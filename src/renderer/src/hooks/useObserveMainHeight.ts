@@ -1,7 +1,7 @@
 import useResizeObserver from '@react-hook/resize-observer';
-import { RefObject, useRef } from 'react';
-import { debounce } from 'lodash-es';
 import { useAtom } from 'jotai';
+import { debounce } from 'lodash-es';
+import { type RefObject, useRef } from 'react';
 import { mainHeightAtom, openAtom } from '../jotai';
 
 export default <T extends HTMLElement = HTMLElement>(selector = '') => {
@@ -10,14 +10,16 @@ export default <T extends HTMLElement = HTMLElement>(selector = '') => {
   const [isOpen] = useAtom(openAtom);
 
   const update = debounce(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
     const wrapper: any = document?.querySelector(selector);
     // console.log(`>>> Update`);
 
     if (wrapper) {
       const styleHeightString = wrapper?.style?.height;
       if (styleHeightString) {
-        const styleHeight = parseInt(styleHeightString.replace('px', ''), 10);
+        const styleHeight = Number.parseInt(styleHeightString.replace('px', ''), 10);
         // console.log(`${selector} style height: ${styleHeight}`);
         setMainHeight(styleHeight);
       } else {

@@ -1,34 +1,30 @@
-import React, { useCallback, useEffect, useState, DragEvent } from 'react';
+import type { Script } from '@johnlindquist/kit/types/core';
 import parse from 'html-react-parser';
-import { Script } from '@johnlindquist/kit/types/core';
 import { useAtom, useAtomValue } from 'jotai';
+import React, { useCallback, useEffect, useState, type DragEvent } from 'react';
 const { ipcRenderer } = window.electron;
 
-import { ChoiceButtonProps } from '../../../shared/types';
+import type { ChoiceButtonProps } from '../../../shared/types';
 import {
-  isMouseDownAtom,
   _modifiers,
-  isScrollingAtom,
-  inputAtom,
-  mouseEnabledAtom,
-  submitValueAtom,
+  actionsButtonDescriptionFontSizeAtom,
+  actionsButtonNameFontSizeAtom,
   flagsIndexAtom,
   focusedChoiceAtom,
-  actionsButtonNameFontSizeAtom,
-  actionsButtonDescriptionFontSizeAtom,
+  inputAtom,
+  isMouseDownAtom,
+  isScrollingAtom,
+  mouseEnabledAtom,
+  submitValueAtom,
   uiAtom,
 } from '../jotai';
 
+import { UI } from '@johnlindquist/kit/core/enum';
 // import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
 import { AppChannel } from '../../../shared/enums';
 import { highlight } from './utils';
-import { UI } from '@johnlindquist/kit/core/enum';
 
-function FlagButton({
-  index: buttonIndex,
-  style,
-  data: { choices },
-}: ChoiceButtonProps) {
+function FlagButton({ index: buttonIndex, style, data: { choices } }: ChoiceButtonProps) {
   const scoredChoice = choices[buttonIndex];
   const choice = scoredChoice?.item;
   const [index, setIndex] = useAtom(flagsIndexAtom);
@@ -39,9 +35,7 @@ function FlagButton({
   const [modifiers] = useAtom(_modifiers);
   const [modifierDescription, setModifierDescription] = useState('');
   const [buttonNameFontSize] = useAtom(actionsButtonNameFontSizeAtom);
-  const [buttonDescriptionFontSize] = useAtom(
-    actionsButtonDescriptionFontSizeAtom,
-  );
+  const [buttonDescriptionFontSize] = useAtom(actionsButtonDescriptionFontSizeAtom);
   const input = useAtomValue(inputAtom);
   const [, setSubmitValue] = useAtom(submitValueAtom);
   const [focusedChoice] = useAtom(focusedChoiceAtom);
@@ -67,8 +61,7 @@ function FlagButton({
   const [imageFail, setImageFail] = useState(false);
   const ui = useAtomValue(uiAtom);
 
-  const focusedName =
-    ui === UI.arg && focusedChoice?.name ? focusedChoice.name : '';
+  const focusedName = ui === UI.arg && focusedChoice?.name ? focusedChoice.name : '';
 
   useEffect(() => {
     setImageFail(false);
@@ -91,10 +84,7 @@ function FlagButton({
           //     type: 'text/plain;charset=utf-8',
           //   })
           // )}`;
-          event.dataTransfer?.setData(
-            drag?.format || 'text/plain',
-            drag?.data || `please set drag.data`,
-          );
+          event.dataTransfer?.setData(drag?.format || 'text/plain', drag?.data || 'please set drag.data');
         }
       }
     },
@@ -125,18 +115,12 @@ function FlagButton({
           }
         : {})}
       style={{
-        cursor: mouseEnabled
-          ? choice?.drag
-            ? isMouseDown
-              ? 'grabbing'
-              : 'grab'
-            : 'pointer'
-          : 'none',
+        cursor: mouseEnabled ? (choice?.drag ? (isMouseDown ? 'grabbing' : 'grab') : 'pointer') : 'none',
         ...style,
       }}
       className={`
       text-text-base
-      ${index === buttonIndex && !choice?.disableSubmit ? `bg-ui-bg` : ``}
+      ${index === buttonIndex && !choice?.disableSubmit ? 'bg-ui-bg' : ''}
         flex
         h-16
         w-full
@@ -151,7 +135,7 @@ function FlagButton({
         outline-none
         focus:outline-none
         ${choice?.className}
-        ${index === buttonIndex ? `opacity-100` : `opacity-90`}
+        ${index === buttonIndex ? 'opacity-100' : 'opacity-90'}
       }`}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
@@ -161,8 +145,9 @@ function FlagButton({
       {choice?.html ? (
         parse(choice?.html, {
           replace: (domNode: any) => {
-            if (domNode?.attribs && index === buttonIndex)
+            if (domNode?.attribs && index === buttonIndex) {
               domNode.attribs.class += ' focused';
+            }
             return domNode;
           },
         })
@@ -180,36 +165,27 @@ function FlagButton({
                 h-4/5
                 rounded
                 object-contain
-                ${index === buttonIndex ? `opacity-100` : `opacity-80`}
+                ${index === buttonIndex ? 'opacity-100' : 'opacity-80'}
                 `}
               />
             )}
             <div className="flex max-h-full max-w-full flex-col overflow-x-hidden">
               {/* Name */}
-              <div
-                className={`${buttonNameFontSize} truncate ${choice?.nameClassName}`}
-              >
+              <div className={`${buttonNameFontSize} truncate ${choice?.nameClassName}`}>
                 {highlight(
-                  choice.name
-                    ?.replace(/{\s*input\s*}/g, input)
-                    .replace(/{\s*base\s*}/g, base),
+                  choice.name?.replace(/{\s*input\s*}/g, input).replace(/{\s*base\s*}/g, base),
                   scoredChoice?.matches?.slicedName,
-                  `bg-primary bg-opacity-5 text-primary`,
+                  'bg-primary bg-opacity-5 text-primary',
                 )}
               </div>
               {/* Description */}
-              {(choice?.focused ||
-                choice?.description ||
-                modifierDescription) && (
+              {(choice?.focused || choice?.description || modifierDescription) && (
                 <div
                   className={`truncate pb-1 ${buttonDescriptionFontSize} ${choice?.descriptionClassName}${
-                    index === buttonIndex
-                      ? ` text-primary opacity-100 `
-                      : ` opacity-60 `
+                    index === buttonIndex ? ' text-primary opacity-100 ' : ' opacity-60 '
                   }`}
                 >
-                  {modifierDescription ||
-                  (index === buttonIndex && choice?.focused)
+                  {modifierDescription || (index === buttonIndex && choice?.focused)
                     ? choice?.focused
                     : focusedName
                       ? choice?.description?.replace('{{name}}', focusedName)
@@ -219,24 +195,16 @@ function FlagButton({
             </div>
           </div>
 
-          <div
-            className={`flex h-full flex-shrink-0 flex-row items-center ${
-              isScrolling ? `-mr-2px` : `0`
-            }`}
-          >
+          <div className={`flex h-full flex-shrink-0 flex-row items-center ${isScrolling ? '-mr-2px' : '0'}`}>
             {(choice?.tag || choice?.icon || choice?.pass || isRecent) && (
               <div className="flex flex-row items-center">
-                {((choice?.pass || isRecent) && (choice as Script)?.kenv
-                  ? (choice as Script).kenv
-                  : choice.tag) && (
+                {((choice?.pass || isRecent) && (choice as Script)?.kenv ? (choice as Script).kenv : choice.tag) && (
                   <div
                     className={`mx-1 truncate font-mono text-xxs ${choice?.tagClassName} ${
-                      index === buttonIndex ? `opacity-70` : `opacity-40`
+                      index === buttonIndex ? 'opacity-70' : 'opacity-40'
                     }`}
                   >
-                    {(choice?.pass || isRecent) &&
-                    (choice as Script)?.kenv &&
-                    (choice as Script)?.kenv !== '.kit'
+                    {(choice?.pass || isRecent) && (choice as Script)?.kenv && (choice as Script)?.kenv !== '.kit'
                       ? (choice as Script).kenv
                       : choice.tag
                         ? highlight(
@@ -263,10 +231,7 @@ function FlagButton({
             )}
 
             {imageFail && (
-              <div
-                style={{ aspectRatio: '1/1' }}
-                className="flex h-8 flex-row items-center justify-center"
-              >
+              <div style={{ aspectRatio: '1/1' }} className="flex h-8 flex-row items-center justify-center">
                 {/* <NoImageIcon
                   className={`
         h-1/2

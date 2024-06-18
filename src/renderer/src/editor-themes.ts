@@ -1,4 +1,4 @@
-import { editor as monacoEditor } from 'monaco-editor';
+import type { editor as monacoEditor } from 'monaco-editor';
 
 export const nightOwl: monacoEditor.IStandaloneThemeData = {
   base: 'vs-dark',
@@ -66,8 +66,7 @@ export const nightOwl: monacoEditor.IStandaloneThemeData = {
     },
     {
       foreground: 'c792ea',
-      token:
-        'meta.class meta.method.declaration meta.var.expr storage.type.jsm',
+      token: 'meta.class meta.method.declaration meta.var.expr storage.type.jsm',
     },
     {
       foreground: 'c792ea',
@@ -499,8 +498,7 @@ export const nightOwl: monacoEditor.IStandaloneThemeData = {
     },
     {
       foreground: 'ff5874',
-      token:
-        'meta.structure.dictionary.json meta.structure.dictionary.value constant.language',
+      token: 'meta.structure.dictionary.json meta.structure.dictionary.value constant.language',
     },
     {
       foreground: 'd6deeb',

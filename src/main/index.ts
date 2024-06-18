@@ -1,12 +1,4 @@
-import {
-  app,
-  protocol,
-  powerMonitor,
-  BrowserWindow,
-  crashReporter,
-  screen,
-  nativeTheme,
-} from 'electron';
+import { BrowserWindow, app, crashReporter, nativeTheme, powerMonitor, protocol, screen } from 'electron';
 
 import './env';
 
@@ -30,76 +22,42 @@ import electronUpdater from 'electron-updater';
 
 const { autoUpdater } = electronUpdater;
 
-import path from 'path';
-import { fork, SpawnSyncOptions, execFileSync } from 'child_process';
-import os from 'os';
-import semver from 'semver';
+import { type SpawnSyncOptions, execFileSync, fork } from 'node:child_process';
+import os from 'node:os';
+import path from 'node:path';
 import fsExtra from 'fs-extra';
+import semver from 'semver';
 const { ensureDir, pathExistsSync } = fsExtra;
-import { existsSync, readFileSync } from 'fs';
-import { readdir, copyFile } from 'fs/promises';
+import { existsSync, readFileSync } from 'node:fs';
+import { copyFile, readdir } from 'node:fs/promises';
 
 import {
-  kenvPath,
-  kitPath,
-  knodePath,
   KIT_FIRST_PATH,
-  tmpClipboardDir,
-  tmpDownloadsDir,
   execPath,
   getKenvs,
   getMainScriptPath,
+  kenvPath,
+  kitPath,
+  knodePath,
+  tmpClipboardDir,
+  tmpDownloadsDir,
 } from '@johnlindquist/kit/core/utils';
 
 import { getPrefsDb } from '@johnlindquist/kit/core/db';
-import { subscribeKey } from 'valtio/utils';
 import { debounce, throttle } from 'lodash-es';
+import { subscribeKey } from 'valtio/utils';
+import { getAssetPath, getPlatformExtension, getReleaseChannel } from '../shared/assets';
+import { clearPromptCache, clearPromptTimers, logPromptState, prepQuitWindow } from './prompt';
+import { startClipboardAndKeyboardWatchers, stopClipboardAndKeyboardWatchers } from './tick';
 import { checkTray, setupTray } from './tray';
 import { setupWatchers, teardownWatchers } from './watcher';
-import {
-  getAssetPath,
-  getReleaseChannel,
-  getPlatformExtension,
-} from '../shared/assets';
-import {
-  startClipboardAndKeyboardWatchers,
-  stopClipboardAndKeyboardWatchers,
-} from './tick';
-import {
-  clearPromptCache,
-  clearPromptTimers,
-  logPromptState,
-  prepQuitWindow,
-} from './prompt';
 
-import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
-import { getVersion, getStoredVersion, storeVersion } from './version';
-import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
-import { kenvEnv } from '@johnlindquist/kit/types/env';
-import {
-  cacheKitScripts,
-  getThemes,
-  initKeymap,
-  kitState,
-  kitStore,
-  subs,
-} from './state';
-import { startSK } from './sk';
-import {
-  destroyAllProcesses,
-  ensureIdleProcess,
-  handleWidgetEvents,
-  setTheme,
-} from './process';
-import { startIpc } from './ipc';
-import { cliFromParams, runPromptProcess } from './kit';
-import { scheduleDownloads, sleepSchedule } from './schedule';
-import { startSettings as setupSettings } from './settings';
-import { registerKillLatestShortcut, updateMainShortcut } from './shortcuts';
-import { logMap, mainLog } from './logs';
+import type { kenvEnv } from '@johnlindquist/kit/types/env';
 import { KitEvent, emitter } from '../shared/events';
+import { syncClipboardStore } from './clipboard';
+import { actualHideDock, clearStateTimers } from './dock';
 import { displayError } from './error';
-import { TrackEvent, trackEvent } from './track';
+import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import {
   cacheMainScripts,
   cleanKit,
@@ -124,23 +82,35 @@ import {
   setupLog,
   showSplash,
 } from './install';
-import { readKitCss } from './theme';
-import { syncClipboardStore } from './clipboard';
-import { actualHideDock, clearStateTimers } from './dock';
+import { startIpc } from './ipc';
+import { cliFromParams, runPromptProcess } from './kit';
+import { logMap, mainLog } from './logs';
+import { destroyAllProcesses, ensureIdleProcess, handleWidgetEvents, setTheme } from './process';
 import { prompts } from './prompts';
 import { createIdlePty, destroyPtyPool } from './pty';
+import { scheduleDownloads, sleepSchedule } from './schedule';
+import { startSettings as setupSettings } from './settings';
 import shims, { loadSupportedOptionalLibraries } from './shims';
+import { registerKillLatestShortcut, updateMainShortcut } from './shortcuts';
+import { startSK } from './sk';
+import { cacheKitScripts, getThemes, initKeymap, kitState, kitStore, subs } from './state';
+import { readKitCss } from './theme';
+import { TrackEvent, trackEvent } from './track';
+import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
+import { getStoredVersion, getVersion, storeVersion } from './version';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
-log.info(`Setting up process.env`);
+log.info('Setting up process.env');
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 // process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 /* eslint-disable */
-(function () {
-  if (!process.env.NODE_EXTRA_CA_CERTS) return;
+(() => {
+  if (!process.env.NODE_EXTRA_CA_CERTS) {
+    return;
+  }
   let extraca: any = null;
   try {
     extraca = readFileSync(process.env.NODE_EXTRA_CA_CERTS);
@@ -177,16 +147,20 @@ log.info(`
 Crash reports are saved in: ${app.getPath('crashDumps')}
 `);
 
-let prevError = ``;
+let prevError = '';
 unhandled({
   showDialog: false,
   logger: throttle(
     (error) => {
       log.warn(error);
       // if error contains "ECONN", then ignore it
-      if (error.message.includes('ECONN')) return;
+      if (error.message.includes('ECONN')) {
+        return;
+      }
       // if error is the same as prevError, then ignore it
-      if (error.message === prevError) return;
+      if (error.message === prevError) {
+        return;
+      }
       prevError = error.message;
       displayError(error);
     },
@@ -201,7 +175,7 @@ if (!app.requestSingleInstanceLock()) {
   app.exit();
 }
 
-log.info(`Appending switch: ignore-certificate-errors`);
+log.info('Appending switch: ignore-certificate-errors');
 app.commandLine.appendSwitch('ignore-certificate-errors');
 
 const kenvEnvPath = kenvPath('.env');
@@ -225,25 +199,25 @@ const platform = os.platform();
 const nodeVersion = `v${process.versions.node}`;
 
 app.on('window-all-closed', (e: Event) => {
-  log.info(`🪟 window-all-closed`, e);
+  log.info('🪟 window-all-closed', e);
   if (!kitState.allowQuit) {
-    mainLog.log(`🪟 window-all-closed`);
+    mainLog.log('🪟 window-all-closed');
     e.preventDefault();
   }
 });
 
 app?.on('browser-window-blur', () => {
-  log.info(`🪟 browser-window-blur`);
+  log.info('🪟 browser-window-blur');
   kitState.emojiActive = false;
 });
 
 app?.on('did-resign-active', () => {
-  log.info(`🪟 did-resign-active`);
+  log.info('🪟 did-resign-active');
   kitState.emojiActive = false;
 });
 
 app?.on('child-process-gone', (event, details) => {
-  log.error(`🫣 Child process gone...`);
+  log.error('🫣 Child process gone...');
   log.error({ event, details });
 });
 
@@ -257,12 +231,12 @@ app?.on('child-process-gone', (event, details) => {
 
 // accessibility-support-changed
 app?.on('accessibility-support-changed', (event, details) => {
-  log.info(`🫣 accessibility-support-changed...`);
+  log.info('🫣 accessibility-support-changed...');
   log.info({ event, details });
 });
 
 app.on('render-process-gone', (event, details) => {
-  log.error(`🫣 Render process gone...`);
+  log.error('🫣 Render process gone...');
   log.error({ event });
 });
 
@@ -317,8 +291,10 @@ const newFromProtocol = async (u: string) => {
 
 const prepareProtocols = async () => {
   app.on('open-url', async (e, u) => {
-    log.info(`URL PROTOCOL`, u);
-    if (e) e.preventDefault();
+    log.info('URL PROTOCOL', u);
+    if (e) {
+      e.preventDefault();
+    }
     await newFromProtocol(u);
   });
 
@@ -326,7 +302,7 @@ const prepareProtocols = async () => {
     const url = request.url.substr(KIT_PROTOCOL.length + 2);
     const file = { path: url };
 
-    log.info(`fileProtocol loading:`, file);
+    log.info('fileProtocol loading:', file);
 
     callback(file);
   });
@@ -362,7 +338,7 @@ const systemEvents = () => {
   screen.addListener(
     'display-added',
     debounce(() => {
-      log.info(`🖥️ Display added`);
+      log.info('🖥️ Display added');
       clearPromptCache();
 
       assignDisplays();
@@ -372,7 +348,7 @@ const systemEvents = () => {
   screen.addListener(
     'display-removed',
     debounce(() => {
-      log.info(`🖥️ Display removed`);
+      log.info('🖥️ Display removed');
       clearPromptCache();
       assignDisplays();
     }, 1000),
@@ -381,22 +357,22 @@ const systemEvents = () => {
   screen.addListener(
     'display-metrics-changed',
     debounce((_, metrics) => {
-      log.info(`🖥️ Display metrics changed`);
+      log.info('🖥️ Display metrics changed');
       log.info(metrics);
       assignDisplays();
     }, 1000),
   );
 
   powerMonitor.addListener('on-battery', () => {
-    log.info(`🔋 on battery`);
+    log.info('🔋 on battery');
   });
 
   powerMonitor.addListener('on-ac', () => {
-    log.info(`🔌  on ac`);
+    log.info('🔌  on ac');
   });
 
   powerMonitor.addListener('suspend', async () => {
-    log.info(`😴 System suspending. Removing watchers.`);
+    log.info('😴 System suspending. Removing watchers.');
     // if (kitState.scriptPath === getMainScriptPath())
     // TODO: Hide main prompts when sleep?
     // maybeHide(HideReason.Suspend);
@@ -419,7 +395,7 @@ const systemEvents = () => {
         // wait 5 seconds for the system to wake up
         await new Promise((resolve) => setTimeout(resolve, 5000));
 
-        log.info(`🌄 System waking`);
+        log.info('🌄 System waking');
         // await setupWatchers();
 
         kitState.suspended = false;
@@ -432,7 +408,7 @@ const systemEvents = () => {
           try {
             checkForUpdates();
           } catch (error) {
-            log.error(`Error checking for updates`, error);
+            log.error('Error checking for updates', error);
           }
         }
 
@@ -460,29 +436,25 @@ const systemEvents = () => {
 };
 
 const ready = async () => {
-  log.info(`ready`);
+  log.info('ready');
   assignDisplays();
   try {
     const isMac = os.platform() === 'darwin';
     if (isMac) {
       startSK();
 
-      log.info(`isMac`);
-      let authorized =
-        shims['node-mac-permissions'].getAuthStatus('accessibility') ===
-        'authorized';
-      log.info(`authorized`, authorized);
+      log.info('isMac');
+      let authorized = shims['node-mac-permissions'].getAuthStatus('accessibility') === 'authorized';
+      log.info('authorized', authorized);
       kitStore.set('accessibilityAuthorized', authorized);
 
       if (!authorized) {
         setInterval(async () => {
-          authorized =
-            shims['node-mac-permissions'].getAuthStatus('accessibility') ===
-            'authorized';
+          authorized = shims['node-mac-permissions'].getAuthStatus('accessibility') === 'authorized';
           if (authorized) {
             kitStore.set('accessibilityAuthorized', authorized);
 
-            log.info(`🌎 Accessibility Mode Enabled. Relaunching...`);
+            log.info('🌎 Accessibility Mode Enabled. Relaunching...');
             app.relaunch();
             app.exit();
           }
@@ -495,17 +467,17 @@ const ready = async () => {
     createLogs();
     await initKeymap();
     await prepareProtocols();
-    await setupLog(`Protocols Prepared`);
+    await setupLog('Protocols Prepared');
     await setupSettings();
 
     await setupTray(true, 'default');
 
-    await setupLog(`Tray created`);
+    await setupLog('Tray created');
 
     await setupWatchers();
-    await setupLog(`Shortcuts Assigned`);
+    await setupLog('Shortcuts Assigned');
 
-    await setupLog(``);
+    await setupLog('');
     setupDone();
     await cacheKitScripts();
 
@@ -543,7 +515,7 @@ const ready = async () => {
       });
 
       process.on('newListener', (event, listener) => {
-        log.info(`newListener`, event);
+        log.info('newListener', event);
       });
     }
 
@@ -557,7 +529,7 @@ const kitExists = async () => {
   setupLog(kitPath());
   const doesKitExist = existsSync(kitPath('package.json'));
 
-  await setupLog(`kit${doesKitExist ? `` : ` not`} found at ${kitPath()}`);
+  await setupLog(`kit${doesKitExist ? '' : ' not'} found at ${kitPath()}`);
 
   return doesKitExist;
 };
@@ -569,75 +541,63 @@ const isContributor = async () => {
 
 const kenvExists = async () => {
   const doesKenvExist = existsSync(kenvPath());
-  await setupLog(`kenv${doesKenvExist ? `` : ` not`} found at ${kenvPath()}`);
+  await setupLog(`kenv${doesKenvExist ? '' : ' not'} found at ${kenvPath()}`);
 
   return doesKenvExist;
 };
 
 const kenvConfigured = async () => {
   const isKenvConfigured = existsSync(kenvPath('.env'));
-  await setupLog(
-    `kenv is${isKenvConfigured ? `` : ` not`} configured at ${kenvPath()}`,
-  );
+  await setupLog(`kenv is${isKenvConfigured ? '' : ' not'} configured at ${kenvPath()}`);
 
   return isKenvConfigured;
 };
 
 const nodeExists = async () => {
   const doesNodeExist = existsSync(execPath);
-  await setupLog(`node${doesNodeExist ? `` : ` not`} found at ${execPath}`);
+  await setupLog(`node${doesNodeExist ? '' : ' not'} found at ${execPath}`);
 
   return doesNodeExist;
 };
 
 const nodeModulesExists = async () => {
   const doesNodeModulesExist = existsSync(kitPath('node_modules'));
-  await setupLog(
-    `node_modules${doesNodeModulesExist ? `` : ` not`} found at ${kitPath()}`,
-  );
+  await setupLog(`node_modules${doesNodeModulesExist ? '' : ' not'} found at ${kitPath()}`);
 
   return doesNodeModulesExist;
 };
 
 const verifyInstall = async () => {
-  log.info(`-----------------------------------------------`);
+  log.info('-----------------------------------------------');
   log.info(process.env);
-  log.info(`-----------------------------------------------`);
+  log.info('-----------------------------------------------');
 
   if (process.env.MAIN_SKIP_SETUP) {
-    log.info(`⏭️ Skipping verifyInstall`);
+    log.info('⏭️ Skipping verifyInstall');
     return;
   }
 
   const checkNode = await nodeExists();
-  await setupLog(checkNode ? `node found` : `node missing`);
+  await setupLog(checkNode ? 'node found' : 'node missing');
 
-  await setupLog(`Verifying ~/.kit exists:`);
+  await setupLog('Verifying ~/.kit exists:');
   const checkKit = await kitExists();
-  await setupLog(`Verifying ~/.kenv exists:`);
+  await setupLog('Verifying ~/.kenv exists:');
   const checkKenv = await kenvExists();
   await matchPackageJsonEngines();
 
   const checkNodeModules = await nodeModulesExists();
-  await setupLog(
-    checkNodeModules ? `node_modules found` : `node_modules missing`,
-  );
+  await setupLog(checkNodeModules ? 'node_modules found' : 'node_modules missing');
 
   const isKenvConfigured = await kenvConfigured();
-  await setupLog(isKenvConfigured ? `kenv .env found` : `kenv .env missinag`);
+  await setupLog(isKenvConfigured ? 'kenv .env found' : 'kenv .env missinag');
 
-  if (
-    checkKit &&
-    checkKenv &&
-    checkNode &&
-    checkNodeModules &&
-    isKenvConfigured
-  ) {
-    await setupLog(`Install verified`);
+  if (checkKit && checkKenv && checkNode && checkNodeModules && isKenvConfigured) {
+    await setupLog('Install verified');
     return true;
   }
 
-  throw new Error(`Install not verified...`);
+  throw new Error('Install not verified...');
 };
 
 const isNewVersion = async () => {
@@ -655,7 +615,7 @@ const isNewVersion = async () => {
 };
 
 const checkKit = async () => {
-  log.info(`checkKit`);
+  log.info('checkKit');
   // log.info(`Waiting 10 seconds...`);
   // await new Promise((resolve, reject) => {
   //   setTimeout(() => {
@@ -667,7 +627,7 @@ const checkKit = async () => {
 
   // prompts.init();
   await setupTray(true, 'busy');
-  await setupLog(`Tray created`);
+  await setupLog('Tray created');
 
   const options: SpawnSyncOptions = {
     cwd: KIT,
@@ -684,7 +644,7 @@ const checkKit = async () => {
 
   const setupScript = (...args: string[]) => {
     if (process.env.MAIN_SKIP_SETUP) {
-      log.info(`⏭️ Skipping setupScript`, args);
+      log.info('⏭️ Skipping setupScript', args);
       return;
     }
     return new Promise((resolve, reject) => {
@@ -727,23 +687,21 @@ const checkKit = async () => {
     try {
       // await installExtensions();
     } catch (error) {
-      log.info(`Failed to install extensions`, error);
+      log.info('Failed to install extensions', error);
     }
   }
-  log.info(`Starting IPC...`);
+  log.info('Starting IPC...');
   startIpc();
-  log.info(`IPC started.`);
+  log.info('IPC started.');
   // await createPromptWindow();
 
-  await setupLog(`Prompt window created`);
+  await setupLog('Prompt window created');
 
-  await setupLog(`\n\n---------------------------------`);
+  await setupLog('\n\n---------------------------------');
   await setupLog(`Launching Script Kit  ${getVersion()}`);
-  await setupLog(
-    `auto updater detected version: ${autoUpdater.currentVersion}`,
-  );
+  await setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
 
-  log.info(`PATH:`, KIT_FIRST_PATH);
+  log.info('PATH:', KIT_FIRST_PATH);
   try {
     configureAutoUpdate();
   } catch (error) {
@@ -765,44 +723,33 @@ const checkKit = async () => {
   const isMac = os.platform() === 'darwin';
   if (!(await kitExists()) || storedVersion === '0.0.0') {
     if (!process.env.KIT_SPLASH) {
-      log.info(
-        `🌑 shouldUseDarkColors: ${
-          nativeTheme.shouldUseDarkColors ? 'true' : 'false'
-        }`,
-      );
+      log.info(`🌑 shouldUseDarkColors: ${nativeTheme.shouldUseDarkColors ? 'true' : 'false'}`);
 
       const { scriptKitTheme, scriptKitLightTheme } = getThemes();
 
-      setTheme(
-        nativeTheme.shouldUseDarkColors ? scriptKitTheme : scriptKitLightTheme,
-        'install',
-      );
+      setTheme(nativeTheme.shouldUseDarkColors ? scriptKitTheme : scriptKitLightTheme, 'install');
 
       await showSplash();
     }
     kitState.installing = true;
-    log.info(`🔥 Starting Kit First Install`);
+    log.info('🔥 Starting Kit First Install');
   }
 
   let nodeVersionMatch = true;
 
   if ((await nodeExists()) && !process.env.MAIN_SKIP_SETUP) {
-    log.info(`👍 Node Exists`);
+    log.info('👍 Node Exists');
     // Compare nodeVersion to execPath
     const execPathVersion = execFileSync(execPath, ['--version']);
     log.info(`existingNode ${nodeVersion}, execPath: ${execPathVersion}`);
     nodeVersionMatch = execPathVersion.toString().trim() === nodeVersion.trim();
   }
 
-  if (!(await nodeExists()) || !nodeVersionMatch) {
-    await setupLog(
-      `Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`,
-    );
+  if (!((await nodeExists()) && nodeVersionMatch)) {
+    await setupLog(`Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`);
 
     let nodeFilePath = '';
-    const bundledNodePath =
-      process.env.KIT_BUNDLED_NODE_PATH ||
-      getAssetPath(`node.${getPlatformExtension()}`);
+    const bundledNodePath = process.env.KIT_BUNDLED_NODE_PATH || getAssetPath(`node.${getPlatformExtension()}`);
 
     if (existsSync(bundledNodePath)) {
       nodeFilePath = bundledNodePath;
@@ -817,11 +764,11 @@ const checkKit = async () => {
   const requiresInstall = (await isNewVersion()) || !(await kitExists());
   log.info(`Requires install: ${requiresInstall}`);
   if (await isContributor()) {
-    await setupLog(`Welcome fellow contributor! Thanks for all you do!`);
+    await setupLog('Welcome fellow contributor! Thanks for all you do!');
   } else if (requiresInstall) {
     if (await kitExists()) {
       kitState.updateInstalling = true;
-      await setupLog(`Cleaning previous .kit`);
+      await setupLog('Cleaning previous .kit');
       await cleanKit();
       trackEvent(TrackEvent.ApplyUpdate, {
         previousVersion: storedVersion,
@@ -844,8 +791,7 @@ const checkKit = async () => {
 
     let kitTarPath = '';
 
-    const bundledKitPath =
-      process.env.KIT_BUNDLED_PATH || getAssetPath(`kit.tar.gz`);
+    const bundledKitPath = process.env.KIT_BUNDLED_PATH || getAssetPath('kit.tar.gz');
 
     if (existsSync(bundledKitPath)) {
       log.info(`📦 Kit file exists at ${bundledKitPath}`);
@@ -857,7 +803,7 @@ const checkKit = async () => {
 
     await extractKitTar(kitTarPath);
 
-    await setupLog(`.kit installed`);
+    await setupLog('.kit installed');
 
     await installEsbuild();
 
@@ -890,16 +836,26 @@ const checkKit = async () => {
 
   // await handleSpawnReturns(`docs-pull`, pullDocsResult);
 
-  log.info(`kenvExists`);
-  if (!(await kenvExists())) {
+  log.info('kenvExists');
+  if (await kenvExists()) {
+    // eslint-disable-next-line promise/catch-or-return
+    // optionalSetupScript(kitPath('setup', 'build-ts-scripts.js')).then(
+    //   (result) => {
+    //     log.info(`👍 TS Scripts Built`);
+    //     setTimeout(() => {
+    //       kitState.waking = false;
+    //     }, 10000);
+    //     return result;
+    //   }
+    // );
+  } else {
     // Step 4: Use kit wrapper to run setup.js script
     // configWindow?.show();
-    await setupLog(`Extracting kenv.zip to ~/.kenv...`);
+    await setupLog('Extracting kenv.zip to ~/.kenv...');
 
     let kenvZipPath = '';
 
-    const bundledKenvPath =
-      process.env.KIT_BUNDLED_KENV_PATH || getAssetPath('kenv.zip');
+    const bundledKenvPath = process.env.KIT_BUNDLED_KENV_PATH || getAssetPath('kenv.zip');
 
     if (existsSync(bundledKenvPath)) {
       log.info(`📦 Kenv file exists at ${bundledKenvPath}`);
@@ -918,52 +874,36 @@ const checkKit = async () => {
 
     optionalSetupScript(kitPath('setup', 'clone-examples.js'));
     optionalSetupScript(kitPath('setup', 'clone-sponsors.js'));
-  } else {
-    // eslint-disable-next-line promise/catch-or-return
-    // optionalSetupScript(kitPath('setup', 'build-ts-scripts.js')).then(
-    //   (result) => {
-    //     log.info(`👍 TS Scripts Built`);
-    //     setTimeout(() => {
-    //       kitState.waking = false;
-    //     }, 10000);
-    //     return result;
-    //   }
-    // );
   }
 
   if (!(await kenvConfigured())) {
-    await setupLog(`Run .kenv setup script...`);
+    await setupLog('Run .kenv setup script...');
 
     await setupScript(kitPath('setup', 'setup.js'));
     await kenvConfigured();
   }
 
-  await setupLog(`Update .kenv`);
+  await setupLog('Update .kenv');
 
   // patch now creates an kenvPath(".npmrc") file
   // TODO: Fix
   // await setupScript(kitPath('setup', 'patch.js'));
 
-  await setupLog(`Creating bins`);
+  await setupLog('Creating bins');
   optionalSetupScript(kitPath('cli', 'create-all-bins-no-trash.js'));
 
   if (!process.env.MAIN_SKIP_SETUP) {
-    await Promise.all([
-      installKitInKenv(),
-      installEsbuild(),
-      installPlatformDeps(),
-      installNoDom(),
-    ]);
+    await Promise.all([installKitInKenv(), installEsbuild(), installPlatformDeps(), installNoDom()]);
   }
 
-  log.info(`installKitInKenv`);
+  log.info('installKitInKenv');
   if (
     requiresInstall &&
     (await kenvExists()) &&
     semver.gt(storedVersion, '0.0.0') &&
     semver.lt(storedVersion, '1.58.0')
   ) {
-    await setupLog(`Trusting old kenvs...`);
+    await setupLog('Trusting old kenvs...');
     const kenvs = (await getKenvs()).map((kenv: string) => path.basename(kenv));
     for await (const kenv of kenvs) {
       await optionalSetupScript(kitPath('cli', 'kenv-trust.js'), [kenv, kenv]);
@@ -971,18 +911,14 @@ const checkKit = async () => {
   }
 
   try {
-    log.info(`verifyInstall`);
+    log.info('verifyInstall');
     await verifyInstall();
 
-    log.info(`storeVersion`);
+    log.info('storeVersion');
     await storeVersion(getVersion());
 
     if (kitState.isMac) {
-      optionalSpawnSetup(
-        kitPath('main', 'app-launcher.js'),
-        '--prep',
-        '--trust',
-      );
+      optionalSpawnSetup(kitPath('main', 'app-launcher.js'), '--prep', '--trust');
     }
 
     kitState.starting = false;
@@ -1022,7 +958,7 @@ const checkKit = async () => {
 
     // focusPrompt();
     setTimeout(async () => {
-      log.info(`Parsing scripts...`);
+      log.info('Parsing scripts...');
       await cacheMainScripts();
     }, 1000);
   } catch (error) {
@@ -1037,7 +973,7 @@ emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
 app.whenReady().then(loadSupportedOptionalLibraries).then(checkKit).catch(ohNo);
 
 app?.on('will-quit', (e) => {
-  log.info(`🚪 will-quit`);
+  log.info('🚪 will-quit');
 });
 
 // app?.on('before-quit', (e) => {
@@ -1068,12 +1004,14 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   prompts.idle?.prepPromptForQuit();
 
   // app?.removeAllListeners('window-all-closed');
-  if (!allowQuit) return;
+  if (!allowQuit) {
+    return;
+  }
   if (kitState.relaunch) {
-    mainLog.info(`🚀 Kit.app should relaunch after quit...`);
+    mainLog.info('🚀 Kit.app should relaunch after quit...');
     app.relaunch();
   }
-  mainLog.info(`😬 Tear down all processes before quit`);
+  mainLog.info('😬 Tear down all processes before quit');
   try {
     teardownWatchers();
     sleepSchedule();
@@ -1083,20 +1021,22 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
       try {
         sub();
       } catch (error) {
-        mainLog.error(`😬 Error unsubscribing`, { error });
+        mainLog.error('😬 Error unsubscribing', { error });
       }
     });
     subs.length = 0;
     clearPromptTimers();
     clearStateTimers();
     // destory event emitter named "emitter"
-    if (emitter) emitter.removeAllListeners();
+    if (emitter) {
+      emitter.removeAllListeners();
+    }
 
-    mainLog.info(`Cleared out everything...`);
+    mainLog.info('Cleared out everything...');
 
     // destroyTray();
   } catch (error) {
-    mainLog.error(`😬 Error Teardown and Sleep`, { error });
+    mainLog.error('😬 Error Teardown and Sleep', { error });
   }
 
   try {
@@ -1122,13 +1062,13 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
       }
 
       destroyPtyPool();
-      log.info(`🚪 Why is this app still running with all the windows closed?`);
+      log.info('🚪 Why is this app still running with all the windows closed?');
       try {
         if (kitState?.quitAndInstall) {
-          mainLog.info(`🚀 Quit and Install`);
+          mainLog.info('🚀 Quit and Install');
           autoUpdater?.quitAndInstall();
         } else {
-          mainLog.info(`🚀 Quit`);
+          mainLog.info('🚀 Quit');
           app?.quit();
           app?.exit(0);
         }

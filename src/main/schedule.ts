@@ -1,19 +1,21 @@
-import schedule, { Job } from 'node-schedule';
+import schedule, { type Job } from 'node-schedule';
 
-import log from 'electron-log';
-import { Script } from '@johnlindquist/kit/types/core';
 import { kitPath } from '@johnlindquist/kit/core/utils';
+import type { Script } from '@johnlindquist/kit/types/core';
+import log from 'electron-log';
+import { Trigger } from '../shared/enums';
 import { runPromptProcess, runScript } from './kit';
 import { kitState, online, scheduleMap } from './state';
-import { Trigger } from '../shared/enums';
 
 export const cancelJob = (filePath: string) => {
-  if (!filePath) return false;
+  if (!filePath) {
+    return false;
+  }
   let success = false;
   if (scheduleMap.has(filePath)) {
     log.info(`Unscheduling: ${filePath}`);
     const job = scheduleMap.get(filePath) as Job;
-    if (job && job?.name) {
+    if (job?.name) {
       try {
         success = schedule.cancelJob(job.name);
         job.cancelNext();
@@ -38,15 +40,11 @@ export const sleepSchedule = () => {
   // }
 
   for (const [filePath, job] of scheduleMap) {
-    if (job && job.name) {
+    if (job?.name) {
       try {
         const cancelled = cancelJob(filePath);
         log.info(
-          `😴 Computer sleeping: ${
-            job.name
-          } won't run again until wake. Cancel Success? ${
-            cancelled ? 'Yes' : 'No'
-          }`,
+          `😴 Computer sleeping: ${job.name} won't run again until wake. Cancel Success? ${cancelled ? 'Yes' : 'No'}`,
         );
       } catch (error) {
         log.error(error);
@@ -58,16 +56,15 @@ export const sleepSchedule = () => {
 };
 
 export const scheduleDownloads = async () => {
-  log.info(`schedule downloads`);
+  log.info('schedule downloads');
   const isOnline = await online();
-  if (!isOnline) return;
+  if (!isOnline) {
+    return;
+  }
 
   try {
     log.info(`Running downloads script: ${kitPath('setup', 'downloads.js')}`);
-    runScript(
-      kitPath('setup', 'downloads.js'),
-      process.env.NODE_ENV === 'development' ? '--dev' : '',
-    );
+    runScript(kitPath('setup', 'downloads.js'), process.env.NODE_ENV === 'development' ? '--dev' : '');
   } catch (error) {
     log.error(error);
   }
@@ -77,26 +74,16 @@ export const cancelSchedule = (filePath: string) => {
   cancelJob(filePath);
 };
 
-export const scheduleScriptChanged = ({
-  filePath,
-  kenv,
-  schedule: scheduleString,
-}: Script) => {
+export const scheduleScriptChanged = ({ filePath, kenv, schedule: scheduleString }: Script) => {
   if (scheduleMap.has(filePath)) {
-    log.info(
-      `Schedule script exists. Reschedule: ${filePath} ${scheduleString}`,
-    );
+    log.info(`Schedule script exists. Reschedule: ${filePath} ${scheduleString}`);
     cancelJob(filePath);
   }
 
   if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
     if (scheduleString) {
-      log.info(
-        `Ignoring ${filePath} // Schedule metadata because it's not trusted.`,
-      );
-      log.info(
-        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`,
-      );
+      log.info(`Ignoring ${filePath} // Schedule metadata because it's not trusted.`);
+      log.info(`Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`);
     }
 
     return;
@@ -127,11 +114,7 @@ export const scheduleScriptChanged = ({
         });
       };
 
-      const job = schedule.scheduleJob(
-        filePath,
-        scheduleString,
-        scheduledFunction,
-      );
+      const job = schedule.scheduleJob(filePath, scheduleString, scheduledFunction);
 
       log.info(`Scheduling: ${filePath} for ${scheduleString}`);
       scheduleMap.set(filePath, job);

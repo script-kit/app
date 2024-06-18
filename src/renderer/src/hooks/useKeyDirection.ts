@@ -1,9 +1,9 @@
 import { useAtom } from 'jotai';
 import { debounce } from 'lodash-es';
 import { useHotkeys } from 'react-hotkeys-hook';
+import type { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
 import { actionsInputFocusAtom, cmdAtom, inputFocusAtom } from '../jotai';
 import { hotkeysOptions } from './shared';
-import { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
 
 export type Direction = 'up' | 'down' | 'left' | 'right';
 

@@ -1,3 +1,4 @@
+import { Channel, UI } from '@johnlindquist/kit/core/enum';
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/no-unstable-nested-components */
 /* eslint-disable react/function-component-definition */
@@ -5,37 +6,24 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable react/no-danger */
 import log from 'electron-log';
-import { useAtom, useSetAtom } from 'jotai';
-import { Channel, UI } from '@johnlindquist/kit/core/enum';
-import { debounce } from 'lodash-es';
 import parse, { domToReact } from 'html-react-parser';
-import React, {
-  useEffect,
-  FC,
-  Key,
-  useRef,
-  useState,
-  useCallback,
-} from 'react';
+import { useAtom, useSetAtom } from 'jotai';
+import { debounce } from 'lodash-es';
+import React, { useEffect, type FC, type Key, useRef, useState, useCallback } from 'react';
 
 import classNames from 'classnames';
+import type { IInputProps, IMessageListProps, MessageListEvent, MessageType } from 'react-chat-elements';
 import { FaChevronDown } from 'react-icons/fa';
-import {
-  MessageType,
-  IMessageListProps,
-  MessageListEvent,
-  IInputProps,
-} from 'react-chat-elements';
 
 import {
-  chatMessagesAtom,
-  chatMessageSubmitAtom,
-  placeholderAtom,
-  inputAtom,
   channelAtom,
-  uiAtom,
-  promptDataAtom,
+  chatMessageSubmitAtom,
+  chatMessagesAtom,
+  inputAtom,
+  placeholderAtom,
   preventChatScrollAtom,
+  promptDataAtom,
+  uiAtom,
 } from '../jotai';
 import Button from './chat/button';
 import MessageBox from './chat/messagebox';
@@ -82,7 +70,9 @@ const ChatInput: React.FC<
   ...props
 }) => {
   useEffect(() => {
-    if (autofocus === true) props.referance?.current?.focus();
+    if (autofocus === true) {
+      props.referance?.current?.focus();
+    }
 
     if (props.clear instanceof Function) {
       props.clear(clear);
@@ -95,17 +85,18 @@ const ChatInput: React.FC<
 
   const onChangeEvent = (e: any) => {
     if (props.maxlength && (e.target.value || '').length > props.maxlength) {
-      if (props.onMaxLengthExceed instanceof Function)
+      if (props.onMaxLengthExceed instanceof Function) {
         props.onMaxLengthExceed();
+      }
 
-      if (
-        props.referance?.current?.value ===
-        (e.target.value || '').substring(0, props.maxlength)
-      )
+      if (props.referance?.current?.value === (e.target.value || '').substring(0, props.maxlength)) {
         return;
+      }
     }
 
-    if (props.onChange instanceof Function) props.onChange(e);
+    if (props.onChange instanceof Function) {
+      props.onChange(e);
+    }
 
     if (multiline === true) {
       if (autoHeight === true) {
@@ -114,9 +105,11 @@ const ChatInput: React.FC<
         }
 
         let height;
-        if (e.target.scrollHeight <= maxHeight)
+        if (e.target.scrollHeight <= maxHeight) {
           height = `${e.target.scrollHeight}px`;
-        else height = `${maxHeight}px`;
+        } else {
+          height = `${maxHeight}px`;
+        }
 
         if (e.target.style.height !== height) {
           e.target.style.height = height;
@@ -144,7 +137,9 @@ const ChatInput: React.FC<
       target: props.referance?.current,
     };
 
-    if (props.referance.current.value === value) return;
+    if (props.referance.current.value === value) {
+      return;
+    }
     props.referance.current.value = value;
 
     onChangeEvent(_event);
@@ -152,9 +147,7 @@ const ChatInput: React.FC<
 
   return (
     <div className={classNames('rce-container-input', props.className)}>
-      {props.leftButtons && (
-        <div className="rce-input-buttons">{props.leftButtons}</div>
-      )}
+      {props.leftButtons && <div className="rce-input-buttons">{props.leftButtons}</div>}
       {multiline === false ? (
         <input
           ref={props.referance}
@@ -197,9 +190,7 @@ const ChatInput: React.FC<
           onKeyUp={props.onKeyUp}
         />
       )}
-      {props.rightButtons && (
-        <div className="rce-input-buttons">{props.rightButtons}</div>
-      )}
+      {props.rightButtons && <div className="rce-input-buttons">{props.rightButtons}</div>}
     </div>
   );
 };
@@ -218,26 +209,26 @@ const ChatList: FC<IMessageListProps> = ({
 
   const checkScroll = () => {
     const e = referance;
-    if (!e || !e.current) return;
+    if (!e?.current) {
+      return;
+    }
 
-    if (
-      toBottomHeight === '100%' ||
-      (toBottomHeight && scrollBottom < Number(toBottomHeight))
-    ) {
+    if (toBottomHeight === '100%' || (toBottomHeight && scrollBottom < Number(toBottomHeight))) {
       e.current.scrollTop = e.current.scrollHeight; // scroll to bottom
     } else if (lockable === true) {
-      e.current.scrollTop =
-        e.current.scrollHeight - e.current.offsetHeight - scrollBottom;
+      e.current.scrollTop = e.current.scrollHeight - e.current.offsetHeight - scrollBottom;
     }
   };
 
   useEffect(() => {
-    if (!referance) return;
+    if (!referance) {
+      return;
+    }
 
     if (prevProps.current.dataSource.length !== props.dataSource.length) {
       setScrollBottom(getBottom(referance));
       if (preventScroll) {
-        log.info(`Scrolling interrupted by user`);
+        log.info('Scrolling interrupted by user');
       } else {
         checkScroll();
       }
@@ -247,69 +238,82 @@ const ChatList: FC<IMessageListProps> = ({
   }, [checkScroll, prevProps, referance, preventScroll]);
 
   const getBottom = (e: any) => {
-    if (e.current)
-      return (
-        e.current.scrollHeight - e.current.scrollTop - e.current.offsetHeight
-      );
+    if (e.current) {
+      return e.current.scrollHeight - e.current.scrollTop - e.current.offsetHeight;
+    }
     return e.scrollHeight - e.scrollTop - e.offsetHeight;
   };
 
   const onOpen: MessageListEvent = (item, index, event) => {
-    if (props.onOpen instanceof Function) props.onOpen(item, index, event);
+    if (props.onOpen instanceof Function) {
+      props.onOpen(item, index, event);
+    }
   };
 
   const onDownload: MessageListEvent = (item, index, event) => {
-    if (props.onDownload instanceof Function)
+    if (props.onDownload instanceof Function) {
       props.onDownload(item, index, event);
+    }
   };
 
   const onPhotoError: MessageListEvent = (item, index, event) => {
-    if (props.onPhotoError instanceof Function)
+    if (props.onPhotoError instanceof Function) {
       props.onPhotoError(item, index, event);
+    }
   };
 
   const onClick: MessageListEvent = (item, index, event) => {
-    if (props.onClick instanceof Function) props.onClick(item, index, event);
+    if (props.onClick instanceof Function) {
+      props.onClick(item, index, event);
+    }
   };
 
   const onTitleClick: MessageListEvent = (item, index, event) => {
-    if (props.onTitleClick instanceof Function)
+    if (props.onTitleClick instanceof Function) {
       props.onTitleClick(item, index, event);
+    }
   };
 
   const onForwardClick: MessageListEvent = (item, index, event) => {
-    if (props.onForwardClick instanceof Function)
+    if (props.onForwardClick instanceof Function) {
       props.onForwardClick(item, index, event);
+    }
   };
 
   const onReplyClick: MessageListEvent = (item, index, event) => {
-    if (props.onReplyClick instanceof Function)
+    if (props.onReplyClick instanceof Function) {
       props.onReplyClick(item, index, event);
+    }
   };
 
   const onReplyMessageClick: MessageListEvent = (item, index, event) => {
-    if (props.onReplyMessageClick instanceof Function)
+    if (props.onReplyMessageClick instanceof Function) {
       props.onReplyMessageClick(item, index, event);
+    }
   };
 
   const onRemoveMessageClick: MessageListEvent = (item, index, event) => {
-    if (props.onRemoveMessageClick instanceof Function)
+    if (props.onRemoveMessageClick instanceof Function) {
       props.onRemoveMessageClick(item, index, event);
+    }
   };
 
   const onContextMenu: MessageListEvent = (item, index, event) => {
-    if (props.onContextMenu instanceof Function)
+    if (props.onContextMenu instanceof Function) {
       props.onContextMenu(item, index, event);
+    }
   };
 
   const onMessageFocused: MessageListEvent = (item, index, event) => {
-    if (props.onMessageFocused instanceof Function)
+    if (props.onMessageFocused instanceof Function) {
       props.onMessageFocused(item, index, event);
+    }
   };
 
   const onMeetingMessageClick: MessageListEvent = (item, index, event) => {
-    if (props.onMeetingMessageClick instanceof Function)
+    if (props.onMeetingMessageClick instanceof Function) {
       props.onMeetingMessageClick(item, index, event);
+    }
   };
 
   const onScroll = (e: React.UIEvent<HTMLElement>): void => {
@@ -333,9 +337,7 @@ const ChatList: FC<IMessageListProps> = ({
   };
 
   const onWheel = (e: React.WheelEvent<HTMLElement>): void => {
-    const atBottom =
-      e.currentTarget.scrollHeight - e.currentTarget.scrollTop ===
-      e.currentTarget.offsetHeight;
+    const atBottom = e.currentTarget.scrollHeight - e.currentTarget.scrollTop === e.currentTarget.offsetHeight;
 
     if (atBottom) {
       setPreventScroll(false);
@@ -345,7 +347,9 @@ const ChatList: FC<IMessageListProps> = ({
   };
 
   const toBottom = (e: any) => {
-    if (!referance) return;
+    if (!referance) {
+      return;
+    }
     referance.current.scrollTop = referance.current.scrollHeight;
     if (props.onDownButtonClick instanceof Function) {
       props.onDownButtonClick(e);
@@ -353,13 +357,15 @@ const ChatList: FC<IMessageListProps> = ({
   };
 
   const onMeetingMoreSelect: MessageListEvent = (item, i, e) => {
-    if (props.onMeetingMoreSelect instanceof Function)
+    if (props.onMeetingMoreSelect instanceof Function) {
       props.onMeetingMoreSelect(item, i, e);
+    }
   };
 
   const onMeetingLinkClick: MessageListEvent = (item, i, e) => {
-    if (props.onMeetingLinkClick instanceof Function)
+    if (props.onMeetingLinkClick instanceof Function) {
       props.onMeetingLinkClick(item, i, e);
+    }
   };
 
   // onFocus, copy innerText to clipboard using navigator.clipboard
@@ -381,11 +387,7 @@ const ChatList: FC<IMessageListProps> = ({
   const onCopy = (e: React.ClipboardEvent<HTMLDivElement>) => {
     const selection = window.getSelection();
     // Check if there is a text selection and if it's within the current target element
-    if (
-      selection &&
-      selection.toString() &&
-      e.currentTarget.contains(selection.anchorNode)
-    ) {
+    if (selection?.toString() && e.currentTarget.contains(selection.anchorNode)) {
       // If there's selected text, let the browser handle the copy event
       return;
     }
@@ -447,12 +449,7 @@ const ChatList: FC<IMessageListProps> = ({
       {...props.customProps}
     >
       {!!props.children && props.isShowChild && props.children}
-      <div
-        ref={referance}
-        onScroll={onScroll}
-        onWheel={onWheel}
-        className="rce-mlist chat-scrollbar"
-      >
+      <div ref={referance} onScroll={onScroll} onWheel={onWheel} className="rce-mlist chat-scrollbar">
         {props.dataSource.map((x, i: number, array) => {
           const options = {
             replace: (domNode: any) => {
@@ -471,18 +468,12 @@ const ChatList: FC<IMessageListProps> = ({
                   onMouseEnter,
                 };
 
-                domNode.attribs.class = `kit-mbox ${
-                  domNode.attribs?.class || ''
-                }`;
+                domNode.attribs.class = `kit-mbox ${domNode.attribs?.class || ''}`;
 
                 return (
                   <div className="relative" key={`${domNode.name}-${i}`}>
                     <div {...domNode.attribs}>
-                      {React.createElement(
-                        domNode.name,
-                        {},
-                        domToReact(domNode.children, options),
-                      )}
+                      {React.createElement(domNode.name, {}, domToReact(domNode.children, options))}
                     </div>
                   </div>
                 );
@@ -492,12 +483,7 @@ const ChatList: FC<IMessageListProps> = ({
             },
           };
           const text = (
-            <div
-              onCopy={onCopy}
-              onFocus={onFocus}
-              className="kit-mbox-wrapper"
-              tabIndex={array.length - i}
-            >
+            <div onCopy={onCopy} onFocus={onFocus} className="kit-mbox-wrapper" tabIndex={array.length - i}>
               {parse(x.text || '', options)}
             </div>
           );
@@ -510,69 +496,33 @@ const ChatList: FC<IMessageListProps> = ({
               text={text || x?.text}
               // data={x}
 
-              onOpen={
-                props.onOpen &&
-                ((e: React.MouseEvent<HTMLElement>) => onOpen(x, i, e))
-              }
-              onPhotoError={
-                props.onPhotoError &&
-                ((e: React.MouseEvent<HTMLElement>) => onPhotoError(x, i, e))
-              }
-              onDownload={
-                props.onDownload &&
-                ((e: React.MouseEvent<HTMLElement>) => onDownload(x, i, e))
-              }
-              onTitleClick={
-                props.onTitleClick &&
-                ((e: React.MouseEvent<HTMLElement>) => onTitleClick(x, i, e))
-              }
-              onForwardClick={
-                props.onForwardClick &&
-                ((e: React.MouseEvent<HTMLElement>) => onForwardClick(x, i, e))
-              }
-              onReplyClick={
-                props.onReplyClick &&
-                ((e: React.MouseEvent<HTMLElement>) => onReplyClick(x, i, e))
-              }
+              onOpen={props.onOpen && ((e: React.MouseEvent<HTMLElement>) => onOpen(x, i, e))}
+              onPhotoError={props.onPhotoError && ((e: React.MouseEvent<HTMLElement>) => onPhotoError(x, i, e))}
+              onDownload={props.onDownload && ((e: React.MouseEvent<HTMLElement>) => onDownload(x, i, e))}
+              onTitleClick={props.onTitleClick && ((e: React.MouseEvent<HTMLElement>) => onTitleClick(x, i, e))}
+              onForwardClick={props.onForwardClick && ((e: React.MouseEvent<HTMLElement>) => onForwardClick(x, i, e))}
+              onReplyClick={props.onReplyClick && ((e: React.MouseEvent<HTMLElement>) => onReplyClick(x, i, e))}
               onReplyMessageClick={
-                props.onReplyMessageClick &&
-                ((e: React.MouseEvent<HTMLElement>) =>
-                  onReplyMessageClick(x, i, e))
+                props.onReplyMessageClick && ((e: React.MouseEvent<HTMLElement>) => onReplyMessageClick(x, i, e))
               }
               onRemoveMessageClick={
-                props.onRemoveMessageClick &&
-                ((e: React.MouseEvent<HTMLElement>) =>
-                  onRemoveMessageClick(x, i, e))
+                props.onRemoveMessageClick && ((e: React.MouseEvent<HTMLElement>) => onRemoveMessageClick(x, i, e))
               }
-              onClick={
-                props.onClick &&
-                ((e: React.MouseEvent<HTMLElement>) => onClick(x, i, e))
-              }
-              onContextMenu={
-                props.onContextMenu &&
-                ((e: React.MouseEvent<HTMLElement>) => onContextMenu(x, i, e))
-              }
+              onClick={props.onClick && ((e: React.MouseEvent<HTMLElement>) => onClick(x, i, e))}
+              onContextMenu={props.onContextMenu && ((e: React.MouseEvent<HTMLElement>) => onContextMenu(x, i, e))}
               onMeetingMoreSelect={
-                props.onMeetingMoreSelect &&
-                ((e: React.MouseEvent<HTMLElement>) =>
-                  onMeetingMoreSelect(x, i, e))
+                props.onMeetingMoreSelect && ((e: React.MouseEvent<HTMLElement>) => onMeetingMoreSelect(x, i, e))
               }
               onMessageFocused={
-                props.onMessageFocused &&
-                ((e: React.MouseEvent<HTMLElement>) =>
-                  onMessageFocused(x, i, e))
+                props.onMessageFocused && ((e: React.MouseEvent<HTMLElement>) => onMessageFocused(x, i, e))
               }
               onMeetingMessageClick={
-                props.onMeetingMessageClick &&
-                ((e: React.MouseEvent<HTMLElement>) =>
-                  onMeetingMessageClick(x, i, e))
+                props.onMeetingMessageClick && ((e: React.MouseEvent<HTMLElement>) => onMeetingMessageClick(x, i, e))
               }
               onMeetingTitleClick={props.onMeetingTitleClick}
               onMeetingVideoLinkClick={props.onMeetingVideoLinkClick}
               onMeetingLinkClick={
-                props.onMeetingLinkClick &&
-                ((e: React.MouseEvent<HTMLElement>) =>
-                  onMeetingLinkClick(x, i, e))
+                props.onMeetingLinkClick && ((e: React.MouseEvent<HTMLElement>) => onMeetingLinkClick(x, i, e))
               }
               actionButtons={props.actionButtons}
               styles={props.messageBoxStyles}
@@ -586,9 +536,7 @@ const ChatList: FC<IMessageListProps> = ({
         <div className="rce-mlist-down-button" onClick={toBottom}>
           <FaChevronDown />
           {props.downButtonBadge !== undefined ? (
-            <span className="rce-mlist-down-button--badge">
-              {props.downButtonBadge.toString()}
-            </span>
+            <span className="rce-mlist-down-button--badge">{props.downButtonBadge.toString()}</span>
           ) : null}
         </div>
       )}
@@ -633,27 +581,15 @@ export function Chat() {
       inputRef.current.setAttribute('tabindex', '0');
       buttonRef.current?.setAttribute('tabindex', '-1');
 
-      inputRef.current?.addEventListener(
-        'compositionstart',
-        handleCompositionStart,
-      );
+      inputRef.current?.addEventListener('compositionstart', handleCompositionStart);
 
-      inputRef.current?.addEventListener(
-        'compositionend',
-        handleCompositionEnd,
-      );
+      inputRef.current?.addEventListener('compositionend', handleCompositionEnd);
     }
     return () => {
       if (inputRef?.current) {
-        inputRef?.current.removeEventListener(
-          'compositionstart',
-          handleCompositionStart,
-        );
+        inputRef?.current.removeEventListener('compositionstart', handleCompositionStart);
 
-        inputRef?.current.removeEventListener(
-          'compositionend',
-          handleCompositionEnd,
-        );
+        inputRef?.current.removeEventListener('compositionend', handleCompositionEnd);
       }
     };
   }, []);
@@ -664,13 +600,17 @@ export function Chat() {
   const [input] = useAtom(inputAtom);
 
   useEffect(() => {
-    if (setInputRef.current && input.length > 0) setInputRef.current(input);
+    if (setInputRef.current && input.length > 0) {
+      setInputRef.current(input);
+    }
   }, [input, ui]);
 
   const onSubmit = useCallback(
     (e: any) => {
       e.preventDefault();
-      if (isComposing) return;
+      if (isComposing) {
+        return;
+      }
       // const validHtml = checkValidHtml(currentMessage);
       // Escape html characters if invalid
       const text = escapeHtml(currentMessage);
@@ -686,16 +626,11 @@ export function Chat() {
       setMessages(updatedMessages);
       submitMessage(text);
       setCurrentMessage('');
-      if (clearRef.current) clearRef.current();
+      if (clearRef.current) {
+        clearRef.current();
+      }
     },
-    [
-      currentMessage,
-      messages,
-      setCurrentMessage,
-      setMessages,
-      submitMessage,
-      isComposing,
-    ],
+    [currentMessage, messages, setCurrentMessage, setMessages, submitMessage, isComposing],
   );
 
   // state for cursor position
@@ -773,9 +708,7 @@ export function Chat() {
         }
         // if new index is less than 0, set it to the tabIndex of the last message
 
-        const element = document.querySelector(
-          `[tabindex="${newIndex}"]`,
-        ) as HTMLInputElement;
+        const element = document.querySelector(`[tabindex="${newIndex}"]`) as HTMLInputElement;
         if (element) {
           element?.focus();
           const focusIndex = messages.length - newIndex;
@@ -783,13 +716,7 @@ export function Chat() {
         }
         // else if not a modifier key, focus the input
         // else if not the tab key, focus the input
-      } else if (
-        !e.shiftKey &&
-        !e.altKey &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        e.key !== 'Tab'
-      ) {
+      } else if (!(e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) && e.key !== 'Tab') {
         inputRef.current?.focus();
       }
     },
@@ -808,7 +735,9 @@ export function Chat() {
 
   // when messages changes, scroll to the bottom
   useEffect(() => {
-    if (preventScroll) return;
+    if (preventScroll) {
+      return;
+    }
     const element = document.querySelector('.kit-chat-messages > .rce-mlist');
 
     if (element) {
@@ -822,11 +751,7 @@ export function Chat() {
 
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-    <div
-      className="chat-container flex h-full w-full flex-col"
-      onKeyDown={onChatKeyDown}
-      id={UI.chat}
-    >
+    <div className="chat-container flex h-full w-full flex-col" onKeyDown={onChatKeyDown} id={UI.chat}>
       <ChatList
         referance={messagesRef}
         dataSource={messages as MessageType[]}
@@ -835,7 +760,7 @@ export function Chat() {
         notchStyle={{ display: 'none' }}
       />
       <ChatInput
-        multiline
+        multiline={true}
         clear={(c) => {
           clearRef.current = c;
         }}

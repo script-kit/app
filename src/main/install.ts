@@ -1,65 +1,61 @@
 import { clipboard, nativeTheme, shell } from 'electron';
 import { HttpsProxyAgent } from 'hpagent';
 
-import dotenv from 'dotenv';
-import log from 'electron-log';
-import download from 'download';
-import { assign, debounce } from 'lodash-es';
-import path from 'path';
-import * as tar from 'tar';
-import { promisify } from 'util';
-import StreamZip from 'node-stream-zip';
 import {
-  SpawnSyncOptions,
-  ForkOptions,
+  type ExecOptions,
+  type ForkOptions,
+  type SpawnSyncOptions,
+  type SpawnSyncReturns,
+  exec,
   fork,
   spawn,
-  SpawnSyncReturns,
-  exec,
-  ExecOptions,
-} from 'child_process';
-import os, { homedir } from 'os';
+} from 'node:child_process';
+import os, { homedir } from 'node:os';
+import path from 'node:path';
+import { promisify } from 'node:util';
+import dotenv from 'dotenv';
+import download from 'download';
+import log from 'electron-log';
 import fsExtra from 'fs-extra';
+import { assign, debounce } from 'lodash-es';
+import StreamZip from 'node-stream-zip';
+import * as tar from 'tar';
 const { ensureDir, writeFile, readdir, readJson, writeJson } = fsExtra;
-import { lstat, readFile, rm } from 'fs/promises';
+import { lstat, readFile, rm } from 'node:fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
-import { CACHED_GROUPED_SCRIPTS_WORKER } from '@johnlindquist/kit/workers';
-import { FlagsOptions, Script, Shortcut } from '@johnlindquist/kit/types';
 import {
+  KIT_FIRST_PATH,
+  createPathResolver,
+  getMainScriptPath,
+  isDir,
+  isFile,
   kenvPath,
   kitPath,
   knodePath,
-  KIT_FIRST_PATH,
-  isDir,
-  createPathResolver,
-  getMainScriptPath,
-  isFile,
 } from '@johnlindquist/kit/core/utils';
+import type { FlagsOptions, Script, Shortcut } from '@johnlindquist/kit/types';
+import { CACHED_GROUPED_SCRIPTS_WORKER } from '@johnlindquist/kit/workers';
 
 import { KitPrompt, destroyPromptWindow, makeSplashWindow } from './prompt';
 
-import { INSTALL_ERROR, show } from './show';
-import { showError } from './main.dev.templates';
-import { mainLogPath } from './logs';
-import {
-  getThemes,
-  kitCache,
-  kitState,
-  preloadChoicesMap,
-  workers,
-} from './state';
-import { createScoredChoice } from './helpers';
-import { prompts } from './prompts';
+import { Worker } from 'node:worker_threads';
 import { SPLASH_PATH } from '../shared/defaults';
-import { KitEvent, emitter } from '../shared/events';
-import { maybeConvertColors } from './process';
-import { sendToAllPrompts } from './channel';
 import { AppChannel } from '../shared/enums';
-import { Worker } from 'worker_threads';
+import { KitEvent, emitter } from '../shared/events';
+import { sendToAllPrompts } from './channel';
+import { createScoredChoice } from './helpers';
+import { mainLogPath } from './logs';
+import { showError } from './main.dev.templates';
+import { maybeConvertColors } from './process';
+import { prompts } from './prompts';
+import { INSTALL_ERROR, show } from './show';
+import { getThemes, kitCache, kitState, preloadChoicesMap, workers } from './state';
 
 let isOhNo = false;
 export const ohNo = async (error: Error) => {
-  if (isOhNo) return;
+  if (isOhNo) {
+    return;
+  }
   isOhNo = true;
   log.warn(error.message);
   log.warn(error.stack);
@@ -86,7 +82,7 @@ export const ohNo = async (error: Error) => {
 
 let splashPrompt: KitPrompt | null = null;
 export const showSplash = async () => {
-  log.info(`🌊 Showing splash install screen...`);
+  log.info('🌊 Showing splash install screen...');
   splashPrompt = new KitPrompt();
   splashPrompt.ui = UI.splash;
   splashPrompt.scriptPath = SPLASH_PATH;
@@ -107,9 +103,7 @@ export const showSplash = async () => {
 
   splashPrompt.readyEmitter.once('ready', async () => {
     const { scriptKitTheme, scriptKitLightTheme } = getThemes();
-    const value = nativeTheme.shouldUseDarkColors
-      ? scriptKitTheme
-      : scriptKitLightTheme;
+    const value = nativeTheme.shouldUseDarkColors ? scriptKitTheme : scriptKitLightTheme;
     const newValue = await maybeConvertColors(value);
     assign(kitState.theme, newValue);
 
@@ -132,13 +126,19 @@ export const showSplash = async () => {
     splashPrompt?.window.show();
   });
 
-  sendSplashHeader(`Installing Kit SDK and Kit Environment...`);
+  sendSplashHeader('Installing Kit SDK and Kit Environment...');
 };
 export const sendSplashBody = (message: string) => {
-  if (message.includes('object')) return;
-  if (message.toLowerCase().includes('warn')) return;
+  if (message.includes('object')) {
+    return;
+  }
+  if (message.toLowerCase().includes('warn')) {
+    return;
+  }
   message = message.trim();
-  if (!message) return;
+  if (!message) {
+    return;
+  }
 
   log.info(`🌊 body: ${message}`);
   splashPrompt?.sendToPrompt(Channel.SET_SPLASH_BODY, message);
@@ -146,7 +146,9 @@ export const sendSplashBody = (message: string) => {
 
 export const sendSplashHeader = (message: string) => {
   message = message.trim();
-  if (!message) return;
+  if (!message) {
+    return;
+  }
 
   log.info(`🌊 header: ${message}`);
   splashPrompt?.sendToPrompt(Channel.SET_SPLASH_HEADER, message);
@@ -159,16 +161,12 @@ export const sendSplashProgress = (progress: number) => {
 
 export const setupDone = () => {
   sendSplashProgress(100);
-  sendSplashHeader(`Kit SDK Install verified ✅`);
+  sendSplashHeader('Kit SDK Install verified ✅');
 };
 
-export const handleLogMessage = async (
-  message: string,
-  result: SpawnSyncReturns<any>,
-  required = true,
-) => {
-  log.info(`stdout:`, result?.stdout?.toString());
-  log.info(`stderr:`, result?.stderr?.toString());
+export const handleLogMessage = async (message: string, result: SpawnSyncReturns<any>, required = true) => {
+  log.info('stdout:', result?.stdout?.toString());
+  log.info('stderr:', result?.stderr?.toString());
   const { stdout, stderr, error } = result;
 
   if (stdout?.toString().length) {
@@ -219,13 +217,11 @@ export const installPackage = async (installCommand: string, cwd: string) => {
   const npmResult = await new Promise((resolve, reject) => {
     // Determine the platform and set the npm path accordingly
     const isWin = os.platform().startsWith('win');
-    const npmPath = isWin
-      ? knodePath('bin', 'npm.cmd')
-      : knodePath('bin', 'npm');
+    const npmPath = isWin ? knodePath('bin', 'npm.cmd') : knodePath('bin', 'npm');
     log.info(`${cwd}: 👷 ${npmPath} ${installCommand}`);
 
     // Execute the spawn command with the appropriate npm path, install command and options
-    log.info(`👷 Spawning npm install`, {
+    log.info('👷 Spawning npm install', {
       npmPath,
       installCommand,
       options,
@@ -235,9 +231,11 @@ export const installPackage = async (installCommand: string, cwd: string) => {
 
     // Display a loading message with a spinner
     let dots = 1;
-    const installMessage = `Installing Kit Packages`;
+    const installMessage = 'Installing Kit Packages';
     const id = setInterval(() => {
-      if (dots >= 3) dots = 0;
+      if (dots >= 3) {
+        dots = 0;
+      }
       dots += 1;
       sendSplashBody(installMessage.padEnd(installMessage.length + dots, '.'));
     }, 250);
@@ -245,9 +243,11 @@ export const installPackage = async (installCommand: string, cwd: string) => {
     // Function to clear the interval id
     const clearId = () => {
       try {
-        if (id) clearInterval(id);
+        if (id) {
+          clearInterval(id);
+        }
       } catch (error) {
-        log.info(`Failed to clear id`);
+        log.info('Failed to clear id');
       }
     };
 
@@ -283,52 +283,46 @@ export const installPackage = async (installCommand: string, cwd: string) => {
 const installDependency = async (dependencyName, installCommand) => {
   if (await kenvPackageJsonExists()) {
     const pkgJson = await readJson(kenvPath('package.json'));
-    const allDeps = [
-      ...Object.keys(pkgJson.dependencies || {}),
-      ...Object.keys(pkgJson.devDependencies || {}),
-    ];
+    const allDeps = [...Object.keys(pkgJson.dependencies || {}), ...Object.keys(pkgJson.devDependencies || {})];
     if (allDeps.includes(dependencyName)) {
       log.info(`${dependencyName} already installed in ${kenvPath()}`);
       return null;
-    } else {
-      log.info(`Installing ${dependencyName} in ${kenvPath()}`);
-      try {
-        return installPackage(installCommand, kitPath());
-      } catch (error) {
-        log.error(error);
-        return null;
-      }
+    }
+    log.info(`Installing ${dependencyName} in ${kenvPath()}`);
+    try {
+      return installPackage(installCommand, kitPath());
+    } catch (error) {
+      log.error(error);
+      return null;
     }
   }
 
-  log.info(
-    `No package.json found in ${kenvPath()}. Skipping installation of ${dependencyName}`,
-  );
+  log.info(`No package.json found in ${kenvPath()}. Skipping installation of ${dependencyName}`);
   return null;
 };
 
 export const installEsbuild = async () => {
   const result = await installDependency(
     'esbuild',
-    `i -D esbuild@0.21.4 --save-exact --production --prefer-dedupe --loglevel=verbose`,
+    'i -D esbuild@0.21.4 --save-exact --production --prefer-dedupe --loglevel=verbose',
   );
 
   if (result) {
-    log.info(`Installed esbuild`);
+    log.info('Installed esbuild');
   } else {
-    log.info(`Failed to install esbuild`);
+    log.info('Failed to install esbuild');
   }
 };
 
 export const installNoDom = async () => {
   const result = await installDependency(
     '@typescript/lib-dom',
-    `i -D @typescript/lib-dom@npm:@johnlindquist/no-dom --save-exact --production --prefer-dedupe --loglevel=verbose`,
+    'i -D @typescript/lib-dom@npm:@johnlindquist/no-dom --save-exact --production --prefer-dedupe --loglevel=verbose',
   );
   if (result) {
-    log.info(`Installed @johnlindquist/no-dom`);
+    log.info('Installed @johnlindquist/no-dom');
   } else {
-    log.info(`Failed to install @johnlindquist/no-dom`);
+    log.info('Failed to install @johnlindquist/no-dom');
   }
 };
 
@@ -336,12 +330,12 @@ export const installPlatformDeps = async () => {
   if (os.platform().startsWith('darwin')) {
     const result = await installDependency(
       '@johnlindquist/mac-dictionary',
-      `i -D @johnlindquist/mac-dictionary --save-exact --production --prefer-dedupe --loglevel=verbose`,
+      'i -D @johnlindquist/mac-dictionary --save-exact --production --prefer-dedupe --loglevel=verbose',
     );
     if (result) {
-      log.info(`Installed @johnlindquist/mac-dictionary`);
+      log.info('Installed @johnlindquist/mac-dictionary');
     } else {
-      log.info(`Failed to install @johnlindquist/mac-dictionary`);
+      log.info('Failed to install @johnlindquist/mac-dictionary');
     }
   }
 
@@ -350,13 +344,13 @@ export const installPlatformDeps = async () => {
 
 export const installKitInKenv = async () => {
   const result = await installDependency(
-    `@johnlindquist/kit`,
+    '@johnlindquist/kit',
     `i -D ${kitPath()} --production --prefer-dedupe --loglevel=verbose`,
   );
   if (result) {
-    log.info(`Installed @johnlindquist/kit`);
+    log.info('Installed @johnlindquist/kit');
   } else {
-    log.info(`Failed to install @johnlindquist/kit`);
+    log.info('Failed to install @johnlindquist/kit');
   }
 };
 
@@ -366,11 +360,7 @@ const getOptions = () => {
     rejectUnauthorized: false,
     followRedirect: true,
   };
-  const proxy =
-    process.env.HTTPS_PROXY ||
-    process.env.https_proxy ||
-    process.env.HTTP_PROXY ||
-    process.env.http_proxy;
+  const proxy = process.env.HTTPS_PROXY || process.env.https_proxy || process.env.HTTP_PROXY || process.env.http_proxy;
   if (proxy) {
     log.info(`Using proxy ${proxy}`);
     options.agent = new HttpsProxyAgent({
@@ -406,7 +396,7 @@ export const downloadKenv = async () => {
   }
   const osTmpPath = createPathResolver(os.tmpdir());
 
-  const fileName = `kenv.zip`;
+  const fileName = 'kenv.zip';
   const file = osTmpPath(fileName);
   let url = `https://github.com/johnlindquist/kenv/releases/latest/download/${fileName}`;
 
@@ -416,10 +406,10 @@ export const downloadKenv = async () => {
   try {
     stat = await lstat(kitrcPath);
   } catch (error) {
-    log.info(`No ~/.kitrc found`);
+    log.info('No ~/.kitrc found');
   }
 
-  if (stat && stat.isFile()) {
+  if (stat?.isFile()) {
     const kitRcContents = await readFile(kitrcPath, {
       encoding: 'utf8',
     });
@@ -500,12 +490,7 @@ export const downloadKit = async () => {
   const extension = 'tar.gz';
 
   /* eslint-disable no-nested-ternary */
-  const uppercaseOSName =
-    process.platform === 'win32'
-      ? 'Windows'
-      : process.platform === 'linux'
-        ? 'Linux'
-        : 'macOS';
+  const uppercaseOSName = process.platform === 'win32' ? 'Windows' : process.platform === 'linux' ? 'Linux' : 'macOS';
 
   // Download Kit SDK based on the current platform and architecture
   // Examples:
@@ -666,11 +651,7 @@ export const optionalSpawnSetup = (...args: string[]) => {
   }
   return new Promise((resolve, reject) => {
     log.info(`Running optional setup script: ${args.join(' ')}`);
-    const child = spawn(
-      knodePath('bin', 'node'),
-      [kitPath('run', 'terminal.js'), ...args],
-      forkOptions,
-    );
+    const child = spawn(knodePath('bin', 'node'), [kitPath('run', 'terminal.js'), ...args], forkOptions);
 
     const id = setTimeout(() => {
       if (child && !child.killed) {
@@ -682,13 +663,17 @@ export const optionalSpawnSetup = (...args: string[]) => {
 
     if (child?.stdout) {
       child.stdout.on('data', (data) => {
-        if (kitState.ready) return;
+        if (kitState.ready) {
+          return;
+        }
         log.info(data.toString());
       });
     }
 
     if (child?.stderr) {
-      if (kitState.ready) return;
+      if (kitState.ready) {
+        return;
+      }
       child.stderr.on('data', (data) => {
         log.warn(data.toString());
       });
@@ -697,7 +682,7 @@ export const optionalSpawnSetup = (...args: string[]) => {
     child.on('message', (data) => {
       const dataString = typeof data === 'string' ? data : data.toString();
 
-      if (!dataString.includes(`[object`)) {
+      if (!dataString.includes('[object')) {
         log.info(args[0], dataString);
         // sendSplashBody(dataString.slice(0, 200));
       }
@@ -705,7 +690,9 @@ export const optionalSpawnSetup = (...args: string[]) => {
 
     child.on('exit', (code) => {
       if (code === 0) {
-        if (id) clearTimeout(id);
+        if (id) {
+          clearTimeout(id);
+        }
         log.info(`✅ Setup script completed: ${args.join(' ')}`);
         resolve('done');
       } else {
@@ -715,7 +702,9 @@ export const optionalSpawnSetup = (...args: string[]) => {
     });
 
     child.on('error', (error: Error) => {
-      if (id) clearTimeout(id);
+      if (id) {
+        clearTimeout(id);
+      }
       log.error(`⚠️ Errored on setup script: ${args.join(' ')}`, error.message);
       resolve('error');
       // reject(error);
@@ -724,11 +713,7 @@ export const optionalSpawnSetup = (...args: string[]) => {
   });
 };
 
-export const optionalSetupScript = (
-  scriptPath: string,
-  argsParam?: string[],
-  callback?: (object: any) => void,
-) => {
+export const optionalSetupScript = (scriptPath: string, argsParam?: string[], callback?: (object: any) => void) => {
   if (process.env.MAIN_SKIP_SETUP) {
     log.info(`⏭️ Skipping setup script: ${scriptPath}`);
     return Promise.resolve('done');
@@ -737,11 +722,7 @@ export const optionalSetupScript = (
   const args = argsParam || [];
   return new Promise((resolve, reject) => {
     log.info(`Running optional setup script: ${scriptPath} with ${args}`);
-    const child = fork(
-      kitPath('run', 'terminal.js'),
-      [scriptPath, ...args],
-      forkOptions,
-    );
+    const child = fork(kitPath('run', 'terminal.js'), [scriptPath, ...args], forkOptions);
 
     const id = setTimeout(() => {
       if (child && !child.killed) {
@@ -753,13 +734,17 @@ export const optionalSetupScript = (
 
     if (child?.stdout) {
       child.stdout.on('data', (data) => {
-        if (kitState.ready) return;
+        if (kitState.ready) {
+          return;
+        }
         setupLog(data.toString());
       });
     }
 
     if (child?.stderr) {
-      if (kitState.ready) return;
+      if (kitState.ready) {
+        return;
+      }
       child.stderr.on('data', (data) => {
         setupLog(data.toString());
       });
@@ -774,7 +759,9 @@ export const optionalSetupScript = (
 
     child.on('exit', (code) => {
       if (code === 0) {
-        if (id) clearTimeout(id);
+        if (id) {
+          clearTimeout(id);
+        }
         log.info(`✅ Setup script completed: ${scriptPath}`);
         resolve('done');
       } else {
@@ -784,11 +771,10 @@ export const optionalSetupScript = (
     });
 
     child.on('error', (error: Error) => {
-      if (id) clearTimeout(id);
-      log.error(
-        `⚠️ Errored on setup script: ${scriptPath.join(' ')}`,
-        error.message,
-      );
+      if (id) {
+        clearTimeout(id);
+      }
+      log.error(`⚠️ Errored on setup script: ${scriptPath.join(' ')}`, error.message);
       resolve('error');
       // reject(error);
       // throw new Error(error.message);
@@ -814,22 +800,14 @@ const cacheTriggers = (choices: Choice[]) => {
     }
 
     // TODO: Parse choice.trigger earlier during choice formatting?
-    const trigger = (
-      choice?.trigger ||
-      choice?.name?.match(/(?<=\[)\w+(?=\])/i)?.[0] ||
-      ''
-    ).toLowerCase();
+    const trigger = (choice?.trigger || choice?.name?.match(/(?<=\[)\w+(?=\])/i)?.[0] || '').toLowerCase();
 
     if (trigger) {
       kitCache.triggers.set(trigger, choice);
     }
 
     const postfix =
-      typeof choice?.pass === 'string' &&
-      choice?.pass !== 'true' &&
-      choice?.pass !== 'false'
-        ? choice.pass
-        : '';
+      typeof choice?.pass === 'string' && choice?.pass !== 'true' && choice?.pass !== 'false' ? choice.pass : '';
 
     if (postfix) {
       // log.info(`🔚 Found postfix ${choice.pass}`);
@@ -842,7 +820,9 @@ const scoreAndCacheMainChoices = (scripts: Script[]) => {
   // TODO: Reimplement score and cache?
   const results = scripts
     .filter((c) => {
-      if (c?.miss || c?.pass || c?.hideWithoutInput || c?.exclude) return false;
+      if (c?.miss || c?.pass || c?.hideWithoutInput || c?.exclude) {
+        return false;
+      }
       return true;
     })
     .map(createScoredChoice);
@@ -888,12 +868,12 @@ export const cacheMainScripts = debounce(async (stamp = null) => {
       scriptFlags: FlagsOptions;
     }) => {
       if (Array.isArray(scripts) && scripts.length > 0) {
-        log.info(`Caching scripts and preview...`, {
+        log.info('Caching scripts and preview...', {
           scripts: scripts?.length,
           preview: preview?.length,
         });
         preloadChoicesMap.set(getMainScriptPath(), scripts);
-        log.info(`✉️ Sending scripts to prompt...`);
+        log.info('✉️ Sending scripts to prompt...');
         if (preview) {
           cacheMainPreview(preview);
         }
@@ -931,34 +911,34 @@ export const cacheMainScripts = debounce(async (stamp = null) => {
       log.info(`Creating worker: ${CACHED_GROUPED_SCRIPTS_WORKER}...`);
       workers.cacheScripts = new Worker(CACHED_GROUPED_SCRIPTS_WORKER);
       workers.cacheScripts.on('exit', (exitCode) => {
-        log.error(`Worker exited`, {
+        log.error('Worker exited', {
           exitCode,
         });
       });
       workers.cacheScripts.on('message', receiveScripts);
       workers.cacheScripts.on('messageerror', (error) => {
-        log.error(`MessageError: Failed to cache main scripts`, error);
+        log.error('MessageError: Failed to cache main scripts', error);
       });
       // handle errors
       workers.cacheScripts.on('error', (error) => {
         if (error instanceof Error) {
-          log.error(`Failed to cache main scripts`, {
+          log.error('Failed to cache main scripts', {
             message: error.message,
             stack: error.stack,
             name: error.name,
           });
         } else {
-          log.error(`Failed to cache main scripts`, {
+          log.error('Failed to cache main scripts', {
             error: error,
           });
         }
       });
     }
 
-    log.info(`Posting`);
+    log.info('Posting');
     workers.cacheScripts.postMessage(stamp);
   } catch (error) {
-    log.warn(`Failed to cache main scripts at startup`, error);
+    log.warn('Failed to cache main scripts at startup', error);
   }
 }, 100);
 
@@ -983,9 +963,7 @@ export const matchPackageJsonEngines = async () => {
   };
   const isWin = os.platform().startsWith('win');
   const npmPath = isWin ? knodePath('bin', 'npm.cmd') : knodePath('bin', 'npm');
-  const nodePath = isWin
-    ? knodePath('bin', 'node.exe')
-    : knodePath('bin', 'node');
+  const nodePath = isWin ? knodePath('bin', 'node.exe') : knodePath('bin', 'node');
 
   const pkgJson = await readJson(kenvPath('package.json'));
   try {
@@ -1001,7 +979,7 @@ export const matchPackageJsonEngines = async () => {
       npm: npmVersion,
     };
   } catch (error) {
-    delete pkgJson.engines;
+    pkgJson.engines = undefined;
   }
 
   await writeJson(kenvPath('package.json'), pkgJson, { spaces: 2 });

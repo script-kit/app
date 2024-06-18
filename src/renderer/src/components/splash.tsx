@@ -1,6 +1,6 @@
-import iconUrl from '../assets/icon.png';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAtom } from 'jotai';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import iconUrl from '../assets/icon.png';
 import {
   appConfigAtom,
   runMainScriptAtom,
@@ -24,14 +24,7 @@ const Spinner = () => (
     fill="none"
     viewBox="0 0 24 24"
   >
-    <circle
-      className="opacity-50"
-      cx="12"
-      cy="12"
-      r="10"
-      stroke="currentColor"
-      strokeWidth="4"
-    />
+    <circle className="opacity-50" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
     <path
       className="opacity-100"
       fill="currentColor"
@@ -41,15 +34,15 @@ const Spinner = () => (
 );
 
 const questions = [
-  `What problem do you want a script to solve?`,
-  `How are you currently dealing with this problem?`,
-  `Describe the last time you scripted something`,
-  `What tools do you use for scripting?`,
-  `Which API do you wish you could automate?`,
+  'What problem do you want a script to solve?',
+  'How are you currently dealing with this problem?',
+  'Describe the last time you scripted something',
+  'What tools do you use for scripting?',
+  'Which API do you wish you could automate?',
   `What's your most annoying daily task?`,
-  `What work task wastes your most time?`,
-  `What question do you think I should have asked?`,
-  `Anything else?`,
+  'What work task wastes your most time?',
+  'What question do you think I should have asked?',
+  'Anything else?',
 ];
 
 function Aside() {
@@ -85,12 +78,8 @@ function Aside() {
             </div>
           )}
         </div>
-        <h1 className="mb-1 text-2xl font-semibold">
-          {progress === 100 ? 'Script Kit Ready' : 'Preparing Kit...'}
-        </h1>
-        <h3 className="mx-6 text-center text-sm font-normal leading-tight opacity-70">
-          {header}
-        </h3>
+        <h1 className="mb-1 text-2xl font-semibold">{progress === 100 ? 'Script Kit Ready' : 'Preparing Kit...'}</h1>
+        <h3 className="mx-6 text-center text-sm font-normal leading-tight opacity-70">{header}</h3>
         <h3 className="max-h-10 overflow-hidden break-all px-6 text-center text-xxs font-normal leading-tight opacity-70">
           {body}
         </h3>
@@ -105,9 +94,7 @@ function Aside() {
             >
               Launch with{' '}
               <span className="text-sm">
-                <kbd className="rounded-md bg-primary bg-opacity-25 p-1">
-                  {appConfig?.isMac ? 'CMD' : 'CTRL'}
-                </kbd>
+                <kbd className="rounded-md bg-primary bg-opacity-25 p-1">{appConfig?.isMac ? 'CMD' : 'CTRL'}</kbd>
                 <kbd>+</kbd>
                 <kbd className="rounded-md bg-primary bg-opacity-25 p-1">;</kbd>
               </span>
@@ -177,44 +164,24 @@ export default function Splash() {
       setSubmitting(false);
       setSubmitted(true);
       setResponse('');
-      setQIndex(
-        qIndex + 1 > questions.length - 1 ? questions.length - 1 : qIndex + 1,
-      );
+      setQIndex(qIndex + 1 > questions.length - 1 ? questions.length - 1 : qIndex + 1);
       setSubscribeSubmitted(subscribe);
       setContactSubmitted(contact);
       setHideEmail(email?.length > 0 && subscribe && contact);
       questionRef?.current?.focus();
     }, 1000);
-  }, [
-    subscribe,
-    contact,
-    response,
-    email,
-    question,
-    questionRef,
-    questionRef?.current,
-    isSubmitting,
-    isSubmitted,
-  ]);
+  }, [subscribe, contact, response, email, question, questionRef, questionRef?.current, isSubmitting, isSubmitted]);
 
   const emailRequired = subscribe || contact;
 
   return (
-    <div
-      key="splash"
-      className="fixed left-0 top-0 grid h-screen w-screen grid-cols-8"
-    >
+    <div key="splash" className="fixed left-0 top-0 grid h-screen w-screen grid-cols-8">
       <Aside />
       <main className="col-span-5 h-full w-full bg-bg-base/10 p-6">
-        <form
-          onSubmit={handleOnSubmit}
-          className="flex h-full flex-col justify-center"
-        >
+        <form onSubmit={handleOnSubmit} className="flex h-full flex-col justify-center">
           <fieldset className="space-y-2 p-2">
             <legend className="h-14 w-full text-lg opacity-90">
-              <p className="mb-2 text-base">
-                👋 Your feedback guides Script Kit's future:
-              </p>
+              <p className="mb-2 text-base">👋 Your feedback guides Script Kit's future:</p>
 
               {question && (
                 <p
@@ -231,7 +198,6 @@ export default function Splash() {
             </legend>
             <div className="flex flex-col rounded-md  border border-text-base border-opacity-25 focus:border-opacity-100">
               <textarea
-                autoFocus
                 tabIndex={0}
                 ref={questionRef}
                 value={response}
@@ -253,7 +219,7 @@ export default function Splash() {
                   <input
                     type="checkbox"
                     checked={contact}
-                    onChange={(e) => setContact(e?.target?.checked || false)}
+                    onChange={(e) => setContact(e?.target?.checked)}
                     id="contact"
                     className="rounded-sm border border-text-base  border-opacity-25 bg-text-base bg-opacity-5 "
                   />
@@ -269,9 +235,7 @@ export default function Splash() {
                     <input
                       type="checkbox"
                       checked={subscribe}
-                      onChange={(e) =>
-                        setSubscribe(e?.target?.checked || false)
-                      }
+                      onChange={(e) => setSubscribe(e?.target?.checked)}
                       id="subscribe"
                       className="rounded-sm border border-text-base  border-opacity-25 bg-text-base bg-opacity-5 "
                     />
@@ -281,13 +245,11 @@ export default function Splash() {
                   </div>
                 </div>
               )}
-              {!hideEmail ? (
+              {hideEmail ? null : (
                 <div className="my-3 rounded-md border border-text-base border-opacity-25 bg-text-base  bg-opacity-5">
                   <label
                     className={`absolute px-5 py-3 ${
-                      emailRequired
-                        ? "after:absolute after:text-primary after:content-['*']"
-                        : ''
+                      emailRequired ? "after:absolute after:text-primary after:content-['*']" : ''
                     }`}
                     htmlFor="email"
                   >
@@ -304,7 +266,7 @@ export default function Splash() {
                     placeholder="you@company.com"
                   />
                 </div>
-              ) : null}
+              )}
             </div>
 
             <div className="flex w-full flex-row justify-between pt-2">
@@ -320,14 +282,8 @@ export default function Splash() {
               {isSubmitted && (subscribeSubmitted || contactSubmitted) && (
                 <div className="w-9/12 pl-2 opacity-80">
                   <ul>
-                    {subscribeSubmitted && (
-                      <li className="pb-4">
-                        Verify the newsletter subscription in your inbox
-                      </li>
-                    )}
-                    {contactSubmitted && (
-                      <li>We will e-mail you an example of your script idea</li>
-                    )}
+                    {subscribeSubmitted && <li className="pb-4">Verify the newsletter subscription in your inbox</li>}
+                    {contactSubmitted && <li>We will e-mail you an example of your script idea</li>}
                   </ul>
                 </div>
               )}

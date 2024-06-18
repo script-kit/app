@@ -1,31 +1,27 @@
+import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 /* eslint-disable import/prefer-default-export */
 import { Clipboard } from '@johnlindquist/clipboard';
-import { Observable, Subscription } from 'rxjs';
-import { debounceTime, filter, share, switchMap } from 'rxjs/operators';
-import log from 'electron-log';
-import { subscribeKey } from 'valtio/utils';
 import { format } from 'date-fns';
-import { writeFile, readFile } from 'fs/promises';
-import path from 'path';
+import log from 'electron-log';
 import { nanoid } from 'nanoid';
+import { Observable, type Subscription } from 'rxjs';
+import { debounceTime, filter, share, switchMap } from 'rxjs/operators';
+import { subscribeKey } from 'valtio/utils';
 
-import { tmpClipboardDir, kitPath } from '@johnlindquist/kit/core/utils';
-import { Script } from '@johnlindquist/kit/types';
 import { store } from '@johnlindquist/kit/core/db';
+import { kitPath, tmpClipboardDir } from '@johnlindquist/kit/core/utils';
+import type { Script } from '@johnlindquist/kit/types';
 import { debounce } from 'lodash-es';
 
 import { clipboard } from 'electron';
-import { emitter, KitEvent } from '../shared/events';
+import { KitEvent, emitter } from '../shared/events';
 import { kitClipboard, kitConfig, kitState, kitStore, subs } from './state';
 
-import { deleteText } from './keyboard';
 import { Trigger } from '../shared/enums';
+import { deleteText } from './keyboard';
 
-import {
-  addToClipboardHistory,
-  getClipboardHistory,
-  syncClipboardStore,
-} from './clipboard';
+import { addToClipboardHistory, getClipboardHistory, syncClipboardStore } from './clipboard';
 import { registerIO, toKey } from './io';
 import { prompts } from './prompts';
 import shims, { supportsDependency } from './shims';
@@ -44,7 +40,7 @@ type ClipboardInfo = {
   app: FrontmostApp;
 };
 
-let frontmost: any = null;
+const frontmost: any = null;
 
 // syncClipboardStore();
 
@@ -53,11 +49,7 @@ const SPACE = '_';
 let prevKey = -1;
 
 // @ts-ignore This import might not work, depending on the platform
-import type {
-  UiohookKeyboardEvent,
-  UiohookMouseEvent,
-  UiohookKey,
-} from 'uiohook-napi';
+import type { UiohookKey, UiohookKeyboardEvent, UiohookMouseEvent } from 'uiohook-napi';
 let uiohookKeyCode: typeof UiohookKey;
 
 const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
@@ -77,14 +69,14 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
     if (e.keycode === uiohookKeyCode.Escape) {
       kitState.typedText = '';
       if (kitState.isTyping) {
-        log.info(`✋ Cancel typing`);
+        log.info('✋ Cancel typing');
         kitState.cancelTyping = true;
       }
     }
 
     if (kitState.isTyping) {
       kitState.snippet = '';
-      log.silly(`Ignoring snippet while Kit.app typing`);
+      log.silly('Ignoring snippet while Kit.app typing');
       return;
     }
 
@@ -107,24 +99,21 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
       e.keycode === uiohookKeyCode.ArrowUp ||
       e.keycode === uiohookKeyCode.ArrowDown
     ) {
-      log.silly(`Ignoring arrow key and clearing snippet`);
+      log.silly('Ignoring arrow key and clearing snippet');
       kitState.snippet = '';
       kitState.typedText = '';
       return;
     }
 
     // 42 is shift
-    if (
-      e.keycode === uiohookKeyCode.Shift ||
-      e.keycode === uiohookKeyCode.ShiftRight
-    ) {
-      log.silly(`Ignoring shift key`);
+    if (e.keycode === uiohookKeyCode.Shift || e.keycode === uiohookKeyCode.ShiftRight) {
+      log.silly('Ignoring shift key');
       return;
     }
 
     // Clear on modifier key
     if (e.metaKey || e.ctrlKey || e.altKey) {
-      log.silly(`Ignoring modifier key and clearing snippet`);
+      log.silly('Ignoring modifier key and clearing snippet');
       kitState.snippet = '';
       if (e.keycode === uiohookKeyCode.Backspace) {
         kitState.typedText = '';
@@ -133,34 +122,25 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
     }
 
     if (e.keycode === uiohookKeyCode.Backspace) {
-      log.silly(`Backspace: Removing last character from snippet`);
+      log.silly('Backspace: Removing last character from snippet');
       kitState.snippet = kitState.snippet.slice(0, -1);
       kitState.typedText = kitState.typedText.slice(0, -1);
       // 57 is the space key
     } else if (e?.keycode === uiohookKeyCode.Space) {
-      log.silly(`Space: Adding space to snippet`);
-      if (
-        prevKey === uiohookKeyCode.Backspace ||
-        kitState.snippet.length === 0
-      ) {
+      log.silly('Space: Adding space to snippet');
+      if (prevKey === uiohookKeyCode.Backspace || kitState.snippet.length === 0) {
         kitState.snippet = '';
       } else {
         kitState.snippet += SPACE;
         kitState.typedText = `${kitState.typedText} `;
       }
-    } else if (
-      e?.keycode === uiohookKeyCode.Quote ||
-      key.length > 1 ||
-      key === ''
-    ) {
-      kitState.snippet = ``;
+    } else if (e?.keycode === uiohookKeyCode.Quote || key.length > 1 || key === '') {
+      kitState.snippet = '';
       kitState.typedText = `${kitState.typedText}${key}`;
     } else {
       kitState.snippet = `${kitState.snippet}${key}`;
-      kitState.typedText = `${kitState.typedText}${key}`.slice(
-        -kitState.typedLimit,
-      );
-      log.silly(`kitState.snippet = `, kitState.snippet);
+      kitState.typedText = `${kitState.typedText}${key}`.slice(-kitState.typedLimit);
+      log.silly('kitState.snippet = ', kitState.snippet);
     }
     prevKey = e.keycode;
   } catch (error) {
@@ -186,7 +166,7 @@ export const preStartConfigureInterval = async () => {
     }
   }
   if (kitStore.get('accessibilityAuthorized')) {
-    log.info(`💻 Accessibility authorized ✅`);
+    log.info('💻 Accessibility authorized ✅');
     await startClipboardMonitor();
   }
 };
@@ -209,50 +189,56 @@ const isTransient = () => {
 let clipboardEventListener: Clipboard | null = null;
 export const startKeyboardMonitor = async () => {
   if (kitState.kenvEnv?.KIT_KEYBOARD === 'false') {
-    log.info(`🔇 Keyboard monitor disabled`);
-    if (io$Sub) io$Sub.unsubscribe();
+    log.info('🔇 Keyboard monitor disabled');
+    if (io$Sub) {
+      io$Sub.unsubscribe();
+    }
     return;
   }
   const io$ = new Observable((observer) => {
-    log.info(`Creating new Observable for uiohook-napi...`);
+    log.info('Creating new Observable for uiohook-napi...');
     try {
-      log.info(`Attempting to start uiohook-napi...`);
+      log.info('Attempting to start uiohook-napi...');
 
       // eslint-disable-next-line promise/catch-or-return, promise/always-return
       registerIO(observer.next.bind(observer)).then(() => {
-        log.info(`🟢 Started keyboard and mouse watcher`);
+        log.info('🟢 Started keyboard and mouse watcher');
       });
     } catch (e) {
-      log.error(`🔴 Failed to start keyboard and mouse watcher`);
+      log.error('🔴 Failed to start keyboard and mouse watcher');
       log.error(e);
 
       observer.unsubscribe();
     }
 
     return () => {
-      log.info(`🛑 Attempting to stop keyboard and mouse watcher`);
+      log.info('🛑 Attempting to stop keyboard and mouse watcher');
       const { uIOhook } = shims['uiohook-napi'];
 
       uIOhook.stop();
-      log.info(`🛑 Successfully stopped keyboard and mouse watcher`);
+      log.info('🛑 Successfully stopped keyboard and mouse watcher');
     };
   }).pipe(share());
-  if (!io$Sub) io$Sub = io$.subscribe(ioEvent as any);
+  if (!io$Sub) {
+    io$Sub = io$.subscribe(ioEvent as any);
+  }
 };
 
 export const startClipboardMonitor = async () => {
   if (kitState.kenvEnv?.KIT_CLIPBOARD === 'false') {
-    log.info(`🔇 Clipboard monitor disabled`);
-    if (clipboard$Sub) clipboard$Sub.unsubscribe();
+    log.info('🔇 Clipboard monitor disabled');
+    if (clipboard$Sub) {
+      clipboard$Sub.unsubscribe();
+    }
     return;
   }
-  log.info(`⌚️ Configuring interval...`);
+  log.info('⌚️ Configuring interval...');
   if (!kitState.supportsNut) {
-    log.info(`🛑 Keyboard watcher not supported on this platform`);
+    log.info('🛑 Keyboard watcher not supported on this platform');
     return;
   }
 
-  log.info(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
+  log.info('Initializing 🖱 mouse and ⌨️ keyboard watcher');
 
   if (kitState.isMac) {
     try {
@@ -263,34 +249,11 @@ export const startClipboardMonitor = async () => {
   }
 
   const clipboardText$: Observable<any> = new Observable<string>((observer) => {
-    log.info(`Creating new Observable for clipboard...`);
+    log.info('Creating new Observable for clipboard...');
     try {
-      log.info(`Attempting to start clipboard...`);
-      if (!kitState.isMac) {
-        clipboardEventListener = new Clipboard();
-        clipboardEventListener.on('text', () => {
-          try {
-            log.info(`Clipboard text changed...`);
-            observer.next('text');
-          } catch (error) {
-            log.error(error);
-          }
-        });
-
-        clipboardEventListener.on('image', () => {
-          try {
-            log.info(`Clipboard image changed...`);
-            observer.next('image');
-          } catch (error) {
-            log.error(error);
-          }
-        });
-
-        clipboardEventListener.listen();
-      } else {
-        log.info(
-          `Attempting to start @johnlindquist/mac-clipboard-listener...`,
-        );
+      log.info('Attempting to start clipboard...');
+      if (kitState.isMac) {
+        log.info('Attempting to start @johnlindquist/mac-clipboard-listener...');
 
         shims['@johnlindquist/mac-clipboard-listener'].start();
 
@@ -298,9 +261,7 @@ export const startClipboardMonitor = async () => {
           debounce(
             () => {
               try {
-                log.info(
-                  `@johnlindquist/mac-clipboard-listener image changed...`,
-                );
+                log.info('@johnlindquist/mac-clipboard-listener image changed...');
                 observer.next('image');
               } catch (error) {
                 log.error(error);
@@ -317,9 +278,7 @@ export const startClipboardMonitor = async () => {
           debounce(
             () => {
               try {
-                log.info(
-                  `@johnlindquist/mac-clipboard-listener text changed...`,
-                );
+                log.info('@johnlindquist/mac-clipboard-listener text changed...');
                 observer.next('text');
               } catch (error) {
                 log.error(error);
@@ -331,16 +290,37 @@ export const startClipboardMonitor = async () => {
             },
           ),
         );
+      } else {
+        clipboardEventListener = new Clipboard();
+        clipboardEventListener.on('text', () => {
+          try {
+            log.info('Clipboard text changed...');
+            observer.next('text');
+          } catch (error) {
+            log.error(error);
+          }
+        });
+
+        clipboardEventListener.on('image', () => {
+          try {
+            log.info('Clipboard image changed...');
+            observer.next('image');
+          } catch (error) {
+            log.error(error);
+          }
+        });
+
+        clipboardEventListener.listen();
       }
     } catch (e) {
-      log.error(`🔴 Failed to start clipboard watcher`);
+      log.error('🔴 Failed to start clipboard watcher');
       log.error(e);
     }
 
     return () => {
-      log.info(`🛑 Attempting to stop clipboard watcher`);
+      log.info('🛑 Attempting to stop clipboard watcher');
       clipboardEventListener?.close();
-      log.info(`🛑 Successfully stopped clipboard watcher`);
+      log.info('🛑 Successfully stopped clipboard watcher');
     };
   }).pipe(
     switchMap(async (type: string) => {
@@ -368,98 +348,87 @@ export const startClipboardMonitor = async () => {
     debounceTime(100),
   );
 
-  if (!clipboard$Sub)
-    clipboard$Sub = clipboardText$.subscribe(
-      async ({ type, app }: ClipboardInfo) => {
-        if (isTransient()) {
-          log.info(`Ignoring transient clipboard`);
-          return;
-        }
+  if (!clipboard$Sub) {
+    clipboard$Sub = clipboardText$.subscribe(async ({ type, app }: ClipboardInfo) => {
+      if (isTransient()) {
+        log.info('Ignoring transient clipboard');
+        return;
+      }
 
-        const timestamp = format(new Date(), 'yyyy-MM-dd-hh-mm-ss');
+      const timestamp = format(new Date(), 'yyyy-MM-dd-hh-mm-ss');
 
-        let maybeSecret = false;
-        let itemName = ``;
-        let value = ``;
+      let maybeSecret = false;
+      let itemName = '';
+      let value = '';
 
-        if (type === 'image') {
-          try {
-            log.info(`Attempting to read image from clipboard...`);
-            const image = clipboard.readImage('clipboard');
-            log.info(`Read image from clipboard, converting toPNG()...`);
+      if (type === 'image') {
+        try {
+          log.info('Attempting to read image from clipboard...');
+          const image = clipboard.readImage('clipboard');
+          log.info('Read image from clipboard, converting toPNG()...');
 
-            const pngImageBuffer = image.toPNG();
-            log.info(`Converted image to PNG, checking size...`);
+          const pngImageBuffer = image.toPNG();
+          log.info('Converted image to PNG, checking size...');
 
-            log.info(`Image size: ${pngImageBuffer.length} bytes`);
-            if (pngImageBuffer.length > 20 * 1024 * 1024) {
-              log.info('Image size > 20MB. Ignoring...');
-              return;
-            }
-
-            itemName = `${timestamp}.png`;
-            value = path.join(tmpClipboardDir, itemName);
-
-            await writeFile(value, pngImageBuffer);
-          } catch (error) {
-            log.error(error);
-          }
-        } else {
-          try {
-            value = clipboard.readText();
-            if (value.length > 1280) {
-              log.info(`Ignoring clipboard value > 1280 characters`);
-              return;
-            }
-            if (
-              kitState?.kenvEnv?.KIT_CLIPBOARD_IGNORE_REGEX &&
-              value?.match(kitState?.kenvEnv?.KIT_CLIPBOARD_IGNORE_REGEX)
-            ) {
-              log.info(
-                `Ignoring clipboard value that matches KIT_CLIPBOARD_IGNORE_REGEX`,
-              );
-              return;
-            }
-            itemName = value.trim().slice(0, 40);
-          } catch (error) {
-            log.warn(error);
+          log.info(`Image size: ${pngImageBuffer.length} bytes`);
+          if (pngImageBuffer.length > 20 * 1024 * 1024) {
+            log.info('Image size > 20MB. Ignoring...');
             return;
           }
 
-          // TODO: Consider filtering consecutive characters without a space
-          maybeSecret = Boolean(
-            // no newlines
-            (!value.match(/\n/g) &&
-              value.match(
-                /^(?=.*[0-9])(?=.*[a-zA-Z])[a-zA-Z0-9!@#$%^&*()-_=+{}[\]<>;:,.|~]{5,}$/i,
-              )) ||
-              (kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX &&
-                value.match(
-                  new RegExp(kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX),
-                )),
-          );
+          itemName = `${timestamp}.png`;
+          value = path.join(tmpClipboardDir, itemName);
+
+          await writeFile(value, pngImageBuffer);
+        } catch (error) {
+          log.error(error);
+        }
+      } else {
+        try {
+          value = clipboard.readText();
+          if (value.length > 1280) {
+            log.info('Ignoring clipboard value > 1280 characters');
+            return;
+          }
+          if (
+            kitState?.kenvEnv?.KIT_CLIPBOARD_IGNORE_REGEX &&
+            value?.match(kitState?.kenvEnv?.KIT_CLIPBOARD_IGNORE_REGEX)
+          ) {
+            log.info('Ignoring clipboard value that matches KIT_CLIPBOARD_IGNORE_REGEX');
+            return;
+          }
+          itemName = value.trim().slice(0, 40);
+        } catch (error) {
+          log.warn(error);
+          return;
         }
 
-        // eslint-disable-next-line no-nested-ternary
-        const appName = prompts?.focused
-          ? 'Script Kit'
-          : app?.localizedName
-            ? app.localizedName
-            : 'Unknown';
+        // TODO: Consider filtering consecutive characters without a space
+        maybeSecret = Boolean(
+          // no newlines
+          (!value.match(/\n/g) &&
+            value.match(/^(?=.*[0-9])(?=.*[a-zA-Z])[a-zA-Z0-9!@#$%^&*()-_=+{}[\]<>;:,.|~]{5,}$/i)) ||
+            (kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX &&
+              value.match(new RegExp(kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX))),
+        );
+      }
 
-        const clipboardItem = {
-          id: nanoid(),
-          name: itemName,
-          description: `${appName} - ${timestamp}`,
-          value,
-          type,
-          timestamp,
-          maybeSecret,
-        };
+      // eslint-disable-next-line no-nested-ternary
+      const appName = prompts?.focused ? 'Script Kit' : app?.localizedName ? app.localizedName : 'Unknown';
 
-        addToClipboardHistory(clipboardItem);
-      },
-    );
+      const clipboardItem = {
+        id: nanoid(),
+        name: itemName,
+        description: `${appName} - ${timestamp}`,
+        value,
+        type,
+        timestamp,
+        maybeSecret,
+      };
+
+      addToClipboardHistory(clipboardItem);
+    });
+  }
 };
 
 export const startClipboardAndKeyboardWatchers = async () => {
@@ -468,9 +437,11 @@ export const startClipboardAndKeyboardWatchers = async () => {
   startKeyboardMonitor();
 };
 
-const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
+const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = '') => {
   // Use `;;` as "end"?
-  if (snippet.length < 2) return;
+  if (snippet.length < 2) {
+    return;
+  }
   for await (const snippetKey of snippetMap.keys()) {
     if (snippet.endsWith(snippetKey)) {
       let postfix = false;
@@ -483,7 +454,7 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
       if (kitConfig.deleteSnippet) {
         // get postfix from snippetMap
         if (snippetMap.has(snippetKey)) {
-          postfix = snippetMap.get(snippetKey)?.postfix || false;
+          postfix = snippetMap.get(snippetKey)?.postfix;
 
           const stringToDelete = postfix ? snippet : snippetKey;
           log.silly({ stringToDelete, postfix });
@@ -593,12 +564,8 @@ export const addSnippet = (script: Script) => {
 
   if (script?.kenv !== '' && !kitState.trustedKenvs.includes(script?.kenv)) {
     if (script?.snippet) {
-      log.info(
-        `Ignoring ${script?.filePath} // Snippet metadata because it's not trusted in a trusted kenv.`,
-      );
-      log.info(
-        `Add "${kitState.trustedKenvsKey}=${script?.kenv}" to your .env file to trust it.`,
-      );
+      log.info(`Ignoring ${script?.filePath} // Snippet metadata because it's not trusted in a trusted kenv.`);
+      log.info(`Add "${kitState.trustedKenvsKey}=${script?.kenv}" to your .env file to trust it.`);
     }
 
     return;

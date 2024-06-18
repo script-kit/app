@@ -7,7 +7,7 @@ export default function internetAvailable(
     domainName?: string;
     port?: number;
     host?: string;
-  } = {}
+  } = {},
 ): Promise<boolean> {
   const defaultSettings = {
     timeout: 1000,
@@ -22,7 +22,7 @@ export default function internetAvailable(
     ...options,
   };
 
-  return new Promise(function (resolve, reject) {
+  return new Promise((resolve, reject) => {
     // Create instance of the DNS resolver
     try {
       const socket = dns({
@@ -41,7 +41,7 @@ export default function internetAvailable(
           ],
         },
         port,
-        host
+        host,
       );
 
       // DNS Address solved, internet available

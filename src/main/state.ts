@@ -1,53 +1,41 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-nested-ternary */
 
-import Store, { Schema } from 'electron-store';
+import Store, { type Schema } from 'electron-store';
 
-import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
-import { proxy } from 'valtio/vanilla';
+import type { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import fsExtra from 'fs-extra';
+import { proxy } from 'valtio/vanilla';
 const { writeJson } = fsExtra;
+import type { ChildProcess } from 'node:child_process';
+import os from 'node:os';
+import path from 'node:path';
+import electron, { type Display } from 'electron';
+import log, { type FileTransport, type LevelOption, type LogLevel } from 'electron-log';
+import { debounce } from 'lodash-es';
 import * as nativeKeymap from 'native-keymap';
 import { subscribeKey } from 'valtio/utils';
-import log, { FileTransport, LevelOption, LogLevel } from 'electron-log';
-import { debounce } from 'lodash-es';
-import path from 'path';
-import os from 'os';
-import { ChildProcess } from 'child_process';
-import electron, { Display } from 'electron';
 const { app, nativeTheme } = electron;
 
-import schedule, { Job } from 'node-schedule';
-import { readdir } from 'fs/promises';
-import {
-  Script,
-  Choice,
-  PromptData,
-  ScoredChoice,
-  Shortcut,
-  FlagsOptions,
-} from '@johnlindquist/kit/types/core';
-import {
-  setScriptTimestamp,
-  UserDb,
-  AppDb,
-  Stamp,
-} from '@johnlindquist/kit/core/db';
+import { readdir } from 'node:fs/promises';
+import { AppDb, type Stamp, type UserDb, setScriptTimestamp } from '@johnlindquist/kit/core/db';
+import type { Choice, FlagsOptions, PromptData, ScoredChoice, Script, Shortcut } from '@johnlindquist/kit/types/core';
+import schedule, { type Job } from 'node-schedule';
 
+import type { Worker } from 'node:worker_threads';
 import {
-  parseScript,
-  kitPath,
-  kenvPath,
-  isParentOfDir,
-  tmpClipboardDir,
   getTrustedKenvsKey,
+  isParentOfDir,
+  kenvPath,
+  kitPath,
+  parseScript,
+  tmpClipboardDir,
 } from '@johnlindquist/kit/core/utils';
+import type { kenvEnv } from '@johnlindquist/kit/types/env';
 import axios from 'axios';
-import internetAvailable from '../shared/internet-available';
-import { emitter, KitEvent } from '../shared/events';
 import { Trigger } from '../shared/enums';
-import { kenvEnv } from '@johnlindquist/kit/types/env';
-import { Worker } from 'worker_threads';
+import { KitEvent, emitter } from '../shared/events';
+import internetAvailable from '../shared/internet-available';
 import shims from './shims';
 
 const schema: Schema<{
@@ -88,8 +76,7 @@ process.env.KENV = storedKenv;
 const release = os.release();
 const isMac = os.platform() === 'darwin';
 const isWin = os.platform() === 'win32';
-const isWin11 =
-  isWin && (release.startsWith('10.0.22') || release.startsWith('11.'));
+const isWin11 = isWin && (release.startsWith('10.0.22') || release.startsWith('11.'));
 const isWin10 = isWin && !isWin11;
 const isLinux = os.platform() === 'linux';
 const arch = os.arch();
@@ -107,18 +94,16 @@ export interface Background {
 export const backgroundMap = new Map<string, Background>();
 
 export const getBackgroundTasks = () => {
-  const tasks = Array.from(backgroundMap.entries()).map(
-    ([filePath, { child, start }]: [string, Background]) => {
-      return {
-        filePath,
-        process: {
-          spawnargs: child?.spawnargs,
-          pid: child?.pid,
-          start,
-        },
-      };
-    },
-  );
+  const tasks = Array.from(backgroundMap.entries()).map(([filePath, { child, start }]: [string, Background]) => {
+    return {
+      filePath,
+      process: {
+        spawnargs: child?.spawnargs,
+        pid: child?.pid,
+        start,
+      },
+    };
+  });
 
   return tasks;
 };
@@ -128,10 +113,7 @@ export const scheduleMap = new Map<string, Job>();
 export const getSchedule = () => {
   return Array.from(scheduleMap.entries())
     .filter(([filePath, job]) => {
-      return (
-        schedule.scheduledJobs?.[filePath] === job &&
-        !isParentOfDir(kitPath(), filePath)
-      );
+      return schedule.scheduledJobs?.[filePath] === job && !isParentOfDir(kitPath(), filePath);
     })
     .map(([filePath, job]: [string, Job]) => {
       return {
@@ -146,17 +128,14 @@ export const workers = {
   cacheScripts: null as Worker | null,
 };
 
-export const debounceSetScriptTimestamp = debounce(
-  (stamp: Stamp & { reason?: string }) => {
-    log.info(`💮 Stamping ${stamp?.filePath} - ${stamp?.reason}`);
-    if (!kitState.hasOpenedMainMenu) {
-      return;
-    }
+export const debounceSetScriptTimestamp = debounce((stamp: Stamp & { reason?: string }) => {
+  log.info(`💮 Stamping ${stamp?.filePath} - ${stamp?.reason}`);
+  if (!kitState.hasOpenedMainMenu) {
+    return;
+  }
 
-    emitter.emit(KitEvent.SetScriptTimestamp, stamp);
-  },
-  100,
-);
+  emitter.emit(KitEvent.SetScriptTimestamp, stamp);
+}, 100);
 
 export const cacheKitScripts = async () => {
   const kitMainPath = kitPath('main');
@@ -177,9 +156,7 @@ export const cacheKitScripts = async () => {
 };
 
 export const getKitScript = (filePath: string): Script => {
-  return kitState.kitScripts.find(
-    (script) => script.filePath === filePath,
-  ) as Script;
+  return kitState.kitScripts.find((script) => script.filePath === filePath) as Script;
 };
 
 export const kitCache = {
@@ -220,9 +197,7 @@ export const getThemes = () => ({
   },
 });
 
-export const theme = nativeTheme.shouldUseDarkColors
-  ? getThemes().scriptKitTheme
-  : getThemes().scriptKitLightTheme;
+export const theme = nativeTheme.shouldUseDarkColors ? getThemes().scriptKitTheme : getThemes().scriptKitLightTheme;
 
 const initState = {
   displays: [] as Display[],
@@ -232,8 +207,8 @@ const initState = {
   preventClose: false,
   isTyping: false,
   hasOpenedMainMenu: false,
-  snippet: ``,
-  typedText: ``,
+  snippet: '',
+  typedText: '',
   typedLimit: 256,
   socketURL: '',
   isShiftDown: false,
@@ -257,7 +232,7 @@ const initState = {
   authorized: false,
   requiresAuthorizedRestart: false,
   fullDiskAccess: false,
-  mainShortcut: ``,
+  mainShortcut: '',
   isDark: nativeTheme.shouldUseDarkColors,
   // warn: ``,
   // busy: ``,
@@ -278,7 +253,7 @@ const initState = {
   preventResize: false,
   trayOpen: false,
   trayScripts: [] as string[],
-  prevScriptPath: ``,
+  prevScriptPath: '',
   promptHasPreview: true,
   kitScripts: [] as Script[],
   promptId: '__unset__',
@@ -302,8 +277,7 @@ const initState = {
   kenvEnv: {} as kenvEnv,
   escapePressed: false,
   shortcutPressed: '',
-  supportsNut:
-    isMac || (isWin && arch === 'x64') || (isLinux && arch === 'x64'),
+  supportsNut: isMac || (isWin && arch === 'x64') || (isLinux && arch === 'x64'),
   promptHidden: true,
   // DISABLING: Using the "accept" prompt as confirmation that people trust
   // trustedKenvs: [] as string[],
@@ -317,7 +291,7 @@ const initState = {
   app_version: '',
   platform: `${os.platform()}-${arch}`,
   os_version: os.release(),
-  url: `https://scriptkit.com`,
+  url: 'https://scriptkit.com',
   mainMenuHasRun: false,
   idleProcessReady: false,
   preloaded: false,
@@ -325,7 +299,7 @@ const initState = {
   isThrottling: true,
   ignoreInitial: false,
   waking: true,
-  cmd: isMac ? `cmd` : `ctrl`,
+  cmd: isMac ? 'cmd' : 'ctrl',
   noPreview: false,
   cachePreview: false,
   cachePrompt: false,
@@ -399,7 +373,7 @@ const subDevToolsCount = subscribeKey(kitState, 'devToolsCount', (count) => {
 });
 
 export const online = async () => {
-  log.info(`Checking online status...`);
+  log.info('Checking online status...');
   try {
     const result = await internetAvailable();
 
@@ -416,7 +390,7 @@ export const online = async () => {
 // };
 
 export const forceQuit = () => {
-  log.info(`Begin force quit...`);
+  log.info('Begin force quit...');
   kitState.allowQuit = true;
 };
 
@@ -427,37 +401,25 @@ const subRequiresAuthorizedRestart = subscribeKey(
   'requiresAuthorizedRestart',
   (requiresAuthorizedRestart) => {
     if (requiresAuthorizedRestart) {
-      log.info(`👋 Restarting...`);
+      log.info('👋 Restarting...');
       kitState.relaunch = true;
       forceQuit();
     }
   },
 );
 
-const subScriptErrorPath = subscribeKey(
-  kitState,
-  'scriptErrorPath',
-  (scriptErrorPath) => {
-    kitState.status = {
-      status: scriptErrorPath ? 'warn' : 'default',
-      message: ``,
-    };
-  },
-);
+const subScriptErrorPath = subscribeKey(kitState, 'scriptErrorPath', (scriptErrorPath) => {
+  kitState.status = {
+    status: scriptErrorPath ? 'warn' : 'default',
+    message: '',
+  };
+});
 
 // TODO: I don't need to return booleans AND set kitState.isSponsor. Pick one.
 export const sponsorCheck = async (feature: string, block = true) => {
-  log.info(
-    `Checking sponsor status... login: ${kitState?.user?.login} ${
-      kitState.isSponsor ? '✅' : '❌'
-    }`,
-  );
+  log.info(`Checking sponsor status... login: ${kitState?.user?.login} ${kitState.isSponsor ? '✅' : '❌'}`);
   const isOnline = await online();
-  if (
-    !isOnline ||
-    (process.env.KIT_SPONSOR === 'development' &&
-      os.userInfo().username === 'johnlindquist')
-  ) {
+  if (!isOnline || (process.env.KIT_SPONSOR === 'development' && os.userInfo().username === 'johnlindquist')) {
     kitState.isSponsor = true;
     return true;
   }
@@ -489,13 +451,9 @@ export const sponsorCheck = async (feature: string, block = true) => {
       log.error('Error checking sponsor status', response);
     }
 
-    log.info(`🕵️‍♀️ Sponsor check response`, JSON.stringify(response.data));
+    log.info('🕵️‍♀️ Sponsor check response', JSON.stringify(response.data));
 
-    if (
-      response.data &&
-      kitState.user.node_id &&
-      response.data.id === kitState.user.node_id
-    ) {
+    if (response.data && kitState.user.node_id && response.data.id === kitState.user.node_id) {
       log.info('User is sponsor');
       kitState.isSponsor = true;
       return true;
@@ -611,11 +569,9 @@ const defaultKeyMap: {
 
 const keymapLogPath = path.resolve(app.getPath('logs'), 'keymap.log');
 const keymapLog = log.create({ logId: 'keymapLog' });
-(keymapLog.transports.file as FileTransport).resolvePathFn = () =>
-  keymapLogPath;
+(keymapLog.transports.file as FileTransport).resolvePathFn = () => keymapLogPath;
 
-keymapLog.transports.console.level = (process.env.VITE_LOG_LEVEL ||
-  'info') as LevelOption;
+keymapLog.transports.console.level = (process.env.VITE_LOG_LEVEL || 'info') as LevelOption;
 
 export const convertKey = (sourceKey: string) => {
   if (kitState.kenvEnv?.KIT_CONVERT_KEY === 'false') {
@@ -624,8 +580,7 @@ export const convertKey = (sourceKey: string) => {
   }
   if (kitState.keymap) {
     const result = Object.entries(kitState.keymap).find(
-      ([, { value }]: [string, any]) =>
-        value.toLowerCase() === sourceKey.toLowerCase(),
+      ([, { value }]: [string, any]) => value.toLowerCase() === sourceKey.toLowerCase(),
     ) || [''];
 
     const targetKey = result[0];
@@ -649,33 +604,31 @@ export const convertKey = (sourceKey: string) => {
 
 let prevKeyMap = {};
 export const initKeymap = async () => {
-  keymapLog.info(`🔑 Initializing keymap...`);
+  keymapLog.info('🔑 Initializing keymap...');
   if (!kitState.keymap) {
     try {
       let keymap = nativeKeymap.getKeyMap();
-      keymapLog.verbose(`🔑 Detected Keymap:`, { keymap });
+      keymapLog.verbose('🔑 Detected Keymap:', { keymap });
       writeJson(kitPath('db', 'keymap.json'), keymap);
       let value = keymap?.KeyA?.value;
 
       const alpha = /[A-Za-z]/;
 
-      keymapLog.verbose(`🔑 Keymap`, { a: value });
+      keymapLog.verbose('🔑 Keymap', { a: value });
 
-      if (value && value.match(alpha)) {
+      if (value?.match(alpha)) {
         kitState.keymap = keymap;
       } else {
-        keymapLog.verbose(
-          `Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`,
-        );
+        keymapLog.verbose(`Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`);
       }
 
       nativeKeymap.onDidChangeKeyboardLayout(
         debounce(() => {
           keymap = nativeKeymap.getKeyMap();
-          keymapLog.verbose(`🔑 Keymap changed:`, { keymap });
+          keymapLog.verbose('🔑 Keymap changed:', { keymap });
           value = keymap?.KeyA.value;
 
-          if (value && value.match(alpha)) {
+          if (value?.match(alpha)) {
             // Check if keymap changed
             if (JSON.stringify(keymap) !== JSON.stringify(prevKeyMap)) {
               kitState.keymap = keymap;
@@ -684,33 +637,32 @@ export const initKeymap = async () => {
               log.verbose('Keymap not changed');
             }
           } else {
-            keymapLog.verbose(
-              `Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`,
-            );
+            keymapLog.verbose(`Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`);
           }
         }, 500),
       );
 
-      if (kitState.keymap)
+      if (kitState.keymap) {
         keymapLog.verbose(
           `🔑 Keymap: ${JSON.stringify(
             Object.entries(kitState.keymap).map(([k, v]: any) => {
-              if (v?.value) return `${k} -> ${v.value}`;
+              if (v?.value) {
+                return `${k} -> ${v.value}`;
+              }
               return `${k} -> null`;
             }),
           )}`,
         );
+      }
     } catch (e) {
-      keymapLog.error(`🔑 Keymap error... 🤔`);
+      keymapLog.error('🔑 Keymap error... 🤔');
       keymapLog.error(e);
     }
   }
 };
 
 export const getEmojiShortcut = () => {
-  return kitState?.kenvEnv?.KIT_EMOJI_SHORTCUT || kitState.isMac
-    ? 'Command+Control+Space'
-    : 'Super+.';
+  return kitState?.kenvEnv?.KIT_EMOJI_SHORTCUT || kitState.isMac ? 'Command+Control+Space' : 'Super+.';
 };
 
 export const preloadChoicesMap = new Map<string, Choice[]>();
@@ -723,9 +675,7 @@ export const kitClipboard = {
 
 export const getAccessibilityAuthorized = async () => {
   if (isMac) {
-    const authorized =
-      shims['node-mac-permissions'].getAuthStatus('accessibility') ===
-      'authorized';
+    const authorized = shims['node-mac-permissions'].getAuthStatus('accessibility') === 'authorized';
     kitStore.set('accessibilityAuthorized', authorized);
     return authorized;
   }

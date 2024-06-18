@@ -1,96 +1,82 @@
-import log from 'electron-log';
-import url from 'url';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
+import url from 'node:url';
 import detect from 'detect-port';
+import log from 'electron-log';
 import sizeOf from 'image-size';
 import untildify from 'untildify';
 
-import {
-  app,
-  clipboard,
-  screen,
-  Notification,
-  nativeImage,
-  BrowserWindow,
-  dialog,
-  shell,
-  globalShortcut,
-} from 'electron';
-import os from 'os';
-import { remove } from 'lodash-es';
-import { snapshot } from 'valtio';
-import path from 'node:path';
+import { writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import https from 'node:https';
-import { writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { Channel, Key, ProcessType, UI, Value } from '@johnlindquist/kit/core/enum';
+import type { Choice, ProcessInfo, Script } from '@johnlindquist/kit/types/core';
 import {
-  Channel,
-  Key,
-  ProcessType,
-  Value,
-  UI,
-} from '@johnlindquist/kit/core/enum';
-import { Choice, ProcessInfo, Script } from '@johnlindquist/kit/types/core';
+  BrowserWindow,
+  Notification,
+  app,
+  clipboard,
+  dialog,
+  globalShortcut,
+  nativeImage,
+  screen,
+  shell,
+} from 'electron';
+import { remove } from 'lodash-es';
+import { snapshot } from 'valtio';
 
-import { ChannelMap, SendData } from '@johnlindquist/kit/types/kitapp';
+import type { ChannelMap, SendData } from '@johnlindquist/kit/types/kitapp';
 
-import {
-  kitPath,
-  kenvPath,
-  getMainScriptPath,
-} from '@johnlindquist/kit/core/utils';
+import { getMainScriptPath, kenvPath, kitPath } from '@johnlindquist/kit/core/utils';
 
 // const { pathExistsSync, readJson } = fsExtra;
 import { getTimestamps } from '@johnlindquist/kit/core/db';
-import { getLog, Logger, warn } from './logs';
+import { type Logger, getLog, warn } from './logs';
 import { clearPromptCache, getCurrentScreenFromMouse } from './prompt';
 import {
+  debounceSetScriptTimestamp,
+  forceQuit,
   getBackgroundTasks,
   getSchedule,
-  kitState,
   kitConfig,
-  forceQuit,
-  sponsorCheck,
+  kitState,
   kitStore,
   preloadChoicesMap,
-  debounceSetScriptTimestamp,
+  sponsorCheck,
 } from './state';
 
-import { widgetState, findWidget } from '../shared/widget';
+import { findWidget, widgetState } from '../shared/widget';
 
 import { createSendToChild } from './channel';
-import { appendChoices, setFlags, setChoices, invokeSearch } from './search';
+import { appendChoices, invokeSearch, setChoices, setFlags } from './search';
 
-import { emitter, KitEvent } from '../shared/events';
+import { KitEvent, emitter } from '../shared/events';
 import { show, showDevTools, showWidget } from './show';
 
-import {
-  getClipboardHistory,
-  removeFromClipboardHistory,
-  syncClipboardStore,
-} from './clipboard';
-import { getTray, getTrayIcon, setTrayMenu } from './tray';
+import { format, formatDistanceToNowStrict } from 'date-fns';
+import { getAssetPath } from '../shared/assets';
 import { AppChannel, Trigger } from '../shared/enums';
+import { stripAnsi } from './ansi';
+import { getClipboardHistory, removeFromClipboardHistory, syncClipboardStore } from './clipboard';
 import { convertShortcut, isLocalPath } from './helpers';
 import { deleteText } from './keyboard';
-import { showLogWindow } from './window';
-import { stripAnsi } from './ansi';
-import { getAssetPath } from '../shared/assets';
-import { TrackEvent, trackEvent } from './track';
 import {
   HANDLER_CHANNELS,
+  type ProcessAndPrompt,
   childShortcutMap,
   clearFlags,
   clearPreview,
   maybeConvertColors,
-  ProcessAndPrompt,
   processes,
   setTheme,
 } from './process';
-import { format, formatDistanceToNowStrict } from 'date-fns';
 import { prompts } from './prompts';
 import { getSourceFromRectangle } from './screen';
 import shims from './shims';
+import { TrackEvent, trackEvent } from './track';
+import { getTray, getTrayIcon, setTrayMenu } from './tray';
+import { showLogWindow } from './window';
 
 let prevId1: string;
 let prevId2: string;
@@ -133,9 +119,7 @@ export const formatScriptChoices = (data: Choice[]) => {
     // TODO: I'm kinda torn about showing descriptions in the main menu...
     // if (script.group !== 'Kit') script.description = '';
     if (script.background) {
-      const backgroundScript = getBackgroundTasks().find(
-        (t) => t.filePath === script.filePath,
-      );
+      const backgroundScript = getBackgroundTasks().find((t) => t.filePath === script.filePath);
 
       script.description = `${script.description || ''}${
         backgroundScript
@@ -148,9 +132,7 @@ export const formatScriptChoices = (data: Choice[]) => {
 
     if (script.schedule) {
       // log.info(`📅 ${script.name} scheduled for ${script.schedule}`);
-      const scheduleScript = getSchedule().find(
-        (s) => s.filePath === script.filePath,
-      );
+      const scheduleScript = getSchedule().find((s) => s.filePath === script.filePath);
 
       if (scheduleScript) {
         const date = new Date(scheduleScript.date);
@@ -162,9 +144,7 @@ export const formatScriptChoices = (data: Choice[]) => {
     }
 
     if (script.watch) {
-      script.description = `${script.description || ``} Watching: ${
-        script.watch
-      }`;
+      script.description = `${script.description || ''} Watching: ${script.watch}`;
     }
 
     if (script.img) {
@@ -181,7 +161,7 @@ export const formatScriptChoices = (data: Choice[]) => {
 
 export const createMessageMap = (info: ProcessAndPrompt) => {
   let exiting = false;
-  let resetting = false;
+  const resetting = false;
 
   const { prompt, scriptPath } = info;
   const sendToPrompt = prompt.sendToPrompt;
@@ -196,15 +176,12 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
   const handleChannelMessage = <K extends keyof ChannelMap>(
     data: SendData<K>,
-    fn: (
-      processInfo: ProcessAndPrompt,
-      data: SendData<K>,
-      samePrompt?: boolean,
-    ) => void,
+    fn: (processInfo: ProcessAndPrompt, data: SendData<K>, samePrompt?: boolean) => void,
     sendToChild?: boolean,
   ) => {
-    if (kitState.allowQuit)
+    if (kitState.allowQuit) {
       return warn(`⚠️  Tried to send data to ${data.channel} after quit`);
+    }
 
     // log.info(`${data?.pid}: --> toProcess: ${data.channel}`);
     const processInfo = processes.getByPid(data?.pid);
@@ -212,9 +189,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     if (!processInfo) {
       return warn(
-        `${data?.pid}:${data?.channel}: Can't find process associated with ${
-          isWidgetMessage ? `widget` : `script`
-        }`,
+        `${data?.pid}:${data?.channel}: Can't find process associated with ${isWidgetMessage ? 'widget' : 'script'}`,
       );
     }
 
@@ -230,22 +205,14 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
   const onChildChannel =
     <K extends keyof ChannelMap>(
-      fn: (
-        processInfo: ProcessAndPrompt,
-        data: SendData<K>,
-        samePrompt?: boolean,
-      ) => void,
+      fn: (processInfo: ProcessAndPrompt, data: SendData<K>, samePrompt?: boolean) => void,
     ) =>
     (data: SendData<K>) =>
       handleChannelMessage(data, fn, true);
 
   const onChildChannelOverride =
     <K extends keyof ChannelMap>(
-      fn: (
-        processInfo: ProcessAndPrompt,
-        data: SendData<K>,
-        samePrompt?: boolean,
-      ) => void,
+      fn: (processInfo: ProcessAndPrompt, data: SendData<K>, samePrompt?: boolean) => void,
     ) =>
     (data: SendData<K>) =>
       handleChannelMessage(data, fn);
@@ -290,16 +257,14 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     MAIN_MENU_READY: () => {},
     PONG: (data) => {},
     QUIT_AND_RELAUNCH: () => {
-      log.info(`👋 Quitting and relaunching`);
+      log.info('👋 Quitting and relaunching');
       app.relaunch();
       app.exit();
     },
-    ENABLE_ACCESSIBILITY: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        log.info(`👋 Enabling accessibility`);
-        shims['node-mac-permissions'].askForAccessibilityAccess();
-      },
-    ),
+    ENABLE_ACCESSIBILITY: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      log.info('👋 Enabling accessibility');
+      shims['node-mac-permissions'].askForAccessibilityAccess();
+    }),
 
     CONSOLE_LOG: (data) => {
       getLog(data.kitScript).info(data?.value || Value.Undefined);
@@ -345,14 +310,12 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       childSend({ channel, tasks: getBackgroundTasks() });
     }),
 
-    GET_CLIPBOARD_HISTORY: onChildChannelOverride(
-      async ({ child }, { channel }) => {
-        childSend({
-          channel,
-          history: await getClipboardHistory(),
-        });
-      },
-    ),
+    GET_CLIPBOARD_HISTORY: onChildChannelOverride(async ({ child }, { channel }) => {
+      childSend({
+        channel,
+        history: await getClipboardHistory(),
+      });
+    }),
 
     WIDGET_UPDATE: onChildChannel(({ child }, { channel, value }) => {
       const { widgetId } = value as any;
@@ -366,56 +329,58 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       }
     }),
 
-    WIDGET_EXECUTE_JAVASCRIPT: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        log.info(value);
-        const { widgetId, value: js } = value as any;
-        const widget = findWidget(widgetId, channel);
-        if (!widget) return;
+    WIDGET_EXECUTE_JAVASCRIPT: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      log.info(value);
+      const { widgetId, value: js } = value as any;
+      const widget = findWidget(widgetId, channel);
+      if (!widget) {
+        return;
+      }
 
-        log.info(`WIDGET_EXECUTE_JAVASCRIPT`, {
-          widgetId,
-          js: js.trim(),
+      log.info('WIDGET_EXECUTE_JAVASCRIPT', {
+        widgetId,
+        js: js.trim(),
+      });
+
+      if (widget) {
+        const result = await widget?.webContents.executeJavaScript(js);
+
+        childSend({
+          channel,
+          value: result,
         });
+      } else {
+        warn(`${widgetId}: widget not found. Killing process.`);
+        child?.kill();
+      }
+    }),
 
-        if (widget) {
-          const result = await widget?.webContents.executeJavaScript(js);
+    WIDGET_SET_STATE: onChildChannelOverride(({ child }, { channel, value }) => {
+      const { widgetId, state } = value as any;
 
-          childSend({
-            channel,
-            value: result,
-          });
-        } else {
-          warn(`${widgetId}: widget not found. Killing process.`);
-          child?.kill();
-        }
-      },
-    ),
+      const widget = findWidget(widgetId, channel);
+      if (!widget) {
+        return;
+      }
 
-    WIDGET_SET_STATE: onChildChannelOverride(
-      ({ child }, { channel, value }) => {
-        const { widgetId, state } = value as any;
-
-        const widget = findWidget(widgetId, channel);
-        if (!widget) return;
-
-        // log.info(`WIDGET_SET_STATE`, value);
-        if (widget) {
-          widget?.webContents.send(channel, state);
-        } else {
-          warn(`${widgetId}: widget not found. Terminating process.`);
-          child?.kill();
-        }
-      },
-    ),
+      // log.info(`WIDGET_SET_STATE`, value);
+      if (widget) {
+        widget?.webContents.send(channel, state);
+      } else {
+        warn(`${widgetId}: widget not found. Terminating process.`);
+        child?.kill();
+      }
+    }),
 
     WIDGET_CALL: onChildChannel(({ child }, { channel, value }) => {
       const { widgetId, method, args } = value as any;
 
       const widget = findWidget(widgetId, channel);
-      if (!widget) return;
+      if (!widget) {
+        return;
+      }
 
-      log.info(`📞 WIDGET_CALL`, widgetId, value, args);
+      log.info('📞 WIDGET_CALL', widgetId, value, args);
       if (widget) {
         try {
           (widget as any)?.[method]?.(...args);
@@ -432,7 +397,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       // log.info({ widgetId }, `${channel}`);
 
       const widget = findWidget(widgetId, channel);
-      if (!widget) return;
+      if (!widget) {
+        return;
+      }
 
       // log.info(`WIDGET_SET_STATE`, value);
       if (widget) {
@@ -447,7 +414,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       const { widgetId, width, height } = value as any;
       // log.info({ widgetId }, `${channel}`);
       const widget = findWidget(widgetId, channel);
-      if (!widget) return;
+      if (!widget) {
+        return;
+      }
 
       // log.info(`WIDGET_SET_STATE`, value);
       if (widget) {
@@ -462,7 +431,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       const { widgetId, x, y } = value as any;
       // log.info({ widgetId }, `${channel}`);
       const widget = findWidget(widgetId, channel);
-      if (!widget) return;
+      if (!widget) {
+        return;
+      }
 
       // log.info(`WIDGET_SET_STATE`, value);
       if (widget) {
@@ -517,10 +488,8 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           wid: widget?.id,
           pid: child?.pid,
           moved: false,
-          ignoreMouse: value?.options?.ignoreMouse || false,
-          ignoreMeasure: Boolean(
-            value?.options?.width || value?.options?.height || false,
-          ),
+          ignoreMouse: value?.options?.ignoreMouse,
+          ignoreMeasure: Boolean(value?.options?.width || value?.options?.height),
         });
 
         widget.on('resized', () => {
@@ -542,8 +511,12 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         const closeHandler = () => {
           const w = findWidget(widgetId, 'CLOSE_HANDLER');
 
-          if (!w) return;
-          if (w?.isDestroyed()) return;
+          if (!w) {
+            return;
+          }
+          if (w?.isDestroyed()) {
+            return;
+          }
 
           log.info(`${widgetId}: Widget closed`);
           if (prompt?.isVisible()) {
@@ -569,7 +542,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
           if (input.key === 'l' && (input.control || input.meta)) {
             const o = widgetState.widgets.find(({ id }) => id === widgetId);
-            if (!o) return;
+            if (!o) {
+              return;
+            }
             if (o?.ignoreMouse) {
               log.info(`${widgetId}: 🔓 Unlock widget`);
               widget.setIgnoreMouseEvents(false);
@@ -600,7 +575,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         widget?.on('will-move', () => {
           log.verbose(`${widgetId}: 📦 widget will move`);
           const o = widgetState.widgets.find(({ id }) => id === widgetId);
-          if (!o) return;
+          if (!o) {
+            return;
+          }
           o.moved = true;
         });
 
@@ -615,7 +592,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       const { widgetId } = value as any;
       const widget = findWidget(widgetId, channel);
 
-      if (!widget) return;
+      if (!widget) {
+        return;
+      }
 
       log.info(`${widgetId}: Widget closed`);
       prompt?.focusPrompt();
@@ -633,35 +612,30 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       }
     }),
 
-    WIDGET_CAPTURE_PAGE: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        const { widgetId } = value as any;
-        const widget = findWidget(widgetId, channel);
-        const image = await widget?.capturePage();
-        log.info(`Captured page for widget ${widgetId}`);
+    WIDGET_CAPTURE_PAGE: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      const { widgetId } = value as any;
+      const widget = findWidget(widgetId, channel);
+      const image = await widget?.capturePage();
+      log.info(`Captured page for widget ${widgetId}`);
 
-        if (image) {
-          const imagePath = path.join(
-            os.tmpdir(),
-            `kit-widget-capture-${randomUUID()}.png`,
-          );
-          log.info(`Captured page for widget ${widgetId} to ${imagePath}`);
-          await writeFile(imagePath, image.toPNG());
+      if (image) {
+        const imagePath = path.join(os.tmpdir(), `kit-widget-capture-${randomUUID()}.png`);
+        log.info(`Captured page for widget ${widgetId} to ${imagePath}`);
+        await writeFile(imagePath, image.toPNG());
 
-          childSend({
-            channel,
-            imagePath,
-          });
-        } else {
-          const imagePath = `⚠️ Failed to capture page for widget ${widgetId}`;
-          childSend({
-            channel,
-            imagePath,
-          });
-          warn(imagePath);
-        }
-      },
-    ),
+        childSend({
+          channel,
+          imagePath,
+        });
+      } else {
+        const imagePath = `⚠️ Failed to capture page for widget ${widgetId}`;
+        childSend({
+          channel,
+          imagePath,
+        });
+        warn(imagePath);
+      }
+    }),
 
     CLIPBOARD_SYNC_HISTORY: onChildChannel(({ child }, { channel, value }) => {
       log.verbose(channel);
@@ -669,13 +643,11 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       syncClipboardStore();
     }),
 
-    REMOVE_CLIPBOARD_HISTORY_ITEM: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        log.verbose(channel, value);
+    REMOVE_CLIPBOARD_HISTORY_ITEM: onChildChannel(async ({ child }, { channel, value }) => {
+      log.verbose(channel, value);
 
-        await removeFromClipboardHistory(value);
-      },
-    ),
+      await removeFromClipboardHistory(value);
+    }),
 
     TOGGLE_BACKGROUND: (data: any) => {
       emitter.emit(KitEvent.ToggleBackground, data);
@@ -698,8 +670,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     }),
     GET_ACTIVE_APP: onChildChannelOverride(async ({ child }, { channel }) => {
       if (kitState.isMac) {
-        const frontmostApp =
-          shims['@johnlindquist/mac-frontmost'].getFrontmostApp();
+        const frontmostApp = shims['@johnlindquist/mac-frontmost'].getFrontmostApp();
         childSend({ channel, app: frontmostApp });
       } else {
         // TODO: implement for windows
@@ -739,7 +710,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         // eslint-disable-next-line prefer-const
         let [name, tag, description] = title?.split(' | ');
         if (tag && description) {
-          description = `Add a title to your widget to customize the name`;
+          description = 'Add a title to your widget to customize the name';
         }
         return {
           name,
@@ -754,14 +725,14 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         };
       });
 
-      log.info(`GET_KIT_WINDOWS`, { windows });
+      log.info('GET_KIT_WINDOWS', { windows });
 
       childSend({ channel, windows });
     }),
 
     FOCUS_KIT_WINDOW: onChildChannel(({ child }, { channel, value }) => {
       const { id } = value;
-      const window = BrowserWindow.fromId(parseInt(id, 10));
+      const window = BrowserWindow.fromId(Number.parseInt(id, 10));
       log.info(`Focusing window ${id}: ${window?.getTitle()}`);
       if (window) {
         app.focus({ steal: true });
@@ -777,35 +748,37 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       prompt?.showPrompt();
     }),
 
-    HIDE_APP: onChildChannelOverride(
-      async ({ scriptPath, child }, { channel, value }) => {
-        if (kitState.isMac && app?.dock) app?.dock?.hide();
+    HIDE_APP: onChildChannelOverride(async ({ scriptPath, child }, { channel, value }) => {
+      if (kitState.isMac && app?.dock) {
+        app?.dock?.hide();
+      }
 
-        sendToPrompt(Channel.HIDE_APP);
+      sendToPrompt(Channel.HIDE_APP);
 
-        kitState.hiddenByUser = true;
-        log.info(`😳 Hiding app`);
+      kitState.hiddenByUser = true;
+      log.info('😳 Hiding app');
 
-        const handler = () => {
-          log.info(`🫣 App hidden`);
-          if (!child?.killed) {
-            childSend({
-              channel,
-            });
-          }
-        };
-
-        if (prompt?.isVisible()) {
-          prompt?.onHideOnce(handler);
+      const handler = () => {
+        log.info('🫣 App hidden');
+        if (!child?.killed) {
+          childSend({
+            channel,
+          });
         }
-        handler();
+      };
 
-        prompt.hide();
-      },
-    ),
+      if (prompt?.isVisible()) {
+        prompt?.onHideOnce(handler);
+      }
+      handler();
+
+      prompt.hide();
+    }),
 
     BEFORE_EXIT: onChildChannelOverride(({ pid }) => {
-      if (exiting) return;
+      if (exiting) {
+        return;
+      }
       exiting = true;
       log.info(`${pid}: 🚪 Before exit`);
       prompt?.hideInstant();
@@ -818,7 +791,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       forceQuit();
     }),
     SET_KIT_STATE: onChildChannel(async (processInfo, data) => {
-      log.info(`SET_KIT_STATE`, data?.value);
+      log.info('SET_KIT_STATE', data?.value);
       for (const [key, value] of Object.entries(data?.value)) {
         if ((kitState as any)?.[key] !== undefined) {
           log.info(`Setting kitState.${key} to ${value}`);
@@ -828,20 +801,22 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     }),
     FOCUS_PROMPT: onChildChannel(async ({ child }, { channel, value }) => {
       const { pid } = value;
-      log.info(`🧘 FOCUS_PROMPT`, value);
-      const process = processes.getByPid(parseInt(pid, 10));
+      log.info('🧘 FOCUS_PROMPT', value);
+      const process = processes.getByPid(Number.parseInt(pid, 10));
       // log.info({ process });
       process?.prompt?.forceFocus();
     }),
     DEBUG_SCRIPT: onChildChannelOverride(async (processInfo, data) => {
       // TODO: Re-enable DEBUG_SCRIPT
       await sponsorCheck('Debugging Scripts');
-      if (!kitState.isSponsor) return;
+      if (!kitState.isSponsor) {
+        return;
+      }
 
       if (processInfo?.child?.pid) {
         processes.removeByPid(processInfo?.child?.pid);
       }
-      log.info(`DEBUG_SCRIPT`, data?.value?.filePath);
+      log.info('DEBUG_SCRIPT', data?.value?.filePath);
       trackEvent(TrackEvent.DebugScript, {
         scriptName: path.basename(data?.value?.filePath || ''),
       });
@@ -894,10 +869,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       // attemptPreload(filePath);
 
       if (prompt.preloaded && getMainScriptPath() === data?.value?.filePath) {
-        log.info(
-          `👀 ${prompt.pid}: Ignoring main setScript because preloaded:`,
-          prompt.preloaded,
-        );
+        log.info(`👀 ${prompt.pid}: Ignoring main setScript because preloaded:`, prompt.preloaded);
         prompt.preloaded = '';
         return;
       }
@@ -919,7 +891,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           processInfo.child.stderr.removeAllListeners();
 
           const routeToScriptLog = (d: any) => {
-            if (processInfo?.child?.killed) return;
+            if (processInfo?.child?.killed) {
+              return;
+            }
             if (data?.value?.verbose) {
               const result = d.toString();
               scriptLog.info(`\n${stripAnsi(result)}`);
@@ -946,7 +920,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       await prompt?.setScript(data.value, processInfo.pid);
     }),
     SET_STATUS: onChildChannel(async (_, data) => {
-      if (data?.value) kitState.status = data?.value;
+      if (data?.value) {
+        kitState.status = data?.value;
+      }
     }),
     SET_SUBMIT_VALUE: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_SUBMIT_VALUE, value);
@@ -965,7 +941,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     }),
 
     SET_IGNORE_BLUR: onChildChannel(async ({ child }, { channel, value }) => {
-      log.info(`SET_IGNORE_BLUR`, { value });
+      log.info('SET_IGNORE_BLUR', { value });
     }),
 
     SET_RESIZE: (data) => {
@@ -973,26 +949,24 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     },
 
     SET_PAUSE_RESIZE: onChildChannel(async ({ child }, { channel, value }) => {
-      log.info(`⏸ Resize`, `${value ? 'paused' : 'resumed'}`);
+      log.info('⏸ Resize', `${value ? 'paused' : 'resumed'}`);
       kitState.resizePaused = value;
     }),
 
-    SET_INPUT: onChildChannel(
-      async ({ child }, { channel, value, promptId }, samePrompt) => {
-        if (samePrompt) {
-          // log.info(`💌 SET_INPUT to ${value}`);
-          prompt.kitSearch.keywords.clear();
-          prompt.kitSearch.keyword = '';
-          prompt.kitSearch.input = value;
-          sendToPrompt(Channel.SET_INPUT, value);
-        } else {
-          log.warn(`${prompt.pid}: ⛔️ SET_INPUT: Prompt ID mismatch`, {
-            dataId: promptId,
-            promptId: prompt.id,
-          });
-        }
-      },
-    ),
+    SET_INPUT: onChildChannel(async ({ child }, { channel, value, promptId }, samePrompt) => {
+      if (samePrompt) {
+        // log.info(`💌 SET_INPUT to ${value}`);
+        prompt.kitSearch.keywords.clear();
+        prompt.kitSearch.keyword = '';
+        prompt.kitSearch.input = value;
+        sendToPrompt(Channel.SET_INPUT, value);
+      } else {
+        log.warn(`${prompt.pid}: ⛔️ SET_INPUT: Prompt ID mismatch`, {
+          dataId: promptId,
+          promptId: prompt.id,
+        });
+      }
+    }),
 
     GET_INPUT: onChildChannel(async ({ child }, { channel }) => {
       sendToPrompt(Channel.GET_INPUT);
@@ -1010,17 +984,13 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       sendToPrompt(Channel.EDITOR_SET_CODE_HINT);
     }),
 
-    EDITOR_MOVE_CURSOR: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        sendToPrompt(Channel.EDITOR_MOVE_CURSOR, value);
-      },
-    ),
+    EDITOR_MOVE_CURSOR: onChildChannel(async ({ child }, { channel, value }) => {
+      sendToPrompt(Channel.EDITOR_MOVE_CURSOR, value);
+    }),
 
-    EDITOR_INSERT_TEXT: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        sendToPrompt(Channel.EDITOR_INSERT_TEXT, value);
-      },
-    ),
+    EDITOR_INSERT_TEXT: onChildChannel(async ({ child }, { channel, value }) => {
+      sendToPrompt(Channel.EDITOR_INSERT_TEXT, value);
+    }),
 
     APPEND_INPUT: onChildChannel(async ({ child }, { channel, value }) => {
       sendToPrompt(Channel.APPEND_INPUT, value);
@@ -1042,66 +1012,56 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       sendToPrompt(Channel.SET_FOOTER, value);
     }),
 
-    SET_PANEL: onChildChannel(
-      async ({ child }, { channel, value, promptId }, samePrompt) => {
-        if (samePrompt) {
-          sendToPrompt(Channel.SET_PANEL, value);
-        } else {
-          log.warn(`${prompt.pid}: ⛔️ SET_PANEL: Prompt ID mismatch`, {
-            dataId: promptId,
-            promptId: prompt.id,
-          });
-        }
-      },
-    ),
+    SET_PANEL: onChildChannel(async ({ child }, { channel, value, promptId }, samePrompt) => {
+      if (samePrompt) {
+        sendToPrompt(Channel.SET_PANEL, value);
+      } else {
+        log.warn(`${prompt.pid}: ⛔️ SET_PANEL: Prompt ID mismatch`, {
+          dataId: promptId,
+          promptId: prompt.id,
+        });
+      }
+    }),
 
-    SET_PREVIEW: onChildChannel(
-      async ({ child }, { channel, value, promptId }, samePrompt) => {
-        if (samePrompt) {
-          sendToPrompt(Channel.SET_PREVIEW, value);
-        } else {
-          log.warn(`${prompt.pid}: ⛔️ SET_PREVIEW: Prompt ID mismatch`, {
-            dataId: promptId,
-            promptId: prompt.id,
-          });
-        }
-      },
-    ),
+    SET_PREVIEW: onChildChannel(async ({ child }, { channel, value, promptId }, samePrompt) => {
+      if (samePrompt) {
+        sendToPrompt(Channel.SET_PREVIEW, value);
+      } else {
+        log.warn(`${prompt.pid}: ⛔️ SET_PREVIEW: Prompt ID mismatch`, {
+          dataId: promptId,
+          promptId: prompt.id,
+        });
+      }
+    }),
 
-    SET_SHORTCUTS: onChildChannel(
-      async ({ child, prompt }, { channel, value, promptId }, samePrompt) => {
-        if (samePrompt) {
-          sendToPrompt(channel, value);
-        } else {
-          log.warn(`${prompt.pid}: ⛔️ SET_SHORTCUTS: Prompt ID mismatch`, {
-            dataId: promptId,
-            promptId: prompt.id,
-          });
-        }
-        if (
-          prompt.scriptPath === getMainScriptPath() &&
-          prompt.kitSearch.input === '' &&
-          value?.length
-        ) {
-          prompt.sendToPrompt(AppChannel.SET_CACHED_MAIN_SHORTCUTS, value);
-        }
+    SET_SHORTCUTS: onChildChannel(async ({ child, prompt }, { channel, value, promptId }, samePrompt) => {
+      if (samePrompt) {
+        sendToPrompt(channel, value);
+      } else {
+        log.warn(`${prompt.pid}: ⛔️ SET_SHORTCUTS: Prompt ID mismatch`, {
+          dataId: promptId,
+          promptId: prompt.id,
+        });
+      }
+      if (prompt.scriptPath === getMainScriptPath() && prompt.kitSearch.input === '' && value?.length) {
+        prompt.sendToPrompt(AppChannel.SET_CACHED_MAIN_SHORTCUTS, value);
+      }
 
-        // TOOD: Consider caching shortcuts
-        // const cachePath = getCachePath(kitState.scriptPath, 'shortcuts');
+      // TOOD: Consider caching shortcuts
+      // const cachePath = getCachePath(kitState.scriptPath, 'shortcuts');
 
-        // ensureDir(path.dirname(cachePath))
-        //   .then((success) => {
-        //     // eslint-disable-next-line promise/no-nesting
-        //     return writeJson(cachePath, value).catch((error) => {
-        //       log.warn({ error });
-        //       return error;
-        //     });
-        //   })
-        //   .catch((error) => {
-        //     log.warn({ error });
-        //   });
-      },
-    ),
+      // ensureDir(path.dirname(cachePath))
+      //   .then((success) => {
+      //     // eslint-disable-next-line promise/no-nesting
+      //     return writeJson(cachePath, value).catch((error) => {
+      //       log.warn({ error });
+      //       return error;
+      //     });
+      //   })
+      //   .catch((error) => {
+      //     log.warn({ error });
+      //   });
+    }),
 
     CONSOLE_CLEAR: onChildChannel(async ({ child }, { channel }) => {
       setLog(Channel.CONSOLE_CLEAR);
@@ -1113,16 +1073,16 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     DEV_TOOLS: onChildChannel(async ({ child }, { channel, value }) => {
       showDevTools(value);
     }),
-    SHOW_LOG_WINDOW: onChildChannel(
-      async ({ scriptPath, pid }, { channel, value }) => {
-        await sponsorCheck('Log Window');
-        if (!kitState.isSponsor) return;
-        await showLogWindow({
-          scriptPath: value || scriptPath,
-          pid,
-        });
-      },
-    ),
+    SHOW_LOG_WINDOW: onChildChannel(async ({ scriptPath, pid }, { channel, value }) => {
+      await sponsorCheck('Log Window');
+      if (!kitState.isSponsor) {
+        return;
+      }
+      await showLogWindow({
+        scriptPath: value || scriptPath,
+        pid,
+      });
+    }),
 
     // SHOW_TEXT: (data) => {
     //   setBlurredByKit();
@@ -1137,77 +1097,70 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     //   showNotification(data.html || 'You forgot html', data.options);
     // },
-    SET_PROMPT_DATA: onChildChannel(
-      async (pap, { channel, value, promptId }) => {
-        performance.measure('SET_PROMPT_DATA', 'script');
-        log.info(`${prompt.pid}: 📝 SET_PROMPT_DATA`, {
+    SET_PROMPT_DATA: onChildChannel(async (pap, { channel, value, promptId }) => {
+      performance.measure('SET_PROMPT_DATA', 'script');
+      log.info(`${prompt.pid}: 📝 SET_PROMPT_DATA`, {
+        preloaded: prompt.preloaded,
+        id: prompt.id,
+        promptId,
+      });
+
+      if (prompt.preloaded && value?.scriptPath === getMainScriptPath()) {
+        log.info(`${prompt.pid}: 📝 IGNORE SET_PROMPT_DATA on Main`, {
           preloaded: prompt.preloaded,
           id: prompt.id,
           promptId,
         });
+        prompt.preloaded = '';
+        return;
+      }
 
-        if (prompt.preloaded && value?.scriptPath === getMainScriptPath()) {
-          log.info(`${prompt.pid}: 📝 IGNORE SET_PROMPT_DATA on Main`, {
-            preloaded: prompt.preloaded,
-            id: prompt.id,
-            promptId,
-          });
-          prompt.preloaded = '';
-          return;
-        }
+      if (prompt.preloaded && prompt.id.startsWith(prompt.preloaded)) {
+        log.info(`${prompt.pid}: 📝 IGNORE SET_PROMPT_DATA on Preloaded`, {
+          preloaded: prompt.preloaded,
+          id: prompt.id,
+          promptId,
+        });
+        prompt.preloaded = '';
+        return;
+      }
 
-        if (prompt.preloaded && prompt.id.startsWith(prompt.preloaded)) {
-          log.info(`${prompt.pid}: 📝 IGNORE SET_PROMPT_DATA on Preloaded`, {
-            preloaded: prompt.preloaded,
-            id: prompt.id,
-            promptId,
-          });
-          prompt.preloaded = '';
-          return;
-        }
+      prompt.id = promptId;
+      prompt.scriptPath = value?.scriptPath || '';
+      prompt.hideOnEscape = Boolean(value?.hideOnEscape);
 
-        prompt.id = promptId;
-        prompt.scriptPath = value?.scriptPath || '';
-        prompt.hideOnEscape = Boolean(value?.hideOnEscape);
+      prompt.kitSearch.keys = value?.searchKeys || ['slicedName', 'tag', 'group', 'command'];
+      if (typeof value?.keyword === 'string') {
+        prompt.kitSearch.keywords.clear();
+        prompt.kitSearch.input = '';
+        prompt.kitSearch.keyword = value?.keyword;
+      }
 
-        prompt.kitSearch.keys = value?.searchKeys || [
-          'slicedName',
-          'tag',
-          'group',
-          'command',
-        ];
-        if (typeof value?.keyword === 'string') {
-          prompt.kitSearch.keywords.clear();
-          prompt.kitSearch.input = '';
-          prompt.kitSearch.keyword = value?.keyword;
-        }
+      if (value?.ui === UI.mic) {
+        prompt.sendToPrompt(AppChannel.SET_MIC_CONFIG, {
+          timeSlice: value?.timeSlice || 200,
+          format: value?.format || 'webm',
+          stream: value?.stream,
+          filePath: value?.filePath || '',
+        });
+      }
+      // log.silly(`SET_PROMPT_DATA`);
 
-        if (value?.ui === UI.mic) {
-          prompt.sendToPrompt(AppChannel.SET_MIC_CONFIG, {
-            timeSlice: value?.timeSlice || 200,
-            format: value?.format || 'webm',
-            stream: value?.stream || false,
-            filePath: value?.filePath || '',
-          });
-        }
-        // log.silly(`SET_PROMPT_DATA`);
+      // if (value?.ui === UI.term) {
+      //   kitState.termCommand = value?.input || ''
+      //   kitState.termCwd = value?.cwd || ''
+      //   kitState.termEnv = value?.env || {}
+      // }
 
-        // if (value?.ui === UI.term) {
-        //   kitState.termCommand = value?.input || ''
-        //   kitState.termCwd = value?.cwd || ''
-        //   kitState.termEnv = value?.env || {}
-        // }
+      if (prompt.kitSearch.keyword) {
+        value.input = `${prompt.kitSearch.keyword} `;
+      } else if (value.input && prompt.firstPrompt) {
+        prompt.kitSearch.input = value.input;
+      }
 
-        if (prompt.kitSearch.keyword) {
-          value.input = `${prompt.kitSearch.keyword} `;
-        } else if (value.input && prompt.firstPrompt) {
-          prompt.kitSearch.input = value.input;
-        }
-
-        prompt?.setPromptData(value);
-        prompt.isScripts = Boolean(value?.scripts);
-      },
-    ),
+      prompt?.setPromptData(value);
+      prompt.isScripts = Boolean(value?.scripts);
+    }),
 
     SET_PROMPT_PROP: async (data) => {
       prompt?.setPromptProp(data.value);
@@ -1216,11 +1169,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     SHOW: async (data) => {
       kitState.blurredByKit = true;
 
-      const showWindow = await show(
-        'show',
-        data.value.html || 'You forgot html',
-        data.value.options,
-      );
+      const showWindow = await show('show', data.value.html || 'You forgot html', data.value.options);
       if (showWindow && !showWindow.isDestroyed()) {
         showWindow.on('close', () => {
           prompt?.focusPrompt();
@@ -1235,101 +1184,91 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       invokeSearch(prompt, prompt.kitSearch.input, 'ADD_CHOICE');
     }),
 
-    SET_CHOICES: onChildChannelOverride(
-      async ({ child }, { channel, value, promptId }, samePrompt) => {
-        performance.measure('SET_CHOICES', 'script');
-        log.info(`${prompt.pid}: SET_CHOICES`, {
-          length: value?.choices?.length,
-          preloaded: prompt.preloaded,
-          dataId: promptId,
-          promptId: prompt.id,
-        });
-        if (![UI.arg, UI.hotkey].includes(prompt.ui)) {
-          log.info(`⛔️ UI changed before choices sent. Skipping SET_CHOICES`);
-
-          if (child) {
-            childSend({
-              channel,
-            });
-          }
-          return;
-        }
-
-        if (samePrompt) {
-          const { choices, skipInitialSearch, inputRegex, generated } = value;
-
-          // const choiceIds = choices.map((choice) => choice.id).join(',');hks
-          // if (prevChoiceIds === choiceIds) {
-          //   log.info(`${prompt.pid}: ⛔️ SET_CHOICES: No changes`, {
-          //     dataId: promptId,
-          //   });
-          //   return;
-          // }
-          // prevChoiceIds = choiceIds;
-
-          prompt.kitSearch.inputRegex = inputRegex
-            ? new RegExp(inputRegex, 'gi')
-            : undefined;
-
-          let formattedChoices = choices;
-          if (prompt.isScripts) {
-            formattedChoices = formatScriptChoices(choices);
-          }
-
-          setChoices(prompt, formattedChoices, {
-            preload: false,
-            skipInitialSearch,
-            generated: Boolean(generated),
-          });
-        } else {
-          log.warn(`${prompt.pid}: ⛔️ SET_CHOICES: Prompt ID mismatch`, {
-            dataId: promptId,
-            promptId: prompt.id,
-          });
-        }
+    SET_CHOICES: onChildChannelOverride(async ({ child }, { channel, value, promptId }, samePrompt) => {
+      performance.measure('SET_CHOICES', 'script');
+      log.info(`${prompt.pid}: SET_CHOICES`, {
+        length: value?.choices?.length,
+        preloaded: prompt.preloaded,
+        dataId: promptId,
+        promptId: prompt.id,
+      });
+      if (![UI.arg, UI.hotkey].includes(prompt.ui)) {
+        log.info('⛔️ UI changed before choices sent. Skipping SET_CHOICES');
 
         if (child) {
           childSend({
             channel,
           });
         }
-      },
-    ),
+        return;
+      }
 
-    APPEND_CHOICES: onChildChannel(
-      async ({ child }, { channel, value, promptId }, samePrompt) => {
-        if (samePrompt) {
-          appendChoices(prompt, value as Choice[]);
-        } else {
-          log.warn(`${prompt.pid}: ⛔️ APPEND_CHOICES: Prompt ID mismatch`, {
-            dataId: promptId,
-            promptId: prompt.id,
-          });
+      if (samePrompt) {
+        const { choices, skipInitialSearch, inputRegex, generated } = value;
+
+        // const choiceIds = choices.map((choice) => choice.id).join(',');hks
+        // if (prevChoiceIds === choiceIds) {
+        //   log.info(`${prompt.pid}: ⛔️ SET_CHOICES: No changes`, {
+        //     dataId: promptId,
+        //   });
+        //   return;
+        // }
+        // prevChoiceIds = choiceIds;
+
+        prompt.kitSearch.inputRegex = inputRegex ? new RegExp(inputRegex, 'gi') : undefined;
+
+        let formattedChoices = choices;
+        if (prompt.isScripts) {
+          formattedChoices = formatScriptChoices(choices);
         }
-      },
-    ),
+
+        setChoices(prompt, formattedChoices, {
+          preload: false,
+          skipInitialSearch,
+          generated: Boolean(generated),
+        });
+      } else {
+        log.warn(`${prompt.pid}: ⛔️ SET_CHOICES: Prompt ID mismatch`, {
+          dataId: promptId,
+          promptId: prompt.id,
+        });
+      }
+
+      if (child) {
+        childSend({
+          channel,
+        });
+      }
+    }),
+
+    APPEND_CHOICES: onChildChannel(async ({ child }, { channel, value, promptId }, samePrompt) => {
+      if (samePrompt) {
+        appendChoices(prompt, value as Choice[]);
+      } else {
+        log.warn(`${prompt.pid}: ⛔️ APPEND_CHOICES: Prompt ID mismatch`, {
+          dataId: promptId,
+          promptId: prompt.id,
+        });
+      }
+    }),
 
     // UPDATE_PROMPT_WARN: (data) => {
     //   setPlaceholder(data.info as string);
     // },
 
-    CLEAR_PROMPT_CACHE: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        log.verbose(`${channel}: Clearing prompt cache`);
-        await clearPromptCache();
-        prompt?.resetWindow();
-      },
-    ),
+    CLEAR_PROMPT_CACHE: onChildChannel(async ({ child }, { channel, value }) => {
+      log.verbose(`${channel}: Clearing prompt cache`);
+      await clearPromptCache();
+      prompt?.resetWindow();
+    }),
     FOCUS: onChildChannel(async ({ child }, { channel, value }) => {
       log.info(`${child.pid}: ${channel}: Manually focusing prompt`);
       prompt?.forceFocus();
     }),
-    SET_ALWAYS_ON_TOP: onChildChannel(
-      async ({ child, prompt }, { channel, value }) => {
-        log.info(`${prompt.pid}: 🎩 Setting always on top to ${value}`);
-        prompt?.setPromptAlwaysOnTop(value as boolean, true);
-      },
-    ),
+    SET_ALWAYS_ON_TOP: onChildChannel(async ({ child, prompt }, { channel, value }) => {
+      log.info(`${prompt.pid}: 🎩 Setting always on top to ${value}`);
+      prompt?.setPromptAlwaysOnTop(value as boolean, true);
+    }),
     CLEAR_TABS: () => {
       sendToPrompt(Channel.CLEAR_TABS, []);
     },
@@ -1342,17 +1281,13 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       sendToPrompt(Channel.SET_EDITOR_CONFIG, value);
     }),
 
-    SET_EDITOR_SUGGESTIONS: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        sendToPrompt(Channel.SET_EDITOR_SUGGESTIONS, value);
-      },
-    ),
+    SET_EDITOR_SUGGESTIONS: onChildChannel(async ({ child }, { channel, value }) => {
+      sendToPrompt(Channel.SET_EDITOR_SUGGESTIONS, value);
+    }),
 
-    APPEND_EDITOR_VALUE: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        sendToPrompt(Channel.APPEND_EDITOR_VALUE, value);
-      },
-    ),
+    APPEND_EDITOR_VALUE: onChildChannel(async ({ child }, { channel, value }) => {
+      sendToPrompt(Channel.APPEND_EDITOR_VALUE, value);
+    }),
 
     SET_TEXTAREA_CONFIG: (data) => {
       sendToPrompt(Channel.SET_TEXTAREA_CONFIG, data.value);
@@ -1364,7 +1299,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     SET_TEMP_THEME: onChildChannel(async ({ child }, { channel, value }) => {
       const newValue = await maybeConvertColors(value);
-      log.info(`🎨 Setting temp theme`, newValue);
+      log.info('🎨 Setting temp theme', newValue);
       sendToPrompt(Channel.SET_TEMP_THEME, newValue);
       // TOOD: https://github.com/electron/electron/issues/37705
       // const backgroundColor = `rgba(${newValue['--color-background']}, ${newValue['--opacity']})`;
@@ -1379,20 +1314,18 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     SET_FORM: (data) => {
       sendToPrompt(Channel.SET_FORM, data.value);
     },
-    SET_FLAGS: onChildChannel(
-      async ({ child }, { channel, value, promptId }, samePrompt) => {
-        if (samePrompt) {
-          log.info(`⛳️ Set flags ${Object.keys(value).length}`);
-          sendToPrompt(Channel.SET_FLAGS, value);
-          setFlags(prompt, value as any);
-        } else {
-          log.warn(`${prompt.pid}: ⛔️ SET_FLAGS: Prompt ID mismatch`, {
-            dataId: promptId,
-            promptId: prompt.id,
-          });
-        }
-      },
-    ),
+    SET_FLAGS: onChildChannel(async ({ child }, { channel, value, promptId }, samePrompt) => {
+      if (samePrompt) {
+        log.info(`⛳️ Set flags ${Object.keys(value).length}`);
+        sendToPrompt(Channel.SET_FLAGS, value);
+        setFlags(prompt, value as any);
+      } else {
+        log.warn(`${prompt.pid}: ⛔️ SET_FLAGS: Prompt ID mismatch`, {
+          dataId: promptId,
+          promptId: prompt.id,
+        });
+      }
+    }),
     SET_FLAG_VALUE: onChildChannel(async ({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_FLAG_VALUE, value);
     }),
@@ -1461,7 +1394,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       log.info(JSON.stringify(value));
       const { label, scripts } = value;
       if (label) {
-        const image = nativeImage.createFromDataURL(``);
+        const image = nativeImage.createFromDataURL('');
         getTray()?.setImage(image);
         getTray()?.setTitle(label);
       } else {
@@ -1483,7 +1416,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       processes.removeByPid(value);
     }),
     TERMINATE_ALL_PROCESSES: onChildChannel(async ({ child }, { channel }) => {
-      warn(`Terminating all processes`);
+      warn('Terminating all processes');
       const activeProcesses = processes.getActiveProcesses();
       activeProcesses.forEach((process) => {
         try {
@@ -1494,504 +1427,427 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       });
     }),
 
-    GET_APP_STATE: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        childSend({
-          channel,
-          value: snapshot(kitState),
-        });
-      },
-    ),
+    GET_APP_STATE: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      childSend({
+        channel,
+        value: snapshot(kitState),
+      });
+    }),
 
     TERMINAL: (data) => {
       sendToPrompt(Channel.TERMINAL, data.value);
     },
-    CLIPBOARD_READ_TEXT: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        const text = await clipboard.readText();
-        childSend({
-          channel,
-          value: text,
-        });
-      },
-    ),
+    CLIPBOARD_READ_TEXT: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      const text = await clipboard.readText();
+      childSend({
+        channel,
+        value: text,
+      });
+    }),
 
-    CLIPBOARD_READ_IMAGE: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        const image = clipboard.readImage();
-        // write image to a tmp file path with a uuid name
-        const tmpPath = path.join(os.tmpdir(), `kit-${randomUUID()}.png`);
-        await writeFile(tmpPath, image.toPNG());
+    CLIPBOARD_READ_IMAGE: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      const image = clipboard.readImage();
+      // write image to a tmp file path with a uuid name
+      const tmpPath = path.join(os.tmpdir(), `kit-${randomUUID()}.png`);
+      await writeFile(tmpPath, image.toPNG());
 
-        childSend({
-          channel,
-          value: tmpPath,
-        });
-      },
-    ),
-    CLIPBOARD_READ_RTF: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        const rtf = await clipboard.readRTF();
-        childSend({
-          channel,
-          value: rtf,
-        });
-      },
-    ),
-    CLIPBOARD_READ_HTML: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        const html = await clipboard.readHTML();
-        childSend({
-          channel,
-          value: html,
-        });
-      },
-    ),
-    CLIPBOARD_READ_BOOKMARK: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        const bookmark = await clipboard.readBookmark();
-        childSend({
-          channel,
-          value: bookmark,
-        });
-      },
-    ),
-    CLIPBOARD_READ_FIND_TEXT: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        const findText = await clipboard.readFindText();
-        childSend({
-          channel,
-          value: findText,
-        });
-      },
-    ),
+      childSend({
+        channel,
+        value: tmpPath,
+      });
+    }),
+    CLIPBOARD_READ_RTF: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      const rtf = await clipboard.readRTF();
+      childSend({
+        channel,
+        value: rtf,
+      });
+    }),
+    CLIPBOARD_READ_HTML: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      const html = await clipboard.readHTML();
+      childSend({
+        channel,
+        value: html,
+      });
+    }),
+    CLIPBOARD_READ_BOOKMARK: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      const bookmark = await clipboard.readBookmark();
+      childSend({
+        channel,
+        value: bookmark,
+      });
+    }),
+    CLIPBOARD_READ_FIND_TEXT: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      const findText = await clipboard.readFindText();
+      childSend({
+        channel,
+        value: findText,
+      });
+    }),
 
-    CLIPBOARD_WRITE_TEXT: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        let text;
-        if (typeof value === 'string') {
-          text = value;
-        } else if (typeof value === 'number') {
-          text = value.toString();
-        } else {
-          text = JSON.stringify(value);
-        }
+    CLIPBOARD_WRITE_TEXT: onChildChannel(async ({ child }, { channel, value }) => {
+      let text;
+      if (typeof value === 'string') {
+        text = value;
+      } else if (typeof value === 'number') {
+        text = value.toString();
+      } else {
+        text = JSON.stringify(value);
+      }
 
-        if (text) {
-          await clipboard.writeText(text);
-        }
-      },
-    ),
-    CLIPBOARD_WRITE_IMAGE: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        const image = nativeImage.createFromPath(value);
-        await clipboard.writeImage(image);
-      },
-    ),
-    CLIPBOARD_WRITE_RTF: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        await clipboard.writeRTF(value);
-      },
-    ),
-    CLIPBOARD_WRITE_HTML: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        await clipboard.writeHTML(value);
-      },
-    ),
+      if (text) {
+        await clipboard.writeText(text);
+      }
+    }),
+    CLIPBOARD_WRITE_IMAGE: onChildChannel(async ({ child }, { channel, value }) => {
+      const image = nativeImage.createFromPath(value);
+      await clipboard.writeImage(image);
+    }),
+    CLIPBOARD_WRITE_RTF: onChildChannel(async ({ child }, { channel, value }) => {
+      await clipboard.writeRTF(value);
+    }),
+    CLIPBOARD_WRITE_HTML: onChildChannel(async ({ child }, { channel, value }) => {
+      await clipboard.writeHTML(value);
+    }),
 
-    CLIPBOARD_WRITE_BOOKMARK: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        await clipboard.writeBookmark(value.title, value.url);
-      },
-    ),
-    CLIPBOARD_WRITE_FIND_TEXT: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        await clipboard.writeFindText(value);
-      },
-    ),
+    CLIPBOARD_WRITE_BOOKMARK: onChildChannel(async ({ child }, { channel, value }) => {
+      await clipboard.writeBookmark(value.title, value.url);
+    }),
+    CLIPBOARD_WRITE_FIND_TEXT: onChildChannel(async ({ child }, { channel, value }) => {
+      await clipboard.writeFindText(value);
+    }),
     CLIPBOARD_CLEAR: onChildChannel(async ({ child }, { channel, value }) => {
       await clipboard.clear();
     }),
 
-    REGISTER_GLOBAL_SHORTCUT: onChildChannelOverride(
-      async ({ child, scriptPath }, { channel, value }) => {
-        const properShortcut = convertShortcut(value, scriptPath);
-        log.info(
-          `App: registering global shortcut ${value} as ${properShortcut}`,
-        );
-        const result = globalShortcut.register(properShortcut, async () => {
-          kitState.shortcutPressed = properShortcut;
-          log.info(
-            `Global shortcut: Sending ${value} on ${Channel.GLOBAL_SHORTCUT_PRESSED}`,
-          );
-          childSend({
-            channel: Channel.GLOBAL_SHORTCUT_PRESSED,
-            value,
-          });
+    REGISTER_GLOBAL_SHORTCUT: onChildChannelOverride(async ({ child, scriptPath }, { channel, value }) => {
+      const properShortcut = convertShortcut(value, scriptPath);
+      log.info(`App: registering global shortcut ${value} as ${properShortcut}`);
+      const result = globalShortcut.register(properShortcut, async () => {
+        kitState.shortcutPressed = properShortcut;
+        log.info(`Global shortcut: Sending ${value} on ${Channel.GLOBAL_SHORTCUT_PRESSED}`);
+        childSend({
+          channel: Channel.GLOBAL_SHORTCUT_PRESSED,
+          value,
+        });
+      });
+
+      log.info(`Shortcut ${value}: ${result ? 'success' : 'failure'}}`);
+
+      if (result && child?.pid) {
+        if (child?.pid && !childShortcutMap.has(child.pid)) {
+          childShortcutMap.set(child.pid, [properShortcut]);
+        } else {
+          childShortcutMap.get(child.pid)?.push(properShortcut);
+        }
+
+        childSend({
+          channel,
+          value,
+        });
+      } else {
+        log.error(`${child?.pid}: 😅 Kit.app: Global shortcut: ${value} as ${properShortcut} failed to register`);
+        const infoScript = kitPath('cli', 'info.js');
+        const markdown = `# Failed to register global shortcut: ${value}`;
+        emitter.emit(KitEvent.RunPromptProcess, {
+          scriptPath: infoScript,
+          args: [path.basename(scriptPath), value, markdown],
+          options: {
+            force: true,
+            trigger: Trigger.App,
+          },
         });
 
-        log.info(`Shortcut ${value}: ${result ? 'success' : 'failure'}}`);
+        childSend({
+          channel,
+          value: false,
+        });
+      }
+    }),
 
-        if (result && child?.pid) {
-          if (child?.pid && !childShortcutMap.has(child.pid)) {
-            childShortcutMap.set(child.pid, [properShortcut]);
-          } else {
-            childShortcutMap.get(child.pid)?.push(properShortcut);
-          }
+    UNREGISTER_GLOBAL_SHORTCUT: onChildChannel(async ({ scriptPath, child }, { channel, value }) => {
+      log.info(`App: unregistering global shortcut ${value}`);
 
-          childSend({
-            channel,
-            value,
-          });
+      const properShortcut = convertShortcut(value, scriptPath);
+      if (child?.pid && childShortcutMap.has(child.pid)) {
+        const shortcuts = childShortcutMap.get(child.pid);
+        const index = shortcuts?.indexOf(value);
+        if (typeof index === 'number' && index > -1) {
+          shortcuts?.splice(index, 1);
+        }
+        if (shortcuts?.length === 0) {
+          childShortcutMap.delete(child.pid);
+        }
+      }
+
+      globalShortcut.unregister(properShortcut);
+    }),
+
+    KEYBOARD_TYPE_RATE: onChildChannelOverride(async ({ child }, { channel, value: { rate, textOrKeys } }) => {
+      if (!kitState.supportsNut) {
+        log.warn('Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!');
+        return;
+      }
+
+      // REMOVE-NUT
+      if (kitState.shortcutPressed) {
+        log.info(`Releasing ${kitState.shortcutPressed}`);
+        // Get the modifiers from the accelerator
+        const modifiers = kitState.shortcutPressed.split('+');
+        // Remove the last item, which is the key
+        const mainKey: any = modifiers.pop() || '';
+
+        log.info(`Pressing ${mainKey}`);
+
+        if (Key?.[mainKey]) {
+          log.info(`Releasing ${mainKey}`);
+          // await keyboard.releaseKey(Key[mainKey] as any);
+          // robot.keyToggle(getModifier(), 'up');
+        }
+      }
+      // log.info(
+      //   `${channel}: ${typeof textOrKeys} ${textOrKeys}, isArray: ${Array.isArray(textOrKeys)}, expanded: ${[...textOrKeys]}`,
+      // );
+      // keyboard.config.autoDelayMs =
+      //   kitState?.keyboardConfig?.autoDelayMs || 0;
+      kitState.isTyping = true;
+      // I can't remember why we do this. Something to do with "nut's" old typing system?
+      const text = typeof textOrKeys === 'string' ? textOrKeys : textOrKeys[0];
+      try {
+        if (typeof rate === 'number') {
+          log.info(`⌨️ Typing ${text} with delay ${rate}`);
+          shims['@jitsi/robotjs'].typeStringDelayed(text, rate);
         } else {
-          log.error(
-            `${child?.pid}: 😅 Kit.app: Global shortcut: ${value} as ${properShortcut} failed to register`,
-          );
-          const infoScript = kitPath('cli', 'info.js');
-          const markdown = `# Failed to register global shortcut: ${value}`;
-          emitter.emit(KitEvent.RunPromptProcess, {
-            scriptPath: infoScript,
-            args: [path.basename(scriptPath), value, markdown],
-            options: {
-              force: true,
-              trigger: Trigger.App,
-            },
-          });
+          log.info(`⌨️ Typing ${text} without delay`);
+          shims['@jitsi/robotjs'].typeString(text);
+        }
+      } catch (error) {
+        log.error('KEYBOARD ERROR TYPE', error);
+      }
 
+      setTimeout(
+        () => {
+          kitState.snippet = '';
+          kitState.isTyping = false;
+          kitState.cancelTyping = false;
+          // keyboard.config.autoDelayMs = 0;
           childSend({
             channel,
-            value: false,
           });
+        },
+        Math.max(textOrKeys.length, 100),
+      );
+
+      // END-REMOVE-NUT
+    }),
+
+    KEYBOARD_TYPE: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      if (!kitState.supportsNut) {
+        log.warn('Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!');
+        return;
+      }
+
+      // REMOVE-NUT
+      if (kitState.shortcutPressed) {
+        log.info(`Releasing ${kitState.shortcutPressed}`);
+        // Get the modifiers from the accelerator
+        const modifiers = kitState.shortcutPressed.split('+');
+        // Remove the last item, which is the key
+        const mainKey: any = modifiers.pop() || '';
+
+        log.info(`Pressing ${mainKey}`);
+
+        if (Key?.[mainKey]) {
+          log.info(`Releasing ${mainKey}`);
+          // await keyboard.releaseKey(Key[mainKey] as any);
+          // robot.keyToggle(getModifier(), 'up');
         }
-      },
-    ),
-
-    UNREGISTER_GLOBAL_SHORTCUT: onChildChannel(
-      async ({ scriptPath, child }, { channel, value }) => {
-        log.info(`App: unregistering global shortcut ${value}`);
-
-        const properShortcut = convertShortcut(value, scriptPath);
-        if (child?.pid && childShortcutMap.has(child.pid)) {
-          const shortcuts = childShortcutMap.get(child.pid);
-          const index = shortcuts?.indexOf(value);
-          if (typeof index === 'number' && index > -1) {
-            shortcuts?.splice(index, 1);
-          }
-          if (shortcuts?.length === 0) {
-            childShortcutMap.delete(child.pid);
-          }
+      }
+      // log.info(
+      //   `${channel}: ${typeof value} ${value}, isArray: ${Array.isArray(value)}, expanded: ${[...value]}`,
+      // );
+      // keyboard.config.autoDelayMs =
+      //   kitState?.keyboardConfig?.autoDelayMs || 0;
+      kitState.isTyping = true;
+      const speed = kitState?.kenvEnv?.KIT_TYPING_SPEED;
+      // I can't remember why we do this. Something to do with "nut's" old typing system?
+      const text = typeof value === 'string' ? value : value[0];
+      try {
+        if (typeof speed === 'number') {
+          log.info(`⌨️ Typing ${text} with delay ${speed}`);
+          shims['@jitsi/robotjs'].typeStringDelayed(text, speed);
+        } else {
+          log.info(`⌨️ Typing ${text} without delay`);
+          shims['@jitsi/robotjs'].typeString(text);
         }
+      } catch (error) {
+        log.error('KEYBOARD ERROR TYPE', error);
+      }
 
-        globalShortcut.unregister(properShortcut);
-      },
-    ),
+      setTimeout(
+        () => {
+          kitState.snippet = '';
+          kitState.isTyping = false;
+          kitState.cancelTyping = false;
+          // keyboard.config.autoDelayMs = 0;
+          childSend({
+            channel,
+          });
+        },
+        Math.max(value.length, 100),
+      );
 
-    KEYBOARD_TYPE_RATE: onChildChannelOverride(
-      async ({ child }, { channel, value: { rate, textOrKeys } }) => {
-        if (!kitState.supportsNut) {
-          log.warn(
-            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
-          );
-          return;
-        }
+      // END-REMOVE-NUT
+    }),
 
-        // REMOVE-NUT
-        if (kitState.shortcutPressed) {
-          log.info(`Releasing ${kitState.shortcutPressed}`);
-          // Get the modifiers from the accelerator
-          const modifiers = kitState.shortcutPressed.split('+');
-          // Remove the last item, which is the key
-          const mainKey: any = modifiers.pop() || '';
+    KEYBOARD_PRESS_KEY: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      if (!kitState.supportsNut) {
+        log.warn('Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a cv soon!');
+        return;
+      }
+      // REMOVE-NUT
+      log.info('PRESSING KEY', { value });
+      const modifiers = [
+        Key.LeftControl,
+        Key.LeftShift,
+        Key.LeftAlt,
+        Key.LeftSuper,
+        Key.RightControl,
+        Key.RightShift,
+        Key.RightAlt,
+        Key.RightSuper,
+      ];
 
-          log.info(`Pressing ${mainKey}`);
+      const key = (value as Key[]).find((v) => !modifiers.includes(v));
+      const activeModifiers = (value as Key[]).filter((v) => modifiers.includes(v));
 
-          if (Key?.[mainKey]) {
-            log.info(`Releasing ${mainKey}`);
-            // await keyboard.releaseKey(Key[mainKey] as any);
-            // robot.keyToggle(getModifier(), 'up');
-          }
-        }
-        // log.info(
-        //   `${channel}: ${typeof textOrKeys} ${textOrKeys}, isArray: ${Array.isArray(textOrKeys)}, expanded: ${[...textOrKeys]}`,
-        // );
-        // keyboard.config.autoDelayMs =
-        //   kitState?.keyboardConfig?.autoDelayMs || 0;
-        kitState.isTyping = true;
-        // I can't remember why we do this. Something to do with "nut's" old typing system?
-        const text =
-          typeof textOrKeys === 'string' ? textOrKeys : textOrKeys[0];
-        try {
-          if (typeof rate === 'number') {
-            log.info(`⌨️ Typing ${text} with delay ${rate}`);
-            shims['@jitsi/robotjs'].typeStringDelayed(text, rate);
-          } else {
-            log.info(`⌨️ Typing ${text} without delay`);
-            shims['@jitsi/robotjs'].typeString(text);
-          }
-        } catch (error) {
-          log.error(`KEYBOARD ERROR TYPE`, error);
-        }
+      if (!key) {
+        log.error('KEYBOARD ERROR PRESS KEY', { value });
+        childSend({ channel, value: false });
+        return;
+      }
 
-        setTimeout(
-          () => {
-            kitState.snippet = '';
-            kitState.isTyping = false;
-            kitState.cancelTyping = false;
-            // keyboard.config.autoDelayMs = 0;
-            childSend({
-              channel,
-            });
-          },
-          Math.max(textOrKeys.length, 100),
-        );
+      shims['@jitsi/robotjs'].keyTap(key as string, activeModifiers);
 
-        // END-REMOVE-NUT
-      },
-    ),
+      childSend({ channel, value });
 
-    KEYBOARD_TYPE: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        if (!kitState.supportsNut) {
-          log.warn(
-            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
-          );
-          return;
-        }
+      // END-REMOVE-NUT
+    }),
 
-        // REMOVE-NUT
-        if (kitState.shortcutPressed) {
-          log.info(`Releasing ${kitState.shortcutPressed}`);
-          // Get the modifiers from the accelerator
-          const modifiers = kitState.shortcutPressed.split('+');
-          // Remove the last item, which is the key
-          const mainKey: any = modifiers.pop() || '';
+    KEYBOARD_COPY: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      if (!kitState.supportsNut) {
+        log.warn('Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a cv soon!');
+        return;
+      }
 
-          log.info(`Pressing ${mainKey}`);
+      // REMOVE-NUT
+      const modifier = getModifier();
+      log.info(`COPYING with ${modifier}+c`);
+      const beforeText = clipboard.readText();
+      shims['@jitsi/robotjs'].keyTap('c', modifier);
 
-          if (Key?.[mainKey]) {
-            log.info(`Releasing ${mainKey}`);
-            // await keyboard.releaseKey(Key[mainKey] as any);
-            // robot.keyToggle(getModifier(), 'up');
-          }
-        }
-        // log.info(
-        //   `${channel}: ${typeof value} ${value}, isArray: ${Array.isArray(value)}, expanded: ${[...value]}`,
-        // );
-        // keyboard.config.autoDelayMs =
-        //   kitState?.keyboardConfig?.autoDelayMs || 0;
-        kitState.isTyping = true;
-        const speed = kitState?.kenvEnv?.KIT_TYPING_SPEED;
-        // I can't remember why we do this. Something to do with "nut's" old typing system?
-        const text = typeof value === 'string' ? value : value[0];
-        try {
-          if (typeof speed === 'number') {
-            log.info(`⌨️ Typing ${text} with delay ${speed}`);
-            shims['@jitsi/robotjs'].typeStringDelayed(text, speed);
-          } else {
-            log.info(`⌨️ Typing ${text} without delay`);
-            shims['@jitsi/robotjs'].typeString(text);
-          }
-        } catch (error) {
-          log.error(`KEYBOARD ERROR TYPE`, error);
-        }
+      let afterText = clipboard.readText();
+      const maxTries = 5;
+      let tries = 0;
+      while (beforeText === afterText && tries < maxTries) {
+        afterText = clipboard.readText();
+        tries++;
+        log.info('Retrying copy', { tries, afterText });
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
 
-        setTimeout(
-          () => {
-            kitState.snippet = '';
-            kitState.isTyping = false;
-            kitState.cancelTyping = false;
-            // keyboard.config.autoDelayMs = 0;
-            childSend({
-              channel,
-            });
-          },
-          Math.max(value.length, 100),
-        );
+      childSend({ channel, value });
 
-        // END-REMOVE-NUT
-      },
-    ),
+      // END-REMOVE-NUT
+    }),
 
-    KEYBOARD_PRESS_KEY: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        if (!kitState.supportsNut) {
-          log.warn(
-            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a cv soon!`,
-          );
-          return;
-        }
-        // REMOVE-NUT
-        log.info(`PRESSING KEY`, { value });
-        const modifiers = [
-          Key.LeftControl,
-          Key.LeftShift,
-          Key.LeftAlt,
-          Key.LeftSuper,
-          Key.RightControl,
-          Key.RightShift,
-          Key.RightAlt,
-          Key.RightSuper,
-        ];
+    KEYBOARD_PASTE: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      if (!kitState.supportsNut) {
+        log.warn('Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!');
+        return;
+      }
 
-        const key = (value as Key[]).find((v) => !modifiers.includes(v));
-        const activeModifiers = (value as Key[]).filter((v) =>
-          modifiers.includes(v),
-        );
+      // REMOVE-NUT
+      const modifier = getModifier();
+      log.info(`PASTING with ${modifier}+v`);
+      shims['@jitsi/robotjs'].keyTap('v', modifier);
 
-        if (!key) {
-          log.error(`KEYBOARD ERROR PRESS KEY`, { value });
-          childSend({ channel, value: false });
-          return;
-        }
+      childSend({ channel, value });
+      // END-REMOVE-NUT
+    }),
 
-        shims['@jitsi/robotjs'].keyTap(key as string, activeModifiers);
+    KEYBOARD_CUT: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      if (!kitState.supportsNut) {
+        log.warn('Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!');
+        return;
+      }
 
-        childSend({ channel, value });
+      const modifier = getModifier();
+      log.info(`CUTTING with ${modifier}+x`);
+      shims['@jitsi/robotjs'].keyTap('x', modifier);
 
-        // END-REMOVE-NUT
-      },
-    ),
+      childSend({ channel, value });
+    }),
 
-    KEYBOARD_COPY: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        if (!kitState.supportsNut) {
-          log.warn(
-            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a cv soon!`,
-          );
-          return;
-        }
+    KEYBOARD_SELECT_ALL: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      if (!kitState.supportsNut) {
+        log.warn('Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!');
+        return;
+      }
 
-        // REMOVE-NUT
-        const modifier = getModifier();
-        log.info(`COPYING with ${modifier}+c`);
-        const beforeText = clipboard.readText();
-        shims['@jitsi/robotjs'].keyTap('c', modifier);
+      log.info('SELECTING ALL');
+      shims['@jitsi/robotjs'].keyTap('a', getModifier());
 
-        let afterText = clipboard.readText();
-        const maxTries = 5;
-        let tries = 0;
-        while (beforeText === afterText && tries < maxTries) {
-          afterText = clipboard.readText();
-          tries++;
-          log.info(`Retrying copy`, { tries, afterText });
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
+      childSend({ channel, value });
+    }),
 
-        childSend({ channel, value });
+    KEYBOARD_UNDO: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      if (!kitState.supportsNut) {
+        log.warn('Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!');
+        return;
+      }
 
-        // END-REMOVE-NUT
-      },
-    ),
+      // REMOVE-NUT
+      log.info('UNDO');
+      shims['@jitsi/robotjs'].keyTap('z', getModifier());
 
-    KEYBOARD_PASTE: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        if (!kitState.supportsNut) {
-          log.warn(
-            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
-          );
-          return;
-        }
+      childSend({ channel, value });
+      // END-REMOVE-NUT
+    }),
 
-        // REMOVE-NUT
-        const modifier = getModifier();
-        log.info(`PASTING with ${modifier}+v`);
-        shims['@jitsi/robotjs'].keyTap('v', modifier);
+    KEYBOARD_RELEASE_KEY: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      if (!kitState.supportsNut) {
+        log.warn('Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!');
+        return;
+      }
 
-        childSend({ channel, value });
-        // END-REMOVE-NUT
-      },
-    ),
+      // REMOVE-NUT
+      log.info('RELEASING KEY', { value });
+      const modifiers = [
+        Key.LeftControl,
+        Key.LeftShift,
+        Key.LeftAlt,
+        Key.LeftSuper,
+        Key.RightControl,
+        Key.RightShift,
+        Key.RightAlt,
+        Key.RightSuper,
+      ];
 
-    KEYBOARD_CUT: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        if (!kitState.supportsNut) {
-          log.warn(
-            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
-          );
-          return;
-        }
+      const key = (value as Key[]).find((v) => !modifiers.includes(v));
+      const activeModifiers = (value as Key[]).filter((v) => modifiers.includes(v));
 
-        const modifier = getModifier();
-        log.info(`CUTTING with ${modifier}+x`);
-        shims['@jitsi/robotjs'].keyTap('x', modifier);
+      if (!key) {
+        log.error('KEYBOARD ERROR PRESS KEY', { value });
+        childSend({ channel, value: false });
+        return;
+      }
 
-        childSend({ channel, value });
-      },
-    ),
+      shims['@jitsi/robotjs'].keyToggle(key as string, 'up', activeModifiers);
 
-    KEYBOARD_SELECT_ALL: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        if (!kitState.supportsNut) {
-          log.warn(
-            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
-          );
-          return;
-        }
-
-        log.info(`SELECTING ALL`);
-        shims['@jitsi/robotjs'].keyTap('a', getModifier());
-
-        childSend({ channel, value });
-      },
-    ),
-
-    KEYBOARD_UNDO: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        if (!kitState.supportsNut) {
-          log.warn(
-            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
-          );
-          return;
-        }
-
-        // REMOVE-NUT
-        log.info(`UNDO`);
-        shims['@jitsi/robotjs'].keyTap('z', getModifier());
-
-        childSend({ channel, value });
-        // END-REMOVE-NUT
-      },
-    ),
-
-    KEYBOARD_RELEASE_KEY: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        if (!kitState.supportsNut) {
-          log.warn(
-            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
-          );
-          return;
-        }
-
-        // REMOVE-NUT
-        log.info(`RELEASING KEY`, { value });
-        const modifiers = [
-          Key.LeftControl,
-          Key.LeftShift,
-          Key.LeftAlt,
-          Key.LeftSuper,
-          Key.RightControl,
-          Key.RightShift,
-          Key.RightAlt,
-          Key.RightSuper,
-        ];
-
-        const key = (value as Key[]).find((v) => !modifiers.includes(v));
-        const activeModifiers = (value as Key[]).filter((v) =>
-          modifiers.includes(v),
-        );
-
-        if (!key) {
-          log.error(`KEYBOARD ERROR PRESS KEY`, { value });
-          childSend({ channel, value: false });
-          return;
-        }
-
-        shims['@jitsi/robotjs'].keyToggle(key as string, 'up', activeModifiers);
-
-        childSend({ channel, value });
-        // END-REMOVE-NUT
-      },
-    ),
+      childSend({ channel, value });
+      // END-REMOVE-NUT
+    }),
 
     MOUSE_LEFT_CLICK: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
@@ -2013,13 +1869,11 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       // END-REMOVE-NUT
     }),
 
-    MOUSE_SET_POSITION: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        // REMOVE-NUT
-        shims['@jitsi/robotjs'].moveMouse(value.x, value.y);
-        // END-REMOVE-NUT
-      },
-    ),
+    MOUSE_SET_POSITION: onChildChannel(async ({ child }, { channel, value }) => {
+      // REMOVE-NUT
+      shims['@jitsi/robotjs'].moveMouse(value.x, value.y);
+      // END-REMOVE-NUT
+    }),
 
     // TRASH: toProcess(async ({ child }, { channel, value }) => {
     //   // const result = await trash(value);
@@ -2031,7 +1885,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     // }),
 
     COPY: onChildChannelOverride(async ({ child }, { channel, value }) => {
-      log.info(`>>>> COPY`);
+      log.info('>>>> COPY');
       clipboard.writeText(value);
 
       childSend({
@@ -2045,7 +1899,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     PASTE: onChildChannelOverride(async ({ child }, { channel }) => {
       const value = clipboard.readText();
-      log.info(`>>>> PASTE`, value);
+      log.info('>>>> PASTE', value);
       childSend({
         channel,
         value,
@@ -2054,7 +1908,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     KEYBOARD_CONFIG: async (data) => {
       log.warn(
-        `keyboard.config() is deprecated. Use keyboard.typeDelayed() or keyboard.type() with KIT_TYPING_RATE set instead.`,
+        'keyboard.config() is deprecated. Use keyboard.typeDelayed() or keyboard.type() with KIT_TYPING_RATE set instead.',
       );
     },
     SET_CONFIG: async (data) => {
@@ -2078,8 +1932,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       if (process.env.NODE_ENV === 'development' || !kitState.isMac) {
         value = true;
       } else {
-        const authStatus =
-          shims['node-mac-permissions'].getAuthStatus('full-disk-access');
+        const authStatus = shims['node-mac-permissions'].getAuthStatus('full-disk-access');
         if (authStatus === 'authorized') {
           value = true;
         } else {
@@ -2088,37 +1941,35 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       }
     }),
 
-    SET_SELECTED_TEXT: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        if (!kitState.supportsNut) {
-          log.warn(
-            `SET_SELECTED_TEXT: Nut not yay supported! on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
-          );
-          return;
-        }
+    SET_SELECTED_TEXT: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      if (!kitState.supportsNut) {
+        log.warn(
+          'SET_SELECTED_TEXT: Nut not yay supported! on Windows arm64 or Linux arm64. Hoping to find a solution soon!',
+        );
+        return;
+      }
 
-        // REMOVE-NUT
+      // REMOVE-NUT
 
-        const text = value?.text;
-        const hide = value?.hide;
+      const text = value?.text;
+      const hide = value?.hide;
 
-        if (hide && kitState.isMac && app?.dock && app?.dock?.isVisible()) {
-          app?.dock?.hide();
-        }
+      if (hide && kitState.isMac && app?.dock && app?.dock?.isVisible()) {
+        app?.dock?.hide();
+      }
 
-        log.info(`SET SELECTED TEXT`, text);
-        clipboard.writeText(text);
+      log.info('SET SELECTED TEXT', text);
+      clipboard.writeText(text);
 
-        robot.keyTap('v', getModifier());
-        setTimeout(() => {
-          kitState.snippet = '';
-          childSend({ channel, value });
-          log.info(`SET SELECTED TEXT DONE with ${channel}`, text);
-        }, 10);
+      robot.keyTap('v', getModifier());
+      setTimeout(() => {
+        kitState.snippet = '';
+        childSend({ channel, value });
+        log.info(`SET SELECTED TEXT DONE with ${channel}`, text);
+      }, 10);
 
-        // END-REMOVE-NUT
-      },
-    ),
+      // END-REMOVE-NUT
+    }),
 
     SHOW_EMOJI_PANEL: onChildChannel(async ({ child }, { channel, value }) => {
       app.showEmojiPanel();
@@ -2126,80 +1977,70 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     SET_APPEARANCE: onChildChannel(async ({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_APPEARANCE, value);
     }),
-    SELECT_FILE: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        // Show electron file selector dialog
-        const response = await dialog.showOpenDialog(prompt.window, {
-          defaultPath: os.homedir(),
-          message: 'Select a file',
-          properties: ['openFile'],
-        });
+    SELECT_FILE: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      // Show electron file selector dialog
+      const response = await dialog.showOpenDialog(prompt.window, {
+        defaultPath: os.homedir(),
+        message: 'Select a file',
+        properties: ['openFile'],
+      });
 
-        log.info({ response });
+      log.info({ response });
 
-        const returnValue = response.canceled ? '' : response.filePaths[0];
+      const returnValue = response.canceled ? '' : response.filePaths[0];
 
-        log.info({
-          returnValue,
-        });
+      log.info({
+        returnValue,
+      });
 
-        childSend({ channel, value: returnValue });
-      },
-    ),
-    SELECT_FOLDER: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        // Show electron file selector dialog
-        const response = await dialog.showOpenDialog(prompt.window, {
-          defaultPath: os.homedir(),
-          message: 'Select a file',
-          properties: ['openDirectory'],
-        });
+      childSend({ channel, value: returnValue });
+    }),
+    SELECT_FOLDER: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      // Show electron file selector dialog
+      const response = await dialog.showOpenDialog(prompt.window, {
+        defaultPath: os.homedir(),
+        message: 'Select a file',
+        properties: ['openDirectory'],
+      });
 
-        const returnValue = response.canceled ? '' : response.filePaths[0];
+      const returnValue = response.canceled ? '' : response.filePaths[0];
 
-        childSend({ channel, value: returnValue });
-      },
-    ),
+      childSend({ channel, value: returnValue });
+    }),
     REVEAL_FILE: onChildChannel(async ({ child }, { channel, value }) => {
       shell.showItemInFolder(value);
     }),
     BEEP: onChildChannel(async ({ child }, { channel, value }) => {
       shell.beep();
     }),
-    PLAY_AUDIO: onChildChannelOverride(
-      async ({ child }, { channel, value }: any) => {
-        try {
-          log.info(`🔊 Playing ${value?.filePath || value}`);
-        } catch (error) {
-          log.error(`🔊 Error playing ${value}`, error);
-        }
+    PLAY_AUDIO: onChildChannelOverride(async ({ child }, { channel, value }: any) => {
+      try {
+        log.info(`🔊 Playing ${value?.filePath || value}`);
+      } catch (error) {
+        log.error(`🔊 Error playing ${value}`, error);
+      }
 
-        // if value?.filePath is a file on the system, use the `file://` protocol ensure cross-platform compatibility
-        const isLocalFilePath = isLocalPath(value?.filePath);
-        if (isLocalFilePath) {
-          const normalizedPath = path.normalize(value.filePath);
-          const fileUrlPath = url.pathToFileURL(normalizedPath).href;
-          log.info(
-            `Converting audio file path ${value.filePath} to ${fileUrlPath}`,
-          );
-          value.filePath = fileUrlPath;
-        }
+      // if value?.filePath is a file on the system, use the `file://` protocol ensure cross-platform compatibility
+      const isLocalFilePath = isLocalPath(value?.filePath);
+      if (isLocalFilePath) {
+        const normalizedPath = path.normalize(value.filePath);
+        const fileUrlPath = url.pathToFileURL(normalizedPath).href;
+        log.info(`Converting audio file path ${value.filePath} to ${fileUrlPath}`);
+        value.filePath = fileUrlPath;
+      }
 
-        waitForPrompt(channel, value);
-      },
-    ),
+      waitForPrompt(channel, value);
+    }),
     STOP_AUDIO: onChildChannel(async ({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
     }),
-    SPEAK_TEXT: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        waitForPrompt(channel, value);
-      },
-    ),
+    SPEAK_TEXT: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      waitForPrompt(channel, value);
+    }),
 
     CUT_TEXT: onChildChannelOverride(async ({ child }, { channel, value }) => {
       const text = kitState.snippet;
-      log.info(`Yanking text`, text);
+      log.info('Yanking text', text);
       await deleteText(text);
       kitState.snippet = '';
 
@@ -2208,16 +2049,14 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         value: text,
       });
     }),
-    PRO_STATUS: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        const isSponsor = await sponsorCheck('Check Status', false);
-        log.info(`PRO STATUS`, JSON.stringify({ isSponsor }));
-        childSend({
-          channel,
-          value: isSponsor,
-        });
-      },
-    ),
+    PRO_STATUS: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      const isSponsor = await sponsorCheck('Check Status', false);
+      log.info('PRO STATUS', JSON.stringify({ isSponsor }));
+      childSend({
+        channel,
+        value: isSponsor,
+      });
+    }),
     OPEN_MENU: onChildChannel(async ({ child }, { channel, value }) => {
       emitter.emit(KitEvent.TrayClick);
     }),
@@ -2234,7 +2073,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
             icon: value?.iconPath || getAssetPath('icons8-file-50.png'),
           });
         } catch (error) {
-          log.error(`Error starting drag`, error);
+          log.error('Error starting drag', error);
         }
       }
     }),
@@ -2259,64 +2098,54 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     TOAST: onChildChannel(async ({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
     }),
-    TERM_EXIT: onChildChannel(
-      async ({ child, promptId }, { channel, value }) => {
-        log.info(`TERM EXIT FROM SCRIPT`, value);
-        sendToPrompt(channel, promptId || '');
-      },
-    ),
-    GET_DEVICES: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        sendToPrompt(channel, value);
-      },
-    ),
+    TERM_EXIT: onChildChannel(async ({ child, promptId }, { channel, value }) => {
+      log.info('TERM EXIT FROM SCRIPT', value);
+      sendToPrompt(channel, promptId || '');
+    }),
+    GET_DEVICES: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      sendToPrompt(channel, value);
+    }),
     SHEBANG: onChildChannel(async ({ child }, { channel, value }) => {
       spawnShebang(value);
     }),
     ERROR: onChildChannelOverride(async ({ child }, { channel, value }) => {
-      log.error(`ERROR`, value);
+      log.error('ERROR', value);
       trackEvent(TrackEvent.Error, value);
     }),
-    GET_TYPED_TEXT: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        childSend({ channel, value: kitState.typedText });
-      },
-    ),
+    GET_TYPED_TEXT: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      childSend({ channel, value: kitState.typedText });
+    }),
     TERM_WRITE: onChildChannel(async ({ child }, { channel, value }) => {
       emitter.emit(KitEvent.TermWrite, value);
     }),
     SET_FORM_DATA: onChildChannel(async ({ child }, { channel, value }) => {
-      log.info(`SET FORM DATA`, value);
+      log.info('SET FORM DATA', value);
       sendToPrompt(channel, value);
     }),
-    SET_DISABLE_SUBMIT: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        log.info(`SET DISABLE SUBMIT`, value);
-        sendToPrompt(channel, value);
-      },
-    ),
+    SET_DISABLE_SUBMIT: onChildChannel(async ({ child }, { channel, value }) => {
+      log.info('SET DISABLE SUBMIT', value);
+      sendToPrompt(channel, value);
+    }),
     START_MIC: onChildChannel(async ({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
     }),
     STOP_MIC: onChildChannelOverride(async ({ child }, { channel, value }) => {
-      log.info(`STOP MIC`, value);
+      log.info('STOP MIC', value);
       sendToPrompt(channel, value);
     }),
 
     TRASH: onChildChannel(async ({ child }, { channel, value }) => {
       for await (const item of value) {
-        log.info(`🗑 Trashing`, item);
+        log.info('🗑 Trashing', item);
         await shell.trashItem(item);
       }
     }),
-    SET_SCORED_CHOICES: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        log.verbose(`SET SCORED CHOICES`);
-        if (!prompt.kitSearch.input) {
-          sendToPrompt(channel, value);
-        }
-      },
-    ),
+    SET_SCORED_CHOICES: onChildChannel(async ({ child }, { channel, value }) => {
+      log.verbose('SET SCORED CHOICES');
+      if (!prompt.kitSearch.input) {
+        sendToPrompt(channel, value);
+      }
+    }),
     PRELOAD: onChildChannel(async ({ child }, { channel, value }) => {
       prompt.attemptPreload(value);
     }),
@@ -2325,7 +2154,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       stampDb.stamps = [];
       await stampDb.write();
 
-      log.verbose(`CLEAR TIMESTAMPS`);
+      log.verbose('CLEAR TIMESTAMPS');
     }),
     REMOVE_TIMESTAMP: onChildChannel(async ({ child }, { channel, value }) => {
       log.verbose(`REMOVE TIMESTAMP for ${value}`);
@@ -2337,24 +2166,20 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       await stampDb.write();
     }),
     TOGGLE_WATCHER: onChildChannel(async ({ child }, { channel, value }) => {
-      log.info(`TOGGLE WATCHER DEPRECATED`);
+      log.info('TOGGLE WATCHER DEPRECATED');
     }),
-    SET_SELECTED_CHOICES: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        log.verbose(`SET SELECTED CHOICES`);
-        sendToPrompt(channel, value);
-      },
-    ),
+    SET_SELECTED_CHOICES: onChildChannel(async ({ child }, { channel, value }) => {
+      log.verbose('SET SELECTED CHOICES');
+      sendToPrompt(channel, value);
+    }),
 
-    TOGGLE_ALL_SELECTED_CHOICES: onChildChannel(
-      async ({ child }, { channel, value }) => {
-        log.verbose(`TOGGLE ALL SELECTED CHOICES`);
-        sendToPrompt(channel, value);
-      },
-    ),
+    TOGGLE_ALL_SELECTED_CHOICES: onChildChannel(async ({ child }, { channel, value }) => {
+      log.verbose('TOGGLE ALL SELECTED CHOICES');
+      sendToPrompt(channel, value);
+    }),
 
     KENV_NEW_PATH: onChildChannel(async ({ child }, { channel, value }) => {
-      log.verbose(`KENV NEW PATH`, { value });
+      log.verbose('KENV NEW PATH', { value });
       kitStore.set('KENV', value);
     }),
 
@@ -2377,40 +2202,35 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     OPEN_ACTIONS: onChildChannel(async ({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_FLAG_VALUE, 'action');
     }),
-    SCREENSHOT: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
-        log.info(`📸 Screenshot`, {
-          channel,
-          value,
-        });
+    SCREENSHOT: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      log.info('📸 Screenshot', {
+        channel,
+        value,
+      });
 
-        const screen = getCurrentScreenFromMouse();
-        const displayId = (value?.displayId || screen.id).toString();
-        const bounds = value?.bounds || screen.bounds;
+      const screen = getCurrentScreenFromMouse();
+      const displayId = (value?.displayId || screen.id).toString();
+      const bounds = value?.bounds || screen.bounds;
 
-        const mouseSource = await getSourceFromRectangle(displayId, bounds);
+      const mouseSource = await getSourceFromRectangle(displayId, bounds);
 
-        if (mouseSource) {
-          const image = mouseSource.thumbnail.toPNG();
-          log.info(`📸 Creating screenshot...`);
-          // await writeFile(kenvPath('screenshot.png'), image);
-          const tmpPath = path.join(
-            os.tmpdir(),
-            `${new Date().toISOString().split('T')[0]}_screenshot.png`,
-          );
-          log.info(`Writing screenshot to ${tmpPath}`);
-          await writeFile(tmpPath, image);
-          log.info(`Sending screenshot to ${channel}`);
-          childSend({ channel, value: tmpPath });
-        } else {
-          log.error(`❌ No screenshot source found. Returning null`);
-          childSend({ channel, value: null });
-        }
-      },
-    ),
+      if (mouseSource) {
+        const image = mouseSource.thumbnail.toPNG();
+        log.info('📸 Creating screenshot...');
+        // await writeFile(kenvPath('screenshot.png'), image);
+        const tmpPath = path.join(os.tmpdir(), `${new Date().toISOString().split('T')[0]}_screenshot.png`);
+        log.info(`Writing screenshot to ${tmpPath}`);
+        await writeFile(tmpPath, image);
+        log.info(`Sending screenshot to ${channel}`);
+        childSend({ channel, value: tmpPath });
+      } else {
+        log.error('❌ No screenshot source found. Returning null');
+        childSend({ channel, value: null });
+      }
+    }),
     ...HANDLER_CHANNELS.reduce((acc, channel) => {
       acc[channel] = onChildChannel(async ({ child }, { channel, value }) => {
-        log.info(`SYSTEM CHANNEL`, { channel, value });
+        log.info('SYSTEM CHANNEL', { channel, value });
         if (value && info?.preventChannels?.has(channel)) {
           info?.preventChannels?.delete(channel);
           log.info(`${child.pid} ${channel} removed from "prevent" list`, {

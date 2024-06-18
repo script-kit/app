@@ -2,8 +2,8 @@
 /* eslint-disable no-plusplus */
 /* eslint-disable no-continue */
 
-import net from 'net';
-import os from 'os';
+import net from 'node:net';
+import os from 'node:os';
 
 class Locked extends Error {
   constructor(port: any) {
@@ -102,14 +102,12 @@ export default async function getPorts(options: any) {
       for (const element of excludeIterable) {
         if (typeof element !== 'number') {
           throw new TypeError(
-            'Each item in the `exclude` option must be a number corresponding to the port you want excluded.'
+            'Each item in the `exclude` option must be a number corresponding to the port you want excluded.',
           );
         }
 
         if (!Number.isSafeInteger(element)) {
-          throw new TypeError(
-            `Number ${element} in the exclude option is not a safe integer and can't be used`
-          );
+          throw new TypeError(`Number ${element} in the exclude option is not a safe integer and can't be used`);
         }
       }
 
@@ -138,10 +136,7 @@ export default async function getPorts(options: any) {
       }
 
       let availablePort = await getAvailablePort({ ...options, port }, hosts); // eslint-disable-line no-await-in-loop
-      while (
-        lockedPorts.old.has(availablePort) ||
-        lockedPorts.young.has(availablePort)
-      ) {
+      while (lockedPorts.old.has(availablePort) || lockedPorts.young.has(availablePort)) {
         if (port !== 0) {
           throw new Locked(port);
         }
@@ -153,10 +148,7 @@ export default async function getPorts(options: any) {
 
       return availablePort;
     } catch (error) {
-      if (
-        !['EADDRINUSE', 'EACCES'].includes((error as any)?.code) &&
-        !(error instanceof Locked)
-      ) {
+      if (!(['EADDRINUSE', 'EACCES'].includes((error as any)?.code) || error instanceof Locked)) {
         throw error;
       }
     }
@@ -166,7 +158,7 @@ export default async function getPorts(options: any) {
 }
 
 export function portNumbers(from: any, to: any) {
-  if (!Number.isInteger(from) || !Number.isInteger(to)) {
+  if (!(Number.isInteger(from) && Number.isInteger(to))) {
     throw new TypeError('`from` and `to` must be integer numbers');
   }
 

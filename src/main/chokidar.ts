@@ -1,20 +1,14 @@
-import path from 'path';
+import path from 'node:path';
+import { kenvPath, kitPath, userDbPath } from '@johnlindquist/kit/core/utils';
 import chokidar from 'chokidar';
 import log from 'electron-log';
-import { kenvPath, kitPath, userDbPath } from '@johnlindquist/kit/core/utils';
 import { kitState } from './state';
 
 export type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
-type WatcherCallback = (
-  eventName: WatchEvent,
-  filePath: string,
-) => Promise<void>;
+type WatcherCallback = (eventName: WatchEvent, filePath: string) => Promise<void>;
 export const startWatching = (callback: WatcherCallback) => {
   const kenvScriptsWatcher = chokidar.watch(
-    [
-      path.resolve(kenvPath('snippets', '*')),
-      path.resolve(kenvPath('scripts', '*')),
-    ],
+    [path.resolve(kenvPath('snippets', '*')), path.resolve(kenvPath('scripts', '*'))],
     {
       depth: 0,
       // ignore dotfiles
@@ -29,19 +23,14 @@ export const startWatching = (callback: WatcherCallback) => {
     depth: 0,
     ignored: (filePath) => {
       const relativePath = filePath.slice(kenvPath('kenvs').length);
-      const depth = relativePath
-        .split(path.sep)
-        .filter((p) => p.length > 0).length;
+      const depth = relativePath.split(path.sep).filter((p) => p.length > 0).length;
       return depth > 1;
     },
   });
   kenvsWatcher.on('addDir', (filePath) => {
     log.info(`🕵️‍♀️ Detected new dir in "kenvs": ${filePath}`);
 
-    const globs = [
-      path.resolve(filePath, 'snippets', '*'),
-      path.resolve(filePath, 'scripts', '*'),
-    ];
+    const globs = [path.resolve(filePath, 'snippets', '*'), path.resolve(filePath, 'scripts', '*')];
 
     setTimeout(() => {
       log.info(`Adding globs: ${globs}`);
@@ -64,18 +53,10 @@ export const startWatching = (callback: WatcherCallback) => {
     kenvScriptsWatcher.unwatch(path.resolve(filePath, 'scripts', '*'));
   });
 
-  const fileWatcher = chokidar.watch(
-    [
-      userDbPath,
-      kenvPath('.env'),
-      kenvPath('kit.css'),
-      kenvPath('package.json'),
-    ],
-    {
-      disableGlobbing: true,
-      ignoreInitial: kitState.ignoreInitial,
-    },
-  );
+  const fileWatcher = chokidar.watch([userDbPath, kenvPath('.env'), kenvPath('kit.css'), kenvPath('package.json')], {
+    disableGlobbing: true,
+    ignoreInitial: kitState.ignoreInitial,
+  });
 
   fileWatcher.on('all', callback);
 

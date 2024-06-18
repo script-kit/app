@@ -1,28 +1,28 @@
 /* eslint-disable import/prefer-default-export */
 import {
-  app,
   BrowserWindow,
-  BrowserWindowConstructorOptions,
-  screen,
-  MenuItemConstructorOptions,
-  PopupOptions,
+  type BrowserWindowConstructorOptions,
   Menu,
+  type MenuItemConstructorOptions,
+  type PopupOptions,
+  app,
+  screen,
 } from 'electron';
 import log from 'electron-log';
 import fsExtra from 'fs-extra';
 const { ensureDir } = fsExtra;
-import path from 'path';
-import { writeFile } from 'fs/promises';
-import { kenvPath, isDir } from '@johnlindquist/kit/core/utils';
-import { ShowOptions } from '@johnlindquist/kit/types/kitapp';
-import { WidgetOptions } from '@johnlindquist/kit/types/pro';
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { isDir, kenvPath } from '@johnlindquist/kit/core/utils';
+import type { ShowOptions } from '@johnlindquist/kit/types/kitapp';
+import type { WidgetOptions } from '@johnlindquist/kit/types/pro';
 
+import { fileURLToPath } from 'node:url';
+import { Channel } from '@johnlindquist/kit/core/enum';
 import { snapshot } from 'valtio';
 import { getAssetPath } from '../shared/assets';
-import { forceQuit, kitState } from './state';
 import { getCurrentScreenFromMouse } from './prompt';
-import { fileURLToPath } from 'url';
-import { Channel } from '@johnlindquist/kit/core/enum';
+import { forceQuit, kitState } from './state';
 
 export const INSTALL_ERROR = 'install-error';
 
@@ -94,9 +94,7 @@ const devTools = () => {
   `;
 };
 
-const getCenterOnCurrentScreen = (
-  options: BrowserWindowConstructorOptions = {},
-) => {
+const getCenterOnCurrentScreen = (options: BrowserWindowConstructorOptions = {}) => {
   const cursor = screen.getCursorScreenPoint();
   // Get display with cursor
   const distScreen = screen.getDisplayNearestPoint({
@@ -118,9 +116,7 @@ const getCenterOnCurrentScreen = (
   };
 };
 
-const getTopRightCurrentScreen = (
-  options: BrowserWindowConstructorOptions = {},
-) => {
+const getTopRightCurrentScreen = (options: BrowserWindowConstructorOptions = {}) => {
   const cursor = screen.getCursorScreenPoint();
   // Get display with cursor
   const distScreen = screen.getDisplayNearestPoint({
@@ -131,11 +127,7 @@ const getTopRightCurrentScreen = (
   const width = options?.width || 480;
   const height = options?.height || 360;
 
-  const {
-    width: workAreaWidth,
-    x: workAreaX,
-    y: workAreaY,
-  } = distScreen.workArea;
+  const { width: workAreaWidth, x: workAreaX, y: workAreaY } = distScreen.workArea;
 
   const x = workAreaX + workAreaWidth - width; // * distScreen.scaleFactor
   const y = workAreaY;
@@ -205,9 +197,7 @@ export const showDevTools = async (value: any, url = '') => {
     devToolsWindow.webContents.send('LOG', `Type 'x' to access your object`);
   }
 
-  const devToolsParentDir = (await isDir(kenvPath('tmp')))
-    ? kenvPath('tmp', 'devTools')
-    : app.getPath('appData');
+  const devToolsParentDir = (await isDir(kenvPath('tmp'))) ? kenvPath('tmp', 'devTools') : app.getPath('appData');
 
   await ensureDir(devToolsParentDir);
 
@@ -240,9 +230,7 @@ export const show = async (
   options: ShowOptions = {},
   showOnLoad = true,
 ): Promise<BrowserWindow> => {
-  const position = options?.center
-    ? getCenterOnCurrentScreen(options)
-    : getTopRightCurrentScreen(options);
+  const position = options?.center ? getCenterOnCurrentScreen(options) : getTopRightCurrentScreen(options);
 
   const showWindow = new BrowserWindow({
     title: name,
@@ -282,10 +270,10 @@ export const show = async (
 
         forceQuit();
       }
-      if (
-        BrowserWindow.getAllWindows().every((window) => !window.isVisible())
-      ) {
-        if (app?.hide) app?.hide();
+      if (BrowserWindow.getAllWindows().every((window) => !window.isVisible())) {
+        if (app?.hide) {
+          app?.hide();
+        }
       }
     }
   });
@@ -350,24 +338,23 @@ export const showWidget = async (
     if (!options.transparent) {
       widgetWindow.setVibrancy('popover');
     }
-  } else if (!options?.transparent) {
+  } else if (options?.transparent) {
+    widgetWindow = new BrowserWindow(bwOptions);
+    widgetWindow.setBackgroundColor('#00000000');
+  } else {
     widgetWindow = new BrowserWindow({
       ...bwOptions,
       backgroundColor: '#00000000',
     });
-  } else {
-    widgetWindow = new BrowserWindow(bwOptions);
-    widgetWindow.setBackgroundColor(`#00000000`);
   }
 
-  if (options?.ignoreMouse)
+  if (options?.ignoreMouse) {
     widgetWindow?.setIgnoreMouseEvents(true, { forward: true });
+  }
 
   if (options?.ttl) {
     setTimeout(() => {
-      log.info(
-        `Close widget: ${widgetWindow.id} due to timeout of ${options.ttl}ms`,
-      );
+      log.info(`Close widget: ${widgetWindow.id} due to timeout of ${options.ttl}ms`);
       widgetWindow.close();
     }, options?.ttl);
   }
@@ -385,14 +372,13 @@ export const showWidget = async (
 
         // Set the css variables from kitState.theme
         const theme = snapshot(kitState.theme);
-        log.info(`Current theme`, {
+        log.info('Current theme', {
           channel: Channel.WIDGET_THEME,
           theme,
         });
         widgetWindow.webContents.send('WIDGET_THEME', theme);
 
-        const noShow =
-          typeof options?.show === 'boolean' && options?.show === false;
+        const noShow = typeof options?.show === 'boolean' && options?.show === false;
         if (!noShow) {
           widgetWindow?.show();
         }
@@ -406,7 +392,7 @@ export const showWidget = async (
     });
 
     widgetWindow.webContents.on('context-menu', (event: any) => {
-      log.info(`Context menu`);
+      log.info('Context menu');
       event?.preventDefault();
 
       if (!widgetWindow) {
@@ -423,7 +409,7 @@ export const showWidget = async (
           },
         },
         {
-          label: `Enable Click-Through`,
+          label: 'Enable Click-Through',
           checked: options.ignoreMouse,
           click: () => {
             log.info(`Enable click-through on ${widgetWindow.id}`);
@@ -432,9 +418,7 @@ export const showWidget = async (
           },
         },
         {
-          label: `Disable Click-Though with ${
-            kitState.isMac ? `cmd` : `ctrl`
-          }+L`,
+          label: `Disable Click-Though with ${kitState.isMac ? 'cmd' : 'ctrl'}+L`,
           enabled: false,
         },
 
@@ -457,14 +441,10 @@ export const showWidget = async (
       html,
     });
 
-    if (!app.isPackaged && process.env['ELECTRON_RENDERER_URL']) {
-      widgetWindow.loadURL(
-        `${process.env['ELECTRON_RENDERER_URL']}/widget.html`,
-      );
+    if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
+      widgetWindow.loadURL(`${process.env.ELECTRON_RENDERER_URL}/widget.html`);
     } else {
-      widgetWindow.loadFile(
-        fileURLToPath(new URL('../renderer/widget.html', import.meta.url)),
-      );
+      widgetWindow.loadFile(fileURLToPath(new URL('../renderer/widget.html', import.meta.url)));
     }
   });
 };

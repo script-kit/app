@@ -1,22 +1,22 @@
+import { ipcMain } from 'electron';
 /* eslint-disable no-nested-ternary */
 import log from 'electron-log';
-import { ipcMain } from 'electron';
-import * as pty from 'node-pty';
 import { debounce } from 'lodash-es';
+import * as pty from 'node-pty';
 import { AppChannel } from '../shared/enums';
-import { emitter, KitEvent } from '../shared/events';
-import { TermConfig } from '../shared/types';
+import { KitEvent, emitter } from '../shared/events';
+import type { TermConfig } from '../shared/types';
 import { displayError } from './error';
 
+import type { KitPrompt } from './prompt';
 import {
+  USE_BINARY,
   getDefaultArgs,
   getDefaultOptions,
   getDefaultShell,
   getPtyOptions,
   getShellConfig,
-  USE_BINARY,
 } from './pty-utils';
-import { KitPrompt } from './prompt';
 
 class PtyPool {
   killPty(pid: number) {
@@ -74,17 +74,11 @@ class PtyPool {
     }
   }
 
-  public getIdlePty(
-    shell: string,
-    args: string[],
-    options: any,
-    config: TermConfig,
-  ): pty.IPty {
+  public getIdlePty(shell: string, args: string[], options: any, config: TermConfig): pty.IPty {
     const defaultOptions = getDefaultOptions();
     const sameShell = shell === getDefaultShell();
 
-    const sameArgs =
-      JSON.stringify(args) === JSON.stringify(getDefaultArgs(true));
+    const sameArgs = JSON.stringify(args) === JSON.stringify(getDefaultArgs(true));
 
     const allDefaults = this.idlePty && sameShell && sameArgs;
 
@@ -93,10 +87,7 @@ class PtyPool {
 
       (defaultPty as any).bufferedData = this.bufferedData;
       if (options.cwd && options.cwd !== defaultOptions.cwd) {
-        const command =
-          process.platform === 'win32'
-            ? `cd /d "${options.cwd}"\r`
-            : `cd "${options.cwd}"\r`;
+        const command = process.platform === 'win32' ? `cd /d "${options.cwd}"\r` : `cd "${options.cwd}"\r`;
         defaultPty.write(command);
       }
 
@@ -126,9 +117,8 @@ class PtyPool {
       });
 
       return defaultPty;
-    } else {
-      return this.createPty(shell, args, options);
     }
+    return this.createPty(shell, args, options);
   }
 
   onDataHandler = (data: any) => {
@@ -141,13 +131,13 @@ class PtyPool {
     if (this.idlePty) {
       return;
     }
-    log.info(`🐲 >_ Preparing next idle pty`);
+    log.info('🐲 >_ Preparing next idle pty');
     const shell = getDefaultShell();
     const args = getDefaultArgs(true);
     const options = getPtyOptions({});
     this.idlePty = this.createPty(shell, args, options);
     this.idlePty.onExit(({ exitCode, signal }) => {
-      log.info(`🐲 Idle pty exited`, { exitCode, signal });
+      log.info('🐲 Idle pty exited', { exitCode, signal });
     });
     this.disposer = this.idlePty.onData(this.onDataHandler);
   }
@@ -168,7 +158,9 @@ export const createPty = (prompt: KitPrompt) => {
   };
 
   const resizeHandler = (_event: any, { cols, rows }: TermSize) => {
-    if (t) t?.resize(cols, rows);
+    if (t) {
+      t?.resize(cols, rows);
+    }
   };
 
   const inputHandler = (
@@ -178,11 +170,13 @@ export const createPty = (prompt: KitPrompt) => {
       pid: number;
     },
   ) => {
-    if (data?.pid !== prompt?.pid) return;
+    if (data?.pid !== prompt?.pid) {
+      return;
+    }
     try {
       t.write(data?.data);
     } catch (error) {
-      log.error(`Error writing to pty`, error);
+      log.error('Error writing to pty', error);
     }
   };
 
@@ -221,8 +215,12 @@ export const createPty = (prompt: KitPrompt) => {
         shell: config?.shell || '<no shell>',
       },
     });
-    if (!prompt) return;
-    if (config.pid !== prompt?.pid) return;
+    if (!prompt) {
+      return;
+    }
+    if (config.pid !== prompt?.pid) {
+      return;
+    }
 
     function bufferString(timeout: number) {
       let s = '';
@@ -273,7 +271,7 @@ export const createPty = (prompt: KitPrompt) => {
     };
 
     const termKill = (pid: number) => {
-      log.verbose(`TERM_KILL`, {
+      log.verbose('TERM_KILL', {
         pid,
         configPid: prompt?.pid,
       });
@@ -284,16 +282,18 @@ export const createPty = (prompt: KitPrompt) => {
     };
 
     const termExit = (config: TermConfig) => {
-      if (config.pid !== prompt?.pid) return;
+      if (config.pid !== prompt?.pid) {
+        return;
+      }
       emitter.off(KitEvent.TERM_KILL, termKill);
       emitter.off(KitEvent.TermWrite, termWrite);
-      log.verbose(`TERM_EXIT`);
+      log.verbose('TERM_EXIT');
       teardown(t?.pid);
     };
 
     ipcMain.once(AppChannel.TERM_EXIT, termExit);
 
-    log.info(`🐲 >_ Handling TERM_KILL`);
+    log.info('🐲 >_ Handling TERM_KILL');
     emitter.once(KitEvent.TERM_KILL, termKill);
 
     ipcMain.on(AppChannel.TERM_RESIZE, resizeHandler);
@@ -346,7 +346,7 @@ export const createPty = (prompt: KitPrompt) => {
       try {
         sendData(data);
       } catch (ex) {
-        log.error(`Error sending data to pty`, ex);
+        log.error('Error sending data to pty', ex);
       }
 
       if (config.command) {
@@ -357,24 +357,19 @@ export const createPty = (prompt: KitPrompt) => {
     t.onExit(
       debounce(
         () => {
-          log.info(`🐲 Term process exited`);
+          log.info('🐲 Term process exited');
           try {
-            if (
-              typeof config?.closeOnExit === 'boolean' &&
-              !config.closeOnExit
-            ) {
-              log.info(
-                `Process closed, but not closing pty because closeOnExit is false`,
-              );
+            if (typeof config?.closeOnExit === 'boolean' && !config.closeOnExit) {
+              log.info('Process closed, but not closing pty because closeOnExit is false');
             } else {
               teardown(t?.pid);
 
-              log.info(`🐲 >_ Emit term process exited`);
+              log.info('🐲 >_ Emit term process exited');
               emitter.emit(KitEvent.TermExited, '');
             }
             // t = null;
           } catch (error) {
-            log.error(`Error closing pty`, error);
+            log.error('Error closing pty', error);
           }
         },
         500,
@@ -387,6 +382,6 @@ export const createPty = (prompt: KitPrompt) => {
 };
 
 export const destroyPtyPool = async () => {
-  log.info(`🐲 >_ Destroying pty pool`);
+  log.info('🐲 >_ Destroying pty pool');
   await ptyPool.destroyPool();
 };

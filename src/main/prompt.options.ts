@@ -1,11 +1,11 @@
-import log from 'electron-log';
-import { fileURLToPath } from 'url';
-import { getAssetPath } from '../shared/assets';
-import { getCurrentScreen } from './screen';
+import { fileURLToPath } from 'node:url';
 import { PROMPT } from '@johnlindquist/kit/core/enum';
-import { kitState } from './state';
+import type { BrowserWindowConstructorOptions } from 'electron';
+import log from 'electron-log';
+import { getAssetPath } from '../shared/assets';
 import { MIN_WIDTH } from '../shared/defaults';
-import { BrowserWindowConstructorOptions } from 'electron';
+import { getCurrentScreen } from './screen';
+import { kitState } from './state';
 
 export const OFFSCREEN_X = -10000;
 export const OFFSCREEN_Y = -10000;
@@ -15,8 +15,7 @@ export const getPromptOptions = () => {
   const height = PROMPT.HEIGHT.BASE;
   // const currentScreen = getCurrentScreenFromMouse();
   const currentScreen = getCurrentScreen();
-  const { width: screenWidth, height: screenHeight } =
-    currentScreen.workAreaSize;
+  const { width: screenWidth, height: screenHeight } = currentScreen.workAreaSize;
   const { x: workX, y: workY } = currentScreen.workArea;
 
   let backgroundThrottling = true;
@@ -39,7 +38,7 @@ export const getPromptOptions = () => {
     transparent = true;
   }
 
-  let focusable = kitState.isWindows ? false : true;
+  let focusable = !kitState.isWindows;
   if (kitState?.kenvEnv?.KIT_FORCE_FOCUSABLE === 'true') {
     focusable = true;
   }
@@ -50,7 +49,7 @@ export const getPromptOptions = () => {
   }
 
   if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_X) {
-    x = parseInt(kitState?.kenvEnv?.KIT_PROMPT_INITIAL_X);
+    x = Number.parseInt(kitState?.kenvEnv?.KIT_PROMPT_INITIAL_X);
   }
 
   let y = Math.round(workY + screenHeight / 8);
@@ -59,7 +58,7 @@ export const getPromptOptions = () => {
   }
 
   if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_Y) {
-    y = parseInt(kitState?.kenvEnv?.KIT_PROMPT_INITIAL_Y);
+    y = Number.parseInt(kitState?.kenvEnv?.KIT_PROMPT_INITIAL_Y);
   }
 
   let show = false;
@@ -131,8 +130,7 @@ export const getPromptOptions = () => {
   if (kitState.isMac) {
     options.vibrancy = 'popover';
     options.visualEffectState = 'active';
-    options.backgroundColor =
-      kitState.kenvEnv.KIT_BACKGROUND_COLOR || '#00000000';
+    options.backgroundColor = kitState.kenvEnv.KIT_BACKGROUND_COLOR || '#00000000';
     options.transparent = true;
   }
 

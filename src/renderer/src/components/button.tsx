@@ -1,36 +1,30 @@
-import log from 'electron-log';
-import React, {
-  useCallback,
-  useEffect,
-  useState,
-  DragEvent,
-  useMemo,
-} from 'react';
-import parse from 'html-react-parser';
-import { Script } from '@johnlindquist/kit/types/core';
 import { PROMPT } from '@johnlindquist/kit/core/enum';
+import type { Script } from '@johnlindquist/kit/types/core';
+import log from 'electron-log';
+import parse from 'html-react-parser';
 import { useAtom, useAtomValue } from 'jotai';
+import React, { useCallback, useEffect, useState, type DragEvent, useMemo } from 'react';
 const { ipcRenderer } = window.electron;
 
-import { ChoiceButtonProps } from '../../../shared/types';
+import type { ChoiceButtonProps } from '../../../shared/types';
 import {
-  flagsAtom,
-  flaggedChoiceValueAtom,
-  isMouseDownAtom,
   _modifiers,
-  buttonNameFontSizeAtom,
   buttonDescriptionFontSizeAtom,
-  isScrollingAtom,
-  inputAtom,
-  mouseEnabledAtom,
-  indexAtom,
-  submitValueAtom,
+  buttonNameFontSizeAtom,
+  flaggedChoiceValueAtom,
+  flagsAtom,
   hasRightShortcutAtom,
+  indexAtom,
+  inputAtom,
+  isMouseDownAtom,
+  isScrollingAtom,
+  kitStateAtom,
+  mouseEnabledAtom,
   promptDataAtom,
-  toggleSelectedChoiceAtom,
   selectedChoicesAtom,
   shouldHighlightDescriptionAtom,
-  kitStateAtom,
+  submitValueAtom,
+  toggleSelectedChoiceAtom,
 } from '../jotai';
 
 // import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg?asset';
@@ -46,11 +40,7 @@ function calculateScale(height: number = PROMPT.ITEM.HEIGHT.SM): string {
   return 'scale-90';
 }
 
-function ChoiceButton({
-  index: buttonIndex,
-  style,
-  data: { choices },
-}: ChoiceButtonProps) {
+function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceButtonProps) {
   const scoredChoice = choices[buttonIndex];
   const choice = scoredChoice?.item;
   const [index, setIndex] = useAtom(indexAtom);
@@ -133,10 +123,7 @@ function ChoiceButton({
           //     type: 'text/plain;charset=utf-8',
           //   })
           // )}`;
-          event.dataTransfer?.setData(
-            drag?.format || 'text/plain',
-            drag?.data || `please set drag.data`,
-          );
+          event.dataTransfer?.setData(drag?.format || 'text/plain', drag?.data || 'please set drag.data');
         }
       }
     },
@@ -144,13 +131,13 @@ function ChoiceButton({
   );
 
   const memoizedChoiceName = useMemo(() => {
-    return choice.name
-      ?.replace(/{\s*input\s*}/g, input)
-      .replace(/{\s*base\s*}/g, base);
+    return choice.name?.replace(/{\s*input\s*}/g, input).replace(/{\s*base\s*}/g, base);
   }, [choice.name, input, base]);
 
   const memoizedHtmlDomNode = useMemo(() => {
-    if (!choice?.html) return '';
+    if (!choice?.html) {
+      return '';
+    }
     return parse(choice?.html, {
       replace: (domNode: any) => {
         if (domNode?.attribs && index === buttonIndex) {
@@ -183,22 +170,12 @@ function ChoiceButton({
       onDragStart={choice?.drag ? onDragStart : undefined}
       onContextMenu={onRightClick}
       style={{
-        cursor: mouseEnabled
-          ? choice?.drag
-            ? isMouseDown
-              ? 'grabbing'
-              : 'grab'
-            : 'pointer'
-          : 'none',
+        cursor: mouseEnabled ? (choice?.drag ? (isMouseDown ? 'grabbing' : 'grab') : 'pointer') : 'none',
         ...style,
       }}
       className={`
       text-text-base
-      ${
-        index === buttonIndex && !choice?.disableSubmit
-          ? choice?.focusedClassName || `bg-ui-bg`
-          : ``
-      }
+      ${index === buttonIndex && !choice?.disableSubmit ? choice?.focusedClassName || 'bg-ui-bg' : ''}
         flex
         h-16
         w-full
@@ -212,11 +189,7 @@ function ChoiceButton({
         outline-none
         focus:outline-none
         ${choice?.className}
-        ${
-          index === buttonIndex
-            ? `opacity-100`
-            : `opacity-90 ${flaggedValue ? 'opacity-30' : ''}`
-        }
+        ${index === buttonIndex ? 'opacity-100' : `opacity-90 ${flaggedValue ? 'opacity-30' : ''}`}
       `}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
@@ -253,9 +226,7 @@ function ChoiceButton({
 
         `}
                 >
-                  {selectedChoices.find((c) => choice?.id === c?.id) && (
-                    <IconSwapper text="selected" />
-                  )}
+                  {selectedChoices.find((c) => choice?.id === c?.id) && <IconSwapper text="selected" />}
                 </div>
               </div>
             )}
@@ -270,41 +241,34 @@ function ChoiceButton({
                 h-4/5
                 rounded
                 object-contain
-                ${index === buttonIndex ? `opacity-100` : `opacity-80`}
+                ${index === buttonIndex ? 'opacity-100' : 'opacity-80'}
                 `}
               />
             )}
             <div className="flex max-h-full max-w-full flex-col overflow-x-hidden">
               {/* Name */}
-              <div
-                className={`${buttonNameFontSize} truncate ${choice?.nameClassName}`}
-              >
+              <div className={`${buttonNameFontSize} truncate ${choice?.nameClassName}`}>
                 {highlight(
                   memoizedChoiceName,
                   scoredChoice?.matches?.slicedName,
-                  `bg-primary bg-opacity-5 text-primary`,
+                  'bg-primary bg-opacity-5 text-primary',
                 )}
                 {choice?.nameHTML && parse(choice?.nameHTML)}
               </div>
               {/* Description */}
-              {(choice?.focused ||
-                choice?.description ||
-                modifierDescription) && (
+              {(choice?.focused || choice?.description || modifierDescription) && (
                 <div
                   className={`truncate ${buttonDescriptionFontSize} ${choice?.descriptionClassName}${
-                    index === buttonIndex
-                      ? ` text-primary opacity-100 `
-                      : ` opacity-60 `
+                    index === buttonIndex ? ' text-primary opacity-100 ' : ' opacity-60 '
                   }`}
                 >
-                  {modifierDescription ||
-                  (index === buttonIndex && choice?.focused)
+                  {modifierDescription || (index === buttonIndex && choice?.focused)
                     ? choice?.focused
                     : shouldHighlightDescription
                       ? highlight(
                           choice.description || '',
                           scoredChoice?.matches?.description,
-                          `bg-primary bg-opacity-5 text-primary`,
+                          'bg-primary bg-opacity-5 text-primary',
                         )
                       : choice?.description}
                 </div>
@@ -312,11 +276,7 @@ function ChoiceButton({
             </div>
           </div>
 
-          <div
-            className={`flex h-full flex-shrink-0 flex-row items-center ${
-              isScrolling ? `-mr-2px` : `0`
-            }`}
-          >
+          <div className={`flex h-full flex-shrink-0 flex-row items-center ${isScrolling ? '-mr-2px' : '0'}`}>
             {(choice?.tag || choice?.icon || choice?.pass || isRecent) && (
               <div className="flex flex-row items-center">
                 {((choice?.pass || isRecent) && (choice as Script)?.kenv
@@ -324,12 +284,10 @@ function ChoiceButton({
                   : choice.tag || choice.keyword || choice.trigger) && (
                   <div
                     className={`mx-1 font-mono text-xxs ${choice?.tagClassName} ${
-                      index === buttonIndex ? `opacity-70` : `opacity-40`
+                      index === buttonIndex ? 'opacity-70' : 'opacity-40'
                     }`}
                   >
-                    {(choice?.pass || isRecent) &&
-                    (choice as Script)?.kenv &&
-                    (choice as Script).kenv !== '.kit'
+                    {(choice?.pass || isRecent) && (choice as Script)?.kenv && (choice as Script).kenv !== '.kit'
                       ? (choice as Script).kenv
                       : choice.tag
                         ? highlight(
@@ -355,10 +313,7 @@ function ChoiceButton({
               </div>
             )}
             {imageFail && (
-              <div
-                style={{ aspectRatio: '1/1' }}
-                className="flex h-8 flex-row items-center justify-center"
-              >
+              <div style={{ aspectRatio: '1/1' }} className="flex h-8 flex-row items-center justify-center">
                 {/* <NoImageIcon
                   className={`
         h-1/2

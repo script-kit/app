@@ -1,5 +1,5 @@
-import { Choice } from '@johnlindquist/kit/types/core';
-import { Mode, UI } from '@johnlindquist/kit/core/enum';
+import type { Mode, UI } from '@johnlindquist/kit/core/enum';
+import type { Choice } from '@johnlindquist/kit/types/core';
 
 export interface ScoredChoice {
   item: Choice<{ id: string; name: string; value: any }>;

@@ -1,8 +1,8 @@
 import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
-import { hotkeysOptions } from './shared';
 import { cmdAtom, openAtom } from '../jotai';
+import { hotkeysOptions } from './shared';
 
 export default () => {
   const [open, setOpen] = useAtom(openAtom);
@@ -15,6 +15,6 @@ export default () => {
       setOpen(false);
     },
     hotkeysOptions,
-    [open, cmd]
+    [open, cmd],
   );
 };

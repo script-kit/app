@@ -1,7 +1,7 @@
-import { proxy } from 'valtio/vanilla';
-import log from 'electron-log';
 import { BrowserWindow } from 'electron';
+import log from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
+import { proxy } from 'valtio/vanilla';
 import { KitEvent, emitter } from './events';
 
 export type WidgetOptions = {

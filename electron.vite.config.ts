@@ -1,8 +1,8 @@
-import path from 'path';
+import path from 'node:path';
+import react from '@vitejs/plugin-react';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import million from 'million/compiler';
-import react from '@vitejs/plugin-react';
-import { BuildOptions } from 'vite';
+import type { BuildOptions } from 'vite';
 
 import { external, include } from './src/main/shims';
 

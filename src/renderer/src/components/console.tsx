@@ -1,13 +1,13 @@
-/* eslint-disable jsx-a11y/mouse-events-have-key-events */
-import React, { RefObject, useCallback, useRef, useState } from 'react';
-import SimpleBar from 'simplebar-react';
-import useResizeObserver from '@react-hook/resize-observer';
 import PencilAltIcon from '@heroicons/react/24/outline/PencilSquareIcon';
+import useResizeObserver from '@react-hook/resize-observer';
 import parse from 'html-react-parser';
 import { useAtom } from 'jotai';
+/* eslint-disable jsx-a11y/mouse-events-have-key-events */
+import React, { type RefObject, useCallback, useRef, useState } from 'react';
+import SimpleBar from 'simplebar-react';
 const { ipcRenderer } = window.electron;
-import { logHeightAtom, logHTMLAtom, scriptAtom } from '../jotai';
 import { AppChannel } from '../../../shared/enums';
+import { logHTMLAtom, logHeightAtom, scriptAtom } from '../jotai';
 
 export default function Console() {
   const [script, setScript] = useAtom(scriptAtom);

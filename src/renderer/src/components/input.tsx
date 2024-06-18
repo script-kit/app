@@ -1,70 +1,68 @@
-import {
-  useCallback,
-  KeyboardEvent,
-  LegacyRef,
-  useRef,
-  useEffect,
-  useState,
-  ChangeEvent,
-} from 'react';
-import log from 'electron-log';
 import { Channel, PROMPT } from '@johnlindquist/kit/core/enum';
+import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { type ChangeEvent, type KeyboardEvent, type LegacyRef, useCallback, useEffect, useRef, useState } from 'react';
 
 import useResizeObserver from '@react-hook/resize-observer';
 import { debounce } from 'lodash-es';
+import { useFocus, useKeyIndex, useTab } from '../hooks';
 import {
-  inputAtom,
-  modifiers,
+  _lastKeyDownWasModifierAtom,
   _modifiers,
+  actionsAtom,
+  appendToLogHTMLAtom,
+  cachedAtom,
+  channelAtom,
+  choicesConfigAtom,
+  enterButtonDisabledAtom,
+  enterButtonNameAtom,
+  flagsAtom,
+  focusedChoiceAtom,
+  footerHiddenAtom,
+  headerHiddenAtom,
+  inputAtom,
+  inputFocusAtom,
+  inputFontSizeAtom,
+  inputHeightAtom,
+  kitStateAtom,
+  lastKeyDownWasModifierAtom,
+  loadingAtom,
+  miniShortcutsHoveredAtom,
+  miniShortcutsVisibleAtom,
+  modifiers,
+  onInputSubmitAtom,
   placeholderAtom,
   promptDataAtom,
   selectionStartAtom,
-  submittedAtom,
-  submitValueAtom,
-  tabIndexAtom,
-  choicesConfigAtom,
-  onInputSubmitAtom,
-  inputFocusAtom,
-  uiAtom,
-  inputFontSizeAtom,
-  actionsAtom,
-  enterButtonNameAtom,
-  flagsAtom,
-  enterButtonDisabledAtom,
-  miniShortcutsVisibleAtom,
-  miniShortcutsHoveredAtom,
-  lastKeyDownWasModifierAtom,
-  footerHiddenAtom,
-  inputHeightAtom,
-  headerHiddenAtom,
-  loadingAtom,
-  typingAtom,
-  shortcutsAtom,
-  userAtom,
-  kitStateAtom,
-  channelAtom,
-  shouldActionButtonShowOnInputAtom,
-  focusedChoiceAtom,
   sendShortcutAtom,
-  signInActionAtom,
-  cachedAtom,
   shortcodesAtom,
-  appendToLogHTMLAtom,
-  _lastKeyDownWasModifierAtom,
+  shortcutsAtom,
+  shouldActionButtonShowOnInputAtom,
+  signInActionAtom,
+  submitValueAtom,
+  submittedAtom,
+  tabIndexAtom,
+  typingAtom,
+  uiAtom,
+  userAtom,
 } from '../jotai';
-import { useFocus, useKeyIndex, useTab } from '../hooks';
-import { IconButton } from './icon';
 import { ActionButton } from './actionbutton';
-import { ActionSeparator } from './actionseparator';
 import { EnterButton } from './actionenterbutton';
 import { OptionsButton } from './actionoptionsbutton';
+import { ActionSeparator } from './actionseparator';
+import { IconButton } from './icon';
 import { LoginButton } from './loginbutton';
 
 const remapModifiers = (m: string) => {
-  if (m === 'Meta') return ['cmd'];
-  if (m === 'Control') return ['control', 'ctrl'];
-  if (m === 'Alt') return ['alt', 'option'];
+  if (m === 'Meta') {
+    return ['cmd'];
+  }
+  if (m === 'Control') {
+    return ['control', 'ctrl'];
+  }
+  if (m === 'Alt') {
+    return ['alt', 'option'];
+  }
   return m.toLowerCase();
 };
 
@@ -91,22 +89,15 @@ export default function Input() {
   const enterButtonName = useAtomValue(enterButtonNameAtom);
   const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
   const flags = useAtomValue(flagsAtom);
-  const shouldActionButtonShowOnInput = useAtomValue(
-    shouldActionButtonShowOnInputAtom,
-  );
+  const shouldActionButtonShowOnInput = useAtomValue(shouldActionButtonShowOnInputAtom);
   const miniShortcutsVisible = useAtomValue(miniShortcutsVisibleAtom);
-  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(
-    miniShortcutsHoveredAtom,
-  );
+  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(miniShortcutsHoveredAtom);
   const loading = useAtomValue(loadingAtom);
   const headerHidden = useAtomValue(headerHiddenAtom);
   const footerHidden = useAtomValue(footerHiddenAtom);
   const inputHeight = useAtomValue(inputHeightAtom);
 
-  const setLastKeyDownWasModifier = debounce(
-    useSetAtom(lastKeyDownWasModifierAtom),
-    300,
-  );
+  const setLastKeyDownWasModifier = debounce(useSetAtom(lastKeyDownWasModifierAtom), 300);
   const _setLastKeyDownWasModifier = useSetAtom(_lastKeyDownWasModifierAtom);
   const setTyping = useSetAtom(typingAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
@@ -119,7 +110,9 @@ export default function Input() {
 
   const onClick = useCallback(
     (event) => {
-      if (action) sendShortcut(action.key);
+      if (action) {
+        sendShortcut(action.key);
+      }
     },
     [action, sendShortcut],
   );
@@ -155,9 +148,7 @@ export default function Input() {
       }
 
       if (event.ctrlKey) {
-        const shortcut = shortcuts.find((s) =>
-          (s?.key || '')?.includes('ctrl'),
-        );
+        const shortcut = shortcuts.find((s) => (s?.key || '')?.includes('ctrl'));
         const key = shortcut?.key || '';
 
         if (key) {
@@ -181,16 +172,10 @@ export default function Input() {
       //   modifiers,
       // });
 
-      const currentModifiers = modifiers
-        .filter((m) => event.getModifierState(m))
-        .flatMap(remapModifiers);
+      const currentModifiers = modifiers.filter((m) => event.getModifierState(m)).flatMap(remapModifiers);
 
       const modifiersNotShift = currentModifiers.filter((m) => m !== 'shift');
-      if (
-        input &&
-        shortcodes.includes(input) &&
-        modifiersNotShift.length === 0
-      ) {
+      if (input && shortcodes.includes(input) && modifiersNotShift.length === 0) {
         log.info(`${window.pid}: preventDefault(): found: '${input}'`);
         // setAppendToLog(`${window.pid}: preventDefault(): found: '${input}'`);
         // event.preventDefault();
@@ -206,9 +191,7 @@ export default function Input() {
       if (typeof setLastKeyDownWasModifier?.cancel === 'function') {
         setLastKeyDownWasModifier.cancel();
       }
-      setLastKeyDownWasModifier(
-        modifiers.includes(event.key) && event.key !== 'Shift',
-      );
+      setLastKeyDownWasModifier(modifiers.includes(event.key) && event.key !== 'Shift');
 
       // If not Enter, Tab, or a modifier, setTyping to true
       if (event.key !== 'Enter' && event.key !== 'Tab' && !modifiers.length) {
@@ -217,31 +200,18 @@ export default function Input() {
 
       // If key was delete and the value is empty, clear setInput
       if (event.key === 'Backspace' && target.value === '') {
-        log.info(`Clearing input`);
+        log.info('Clearing input');
         channel(Channel.INPUT, {
           input: '',
         });
       }
     },
-    [
-      setSelectionStart,
-      setModifiers,
-      setLastKeyDownWasModifier,
-      setTyping,
-      shortcuts,
-      flags,
-      setInput,
-      shortcodes,
-    ],
+    [setSelectionStart, setModifiers, setLastKeyDownWasModifier, setTyping, shortcuts, flags, setInput, shortcodes],
   );
 
   const onKeyUp = useCallback(
     (event) => {
-      setModifiers(
-        modifiers
-          .filter((m) => event.getModifierState(m))
-          .flatMap(remapModifiers),
-      );
+      setModifiers(modifiers.filter((m) => event.getModifierState(m)).flatMap(remapModifiers));
 
       if (typeof setLastKeyDownWasModifier?.cancel === 'function') {
         setLastKeyDownWasModifier.cancel();
@@ -268,12 +238,12 @@ export default function Input() {
       if (onInputSubmit[event.target.value] && !submitted) {
         const submitValue = onInputSubmit[event.target.value];
         setSubmitValue(submitValue);
-      } else if (!cached) {
+      } else if (cached) {
+        setPendingInput(event.target.value);
+      } else {
         log.info(`Setting input: ${event.target.value}`);
         setInput(event.target.value);
         setPendingInput('');
-      } else {
-        setPendingInput(event.target.value);
       }
     },
     [onInputSubmit, submitted, setSubmitValue, setInput, cached],
@@ -291,9 +261,7 @@ export default function Input() {
   return (
     <div
       key="input"
-      className={`flex flex-row ${
-        footerHidden && '-mt-px'
-      } max-w-screen relative`}
+      className={`flex flex-row ${footerHidden && '-mt-px'} max-w-screen relative`}
       style={{
         height: inputHeight || PROMPT.INPUT.HEIGHT.SM,
       }}
@@ -325,7 +293,6 @@ export default function Input() {
             } as any
           }
           disabled={submitted}
-          autoFocus
           className={`
       flex-1 bg-transparent tracking-normal text-text-base placeholder-text-base
       placeholder-opacity-25 outline-none
@@ -377,7 +344,7 @@ export default function Input() {
             }}
             className={`right-container
       flex min-w-fit flex-grow flex-row items-center justify-end overflow-hidden ${
-        inputHeight === PROMPT.INPUT.HEIGHT.XS && `origin-right scale-95`
+        inputHeight === PROMPT.INPUT.HEIGHT.XS && 'origin-right scale-95'
       }`}
           >
             <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
@@ -448,11 +415,7 @@ export default function Input() {
 
             {kitState.isSponsor ? (
               <span
-                className={`relative ${
-                  inputHeight === PROMPT.INPUT.HEIGHT.XS
-                    ? `w-[28px]`
-                    : `w-[30px]`
-                } pl-1 pr-1`}
+                className={`relative ${inputHeight === PROMPT.INPUT.HEIGHT.XS ? 'w-[28px]' : 'w-[30px]'} pl-1 pr-1`}
               >
                 <img
                   onClick={onClick}

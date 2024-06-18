@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import { app, BrowserWindow, screen } from 'electron';
+import { BrowserWindow, app, screen } from 'electron';
 import { KIT_PROTOCOL } from './helpers';
 
 let notificationWindow: BrowserWindow | null = null;
@@ -20,15 +20,12 @@ export const createNotification = async () => {
   });
 
   if (notificationWindow && !notificationWindow.isDestroyed()) {
-    notificationWindow?.webContents.on(
-      'before-input-event',
-      (event: any, input) => {
-        if (input.key === 'Escape') {
-          hidePromptWindow();
-          notificationWindow?.webContents.send('escape', {});
-        }
-      },
-    );
+    notificationWindow?.webContents.on('before-input-event', (event: any, input) => {
+      if (input.key === 'Escape') {
+        hidePromptWindow();
+        notificationWindow?.webContents.send('escape', {});
+      }
+    });
   }
   return notificationWindow;
 };
@@ -49,14 +46,9 @@ const page = (html: string) => `<!DOCTYPE html>
 </html>`;
 
 export const showNotification = (html: string, options: any = {}) => {
-  notificationWindow?.loadURL(
-    `data:text/html;charset=UTF-8,${encodeURIComponent(page(html))}`,
-    {
-      baseURLForDataURL: `${KIT_PROTOCOL}://${app
-        .getAppPath()
-        .replace('\\', '/')}/`,
-    },
-  );
+  notificationWindow?.loadURL(`data:text/html;charset=UTF-8,${encodeURIComponent(page(html))}`, {
+    baseURLForDataURL: `${KIT_PROTOCOL}://${app.getAppPath().replace('\\', '/')}/`,
+  });
   if (!notificationWindow?.isVisible()) {
     const cursor = screen.getCursorScreenPoint();
     // Get display with cursor
@@ -65,8 +57,7 @@ export const showNotification = (html: string, options: any = {}) => {
       y: cursor.y,
     });
 
-    const { width: screenWidth, height: screenHeight } =
-      distScreen.workAreaSize;
+    const { width: screenWidth, height: screenHeight } = distScreen.workAreaSize;
     const width = Math.floor((screenWidth / 4) * distScreen.scaleFactor);
     const height = Math.floor((screenHeight / 4) * distScreen.scaleFactor);
     const x = Math.floor(screenWidth * distScreen.scaleFactor - width); // * distScreen.scaleFactor

@@ -1,22 +1,22 @@
-/* eslint-disable no-nested-ternary */
-import React, { RefObject, useEffect, useLayoutEffect, useRef } from 'react';
-import SimpleBar from 'simplebar-react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { UI } from '@johnlindquist/kit/core/enum';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+/* eslint-disable no-nested-ternary */
+import React, { type RefObject, useEffect, useLayoutEffect, useRef } from 'react';
+import SimpleBar from 'simplebar-react';
 
 import useResizeObserver from '@react-hook/resize-observer';
+import { darkTheme, lightTheme } from '../../../shared/themes';
+import { useKeyDirection } from '../hooks';
 import {
+  darkAtom,
+  domUpdatedAtom,
+  flagsAtom,
+  inputFocusAtom,
   mouseEnabledAtom,
   panelHTMLAtom,
-  darkAtom,
-  inputFocusAtom,
-  uiAtom,
   shortcutsAtom,
-  flagsAtom,
-  domUpdatedAtom,
+  uiAtom,
 } from '../jotai';
-import { useKeyDirection } from '../hooks';
-import { darkTheme, lightTheme } from '../../../shared/themes';
 
 function extractInnerHtmlAndClasses(panelHTML: string) {
   // if panelHTML isn't wrapped in a tag, wrap it in a div
@@ -55,11 +55,11 @@ export default function Panel() {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useResizeObserver(panelRef, (entry) => {
-    domUpdated()(`Panel useResizeObserver`);
+    domUpdated()('Panel useResizeObserver');
   });
 
   useLayoutEffect(() => {
-    domUpdated()(`Panel useLayoutEffect`);
+    domUpdated()('Panel useLayoutEffect');
 
     return () => {
       // domUpdated()(`Panel useLayoutEffect cleanup`);
@@ -81,7 +81,7 @@ export default function Panel() {
         });
       }
     },
-    [scrollRef?.current, inputFocus, shortcuts, flags]
+    [scrollRef?.current, inputFocus, shortcuts, flags],
   );
 
   const { __html, containerClasses } = extractInnerHtmlAndClasses(panelHTML);

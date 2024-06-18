@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react';
 import { useAtomValue } from 'jotai';
+import React, { useCallback } from 'react';
 import { processesAtom, runProcessesAtom } from './jotai';
 
 export default function ProcessesDot() {

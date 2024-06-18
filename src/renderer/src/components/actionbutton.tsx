@@ -1,18 +1,13 @@
+import { UI } from '@johnlindquist/kit/core/enum';
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
 import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { UI } from '@johnlindquist/kit/core/enum';
 import React, { useCallback } from 'react';
-import {
-  focusedFlagValueAtom,
-  uiAtom,
-  sendShortcutAtom,
-  appConfigAtom,
-} from '../jotai';
-import { Action, bg, textContrast } from './actions';
+import { appConfigAtom, focusedFlagValueAtom, sendShortcutAtom, uiAtom } from '../jotai';
+import { type Action, bg, textContrast } from './actions';
 import { IconSwapper } from './iconswapper';
 
 export function ActionButton(action: Action & { extraClassName?: string }) {
@@ -27,15 +22,15 @@ export function ActionButton(action: Action & { extraClassName?: string }) {
       if (ui === UI.form) {
         event.preventDefault();
 
-        const el = document.querySelector(
-          `[name="${action.name.toLowerCase()}"]`,
-        ) as HTMLInputElement;
+        const el = document.querySelector(`[name="${action.name.toLowerCase()}"]`) as HTMLInputElement;
 
         if (el) {
           el.click();
         }
       } else {
-        if (action?.flag) setFlag(action.flag);
+        if (action?.flag) {
+          setFlag(action.flag);
+        }
         sendShortcut(action.value);
       }
     },
@@ -59,7 +54,7 @@ export function ActionButton(action: Action & { extraClassName?: string }) {
 
   outline-none
   transition-opacity duration-200 ease-out
-  ${action?.disabled ? `text-primary text-opacity-25` : `${bg} ${textContrast}`}
+  ${action?.disabled ? 'text-primary text-opacity-25' : `${bg} ${textContrast}`}
   ${action?.extraClassName}
   `}
       onClick={action?.onClick ?? onClick}
@@ -73,7 +68,7 @@ export function ActionButton(action: Action & { extraClassName?: string }) {
         {action.name}
       </div>
 
-      <div className={`${!m && `mt-px`} flex flex-row`}>
+      <div className={`${!m && 'mt-px'} flex flex-row`}>
         {action.shortcut.split('+').map((k) => {
           return (
             <div

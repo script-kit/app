@@ -1,100 +1,100 @@
-import { useEffect, useState } from 'react';
-import { ToastOptions, toast } from 'react-toastify';
 import DOMPurify from 'dompurify';
 import log from 'electron-log/renderer';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { debounce } from 'lodash-es';
-import { useAtom, useSetAtom, useAtomValue } from 'jotai';
+import { useEffect, useState } from 'react';
+import { ToastOptions, toast } from 'react-toastify';
 const { ipcRenderer } = window.electron;
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
-import { Choice } from '@johnlindquist/kit/types';
+import type { Choice } from '@johnlindquist/kit/types';
+import type { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
 import {
+  addChatMessageAtom,
+  appConfigAtom,
+  appendInputAtom,
+  audioAtom,
+  audioDotAtom,
+  beforeInputAtom,
+  blurAtom,
+  boundsAtom,
+  cachedMainFlagsAtom,
+  cachedMainPreviewAtom,
+  cachedMainScoredChoicesAtom,
+  cachedMainShortcutsAtom,
+  channelAtom,
+  chatMessagesAtom,
+  chatPushTokenAtom,
+  choicesConfigAtom,
+  clearCacheAtom,
+  colorAtom,
+  cssAtom,
+  descriptionAtom,
+  editorAppendAtom,
   editorConfigAtom,
+  editorLogModeAtom,
   editorSuggestionsAtom,
+  enterAtom,
+  exitAtom,
+  flaggedChoiceValueAtom,
   flagsAtom,
+  footerAtom,
+  getEditorHistoryAtom,
   hintAtom,
+  initPromptAtom,
   inputAtom,
+  isHiddenAtom,
+  isReadyAtom,
+  kitConfigAtom,
+  kitStateAtom,
+  lastLogLineAtom,
+  loadingAtom,
   logHTMLAtom,
+  logValueAtom,
+  logoAtom,
+  micConfigAtom,
+  micIdAtom,
+  micStreamEnabledAtom,
+  nameAtom,
   openAtom,
   panelHTMLAtom,
   pidAtom,
   placeholderAtom,
+  preloadedAtom,
+  preventSubmitAtom,
   previewHTMLAtom,
+  progressAtom,
+  promptBoundsAtom,
   promptDataAtom,
+  resizingAtom,
+  runningAtom,
+  scoredChoicesAtom,
+  scoredFlagsAtom,
   scriptAtom,
-  submitValueAtom,
-  tabIndexAtom,
-  tabsAtom,
-  textareaConfigAtom,
-  tempThemeAtom,
-  choicesConfigAtom,
-  descriptionAtom,
-  nameAtom,
-  textareaValueAtom,
-  loadingAtom,
-  exitAtom,
-  appConfigAtom,
+  scrollToIndexAtom,
+  selectedChoicesAtom,
+  setChatMessageAtom,
+  setFocusedChoiceAtom,
+  shortcodesAtom,
+  shortcutsAtom,
+  speechAtom,
   splashBodyAtom,
   splashHeaderAtom,
   splashProgressAtom,
-  isReadyAtom,
-  valueInvalidAtom,
-  isHiddenAtom,
-  blurAtom,
-  logoAtom,
-  getEditorHistoryAtom,
-  scoredChoicesAtom,
-  setFocusedChoiceAtom,
-  footerAtom,
-  boundsAtom,
-  resizingAtom,
-  themeAtom,
-  audioAtom,
-  speechAtom,
-  enterAtom,
-  kitStateAtom,
-  lastLogLineAtom,
-  editorLogModeAtom,
-  logValueAtom,
-  shortcutsAtom,
-  editorAppendAtom,
-  colorAtom,
-  chatMessagesAtom,
-  addChatMessageAtom,
-  chatPushTokenAtom,
-  setChatMessageAtom,
+  submitValueAtom,
+  tabIndexAtom,
+  tabsAtom,
+  tempThemeAtom,
   termConfigAtom,
-  zoomAtom,
   termExitAtom,
-  appendInputAtom,
-  micIdAtom,
-  webcamIdAtom,
-  runningAtom,
-  micConfigAtom,
-  promptBoundsAtom,
-  audioDotAtom,
-  scrollToIndexAtom,
-  scoredFlagsAtom,
-  flaggedChoiceValueAtom,
-  preloadedAtom,
-  triggerKeywordAtom,
-  preventSubmitAtom,
-  selectedChoicesAtom,
-  toggleAllSelectedChoicesAtom,
-  cachedMainScoredChoicesAtom,
-  cachedMainShortcutsAtom,
-  cachedMainPreviewAtom,
   termFontAtom,
-  micStreamEnabledAtom,
-  progressAtom,
-  channelAtom,
-  beforeInputAtom,
-  cssAtom,
-  initPromptAtom,
-  cachedMainFlagsAtom,
-  clearCacheAtom,
-  kitConfigAtom,
-  shortcodesAtom,
+  textareaConfigAtom,
+  textareaValueAtom,
+  themeAtom,
+  toggleAllSelectedChoicesAtom,
+  triggerKeywordAtom,
+  valueInvalidAtom,
+  webcamIdAtom,
+  zoomAtom,
 } from '../jotai';
 
 import { AppChannel, WindowChannel } from '../../../shared/enums';
@@ -324,9 +324,7 @@ export default () => {
     [Channel.TERM_EXIT]: setTermExit,
     [Channel.SET_FORM_DATA]: (data) => {
       Object.entries(data).forEach(([key, value]) => {
-        const inputElement = document.querySelector(
-          `.kit-form input[data-name="${key}"]`,
-        );
+        const inputElement = document.querySelector(`.kit-form input[data-name="${key}"]`);
 
         if (inputElement) {
           (inputElement as HTMLInputElement).value = value as string;
@@ -344,9 +342,7 @@ export default () => {
   };
 
   useEffect(() => {
-    log.info(
-      `>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 🔑 Setting up message listeners for ${pid}`,
-    );
+    log.info(`>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 🔑 Setting up message listeners for ${pid}`);
     Object.entries(messageMap).forEach(([key, fn]) => {
       if (ipcRenderer.listenerCount(key) === 0) {
         ipcRenderer.on(key, (_, data) => {
@@ -366,29 +362,26 @@ export default () => {
       setKitState(data);
     };
 
-    if (ipcRenderer.listenerCount(AppChannel.KIT_STATE) === 0)
+    if (ipcRenderer.listenerCount(AppChannel.KIT_STATE) === 0) {
       ipcRenderer.on(AppChannel.KIT_STATE, kitStateCallback);
+    }
 
-    const handleTermConfig: (
-      event: Electron.IpcRendererEvent,
-      ...args: any[]
-    ) => void = (_, data) => {
+    const handleTermConfig: (event: Electron.IpcRendererEvent, ...args: any[]) => void = (_, data) => {
       setTermConfig(data);
     };
 
-    if (ipcRenderer.listenerCount(AppChannel.SET_TERM_CONFIG) === 0)
+    if (ipcRenderer.listenerCount(AppChannel.SET_TERM_CONFIG) === 0) {
       ipcRenderer.on(AppChannel.SET_TERM_CONFIG, handleTermConfig);
+    }
 
-    const handleMicConfig: (
-      event: Electron.IpcRendererEvent,
-      ...args: any[]
-    ) => void = (_, data) => {
-      log.info(`Setting mic config:`, data);
+    const handleMicConfig: (event: Electron.IpcRendererEvent, ...args: any[]) => void = (_, data) => {
+      log.info('Setting mic config:', data);
       setMicConfig(data);
     };
 
-    if (ipcRenderer.listenerCount(AppChannel.SET_MIC_CONFIG) === 0)
+    if (ipcRenderer.listenerCount(AppChannel.SET_MIC_CONFIG) === 0) {
       ipcRenderer.on(AppChannel.SET_MIC_CONFIG, handleMicConfig);
+    }
 
     type HandleCSSVariableHandler = (
       event: Electron.IpcRendererEvent,
@@ -403,47 +396,52 @@ export default () => {
         log.verbose(
           `Changing ${data?.name} from`,
           document.documentElement.style.getPropertyValue(data?.name),
-          `to`,
+          'to',
           data?.value,
         );
         document.documentElement.style.setProperty(data?.name, data?.value);
         // eslint-disable-next-line no-void
         void document.body.offsetHeight;
       } catch (e) {
-        log.error(`Error changing CSS variable:`, e);
+        log.error('Error changing CSS variable:', e);
       }
     };
 
-    if (ipcRenderer.listenerCount(AppChannel.CSS_VARIABLE) === 0)
+    if (ipcRenderer.listenerCount(AppChannel.CSS_VARIABLE) === 0) {
       ipcRenderer.on(AppChannel.CSS_VARIABLE, handleCSSVariable);
+    }
 
     const handleTermExit = (_: any, data: string) => {
       setTermExit(data);
     };
 
-    if (ipcRenderer.listenerCount(AppChannel.TERM_EXIT) === 0)
+    if (ipcRenderer.listenerCount(AppChannel.TERM_EXIT) === 0) {
       ipcRenderer.on(AppChannel.TERM_EXIT, handleTermExit);
+    }
 
     const handleZoom = (_, data) => {
       setZoom(data);
     };
 
-    if (ipcRenderer.listenerCount(AppChannel.ZOOM) === 0)
+    if (ipcRenderer.listenerCount(AppChannel.ZOOM) === 0) {
       ipcRenderer.on(AppChannel.ZOOM, handleZoom);
+    }
 
     const handleSetMicId = (_, data: string) => {
       setMicId(data);
     };
 
-    if (ipcRenderer.listenerCount(AppChannel.SET_MIC_ID) === 0)
+    if (ipcRenderer.listenerCount(AppChannel.SET_MIC_ID) === 0) {
       ipcRenderer.on(AppChannel.SET_MIC_ID, handleSetMicId);
+    }
 
     const handleSetWebcamId = (_, data: string) => {
       setWebcamId(data);
     };
 
-    if (ipcRenderer.listenerCount(AppChannel.SET_WEBCAM_ID) === 0)
+    if (ipcRenderer.listenerCount(AppChannel.SET_WEBCAM_ID) === 0) {
       ipcRenderer.on(AppChannel.SET_WEBCAM_ID, handleSetWebcamId);
+    }
 
     // const handleSetBounds = (_, data: any) => {
     //   requestAnimationFrame(() => {
@@ -500,13 +498,8 @@ export default () => {
       setCachedMainScoredChoices(data);
     };
 
-    if (
-      ipcRenderer.listenerCount(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES) === 0
-    ) {
-      ipcRenderer.on(
-        AppChannel.SET_CACHED_MAIN_SCORED_CHOICES,
-        handleSetCachedMainScoredChoices,
-      );
+    if (ipcRenderer.listenerCount(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES) === 0) {
+      ipcRenderer.on(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, handleSetCachedMainScoredChoices);
     }
 
     const handleSetCachedMainShortcuts = (_, data) => {
@@ -514,10 +507,7 @@ export default () => {
     };
 
     if (ipcRenderer.listenerCount(AppChannel.SET_CACHED_MAIN_SHORTCUTS) === 0) {
-      ipcRenderer.on(
-        AppChannel.SET_CACHED_MAIN_SHORTCUTS,
-        handleSetCachedMainShortcuts,
-      );
+      ipcRenderer.on(AppChannel.SET_CACHED_MAIN_SHORTCUTS, handleSetCachedMainShortcuts);
     }
 
     const handleSetCachedMainPreview = (_, data) => {
@@ -525,23 +515,15 @@ export default () => {
     };
 
     if (ipcRenderer.listenerCount(AppChannel.SET_CACHED_MAIN_PREVIEW) === 0) {
-      ipcRenderer.on(
-        AppChannel.SET_CACHED_MAIN_PREVIEW,
-        handleSetCachedMainPreview,
-      );
+      ipcRenderer.on(AppChannel.SET_CACHED_MAIN_PREVIEW, handleSetCachedMainPreview);
     }
 
     const handleSetCachedMainFlags = (_, data) => {
       setCachedMainFlags(data);
     };
 
-    if (
-      ipcRenderer.listenerCount(AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS) === 0
-    ) {
-      ipcRenderer.on(
-        AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS,
-        handleSetCachedMainFlags,
-      );
+    if (ipcRenderer.listenerCount(AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS) === 0) {
+      ipcRenderer.on(AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS, handleSetCachedMainFlags);
     }
 
     const handleInitPrompt = (_, data) => {
@@ -570,7 +552,7 @@ export default () => {
     }
 
     const handleCssChanged = (_, data) => {
-      log.info(`CSS changed:`, data);
+      log.info('CSS changed:', data);
       setCss(data);
     };
 
@@ -612,27 +594,15 @@ export default () => {
       ipcRenderer.off(AppChannel.SCROLL_TO_INDEX, handleScrollToIndex);
       ipcRenderer.off(AppChannel.SET_PRELOADED, handleSetPreloaded);
       ipcRenderer.off(AppChannel.TRIGGER_KEYWORD, handleTriggerKeyword);
-      ipcRenderer.off(
-        AppChannel.SET_CACHED_MAIN_SCORED_CHOICES,
-        handleSetCachedMainScoredChoices,
-      );
-      ipcRenderer.off(
-        AppChannel.SET_CACHED_MAIN_SHORTCUTS,
-        handleSetCachedMainShortcuts,
-      );
-      ipcRenderer.off(
-        AppChannel.SET_CACHED_MAIN_PREVIEW,
-        handleSetCachedMainPreview,
-      );
+      ipcRenderer.off(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, handleSetCachedMainScoredChoices);
+      ipcRenderer.off(AppChannel.SET_CACHED_MAIN_SHORTCUTS, handleSetCachedMainShortcuts);
+      ipcRenderer.off(AppChannel.SET_CACHED_MAIN_PREVIEW, handleSetCachedMainPreview);
       // ipcRenderer.off(AppChannel.SET_BOUNDS, handleSetBounds);
       ipcRenderer.off(AppChannel.SET_TERM_FONT, handleSetTermFont);
       ipcRenderer.off(AppChannel.BEFORE_INPUT_EVENT, handleBeforeInputEvent);
       ipcRenderer.off(AppChannel.CSS_CHANGED, handleCssChanged);
       ipcRenderer.off(AppChannel.INIT_PROMPT, handleInitPrompt);
-      ipcRenderer.off(
-        AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS,
-        handleSetCachedMainFlags,
-      );
+      ipcRenderer.off(AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS, handleSetCachedMainFlags);
       ipcRenderer.off(AppChannel.CLEAR_CACHE, handleClearCache);
       ipcRenderer.off(AppChannel.FORCE_RENDER, handleForceRender);
     };

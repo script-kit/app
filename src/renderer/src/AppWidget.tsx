@@ -1,8 +1,8 @@
-import log from 'electron-log/renderer';
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { WidgetOptions } from '@johnlindquist/kit/types/pro';
-import React, { ErrorInfo, Suspense, useEffect, useState } from 'react';
+import type { WidgetOptions } from '@johnlindquist/kit/types/pro';
+import log from 'electron-log/renderer';
 import { createApp } from 'petite-vue';
+import React, { type ErrorInfo, Suspense, useEffect, useState } from 'react';
 import { AppChannel } from '../../shared/enums';
 
 const { ipcRenderer } = window.electron;
@@ -38,9 +38,7 @@ class ErrorBoundary extends React.Component {
             Reload Prompt
           </button>
 
-          <div className="text-base text-red-500">
-            Rendering Error. Opening logs.
-          </div>
+          <div className="text-base text-red-500">Rendering Error. Opening logs.</div>
           <div className="text-xs">{info.componentStack}</div>
         </div>
       );
@@ -102,14 +100,8 @@ export default function AppWidget() {
         return;
       }
 
-      const width = Math.ceil(
-        (document.body.firstElementChild as HTMLElement)?.offsetWidth ||
-          window.innerWidth,
-      );
-      const height = Math.ceil(
-        (document.body.firstElementChild as HTMLElement)?.offsetHeight ||
-          window.innerHeight,
-      );
+      const width = Math.ceil((document.body.firstElementChild as HTMLElement)?.offsetWidth || window.innerWidth);
+      const height = Math.ceil((document.body.firstElementChild as HTMLElement)?.offsetHeight || window.innerHeight);
 
       if (width !== contentWidth || height !== contentHeight) {
         setContentWidth(width);
@@ -129,41 +121,41 @@ export default function AppWidget() {
   // Add useEffect hooks for other event listeners like "click", "mousedown", "input"
 
   const bodyStyle = {
-    backgroundColor: options?.transparent
-      ? 'rgba(0, 0, 0, 0) !important'
-      : undefined,
+    backgroundColor: options?.transparent ? 'rgba(0, 0, 0, 0) !important' : undefined,
     pointerEvents: 'none',
     WebkitUserSelect: options?.draggable ? 'none' : undefined,
     WebkitAppRegion: options?.draggable ? 'drag' : undefined,
   };
 
   useEffect(() => {
-    let __widgetContainer = document.getElementById(
-      '__widget-container',
-    ) as HTMLElement;
+    const __widgetContainer = document.getElementById('__widget-container') as HTMLElement;
 
     const handleClick = (event) => {
       const closestIdElement = event.target.closest('*[id]');
-      if (!closestIdElement) return;
+      if (!closestIdElement) {
+        return;
+      }
       const targetId = closestIdElement.id;
       const message = {
         targetId: targetId,
         ...options,
       };
 
-      console.log(`handleClick`, JSON.stringify(message));
+      console.log('handleClick', JSON.stringify(message));
       ipcRenderer.send(Channel.WIDGET_CLICK, message);
     };
 
     const handleMouseDown = (event) => {
       const closestIdElement = event.target.closest('*[id]');
-      if (!closestIdElement) return;
+      if (!closestIdElement) {
+        return;
+      }
       const targetId = closestIdElement.id;
       const message = {
         targetId: targetId,
         ...options,
       };
-      console.log(`handleMouseDown`, JSON.stringify(message));
+      console.log('handleMouseDown', JSON.stringify(message));
       ipcRenderer.send(Channel.WIDGET_MOUSE_DOWN, message);
     };
 
@@ -198,11 +190,11 @@ export default function AppWidget() {
 
     const handleDrop = (event) => {
       event.preventDefault();
-      let { id = '' } = event.target.closest('*[id]');
-      let files = [];
-      let eFiles = event.dataTransfer.files;
+      const { id = '' } = event.target.closest('*[id]');
+      const files = [];
+      const eFiles = event.dataTransfer.files;
 
-      for (let key in eFiles) {
+      for (const key in eFiles) {
         if (eFiles[key]?.path) {
           files.push(eFiles[key].path);
         }
@@ -234,7 +226,7 @@ export default function AppWidget() {
         state: options?.state || {},
         ...(options?.state || {}),
         setState(state) {
-          for (let [key, value] of Object.entries(state)) {
+          for (const [key, value] of Object.entries(state)) {
             this[key] = value;
           }
         },
@@ -269,12 +261,10 @@ export default function AppWidget() {
   }, [options]);
 
   const __html = `<template id="widget-template">
-  ${options?.body || `<div>Missing body</div>`}
+  ${options?.body || '<div>Missing body</div>'}
 </template>
 
-<div id="__widget-container" v-scope="Widget()" @vue:mounted="mounted" class="${
-    options.containerClass
-  }"></div>`;
+<div id="__widget-container" v-scope="Widget()" @vue:mounted="mounted" class="${options.containerClass}"></div>`;
 
   return (
     <ErrorBoundary>

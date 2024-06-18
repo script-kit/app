@@ -5,40 +5,30 @@
 /* eslint-disable react/function-component-definition */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
-import React, { useEffect, useRef } from 'react';
+import type React from 'react';
+import { useEffect, useRef } from 'react';
 
-import { RiShareForwardFill } from 'react-icons/ri';
 import { IoIosDoneAll } from 'react-icons/io';
-import {
-  MdAccessTime,
-  MdCheck,
-  MdMessage,
-  MdDelete,
-  MdBlock,
-  MdDoneAll,
-} from 'react-icons/md';
+import { MdAccessTime, MdBlock, MdCheck, MdDelete, MdDoneAll, MdMessage } from 'react-icons/md';
+import { RiShareForwardFill } from 'react-icons/ri';
 
 import { format } from 'timeago.js';
 
 import classNames from 'classnames';
-import { MessageBoxType } from 'react-chat-elements';
+import type { MessageBoxType } from 'react-chat-elements';
 import SystemMessage from './systemmessage';
 
-const MessageBox: React.FC<MessageBoxType> = ({
-  focus = false,
-  notch = true,
-  styles,
-  ...props
-}) => {
+const MessageBox: React.FC<MessageBoxType> = ({ focus = false, notch = true, styles, ...props }) => {
   const prevProps = useRef(focus);
   const messageRef = useRef<HTMLDivElement>(null);
 
-  var positionCls = classNames('rce-mbox', {
+  const positionCls = classNames('rce-mbox', {
     'rce-mbox-right': props.position === 'right',
   });
-  var thatAbsoluteTime =
-    !/(text|video|file|meeting|audio)/g.test(props.type || 'text') &&
-    !(props.type === 'location' && props.text);
+  const thatAbsoluteTime = !(
+    /(text|video|file|meeting|audio)/g.test(props.type || 'text') ||
+    (props.type === 'location' && props.text)
+  );
   const dateText = props.date && (props.dateString || format(props.date));
 
   useEffect(() => {
@@ -56,14 +46,8 @@ const MessageBox: React.FC<MessageBoxType> = ({
   }, [focus, prevProps]);
 
   return (
-    <div
-      ref={messageRef}
-      className={classNames('rce-container-mbox', props.className)}
-      onClick={props.onClick}
-    >
-      {props.renderAddCmp instanceof Function
-        ? props.renderAddCmp()
-        : props.renderAddCmp}
+    <div ref={messageRef} className={classNames('rce-container-mbox', props.className)} onClick={props.onClick}>
+      {props.renderAddCmp instanceof Function ? props.renderAddCmp() : props.renderAddCmp}
       {props.type === 'system' ? (
         <SystemMessage {...props} focus={focus} notch={notch} />
       ) : (
@@ -73,7 +57,7 @@ const MessageBox: React.FC<MessageBoxType> = ({
             positionCls,
             { 'rce-mbox--clear-padding': thatAbsoluteTime },
             { 'rce-mbox--clear-notch': !notch },
-            { 'message-focus': focus }
+            { 'message-focus': focus },
           )}
         >
           <div className="rce-mbox-body" onContextMenu={props.onContextMenu}>
@@ -82,7 +66,7 @@ const MessageBox: React.FC<MessageBoxType> = ({
                 className={classNames(
                   'rce-mbox-forward',
                   { 'rce-mbox-forward-right': props.position === 'left' },
-                  { 'rce-mbox-forward-left': props.position === 'right' }
+                  { 'rce-mbox-forward-left': props.position === 'right' },
                 )}
                 onClick={props.onForwardClick}
               >
@@ -97,7 +81,7 @@ const MessageBox: React.FC<MessageBoxType> = ({
                     ? classNames(
                         'rce-mbox-forward',
                         { 'rce-mbox-forward-right': props.position === 'left' },
-                        { 'rce-mbox-forward-left': props.position === 'right' }
+                        { 'rce-mbox-forward-left': props.position === 'right' },
                       )
                     : classNames(
                         'rce-mbox-forward',
@@ -106,7 +90,7 @@ const MessageBox: React.FC<MessageBoxType> = ({
                         },
                         {
                           'rce-mbox-reply-btn-left': props.position === 'right',
-                        }
+                        },
                       )
                 }
                 onClick={props.onReplyClick}
@@ -122,7 +106,7 @@ const MessageBox: React.FC<MessageBoxType> = ({
                     ? classNames(
                         'rce-mbox-remove',
                         { 'rce-mbox-remove-right': props.position === 'left' },
-                        { 'rce-mbox-remove-left': props.position === 'right' }
+                        { 'rce-mbox-remove-left': props.position === 'right' },
                       )
                     : classNames(
                         'rce-mbox-forward',
@@ -131,7 +115,7 @@ const MessageBox: React.FC<MessageBoxType> = ({
                         },
                         {
                           'rce-mbox-reply-btn-left': props.position === 'right',
-                        }
+                        },
                       )
                 }
                 onClick={props.onRemoveMessageClick}
@@ -174,13 +158,11 @@ const MessageBox: React.FC<MessageBoxType> = ({
               className={classNames(
                 'rce-mbox-time',
                 { 'rce-mbox-time-block': thatAbsoluteTime },
-                { 'non-copiable': !props.copiableDate }
+                { 'non-copiable': !props.copiableDate },
               )}
               data-text={props.copiableDate ? undefined : dateText}
             >
-              {props.copiableDate &&
-                props.date &&
-                (props.dateString || format(props.date))}
+              {props.copiableDate && props.date && (props.dateString || format(props.date))}
               {props.status && (
                 <span className="rce-mbox-status">
                   {props.status === 'waiting' && <MdAccessTime />}
@@ -219,17 +201,8 @@ const MessageBox: React.FC<MessageBoxType> = ({
                 >
                   <defs>
                     <filter id="filter1" x="0" y="0">
-                      <feOffset
-                        result="offOut"
-                        in="SourceAlpha"
-                        dx="-2"
-                        dy="-5"
-                      />
-                      <feGaussianBlur
-                        result="blurOut"
-                        in="offOut"
-                        stdDeviation="3"
-                      />
+                      <feOffset result="offOut" in="SourceAlpha" dx="-2" dy="-5" />
+                      <feGaussianBlur result="blurOut" in="offOut" stdDeviation="3" />
                       <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
                     </filter>
                   </defs>

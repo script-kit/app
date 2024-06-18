@@ -4,13 +4,13 @@ import { useAtom, useAtomValue } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
   channelAtom,
-  indexAtom,
-  mouseEnabledAtom,
-  inputFocusAtom,
-  shortcutsAtom,
   directionAtom,
-  flagsIndexAtom,
   flaggedChoiceValueAtom,
+  flagsIndexAtom,
+  indexAtom,
+  inputFocusAtom,
+  mouseEnabledAtom,
+  shortcutsAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
@@ -35,7 +35,9 @@ export default () => {
   useHotkeys(
     'up',
     (event) => {
-      if (!inputFocus) return;
+      if (!inputFocus) {
+        return;
+      }
       event.preventDefault();
       setMouseEnabled(0);
       setDirection(-1);
@@ -54,7 +56,9 @@ export default () => {
   useHotkeys(
     'down',
     (event) => {
-      if (!inputFocus) return;
+      if (!inputFocus) {
+        return;
+      }
       event.preventDefault();
       setMouseEnabled(0);
       setDirection(1);
@@ -73,7 +77,9 @@ export default () => {
   useHotkeys(
     'left',
     (event) => {
-      if (!inputFocus) return;
+      if (!inputFocus) {
+        return;
+      }
       // event.preventDefault();
       channel(Channel.LEFT);
     },
@@ -84,7 +90,9 @@ export default () => {
   useHotkeys(
     'right',
     (event) => {
-      if (!inputFocus) return;
+      if (!inputFocus) {
+        return;
+      }
       // event.preventDefault();
       channel(Channel.RIGHT);
     },

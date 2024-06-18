@@ -4,22 +4,18 @@
 /* eslint-disable jest/expect-expect */
 /* eslint-disable no-param-reassign */
 
-import v8 from 'v8';
-import path from 'path';
-import os from 'os';
-import log from 'electron-log';
+import os from 'node:os';
+import path from 'node:path';
+import v8 from 'node:v8';
 import colors from 'color-name';
+import log from 'electron-log';
 
-import {
-  getMainScriptPath,
-  kitPath,
-  shortcutNormalizer,
-} from '@johnlindquist/kit/core/utils';
-import { Choice } from '@johnlindquist/kit/types/core';
-import { emitter, KitEvent } from '../shared/events';
+import { getMainScriptPath, kitPath, shortcutNormalizer } from '@johnlindquist/kit/core/utils';
+import type { Choice } from '@johnlindquist/kit/types/core';
 import { Trigger } from '../shared/enums';
+import { KitEvent, emitter } from '../shared/events';
+import type { ScoredChoice } from '../shared/types';
 import { convertKey } from './state';
-import { ScoredChoice } from '../shared/types';
 
 export const APP_NAME = 'Kit';
 export const KIT_PROTOCOL = 'kit';
@@ -45,18 +41,16 @@ export const isInDirectory = (filePath: string, dir: string) => {
   const relation = path.relative(dir, filePath);
 
   return Boolean(
-    relation &&
-      relation !== '..' &&
-      !relation.startsWith(`..${path.sep}`) &&
-      relation !== path.resolve(filePath),
+    relation && relation !== '..' && !relation.startsWith(`..${path.sep}`) && relation !== path.resolve(filePath),
   );
 };
 
 export function pathsAreEqual(path1: string, path2: string) {
   path1 = path.resolve(path1);
   path2 = path.resolve(path2);
-  if (process.platform === 'win32')
+  if (process.platform === 'win32') {
     return path1.toLowerCase() === path2.toLowerCase();
+  }
   return path1 === path2;
 }
 
@@ -77,20 +71,25 @@ export const isKitScript = (scriptPath: string) => {
 };
 
 export const toRgb = (hexOrRgbOrName: string) => {
-  if (hexOrRgbOrName === 'lighten' || hexOrRgbOrName === 'darken')
+  if (hexOrRgbOrName === 'lighten' || hexOrRgbOrName === 'darken') {
     return hexOrRgbOrName;
-  if (hexOrRgbOrName.includes(',')) return hexOrRgbOrName;
-  if (colors[hexOrRgbOrName]) return colors[hexOrRgbOrName].join(',');
+  }
+  if (hexOrRgbOrName.includes(',')) {
+    return hexOrRgbOrName;
+  }
+  if (colors[hexOrRgbOrName]) {
+    return colors[hexOrRgbOrName].join(',');
+  }
 
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(
-    hexOrRgbOrName,
-  );
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hexOrRgbOrName);
 
-  if (!result) return `0, 0, 0`;
+  if (!result) {
+    return '0, 0, 0';
+  }
 
-  const r = parseInt(result[1], 16);
-  const g = parseInt(result[2], 16);
-  const b = parseInt(result[3], 16);
+  const r = Number.parseInt(result[1], 16);
+  const g = Number.parseInt(result[2], 16);
+  const b = Number.parseInt(result[3], 16);
 
   return `${r}, ${g}, ${b}`;
 };
@@ -103,35 +102,32 @@ const validateAccelerator = (shortcut: string) => {
     const isModifier = modifiers.test(val);
     if (isKey) {
       // Key must be unique
-      if (keyFound) return false;
+      if (keyFound) {
+        return false;
+      }
       keyFound = true;
     }
     // Key is required
-    if (index === parts.length - 1 && !keyFound) return false;
+    if (index === parts.length - 1 && !keyFound) {
+      return false;
+    }
     return isKey || isModifier;
   });
 };
 
-const modifiers =
-  /^(Command|Cmd|Control|Ctrl|CommandOrControl|CmdOrCtrl|Alt|Option|AltGr|Shift|Super)$/;
+const modifiers = /^(Command|Cmd|Control|Ctrl|CommandOrControl|CmdOrCtrl|Alt|Option|AltGr|Shift|Super)$/;
 const keyCodes =
   /^([0-9A-Z)!@#$%^&*(:+<_>?~{|}";=,\-./`[\\\]']|F1*[1-9]|F10|F2[0-4]|Plus|Space|Tab|Backspace|Delete|Insert|Return|Enter|Up|Down|Left|Right|Home|End|PageUp|PageDown|Escape|Esc|VolumeUp|VolumeDown|VolumeMute|MediaNextTrack|MediaPreviousTrack|MediaStop|MediaPlayPause|PrintScreen)$/;
 
 const infoScript = kitPath('cli', 'info.js');
 
-const conversionFail = (
-  shortcut: string,
-  filePath: string,
-  otherPath = '',
-) => `# Shortcut Conversion Failed
+const conversionFail = (shortcut: string, filePath: string, otherPath = '') => `# Shortcut Conversion Failed
 
 Attempted to convert to a valid shortcut, but result was invalid:
 
 <code>${shortcut}</code>
 
-Please open ${path.basename(
-  filePath,
-)} and try again or ask a question in our [Github Discussions](https://github.com/johnlindquist/kit/discussions)
+Please open ${path.basename(filePath)} and try again or ask a question in our [Github Discussions](https://github.com/johnlindquist/kit/discussions)
 `;
 
 export const shortcutInfo = async (
@@ -154,7 +150,9 @@ export const shortcutInfo = async (
 };
 
 export const convertShortcut = (shortcut: string, filePath: string): string => {
-  if (!shortcut?.length) return '';
+  if (!shortcut?.length) {
+    return '';
+  }
   const normalizedShortcut = shortcutNormalizer(shortcut);
   // log.info({ shortcut, normalizedShortcut });
   const [sourceKey, ...mods] = normalizedShortcut
@@ -165,9 +163,13 @@ export const convertShortcut = (shortcut: string, filePath: string): string => {
     .reverse();
   // log.info(`Shortcut main key: ${sourceKey}`);
 
-  if (!mods.length || !sourceKey?.length) {
-    if (!mods.length) log.info('No modifiers found');
-    if (!sourceKey?.length) log.info('No main key found');
+  if (!(mods.length && sourceKey?.length)) {
+    if (!mods.length) {
+      log.info('No modifiers found');
+    }
+    if (!sourceKey?.length) {
+      log.info('No main key found');
+    }
     // shortcutInfo(normalizedShortcut, filePath);
     return '';
   }
@@ -203,12 +205,9 @@ export const createScoredChoice = (item: Choice): ScoredChoice => {
 };
 
 export const compareArrays = (arr1: any[], arr2: any[]) => {
-  if (
-    !Array.isArray(arr1) ||
-    !Array.isArray(arr2) ||
-    arr1.length !== arr2.length
-  )
+  if (!(Array.isArray(arr1) && Array.isArray(arr2)) || arr1.length !== arr2.length) {
     return false;
+  }
 
   // .concat() to not mutate arguments
   const arr1Sorted = arr1.concat().sort();

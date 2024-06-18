@@ -2,12 +2,12 @@
  * Builds the DLL for development electron renderer process
  */
 
+import path from 'node:path';
 import webpack from 'webpack';
-import path from 'path';
 import { merge } from 'webpack-merge';
-import baseConfig from './webpack.config.base';
 import { dependencies } from '../../package.json';
 import CheckNodeEnv from '../scripts/CheckNodeEnv';
+import baseConfig from './webpack.config.base';
 
 CheckNodeEnv('development');
 

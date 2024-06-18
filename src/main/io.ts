@@ -1,9 +1,9 @@
-import log from 'electron-log';
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { getAccessibilityAuthorized, kitState } from './state';
-import { sendToAllActiveChildren } from './process';
+import log from 'electron-log';
 import { chars } from './chars';
+import { sendToAllActiveChildren } from './process';
 import shims from './shims';
+import { getAccessibilityAuthorized, kitState } from './state';
 
 export const ShiftMap = {
   '`': '~',
@@ -60,9 +60,7 @@ let UiohookToName: Record<number, string>;
 function createUiohookToName() {
   const { UiohookKey } = shims['uiohook-napi'];
 
-  UiohookToName = Object.fromEntries(
-    Object.entries(UiohookKey).map(([k, v]) => [v, k]),
-  );
+  UiohookToName = Object.fromEntries(Object.entries(UiohookKey).map(([k, v]) => [v, k]));
 
   UiohookToName[UiohookKey.Comma] = ',';
   UiohookToName[UiohookKey.Period] = '.';
@@ -105,12 +103,12 @@ export const registerIO = async (handler: (event: any) => void) => {
 
   const notAuthorized = await getAccessibilityAuthorized();
   if (!notAuthorized) {
-    log.info(`Requesting accessibility access...`);
+    log.info('Requesting accessibility access...');
 
     return;
   }
 
-  log.info(`Adding click listeners...`);
+  log.info('Adding click listeners...');
   uIOhook.on('click', (event) => {
     try {
       handler(event);
@@ -167,7 +165,7 @@ export const registerIO = async (handler: (event: any) => void) => {
     }
   });
 
-  log.info(`Adding keydown listeners...`);
+  log.info('Adding keydown listeners...');
   let key = '';
   uIOhook.on('keydown', (event) => {
     try {
@@ -182,7 +180,7 @@ export const registerIO = async (handler: (event: any) => void) => {
       });
 
       if (event.keycode === UiohookKey.Escape) {
-        log.info(`✋ Escape pressed`);
+        log.info('✋ Escape pressed');
         kitState.escapePressed = true;
       }
     } catch (error) {
@@ -198,13 +196,13 @@ export const registerIO = async (handler: (event: any) => void) => {
       state: event,
     });
     if (event.keycode === UiohookKey.Escape) {
-      log.info(`✋ Escape released`);
+      log.info('✋ Escape released');
       kitState.escapePressed = false;
     }
   });
 
   // TODO: Is there a way to detect that this has hung and restart the app if so?
-  log.info(`The line right before uIOhook.start()...`);
+  log.info('The line right before uIOhook.start()...');
   uIOhook.start();
-  log.info(`The line right after uIOhook.start()...`);
+  log.info('The line right after uIOhook.start()...');
 };

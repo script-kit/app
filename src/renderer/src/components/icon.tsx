@@ -23,7 +23,7 @@ hover:bg-opacity-10
 focus:bg-opacity-20
 `;
 
-const textContrast = `text-primary text-opacity-90`;
+const textContrast = 'text-primary text-opacity-90';
 const iconContext = {
   className: 'animate-spin-pulse text-primary -z-10 absolute',
   style: {
@@ -42,18 +42,15 @@ export function IconButton() {
   const listProcessesAction = useAtomValue(listProcessesActionAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
 
-  if (lazyIcon.state === 'hasError') return <span>{lazyIcon.error}</span>;
+  if (lazyIcon.state === 'hasError') {
+    return <span>{lazyIcon.error}</span>;
+  }
   if (lazyIcon.state === 'loading') {
     return <span>Loading...</span>;
   }
 
   return (
-    <button
-      key="icon-button"
-      tabIndex={-1}
-      type="button"
-      className="relative min-h-fit min-w-fit"
-    >
+    <button key="icon-button" tabIndex={-1} type="button" className="relative min-h-fit min-w-fit">
       {/* {loading && (
         <IconContext.Provider value={iconContext}>
           <div>

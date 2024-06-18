@@ -1,14 +1,11 @@
-import log from 'electron-log';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import MonacoEditor, { Monaco, useMonaco } from '@monaco-editor/react';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
-import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
+import type { EditorOptions } from '@johnlindquist/kit/types/kitapp';
+import MonacoEditor, { type Monaco, useMonaco } from '@monaco-editor/react';
+import log from 'electron-log';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import {
-  editor as monacoEditor,
-  Range,
-} from 'monaco-editor/esm/vs/editor/editor.api';
+import { Range, type editor as monacoEditor } from 'monaco-editor/esm/vs/editor/editor.api';
 
 const { ipcRenderer } = window.electron;
 import {
@@ -33,8 +30,8 @@ import {
   uiAtom,
 } from '../jotai';
 
-import { kitLight, nightOwl } from '../editor-themes';
 import { convertStringShortcutToMoncacoNumber } from '@renderer/utils/keycodes';
+import { kitLight, nightOwl } from '../editor-themes';
 
 const registerPropertiesLanguage = (monaco: Monaco) => {
   monaco.languages.register({ id: 'properties' });
@@ -87,9 +84,7 @@ const registerPropertiesLanguage = (monaco: Monaco) => {
         label: 'ifelse',
         kind: monaco.languages.CompletionItemKind.Snippet,
         insertText: {
-          value: ['if (${1:condition}) {', '\t$0', '} else {', '\t', '}'].join(
-            '\n',
-          ),
+          value: ['if (${1:condition}) {', '\t$0', '} else {', '\t', '}'].join('\n'),
         },
         documentation: 'If-Else Statement',
       },
@@ -111,9 +106,7 @@ export default function Editor() {
   const disposeRef = useRef<any>(null);
   const [scrollTo, setScrollTo] = useAtom(scrollToAtom);
   const [channel] = useAtom(channelAtom);
-  const [flaggedChoiceValue, setFlaggedChoiceValue] = useAtom(
-    flaggedChoiceValueAtom,
-  );
+  const [flaggedChoiceValue, setFlaggedChoiceValue] = useAtom(flaggedChoiceValueAtom);
 
   const m = useMonaco();
 
@@ -123,33 +116,33 @@ export default function Editor() {
   // useOpen();
 
   useEffect(() => {
-    if (!m) return;
+    if (!m) {
+      return;
+    }
 
-    if (disposeRef?.current) disposeRef?.current?.dispose();
+    if (disposeRef?.current) {
+      disposeRef?.current?.dispose();
+    }
     if (options?.language === 'markdown' || options?.language === 'md') {
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      disposeRef.current = m.languages.registerCompletionItemProvider(
-        'markdown',
-        {
-          async provideCompletionItems(model, position) {
-            // clear previous suggestions
+      disposeRef.current = m.languages.registerCompletionItemProvider('markdown', {
+        async provideCompletionItems(model, position) {
+          // clear previous suggestions
 
-            const suggestions = editorSuggestions?.map((str: string) => ({
-              label: str,
-              insertText: str,
-            }));
+          const suggestions = editorSuggestions?.map((str: string) => ({
+            label: str,
+            insertText: str,
+          }));
 
-            return {
-              suggestions,
-            };
-          },
+          return {
+            suggestions,
+          };
         },
-      );
+      });
     }
   }, [editorSuggestions, m, options]);
 
-  const [editor, setEditorRef] =
-    useState<monacoEditor.IStandaloneCodeEditor | null>(null);
+  const [editor, setEditorRef] = useState<monacoEditor.IStandaloneCodeEditor | null>(null);
 
   useEffect(() => {
     if (editorSuggestions.length && options.language === 'markdown') {
@@ -180,8 +173,7 @@ export default function Editor() {
         monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
           target: monaco.languages.typescript.ScriptTarget.ESNext,
           allowNonTsExtensions: true,
-          moduleResolution:
-            monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+          moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
           module: monaco.languages.typescript.ModuleKind.ESNext,
           lib: ['esnext'],
           jsx: monaco.languages.typescript.JsxEmit.React,
@@ -199,8 +191,7 @@ export default function Editor() {
         monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
           target: monaco.languages.typescript.ScriptTarget.ESNext,
           allowNonTsExtensions: true,
-          moduleResolution:
-            monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+          moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
           module: monaco.languages.typescript.ModuleKind.ESNext,
           lib: ['esnext'],
           jsx: monaco.languages.typescript.JsxEmit.React,
@@ -217,13 +208,10 @@ export default function Editor() {
       setEditorRef(mountEditor);
 
       // Remove the cmd/control + k binding
-      mountEditor.addCommand(
-        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK,
-        () => {
-          const value = mountEditor.getModel()?.getValue();
-          setFlaggedChoiceValue(value || ui);
-        },
-      );
+      mountEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
+        const value = mountEditor.getModel()?.getValue();
+        setFlaggedChoiceValue(value || ui);
+      });
 
       mountEditor.focus();
 
@@ -243,10 +231,7 @@ export default function Editor() {
             for (const { content, filePath } of config.extraLibs) {
               // console.log(filePath);
               // console.log(content);
-              monaco.languages.typescript.typescriptDefaults.addExtraLib(
-                content,
-                filePath,
-              );
+              monaco.languages.typescript.typescriptDefaults.addExtraLib(content, filePath);
             }
           }
         }
@@ -254,10 +239,7 @@ export default function Editor() {
         if (config?.language === 'javascript') {
           if (config?.extraLibs?.length) {
             for (const { content, filePath } of config.extraLibs) {
-              monaco.languages.typescript.javascriptDefaults.addExtraLib(
-                content,
-                filePath,
-              );
+              monaco.languages.typescript.javascriptDefaults.addExtraLib(content, filePath);
             }
           }
         }
@@ -279,24 +261,20 @@ export default function Editor() {
 
       mountEditor.layout({
         width: containerRef?.current?.offsetWidth || document.body.offsetWidth,
-        height:
-          (containerRef?.current?.offsetHeight || document.body.offsetHeight) -
-          24,
+        height: (containerRef?.current?.offsetHeight || document.body.offsetHeight) - 24,
       });
 
       // if (typeof global?.exports === 'undefined') global.exports = {};
       mountEditor.focus();
 
-      if (mountEditor?.getDomNode())
-        (
-          (mountEditor.getDomNode() as HTMLElement).style as any
-        ).webkitAppRegion = 'no-drag';
+      if (mountEditor?.getDomNode()) {
+        ((mountEditor.getDomNode() as HTMLElement).style as any).webkitAppRegion = 'no-drag';
+      }
 
       const lineNumber = mountEditor.getModel()?.getLineCount() || 0;
 
       if ((config as EditorOptions).scrollTo === 'bottom') {
-        const column =
-          (mountEditor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+        const column = (mountEditor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
 
         const position = { lineNumber, column };
         // console.log({ position });
@@ -314,15 +292,16 @@ export default function Editor() {
 
   const onChange = useCallback(
     (value) => {
-      if (!editor) return;
-      if (!editor?.getModel()) return;
-      if (!editor?.getPosition()) return;
-      setCursorPosition(
-        editor
-          ?.getModel()
-          ?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) ||
-          0,
-      );
+      if (!editor) {
+        return;
+      }
+      if (!editor?.getModel()) {
+        return;
+      }
+      if (!editor?.getPosition()) {
+        return;
+      }
+      setCursorPosition(editor?.getModel()?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) || 0);
       setInputValue(value);
     },
     [editor, setCursorPosition, setInputValue],
@@ -336,8 +315,7 @@ export default function Editor() {
     if (editor && (config as EditorOptions).scrollTo === 'bottom') {
       const lineNumber = editor.getModel()?.getLineCount() || 0;
 
-      const column =
-        (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+      const column = (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
 
       const position = { lineNumber, column };
       editor.setPosition(position);
@@ -351,8 +329,7 @@ export default function Editor() {
       if (scrollTo === 'bottom') {
         const lineNumber = editor.getModel()?.getLineCount() || 0;
 
-        const column =
-          (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+        const column = (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
 
         const position = { lineNumber, column };
         editor.setPosition(position);
@@ -378,8 +355,7 @@ export default function Editor() {
       const lineNumber = editor.getModel()?.getLineCount() || 0;
 
       if ((config as EditorOptions).scrollTo === 'bottom') {
-        const column =
-          (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+        const column = (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
 
         const position = { lineNumber, column };
         editor.setPosition(position);
@@ -431,15 +407,17 @@ export default function Editor() {
 
   useEffect(() => {
     const getSelectedText = () => {
-      if (!editor) return;
+      if (!editor) {
+        return;
+      }
       const selection = editor.getSelection();
 
-      if (!selection) return;
+      if (!selection) {
+        return;
+      }
       const text = editor.getModel()?.getValueInRange(selection);
       // get the start and end of the selection
-      const start = editor
-        .getModel()
-        ?.getOffsetAt(selection.getStartPosition());
+      const start = editor.getModel()?.getOffsetAt(selection.getStartPosition());
       const end = editor.getModel()?.getOffsetAt(selection.getEndPosition());
 
       channel(Channel.EDITOR_GET_SELECTION, {
@@ -454,16 +432,18 @@ export default function Editor() {
     ipcRenderer.on(Channel.EDITOR_GET_SELECTION, getSelectedText);
 
     const getCursorPosition = () => {
-      if (!editor) return;
-      if (!editor?.getModel()) return;
-      if (!editor?.getPosition()) return;
+      if (!editor) {
+        return;
+      }
+      if (!editor?.getModel()) {
+        return;
+      }
+      if (!editor?.getPosition()) {
+        return;
+      }
 
       // get the index of the cursor relative to the content
-      const cursorOffset =
-        editor
-          ?.getModel()
-          ?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) ||
-        0;
+      const cursorOffset = editor?.getModel()?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) || 0;
 
       channel(Channel.EDITOR_GET_CURSOR_OFFSET, { value: cursorOffset });
     };
@@ -471,15 +451,17 @@ export default function Editor() {
     ipcRenderer.on(Channel.EDITOR_GET_CURSOR_OFFSET, getCursorPosition);
 
     const insertTextAtCursor = (event: any, text: string) => {
-      if (!editor) return;
-      if (!editor?.getModel()) return;
-      if (!editor?.getPosition()) return;
+      if (!editor) {
+        return;
+      }
+      if (!editor?.getModel()) {
+        return;
+      }
+      if (!editor?.getPosition()) {
+        return;
+      }
 
-      const cursorOffset =
-        editor
-          ?.getModel()
-          ?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) ||
-        0;
+      const cursorOffset = editor?.getModel()?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) || 0;
 
       const position = editor.getModel()?.getPositionAt(cursorOffset);
       editor.setPosition(position || { lineNumber: 1, column: 1 });
@@ -500,10 +482,7 @@ export default function Editor() {
       editor.executeEdits('my-source', [op]);
 
       const newCursorOffset =
-        editor
-          ?.getModel()
-          ?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) ||
-        0;
+        editor?.getModel()?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) || 0;
 
       channel(Channel.EDITOR_INSERT_TEXT, { value: newCursorOffset });
     };
@@ -511,17 +490,18 @@ export default function Editor() {
     ipcRenderer.on(Channel.EDITOR_INSERT_TEXT, insertTextAtCursor);
 
     const moveCursor = (event: any, offset: number) => {
-      if (!editor) return;
-      if (!editor?.getModel()) return;
+      if (!editor) {
+        return;
+      }
+      if (!editor?.getModel()) {
+        return;
+      }
 
       const position = editor.getModel()?.getPositionAt(offset);
       editor.setPosition(position || { lineNumber: 1, column: 1 });
 
       const newCursorOffset =
-        editor
-          ?.getModel()
-          ?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) ||
-        0;
+        editor?.getModel()?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) || 0;
 
       channel(Channel.EDITOR_MOVE_CURSOR, { value: newCursorOffset });
     };
@@ -530,14 +510,8 @@ export default function Editor() {
 
     return () => {
       ipcRenderer.removeListener(Channel.EDITOR_GET_SELECTION, getSelectedText);
-      ipcRenderer.removeListener(
-        Channel.EDITOR_GET_CURSOR_OFFSET,
-        getCursorPosition,
-      );
-      ipcRenderer.removeListener(
-        Channel.EDITOR_INSERT_TEXT,
-        insertTextAtCursor,
-      );
+      ipcRenderer.removeListener(Channel.EDITOR_GET_CURSOR_OFFSET, getCursorPosition);
+      ipcRenderer.removeListener(Channel.EDITOR_INSERT_TEXT, insertTextAtCursor);
       ipcRenderer.removeListener(Channel.EDITOR_MOVE_CURSOR, moveCursor);
     };
   }, [editor, channel]);
@@ -552,14 +526,11 @@ export default function Editor() {
     if (appConfig) {
       for (const { type, value } of shortcutStrings) {
         // log.info(`Assigning shortcut`, { type, value });
-        const result = convertStringShortcutToMoncacoNumber(
-          value,
-          appConfig?.isWin,
-        );
+        const result = convertStringShortcutToMoncacoNumber(value, appConfig?.isWin);
 
         if (result) {
           editor?.addCommand(result, () => {
-            log.info(`🏆`, { value, type });
+            log.info('🏆', { value, type });
             if (type === 'shortcut') {
               sendShortcut(value);
             }

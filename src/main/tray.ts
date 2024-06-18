@@ -1,45 +1,45 @@
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable no-nested-ternary */
 import {
+  Menu,
+  type MenuItemConstructorOptions,
   Notification,
   Tray,
-  Menu,
-  MenuItemConstructorOptions,
-  globalShortcut,
-  shell,
-  ipcMain,
   app,
+  globalShortcut,
+  ipcMain,
+  shell,
 } from 'electron';
 
 // REMOVED BY KIT
 
-import { formatDistanceToNow } from 'date-fns';
-import path from 'path';
-import { rm } from 'fs/promises';
-import log, { LogLevel } from 'electron-log';
-import { KitStatus, Status } from '@johnlindquist/kit/types/kitapp';
-import { subscribeKey } from 'valtio/utils';
-import { KeyboardEvent } from 'electron/main';
-import os from 'os';
+import { rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import {
+  getLogFromScriptPath,
+  getMainScriptPath,
+  isFile,
   kenvPath,
   kitPath,
   knodePath,
-  getMainScriptPath,
-  isFile,
-  getLogFromScriptPath,
   resolveToScriptPath,
 } from '@johnlindquist/kit/core/utils';
+import type { KitStatus, Status } from '@johnlindquist/kit/types/kitapp';
+import { formatDistanceToNow } from 'date-fns';
+import log, { type LogLevel } from 'electron-log';
+import type { KeyboardEvent } from 'electron/main';
+import { subscribeKey } from 'valtio/utils';
 
-import { getAssetPath } from '../shared/assets';
-import { forceQuit, kitState, subs } from './state';
-import { emitter, KitEvent } from '../shared/events';
-import { getVersion } from './version';
-import { AppChannel, Trigger } from '../shared/enums';
-import { mainLogPath, updateLogPath } from './logs';
-import { prompts } from './prompts';
-import { processes } from './process';
 import { debounce } from 'lodash-es';
+import { getAssetPath } from '../shared/assets';
+import { AppChannel, Trigger } from '../shared/enums';
+import { KitEvent, emitter } from '../shared/events';
+import { mainLogPath, updateLogPath } from './logs';
+import { processes } from './process';
+import { prompts } from './prompts';
+import { forceQuit, kitState, subs } from './state';
+import { getVersion } from './version';
 
 let tray: Tray | null = null;
 
@@ -49,9 +49,7 @@ const buildAuthSubmenu = (): MenuItemConstructorOptions[] => {
   return authItems;
 };
 
-const buildRunningScriptsSubmenu = async (): Promise<
-  MenuItemConstructorOptions[]
-> => {
+const buildRunningScriptsSubmenu = async (): Promise<MenuItemConstructorOptions[]> => {
   const runningScripts: MenuItemConstructorOptions[] = [];
 
   if (processes.find((p) => p?.scriptPath)) {
@@ -92,12 +90,10 @@ const buildRunningScriptsSubmenu = async (): Promise<
             },
           });
         }
-        let uptimeLabel = ``;
+        let uptimeLabel = '';
 
         try {
-          uptimeLabel = `uptime: ${formatDistanceToNow(
-            new Date(date as number),
-          )}`;
+          uptimeLabel = `uptime: ${formatDistanceToNow(new Date(date as number))}`;
         } catch (error) {
           // ignore
         }
@@ -161,7 +157,7 @@ const buildUpdateSubmenu = (): MenuItemConstructorOptions[] => {
 
   if (kitState.requiresAuthorizedRestart) {
     updateItems.push({
-      label: `Click to Restart Kit and Apply Permissions Changes`,
+      label: 'Click to Restart Kit and Apply Permissions Changes',
       click: () => {
         kitState.relaunch = true;
         // electron quit and restart
@@ -180,15 +176,11 @@ const buildUpdateSubmenu = (): MenuItemConstructorOptions[] => {
       submenu: [
         {
           label: `Open ${path.basename(kitState.scriptErrorPath)}`,
-          click: runScript(
-            kitPath('cli', 'edit-script.js'),
-            [kitState.scriptErrorPath],
-            {
-              force: true,
-              trigger: Trigger.Tray,
-              sponsorCheck: false,
-            },
-          ),
+          click: runScript(kitPath('cli', 'edit-script.js'), [kitState.scriptErrorPath], {
+            force: true,
+            trigger: Trigger.Tray,
+            sponsorCheck: false,
+          }),
         },
         {
           label: `Open ${path.basename(logPath)}`,
@@ -207,7 +199,7 @@ const buildUpdateSubmenu = (): MenuItemConstructorOptions[] => {
 
   if (kitState.updateDownloaded) {
     updateItems.push({
-      label: `Update Downloaded. Click to quit and install.`,
+      label: 'Update Downloaded. Click to quit and install.',
       click: () => {
         kitState.applyUpdate = true;
       },
@@ -231,9 +223,7 @@ const buildWatcherSubmenu = (): MenuItemConstructorOptions[] => {
   });
 
   watcherSubmenu.push({
-    label: `${
-      kitState.suspendWatchers ? `Resume` : `Suspend`
-    } Script and File Watchers`,
+    label: `${kitState.suspendWatchers ? 'Resume' : 'Suspend'} Script and File Watchers`,
     click: () => {
       kitState.suspendWatchers = !kitState.suspendWatchers;
     },
@@ -247,7 +237,7 @@ const buildPermissionsSubmenu = (): MenuItemConstructorOptions[] => {
 
   // REMOVED BY KIT
   permissionsSubmenu.push({
-    label: `Request Notification Permission`,
+    label: 'Request Notification Permission',
     click: async () => {
       new Notification({
         title: 'Kit.app Notification',
@@ -272,9 +262,9 @@ const buildPromptsSubmenu = (): MenuItemConstructorOptions[] => {
   const promptsSubmenu: MenuItemConstructorOptions[] = [];
 
   promptsSubmenu.push({
-    label: `Open Focused Prompt Dev Tools`,
+    label: 'Open Focused Prompt Dev Tools',
     click: async () => {
-      log.info(`Opening focused prompt dev tools...`);
+      log.info('Opening focused prompt dev tools...');
       prompts?.focused?.window?.webContents?.openDevTools();
     },
   });
@@ -282,7 +272,7 @@ const buildPromptsSubmenu = (): MenuItemConstructorOptions[] => {
   promptsSubmenu.push({
     label: 'Center Focused Prompt',
     click: () => {
-      log.info(`Centering focused prompt...`);
+      log.info('Centering focused prompt...');
       prompts.focused?.forcePromptToCenter();
     },
   });
@@ -290,7 +280,7 @@ const buildPromptsSubmenu = (): MenuItemConstructorOptions[] => {
   promptsSubmenu.push({
     label: 'Gather All Prompts to Center',
     click: () => {
-      log.info(`Gathering all prompts to center...`);
+      log.info('Gathering all prompts to center...');
       for (const prompt of prompts) {
         prompt.forcePromptToCenter();
       }
@@ -298,7 +288,7 @@ const buildPromptsSubmenu = (): MenuItemConstructorOptions[] => {
   });
 
   promptsSubmenu.push({
-    label: `Clear Prompt Cache`,
+    label: 'Clear Prompt Cache',
     click: runScript(kitPath('cli', 'kit-clear-prompt.js')),
   });
 
@@ -309,7 +299,7 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
   const toolsSubmenu: MenuItemConstructorOptions[] = [];
 
   toolsSubmenu.push({
-    label: `Force Reload`,
+    label: 'Force Reload',
     click: async () => {
       ipcMain.emit(AppChannel.RELOAD);
     },
@@ -320,7 +310,7 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
       type: 'separator',
     },
     {
-      label: `Open kit.log`,
+      label: 'Open kit.log',
       click: async () => {
         shell.openPath(kitPath('logs', 'kit.log'));
       },
@@ -329,13 +319,13 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
 
   if (kitState.isMac) {
     toolsSubmenu.push({
-      label: `Watch kit.log in Terminal`,
+      label: 'Watch kit.log in Terminal',
       click: runScript(kitPath('help', 'tail-log.js')),
     });
   }
 
   toolsSubmenu.push({
-    label: `Adjust Log Level`,
+    label: 'Adjust Log Level',
     submenu: log.levels.map(
       (level) =>
         ({
@@ -353,14 +343,14 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
   });
 
   toolsSubmenu.push({
-    label: `Open main.log`,
+    label: 'Open main.log',
     click: () => {
       shell.openPath(mainLogPath);
     },
   });
 
   toolsSubmenu.push({
-    label: `Open update.log`,
+    label: 'Open update.log',
     click: () => {
       shell.openPath(updateLogPath);
     },
@@ -371,7 +361,7 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
   });
 
   toolsSubmenu.push({
-    label: `Reveal ~/.kenv`,
+    label: 'Reveal ~/.kenv',
     click: runScript(kitPath('help', 'reveal-kenv.js')),
   });
 
@@ -389,7 +379,7 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
   toolsSubmenu.push({
     label: 'Force Repair Kit SDK. Will Automatically Restart',
     click: async () => {
-      log.warn(`Repairing kit SDK node_modules...`);
+      log.warn('Repairing kit SDK node_modules...');
       emitter.emit(KitEvent.TeardownWatchers);
       try {
         await rm(knodePath(), { recursive: true, force: true });
@@ -421,37 +411,22 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
 
 export const openMenu = debounce(
   async (event?: KeyboardEvent) => {
-    log.info(`🎨 openMenu`, event);
+    log.info('🎨 openMenu', event);
 
     if (event?.metaKey) {
-      log.info(
-        `🎨 Meta key held while clicking on tray. Running command click...`,
-      );
-      emitter.emit(
-        KitEvent.RunPromptProcess,
-        kenvPath('app', 'command-click.js'),
-      );
+      log.info('🎨 Meta key held while clicking on tray. Running command click...');
+      emitter.emit(KitEvent.RunPromptProcess, kenvPath('app', 'command-click.js'));
     } else if (event?.shiftKey) {
-      log.info(
-        `🎨 Shift key held while clicking on tray. Running shift click...`,
-      );
-      emitter.emit(
-        KitEvent.RunPromptProcess,
-        kenvPath('app', 'shift-click.js'),
-      );
+      log.info('🎨 Shift key held while clicking on tray. Running shift click...');
+      emitter.emit(KitEvent.RunPromptProcess, kenvPath('app', 'shift-click.js'));
     } else if (event?.ctrlKey) {
-      log.info(
-        `🎨 Ctrl key held while clicking on tray. Running control click...`,
-      );
-      emitter.emit(
-        KitEvent.RunPromptProcess,
-        kenvPath('app', 'control-click.js'),
-      );
+      log.info('🎨 Ctrl key held while clicking on tray. Running control click...');
+      emitter.emit(KitEvent.RunPromptProcess, kenvPath('app', 'control-click.js'));
     } else if (event?.altKey) {
-      log.info(`🎨 Alt key held while clicking on tray. Running alt click...`);
+      log.info('🎨 Alt key held while clicking on tray. Running alt click...');
       emitter.emit(KitEvent.RunPromptProcess, kenvPath('app', 'alt-click.js'));
     } else {
-      log.info(`🎨 Opening tray menu...`);
+      log.info('🎨 Opening tray menu...');
       // emitter.emit(KitEvent.RunPromptProcess, getMainScriptPath());
 
       const updateMenu: MenuItemConstructorOptions = {
@@ -515,30 +490,28 @@ export const openMenu = debounce(
           type: 'separator',
         },
         {
-          label: `Script Kit Forum`,
+          label: 'Script Kit Forum',
           click: () => {
-            shell.openExternal(
-              `https://github.com/johnlindquist/kit/discussions`,
-            );
+            shell.openExternal('https://github.com/johnlindquist/kit/discussions');
           },
           icon: menuIcon('github'),
         },
         {
-          label: `Subscribe to the Newsletter`,
+          label: 'Subscribe to the Newsletter',
           click: runScript(kitPath('help', 'join.js')),
           icon: menuIcon('newsletter'),
         },
         {
-          label: `Follow on Twitter`,
+          label: 'Follow on Twitter',
           click: () => {
-            shell.openExternal(`https://twitter.com/scriptkitapp`);
+            shell.openExternal('https://twitter.com/scriptkitapp');
           },
           icon: menuIcon('twitter'),
         },
         {
-          label: `Browse Community Scripts`,
+          label: 'Browse Community Scripts',
           click: () => {
-            shell.openExternal(`https://scriptkit.com/scripts`);
+            shell.openExternal('https://scriptkit.com/scripts');
           },
           icon: menuIcon('browse'),
         },
@@ -550,19 +523,19 @@ export const openMenu = debounce(
           enabled: false,
         },
         {
-          label: `Prompts`,
+          label: 'Prompts',
           submenu: buildPromptsSubmenu(),
         },
         {
-          label: `Tools`,
+          label: 'Tools',
           submenu: buildToolsSubmenu(),
         },
         {
-          label: `Permissions`,
+          label: 'Permissions',
           submenu: buildPermissionsSubmenu(),
         },
         {
-          label: `Watchers`,
+          label: 'Watchers',
           submenu: buildWatcherSubmenu(),
         },
         updateMenu,
@@ -574,7 +547,7 @@ export const openMenu = debounce(
         //   click: runScript(kitPath('cli', 'settings.js')),
         // },
         {
-          label: `Change Shortcut`,
+          label: 'Change Shortcut',
           click: runScript(kitPath('cli', 'change-main-shortcut.js')),
         },
         ...(await buildRunningScriptsSubmenu()),
@@ -586,7 +559,7 @@ export const openMenu = debounce(
         },
       ]);
       contextMenu.once('menu-will-close', () => {
-        log.info(`🎨 menu-will-close Closing tray menu...`);
+        log.info('🎨 menu-will-close Closing tray menu...');
         if (!kitState.starting && kitState.trayScripts.length === 0) {
           kitState.status = {
             status: 'default',
@@ -597,7 +570,7 @@ export const openMenu = debounce(
         kitState.trayOpen = false;
         kitState.scriptErrorPath = '';
       });
-      log.info(`🎨 Opening tray menu...`);
+      log.info('🎨 Opening tray menu...');
       tray?.popUpContextMenu(contextMenu);
       kitState.trayOpen = true;
     }
@@ -613,8 +586,10 @@ const isWin = os.platform() === 'win32';
 
 export const trayIcon = (status: Status) => {
   log.info(`🎨 Tray icon: ${status}`);
-  if (isWin) return getAssetPath(`tray`, `default-win-Template.png`);
-  return getAssetPath(`tray`, `${status}-Template.png`);
+  if (isWin) {
+    return getAssetPath('tray', 'default-win-Template.png');
+  }
+  return getAssetPath('tray', `${status}-Template.png`);
 };
 
 type iconType =
@@ -633,17 +608,13 @@ type iconType =
   | Status;
 
 const menuIcon = (name: iconType) => {
-  return getAssetPath(`menu`, `${name}-Template.png`);
+  return getAssetPath('menu', `${name}-Template.png`);
 };
 
 export const getTrayIcon = () => trayIcon('default');
 
 const runScript =
-  (
-    scriptPath: string,
-    args: string[] = [],
-    options = { force: false, trigger: Trigger.App, sponsorCheck: false },
-  ) =>
+  (scriptPath: string, args: string[] = [], options = { force: false, trigger: Trigger.App, sponsorCheck: false }) =>
   () => {
     log.info(`🎨 Running script: ${scriptPath}`);
     emitter.emit(KitEvent.RunPromptProcess, {
@@ -655,7 +626,7 @@ const runScript =
 
 const createOpenMain = () => {
   return {
-    label: `Open Kit.app Prompt`,
+    label: 'Open Kit.app Prompt',
     // icon: getAssetPath(`IconTemplate${isWin ? `-win` : ``}.png`),
     icon: menuIcon('open'),
     click: runScript(getMainScriptPath(), [], {
@@ -668,7 +639,7 @@ const createOpenMain = () => {
 };
 
 export const setupTray = async (checkDb = false, state: Status = 'default') => {
-  log.info(`🎨 Creating tray...`);
+  log.info('🎨 Creating tray...');
   // subscribeKey(kitState, 'isDark', () => {
   //   tray?.setImage(trayIcon('default'));
   //   kitState.notifyAuthFail = false;
@@ -699,7 +670,7 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
   if (kitState.starting) {
     const startingMenu = () => {
       shell.beep();
-      log.verbose(`🎨 Starting menu...`);
+      log.verbose('🎨 Starting menu...');
       const message = kitState.installing
         ? 'Installing Kit SDK...'
         : kitState.updateInstalling
@@ -753,12 +724,10 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
     }
 
     const trayEnabled = kitState.kenvEnv?.KIT_TRAY !== 'false';
-    log.info(
-      `🎨 Tray enabled by .env KIT_TRAY: ${trayEnabled ? 'true' : 'false'}`,
-    );
+    log.info(`🎨 Tray enabled by .env KIT_TRAY: ${trayEnabled ? 'true' : 'false'}`);
     if (checkDb && !trayEnabled) {
       const notification = new Notification({
-        title: `Kit.app started with icon hidden`,
+        title: 'Kit.app started with icon hidden',
         body: `${getVersion()}`,
         silent: true,
       });
@@ -767,7 +736,7 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
       return;
     }
     try {
-      log.info(`☑ Enable tray`);
+      log.info('☑ Enable tray');
 
       tray.removeAllListeners();
 
@@ -785,7 +754,7 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
 export const getTray = (): Tray | null => tray;
 
 export const destroyTray = () => {
-  log.info(`◽️ Disable tray`);
+  log.info('◽️ Disable tray');
   if (tray) {
     tray?.destroy();
     tray = null;
@@ -794,7 +763,7 @@ export const destroyTray = () => {
 
 const subReady = subscribeKey(kitState, 'ready', () => {
   if (kitState.trayOpen) {
-    log.info(`🎨 Kit ready. Tray open. Stealing focus...`);
+    log.info('🎨 Kit ready. Tray open. Stealing focus...');
     app?.focus({
       steal: true,
     });

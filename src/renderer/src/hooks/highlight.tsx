@@ -1,6 +1,6 @@
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
-import React, { ReactElement } from 'react';
+import React, { type ReactElement } from 'react';
 
 const className = 'text-primary';
 
@@ -79,17 +79,16 @@ const highlightStartsWith = (name: string, input: string) => {
 const firstLettersMatch = (name: string, input: string) => {
   const splitName = name.match(/\w+\W*/g) || [];
   const inputLetters = input.split('');
-  if (inputLetters.length > splitName.length) return false;
+  if (inputLetters.length > splitName.length) {
+    return false;
+  }
 
   return inputLetters.every((il, i) => {
     return il === splitName[i][0];
   });
 };
 
-export const highlightChoiceName = (
-  name: string,
-  input: string
-): string | ReactElement[] => {
+export const highlightChoiceName = (name: string, input: string): string | ReactElement[] => {
   const nameLower = name.toLowerCase();
   const inputLower = input.toLowerCase();
 

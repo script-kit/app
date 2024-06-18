@@ -1,8 +1,8 @@
-import log from 'electron-log';
-import { Choice } from '@johnlindquist/kit/types';
 import { kitPath } from '@johnlindquist/kit/core/utils';
+import type { Choice } from '@johnlindquist/kit/types';
+import log from 'electron-log';
 import { remove } from 'lodash-es';
-import { kitState, kitClipboard, kitStore } from './state';
+import { kitClipboard, kitState, kitStore } from './state';
 
 export interface ClipboardItem extends Choice {
   type: string;
@@ -15,8 +15,8 @@ export const getClipboardHistory = async () => {
   const history = await kitClipboard.store.get('history');
   if (kitState.isMac && kitStore.get('accessibilityAuthorized')) {
     const choice = {
-      name: `Clipboard history requires accessibility access`,
-      description: `Unable to read clipboard history`,
+      name: 'Clipboard history requires accessibility access',
+      description: 'Unable to read clipboard history',
       value: '__not-authorized__',
     };
     log.info(choice);
@@ -46,16 +46,13 @@ export const clearClipboardHistory = () => {
 export const addToClipboardHistory = async (clipboardItem: ClipboardItem) => {
   const clipboardHistory = await kitClipboard.store.get('history');
 
-  remove(
-    clipboardHistory,
-    (item: ClipboardItem) => item.value === clipboardItem?.value,
-  );
+  remove(clipboardHistory, (item: ClipboardItem) => item.value === clipboardItem?.value);
 
-  log.silly(`📋 Clipboard`, clipboardItem);
+  log.silly('📋 Clipboard', clipboardItem);
 
   clipboardHistory.unshift(clipboardItem);
   const maxHistory = kitState?.kenvEnv?.KIT_CLIPBOARD_HISTORY_LIMIT
-    ? parseInt(kitState?.kenvEnv?.KIT_CLIPBOARD_HISTORY_LIMIT, 10)
+    ? Number.parseInt(kitState?.kenvEnv?.KIT_CLIPBOARD_HISTORY_LIMIT, 10)
     : 128;
 
   if (

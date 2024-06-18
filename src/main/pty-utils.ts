@@ -1,35 +1,38 @@
-import os from 'os';
-import untildify from 'untildify';
+import os from 'node:os';
 import { KIT_FIRST_PATH } from '@johnlindquist/kit/core/utils';
 import log from 'electron-log';
+import untildify from 'untildify';
+import type { TermConfig } from '../shared/types';
 import { kitState } from './state';
-import { TermConfig } from '../shared/types';
 import { getVersion } from './version';
 
 export const USE_BINARY = os.platform() !== 'win32';
 
 export function getDefaultShell(): string {
   switch (process.platform) {
-    case 'win32':
+    case 'win32': {
       // check if cmd.exe exists
       if (process.env.ComSpec) {
         log.info(`Using ComSpec: ${process.env.ComSpec}`);
         return process.env.ComSpec;
       }
       return 'cmd.exe';
-    case 'linux':
+    }
+    case 'linux': {
       // check if bash exists
       if (process.env.SHELL) {
         log.info(`Using SHELL: ${process.env.SHELL}`);
         return process.env.SHELL;
       }
       return 'bash';
-    default:
+    }
+    default: {
       if (process.env.SHELL) {
         log.info(`Using SHELL: ${process.env.SHELL}`);
         return process.env.SHELL;
       }
       return 'zsh';
+    }
   }
 }
 
@@ -56,8 +59,9 @@ export function getShellConfig(config: TermConfig, defaultShell: string) {
       // eslint-disable-next-line prefer-destructuring
       login = false;
       config.shell = config?.command.split(' ')[0];
-      if (config?.args?.length === 0)
+      if (config?.args?.length === 0) {
         config.args = config?.command.split(' ').slice(1);
+      }
       config.command = '';
     } else {
       config.command = '';
@@ -83,7 +87,7 @@ export function getDefaultOptions() {
     env: {
       TERM: 'xterm-256color',
       COLORTERM: 'truecolor',
-      TERM_PROGRAM: `Kit`,
+      TERM_PROGRAM: 'Kit',
       TERM_PROGRAM_VERSION: getVersion() || '0.0.0',
       ...process.env,
       ...kitState.kenvEnv,

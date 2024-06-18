@@ -1,8 +1,8 @@
 /* eslint-disable react/function-component-definition */
-import React from 'react';
+import type React from 'react';
 
 import classNames from 'classnames';
-import { ISystemMessageProps } from 'react-chat-elements';
+import type { ISystemMessageProps } from 'react-chat-elements';
 
 const SystemMessage: React.FC<ISystemMessageProps> = (props) => {
   return (

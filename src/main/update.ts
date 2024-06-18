@@ -2,24 +2,24 @@ import { app, shell } from 'electron';
 import electronUpdater from 'electron-updater';
 
 const { autoUpdater } = electronUpdater;
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import log from 'electron-log';
-import os from 'os';
-import path from 'path';
-import { existsSync } from 'fs';
-import { readFile } from 'fs/promises';
 import fsExtra from 'fs-extra';
 const { readdir, remove } = fsExtra;
-import { once } from 'lodash-es';
 import { kitPath } from '@johnlindquist/kit/core/utils';
+import { once } from 'lodash-es';
 import { subscribeKey } from 'valtio/utils';
-import { getVersion, storeVersion } from './version';
-import { emitter, KitEvent } from '../shared/events';
-import { forceQuit, kitState, online } from './state';
+import { KitEvent, emitter } from '../shared/events';
 import { updateLog } from './logs';
+import { forceQuit, kitState, online } from './state';
+import { getVersion, storeVersion } from './version';
 
 export const kitIgnore = () => {
   const isGit = existsSync(kitPath('.kitignore'));
-  log.info(`${isGit ? `Found` : `Didn't find`} ${kitPath('.kitignore')}`);
+  log.info(`${isGit ? 'Found' : `Didn't find`} ${kitPath('.kitignore')}`);
   return isGit;
 };
 
@@ -40,7 +40,9 @@ export const checkForUpdates = async () => {
 
   // TODO: Prompt to apply update
   const isWin = os.platform().startsWith('win');
-  if (isWin) return; // TODO: Get a Windows app cert
+  if (isWin) {
+    return; // TODO: Get a Windows app cert
+  }
 
   if (process.env.TEST_UPDATE) {
     autoUpdater.forceDevUpdateConfig = true;
@@ -59,33 +61,31 @@ export const checkForUpdates = async () => {
 };
 
 const parseChannel = (version: string) => {
-  if (version.includes('development')) return 'development';
-  if (version.includes('alpha')) return 'alpha';
-  if (version.includes('beta')) return 'beta';
+  if (version.includes('development')) {
+    return 'development';
+  }
+  if (version.includes('alpha')) {
+    return 'alpha';
+  }
+  if (version.includes('beta')) {
+    return 'beta';
+  }
 
   return 'main';
 };
 
 let updateInfo = null as any;
 export const configureAutoUpdate = async () => {
-  updateLog.info(
-    `Configuring auto-update: ${process.env.TEST_UPDATE ? 'TEST' : 'PROD'}`,
-  );
+  updateLog.info(`Configuring auto-update: ${process.env.TEST_UPDATE ? 'TEST' : 'PROD'}`);
   if (process.env.TEST_UPDATE) {
-    updateLog.info(`Forcing dev update config`);
+    updateLog.info('Forcing dev update config');
     const devUpdateFilePath = path.join(app.getAppPath(), 'dev-app-update.yml');
     const contents = await readFile(devUpdateFilePath, 'utf8');
     updateLog.info(`Update config: ${contents}`);
     autoUpdater.updateConfigPath = devUpdateFilePath;
 
     try {
-      const cachePath = path.resolve(
-        app.getPath('userData'),
-        '..',
-        'Caches',
-        'Kit',
-        'pending',
-      );
+      const cachePath = path.resolve(app.getPath('userData'), '..', 'Caches', 'Kit', 'pending');
       const files = await readdir(cachePath);
       if (files) {
         for await (const file of files) {
@@ -95,7 +95,7 @@ export const configureAutoUpdate = async () => {
         }
       }
     } catch (error) {
-      updateLog.error(`Error deleting pending updates`, error);
+      updateLog.error('Error deleting pending updates', error);
     }
   }
 
@@ -110,7 +110,7 @@ export const configureAutoUpdate = async () => {
     try {
       updateLog.info(`⏫ Updating from ${version} to ${newVersion}`);
       if (version === updateInfo?.version) {
-        updateLog.warn(`Downloaded same version 🤔`);
+        updateLog.warn('Downloaded same version 🤔');
         return;
       }
       await storeVersion(version);
@@ -124,7 +124,7 @@ export const configureAutoUpdate = async () => {
       kitState.quitAndInstall = true;
       forceQuit();
     } catch (e) {
-      updateLog.warn(`autoUpdater.quitAndInstall error:`, e);
+      updateLog.warn('autoUpdater.quitAndInstall error:', e);
       forceQuit();
     }
   });
@@ -151,23 +151,19 @@ export const configureAutoUpdate = async () => {
     const newChannel = parseChannel(newVersion);
 
     if (currentChannel === newChannel || process.env.TEST_UPDATE) {
-      updateLog.info(`Downloading update`);
+      updateLog.info('Downloading update');
 
       try {
         const result = await autoUpdater.downloadUpdate();
-        updateLog.info(`After downloadUpdate`);
+        updateLog.info('After downloadUpdate');
         updateLog.info({ result });
       } catch (error) {
-        updateLog.error(`Error downloading update`, error);
+        updateLog.error('Error downloading update', error);
       }
     } else if (version === newVersion) {
-      updateLog.info(
-        `Blocking update. You're version is ${version} and found ${newVersion}`,
-      );
+      updateLog.info(`Blocking update. You're version is ${version} and found ${newVersion}`);
     } else {
-      updateLog.info(
-        `Blocking update. You're on ${currentChannel}, but requested ${newChannel}`,
-      );
+      updateLog.info(`Blocking update. You're on ${currentChannel}, but requested ${newChannel}`);
     }
   });
 
@@ -180,13 +176,13 @@ export const configureAutoUpdate = async () => {
 
     kitState.status = {
       status: 'success',
-      message: ``,
+      message: '',
     };
 
-    updateLog.info(`⬇️ Update downloaded`);
+    updateLog.info('⬇️ Update downloaded');
 
     if (kitState.downloadPercent === 100) {
-      updateLog.info(`💯 Download complete`);
+      updateLog.info('💯 Download complete');
     }
   });
 
@@ -202,7 +198,7 @@ export const configureAutoUpdate = async () => {
     if (kitState.manualUpdateCheck) {
       kitState.status = {
         status: 'success',
-        message: `Kit.app is on the latest version`,
+        message: 'Kit.app is on the latest version',
       };
 
       kitState.manualUpdateCheck = false;
@@ -242,7 +238,7 @@ export const configureAutoUpdate = async () => {
     // };
     kitState.status = {
       status: 'warn',
-      message: `Auto-updater error. Check logs..`,
+      message: 'Auto-updater error. Check logs..',
     };
 
     kitState.updateDownloaded = false;
@@ -275,7 +271,7 @@ export const configureAutoUpdate = async () => {
 
     kitState.status = {
       status: 'busy',
-      message: `Checking for update...`,
+      message: 'Checking for update...',
     };
     kitState.manualUpdateCheck = true;
     await checkForUpdates();

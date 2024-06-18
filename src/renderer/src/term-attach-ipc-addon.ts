@@ -1,9 +1,9 @@
 /* eslint-disable no-plusplus */
 
 const { ipcRenderer } = window.electron;
-import { Terminal, ITerminalAddon } from 'xterm';
+import type { ITerminalAddon, Terminal } from 'xterm';
 import { AppChannel } from '../../shared/enums';
-import { TermConfig } from '../../shared/types';
+import type { TermConfig } from '../../shared/types';
 
 export class AttachIPCAddon implements ITerminalAddon {
   private terminal: Terminal | undefined;
@@ -15,10 +15,9 @@ export class AttachIPCAddon implements ITerminalAddon {
   }
 
   private termOutputHandler = (_event: any, data: string | Buffer) => {
-    if (this.terminal)
-      this.terminal.write(
-        typeof data === 'string' ? data : new Uint8Array(data),
-      );
+    if (this.terminal) {
+      this.terminal.write(typeof data === 'string' ? data : new Uint8Array(data));
+    }
   };
 
   public activate(terminal: Terminal): void {
@@ -27,8 +26,9 @@ export class AttachIPCAddon implements ITerminalAddon {
     ipcRenderer.on(AppChannel.TERM_OUTPUT, this.termOutputHandler);
 
     terminal.onData((data) => {
-      if (this.terminal)
+      if (this.terminal) {
         ipcRenderer.send(AppChannel.TERM_INPUT, { pid: this.config.pid, data });
+      }
     });
 
     terminal.onBinary((data) => {
@@ -36,14 +36,17 @@ export class AttachIPCAddon implements ITerminalAddon {
       for (let i = 0; i < data.length; ++i) {
         buffer[i] = data.charCodeAt(i) & 255;
       }
-      if (this.terminal)
+      if (this.terminal) {
         ipcRenderer.send(AppChannel.TERM_INPUT, {
           pid: this.config.pid,
           data: buffer,
         });
+      }
     });
 
-    if (this.terminal) ipcRenderer.send(AppChannel.TERM_READY, this.config);
+    if (this.terminal) {
+      ipcRenderer.send(AppChannel.TERM_READY, this.config);
+    }
   }
 
   public dispose(): void {

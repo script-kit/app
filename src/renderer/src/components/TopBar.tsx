@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { useAtomValue } from 'jotai';
+import React, { useEffect } from 'react';
 import { darkAtom } from '../jotai';
 
 export default function TopBar() {
@@ -21,9 +21,7 @@ export default function TopBar() {
   return (
     <div
       className={`
-      pointer-events-none absolute left-0 top-0 h-0.75 ${
-        isDark ? '-mt-px ' : ''
-      } w-full
+      pointer-events-none absolute left-0 top-0 h-0.75 ${isDark ? '-mt-px ' : ''} w-full
       overflow-hidden
       `}
     >
@@ -31,7 +29,7 @@ export default function TopBar() {
         animate={controls}
         transition={{
           ease: 'easeInOut',
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
           repeatType: 'reverse',
 
           duration: window.innerWidth < 400 ? 1.5 : 2.5,

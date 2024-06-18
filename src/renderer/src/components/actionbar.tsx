@@ -1,29 +1,29 @@
+import { UI } from '@johnlindquist/kit/core/enum';
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
-import { useAtomValue, useAtom } from 'jotai';
-import { UI } from '@johnlindquist/kit/core/enum';
-import { IconButton } from './icon';
-import { ActionButton } from './actionbutton';
-import { EnterButton } from './actionenterbutton';
+import { useAtom, useAtomValue } from 'jotai';
 import {
-  flagsAtom,
-  footerAtom,
-  uiAtom,
-  enterButtonNameAtom,
-  enterButtonDisabledAtom,
   actionsAtom,
   appConfigAtom,
-  lightenUIAtom,
+  enterButtonDisabledAtom,
+  enterButtonNameAtom,
+  flagsAtom,
   focusedChoiceAtom,
-  shortcutsAtom,
+  footerAtom,
   hasRightShortcutAtom,
+  lightenUIAtom,
+  shortcutsAtom,
+  uiAtom,
 } from '../jotai';
+import { ActionButton } from './actionbutton';
+import { EnterButton } from './actionenterbutton';
+import { IconButton } from './icon';
 
-import { Action, textContrast } from './actions';
-import { ActionSeparator } from './actionseparator';
 import { OptionsButton } from './actionoptionsbutton';
+import { type Action, textContrast } from './actions';
+import { ActionSeparator } from './actionseparator';
 
 export default function ActionBar() {
   const [flags] = useAtom(flagsAtom);
@@ -41,47 +41,32 @@ export default function ActionBar() {
   const shortcuts = useAtomValue(shortcutsAtom);
   const hasRightShortcut = useAtomValue(hasRightShortcutAtom);
 
-  const hasFlags =
-    Object.keys(flags)?.length > 0 &&
-    !focusedChoice?.ignoreFlags &&
-    !hasRightShortcut;
+  const hasFlags = Object.keys(flags)?.length > 0 && !focusedChoice?.ignoreFlags && !hasRightShortcut;
 
   const actions = focusedChoice?.ignoreFlags ? [] : _actions;
-  const rightActions =
-    actions.filter((action) => action.position === 'right') || [];
+  const rightActions = actions.filter((action) => action.position === 'right') || [];
 
   return (
     <div
       className={`
       flex flex-row
-      ${ui === UI.splash ? `` : `border-t border-ui-border bg-ui-bg`}
+      ${ui === UI.splash ? '' : 'border-t border-ui-border bg-ui-bg'}
     min-h-7 h-7 max-h-7
     items-center justify-center
     overflow-hidden px-4 py-px
-    ${lightenUI && `lighten`}
+    ${lightenUI && 'lighten'}
     `}
     >
       <IconButton />
 
-      <div
-        className={`left-container flex flex-row items-center justify-center ${
-          !m ? `pb-2px` : `pb-px`
-        }`}
-      >
+      <div className={`left-container flex flex-row items-center justify-center ${m ? 'pb-px' : 'pb-2px'}`}>
         {actions
           .filter((action) => action.position === 'left')
           .flatMap((action, i, array) => [
             // eslint-disable-next-line react/jsx-key
-            <ActionButton
-              {...{ ...action, key: undefined }}
-              key={action.key}
-            />,
-            i < array.length - 1 ? (
-              <ActionSeparator key={`${action?.key}-separator`} />
-            ) : null,
-            i === array.length - 1 && footer?.length ? (
-              <ActionSeparator key={`${action?.key}-separator`} />
-            ) : null,
+            <ActionButton {...{ ...action, key: undefined }} key={action.key} />,
+            i < array.length - 1 ? <ActionSeparator key={`${action?.key}-separator`} /> : null,
+            i === array.length - 1 && footer?.length ? <ActionSeparator key={`${action?.key}-separator`} /> : null,
           ])}
       </div>
       {footer?.length ? (
@@ -95,10 +80,7 @@ truncate
 text-opacity-75
       `}
         >
-          <div
-            className="min-w-0 truncate pb-px"
-            dangerouslySetInnerHTML={{ __html: footer }}
-          />
+          <div className="min-w-0 truncate pb-px" dangerouslySetInnerHTML={{ __html: footer }} />
         </div>
       ) : (
         <div className="max-h-full flex-1" />
@@ -106,15 +88,13 @@ text-opacity-75
 
       <div
         className={`justify-center right-container flex flex-row items-center ${
-          !m ? `pb-2px` : `pb-px`
+          m ? 'pb-px' : 'pb-2px'
         } overflow-hidden`}
       >
         <div className="options-container flex flex-row">
           {hasFlags && [
             <OptionsButton key="options-button" />,
-            rightActions.length > 0 && (
-              <ActionSeparator key="options-separator" />
-            ),
+            rightActions.length > 0 && <ActionSeparator key="options-separator" />,
           ]}
         </div>
         <div className="flex flex-grow-0 flex-row items-center overflow-hidden">

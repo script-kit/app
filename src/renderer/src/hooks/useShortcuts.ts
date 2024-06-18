@@ -1,36 +1,42 @@
-import log from 'electron-log/renderer';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
+import log from 'electron-log/renderer';
 import { useAtom, useAtomValue } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
+  actionsInputFocusAtom,
+  channelAtom,
   choicesAtom,
-  focusedFlagValueAtom,
-  flagsAtom,
   flaggedChoiceValueAtom,
+  flagsAtom,
+  focusedChoiceAtom,
+  focusedFlagValueAtom,
+  hasRightShortcutAtom,
   indexAtom,
   inputAtom,
   inputFocusAtom,
+  previewEnabledAtom,
+  promptDataAtom,
   selectionStartAtom,
-  submitValueAtom,
-  channelAtom,
   sendShortcutAtom,
   shortcutsAtom,
-  promptDataAtom,
-  previewEnabledAtom,
-  focusedChoiceAtom,
-  hasRightShortcutAtom,
+  submitValueAtom,
   uiAtom,
-  actionsInputFocusAtom,
 } from '../jotai';
 
+import type { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
 import { hotkeysOptions } from './shared';
-import { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
 
 function getKey(event: HotkeysEvent) {
   const key = event?.keys?.[0];
-  if (key === 'period') return '.';
-  if (key === 'comma') return ',';
-  if (key === 'slash') return '/';
+  if (key === 'period') {
+    return '.';
+  }
+  if (key === 'comma') {
+    return ',';
+  }
+  if (key === 'slash') {
+    return '/';
+  }
   // if (key === 'quote') return '"';
 
   return key;
@@ -78,7 +84,7 @@ export default () => {
   const actionsInputFocus = useAtomValue(actionsInputFocusAtom);
 
   useHotkeys(
-    `mod+shift+w`,
+    'mod+shift+w',
     (event) => {
       setPreviewEnabled(!previewEnabled);
     },
@@ -89,16 +95,13 @@ export default () => {
   const flagsArray = Object.entries(flags);
 
   const flagsWithShortcuts = flagsArray.filter(
-    ([key, value]) =>
-      value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter',
+    ([key, value]) => value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter',
   );
 
-  let flagShortcuts: string[] = [];
+  const flagShortcuts: string[] = [];
   for (const [key, value] of flagsWithShortcuts) {
     if (value?.shortcut) {
-      flagShortcuts.push(
-        value.shortcut.replace('cmd', 'mod').replace(',', 'comma'),
-      );
+      flagShortcuts.push(value.shortcut.replace('cmd', 'mod').replace(',', 'comma'));
     }
   }
 
@@ -126,7 +129,9 @@ export default () => {
       // if (flagValue) return;
 
       const key = handler?.keys?.[0];
-      if (!key) return;
+      if (!key) {
+        return;
+      }
 
       const flag = flagByHandler(handler) as string;
       const submitValue = focusedChoice?.value || input;
@@ -143,7 +148,7 @@ export default () => {
     [flags, input, inputFocus, choices, index, flagValue, flagShortcuts],
   );
 
-  let onShortcuts = `f19`;
+  let onShortcuts = 'f19';
   if (promptShortcuts.length) {
     let keys = '';
     for (const ps of promptShortcuts) {
@@ -165,9 +170,13 @@ export default () => {
 
       // if (flagValue) return;
       const key = handler?.keys?.[0];
-      if (!key) return;
+      if (!key) {
+        return;
+      }
 
-      if (key === 'escape' && actionsInputFocus) return;
+      if (key === 'escape' && actionsInputFocus) {
+        return;
+      }
 
       log.info(`After escape check: ${key}`);
 
@@ -191,16 +200,17 @@ export default () => {
   );
 
   useHotkeys(
-    `right,left`,
+    'right,left',
     (event) => {
-      if (!inputFocus) return;
-      if (hasRightShortcut) return;
+      if (!inputFocus) {
+        return;
+      }
+      if (hasRightShortcut) {
+        return;
+      }
       if (selectionStart === input.length && event.key !== 'ArrowLeft') {
         event.preventDefault();
-        if (
-          !flagValue &&
-          (flagsArray.length || Boolean(choices?.[index]?.actions))
-        ) {
+        if (!flagValue && (flagsArray.length || Boolean(choices?.[index]?.actions))) {
           setFlagValue(choices.length ? choices[index].value : input);
         }
         channel(Channel.FORWARD);
@@ -228,14 +238,16 @@ export default () => {
     ],
   );
   useHotkeys(
-    `mod+k,mod+shift+p`,
+    'mod+k,mod+shift+p',
     () => {
       log.info('mod+k or mod+shift+p pressed', {
         ui,
         inputFocus,
         length: choices.length,
       });
-      if (ui === UI.arg && !inputFocus) return;
+      if (ui === UI.arg && !inputFocus) {
+        return;
+      }
 
       if (flagValue) {
         setFlagValue('');
@@ -247,17 +259,6 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [
-      input,
-      inputFocus,
-      choices,
-      index,
-      selectionStart,
-      flagValue,
-      channel,
-      flagShortcuts,
-      promptShortcuts,
-      ui,
-    ],
+    [input, inputFocus, choices, index, selectionStart, flagValue, channel, flagShortcuts, promptShortcuts, ui],
   );
 };

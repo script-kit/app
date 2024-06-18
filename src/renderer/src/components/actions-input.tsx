@@ -1,40 +1,38 @@
-import {
-  useCallback,
-  KeyboardEvent,
-  LegacyRef,
-  useRef,
-  useEffect,
-  useState,
-  ChangeEvent,
-} from 'react';
-import log from 'electron-log';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
+import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { type ChangeEvent, type KeyboardEvent, type LegacyRef, useCallback, useEffect, useRef, useState } from 'react';
 
+import { useActionsKeyIndex, useFocus, useTab } from '../hooks';
 import {
-  modifiers,
   _modifiers,
-  submittedAtom,
-  flagsAtom,
-  typingAtom,
-  shortcutsAtom,
-  channelAtom,
-  cachedAtom,
-  shortcodesAtom,
   actionsInputAtom,
-  actionsPlaceholderAtom,
   actionsInputFocusAtom,
-  actionsInputHeightAtom,
   actionsInputFontSizeAtom,
+  actionsInputHeightAtom,
+  actionsPlaceholderAtom,
+  cachedAtom,
+  channelAtom,
+  flagsAtom,
   focusedChoiceAtom,
+  modifiers,
+  shortcodesAtom,
+  shortcutsAtom,
+  submittedAtom,
+  typingAtom,
   uiAtom,
 } from '../jotai';
-import { useFocus, useActionsKeyIndex, useTab } from '../hooks';
 
 const remapModifiers = (m: string) => {
-  if (m === 'Meta') return ['cmd'];
-  if (m === 'Control') return ['control', 'ctrl'];
-  if (m === 'Alt') return ['alt', 'option'];
+  if (m === 'Meta') {
+    return ['cmd'];
+  }
+  if (m === 'Control') {
+    return ['control', 'ctrl'];
+  }
+  if (m === 'Alt') {
+    return ['alt', 'option'];
+  }
   return m.toLowerCase();
 };
 
@@ -88,9 +86,7 @@ export default function ActionsInput() {
       }
 
       if (event.ctrlKey) {
-        const shortcut = shortcuts.find((s) =>
-          (s?.key || '')?.includes('ctrl'),
-        );
+        const shortcut = shortcuts.find((s) => (s?.key || '')?.includes('ctrl'));
         const key = shortcut?.key || '';
 
         if (key) {
@@ -113,16 +109,10 @@ export default function ActionsInput() {
       //   modifiers,
       // });
 
-      const currentModifiers = modifiers
-        .filter((m) => event.getModifierState(m))
-        .flatMap(remapModifiers);
+      const currentModifiers = modifiers.filter((m) => event.getModifierState(m)).flatMap(remapModifiers);
 
       const modifiersNotShift = currentModifiers.filter((m) => m !== 'shift');
-      if (
-        input &&
-        shortcodes.includes(input) &&
-        modifiersNotShift.length === 0
-      ) {
+      if (input && shortcodes.includes(input) && modifiersNotShift.length === 0) {
         log.info(`${window.pid}: preventDefault(): found: '${input}'`);
         // setAppendToLog(`${window.pid}: preventDefault(): found: '${input}'`);
         event.preventDefault();
@@ -140,7 +130,7 @@ export default function ActionsInput() {
 
       // If key was delete and the value is empty, clear setInput
       if (event.key === 'Backspace' && target.value === '') {
-        log.info(`Clearing input`);
+        log.info('Clearing input');
         channel(Channel.ACTIONS_INPUT || 'ACTIONS_INPUT', {
           input: '',
         });
@@ -172,13 +162,12 @@ export default function ActionsInput() {
   const focusedChoice = useAtomValue(focusedChoiceAtom);
   const ui = useAtomValue(uiAtom);
 
-  const focusedName =
-    ui === UI.arg && focusedChoice?.name ? focusedChoice.name : '';
+  const focusedName = ui === UI.arg && focusedChoice?.name ? focusedChoice.name : '';
 
   return (
     <div
       key="input"
-      className={`flex flex-col max-w-screen border-b border-ui-border`}
+      className={'flex flex-col max-w-screen border-b border-ui-border'}
       style={{
         height: inputHeight,
         minHeight: inputHeight,
@@ -204,7 +193,6 @@ export default function ActionsInput() {
             } as any
           }
           disabled={submitted}
-          autoFocus
           className={`
       flex-1 bg-transparent tracking-normal text-text-base placeholder-text-base
       placeholder-opacity-25 outline-none
@@ -225,9 +213,7 @@ export default function ActionsInput() {
         />
 
         {focusedName && (
-          <div className="text-primary/90 text-xs absolute right-[8px] top-[5px] font-normal-medium">
-            {focusedName}
-          </div>
+          <div className="text-primary/90 text-xs absolute right-[8px] top-[5px] font-normal-medium">{focusedName}</div>
         )}
       </div>
 

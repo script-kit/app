@@ -3,16 +3,10 @@
 /* eslint-disable jsx-a11y/no-noninteractive-tabindex */
 /* eslint-disable react/prop-types */
 
-import { useAtom, useAtomValue } from 'jotai';
 import { UI } from '@johnlindquist/kit/core/enum';
+import { useAtom, useAtomValue } from 'jotai';
 import React, { useCallback, useState } from 'react';
-import {
-  placeholderAtom,
-  previewEnabledAtom,
-  previewHTMLAtom,
-  submitValueAtom,
-  previewCheckAtom,
-} from '../jotai';
+import { placeholderAtom, previewCheckAtom, previewEnabledAtom, previewHTMLAtom, submitValueAtom } from '../jotai';
 
 export default function Drop() {
   // useEscape();
@@ -38,7 +32,7 @@ export default function Drop() {
       setDropReady(false);
       setDropMessage(placeholder);
     },
-    [placeholder]
+    [placeholder],
   );
 
   const onDrop = useCallback(
@@ -50,10 +44,7 @@ export default function Drop() {
         return;
       }
 
-      const data =
-        event?.dataTransfer?.getData('URL') ||
-        event?.dataTransfer?.getData('Text') ||
-        null;
+      const data = event?.dataTransfer?.getData('URL') || event?.dataTransfer?.getData('Text') || null;
       if (data) {
         submit(data);
         return;
@@ -67,13 +58,12 @@ export default function Drop() {
         submit(event.target.value);
       }, 100);
     },
-    [submit]
+    [submit],
   );
 
   return (
     <div id={UI.drop} className="flex h-full min-h-full min-w-full flex-row">
       <div
-        tabIndex={0}
         role="region"
         aria-label="droppable area"
         style={
@@ -82,16 +72,14 @@ export default function Drop() {
           } as any
         }
         className={`
-          w-full ${hasPreview ? `mt-16 p-2` : `justify-center p-8`}
+          w-full ${hasPreview ? 'mt-16 p-2' : 'justify-center p-8'}
         drop-component
         flex
         h-full flex-col  items-center
         text-xl  text-text-base
         outline-none ring-0
         ring-opacity-0 transition duration-500 ease-in-out
-        focus:outline-none focus:ring-0 focus:ring-opacity-0 ${
-          dropReady ? `opacity-75 shadow-inner` : `opacity-25`
-        }
+        focus:outline-none focus:ring-0 focus:ring-opacity-0 ${dropReady ? 'opacity-75 shadow-inner' : 'opacity-25'}
       `}
         placeholder={placeholder}
         onDragEnter={onDragEnter}
@@ -102,9 +90,7 @@ export default function Drop() {
         }}
         onDrop={onDrop}
       >
-        <h2 className="pointer-events-none mb-0 text-4xl">
-          {dropMessage || placeholder}
-        </h2>
+        <h2 className="pointer-events-none mb-0 text-4xl">{dropMessage || placeholder}</h2>
       </div>
     </div>
   );

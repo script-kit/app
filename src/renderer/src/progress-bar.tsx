@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
 import { useAtom } from 'jotai';
+import React, { useEffect, useRef } from 'react';
 import { progressAtom } from './jotai';
 
 export default function ProgressBar() {

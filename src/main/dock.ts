@@ -1,36 +1,49 @@
 import { Menu, app } from 'electron';
-import { KitEvent, emitter } from '../shared/events';
 import log from 'electron-log';
-import { kitState, promptState } from './state';
-import { windowsState } from '../shared/windows';
-import { getAssetPath } from '../shared/assets';
-import { widgetState } from '../shared/widget';
-import { prompts } from './prompts';
 import { debounce } from 'lodash-es';
+import { getAssetPath } from '../shared/assets';
+import { KitEvent, emitter } from '../shared/events';
+import { widgetState } from '../shared/widget';
+import { windowsState } from '../shared/windows';
+import { prompts } from './prompts';
+import { kitState, promptState } from './state';
 
 let hideIntervalId: NodeJS.Timeout | null = null;
 
 export const hideDock = debounce(() => {
-  if (!kitState.isMac) return;
-  if (kitState.devToolsCount > 0) return;
-  if (widgetState.widgets.length) return;
-  if (windowsState.windows.length) return;
-  if (prompts.isAnyPromptVisible()) return;
-  if (!kitState.dockShown) return;
+  if (!kitState.isMac) {
+    return;
+  }
+  if (kitState.devToolsCount > 0) {
+    return;
+  }
+  if (widgetState.widgets.length) {
+    return;
+  }
+  if (windowsState.windows.length) {
+    return;
+  }
+  if (prompts.isAnyPromptVisible()) {
+    return;
+  }
+  if (!kitState.dockShown) {
+    return;
+  }
 
   actualHideDock();
 
-  if (hideIntervalId) clearInterval(hideIntervalId);
+  if (hideIntervalId) {
+    clearInterval(hideIntervalId);
+  }
 }, 200);
 
 export const showDock = () => {
-  if (!kitState.isMac) return;
-  if (
-    kitState.devToolsCount === 0 &&
-    !prompts.isAnyPromptVisible() &&
-    widgetState.widgets.length === 0
-  )
+  if (!kitState.isMac) {
     return;
+  }
+  if (kitState.devToolsCount === 0 && !prompts.isAnyPromptVisible() && widgetState.widgets.length === 0) {
+    return;
+  }
 
   if (!app?.dock.isVisible()) {
     hideDock.cancel();
@@ -50,7 +63,9 @@ export const showDock = () => {
 
     app?.dock?.setIcon(getAssetPath('icon.png'));
 
-    if (hideIntervalId) clearInterval(hideIntervalId);
+    if (hideIntervalId) {
+      clearInterval(hideIntervalId);
+    }
 
     hideIntervalId = setInterval(() => {
       hideDock();
@@ -59,11 +74,13 @@ export const showDock = () => {
 };
 
 export const clearStateTimers = () => {
-  if (hideIntervalId) clearInterval(hideIntervalId);
+  if (hideIntervalId) {
+    clearInterval(hideIntervalId);
+  }
 };
 
 export const actualHideDock = () => {
-  log.info(`🚢 Hiding dock`);
+  log.info('🚢 Hiding dock');
   app?.dock?.setIcon(getAssetPath('icon.png'));
   app?.dock?.hide();
   kitState.dockShown = false;

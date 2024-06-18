@@ -163,10 +163,7 @@ Need to support this:
         },
       );
 */
-export function convertStringShortcutToMoncacoNumber(
-  shortcut: string,
-  isWindows: boolean,
-): number {
+export function convertStringShortcutToMoncacoNumber(shortcut: string, isWindows: boolean): number {
   if (!shortcut) {
     log.verbose('No shortcut provided for conversion');
     return 0;
@@ -192,7 +189,7 @@ export function convertStringShortcutToMoncacoNumber(
         code,
         result,
       });
-      result = code | result;
+      result |= code;
     }
   }
 

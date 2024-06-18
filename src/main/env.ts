@@ -3,13 +3,13 @@
 import log from 'electron-log';
 
 import { subscribeKey } from 'valtio/utils';
-import { kitState, kenvEnv } from './state';
+import { type kenvEnv, kitState } from './state';
 
-import { createIdlePty } from './pty';
 import { clearIdleProcesses, ensureIdleProcess, processes } from './process';
+import { createIdlePty } from './pty';
 import { checkOpenAtLogin } from './settings';
-import { checkTray, destroyTray, setupTray } from './tray';
 import { updateMainShortcut } from './shortcuts';
+import { checkTray, destroyTray, setupTray } from './tray';
 
 let prevKenvEnv: kenvEnv = {};
 subscribeKey(kitState, 'kenvEnv', (kenvEnv: kenvEnv) => {
@@ -20,23 +20,25 @@ subscribeKey(kitState, 'kenvEnv', (kenvEnv: kenvEnv) => {
 
   const addedKeys = keys.filter((key) => !prevKeys.includes(key));
   const removedKeys = prevKeys.filter((key) => !keys.includes(key));
-  const changedKeys = keys.filter(
-    (key) => prevKeys.includes(key) && prevKenvEnv[key] !== kenvEnv[key],
-  );
+  const changedKeys = keys.filter((key) => prevKeys.includes(key) && prevKenvEnv[key] !== kenvEnv[key]);
   const updatedKeys = addedKeys.concat(removedKeys, changedKeys);
   prevKenvEnv = kenvEnv;
   if (updatedKeys.length) {
-    log.info(`🔑 kenvEnv changes`, {
+    log.info('🔑 kenvEnv changes', {
       addedKeys,
       changedKeys,
       removedKeys,
     });
   } else {
-    log.info(`🔑 kenvEnv no changes`);
+    log.info('🔑 kenvEnv no changes');
     return;
   }
-  if (Object.keys(kenvEnv).length === 0) return;
-  if (processes.getAllProcessInfo().length === 0) return;
+  if (Object.keys(kenvEnv).length === 0) {
+    return;
+  }
+  if (processes.getAllProcessInfo().length === 0) {
+    return;
+  }
   clearIdleProcesses();
   ensureIdleProcess();
   createIdlePty();
@@ -51,10 +53,7 @@ subscribeKey(kitState, 'kenvEnv', (kenvEnv: kenvEnv) => {
 
   if (updatedKeys.length) {
     if (updatedKeys.includes('KIT_MAIN_SHORTCUT')) {
-      log.info(
-        `🔑 kenvEnv.KIT_MAIN_SHORTCUT updated`,
-        kenvEnv.KIT_MAIN_SHORTCUT,
-      );
+      log.info('🔑 kenvEnv.KIT_MAIN_SHORTCUT updated', kenvEnv.KIT_MAIN_SHORTCUT);
       updateMainShortcut(kenvEnv.KIT_MAIN_SHORTCUT);
     }
   }

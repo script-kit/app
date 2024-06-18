@@ -1,6 +1,6 @@
+import { EventEmitter } from 'node:events';
 /* eslint-disable import/prefer-default-export */
-import { Channel } from '@johnlindquist/kit/core/enum';
-import { EventEmitter } from 'events';
+import type { Channel } from '@johnlindquist/kit/core/enum';
 
 export enum KitEvent {
   PauseShortcuts = 'PauseShortcuts',

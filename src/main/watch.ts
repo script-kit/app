@@ -1,12 +1,12 @@
+import type { FSWatcher } from 'node:fs';
+import path from 'node:path';
+import type { Script } from '@johnlindquist/kit/types/core';
+import chokidar from 'chokidar';
+import { app } from 'electron';
 /* eslint-disable no-nested-ternary */
 import log from 'electron-log';
-import chokidar from 'chokidar';
-import path from 'path';
-import { FSWatcher } from 'fs';
-import { app } from 'electron';
-import { Script } from '@johnlindquist/kit/types/core';
-import { runPromptProcess } from './kit';
 import { Trigger } from '../shared/enums';
+import { runPromptProcess } from './kit';
 import { kitState } from './state';
 
 export const watchMap = new Map();
@@ -47,7 +47,7 @@ const addWatch = (watchString: string, scriptPath: string) => {
       ? JSON.parse(pathsString).map(normalizePath(scriptPath))
       : normalizePath(scriptPath)(pathsString);
 
-    log.info(`Watched paths:`, { paths });
+    log.info('Watched paths:', { paths });
 
     const watcher = chokidar.watch(paths, {
       ignoreInitial: true,
@@ -72,11 +72,7 @@ const addWatch = (watchString: string, scriptPath: string) => {
   }
 };
 
-export const watchScriptChanged = ({
-  filePath,
-  kenv,
-  watch: watchString,
-}: Script) => {
+export const watchScriptChanged = ({ filePath, kenv, watch: watchString }: Script) => {
   if (!watchString && watchMap.get(filePath)) {
     removeWatch(filePath);
     return;
@@ -84,12 +80,8 @@ export const watchScriptChanged = ({
 
   if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
     if (watchString) {
-      log.info(
-        `Ignoring ${filePath} // Background metadata because it's not trusted in a trusted kenv.`,
-      );
-      log.info(
-        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`,
-      );
+      log.info(`Ignoring ${filePath} // Background metadata because it's not trusted in a trusted kenv.`);
+      log.info(`Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`);
     }
 
     return;

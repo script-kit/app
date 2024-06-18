@@ -1,25 +1,25 @@
+import XIcon from '@heroicons/react/24/solid/XMarkIcon';
+import { useAtom, useAtomValue } from 'jotai';
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/function-component-definition */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable no-nested-ternary */
 import React, { useCallback } from 'react';
-import { useAtom, useAtomValue } from 'jotai';
-import XIcon from '@heroicons/react/24/solid/XMarkIcon';
 import {
+  applyUpdateAtom,
   descriptionAtom,
+  isMainScriptAtom,
+  kitStateAtom,
+  loadingAtom,
+  logoAtom,
   mouseEnabledAtom,
   nameAtom,
   openAtom,
-  scriptAtom,
-  logoAtom,
   processesAtom,
-  isMainScriptAtom,
-  runProcessesAtom,
-  loadingAtom,
-  kitStateAtom,
-  applyUpdateAtom,
   promptDataAtom,
+  runProcessesAtom,
+  scriptAtom,
   socialAtom,
 } from '../jotai';
 
@@ -66,7 +66,7 @@ const TopRightButton = () => {
   if (isMainScript && processes?.length > 1) {
     return (
       <button
-      key="process"
+        key="process"
         type="button"
         tabIndex={-1}
         onClick={onProcessButtonClick}
@@ -132,9 +132,7 @@ export default function Header() {
         className={`
         flex
       w-full flex-row items-center px-4 pt-3 font-mono text-xxs font-bold
-      uppercase text-primary ${
-        isMainScript && processes?.length > 1 ? `-my-1` : ``
-      }
+      uppercase text-primary ${isMainScript && processes?.length > 1 ? '-my-1' : ''}
       ${promptData?.headerClassName || ''}
       `}
       >
@@ -159,21 +157,10 @@ export default function Header() {
           className="-mt-4 h-full flex-1"
         />
         <span className="flex flex-row items-end pl-1 text-right">
-          <TopRightButton key='top-right-button' />
+          <TopRightButton key="top-right-button" />
         </span>
       </div>
-      {false && mouseEnabled && (
-        <div onClick={onXClick} className="h-6 w-6 hover:cursor-pointer">
-          <XIcon
-            className="hover:text-primary-black absolute
-          top-0 right-0 m-1.5
-          h-3
-          w-3
-          text-primary
-          "
-          />
-        </div>
-      )}
+      {false}
     </div>
   );
 }

@@ -18,6 +18,6 @@ export default (value: any) => {
       submit(value);
     },
     hotkeysOptions,
-    [value]
+    [value],
   );
 };

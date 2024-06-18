@@ -1,11 +1,11 @@
-/* eslint-disable jsx-a11y/no-autofocus */
-/* eslint-disable react/require-default-props */
-import React, { LegacyRef, useRef } from 'react';
 import { UI } from '@johnlindquist/kit/core/enum';
 import { useAtom } from 'jotai';
+/* eslint-disable jsx-a11y/no-autofocus */
+/* eslint-disable react/require-default-props */
+import React, { type LegacyRef, useRef } from 'react';
 
-import { inputAtom, promptDataAtom } from '../jotai';
 import { useClose, useFocus } from '../hooks';
+import { inputAtom, promptDataAtom } from '../jotai';
 
 // RESIZE ME!!!!!
 

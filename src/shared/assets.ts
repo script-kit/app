@@ -1,10 +1,10 @@
+import { readFileSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 /* eslint-disable import/prefer-default-export */
 import { app } from 'electron';
 import log from 'electron-log';
-import path from 'path';
-import { readFileSync } from 'fs';
-import os from 'os';
-import { fileURLToPath } from 'url';
 
 export function slash(p: string) {
   const isExtendedLengthPath = /^\\\\\?\\/.test(p);
@@ -31,9 +31,7 @@ const checkPackaged = (name: string) => {
 };
 
 export const getAssetPath = (...paths: string[]): string => {
-  const assetPath = slash(
-    path.resolve(checkPackaged('assets'), ...paths),
-  ).trim();
+  const assetPath = slash(path.resolve(checkPackaged('assets'), ...paths)).trim();
   log.info(`Asset: ${assetPath}`);
   return assetPath;
 };

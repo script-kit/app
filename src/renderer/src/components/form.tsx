@@ -1,22 +1,15 @@
+import { UI } from '@johnlindquist/kit/core/enum';
+import parse, { domToReact } from 'html-react-parser';
+import { useAtom, useAtomValue } from 'jotai';
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable jsx-a11y/no-noninteractive-tabindex */
 /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
-import React, { useCallback, KeyboardEvent, useEffect, useRef } from 'react';
-import { UI } from '@johnlindquist/kit/core/enum';
-import parse, { domToReact } from 'html-react-parser';
-import { useAtom, useAtomValue } from 'jotai';
+import React, { useCallback, type KeyboardEvent, useEffect, useRef } from 'react';
 
-import {
-  changeAtom,
-  formDataAtom,
-  formHTMLAtom,
-  logAtom,
-  previewHTMLAtom,
-  submitValueAtom,
-} from '../jotai';
+import { changeAtom, formDataAtom, formHTMLAtom, logAtom, previewHTMLAtom, submitValueAtom } from '../jotai';
 
 export default function Form() {
   // useEscape();
@@ -64,9 +57,7 @@ export default function Form() {
       }
 
       if (document) {
-        const wrapper: any = document.querySelector(
-          '.simplebar-content-wrapper'
-        );
+        const wrapper: any = document.querySelector('.simplebar-content-wrapper');
         if (wrapper) {
           wrapper.tabIndex = -1;
         }
@@ -77,22 +68,22 @@ export default function Form() {
       }
     }
     return () => {
-      document
-        ?.querySelector('button[tabindex="0"]')
-        ?.removeEventListener('click', handler);
+      document?.querySelector('button[tabindex="0"]')?.removeEventListener('click', handler);
     };
   }, [formData, formRef]);
 
   const getFormJSON = useCallback(() => {
     const data: any = new FormData(formRef?.current);
-    const els: any[] = Array.from((formRef?.current as any)?.elements).filter(
-      (el: any) => {
-        if (el.type === 'submit') return false;
-        if (el.type === 'reset') return false;
-
-        return true;
+    const els: any[] = Array.from((formRef?.current as any)?.elements).filter((el: any) => {
+      if (el.type === 'submit') {
+        return false;
       }
-    );
+      if (el.type === 'reset') {
+        return false;
+      }
+
+      return true;
+    });
 
     // create an array of names which have more than one element
     const multis = els.reduce((acc: string[], curr: any) => {
@@ -110,17 +101,13 @@ export default function Form() {
     const formJSON: any = {};
     // sort by parseInt of id
     // split the elements into two arrays: with ID and without ID
-    const elsNoId = els.filter(
-      (el) => !el.id || Number.isNaN(parseInt(el.id, 10))
-    );
-    const elsId = els.filter(
-      (el) => el.id && !Number.isNaN(parseInt(el.id, 10))
-    );
+    const elsNoId = els.filter((el) => !el.id || Number.isNaN(Number.parseInt(el.id, 10)));
+    const elsId = els.filter((el) => el.id && !Number.isNaN(Number.parseInt(el.id, 10)));
 
     // sort the elements with ID
     const sortedElsWithId = elsId.sort((a, b) => {
-      const aId = parseInt(a.id, 10);
-      const bId = parseInt(b.id, 10);
+      const aId = Number.parseInt(a.id, 10);
+      const bId = Number.parseInt(b.id, 10);
 
       return aId > bId ? 1 : -1;
     });
@@ -132,10 +119,7 @@ export default function Form() {
 
     sortedEls.forEach((el) => {
       if (el.name) {
-        if (
-          multis.includes(el.name) ||
-          (el.tagName === 'SELECT' && el.multiple)
-        ) {
+        if (multis.includes(el.name) || (el.tagName === 'SELECT' && el.multiple)) {
           const value = data.getAll(el.name);
           orderedValues.push(value);
         } else {
@@ -147,10 +131,7 @@ export default function Form() {
 
     els.forEach((el) => {
       if (el.name) {
-        if (
-          multis.includes(el.name) ||
-          (el.tagName === 'SELECT' && el.multiple)
-        ) {
+        if (multis.includes(el.name) || (el.tagName === 'SELECT' && el.multiple)) {
           const value = data.getAll(el.name);
           formJSON[el.name] = value;
         } else {
@@ -169,11 +150,13 @@ export default function Form() {
 
   const onLocalSubmit = useCallback(
     (event?: any) => {
-      if (event) event.preventDefault();
+      if (event) {
+        event.preventDefault();
+      }
 
       submit(getFormJSON());
     },
-    [getFormJSON, submit]
+    [getFormJSON, submit],
   );
 
   const onFormKeyDown = useCallback(
@@ -181,17 +164,18 @@ export default function Form() {
       if (event.ctrlKey || event.metaKey) {
         switch (event.key) {
           case 's':
-          case 'Enter':
+          case 'Enter': {
             event.preventDefault();
             onLocalSubmit(event);
             break;
+          }
 
           default:
             break;
         }
       }
     },
-    [onLocalSubmit]
+    [onLocalSubmit],
   );
 
   const onFormChange = useCallback(
@@ -202,7 +186,7 @@ export default function Form() {
 
       onChange(orderedValues);
     },
-    [getFormJSON, onChange]
+    [getFormJSON, onChange],
   );
 
   return (
@@ -234,10 +218,7 @@ export default function Form() {
       >
         {parse(formHTML, {
           replace: (domNode: any) => {
-            if (
-              domNode.attribs &&
-              ['input', 'textarea', 'select'].includes(domNode.name)
-            ) {
+            if (domNode.attribs && ['input', 'textarea', 'select'].includes(domNode.name)) {
               domNode.attribs.onChange = () => {};
               return domToReact(domNode);
             }

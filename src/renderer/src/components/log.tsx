@@ -1,27 +1,17 @@
+import MonacoEditor, { type Monaco } from '@monaco-editor/react';
+import { useAtom, useAtomValue } from 'jotai';
 /* eslint-disable no-template-curly-in-string */
 /* eslint-disable no-useless-escape */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useAtom, useAtomValue } from 'jotai';
-import MonacoEditor, { Monaco } from '@monaco-editor/react';
 
-import { editor as monacoEditor, Range } from 'monaco-editor';
-import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
+import type { EditorOptions } from '@johnlindquist/kit/types/kitapp';
+import { Range, type editor as monacoEditor } from 'monaco-editor';
 const { ipcRenderer } = window.electron;
-import {
-  cmdAtom,
-  darkAtom,
-  editorConfigAtom,
-  editorOptions,
-  editorThemeAtom,
-  shortcutsAtom,
-} from '../jotai';
-import { kitLight, nightOwl } from '../editor-themes';
 import { WindowChannel } from '../../../shared/enums';
+import { kitLight, nightOwl } from '../editor-themes';
+import { cmdAtom, darkAtom, editorConfigAtom, editorOptions, editorThemeAtom, shortcutsAtom } from '../jotai';
 
-const registerLogLanguage = (
-  monaco: Monaco,
-  theme: { foreground: string; background: string },
-) => {
+const registerLogLanguage = (monaco: Monaco, theme: { foreground: string; background: string }) => {
   monaco.languages.register({ id: 'log' });
 
   // Register a tokens provider for the language
@@ -89,15 +79,14 @@ export default function Log() {
   const [config] = useAtom(editorConfigAtom);
   const [isDark] = useAtom(darkAtom);
   const [options] = useAtom(editorOptions);
-  const [logValue, setLogValue] = useState(``);
+  const [logValue, setLogValue] = useState('');
   const [mouseOver, setMouseOver] = useState(false);
 
   const theme = useAtomValue(editorThemeAtom);
   const [, setShortcuts] = useAtom(shortcutsAtom);
   const cmd = useAtomValue(cmdAtom);
 
-  const [editor, setEditorRef] =
-    useState<monacoEditor.IStandaloneCodeEditor | null>(null);
+  const [editor, setEditorRef] = useState<monacoEditor.IStandaloneCodeEditor | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -121,24 +110,20 @@ export default function Log() {
 
       mountEditor.layout({
         width: containerRef?.current?.offsetWidth || document.body.offsetWidth,
-        height:
-          (containerRef?.current?.offsetHeight || document.body.offsetHeight) -
-          24,
+        height: (containerRef?.current?.offsetHeight || document.body.offsetHeight) - 24,
       });
 
       // if (typeof global?.exports === 'undefined') global.exports = {};
       // mountEditor.focus();
 
-      if (mountEditor?.getDomNode())
-        (
-          (mountEditor.getDomNode() as HTMLElement).style as any
-        ).webkitAppRegion = 'no-drag';
+      if (mountEditor?.getDomNode()) {
+        ((mountEditor.getDomNode() as HTMLElement).style as any).webkitAppRegion = 'no-drag';
+      }
 
       const lineNumber = mountEditor.getModel()?.getLineCount() || 0;
 
       if ((config as EditorOptions).scrollTo === 'bottom') {
-        const column =
-          (mountEditor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+        const column = (mountEditor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
 
         const position = { lineNumber, column };
         // console.log({ position });
@@ -189,7 +174,9 @@ export default function Log() {
   }, [editor]);
 
   useEffect(() => {
-    if (!editor || mouseOver) return;
+    if (!editor || mouseOver) {
+      return;
+    }
     editor.setScrollPosition({
       scrollTop: editor.getScrollHeight(),
     });

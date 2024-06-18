@@ -1,18 +1,18 @@
 import { kenvPath } from '@johnlindquist/kit/core/utils';
 
+import { readFile } from 'node:fs/promises';
 import log from 'electron-log';
-import { readFile } from 'fs/promises';
 import fsExtra from 'fs-extra';
 const { pathExists } = fsExtra;
-import { kitState } from './state';
-import { sendToAllPrompts } from './channel';
-import { setTheme } from './process';
 import { AppChannel } from '../shared/enums';
-import { WatchEvent } from './chokidar';
+import { sendToAllPrompts } from './channel';
+import type { WatchEvent } from './chokidar';
+import { setTheme } from './process';
+import { kitState } from './state';
 
 export const setCSSVariable = (name: string, value: undefined | string) => {
   if (value) {
-    log.info(`Setting CSS`, name, value);
+    log.info('Setting CSS', name, value);
     // TODO: Implement "appToSpecificPrompt" for CSS Variables?
     sendToAllPrompts(AppChannel.CSS_VARIABLE, { name, value });
   }
@@ -22,24 +22,20 @@ const extractAndSetCSSVariables = (css: string) => {
   const cssVarRegex = /--[\w-]+:\s*[^;]+;/g;
   const matches = css.match(cssVarRegex);
 
-  log.info(`Extracting CSS Variables`, matches);
+  log.info('Extracting CSS Variables', matches);
 
   const themeMap = matches?.reduce((acc, match) => {
-    const [name, value] = match
-      .split(':')
-      .map((part) => part.trim().replace(';', ''));
+    const [name, value] = match.split(':').map((part) => part.trim().replace(';', ''));
     acc[name] = value;
     return acc;
   }, {});
 
-  log.info(`Setting Theme`, themeMap);
-  setTheme(themeMap, `extractAndSetCSSVariables()`);
+  log.info('Setting Theme', themeMap);
+  setTheme(themeMap, 'extractAndSetCSSVariables()');
 
   if (matches) {
     for (const match of matches) {
-      const [name, value] = match
-        .split(':')
-        .map((part) => part.trim().replace(';', ''));
+      const [name, value] = match.split(':').map((part) => part.trim().replace(';', ''));
       setCSSVariable(name, value);
     }
   }

@@ -1,11 +1,11 @@
 /* eslint-disable */
 
-import * as React from 'react';
 import PropTypes from 'prop-types';
+import * as React from 'react';
 
 // We are using these as types.
 // eslint-disable-next-line no-unused-vars
-import { Terminal, ITerminalOptions, ITerminalAddon } from 'xterm';
+import { type ITerminalAddon, type ITerminalOptions, Terminal } from 'xterm';
 
 interface IProps {
   /**
@@ -21,7 +21,7 @@ interface IProps {
   /**
    * An array of XTerm addons to load along with the terminal.
    */
-  addons?: Array<ITerminalAddon>;
+  addons?: ITerminalAddon[];
 
   /**
    * Adds an event listener for when a binary event fires. This is used to
@@ -175,9 +175,7 @@ export default class Xterm extends React.Component<IProps> {
 
     // Add Custom Key Event Handler
     if (this.props.customKeyEventHandler) {
-      this.terminal.attachCustomKeyEventHandler(
-        this.props.customKeyEventHandler
-      );
+      this.terminal.attachCustomKeyEventHandler(this.props.customKeyEventHandler);
     }
   }
 
@@ -194,43 +192,63 @@ export default class Xterm extends React.Component<IProps> {
   }
 
   private onBinary(data: string) {
-    if (this.props.onBinary) this.props.onBinary(data);
+    if (this.props.onBinary) {
+      this.props.onBinary(data);
+    }
   }
 
   private onCursorMove() {
-    if (this.props.onCursorMove) this.props.onCursorMove();
+    if (this.props.onCursorMove) {
+      this.props.onCursorMove();
+    }
   }
 
   private onData(data: string) {
-    if (this.props.onData) this.props.onData(data);
+    if (this.props.onData) {
+      this.props.onData(data);
+    }
   }
 
   private onKey(event: { key: string; domEvent: KeyboardEvent }) {
-    if (this.props.onKey) this.props.onKey(event);
+    if (this.props.onKey) {
+      this.props.onKey(event);
+    }
   }
 
   private onLineFeed() {
-    if (this.props.onLineFeed) this.props.onLineFeed();
+    if (this.props.onLineFeed) {
+      this.props.onLineFeed();
+    }
   }
 
   private onScroll(newPosition: number) {
-    if (this.props.onScroll) this.props.onScroll(newPosition);
+    if (this.props.onScroll) {
+      this.props.onScroll(newPosition);
+    }
   }
 
   private onSelectionChange() {
-    if (this.props.onSelectionChange) this.props.onSelectionChange();
+    if (this.props.onSelectionChange) {
+      this.props.onSelectionChange();
+    }
   }
 
   private onRender(event: { start: number; end: number }) {
-    if (this.props.onRender) this.props.onRender(event);
+    if (this.props.onRender) {
+      this.props.onRender(event);
+    }
   }
 
   private onResize(event: { cols: number; rows: number }) {
-    if (this.props.onResize) this.props.onResize(event);
+    if (this.props.onResize) {
+      this.props.onResize(event);
+    }
   }
 
   private onTitleChange(newTitle: string) {
-    if (this.props.onTitleChange) this.props.onTitleChange(newTitle);
+    if (this.props.onTitleChange) {
+      this.props.onTitleChange(newTitle);
+    }
   }
 
   render() {

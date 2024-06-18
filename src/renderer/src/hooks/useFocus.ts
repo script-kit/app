@@ -1,6 +1,6 @@
-import { useAtom } from 'jotai';
 import log from 'electron-log/renderer';
-import { Ref, RefObject, useEffect, useRef } from 'react';
+import { useAtom } from 'jotai';
+import { Ref, type RefObject, useEffect, useRef } from 'react';
 import {
   flaggedChoiceValueAtom,
   inputFocusAtom,
@@ -29,18 +29,7 @@ export default (ref: RefObject<HTMLElement>) => {
       // console.log(`Focusing`, ref?.current);
       ref?.current.focus();
     }
-  }, [
-    flagValue,
-    submitted,
-    open,
-    inputFocus,
-    processing,
-    script,
-    isHidden,
-    promptData,
-    ref,
-    ref?.current,
-  ]);
+  }, [flagValue, submitted, open, inputFocus, processing, script, isHidden, promptData, ref, ref?.current]);
 
   // useEffect(() => {
   //   const handleFocusIn = () => {

@@ -1,21 +1,21 @@
-import React, { useEffect, useRef, useState } from 'react';
 import log from 'electron-log/renderer';
-import { VariableSizeList as List } from 'react-window';
 import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
-import ChoiceButton from './button';
+import React, { useEffect, useRef, useState } from 'react';
+import { VariableSizeList as List } from 'react-window';
+import type { ChoiceButtonProps, ListProps } from '../../../shared/types';
 import {
-  indexAtom,
-  scoredChoicesAtom,
-  itemHeightAtom,
-  promptDataAtom,
-  listAtom,
-  requiresScrollAtom,
-  isScrollingAtom,
-  flaggedChoiceValueAtom,
   currentChoiceHeightsAtom,
+  flaggedChoiceValueAtom,
+  indexAtom,
+  isScrollingAtom,
+  itemHeightAtom,
+  listAtom,
+  promptDataAtom,
+  requiresScrollAtom,
+  scoredChoicesAtom,
 } from '../jotai';
-import { ChoiceButtonProps, ListProps } from '../../../shared/types';
+import ChoiceButton from './button';
 
 const createItemData = memoize(
   (choices) =>
@@ -48,10 +48,14 @@ export default function ChoiceList({ height }: ListProps) {
   }, [setList]);
 
   useEffect(() => {
-    if (!listRef.current) return;
+    if (!listRef.current) {
+      return;
+    }
 
     const scroll = () => {
-      if (requiresScroll === -1) return;
+      if (requiresScroll === -1) {
+        return;
+      }
       onIndexChange(requiresScroll);
       log.verbose(`📜 Scrolling to ${requiresScroll}`);
       (listRef as any).current.scrollToItem(
@@ -71,7 +75,9 @@ export default function ChoiceList({ height }: ListProps) {
   }, [requiresScroll, choices]);
 
   useEffect(() => {
-    if (!listRef.current) return;
+    if (!listRef.current) {
+      return;
+    }
 
     // log.info(`🧾 List reset due to choice height changes`);
     listRef?.current?.resetAfterIndex(0);
@@ -86,10 +92,7 @@ export default function ChoiceList({ height }: ListProps) {
   const itemData = createItemData(choices);
 
   return (
-    <div
-      id="list"
-      className="list-component flex w-full flex-row overflow-y-hidden"
-    >
+    <div id="list" className="list-component flex w-full flex-row overflow-y-hidden">
       <List
         ref={listRef}
         innerRef={innerRef}
@@ -103,7 +106,9 @@ export default function ChoiceList({ height }: ListProps) {
 
           // TODO: Disable scrolling if onScroll hasn't trigger for 250ms
           // clear the previous timeout
-          if (scrollTimeout) clearTimeout(scrollTimeout);
+          if (scrollTimeout) {
+            clearTimeout(scrollTimeout);
+          }
 
           // set a new timeout
           setScrollTimeout(
@@ -123,8 +128,7 @@ export default function ChoiceList({ height }: ListProps) {
         itemSize={(i) => {
           const maybeHeight = choices?.[i]?.item?.height;
 
-          const height =
-            typeof maybeHeight === 'number' ? maybeHeight : itemHeight;
+          const height = typeof maybeHeight === 'number' ? maybeHeight : itemHeight;
           // log.info(
           //   `📜 Item ${i}: Name: ${choices?.[i]?.item?.name} height: ${height}`
           // );
@@ -137,7 +141,7 @@ export default function ChoiceList({ height }: ListProps) {
         width="100%"
         itemData={itemData}
         className={`
-        ${isScrolling ? `scrollbar` : ''}
+        ${isScrolling ? 'scrollbar' : ''}
         wrapper
         bg-opacity-20
         px-0

@@ -1,11 +1,11 @@
+import classNames from 'classnames';
 /* eslint-disable object-shorthand */
 /* eslint-disable react/button-has-type */
 /* eslint-disable react/function-component-definition */
 /* eslint-disable react/react-in-jsx-scope */
 /* eslint-disable prettier/prettier */
-import React from 'react';
-import classNames from 'classnames';
-import { IButtonProps } from 'react-chat-elements';
+import type React from 'react';
+import type { IButtonProps } from 'react-chat-elements';
 
 const Button: React.FC<IButtonProps> = ({
   disabled = false,
@@ -28,14 +28,9 @@ const Button: React.FC<IButtonProps> = ({
     >
       {props.icon ? (
         <span className="rce-button-icon--container">
-          {(props.icon.float === 'right' || !props.icon.float) && (
-            <span>{props.text}</span>
-          )}
+          {(props.icon.float === 'right' || !props.icon.float) && <span>{props.text}</span>}
 
-          <span
-            style={{ float: props.icon.float, fontSize: props.icon.size || 12 }}
-            className="rce-button-icon"
-          >
+          <span style={{ float: props.icon.float, fontSize: props.icon.size || 12 }} className="rce-button-icon">
             {props.icon.component}
           </span>
 

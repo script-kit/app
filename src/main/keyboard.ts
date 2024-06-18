@@ -1,12 +1,10 @@
 import log from 'electron-log';
-import { kitState } from './state';
 import shims from './shims';
+import { kitState } from './state';
 
 export const deleteText = async (stringToDelete = '') => {
   if (!kitState.supportsNut) {
-    log.warn(
-      `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
-    );
+    log.warn('Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!');
     return;
   }
 

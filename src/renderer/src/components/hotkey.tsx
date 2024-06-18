@@ -1,11 +1,11 @@
+import type { KeyData } from '@johnlindquist/kit/types/kitapp';
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { KeyboardEvent, useCallback, useEffect, useRef } from 'react';
-import { KeyData } from '@johnlindquist/kit/types/kitapp';
+import React, { type KeyboardEvent, useCallback, useEffect, useRef } from 'react';
 
 import { useAtom } from 'jotai';
-import { placeholderAtom, hintAtom, choicesConfigAtom } from '../jotai';
 import { useFocus } from '../hooks';
+import { choicesConfigAtom, hintAtom, placeholderAtom } from '../jotai';
 
 interface HotkeyProps {
   submit(data: any): void;
@@ -22,17 +22,19 @@ const keyFromCode = (code: string) => {
       slash: '/',
       quote: `'`,
       backquote: '`',
-      equal: `=`,
-      minus: `-`,
-      period: `.`,
-      comma: `,`,
-      bracketleft: `[`,
-      bracketright: `]`,
+      equal: '=',
+      minus: '-',
+      period: '.',
+      comma: ',',
+      bracketleft: '[',
+      bracketright: ']',
       space: ' ',
       semicolon: ';',
     };
 
-    if (map[k]) return map[k];
+    if (map[k]) {
+      return map[k];
+    }
 
     return k;
   };
@@ -42,31 +44,19 @@ const keyFromCode = (code: string) => {
 const getModifierString = (event: KeyboardEvent<HTMLInputElement>) => {
   const superKey = event.getModifierState('Super');
 
-  const {
-    metaKey: command,
-    shiftKey: shift,
-    ctrlKey: control,
-    altKey: option,
-  } = event;
-  return `${command ? `command ` : ``}${shift ? `shift ` : ``}${
-    option ? `option ` : ``
-  }${control ? `control ` : ``}${superKey ? `super ` : ``}`;
+  const { metaKey: command, shiftKey: shift, ctrlKey: control, altKey: option } = event;
+  return `${command ? 'command ' : ''}${shift ? 'shift ' : ''}${
+    option ? 'option ' : ''
+  }${control ? 'control ' : ''}${superKey ? 'super ' : ''}`;
 };
 
-const getKeyData = (
-  event: KeyboardEvent<HTMLInputElement>
-): { modifierString: string; keyData: KeyData } => {
-  const {
-    key,
-    code,
-    metaKey: command,
-    shiftKey: shift,
-    ctrlKey: control,
-    altKey: option,
-  } = event;
+const getKeyData = (event: KeyboardEvent<HTMLInputElement>): { modifierString: string; keyData: KeyData } => {
+  const { key, code, metaKey: command, shiftKey: shift, ctrlKey: control, altKey: option } = event;
   const superKey = event.getModifierState('Super');
   let normalKey = option ? keyFromCode(code) : key;
-  if (normalKey === ' ') normalKey = 'Space';
+  if (normalKey === ' ') {
+    normalKey = 'Space';
+  }
 
   const modifierString = getModifierString(event);
 
@@ -103,7 +93,7 @@ const hotkeyProse = (modifierString: string) => {
   return modifierString.trim().replace(/\s/g, '+');
 };
 
-const WAITING = `Waiting for keypress...`;
+const WAITING = 'Waiting for keypress...';
 
 export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
   const [placeholder, setPlaceholder] = useAtom(placeholderAtom);
@@ -122,7 +112,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
         },
       ]);
     },
-    [setChoices]
+    [setChoices],
   );
 
   useEffect(() => {
@@ -133,7 +123,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
     (event) => {
       event.preventDefault();
       const modifierString = getModifierString(event);
-      let choiceName = ``;
+      let choiceName = '';
       if (modifierString) {
         choiceName = hotkeyProse(modifierString);
       } else {
@@ -143,7 +133,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
       setChoice(choiceName);
       setPlaceholder(choiceName);
     },
-    [setChoice, setPlaceholder]
+    [setChoice, setPlaceholder],
   );
 
   const onKeyDown = useCallback(
@@ -161,14 +151,11 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
         return;
       }
 
-      if (
-        event.key.length === 1 ||
-        ['Shift', 'Control', 'Alt', 'Meta'].every((m) => !event.key.includes(m))
-      ) {
+      if (event.key.length === 1 || ['Shift', 'Control', 'Alt', 'Meta'].every((m) => !event.key.includes(m))) {
         submit(keyData);
       }
     },
-    [setChoice, submit, setPlaceholder]
+    [setChoice, submit, setPlaceholder],
   );
 
   return (
@@ -183,7 +170,6 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
           caretColor: 'transparent',
         } as any
       }
-      autoFocus
       className={`
       hotkey-component
       h-16 w-full border-none  bg-transparent py-0 pl-4   text-xl text-text-base placeholder-text-base

@@ -1,5 +1,5 @@
 import { ProcessType, UI } from '@johnlindquist/kit/core/enum';
-import { Script, Choice } from '@johnlindquist/kit/types/core';
+import type { Choice, Script } from '@johnlindquist/kit/types/core';
 
 export const DEFAULT_LIST_WIDTH = 300; // 256;
 export const DEFAULT_WIDTH = 300; // 256;
@@ -28,7 +28,7 @@ export const heightMap: { [key in UI]: number } = {
   [UI.log]: INPUT_HEIGHT,
 };
 
-export const SPLASH_PATH = `__app__/splash-screen`;
+export const SPLASH_PATH = '__app__/splash-screen';
 export const noScript: Script = {
   id: '',
   filePath: '__app__/no-script',
@@ -44,4 +44,4 @@ export const noChoice: Choice = {
   hasPreview: false,
 };
 
-export const closedDiv = `<div></div>`;
+export const closedDiv = '<div></div>';

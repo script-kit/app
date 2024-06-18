@@ -11,18 +11,12 @@ export default function SpeechToText() {
 
   const startRecognition = useCallback(() => {
     setIsListening(true);
-    iframeRef.current?.contentWindow?.postMessage(
-      { type: 'startRecognition' },
-      '*'
-    );
+    iframeRef.current?.contentWindow?.postMessage({ type: 'startRecognition' }, '*');
   }, []);
 
   const stopRecognition = useCallback(() => {
     setIsListening(false);
-    iframeRef.current?.contentWindow?.postMessage(
-      { type: 'stopRecognition' },
-      '*'
-    );
+    iframeRef.current?.contentWindow?.postMessage({ type: 'stopRecognition' }, '*');
   }, []);
 
   const onClick = useCallback(() => {

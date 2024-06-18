@@ -13,13 +13,7 @@ export const checkOpenAtLogin = () => {
     const { openAtLogin } = app.getLoginItemSettings();
 
     if (openAtLogin !== openAtLoginEnabled) {
-      log.info(
-        `${
-          openAtLoginEnabled
-            ? `☑ Enable: Open Kit.app at login`
-            : `◽️ Disable: Open Kit.app at login`
-        }`,
-      );
+      log.info(`${openAtLoginEnabled ? '☑ Enable: Open Kit.app at login' : '◽️ Disable: Open Kit.app at login'}`);
       app.setLoginItemSettings({ openAtLogin: openAtLoginEnabled });
     }
   } catch (error) {

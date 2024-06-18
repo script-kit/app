@@ -1,4 +1,4 @@
-import { Rectangle, desktopCapturer, screen } from 'electron';
+import { type Rectangle, desktopCapturer, screen } from 'electron';
 import { kitState } from './state';
 
 export const getCurrentScreen = () => {
@@ -13,8 +13,7 @@ export const getCurrentScreen = () => {
   }
 
   const point = screen.getCursorScreenPoint();
-  const currentScreen =
-    screen.getDisplayNearestPoint(point) || screen.getPrimaryDisplay();
+  const currentScreen = screen.getDisplayNearestPoint(point) || screen.getPrimaryDisplay();
 
   return currentScreen;
 };
@@ -32,18 +31,12 @@ export const isBoundsWithinDisplays = (bounds: Rectangle) => {
     const maxY = screen.bounds.y + screen.bounds.height;
 
     return (
-      bounds?.x >= minX &&
-      bounds?.x + bounds?.width <= maxX &&
-      bounds?.y >= minY &&
-      bounds?.y + bounds?.height <= maxY
+      bounds?.x >= minX && bounds?.x + bounds?.width <= maxX && bounds?.y >= minY && bounds?.y + bounds?.height <= maxY
     );
   });
 };
 
-export const isBoundsWithinDisplayById = (
-  bounds: Rectangle,
-  displayId: number,
-) => {
+export const isBoundsWithinDisplayById = (bounds: Rectangle, displayId: number) => {
   const display = screen.getAllDisplays().find((d) => {
     return d.id === displayId;
   });
@@ -55,20 +48,14 @@ export const isBoundsWithinDisplayById = (
     const maxY = display.bounds.y + display.bounds.height;
 
     return (
-      bounds?.x >= minX &&
-      bounds?.x + bounds?.width <= maxX &&
-      bounds?.y >= minY &&
-      bounds?.y + bounds?.height <= maxY
+      bounds?.x >= minX && bounds?.x + bounds?.width <= maxX && bounds?.y >= minY && bounds?.y + bounds?.height <= maxY
     );
   }
 
   return false;
 };
 
-export const getSourceFromRectangle = async (
-  id: string,
-  rectangle: Electron.Rectangle,
-) => {
+export const getSourceFromRectangle = async (id: string, rectangle: Electron.Rectangle) => {
   const sources = await desktopCapturer.getSources({
     types: ['screen'],
     thumbnailSize: {
@@ -82,9 +69,7 @@ export const getSourceFromRectangle = async (
   if (!source) {
     const allDisplay = screen.getAllDisplays();
 
-    const index = allDisplay.findIndex(
-      (display) => display.id.toString() === id,
-    );
+    const index = allDisplay.findIndex((display) => display.id.toString() === id);
 
     if (index !== -1) {
       source = sources[index];
@@ -103,8 +88,7 @@ export const getCurrentCursorDisplay = () => {
 
 export const getDisplayDetail = (display: Electron.Display) => {
   // win32 darwin linux platforms are handled separately
-  const { x, y, width, height } =
-    process.platform === 'linux' ? display.workArea : display.bounds;
+  const { x, y, width, height } = process.platform === 'linux' ? display.workArea : display.bounds;
 
   // The mac image is too large, causing the screenshot window to lag, and the screenshot window display delay is very serious
   const scale = process.platform === 'darwin' ? 1 : display.scaleFactor;

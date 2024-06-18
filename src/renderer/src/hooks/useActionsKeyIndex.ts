@@ -1,18 +1,18 @@
-import log from 'electron-log';
 import { Channel } from '@johnlindquist/kit/core/enum';
+import log from 'electron-log';
 import { useAtom, useAtomValue } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
-  channelAtom,
-  indexAtom,
-  mouseEnabledAtom,
-  inputFocusAtom,
-  shortcutsAtom,
-  directionAtom,
-  flagsIndexAtom,
-  flaggedChoiceValueAtom,
   actionsInputFocusAtom,
+  channelAtom,
+  directionAtom,
+  flaggedChoiceValueAtom,
+  flagsIndexAtom,
+  indexAtom,
+  inputFocusAtom,
+  mouseEnabledAtom,
+  shortcutsAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
@@ -38,7 +38,9 @@ export default () => {
   useHotkeys(
     'up',
     (event) => {
-      if (!inputFocus && !actionsInputFocus) return;
+      if (!(inputFocus || actionsInputFocus)) {
+        return;
+      }
       event.preventDefault();
       setMouseEnabled(0);
       setDirection(-1);
@@ -51,21 +53,15 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [
-      index,
-      flagsIndex,
-      channel,
-      inputFocus,
-      actionsInputFocus,
-      shortcuts,
-      flagValue,
-    ],
+    [index, flagsIndex, channel, inputFocus, actionsInputFocus, shortcuts, flagValue],
   );
 
   useHotkeys(
     'down',
     (event) => {
-      if (!inputFocus && !actionsInputFocus) return;
+      if (!(inputFocus || actionsInputFocus)) {
+        return;
+      }
       event.preventDefault();
       setMouseEnabled(0);
       setDirection(1);
@@ -78,21 +74,15 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [
-      index,
-      flagsIndex,
-      channel,
-      inputFocus,
-      actionsInputFocus,
-      shortcuts,
-      flagValue,
-    ],
+    [index, flagsIndex, channel, inputFocus, actionsInputFocus, shortcuts, flagValue],
   );
 
   useHotkeys(
     'left',
     (event) => {
-      if (!inputFocus && !actionsInputFocus) return;
+      if (!(inputFocus || actionsInputFocus)) {
+        return;
+      }
       // event.preventDefault();
       channel(Channel.LEFT);
     },
@@ -103,7 +93,9 @@ export default () => {
   useHotkeys(
     'right',
     (event) => {
-      if (!inputFocus && !actionsInputFocus) return;
+      if (!(inputFocus || actionsInputFocus)) {
+        return;
+      }
       // event.preventDefault();
       channel(Channel.RIGHT);
     },

@@ -1,18 +1,18 @@
-import { BrowserWindow } from 'electron';
-import { snapshot } from 'valtio';
-import log from 'electron-log';
-import path from 'path';
+import { readFile, stat, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import { getLogFromScriptPath } from '@johnlindquist/kit/core/utils';
+import { BrowserWindow } from 'electron';
+import log from 'electron-log';
 import Tail from 'tail';
-import { readFile, stat, writeFile } from 'fs/promises';
+import { snapshot } from 'valtio';
 import { getAssetPath } from '../shared/assets';
-import { kitState } from './state';
-import { windowsState } from '../shared/windows';
 import { WindowChannel } from '../shared/enums';
+import { windowsState } from '../shared/windows';
 import { getCurrentScreenFromMouse } from './prompt';
-import { fileURLToPath } from 'url';
 import { getPromptOptions } from './prompt.options';
+import { kitState } from './state';
 
 export const createWindow = async ({
   ui,
@@ -42,12 +42,9 @@ export const createWindow = async ({
     windowsState.windows = windowsState.windows.filter((w) => w.id !== win.id);
   });
 
-  await win.loadFile(
-    fileURLToPath(new URL('../renderer/index.html', import.meta.url)),
-    {
-      query: { vs: getAssetPath('vs') },
-    },
-  );
+  await win.loadFile(fileURLToPath(new URL('../renderer/index.html', import.meta.url)), {
+    query: { vs: getAssetPath('vs') },
+  });
 
   win.webContents.executeJavaScript(`
   document.title = '${title}'
@@ -76,9 +73,7 @@ export const showLogWindow = async ({
 }) => {
   // TODO: If Log window already exists, just show it
   let tail: Tail.Tail;
-  const alreadyOpen = windowsState.windows.find(
-    (w) => w.scriptPath === scriptPath && w.ui === UI.log,
-  );
+  const alreadyOpen = windowsState.windows.find((w) => w.scriptPath === scriptPath && w.ui === UI.log);
 
   if (alreadyOpen) {
     log.info(`${alreadyOpen?.id}: Log window already open for ${scriptPath}`, {
@@ -120,13 +115,11 @@ export const showLogWindow = async ({
       }
 
       if (message?.state?.shortcut?.endsWith('w')) {
-        log.info(`Closing log window`);
+        log.info('Closing log window');
         tail?.unwatch();
         win.close();
         win.destroy();
-        windowsState.windows = windowsState.windows.filter(
-          (w) => w.id !== win.id,
-        );
+        windowsState.windows = windowsState.windows.filter((w) => w.id !== win.id);
         log.info(`Close handled. Destroying log window ${win.id}`);
       }
     }
@@ -150,7 +143,9 @@ export const showLogWindow = async ({
 
       tail.on('line', (data) => {
         log.info({ data });
-        if (win.isDestroyed()) return;
+        if (win.isDestroyed()) {
+          return;
+        }
         win.webContents.send(WindowChannel.SET_LAST_LOG_LINE, data);
       });
     }

@@ -1,13 +1,9 @@
+import { PROMPT } from '@johnlindquist/kit/core/enum';
+import { useAtom, useAtomValue } from 'jotai';
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import React, { useCallback } from 'react';
-import { useAtom, useAtomValue } from 'jotai';
-import { PROMPT } from '@johnlindquist/kit/core/enum';
-import {
-  flaggedChoiceValueAtom,
-  inputHeightAtom,
-  selectedAtom,
-} from '../jotai';
+import { flaggedChoiceValueAtom, inputHeightAtom, selectedAtom } from '../jotai';
 import { IconSwapper } from './iconswapper';
 
 export default function Selected() {
@@ -18,17 +14,17 @@ export default function Selected() {
   const tabText =
     // eslint-disable-next-line no-nested-ternary
     inputHeight === PROMPT.INPUT.HEIGHT.XS
-      ? `text-xs`
+      ? 'text-xs'
       : inputHeight === PROMPT.INPUT.HEIGHT.XXS
-        ? `text-xxs`
-        : `text-sm`;
+        ? 'text-xxs'
+        : 'text-sm';
 
   const onClick = useCallback(
     (e) => {
       e.preventDefault();
       setFlagValue('');
     },
-    [setFlagValue]
+    [setFlagValue],
   );
 
   return (
@@ -53,9 +49,7 @@ text-opacity-90
     hover:cursor-pointer
     `}
     >
-      <div
-        className={`${tabText} justify-content flex flex-row items-center pl-3.5 font-medium hover:text-text-base`}
-      >
+      <div className={`${tabText} justify-content flex flex-row items-center pl-3.5 font-medium hover:text-text-base`}>
         <div className="mr-8 flex h-5 flex-row truncate">
           <div className="">
             <IconSwapper text="←" />

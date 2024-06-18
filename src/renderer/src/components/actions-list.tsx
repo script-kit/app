@@ -1,24 +1,24 @@
+import { useAtom, useAtomValue } from 'jotai';
+import memoize from 'memoize-one';
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/require-default-props */
 import { useEffect, useRef, useState } from 'react';
-import { VariableSizeList as List } from 'react-window';
-import { useAtom, useAtomValue } from 'jotai';
-import memoize from 'memoize-one';
-import FlagButton from './flag-button';
-import {
-  isScrollingAtom,
-  flagsListAtom,
-  flagsIndexAtom,
-  flagsRequiresScrollAtom,
-  scoredFlagsAtom,
-  actionsItemHeightAtom,
-  actionsInputHeightAtom,
-  flagsHeightAtom,
-  focusedElementAtom,
-} from '../jotai';
-import { ChoiceButtonProps } from '../../../shared/types';
 import AutoSizer from 'react-virtualized-auto-sizer';
+import { VariableSizeList as List } from 'react-window';
+import type { ChoiceButtonProps } from '../../../shared/types';
+import {
+  actionsInputHeightAtom,
+  actionsItemHeightAtom,
+  flagsHeightAtom,
+  flagsIndexAtom,
+  flagsListAtom,
+  flagsRequiresScrollAtom,
+  focusedElementAtom,
+  isScrollingAtom,
+  scoredFlagsAtom,
+} from '../jotai';
 import ActionsInput from './actions-input';
+import FlagButton from './flag-button';
 
 const createItemData = memoize(
   (choices) =>
@@ -50,10 +50,14 @@ function InnerList({ height }) {
   }, [flagsRef.current]);
 
   useEffect(() => {
-    if (!flagsRef.current) return;
+    if (!flagsRef.current) {
+      return;
+    }
 
     const scroll = () => {
-      if (requiresScroll === -1) return;
+      if (requiresScroll === -1) {
+        return;
+      }
       onIndexChange(requiresScroll);
       flagsRef?.current?.scrollToItem(
         requiresScroll,
@@ -72,7 +76,9 @@ function InnerList({ height }) {
   }, [requiresScroll, choices]);
 
   useEffect(() => {
-    if (!flagsRef.current) return;
+    if (!flagsRef.current) {
+      return;
+    }
     const needsReset = choices.find((c) => c?.item?.height !== itemHeight);
     if (needsReset) {
       (flagsRef?.current as any)?.resetAfterIndex(0);
@@ -97,7 +103,9 @@ function InnerList({ height }) {
 
         // TODO: Disable scrolling if onScroll hasn't trigger for 250ms
         // clear the previous timeout
-        if (scrollTimeout) clearTimeout(scrollTimeout);
+        if (scrollTimeout) {
+          clearTimeout(scrollTimeout);
+        }
 
         // set a new timeout
         setScrollTimeout(
@@ -110,8 +118,7 @@ function InnerList({ height }) {
       itemSize={(i) => {
         const maybeHeight = choices?.[i]?.item?.height;
 
-        const height =
-          typeof maybeHeight === 'number' ? maybeHeight : itemHeight;
+        const height = typeof maybeHeight === 'number' ? maybeHeight : itemHeight;
         // log.info(
         //   `📜 Item ${i}: Name: ${choices?.[i]?.item?.name} height: ${height}`
         // );
@@ -123,7 +130,7 @@ function InnerList({ height }) {
       }}
       itemData={itemData}
       className={`
-${isScrolling ? `scrollbar` : ''}
+${isScrolling ? 'scrollbar' : ''}
 wrapper
 px-0
 text-text-base outline-none focus:border-none focus:outline-none
@@ -178,7 +185,7 @@ export default function ActionsList() {
       <ActionsInput />
       <div className="flex h-full">
         <div className="flex-1">
-          <AutoSizer disableWidth className="w-full">
+          <AutoSizer disableWidth={true} className="w-full">
             {({ height }) => (
               <>
                 <InnerList height={height} />

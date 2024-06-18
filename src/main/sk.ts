@@ -1,15 +1,11 @@
+import fs from 'node:fs';
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable import/prefer-default-export */
-import net from 'net';
-import fs from 'fs';
+import net from 'node:net';
+import { kitPath, parseScript, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
 import log from 'electron-log';
-import {
-  kitPath,
-  resolveToScriptPath,
-  parseScript,
-} from '@johnlindquist/kit/core/utils';
-import { runPromptProcess } from './kit';
 import { Trigger } from '../shared/enums';
+import { runPromptProcess } from './kit';
 import { spawnShebang } from './process';
 
 // TODO: "Force" to front isn't working
@@ -17,7 +13,7 @@ export const startSK = () => {
   const server = net.createServer((stream) => {
     stream.on('data', async (data) => {
       const value = data.toString();
-      const json = value.match(new RegExp(`^{.*}$`, 'gm'))?.[0] || '';
+      const json = value.match(/^{.*}$/gm)?.[0] || '';
       const object = JSON.parse(json);
 
       const { script, args, cwd } = object;
@@ -55,7 +51,7 @@ Content-Length: ${message.length}
 ${message}`,
           );
         } else {
-          const message = `🕹 sk needs a script!`;
+          const message = '🕹 sk needs a script!';
           log.info(message);
           // stream.write(message);
           // Replay with not found http message
@@ -78,6 +74,8 @@ ${message}`,
   });
 
   const socketPath = kitPath('kit.sock');
-  if (fs.existsSync(socketPath)) fs.unlinkSync(socketPath);
+  if (fs.existsSync(socketPath)) {
+    fs.unlinkSync(socketPath);
+  }
   server.listen(socketPath);
 };

@@ -1,8 +1,8 @@
+import type { Script } from '@johnlindquist/kit/types/core';
 import { powerMonitor } from 'electron';
 import log from 'electron-log';
-import { Script } from '@johnlindquist/kit/types/core';
-import { runPromptProcess } from './kit';
 import { Trigger } from '../shared/enums';
+import { runPromptProcess } from './kit';
 import { kitState } from './state';
 
 const validSystemEvents = [
@@ -26,7 +26,7 @@ validSystemEvents.forEach((systemEvent: any) => {
     systemEventMap.forEach((eventList, scriptPath) => {
       eventList.forEach((mappedEvent: string) => {
         if (mappedEvent === systemEvent) {
-          log.info(`🗺`, { mappedEvent, scriptPath });
+          log.info('🗺', { mappedEvent, scriptPath });
           runPromptProcess(scriptPath, [], {
             force: false,
             trigger: Trigger.System,
@@ -45,11 +45,7 @@ export const unlinkEvents = (filePath: string) => {
     systemEventMap.delete(filePath);
   }
 };
-export const systemScriptChanged = ({
-  filePath,
-  kenv,
-  system: systemEventsString,
-}: Script) => {
+export const systemScriptChanged = ({ filePath, kenv, system: systemEventsString }: Script) => {
   if (systemEventMap.get(filePath)) {
     log.info(`Clearing ${systemEventMap.get(filePath)} from ${filePath}`);
     systemEventMap.delete(filePath);
@@ -57,12 +53,8 @@ export const systemScriptChanged = ({
 
   if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
     if (systemEventsString) {
-      log.info(
-        `Ignoring ${filePath} // System metadata because it's not in a trusted kenv.`,
-      );
-      log.info(
-        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`,
-      );
+      log.info(`Ignoring ${filePath} // System metadata because it's not in a trusted kenv.`);
+      log.info(`Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`);
     }
 
     return;
@@ -71,9 +63,7 @@ export const systemScriptChanged = ({
   if (systemEventsString) {
     const systemEvents = systemEventsString.split(' ');
 
-    const valid = systemEvents.every((event) =>
-      validSystemEvents.includes(event as any),
-    );
+    const valid = systemEvents.every((event) => validSystemEvents.includes(event as any));
 
     if (valid) {
       log.info(`🖥  ${systemEvents} will trigger ${filePath}`);

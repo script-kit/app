@@ -2,17 +2,15 @@
 
 import '@johnlindquist/kit';
 
-console.log(
-  `Patching node-pty with @homebridge/node-pty-prebuilt-multiarch ⛳️`,
-);
+console.log('Patching node-pty with @homebridge/node-pty-prebuilt-multiarch ⛳️');
 
-let ptyFilePath = path.resolve(process.env.PWD, 'src', 'pty.ts');
+const ptyFilePath = path.resolve(process.env.PWD, 'src', 'pty.ts');
 
 console.log({
   ptyFilePath,
 });
 
-let result = await replace({
+const result = await replace({
   files: [ptyFilePath],
   from: "from 'node-pty'",
   to: "from '@homebridge/node-pty-prebuilt-multiarch'",
@@ -24,4 +22,4 @@ for (const entry of result) {
   }
 }
 
-console.log(`Kit is fun!!! ❤️`);
+console.log('Kit is fun!!! ❤️');

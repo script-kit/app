@@ -1,64 +1,45 @@
 import log from 'electron-log';
 import { debounce } from 'lodash-es';
 
-import path from 'path';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { lstat, readFile, readdir, rm } from 'node:fs/promises';
+import path from 'node:path';
+import { getScripts, getUserJson } from '@johnlindquist/kit/core/db';
+import { Channel, Env } from '@johnlindquist/kit/core/enum';
+import type { Script } from '@johnlindquist/kit/types';
+import dotenv from 'dotenv';
+import { globby } from 'globby';
+import madge, { type MadgeModuleDependencyGraph } from 'madge';
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
-import dotenv from 'dotenv';
-import { rm, readdir, readFile, lstat } from 'fs/promises';
-import { getScripts, getUserJson } from '@johnlindquist/kit/core/db';
-import { Script } from '@johnlindquist/kit/types';
-import { Channel, Env } from '@johnlindquist/kit/core/enum';
-import madge, { MadgeModuleDependencyGraph } from 'madge';
-import { globby } from 'globby';
 
-import {
-  parseScript,
-  kitPath,
-  kenvPath,
-  resolveToScriptPath,
-} from '@johnlindquist/kit/core/utils';
+import { kenvPath, kitPath, parseScript, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
 
-import chokidar, { FSWatcher } from 'chokidar';
-import { unlinkShortcuts, shortcutScriptChanged } from './shortcuts';
+import chokidar, { type FSWatcher } from 'chokidar';
+import { shortcutScriptChanged, unlinkShortcuts } from './shortcuts';
 
-import { cancelSchedule, scheduleScriptChanged } from './schedule';
-import { unlinkEvents, systemScriptChanged } from './system-events';
-import { removeWatch, watchScriptChanged } from './watch';
-import { backgroundScriptChanged, removeBackground } from './background';
-import {
-  debounceSetScriptTimestamp,
-  kitState,
-  sponsorCheck,
-  workers,
-} from './state';
-import { kenvEnv } from '@johnlindquist/kit/types/env';
+import type { kenvEnv } from '@johnlindquist/kit/types/env';
 import { CREATE_BIN_WORKER } from '@johnlindquist/kit/workers';
+import { backgroundScriptChanged, removeBackground } from './background';
+import { cancelSchedule, scheduleScriptChanged } from './schedule';
+import { debounceSetScriptTimestamp, kitState, sponsorCheck, workers } from './state';
+import { systemScriptChanged, unlinkEvents } from './system-events';
+import { removeWatch, watchScriptChanged } from './watch';
 
-import { addSnippet, addTextSnippet, removeSnippet } from './tick';
-import {
-  clearPromptCache,
-  clearPromptCacheFor,
-  setKitStateAtom,
-} from './prompt';
-import { startWatching, WatchEvent } from './chokidar';
-import { emitter, KitEvent } from '../shared/events';
+import { Worker } from 'node:worker_threads';
 import { AppChannel, Trigger } from '../shared/enums';
-import { runScript } from './kit';
-import {
-  processes,
-  sendToAllActiveChildren,
-  spawnShebang,
-  updateTheme,
-} from './process';
-import { compareArrays, isInDirectory } from './helpers';
-import { getFileImports } from './npm';
+import { KitEvent, emitter } from '../shared/events';
 import { sendToAllPrompts } from './channel';
-import { readKitCss, setCSSVariable } from './theme';
-import { prompts } from './prompts';
+import { type WatchEvent, startWatching } from './chokidar';
 import { createEnv } from './env.utils';
-import { Worker } from 'worker_threads';
+import { compareArrays, isInDirectory } from './helpers';
+import { runScript } from './kit';
+import { getFileImports } from './npm';
+import { processes, sendToAllActiveChildren, spawnShebang, updateTheme } from './process';
+import { clearPromptCache, clearPromptCacheFor, setKitStateAtom } from './prompt';
+import { prompts } from './prompts';
+import { readKitCss, setCSSVariable } from './theme';
+import { addSnippet, addTextSnippet, removeSnippet } from './tick';
 
 const unlink = (filePath: string) => {
   unlinkShortcuts(filePath);
@@ -71,12 +52,12 @@ const unlink = (filePath: string) => {
   const binPath = path.resolve(
     path.dirname(path.dirname(filePath)),
     'bin',
-    path
-      .basename(filePath)
-      .replace(new RegExp(`\\${path.extname(filePath)}$`), ''),
+    path.basename(filePath).replace(new RegExp(`\\${path.extname(filePath)}$`), ''),
   );
 
-  if (existsSync(binPath)) rm(binPath);
+  if (existsSync(binPath)) {
+    rm(binPath);
+  }
 };
 
 const logEvents: { event: WatchEvent; filePath: string }[] = [];
@@ -87,14 +68,26 @@ const logAllEvents = () => {
   const removes: string[] = [];
 
   logEvents.forEach(({ event, filePath }) => {
-    if (event === 'add') adds.push(filePath);
-    if (event === 'change') changes.push(filePath);
-    if (event === 'unlink') removes.push(filePath);
+    if (event === 'add') {
+      adds.push(filePath);
+    }
+    if (event === 'change') {
+      changes.push(filePath);
+    }
+    if (event === 'unlink') {
+      removes.push(filePath);
+    }
   });
 
-  if (adds.length) log.verbose('adds', adds);
-  if (changes.length) log.verbose('changes', changes);
-  if (removes.length) log.verbose('removes', removes);
+  if (adds.length) {
+    log.verbose('adds', adds);
+  }
+  if (changes.length) {
+    log.verbose('changes', changes);
+  }
+  if (removes.length) {
+    log.verbose('removes', removes);
+  }
 
   adds.length = 0;
   changes.length = 0;
@@ -115,11 +108,7 @@ const logQueue = (event: WatchEvent, filePath: string) => {
 };
 
 const unlinkBin = (filePath: string) => {
-  const binPath = path.resolve(
-    path.dirname(path.dirname(filePath)),
-    'bin',
-    path.basename(filePath),
-  );
+  const binPath = path.resolve(path.dirname(path.dirname(filePath)), 'bin', path.basename(filePath));
 
   // if binPath exists, remove it
   if (existsSync(binPath)) {
@@ -142,10 +131,7 @@ const checkFileImports = debounce(async (script: Script) => {
 
   log.info({ imports });
 
-  if (
-    imports?.length &&
-    kitState.kenvEnv?.KIT_DISABLE_AUTO_INSTALL !== 'true'
-  ) {
+  if (imports?.length && kitState.kenvEnv?.KIT_DISABLE_AUTO_INSTALL !== 'true') {
     log.info(`📦 ${script.filePath} missing imports`, imports);
     emitter.emit(KitEvent.RunPromptProcess, {
       scriptPath: kitPath('cli', 'npm.js'),
@@ -161,7 +147,9 @@ const checkFileImports = debounce(async (script: Script) => {
 let depWatcher: FSWatcher;
 let depGraph: MadgeModuleDependencyGraph = {};
 const getDepWatcher = () => {
-  if (depWatcher) return depWatcher;
+  if (depWatcher) {
+    return depWatcher;
+  }
 
   depWatcher = chokidar.watch(kenvPath('package.json'), {
     ignoreInitial: kitState.ignoreInitial,
@@ -173,16 +161,11 @@ const getDepWatcher = () => {
     );
 
     // globby requires forward slashes
-    const relativeFilePath = path
-      .relative(kenvPath(), filePath)
-      .replace(/\\/g, '/');
+    const relativeFilePath = path.relative(kenvPath(), filePath).replace(/\\/g, '/');
     const affectedScripts = findEntryScripts(depGraph, relativeFilePath);
 
-    log.info(
-      `🔍 ${filePath} is a dependency of these scripts:`,
-      Array.from(affectedScripts),
-    );
-    log.info(`Clearing their respective caches...`);
+    log.info(`🔍 ${filePath} is a dependency of these scripts:`, Array.from(affectedScripts));
+    log.info('Clearing their respective caches...');
 
     for await (const relativeScriptPath of affectedScripts) {
       const cachePath = path.join(
@@ -194,9 +177,7 @@ const getDepWatcher = () => {
         log.info(`🔥 Clearing cache for ${relativeScriptPath} at ${cachePath}`);
         await rm(cachePath);
       } else {
-        log.info(
-          `🤔 Cache for ${relativeScriptPath} at ${cachePath} does not exist`,
-        );
+        log.info(`🤔 Cache for ${relativeScriptPath} at ${cachePath} does not exist`);
       }
 
       const fullPath = kenvPath(relativeScriptPath);
@@ -249,9 +230,7 @@ const madgeAllScripts = debounce(async () => {
     kenvPath('scripts', '*').replace(/\\/g, '/'),
     ...kenvs
       .filter((k) => k.isDirectory())
-      .map((kenv) =>
-        kenvPath('kenvs', kenv.name, 'scripts', '*').replace(/\\/g, '/'),
-      ),
+      .map((kenv) => kenvPath('kenvs', kenv.name, 'scripts', '*').replace(/\\/g, '/')),
   ]);
 
   log.info(`🔍 ${allScriptPaths.length} scripts found`);
@@ -293,16 +272,14 @@ const madgeAllScripts = debounce(async () => {
 
 let firstBatch = true;
 let firstBatchTimeout: NodeJS.Timeout;
-export const onScriptsChanged = async (
-  event: WatchEvent,
-  filePath: string,
-  rebuilt = false,
-) => {
+export const onScriptsChanged = async (event: WatchEvent, filePath: string, rebuilt = false) => {
   if (firstBatch) {
-    if (firstBatchTimeout) clearTimeout(firstBatchTimeout);
+    if (firstBatchTimeout) {
+      clearTimeout(firstBatchTimeout);
+    }
     firstBatchTimeout = setTimeout(() => {
       firstBatch = false;
-      log.info(`Finished parsing scripts ✅`);
+      log.info('Finished parsing scripts ✅');
     }, 1000);
   }
 
@@ -350,9 +327,7 @@ export const onScriptsChanged = async (
         });
       }
     } else {
-      log.verbose(
-        `⌚️ ${filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`,
-      );
+      log.verbose(`⌚️ ${filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`);
     }
 
     sendToAllActiveChildren({
@@ -367,13 +342,12 @@ export const onScriptsChanged = async (
     if (kitState.ready) {
       setTimeout(async () => {
         try {
-          const binDirPath = path.resolve(
-            path.dirname(path.dirname(filePath)),
-            'bin',
-          );
+          const binDirPath = path.resolve(path.dirname(path.dirname(filePath)), 'bin');
           const command = path.parse(filePath).name;
           const binFilePath = path.resolve(binDirPath, command);
-          if (!existsSync(binFilePath)) {
+          if (existsSync(binFilePath)) {
+            log.info(`🔗 Bin already exists for ${command}`);
+          } else {
             log.info(`🔗 Creating bin for ${command}`);
             // runScript(kitPath('cli', 'create-bin'), 'scripts', filePath);
             if (!workers.createBin) {
@@ -391,8 +365,6 @@ export const onScriptsChanged = async (
 
             log.info(`🔗 Post message for bin for ${command}`);
             workers.createBin.postMessage(filePath);
-          } else {
-            log.info(`🔗 Bin already exists for ${command}`);
           }
         } catch (error) {
           log.error(error);
@@ -425,7 +397,9 @@ export const checkUserDb = async (eventName: string) => {
 
   kitState.user = currentUser;
 
-  if (eventName === 'unlink') return;
+  if (eventName === 'unlink') {
+    return;
+  }
 
   runScript(kitPath('config', 'set-login'), kitState.user.login || Env.REMOVE);
 
@@ -437,7 +411,7 @@ export const checkUserDb = async (eventName: string) => {
   }
 
   const user = snapshot(kitState.user);
-  log.info(`Send user.json to prompt`, user);
+  log.info('Send user.json to prompt', user);
 
   // TODO: Reimplement this
   sendToAllPrompts(AppChannel.USER_CHANGED, user);
@@ -473,7 +447,7 @@ const triggerRunText = debounce(
         log.error(error);
       }
     } else {
-      log.info(`run.txt removed`);
+      log.info('run.txt removed');
     }
   },
   1000,
@@ -484,7 +458,7 @@ const triggerRunText = debounce(
 
 const refreshScripts = debounce(
   async () => {
-    log.info(`🌈 Refreshing Scripts...`);
+    log.info('🌈 Refreshing Scripts...');
     const scripts = await getScripts();
     for (const script of scripts) {
       onScriptsChanged('change', script.filePath, true);
@@ -494,214 +468,199 @@ const refreshScripts = debounce(
   { leading: true },
 );
 
-export const parseEnvFile = debounce(
-  async (filePath: string, eventName: WatchEvent) => {
-    log.info(`🌎 .env ${eventName}`);
+export const parseEnvFile = debounce(async (filePath: string, eventName: WatchEvent) => {
+  log.info(`🌎 .env ${eventName}`);
 
-    if (existsSync(filePath)) {
-      try {
-        const envData = dotenv.parse(readFileSync(filePath)) as kenvEnv;
+  if (existsSync(filePath)) {
+    try {
+      const envData = dotenv.parse(readFileSync(filePath)) as kenvEnv;
 
-        // const resetKeyboardAndClipboard = () => {
-        //   if (envData?.KIT_CLIPBOARD) {
-        //     kitState.kenvEnv.KIT_CLIPBOARD = envData?.KIT_CLIPBOARD;
-        //   } else if (!envData?.KIT_CLIPBOARD) {
-        //     delete kitState.kenvEnv.KIT_CLIPBOARD;
-        //   }
+      // const resetKeyboardAndClipboard = () => {
+      //   if (envData?.KIT_CLIPBOARD) {
+      //     kitState.kenvEnv.KIT_CLIPBOARD = envData?.KIT_CLIPBOARD;
+      //   } else if (!envData?.KIT_CLIPBOARD) {
+      //     delete kitState.kenvEnv.KIT_CLIPBOARD;
+      //   }
 
-        //   if (envData?.KIT_KEYBOARD) {
-        //     kitState.kenvEnv.KIT_KEYBOARD = envData?.KIT_KEYBOARD;
-        //   } else if (!envData?.KIT_KEYBOARD) {
-        //     delete kitState.kenvEnv.KIT_KEYBOARD;
-        //   }
-        // };
+      //   if (envData?.KIT_KEYBOARD) {
+      //     kitState.kenvEnv.KIT_KEYBOARD = envData?.KIT_KEYBOARD;
+      //   } else if (!envData?.KIT_KEYBOARD) {
+      //     delete kitState.kenvEnv.KIT_KEYBOARD;
+      //   }
+      // };
 
-        // log.info({
-        //   KIT_THEME_LIGHT: envData?.KIT_THEME_LIGHT,
-        //   KIT_THEME_DARK: envData?.KIT_THEME_DARK,
-        // });
+      // log.info({
+      //   KIT_THEME_LIGHT: envData?.KIT_THEME_LIGHT,
+      //   KIT_THEME_DARK: envData?.KIT_THEME_DARK,
+      // });
 
-        if (envData?.KIT_THEME_LIGHT) {
-          log.info(`Setting light theme`, envData?.KIT_THEME_LIGHT);
-          kitState.kenvEnv.KIT_THEME_LIGHT = envData?.KIT_THEME_LIGHT;
-        } else if (kitState.kenvEnv.KIT_THEME_LIGHT) {
-          delete kitState.kenvEnv.KIT_THEME_LIGHT;
-          log.info(`Removing light theme`);
-        }
-
-        if (envData?.KIT_THEME_DARK) {
-          log.info(`Setting dark theme`, envData?.KIT_THEME_DARK);
-          kitState.kenvEnv.KIT_THEME_DARK = envData?.KIT_THEME_DARK;
-        } else if (kitState.kenvEnv.KIT_THEME_DARK) {
-          delete kitState.kenvEnv.KIT_THEME_DARK;
-          log.info(`Removing dark theme`);
-        }
-
-        updateTheme();
-
-        if (envData?.KIT_TERM_FONT) {
-          sendToAllPrompts(AppChannel.SET_TERM_FONT, envData?.KIT_TERM_FONT);
-        }
-
-        const defaultKitMono = `JetBrains Mono`;
-
-        if (envData?.KIT_MONO_FONT) {
-          setCSSVariable(
-            '--mono-font',
-            envData?.KIT_MONO_FONT || defaultKitMono,
-          );
-        } else if (kitState.kenvEnv.KIT_MONO_FONT) {
-          delete kitState.kenvEnv.KIT_MONO_FONT;
-          setCSSVariable('--mono-font', defaultKitMono);
-        }
-
-        const defaultKitSans = `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'`;
-        if (envData?.KIT_SANS_FONT) {
-          setCSSVariable(
-            '--sans-font',
-            envData?.KIT_SANS_FONT || defaultKitSans,
-          );
-        } else if (kitState.kenvEnv.KIT_SANS_FONT) {
-          delete kitState.kenvEnv.KIT_SANS_FONT;
-          setCSSVariable('--sans-font', defaultKitSans);
-        }
-
-        const defaultKitSerif = `'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
-        'serif'`;
-        if (envData?.KIT_SERIF_FONT) {
-          setCSSVariable(
-            '--serif-font',
-            envData?.KIT_SERIF_FONT || defaultKitSerif,
-          );
-        } else if (kitState.kenvEnv.KIT_SERIF_FONT) {
-          delete kitState.kenvEnv.KIT_SERIF_FONT;
-          setCSSVariable('--serif-font', defaultKitSerif);
-        }
-
-        if (envData?.KIT_MIC) {
-          log.info(`Setting mic`, envData?.KIT_MIC);
-          sendToAllPrompts(AppChannel.SET_MIC_ID, envData?.KIT_MIC);
-        }
-
-        if (envData?.KIT_WEBCAM) {
-          log.info(`Setting webcam`, envData?.KIT_WEBCAM);
-          sendToAllPrompts(AppChannel.SET_WEBCAM_ID, envData?.KIT_WEBCAM);
-        }
-
-        if (envData?.KIT_TYPED_LIMIT) {
-          kitState.typedLimit = parseInt(envData?.KIT_TYPED_LIMIT, 10);
-        }
-
-        const trustedKenvs = (envData?.[kitState.trustedKenvsKey] || '')
-          .split(',')
-          .filter(Boolean)
-          .map((kenv) => kenv.trim());
-
-        log.info(`👩‍⚖️ Trusted Kenvs`, trustedKenvs);
-
-        const trustedKenvsChanged = !compareArrays(
-          trustedKenvs,
-          kitState.trustedKenvs,
-        );
-
-        kitState.trustedKenvs = trustedKenvs;
-
-        if (trustedKenvsChanged) {
-          await refreshScripts();
-        }
-
-        // TODO: Debug a single prompt? All of them?
-        if (envData?.KIT_DEBUG_PROMPT) {
-          prompts?.focused?.debugPrompt();
-        }
-
-        if (envData?.KIT_NO_PREVIEW) {
-          setKitStateAtom({
-            noPreview: envData?.KIT_NO_PREVIEW === 'true',
-          });
-        } else if (kitState.kenvEnv.KIT_NO_PREVIEW) {
-          setKitStateAtom({
-            noPreview: false,
-          });
-        }
-
-        if (envData?.KIT_WIDTH) {
-          kitState.kenvEnv.KIT_WIDTH = envData?.KIT_WIDTH;
-        } else if (kitState.kenvEnv.KIT_WIDTH) {
-          kitState.kenvEnv.KIT_WIDTH = undefined;
-        }
-
-        // if (envData?.KIT_LOW_CPU) {
-        //   kitState.kenvEnv.KIT_LOW_CPU = envData?.KIT_LOW_CPU;
-        //   if (envData?.KIT_LOW_CPU === 'true') {
-        //     log.info(`🔋 Low CPU Mode. KIT_LOW_CPU=true`);
-        //     envData.KIT_SUSPEND_WATCHERS = 'true';
-        //     kitState.kenvEnv.KIT_CLIPBOARD = 'false';
-        //     kitState.kenvEnv.KIT_KEYBOARD = 'false';
-        //   } else {
-        //     log.info(`🔋 Normal CPU Mode. KIT_LOW_CPU=false`);
-        //     envData.KIT_SUSPEND_WATCHERS = 'false';
-        //     resetKeyboardAndClipboard();
-        //   }
-        //   startClipboardAndKeyboardWatchers();
-        // } else if (kitState.kenvEnv.KIT_LOW_CPU) {
-        //   delete kitState.kenvEnv.KIT_LOW_CPU;
-        //   log.info(`🔋 Normal CPU Mode. KIT_LOW_CPU=empty string`);
-        //   envData.KIT_SUSPEND_WATCHERS = 'false';
-        //   resetKeyboardAndClipboard();
-        //   startClipboardAndKeyboardWatchers();
-        // }
-
-        if (envData?.KIT_CACHE_PROMPT) {
-          clearPromptCache();
-        } else if (kitState.kenvEnv.KIT_CACHE_PROMPT) {
-          delete kitState.kenvEnv.KIT_CACHE_PROMPT;
-          clearPromptCache();
-        }
-
-        if (envData?.KIT_SUSPEND_WATCHERS) {
-          const suspendWatchers = envData?.KIT_SUSPEND_WATCHERS === 'true';
-          kitState.suspendWatchers = suspendWatchers;
-
-          if (suspendWatchers) {
-            log.info(`⌚️ Suspending Watchers`);
-            teardownWatchers();
-          } else {
-            log.info(`⌚️ Resuming Watchers`);
-            setupWatchers();
-          }
-        } else if (kitState.suspendWatchers) {
-          kitState.suspendWatchers = false;
-          log.info(`⌚️ Resuming Watchers`);
-          setupWatchers();
-        }
-
-        kitState.kenvEnv = envData;
-        if (prompts.idle?.pid) {
-          processes.getByPid(prompts.idle?.pid).child?.send({
-            pid: prompts.idle?.pid,
-            channel: Channel.ENV_CHANGED,
-            env: createEnv(),
-          });
-        }
-
-        // TODO: I don't think this is necessary any more
-        // togglePromptEnv('KIT_MAIN_SCRIPT');
-      } catch (error) {
-        log.warn(error);
+      if (envData?.KIT_THEME_LIGHT) {
+        log.info('Setting light theme', envData?.KIT_THEME_LIGHT);
+        kitState.kenvEnv.KIT_THEME_LIGHT = envData?.KIT_THEME_LIGHT;
+      } else if (kitState.kenvEnv.KIT_THEME_LIGHT) {
+        kitState.kenvEnv.KIT_THEME_LIGHT = undefined;
+        log.info('Removing light theme');
       }
 
-      // if (envData?.KIT_SHELL) kitState.envShell = envData?.KIT_SHELL;
-      // TODO: Would need to update the dark/light contrast
-      // setCSSVariable('--color-text', envData?.KIT_COLOR_TEXT);
-      // setCSSVariable('--color-background', envData?.KIT_COLOR_BACKGROUND);
-      // setCSSVariable('--color-primary', envData?.KIT_COLOR_PRIMARY);
-      // setCSSVariable('--color-secondary', envData?.KIT_COLOR_SECONDARY);
-      // setCSSVariable('--opacity', envData?.KIT_OPACITY);
+      if (envData?.KIT_THEME_DARK) {
+        log.info('Setting dark theme', envData?.KIT_THEME_DARK);
+        kitState.kenvEnv.KIT_THEME_DARK = envData?.KIT_THEME_DARK;
+      } else if (kitState.kenvEnv.KIT_THEME_DARK) {
+        kitState.kenvEnv.KIT_THEME_DARK = undefined;
+        log.info('Removing dark theme');
+      }
+
+      updateTheme();
+
+      if (envData?.KIT_TERM_FONT) {
+        sendToAllPrompts(AppChannel.SET_TERM_FONT, envData?.KIT_TERM_FONT);
+      }
+
+      const defaultKitMono = 'JetBrains Mono';
+
+      if (envData?.KIT_MONO_FONT) {
+        setCSSVariable('--mono-font', envData?.KIT_MONO_FONT || defaultKitMono);
+      } else if (kitState.kenvEnv.KIT_MONO_FONT) {
+        kitState.kenvEnv.KIT_MONO_FONT = undefined;
+        setCSSVariable('--mono-font', defaultKitMono);
+      }
+
+      const defaultKitSans = `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'`;
+      if (envData?.KIT_SANS_FONT) {
+        setCSSVariable('--sans-font', envData?.KIT_SANS_FONT || defaultKitSans);
+      } else if (kitState.kenvEnv.KIT_SANS_FONT) {
+        kitState.kenvEnv.KIT_SANS_FONT = undefined;
+        setCSSVariable('--sans-font', defaultKitSans);
+      }
+
+      const defaultKitSerif = `'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
+        'serif'`;
+      if (envData?.KIT_SERIF_FONT) {
+        setCSSVariable('--serif-font', envData?.KIT_SERIF_FONT || defaultKitSerif);
+      } else if (kitState.kenvEnv.KIT_SERIF_FONT) {
+        kitState.kenvEnv.KIT_SERIF_FONT = undefined;
+        setCSSVariable('--serif-font', defaultKitSerif);
+      }
+
+      if (envData?.KIT_MIC) {
+        log.info('Setting mic', envData?.KIT_MIC);
+        sendToAllPrompts(AppChannel.SET_MIC_ID, envData?.KIT_MIC);
+      }
+
+      if (envData?.KIT_WEBCAM) {
+        log.info('Setting webcam', envData?.KIT_WEBCAM);
+        sendToAllPrompts(AppChannel.SET_WEBCAM_ID, envData?.KIT_WEBCAM);
+      }
+
+      if (envData?.KIT_TYPED_LIMIT) {
+        kitState.typedLimit = Number.parseInt(envData?.KIT_TYPED_LIMIT, 10);
+      }
+
+      const trustedKenvs = (envData?.[kitState.trustedKenvsKey] || '')
+        .split(',')
+        .filter(Boolean)
+        .map((kenv) => kenv.trim());
+
+      log.info('👩‍⚖️ Trusted Kenvs', trustedKenvs);
+
+      const trustedKenvsChanged = !compareArrays(trustedKenvs, kitState.trustedKenvs);
+
+      kitState.trustedKenvs = trustedKenvs;
+
+      if (trustedKenvsChanged) {
+        await refreshScripts();
+      }
+
+      // TODO: Debug a single prompt? All of them?
+      if (envData?.KIT_DEBUG_PROMPT) {
+        prompts?.focused?.debugPrompt();
+      }
+
+      if (envData?.KIT_NO_PREVIEW) {
+        setKitStateAtom({
+          noPreview: envData?.KIT_NO_PREVIEW === 'true',
+        });
+      } else if (kitState.kenvEnv.KIT_NO_PREVIEW) {
+        setKitStateAtom({
+          noPreview: false,
+        });
+      }
+
+      if (envData?.KIT_WIDTH) {
+        kitState.kenvEnv.KIT_WIDTH = envData?.KIT_WIDTH;
+      } else if (kitState.kenvEnv.KIT_WIDTH) {
+        kitState.kenvEnv.KIT_WIDTH = undefined;
+      }
+
+      // if (envData?.KIT_LOW_CPU) {
+      //   kitState.kenvEnv.KIT_LOW_CPU = envData?.KIT_LOW_CPU;
+      //   if (envData?.KIT_LOW_CPU === 'true') {
+      //     log.info(`🔋 Low CPU Mode. KIT_LOW_CPU=true`);
+      //     envData.KIT_SUSPEND_WATCHERS = 'true';
+      //     kitState.kenvEnv.KIT_CLIPBOARD = 'false';
+      //     kitState.kenvEnv.KIT_KEYBOARD = 'false';
+      //   } else {
+      //     log.info(`🔋 Normal CPU Mode. KIT_LOW_CPU=false`);
+      //     envData.KIT_SUSPEND_WATCHERS = 'false';
+      //     resetKeyboardAndClipboard();
+      //   }
+      //   startClipboardAndKeyboardWatchers();
+      // } else if (kitState.kenvEnv.KIT_LOW_CPU) {
+      //   delete kitState.kenvEnv.KIT_LOW_CPU;
+      //   log.info(`🔋 Normal CPU Mode. KIT_LOW_CPU=empty string`);
+      //   envData.KIT_SUSPEND_WATCHERS = 'false';
+      //   resetKeyboardAndClipboard();
+      //   startClipboardAndKeyboardWatchers();
+      // }
+
+      if (envData?.KIT_CACHE_PROMPT) {
+        clearPromptCache();
+      } else if (kitState.kenvEnv.KIT_CACHE_PROMPT) {
+        kitState.kenvEnv.KIT_CACHE_PROMPT = undefined;
+        clearPromptCache();
+      }
+
+      if (envData?.KIT_SUSPEND_WATCHERS) {
+        const suspendWatchers = envData?.KIT_SUSPEND_WATCHERS === 'true';
+        kitState.suspendWatchers = suspendWatchers;
+
+        if (suspendWatchers) {
+          log.info('⌚️ Suspending Watchers');
+          teardownWatchers();
+        } else {
+          log.info('⌚️ Resuming Watchers');
+          setupWatchers();
+        }
+      } else if (kitState.suspendWatchers) {
+        kitState.suspendWatchers = false;
+        log.info('⌚️ Resuming Watchers');
+        setupWatchers();
+      }
+
+      kitState.kenvEnv = envData;
+      if (prompts.idle?.pid) {
+        processes.getByPid(prompts.idle?.pid).child?.send({
+          pid: prompts.idle?.pid,
+          channel: Channel.ENV_CHANGED,
+          env: createEnv(),
+        });
+      }
+
+      // TODO: I don't think this is necessary any more
+      // togglePromptEnv('KIT_MAIN_SCRIPT');
+    } catch (error) {
+      log.warn(error);
     }
-  },
-  100,
-);
+
+    // if (envData?.KIT_SHELL) kitState.envShell = envData?.KIT_SHELL;
+    // TODO: Would need to update the dark/light contrast
+    // setCSSVariable('--color-text', envData?.KIT_COLOR_TEXT);
+    // setCSSVariable('--color-background', envData?.KIT_COLOR_BACKGROUND);
+    // setCSSVariable('--color-primary', envData?.KIT_COLOR_PRIMARY);
+    // setCSSVariable('--color-secondary', envData?.KIT_COLOR_SECONDARY);
+    // setCSSVariable('--opacity', envData?.KIT_OPACITY);
+  }
+}, 100);
 
 export const setupWatchers = async () => {
   await teardownWatchers();
@@ -732,13 +691,13 @@ export const setupWatchers = async () => {
     }
 
     if (base === 'package.json') {
-      log.info(`package.json changed`);
+      log.info('package.json changed');
 
       return;
     }
 
     if (base === 'scripts.json') {
-      log.info(`scripts.json changed`);
+      log.info('scripts.json changed');
       try {
         for (const info of processes) {
           info?.child?.send({
@@ -811,7 +770,7 @@ export const setupWatchers = async () => {
 
     if (dir.endsWith('snippets')) {
       if (eventName === 'add' || eventName === 'change') {
-        log.info(`Snippet added/changed`, filePath);
+        log.info('Snippet added/changed', filePath);
         addTextSnippet(filePath);
       } else {
         removeSnippet(filePath);
@@ -826,10 +785,10 @@ export const setupWatchers = async () => {
 
 subscribeKey(kitState, 'suspendWatchers', async (suspendWatchers) => {
   if (suspendWatchers) {
-    log.info(`⌚️ Suspending Watchers`);
+    log.info('⌚️ Suspending Watchers');
     teardownWatchers();
   } else {
-    log.info(`⌚️ Resuming Watchers`);
+    log.info('⌚️ Resuming Watchers');
     setupWatchers();
   }
 });

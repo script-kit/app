@@ -4,7 +4,7 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import React, { useCallback } from 'react';
-import { sendShortcutAtom, appConfigAtom, signInActionAtom } from '../jotai';
+import { appConfigAtom, sendShortcutAtom, signInActionAtom } from '../jotai';
 import { bg, textContrast } from './actions';
 import { GithubIcon } from './icons';
 
@@ -15,9 +15,11 @@ export function LoginButton() {
 
   const onClick = useCallback(
     (event) => {
-      if (action) sendShortcut(action.key);
+      if (action) {
+        sendShortcut(action.key);
+      }
     },
-    [action, sendShortcut]
+    [action, sendShortcut],
   );
 
   return (

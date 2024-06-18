@@ -6,10 +6,8 @@ console.log({
   ELECTRON_BUILD_ARCH: process.env.ELECTRON_BUILD_ARCH || 'unknown',
   ELECTRON_BUILD_PLATFORM: process.env.ELECTRON_BUILD_PLATFORM || 'unknown',
 });
-const arch = (process.env.ELECTRON_BUILD_ARCH ||
-  process.arch) as NodeJS.Architecture;
-const platform = (process.env.ELECTRON_BUILD_PLATFORM ||
-  os.platform()) as NodeJS.Platform;
+const arch = (process.env.ELECTRON_BUILD_ARCH || process.arch) as NodeJS.Architecture;
+const platform = (process.env.ELECTRON_BUILD_PLATFORM || os.platform()) as NodeJS.Platform;
 
 type Target = `${NodeJS.Platform}-${NodeJS.Architecture}`;
 const target: Target = `${platform}-${arch}`;
@@ -58,17 +56,12 @@ interface Shims {
   [mpw]: typeof import('@johnlindquist/mac-panel-window');
 }
 
-const createShim = <T extends keyof Shims>(
-  packageName: T,
-  depth = 0,
-): Shims[T] =>
+const createShim = <T extends keyof Shims>(packageName: T, depth = 0): Shims[T] =>
   new Proxy(
     {},
     {
       get: (_target, prop: string) => {
-        log.warn(
-          `Accessing ${prop.toString()} not supported on ${packageName}`,
-        );
+        log.warn(`Accessing ${prop.toString()} not supported on ${packageName}`);
 
         if (depth > 0) {
           log.error(

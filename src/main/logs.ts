@@ -1,13 +1,13 @@
+import fs from 'node:fs';
+import * as path from 'node:path';
+import { getLogFromScriptPath, kenvPath } from '@johnlindquist/kit/core/utils';
+import { app } from 'electron';
 /* eslint-disable import/no-cycle */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable no-console */
 /* eslint-disable import/prefer-default-export */
-import log, { FileTransport, LevelOption } from 'electron-log';
-import * as path from 'path';
+import log, { type FileTransport, type LevelOption } from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
-import fs from 'fs';
-import { kenvPath, getLogFromScriptPath } from '@johnlindquist/kit/core/utils';
-import { app } from 'electron';
 import { stripAnsi } from './ansi';
 import { kitState, subs } from './state';
 import { TrackEvent, trackEvent } from './track';
@@ -22,15 +22,13 @@ export const consoleLog = log.create({
   logId: 'consoleLog',
 });
 
-(consoleLog.transports.file as FileTransport)!.resolvePathFn = () =>
-  kenvPath('logs', 'console.log');
+(consoleLog.transports.file as FileTransport)!.resolvePathFn = () => kenvPath('logs', 'console.log');
 
 export const debugLog = log.create({
   logId: 'debugLog',
 });
 
-(debugLog.transports.file as FileTransport)!.resolvePathFn = () =>
-  kenvPath('logs', 'debug.log');
+(debugLog.transports.file as FileTransport)!.resolvePathFn = () => kenvPath('logs', 'debug.log');
 
 (debugLog.transports.console as any).level = 'silent';
 
@@ -38,8 +36,7 @@ export const updateLogPath = path.resolve(app.getPath('logs'), 'update.log');
 export const updateLog = log.create({
   logId: 'updateLog',
 });
-(updateLog.transports.file as FileTransport).resolvePathFn = () =>
-  updateLogPath;
+(updateLog.transports.file as FileTransport).resolvePathFn = () => updateLogPath;
 
 export const mainLogPath = path.resolve(app.getPath('logs'), 'main.log');
 export const mainLog = log.create({
@@ -47,7 +44,7 @@ export const mainLog = log.create({
 });
 (mainLog.transports.file as FileTransport).resolvePathFn = () => mainLogPath;
 
-log.info(`⭐️ Other notable Kit logs:`, {
+log.info('⭐️ Other notable Kit logs:', {
   mainLogPath,
   updateLogPath,
   keymapLogPath: updateLogPath.replace('update', 'keymap'),
@@ -58,7 +55,7 @@ log.info(`
 
 🟢🟢 🟢  !!!SCRIPT KIT TIME!!! 🟢 🟢 🟢 `);
 
-log.info(`Skipping Setup?`, {
+log.info('Skipping Setup?', {
   MAIN_SKIP_SETUP: process.env.MAIN_SKIP_SETUP,
 });
 
@@ -72,7 +69,9 @@ export const logMap = new Map<string, Logger>();
 
 export const getLog = (scriptPath: string): Logger => {
   try {
-    if (logMap.get(scriptPath)) return logMap.get(scriptPath) as Logger;
+    if (logMap.get(scriptPath)) {
+      return logMap.get(scriptPath) as Logger;
+    }
 
     const scriptLog = log.create({
       logId: scriptPath,
@@ -104,7 +103,7 @@ export const getLog = (scriptPath: string): Logger => {
       debug: wrap(_debug),
       silly: wrap(_silly),
       clear: () => {
-        fs.writeFileSync(logPath, ``);
+        fs.writeFileSync(logPath, '');
       },
     };
     logMap.set(scriptPath, logger);
@@ -137,7 +136,9 @@ if (process.env.VITE_LOG_LEVEL) {
 } else if (process.env.NODE_ENV === 'production') {
   log.transports.file.level = 'info';
 } else {
-  if (log.transports.ipc) log.transports.ipc.level = 'error';
+  if (log.transports.ipc) {
+    log.transports.ipc.level = 'error';
+  }
   log.transports.file.level = 'verbose';
 }
 

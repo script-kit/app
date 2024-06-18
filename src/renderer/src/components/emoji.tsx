@@ -1,7 +1,7 @@
+import Picker, { type EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react';
+import { useAtomValue, useSetAtom } from 'jotai';
 /* eslint-disable react/jsx-no-duplicate-props */
 import React, { useEffect } from 'react';
-import Picker, { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react';
-import { useAtomValue, useSetAtom } from 'jotai';
 import { darkAtom, resizingAtom, submitValueAtom } from '../jotai';
 
 const Emoji = () => {
@@ -72,7 +72,7 @@ const Emoji = () => {
         `}
       </style>
       <Picker
-        autoFocusSearch
+        autoFocusSearch={true}
         onEmojiClick={onEmojiClick}
         theme={isDark ? Theme.DARK : Theme.LIGHT}
         lazyLoadEmojis={false}

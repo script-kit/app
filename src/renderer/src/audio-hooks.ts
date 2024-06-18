@@ -1,10 +1,11 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
 import log from 'electron-log/renderer';
+import { useCallback, useEffect, useRef, useState } from 'react';
 const path = window.api.path;
 const os = window.api.os;
 const { ipcRenderer } = window.electron;
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import useOnEnter from './hooks/useOnEnter';
 import {
   audioDotAtom,
   channelAtom,
@@ -16,7 +17,6 @@ import {
   submitValueAtom,
   uiAtom,
 } from './jotai';
-import useOnEnter from './hooks/useOnEnter';
 
 let mountPid: number;
 export function useAudioRecorder() {
@@ -40,16 +40,12 @@ export function useAudioRecorder() {
   const handleDataAvailable = async (event: BlobEvent) => {
     if (mountPid !== getPid()) {
       stopRecording();
-      log.info(
-        `🏞️ Stopping recording... (audio-dot) ${mountPid} doesn't match ${getPid()}`,
-      );
+      log.info(`🏞️ Stopping recording... (audio-dot) ${mountPid} doesn't match ${getPid()}`);
       return;
     }
 
     setAudioChunks((prevAudioChunks) => [...prevAudioChunks, event.data]);
-    log.info(
-      `🏞️ Writing to stream... (audio-dot) mount: ${mountPid}, getPid: ${getPid()}`,
-    );
+    log.info(`🏞️ Writing to stream... (audio-dot) mount: ${mountPid}, getPid: ${getPid()}`);
 
     // Write the current chunk to the file
     const arrayBuffer = await event.data.arrayBuffer();
@@ -61,12 +57,11 @@ export function useAudioRecorder() {
   };
 
   const handleStop = () => {
-    log.info(`>>>>>>>>>>> HANDLE STOP...`);
-    if (recorderRef.current === null) return;
-    recorderRef.current.removeEventListener(
-      'dataavailable',
-      handleDataAvailable,
-    );
+    log.info('>>>>>>>>>>> HANDLE STOP...');
+    if (recorderRef.current === null) {
+      return;
+    }
+    recorderRef.current.removeEventListener('dataavailable', handleDataAvailable);
     recorderRef.current.removeEventListener('stop', handleStop);
     recorderRef.current = null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -75,13 +70,10 @@ export function useAudioRecorder() {
   const destroyRecorder = () => {
     log.info(typeof recorderRef?.current);
     if (recorderRef?.current) {
-      log.info(`Destroying recorder...`);
+      log.info('Destroying recorder...');
       recorderRef.current.stream.getTracks().forEach((track) => track.stop());
       recorderRef.current.removeEventListener('stop', handleStop);
-      recorderRef.current.removeEventListener(
-        'dataavailable',
-        handleDataAvailable,
-      );
+      recorderRef.current.removeEventListener('dataavailable', handleDataAvailable);
       recorderRef.current = null;
     }
 
@@ -94,28 +86,28 @@ export function useAudioRecorder() {
   };
 
   const stopRecording = useCallback(async () => {
-    log.info(`🎙 Stopping recording...`, recorderRef.current);
+    log.info('🎙 Stopping recording...', recorderRef.current);
     setMicState('stopped');
     if (recorderRef.current !== null) {
-      if (recorderRef.current.state === 'recording') recorderRef.current.stop();
+      if (recorderRef.current.state === 'recording') {
+        recorderRef.current.stop();
+      }
       // destroy the recorder
-      log.info(`Destroying recorder because stop...`);
+      log.info('Destroying recorder because stop...');
       destroyRecorder();
       log.info(`Audio chunks: ${audioChunks.length}`);
-      if (audioChunks.length === 0) return;
-      const type = `audio/webm;codecs=opus`;
+      if (audioChunks.length === 0) {
+        return;
+      }
+      const type = 'audio/webm;codecs=opus';
       const audioBlob = new Blob(audioChunks, {
         type,
       });
 
-      log.info(`>>>>>>>>>>>>>>>>>>>>>>>>>>> micConfig`, micConfig);
+      log.info('>>>>>>>>>>>>>>>>>>>>>>>>>>> micConfig', micConfig);
 
       const tmpFileName =
-        micConfig?.filePath ||
-        path.join(
-          os.tmpdir(),
-          `recording_${Math.random().toString(36).substring(7)}.webm`,
-        );
+        micConfig?.filePath || path.join(os.tmpdir(), `recording_${Math.random().toString(36).substring(7)}.webm`);
 
       const arrayBuffer = await audioBlob.arrayBuffer();
 
@@ -123,7 +115,7 @@ export function useAudioRecorder() {
 
       log.info(`Audio written to file: ${tmpFileName}`);
 
-      log.info(`Submitting audio...`);
+      log.info('Submitting audio...');
 
       channel(Channel.START_MIC, { value: tmpFileName });
       if (ui === UI.mic) {
@@ -138,17 +130,14 @@ export function useAudioRecorder() {
   }, [audioChunks, submit, ui]);
 
   const startRecording = async () => {
-    log.info(`🎙 Starting recording...`, micConfig, recorderRef.current);
+    log.info('🎙 Starting recording...', micConfig, recorderRef.current);
     if (!recorderRef.current) {
       await createRecorderRef();
     }
     if (recorderRef.current) {
       setMicState('recording');
-      log.info(`🎙 Recorder exists...`);
-      recorderRef.current.addEventListener(
-        'dataavailable',
-        handleDataAvailable,
-      );
+      log.info('🎙 Recorder exists...');
+      recorderRef.current.addEventListener('dataavailable', handleDataAvailable);
       recorderRef.current.addEventListener('stop', stopRecording);
       log.info(`🎙 Recorder state: ${recorderRef.current.state}`);
       recorderRef.current.start(micConfig?.timeSlice || 200);
@@ -156,9 +145,7 @@ export function useAudioRecorder() {
       audioContextRef.current = new AudioContext();
       const analyser = audioContextRef.current.createAnalyser();
       analyser.fftSize = 2048;
-      const source = audioContextRef.current.createMediaStreamSource(
-        recorderRef.current.stream,
-      );
+      const source = audioContextRef.current.createMediaStreamSource(recorderRef.current.stream);
       source.connect(analyser);
 
       const analyzeVolume = () => {
@@ -182,7 +169,7 @@ export function useAudioRecorder() {
 
   // TODO: I'm hopeful one day to be able to cache the micMediaRecorder. But since each prompt operates in a separatel window, I'd have to isolate to a single window
   const createRecorderRef = useCallback(() => {
-    log.info(`🎙 createRecorderRef...`, { micId });
+    log.info('🎙 createRecorderRef...', { micId });
 
     // if (micMediaRecorder) {
     //   log.info(`🎙 Using existing mic media recorder...`);
@@ -222,14 +209,11 @@ export function useAudioRecorder() {
   }, []);
 
   useEffect(() => {
-    log.info(`Mic mounted. Setting up...`);
+    log.info('Mic mounted. Setting up...');
     return () => {
-      if (
-        recorderRef.current !== null &&
-        recorderRef.current.state === 'recording'
-      ) {
+      if (recorderRef.current !== null && recorderRef.current.state === 'recording') {
         recorderRef.current.stop();
-        log.info(`Mic unmounted. Stopping tracks and clearing audio chunks...`);
+        log.info('Mic unmounted. Stopping tracks and clearing audio chunks...');
         destroyRecorder();
         setAudioChunks([]);
       }

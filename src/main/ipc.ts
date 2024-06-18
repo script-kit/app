@@ -1,51 +1,43 @@
+import { existsSync, renameSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import type { AppState, Script } from '@johnlindquist/kit';
+import { Channel, Mode, UI } from '@johnlindquist/kit/core/enum';
+import {
+  getLogFromScriptPath,
+  getMainScriptPath,
+  isFile,
+  isInDir,
+  kenvPath,
+  kitPath,
+  tmpDownloadsDir,
+} from '@johnlindquist/kit/core/utils';
+import type { AppMessage } from '@johnlindquist/kit/types/kitapp';
+import axios from 'axios';
+import detect from 'detect-file-type';
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable no-restricted-syntax */
 import { ipcMain } from 'electron';
 import log from 'electron-log';
-import path from 'path';
 import { debounce } from 'lodash-es';
-import axios from 'axios';
-import { AppState, Script } from '@johnlindquist/kit';
-import { Channel, Mode, UI } from '@johnlindquist/kit/core/enum';
-import {
-  kitPath,
-  getLogFromScriptPath,
-  tmpDownloadsDir,
-  getMainScriptPath,
-  isInDir,
-  kenvPath,
-  isFile,
-} from '@johnlindquist/kit/core/utils';
-import { AppMessage } from '@johnlindquist/kit/types/kitapp';
-import { existsSync, renameSync } from 'fs';
-import { writeFile } from 'fs/promises';
 import { DownloaderHelper } from 'node-downloader-helper';
-import detect from 'detect-file-type';
-import { emitter, KitEvent } from '../shared/events';
-import {
-  ProcessAndPrompt,
-  cachePreview,
-  ensureIdleProcess,
-  processes,
-} from './process';
+import { KitEvent, emitter } from '../shared/events';
+import { type ProcessAndPrompt, cachePreview, ensureIdleProcess, processes } from './process';
 
-import { KitPrompt } from './prompt';
-import { prompts } from './prompts';
-import { runPromptProcess } from './kit';
-import { AppChannel, HideReason, Trigger } from '../shared/enums';
-import { ResizeData, Survey } from '../shared/types';
 import { getAssetPath } from '../shared/assets';
-import { kitCache, kitState } from './state';
 import { noChoice } from '../shared/defaults';
+import { AppChannel, HideReason, Trigger } from '../shared/enums';
+import type { ResizeData, Survey } from '../shared/types';
+import { runPromptProcess } from './kit';
+import type { KitPrompt } from './prompt';
+import { prompts } from './prompts';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
+import { kitCache, kitState } from './state';
 
 let actionsOpenTimeout: NodeJS.Timeout;
 let prevTransformedInput = '';
-const checkShortcodesAndKeywords = (
-  prompt: KitPrompt,
-  rawInput: string,
-): boolean => {
+const checkShortcodesAndKeywords = (prompt: KitPrompt, rawInput: string): boolean => {
   //   log.info(`
 
   //   🔍🔍🔍
@@ -58,11 +50,10 @@ const checkShortcodesAndKeywords = (
 
   if (prompt.kitSearch.inputRegex) {
     // eslint-disable-next-line no-param-reassign
-    transformedInput =
-      rawInput.match(new RegExp(prompt.kitSearch.inputRegex, 'gi'))?.[0] || '';
+    transformedInput = rawInput.match(new RegExp(prompt.kitSearch.inputRegex, 'gi'))?.[0] || '';
   }
 
-  if (!prevTransformedInput && !rawInput) {
+  if (!(prevTransformedInput || rawInput)) {
     prompt.kitSearch.keywordCleared = false;
     return true;
   }
@@ -96,15 +87,11 @@ const checkShortcodesAndKeywords = (
   // });
   if (trigger) {
     if (prompt.ready) {
-      sendToPrompt(
-        Channel.SET_SUBMIT_VALUE,
-        trigger?.value ? trigger.value : trigger,
-      );
+      sendToPrompt(Channel.SET_SUBMIT_VALUE, trigger?.value ? trigger.value : trigger);
       log.info(`${prompt.pid}: 👢 Trigger: ${transformedInput} triggered`);
       return false;
-    } else {
-      log.info(`${prompt.pid}: 😩 Not ready`, JSON.stringify(trigger));
     }
+    log.info(`${prompt.pid}: 😩 Not ready`, JSON.stringify(trigger));
   }
 
   for (const [postfix, choice] of prompt.kitSearch.postfixes.entries()) {
@@ -116,10 +103,7 @@ const checkShortcodesAndKeywords = (
     }
   }
 
-  if (
-    prompt.kitSearch.keyword &&
-    !rawInput.startsWith(`${prompt.kitSearch.keyword} `)
-  ) {
+  if (prompt.kitSearch.keyword && !rawInput.startsWith(`${prompt.kitSearch.keyword} `)) {
     const keyword = '';
     if (rawInput === prompt.kitSearch.keyword) {
       prompt.kitSearch.input = prompt.kitSearch.keyword;
@@ -138,9 +122,7 @@ const checkShortcodesAndKeywords = (
 
   if (rawInput.includes(' ')) {
     if (rawInput.endsWith(' ')) {
-      const shortcodeChoice = prompt.kitSearch.shortcodes.get(
-        transformedInput.toLowerCase().trimEnd(),
-      );
+      const shortcodeChoice = prompt.kitSearch.shortcodes.get(transformedInput.toLowerCase().trimEnd());
       if (shortcodeChoice) {
         sendToPrompt(Channel.SET_SUBMIT_VALUE, shortcodeChoice.value);
         log.info(`🔑 Shortcode: ${transformedInput} triggered`);
@@ -174,9 +156,7 @@ const checkShortcodesAndKeywords = (
 
 const handleMessageFail = debounce(
   (message: AppMessage) => {
-    log.warn(
-      `${message?.pid}: pid closed. Attempted ${message.channel}, but ignored.`,
-    );
+    log.warn(`${message?.pid}: pid closed. Attempted ${message.channel}, but ignored.`);
 
     processes.removeByPid(message?.pid);
     // TODO: Reimplement failed message with specific prompt
@@ -188,14 +168,15 @@ const handleMessageFail = debounce(
 );
 
 const handleChannel =
-  (fn: (processInfo: ProcessAndPrompt, message: AppMessage) => void) =>
-  (_event: any, message: AppMessage) => {
+  (fn: (processInfo: ProcessAndPrompt, message: AppMessage) => void) => (_event: any, message: AppMessage) => {
     // TODO: Remove logging
     // log.info({
     //   message,
     // });
     log.silly(`📤 ${message.channel} ${message?.pid}`);
-    if (message?.pid === 0) return;
+    if (message?.pid === 0) {
+      return;
+    }
     const processInfo = processes.getByPid(message?.pid);
 
     if (processInfo) {
@@ -217,7 +198,7 @@ export const startIpc = () => {
     AppChannel.ERROR_RELOAD,
     debounce(
       async (event, data: any) => {
-        log.info(`AppChannel.ERROR_RELOAD`);
+        log.info('AppChannel.ERROR_RELOAD');
         const { scriptPath, pid } = data;
         const prompt = prompts.get(pid);
         const onReload = async () => {
@@ -229,7 +210,7 @@ ${data.error}
           `;
           emitter.emit(KitEvent.RunPromptProcess, {
             scriptPath: kitPath('cli', 'info.js'),
-            args: [path.basename(scriptPath), `Error... `, markdown],
+            args: [path.basename(scriptPath), 'Error... ', markdown],
             options: {
               force: true,
               trigger: Trigger.Info,
@@ -253,7 +234,7 @@ ${data.error}
     Channel.PROMPT_ERROR,
     debounce(
       (_event, { error }) => {
-        log.info(`AppChannel.PROMPT_ERROR`);
+        log.info('AppChannel.PROMPT_ERROR');
         log.warn(error);
         if (!kitState.hiddenByUser) {
           setTimeout(() => {
@@ -289,7 +270,7 @@ ${data.error}
   });
 
   ipcMain.on(AppChannel.RELOAD, async () => {
-    log.info(`AppChannel.RELOAD`);
+    log.info('AppChannel.RELOAD');
     // TODO: Reimplement
     // reload();
 
@@ -317,82 +298,68 @@ ${data.error}
     }
   });
 
-  ipcMain.on(
-    AppChannel.OPEN_SCRIPT_DB,
-    async (event, { focused, script }: AppState) => {
-      const filePath = (focused as any)?.filePath || script?.filePath;
-      const dbPath = path.resolve(
-        filePath,
-        '..',
-        '..',
-        'db',
-        `_${path.basename(filePath).replace(/js$/, 'json')}`,
-      );
-      await runPromptProcess(kitPath('cli/edit-file.js'), [dbPath], {
-        force: true,
-        trigger: Trigger.Kit,
-        sponsorCheck: false,
-      });
-    },
-  );
+  ipcMain.on(AppChannel.OPEN_SCRIPT_DB, async (event, { focused, script }: AppState) => {
+    const filePath = (focused as any)?.filePath || script?.filePath;
+    const dbPath = path.resolve(filePath, '..', '..', 'db', `_${path.basename(filePath).replace(/js$/, 'json')}`);
+    await runPromptProcess(kitPath('cli/edit-file.js'), [dbPath], {
+      force: true,
+      trigger: Trigger.Kit,
+      sponsorCheck: false,
+    });
+  });
 
-  ipcMain.on(
-    AppChannel.OPEN_SCRIPT,
-    async (event, { script, description, input }: Required<AppState>) => {
-      // When the editor is editing a script. Toggle back to running the script.
-      const descriptionIsFile = await isFile(description);
-      const descriptionIsInKenv = isInDir(kenvPath())(description);
+  ipcMain.on(AppChannel.OPEN_SCRIPT, async (event, { script, description, input }: Required<AppState>) => {
+    // When the editor is editing a script. Toggle back to running the script.
+    const descriptionIsFile = await isFile(description);
+    const descriptionIsInKenv = isInDir(kenvPath())(description);
 
-      if (descriptionIsInKenv && descriptionIsFile) {
-        try {
-          await writeFile(description, input);
-          await runPromptProcess(description, [], {
-            force: true,
-            trigger: Trigger.Kit,
-            sponsorCheck: false,
-          });
-        } catch (error) {
-          log.error(error);
-        }
-        return;
+    if (descriptionIsInKenv && descriptionIsFile) {
+      try {
+        await writeFile(description, input);
+        await runPromptProcess(description, [], {
+          force: true,
+          trigger: Trigger.Kit,
+          sponsorCheck: false,
+        });
+      } catch (error) {
+        log.error(error);
       }
+      return;
+    }
 
-      const isInKit = isInDir(kitPath())(script.filePath);
+    const isInKit = isInDir(kitPath())(script.filePath);
 
-      if (script.filePath && isInKit) return;
+    if (script.filePath && isInKit) {
+      return;
+    }
 
-      await runPromptProcess(kitPath('cli/edit-file.js'), [script.filePath], {
-        force: true,
-        trigger: Trigger.Kit,
-        sponsorCheck: false,
-      });
-    },
-  );
+    await runPromptProcess(kitPath('cli/edit-file.js'), [script.filePath], {
+      force: true,
+      trigger: Trigger.Kit,
+      sponsorCheck: false,
+    });
+  });
 
-  ipcMain.on(
-    AppChannel.EDIT_SCRIPT,
-    async (event, { script }: Required<AppState>) => {
-      if ((isInDir(kitPath()), script.filePath)) return;
-      await runPromptProcess(kitPath('main/edit.js'), [script.filePath], {
-        force: true,
-        trigger: Trigger.Kit,
-        sponsorCheck: false,
-      });
-    },
-  );
+  ipcMain.on(AppChannel.EDIT_SCRIPT, async (event, { script }: Required<AppState>) => {
+    if ((isInDir(kitPath()), script.filePath)) {
+      return;
+    }
+    await runPromptProcess(kitPath('main/edit.js'), [script.filePath], {
+      force: true,
+      trigger: Trigger.Kit,
+      sponsorCheck: false,
+    });
+  });
 
-  ipcMain.on(
-    AppChannel.OPEN_FILE,
-    async (event, { script, focused }: Required<AppState>) => {
-      const filePath = (focused as any)?.filePath || script?.filePath;
+  ipcMain.on(AppChannel.OPEN_FILE, async (event, { script, focused }: Required<AppState>) => {
+    const filePath = (focused as any)?.filePath || script?.filePath;
 
-      await runPromptProcess(kitPath('cli/edit-file.js'), [filePath], {
-        force: true,
-        trigger: Trigger.Kit,
-        sponsorCheck: false,
-      });
-    },
-  );
+    await runPromptProcess(kitPath('cli/edit-file.js'), [filePath], {
+      force: true,
+      trigger: Trigger.Kit,
+      sponsorCheck: false,
+    });
+  });
 
   ipcMain.on(AppChannel.RUN_MAIN_SCRIPT, async () => {
     runPromptProcess(getMainScriptPath(), [], {
@@ -472,13 +439,8 @@ ${data.error}
 
         if (channel === Channel.MIC_STREAM) {
           const micStreamMessage: any = message;
-          if (
-            micStreamMessage?.state.buffer &&
-            !Buffer.isBuffer(micStreamMessage.buffer)
-          ) {
-            micStreamMessage.state.value = Buffer.from(
-              Object.values(micStreamMessage.state.buffer) as any,
-            );
+          if (micStreamMessage?.state.buffer && !Buffer.isBuffer(micStreamMessage.buffer)) {
+            micStreamMessage.state.value = Buffer.from(Object.values(micStreamMessage.state.buffer) as any);
           }
 
           child.send(micStreamMessage);
@@ -548,7 +510,7 @@ ${data.error}
         }
 
         if (channel === Channel.ABANDON) {
-          log.info(`⚠️ ABANDON`, message.pid);
+          log.info('⚠️ ABANDON', message.pid);
         }
         // log.info({ channel, message });
         if ([Channel.VALUE_SUBMITTED, Channel.TAB_CHANGED].includes(channel)) {
@@ -575,23 +537,17 @@ ${data.error}
           prompt.clearSearch();
 
           if (message?.state?.value === Channel.TERMINAL) {
-            message.state.value = ``;
+            message.state.value = '';
           }
 
           if (prompt.scriptPath === getMainScriptPath()) {
-            if (
-              typeof message?.state?.value?.filePath === 'string' &&
-              !message?.state?.flag
-            ) {
+            if (typeof message?.state?.value?.filePath === 'string' && !message?.state?.flag) {
               prompt.attemptPreload(message?.state?.value?.filePath);
             }
           }
         }
 
-        if (
-          channel === Channel.ESCAPE ||
-          (channel === Channel.SHORTCUT && message.state.shortcut === 'escape')
-        ) {
+        if (channel === Channel.ESCAPE || (channel === Channel.SHORTCUT && message.state.shortcut === 'escape')) {
           kitState.shortcutsPaused = false;
           log.verbose({
             submitted: message.state.submitted,
@@ -614,10 +570,7 @@ ${data.error}
             if (child?.channel && child.connected) {
               child?.send(message);
             } else {
-              log.warn(
-                `${prompt.pid}: Child not connected: ${channel}`,
-                message,
-              );
+              log.warn(`${prompt.pid}: Child not connected: ${channel}`, message);
             }
           } catch (e) {
             // ignore logging EPIPE errors
@@ -629,64 +582,55 @@ ${data.error}
     );
   }
 
-  ipcMain.on(
-    AppChannel.DRAG_FILE_PATH,
-    async (event, { filePath, icon }: { filePath: string; icon: string }) => {
-      try {
-        let newPath = filePath;
-        if (filePath.startsWith('http')) {
-          newPath = await new Promise((resolve, reject) => {
-            const dl = new DownloaderHelper(filePath, tmpDownloadsDir, {
-              override: true,
-            });
-            dl.on('end', (info) => {
-              const fp = info.filePath;
-              detect.fromFile(
-                fp,
-                (err: any, result: { ext: string; mime: string }) => {
-                  if (err) {
-                    throw err;
-                  }
-                  if (!fp.endsWith(result.ext)) {
-                    const fixedFilePath = `${fp}.${result.ext}`;
-                    renameSync(fp, fixedFilePath);
-                    resolve(fixedFilePath);
-                  } else {
-                    resolve(fp);
-                  }
-                },
-              );
-            });
-            dl.start();
+  ipcMain.on(AppChannel.DRAG_FILE_PATH, async (event, { filePath, icon }: { filePath: string; icon: string }) => {
+    try {
+      let newPath = filePath;
+      if (filePath.startsWith('http')) {
+        newPath = await new Promise((resolve, reject) => {
+          const dl = new DownloaderHelper(filePath, tmpDownloadsDir, {
+            override: true,
           });
-        }
-
-        // TODO: Use Finder's image preview db
-        if (existsSync(newPath)) {
-          // const pickIcon = isImage(newPath)
-          //   ? newPath.endsWith('.gif') || newPath.endsWith('.svg')
-          //     ? getAssetPath('icons8-image-file-24.png')
-          //     : newPath
-          //   : getAssetPath('icons8-file-48.png');
-          event.sender.startDrag({
-            file: newPath,
-            icon: getAssetPath('icons8-file-50.png'),
+          dl.on('end', (info) => {
+            const fp = info.filePath;
+            detect.fromFile(fp, (err: any, result: { ext: string; mime: string }) => {
+              if (err) {
+                throw err;
+              }
+              if (fp.endsWith(result.ext)) {
+                resolve(fp);
+              } else {
+                const fixedFilePath = `${fp}.${result.ext}`;
+                renameSync(fp, fixedFilePath);
+                resolve(fixedFilePath);
+              }
+            });
           });
-        }
-      } catch (error) {
-        log.warn(error);
+          dl.start();
+        });
       }
-    },
-  );
+
+      // TODO: Use Finder's image preview db
+      if (existsSync(newPath)) {
+        // const pickIcon = isImage(newPath)
+        //   ? newPath.endsWith('.gif') || newPath.endsWith('.svg')
+        //     ? getAssetPath('icons8-image-file-24.png')
+        //     : newPath
+        //   : getAssetPath('icons8-file-48.png');
+        event.sender.startDrag({
+          file: newPath,
+          icon: getAssetPath('icons8-file-50.png'),
+        });
+      }
+    } catch (error) {
+      log.warn(error);
+    }
+  });
 
   ipcMain.on(AppChannel.FEEDBACK, async (event, data: Survey) => {
     // runScript(kitPath('cli', 'feedback.js'), JSON.stringify(data));
 
     try {
-      const feedbackResponse = await axios.post(
-        `${kitState.url}/api/feedback`,
-        data,
-      );
+      const feedbackResponse = await axios.post(`${kitState.url}/api/feedback`, data);
       log.info(feedbackResponse.data);
 
       if (data?.email && data?.subscribe) {
@@ -702,12 +646,9 @@ ${data.error}
   });
 
   type levelType = 'debug' | 'info' | 'warn' | 'error' | 'silly';
-  ipcMain.on(
-    AppChannel.LOG,
-    async (event, { message, level }: { message: any; level: levelType }) => {
-      log[level](message);
-    },
-  );
+  ipcMain.on(AppChannel.LOG, async (event, { message, level }: { message: any; level: levelType }) => {
+    log[level](message);
+  });
 
   ipcMain.on(AppChannel.LOGIN, async () => {
     runPromptProcess(kitPath('pro', 'login.js'), [], {
@@ -718,7 +659,7 @@ ${data.error}
   });
 
   ipcMain.on(AppChannel.APPLY_UPDATE, async (event, data: any) => {
-    log.info(`🚀 Applying update`);
+    log.info('🚀 Applying update');
     kitState.applyUpdate = true;
   });
 };

@@ -1,15 +1,15 @@
-import React, { RefObject, useEffect, useRef } from 'react';
 import { UI } from '@johnlindquist/kit/core/enum';
+import React, { type RefObject, useEffect, useRef } from 'react';
 const { ipcRenderer, shell } = window.electron;
-import { FitAddon } from 'xterm-addon-fit';
-import { WebLinksAddon } from 'xterm-addon-web-links';
-import { Unicode11Addon } from 'xterm-addon-unicode11';
-import { SearchAddon } from 'xterm-addon-search';
-import { LigaturesAddon } from 'xterm-addon-ligatures';
-import { SerializeAddon } from 'xterm-addon-serialize';
+import useResizeObserver from '@react-hook/resize-observer';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { throttle } from 'lodash-es';
-import useResizeObserver from '@react-hook/resize-observer';
+import { FitAddon } from 'xterm-addon-fit';
+import { LigaturesAddon } from 'xterm-addon-ligatures';
+import { SearchAddon } from 'xterm-addon-search';
+import { SerializeAddon } from 'xterm-addon-serialize';
+import { Unicode11Addon } from 'xterm-addon-unicode11';
+import { WebLinksAddon } from 'xterm-addon-web-links';
 import {
   appBoundsAtom,
   darkAtom,
@@ -23,8 +23,8 @@ import {
   termFontAtom,
 } from './jotai';
 
-import XTerm from './components/xterm';
 import { AppChannel } from '../../shared/enums';
+import XTerm from './components/xterm';
 import { AttachIPCAddon } from './term-attach-ipc-addon';
 
 const defaultTheme = {
@@ -79,7 +79,9 @@ export default function Terminal() {
 
   useEffect(() => {
     ipcRenderer.once(AppChannel.PTY_READY, () => {
-      if (!xtermRef?.current?.terminal) return;
+      if (!xtermRef?.current?.terminal) {
+        return;
+      }
       const t = xtermRef.current.terminal;
 
       // console.log(`onopen`, { ws });
@@ -105,8 +107,12 @@ export default function Terminal() {
       t.focus();
 
       setTimeout(() => {
-        if (t) t.focus();
-        if (fitRef.current) fitRef.current.fit();
+        if (t) {
+          t.focus();
+        }
+        if (fitRef.current) {
+          fitRef.current.fit();
+        }
       }, 250);
     });
   }, []);
@@ -117,11 +123,17 @@ export default function Terminal() {
   }, []);
 
   useEffect(() => {
-    if (!xtermRef?.current?.terminal) return;
+    if (!xtermRef?.current?.terminal) {
+      return;
+    }
     const t = xtermRef.current.terminal;
-    if (terminalKeyReadyRef.current) return;
+    if (terminalKeyReadyRef.current) {
+      return;
+    }
     t.onKey((x: any) => {
-      if (!x || !x.domEvent) return;
+      if (!x?.domEvent) {
+        return;
+      }
       if (x.domEvent.metaKey) {
         const shortcut = `cmd+${x.domEvent.key.toLowerCase()}`;
         sendShortcut(shortcut);
@@ -139,9 +151,13 @@ export default function Terminal() {
   }, [sendShortcut, shortcuts]);
 
   useEffect(() => {
-    if (!xtermRef?.current?.terminal) return;
+    if (!xtermRef?.current?.terminal) {
+      return;
+    }
     const t = xtermRef.current.terminal;
-    if (attachAddonRef.current) return;
+    if (attachAddonRef.current) {
+      return;
+    }
     const attachAddon = new AttachIPCAddon(termConfig);
     attachAddonRef.current = attachAddon;
     t.loadAddon(attachAddon);
@@ -185,24 +201,21 @@ export default function Terminal() {
   useResizeObserver(
     containerRef,
     throttle((entry) => {
-      if (!fitRef?.current) return;
+      if (!fitRef?.current) {
+        return;
+      }
       fitRef.current.fit();
       const dimensions = fitRef.current.proposeDimensions();
-      if (!dimensions) return;
+      if (!dimensions) {
+        return;
+      }
       ipcRenderer.send(AppChannel.TERM_RESIZE, dimensions);
     }, 150),
   );
 
   return (
-    <div
-      id={UI.term}
-      key="terminal"
-      className="-mb-6 h-full max-h-full w-full flex-1 overflow-hidden px-3 pt-3"
-    >
-      <div
-        ref={containerRef as RefObject<HTMLDivElement>}
-        className="h-full w-full"
-      >
+    <div id={UI.term} key="terminal" className="-mb-6 h-full max-h-full w-full flex-1 overflow-hidden px-3 pt-3">
+      <div ref={containerRef as RefObject<HTMLDivElement>} className="h-full w-full">
         <XTerm
           className="h-full max-h-fit w-full max-w-screen-md"
           options={{

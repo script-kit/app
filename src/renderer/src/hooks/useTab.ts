@@ -1,5 +1,5 @@
-import { useAtom } from 'jotai';
 import { Channel } from '@johnlindquist/kit/core/enum';
+import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import { channelAtom, inputAtom, tabIndexAtom, tabsAtom } from '../jotai';
@@ -20,9 +20,7 @@ export default () => {
         let tab = null;
 
         if (inputValue?.length > 0) {
-          tab = tabs.find((t) =>
-            t.toLowerCase().startsWith(inputValue?.toLowerCase())
-          );
+          tab = tabs.find((t) => t.toLowerCase().startsWith(inputValue?.toLowerCase()));
         }
 
         if (tab) {
@@ -40,6 +38,6 @@ export default () => {
       channel(Channel.TAB);
     },
     hotkeysOptions,
-    [tabIndex, tabs, channel, inputValue]
+    [tabIndex, tabs, channel, inputValue],
   );
 };

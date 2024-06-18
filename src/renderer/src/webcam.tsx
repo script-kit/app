@@ -1,16 +1,11 @@
+import { UI } from '@johnlindquist/kit/core/enum';
+import { useAtom } from 'jotai';
 /* eslint-disable react/button-has-type */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { UI } from '@johnlindquist/kit/core/enum';
-import { useAtom } from 'jotai';
-import {
-  submitValueAtom,
-  webcamIdAtom,
-  webcamStreamAtom,
-  focusedFlagValueAtom,
-} from './jotai';
 import useOnEnter from './hooks/useOnEnter';
+import { focusedFlagValueAtom, submitValueAtom, webcamIdAtom, webcamStreamAtom } from './jotai';
 
 export default function Webcam() {
   const [stream, setStream] = useAtom(webcamStreamAtom);
@@ -33,8 +28,7 @@ export default function Webcam() {
       const videoConstraints = {
         video: deviceId ? { deviceId } : true,
       };
-      const mediaStream =
-        await navigator.mediaDevices.getUserMedia(videoConstraints);
+      const mediaStream = await navigator.mediaDevices.getUserMedia(videoConstraints);
       setStream(mediaStream);
     } catch (err) {
       console.error('Error accessing webcam:', err);
@@ -72,9 +66,9 @@ export default function Webcam() {
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
         setStream(null);
-        if (document.getElementById('webcam'))
-          (document.getElementById('webcam') as HTMLVideoElement).srcObject =
-            null;
+        if (document.getElementById('webcam')) {
+          (document.getElementById('webcam') as HTMLVideoElement).srcObject = null;
+        }
       }
       submit(data);
 
@@ -86,17 +80,14 @@ export default function Webcam() {
   useOnEnter(takeSelfie);
 
   return (
-    <div
-      id={UI.webcam}
-      className="flex h-full w-full flex-col items-center justify-center text-xl text-text-base"
-    >
+    <div id={UI.webcam} className="flex h-full w-full flex-col items-center justify-center text-xl text-text-base">
       {stream && (
         <video
           id="webcam"
           ref={videoRef}
-          autoPlay
-          playsInline
-          muted
+          autoPlay={true}
+          playsInline={true}
+          muted={true}
           className="absolute"
           onClick={takeSelfie}
           // flip the video horizontally

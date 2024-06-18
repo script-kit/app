@@ -1,19 +1,19 @@
+import path from 'node:path';
 import { globalShortcut } from 'electron';
 import log from 'electron-log';
-import path from 'path';
-import { subscribeKey } from 'valtio/utils';
 import { debounce } from 'lodash-es';
+import { subscribeKey } from 'valtio/utils';
 
 import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
 
+import { KitEvent, emitter } from '../shared/events';
 import { runPromptProcess } from './kit';
-import { emitter, KitEvent } from '../shared/events';
 
-import { convertKey, kitState, subs } from './state';
 import { Trigger } from '../shared/enums';
 import { convertShortcut, shortcutInfo } from './helpers';
 import { processes, spawnShebang } from './process';
 import { prompts } from './prompts';
+import { convertKey, kitState, subs } from './state';
 
 const registerFail = (shortcut: string, filePath: string) =>
   `# Shortcut Registration Failed
@@ -66,11 +66,11 @@ const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
     );
     const success = globalShortcut.register(shortcut, shortcutAction);
 
-    if (!success) {
+    if (success) {
+      // log.info(`Registered: ${shortcut} to ${filePath}`);
+    } else {
       log.info(`Failed to register: ${shortcut} to ${filePath}`);
       shortcutInfo(shortcut, filePath, registerFail);
-    } else {
-      // log.info(`Registered: ${shortcut} to ${filePath}`);
     }
 
     return success;
@@ -148,12 +148,8 @@ export const shortcutScriptChanged = ({
   // TODO: Bring back trusted kenvs
   if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
     if (shortcut) {
-      log.info(
-        `Ignoring ${filePath} // Shortcut metadata because it's not trusted.`,
-      );
-      log.info(
-        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`,
-      );
+      log.info(`Ignoring ${filePath} // Shortcut metadata because it's not trusted.`);
+      log.info(`Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`);
     }
 
     if (old) {
@@ -166,13 +162,9 @@ export const shortcutScriptChanged = ({
 
   // Handle existing shortcuts
 
-  const exists = [...shortcutMap.entries()].find(
-    ([, s]) => s?.shortcut === convertedShortcut,
-  );
+  const exists = [...shortcutMap.entries()].find(([, s]) => s?.shortcut === convertedShortcut);
   if (exists && !sameScript) {
-    log.info(
-      `Shortcut ${convertedShortcut} already registered to ${exists[0]}`,
-    );
+    log.info(`Shortcut ${convertedShortcut} already registered to ${exists[0]}`);
     shortcutInfo(convertedShortcut, filePath, alreadyFail, exists[0]);
 
     return;
@@ -201,11 +193,7 @@ export const shortcutScriptChanged = ({
   log.info(`Found shortcut: ${convertedShortcut} for ${filePath}`);
   // At this point, we know it's a new shortcut, so register it
 
-  const registerSuccess = registerShortcut(
-    convertedShortcut,
-    filePath,
-    shebang,
-  );
+  const registerSuccess = registerShortcut(convertedShortcut, filePath, shebang);
 
   if (registerSuccess && globalShortcut.isRegistered(convertedShortcut)) {
     log.info(`Registered ${convertedShortcut} to ${filePath}`);
@@ -217,21 +205,21 @@ export const shortcutScriptChanged = ({
 };
 
 export const updateMainShortcut = async (shortcut?: string) => {
-  const checkShortcut = shortcut
-    ? shortcut
-    : kitState.isMac
-      ? 'cmd ;'
-      : 'ctrl ;';
+  const checkShortcut = shortcut ? shortcut : kitState.isMac ? 'cmd ;' : 'ctrl ;';
   log.info(`updateMainShortcut with ${checkShortcut}`);
 
   const finalShortcut = convertShortcut(checkShortcut, getMainScriptPath());
-  if (!finalShortcut) return;
+  if (!finalShortcut) {
+    return;
+  }
 
   log.info(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
 
   const old = shortcutMap.get(getMainScriptPath());
 
-  if (finalShortcut === old?.shortcut) return;
+  if (finalShortcut === old?.shortcut) {
+    return;
+  }
 
   if (old?.shortcut) {
     log.info(`Unregistering old main shortcut: ${old?.shortcut}`);
@@ -264,21 +252,13 @@ export const updateMainShortcut = async (shortcut?: string) => {
   const ret = globalShortcut.register(finalShortcut, mainShortcutAction);
 
   if (!ret) {
-    log.warn(
-      `Failed to register: ${finalShortcut} to ${getMainScriptPath(
-        process.env.KIT_MAIN_SCRIPT,
-      )}`,
-    );
+    log.warn(`Failed to register: ${finalShortcut} to ${getMainScriptPath(process.env.KIT_MAIN_SCRIPT)}`);
     shortcutInfo(finalShortcut, getMainScriptPath(), mainFail);
   }
 
   if (ret && globalShortcut.isRegistered(finalShortcut)) {
     kitState.mainShortcut = finalShortcut;
-    log.info(
-      `Registered ${finalShortcut} to ${getMainScriptPath(
-        process.env.KIT_MAIN_SCRIPT,
-      )}`,
-    );
+    log.info(`Registered ${finalShortcut} to ${getMainScriptPath(process.env.KIT_MAIN_SCRIPT)}`);
     shortcutMap.set(getMainScriptPath(), {
       shortcut: finalShortcut,
       shebang: '',
@@ -287,12 +267,12 @@ export const updateMainShortcut = async (shortcut?: string) => {
 };
 
 const pauseShortcuts = () => {
-  log.info(`PAUSING GLOBAL SHORTCUTS`);
+  log.info('PAUSING GLOBAL SHORTCUTS');
   globalShortcut.unregisterAll();
 };
 
 const resumeShortcuts = () => {
-  log.info(`RESUMING GLOBAL SHORTCUTS`);
+  log.info('RESUMING GLOBAL SHORTCUTS');
   shortcutMap.forEach(({ shortcut }, filePath) => {
     const convertedShortcut = convertShortcut(shortcut, filePath);
     log.info({
@@ -305,23 +285,21 @@ const resumeShortcuts = () => {
 };
 
 let paused = false;
-const subShortcutsPaused = subscribeKey(
-  kitState,
-  'shortcutsPaused',
-  (shortcutsPaused) => {
-    if (paused === shortcutsPaused) return;
-    log.info(`✂️ shortcutsPaused change...`, {
-      oldPaused: paused,
-      newPaused: shortcutsPaused,
-    });
-    paused = shortcutsPaused;
-    if (shortcutsPaused) {
-      pauseShortcuts();
-    } else {
-      resumeShortcuts();
-    }
-  },
-);
+const subShortcutsPaused = subscribeKey(kitState, 'shortcutsPaused', (shortcutsPaused) => {
+  if (paused === shortcutsPaused) {
+    return;
+  }
+  log.info('✂️ shortcutsPaused change...', {
+    oldPaused: paused,
+    newPaused: shortcutsPaused,
+  });
+  paused = shortcutsPaused;
+  if (shortcutsPaused) {
+    pauseShortcuts();
+  } else {
+    resumeShortcuts();
+  }
+});
 
 subs.push(subShortcutsPaused);
 
@@ -332,7 +310,7 @@ const subKeymap = subscribeKey(
   kitState,
   'keymap',
   debounce(async (keymap) => {
-    log.info(`Handling keymap change...`);
+    log.info('Handling keymap change...');
     if (prevKeymap) {
       pauseShortcuts();
       await new Promise((resolve) => setTimeout(resolve, 200));

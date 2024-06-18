@@ -1,14 +1,12 @@
 const { build } = require('../../package.json');
-const fs = require('fs');
-const path = require('path');
-const { readdir, rm, writeFile } = require('fs/promises');
+const fs = require('node:fs');
+const path = require('node:path');
+const { readdir, rm, writeFile } = require('node:fs/promises');
 
 const download = require('download');
 const { Arch } = require('electron-builder');
 
-const VERSION =
-  process.env.KIT_NODE_VERSION ||
-  fs.readFileSync('./assets/node.txt', 'utf-8').trim();
+const VERSION = process.env.KIT_NODE_VERSION || fs.readFileSync('./assets/node.txt', 'utf-8').trim();
 
 exports.default = async function notarizeMacos(context) {
   console.log(`>>> AFTER PACK: - Bundle Node.js ${VERSION}`);
@@ -43,9 +41,7 @@ exports.default = async function notarizeMacos(context) {
   const nodeTxt = 'node.txt';
   const nodeUrl = 'node_url.txt';
   const nodeTar = `node.${extension}`;
-  const assetsPath = `${appOutDir}${
-    mac ? `/Kit.app/Contents/Resources/assets/` : `/resources/assets/`
-  }`;
+  const assetsPath = `${appOutDir}${mac ? '/Kit.app/Contents/Resources/assets/' : '/resources/assets/'}`;
 
   fs.writeFileSync(`${assetsPath}${archTxt}`, archCode);
   fs.writeFileSync(`${assetsPath}${platformTxt}`, electronPlatformName);
@@ -55,7 +51,7 @@ exports.default = async function notarizeMacos(context) {
   console.log(`Writing ${nodeTar} to ${outPath}`);
   const buffer = await download(url);
   await writeFile(outPath, buffer);
-  console.log(`✅ Download complete. Verifying...`);
+  console.log('✅ Download complete. Verifying...');
 
   const assets = await readdir(assetsPath);
   console.log(assets);
@@ -65,7 +61,7 @@ exports.default = async function notarizeMacos(context) {
   const hasNodeUrl = assets.includes(nodeUrl);
 
   if (!(hasArch && hasPlatform && hasNodeTxt && hasNodeUrl)) {
-    console.log(`🔴 Oh no...`);
+    console.log('🔴 Oh no...');
     process.exit(1);
   }
 

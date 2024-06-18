@@ -16,6 +16,6 @@ hover:bg-opacity-10
 focus:bg-opacity-20
 `;
 
-export const textContrast = `text-primary text-opacity-90`;
+export const textContrast = 'text-primary text-opacity-90';
 
 export const transition = { duration: 0.2, ease: 'easeInOut' };

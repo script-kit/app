@@ -1,19 +1,19 @@
+import { Channel, UI } from '@johnlindquist/kit/core/enum';
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
 import { useAtom } from 'jotai';
-import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import React, { useCallback } from 'react';
 import {
-  choicesAtom,
-  inputAtom,
-  indexAtom,
-  channelAtom,
-  flaggedChoiceValueAtom,
-  appConfigAtom,
-  uiAtom,
   actionsButtonActionAtom,
+  appConfigAtom,
+  channelAtom,
+  choicesAtom,
+  flaggedChoiceValueAtom,
+  indexAtom,
+  inputAtom,
+  uiAtom,
 } from '../jotai';
 
 import { ActionButton } from './actionbutton';
@@ -39,11 +39,5 @@ export function OptionsButton() {
     }
   }, [choices, input, index, channel, flagValue, setFlagValue]);
 
-  return (
-    <ActionButton
-      {...actionsAction}
-      extraClassName={flagValue ? 'bg-opacity-10' : ''}
-      onClick={onClick}
-    />
-  );
+  return <ActionButton {...actionsAction} extraClassName={flagValue ? 'bg-opacity-10' : ''} onClick={onClick} />;
 }

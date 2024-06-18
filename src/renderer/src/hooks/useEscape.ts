@@ -2,25 +2,25 @@ import { UI } from '@johnlindquist/kit/core/enum';
 import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
+import { AppChannel } from '../../../shared/enums';
 import {
+  _inputAtom,
+  channelAtom,
+  escapeAtom,
   flaggedChoiceValueAtom,
   indexAtom,
-  openAtom,
-  _inputAtom,
-  isReadyAtom,
-  escapeAtom,
-  uiAtom,
-  runMainScriptAtom,
-  shortcutsAtom,
-  promptDataAtom,
-  runningAtom,
-  submittedAtom,
-  scriptAtom,
-  channelAtom,
   isMainScriptAtom,
+  isReadyAtom,
+  openAtom,
+  promptDataAtom,
+  runMainScriptAtom,
+  runningAtom,
+  scriptAtom,
+  shortcutsAtom,
+  submittedAtom,
+  uiAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
-import { AppChannel } from '../../../shared/enums';
 
 export default () => {
   const [open] = useAtom(openAtom);
@@ -44,15 +44,14 @@ export default () => {
     'escape',
     (event) => {
       event.preventDefault();
-      if (
-        script?.filePath !== promptData?.scriptPath ||
-        (isMainScript && !input && !flagValue)
-      ) {
+      if (script?.filePath !== promptData?.scriptPath || (isMainScript && !input && !flagValue)) {
         channel(AppChannel.END_PROCESS);
         return;
       }
 
-      if (shortcuts?.find((s) => s.key === 'escape') && !flagValue) return;
+      if (shortcuts?.find((s) => s.key === 'escape') && !flagValue) {
+        return;
+      }
 
       if (flagValue) {
         setFlagValue('');

@@ -1,101 +1,90 @@
-import React, {
-  ErrorInfo,
-  RefObject,
-  useCallback,
-  useEffect,
-  useRef,
-} from 'react';
 import log from 'electron-log/renderer';
-import { ToastContainer, cssTransition } from 'react-toastify';
 import { debounce } from 'lodash-es';
+import React, { type ErrorInfo, type RefObject, useCallback, useEffect, useRef } from 'react';
+import { ToastContainer, cssTransition } from 'react-toastify';
 
-import { useAtom, useSetAtom, useAtomValue } from 'jotai';
-import AutoSizer from 'react-virtualized-auto-sizer';
-import {
-  PanelGroup,
-  Panel as PanelChild,
-  PanelResizeHandle,
-  ImperativePanelHandle,
-} from 'react-resizable-panels';
 import useResizeObserver from '@react-hook/resize-observer';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { type ImperativePanelHandle, Panel as PanelChild, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import AutoSizer from 'react-virtualized-auto-sizer';
 const { ipcRenderer, webFrame } = window.electron;
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
-import Tabs from './components/tabs';
-import List from './components/list';
-import Input from './components/input';
 import ActionBar from './components/actionbar';
+import Console from './components/console';
 import Drop from './components/drop';
 import Editor from './components/editor';
-import Hotkey from './components/hotkey';
-import Hint from './components/hint';
-import TextArea from './components/textarea';
-import Panel from './components/panel';
-import Console from './components/console';
-import Log from './components/log';
-import Header from './components/header';
 import Form from './components/form';
+import Header from './components/header';
+import Hint from './components/hint';
+import Hotkey from './components/hotkey';
+import Input from './components/input';
+import List from './components/list';
+import Log from './components/log';
+import Panel from './components/panel';
+import Tabs from './components/tabs';
+import TextArea from './components/textarea';
 import {
+  appBoundsAtom,
+  audioDotAtom,
+  channelAtom,
+  chatMessagesAtom,
+  cssAtom,
+  domUpdatedAtom,
+  flaggedChoiceValueAtom,
+  focusedElementAtom,
+  footerHiddenAtom,
+  headerHiddenAtom,
   hintAtom,
+  inputAtom,
+  inputWhileSubmittedAtom,
+  isMainScriptAtom,
   isMouseDownAtom,
+  kitStateAtom,
+  loadingAtom,
+  logVisibleAtom,
   mainHeightAtom,
+  micIdAtom,
+  micMediaRecorderAtom,
   mouseEnabledAtom,
+  onDropAtom,
+  onPasteAtom,
   openAtom,
   panelHTMLAtom,
   pidAtom,
-  promptDataAtom,
-  scriptAtom,
-  submitValueAtom,
-  uiAtom,
-  topRefAtom,
-  scoredChoicesAtom,
-  showTabsAtom,
-  processesAtom,
-  onPasteAtom,
-  onDropAtom,
-  kitStateAtom,
-  userAtom,
-  chatMessagesAtom,
-  termConfigAtom,
-  zoomAtom,
-  channelAtom,
-  logVisibleAtom,
-  domUpdatedAtom,
-  headerHiddenAtom,
-  footerHiddenAtom,
-  appBoundsAtom,
-  flaggedChoiceValueAtom,
   previewCheckAtom,
-  loadingAtom,
-  audioDotAtom,
-  isMainScriptAtom,
+  processesAtom,
   progressAtom,
-  cssAtom,
-  triggerResizeAtom,
-  inputAtom,
-  focusedElementAtom,
+  promptDataAtom,
+  scoredChoicesAtom,
+  scriptAtom,
+  showTabsAtom,
+  submitValueAtom,
   submittedAtom,
-  inputWhileSubmittedAtom,
-  micIdAtom,
-  micMediaRecorderAtom,
+  termConfigAtom,
+  topRefAtom,
+  triggerResizeAtom,
+  uiAtom,
+  userAtom,
+  zoomAtom,
 } from './jotai';
 
-import { useEnter, useEscape, useMessages, useShortcuts } from './hooks';
-import Splash from './components/splash';
-import Emoji from './components/emoji';
+import { loader } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 import { AppChannel } from '../../shared/enums';
-import Terminal from './term';
-import Inspector from './components/inspector';
-import { Chat } from './components/chat';
-import AudioRecorder from './audio-recorder';
-import Webcam from './webcam';
-import Preview from './components/preview';
-import ActionsList from './components/actions-list';
 import AudioDot from './audio-dot';
+import AudioRecorder from './audio-recorder';
+import ActionsList from './components/actions-list';
+import { Chat } from './components/chat';
+import Emoji from './components/emoji';
+import Inspector from './components/inspector';
+import Preview from './components/preview';
+import Splash from './components/splash';
+import { useEnter, useEscape, useMessages, useShortcuts } from './hooks';
 import LoadingDot from './loading-dot';
 import ProcessesDot from './processes-dot';
 import ProgressBar from './progress-bar';
-import * as monaco from 'monaco-editor';
-import { loader } from '@monaco-editor/react';
+import Terminal from './term';
+import Webcam from './webcam';
 loader.config({ monaco });
 
 class ErrorBoundary extends React.Component {
@@ -129,9 +118,7 @@ class ErrorBoundary extends React.Component {
           >
             Reload Prompt
           </button>
-          <div className="text-base text-red-500">
-            Rendering Error. Opening logs.
-          </div>
+          <div className="text-base text-red-500">Rendering Error. Opening logs.</div>
           <div className="text-xs">{info.componentStack}</div>
         </div>
       );
@@ -179,9 +166,7 @@ export default function App() {
   const isMainScript = useAtomValue(isMainScriptAtom);
   const css = useAtomValue(cssAtom);
   const [submitted, setSubmitted] = useAtom(submittedAtom);
-  const [inputWhileSubmitted, setInputWhileSubmitted] = useAtom(
-    inputWhileSubmittedAtom,
-  );
+  const [inputWhileSubmitted, setInputWhileSubmitted] = useAtom(inputWhileSubmittedAtom);
 
   const submittedInputRef = useRef<HTMLInputElement>(null);
 
@@ -244,10 +229,7 @@ export default function App() {
       const tag = target.tagName;
       if (
         target.id !== 'actions-input' &&
-        (tag === 'INPUT' ||
-          tag === 'TEXTAREA' ||
-          tag === 'SELECT' ||
-          target.isContentEditable)
+        (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable)
       ) {
         log.info(`🔍 Focused element: ${target.id || target.nodeName}`);
         setFocusedElement(event.target as HTMLElement);
@@ -458,7 +440,9 @@ export default function App() {
   }, [setMouseEnabled]);
 
   useEffect(() => {
-    if (headerRef?.current) setTopRef(headerRef?.current);
+    if (headerRef?.current) {
+      setTopRef(headerRef?.current);
+    }
   }, [headerRef, setTopRef]);
 
   useEffect(() => {
@@ -475,11 +459,7 @@ export default function App() {
     debounce(() => {
       const size = panelChildRef.current?.getSize();
       // if size is within 10 of promptData?.previewWidthPercent, then set it to promptData?.previewWidthPercent
-      if (
-        size &&
-        promptData?.previewWidthPercent &&
-        Math.abs(size - promptData?.previewWidthPercent) < 10
-      ) {
+      if (size && promptData?.previewWidthPercent && Math.abs(size - promptData?.previewWidthPercent) < 10) {
         panelChildRef.current?.resize(promptData?.previewWidthPercent);
       }
     }, 250),
@@ -522,9 +502,7 @@ overflow-hidden
 text-text-base
       `}
         >
-          <span className="font-mono text-xxs font-bold absolute top-[-100px] left-[-100px]">
-            .
-          </span>
+          <span className="font-mono text-xxs font-bold absolute top-[-100px] left-[-100px]">.</span>
           {promptData?.css && <style>{promptData?.css}</style>}
           <style>{css}</style>
           {/* {lighten && (
@@ -595,11 +573,7 @@ text-text-base
                 {headerHidden === false && <Header />}
 
                 {ui === UI.hotkey && (
-                  <Hotkey
-                    key="AppHotkey"
-                    submit={setSubmitValue}
-                    onHotkeyHeightChanged={setMainHeight}
-                  />
+                  <Hotkey key="AppHotkey" submit={setSubmitValue} onHotkeyHeightChanged={setMainHeight} />
                 )}
 
                 {ui === UI.arg && (
@@ -634,10 +608,7 @@ text-text-base
               {shortcodes}
             </span> */}
 
-            <main
-              id="main"
-              className="min-h-[1px] w-full flex-1 overflow-y-hidden"
-            >
+            <main id="main" className="min-h-[1px] w-full flex-1 overflow-y-hidden">
               {flagValue && <ActionsList key="ActionsList" />}
               <PanelGroup
                 direction="horizontal"
@@ -679,20 +650,14 @@ ${showTabs ? 'border-t border-ui-border' : ''}
                     {ui === UI.chat && <Chat />}
                     {/* TODO: These UI setup logic "onMount", so open is here in case they were the ui on previous close, then immediately re-opened */}
 
-                    {ui === UI.term &&
-                      open &&
-                      termConfig?.promptId === promptData?.id && <Terminal />}
+                    {ui === UI.term && open && termConfig?.promptId === promptData?.id && <Terminal />}
                     {ui === UI.mic && open && <AudioRecorder />}
                     {ui === UI.webcam && open && <Webcam />}
 
-                    {((ui === UI.arg && !panelHTML && choices.length > 0) ||
-                      ui === UI.hotkey) && (
-                      <AutoSizer disableWidth>
-                        {({ height }) => <List height={height} />}
-                      </AutoSizer>
+                    {((ui === UI.arg && !panelHTML && choices.length > 0) || ui === UI.hotkey) && (
+                      <AutoSizer disableWidth={true}>{({ height }) => <List height={height} />}</AutoSizer>
                     )}
-                    {(!!(ui === UI.arg || ui === UI.div) &&
-                      panelHTML.length > 0 && <Panel />) ||
+                    {(!!(ui === UI.arg || ui === UI.div) && panelHTML.length > 0 && <Panel />) ||
                       (ui === UI.form && <Form />)}
                   </div>
                 </PanelChild>
@@ -718,10 +683,7 @@ ${showTabs ? 'border-t border-ui-border' : ''}
               </PanelGroup>
             </main>
             {!footerHidden && (
-              <footer
-                id="footer"
-                className={`${promptData?.footerClassName || ''} z-50`}
-              >
+              <footer id="footer" className={`${promptData?.footerClassName || ''} z-50`}>
                 <ActionBar />
               </footer>
             )}

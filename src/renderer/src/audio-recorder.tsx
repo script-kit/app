@@ -1,8 +1,8 @@
 import { UI } from '@johnlindquist/kit/core/enum';
 
 import { useAtomValue } from 'jotai';
-import { micStateAtom, placeholderAtom, previewEnabledAtom } from './jotai';
 import { useAudioRecorder } from './audio-hooks';
+import { micStateAtom, placeholderAtom, previewEnabledAtom } from './jotai';
 
 export default function AudioRecorder() {
   const placeholder = useAtomValue(placeholderAtom);
@@ -15,7 +15,7 @@ export default function AudioRecorder() {
     <div id={UI.mic} className="flex min-h-full min-w-full flex-row">
       <div
         className={`w-full ${
-          hasPreview ? `mt-16 p-2` : `justify-center p-8`
+          hasPreview ? 'mt-16 p-2' : 'justify-center p-8'
         } flex flex-col items-center text-text-base`}
       >
         <h1 className="text-center text-5xl">

@@ -1,9 +1,9 @@
+import { PROMPT } from '@johnlindquist/kit/core/enum';
+import { motion } from 'framer-motion';
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import { useAtom, useAtomValue } from 'jotai';
 import React, { useRef, useState, useEffect, Fragment } from 'react';
-import { motion } from 'framer-motion';
-import { PROMPT } from '@johnlindquist/kit/core/enum';
 
 import {
   inputHeightAtom,
@@ -57,10 +57,10 @@ export default function KitTabs() {
   const tabText =
     // eslint-disable-next-line no-nested-ternary
     inputHeight === PROMPT.INPUT.HEIGHT.XS
-      ? `text-xs`
+      ? 'text-xs'
       : inputHeight === PROMPT.INPUT.HEIGHT.XXS
-        ? `text-xxs`
-        : `text-sm`;
+        ? 'text-xxs'
+        : 'text-sm';
 
   useEffect(() => {
     itemsRef.current = itemsRef.current.slice(0, tabs.length);
@@ -77,7 +77,9 @@ export default function KitTabs() {
   }, []);
 
   useEffect(() => {
-    if (!itemsRef?.current?.[tabIndex]) return;
+    if (!itemsRef?.current?.[tabIndex]) {
+      return;
+    }
     const el = itemsRef?.current?.[tabIndex];
     if (el) {
       el.scrollIntoView({ block: 'end', inline: 'nearest' });
@@ -88,11 +90,7 @@ export default function KitTabs() {
     <>
       {kitState.isSponsor && tabs.includes('Account__') && (
         <>
-          <img
-            alt="avatar"
-            src={user.avatar_url}
-            className="absolute right-[14px] bottom-[4px] z-0 w-6 rounded-full"
-          />
+          <img alt="avatar" src={user.avatar_url} className="absolute right-[14px] bottom-[4px] z-0 w-6 rounded-full" />
           <svg
             height="24"
             width="24"
@@ -148,10 +146,10 @@ export default function KitTabs() {
               ${
                 // eslint-disable-next-line no-nested-ternary
                 i === tabIndex
-                  ? `text-text-base/90`
+                  ? 'text-text-base/90'
                   : tab === 'Account__'
-                    ? `text-text-base/90 hover:text-text-base/75`
-                    : `text-text-base/50 hover:text-text-base/75`
+                    ? 'text-text-base/90 hover:text-text-base/75'
+                    : 'text-text-base/50 hover:text-text-base/75'
               }
 
               relative
@@ -159,7 +157,7 @@ export default function KitTabs() {
               pb-[5px]
               transition-opacity
               duration-100
-              ${tabs.length > 5 ? `px-2` : `px-3`}
+              ${tabs.length > 5 ? 'px-2' : 'px-3'}
           `}
                   key={tab}
                   onMouseDown={() => setTabIndex(i)}
@@ -168,7 +166,7 @@ export default function KitTabs() {
                   {i === tabIndex && (
                     <motion.div
                       className="absolute left-0 right-0 bottom-0 h-2px  bg-primary/90 transition-colors"
-                      layoutDependency
+                      layoutDependency={true}
                       layoutId="selectedTab"
                       transition={{ duration: preloaded ? 0 : 0.15 }}
                     />

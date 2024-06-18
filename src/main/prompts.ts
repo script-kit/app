@@ -21,9 +21,7 @@ export const prompts = {
   createPromptIfNoIdle: function (): boolean {
     if (this.idle === null && this.appRunning) {
       this.idle = new KitPrompt();
-      log.info(
-        `🌅 Initializing idle prompt with window id:${this.idle?.window?.id}`,
-      );
+      log.info(`🌅 Initializing idle prompt with window id:${this.idle?.window?.id}`);
       return true;
     }
     return false;
@@ -38,12 +36,10 @@ export const prompts = {
     this.createPromptIfNoIdle();
     const idlePrompt = this.idle;
     if (idlePrompt && !idlePrompt.ready) {
-      log.info(`🐞 Waiting for prompt to be ready...`);
+      log.info('🐞 Waiting for prompt to be ready...');
       await idlePrompt.waitForReady();
     }
-    log.info(
-      `${idlePrompt?.pid}: 🌅 Idle prompt ready with window id:${idlePrompt?.window?.id}`,
-    );
+    log.info(`${idlePrompt?.pid}: 🌅 Idle prompt ready with window id:${idlePrompt?.window?.id}`);
     return idlePrompt!;
   },
 
@@ -59,9 +55,7 @@ export const prompts = {
    */
   attachIdlePromptToProcess(pid: number): KitPrompt {
     const created = this.createPromptIfNoIdle();
-    log.info(
-      `🔗 Attaching idle prompt ${this.idle?.window?.id} to process ${pid}`,
-    );
+    log.info(`🔗 Attaching idle prompt ${this.idle?.window?.id} to process ${pid}`);
     const prompt = this.idle as KitPrompt;
     this.idle = null;
     prompt.bindToProcess(pid);
@@ -85,9 +79,13 @@ export const prompts = {
    */
   delete: function (pid: number): void {
     const prompt = promptMap.get(pid);
-    if (!prompt) return;
+    if (!prompt) {
+      return;
+    }
     promptMap.delete(pid);
-    if (prompt.isDestroyed()) return;
+    if (prompt.isDestroyed()) {
+      return;
+    }
     if (this.focused === prompt) {
       this.focused = null;
     }
@@ -102,35 +100,27 @@ export const prompts = {
    * @param pid The PID of the prompt to get.
    * @returns The prompt associated with the given PID, or undefined if no such prompt exists.
    */
-  get: function (pid: number): KitPrompt | undefined {
-    return promptMap.get(pid);
-  },
+  get: (pid: number): KitPrompt | undefined => promptMap.get(pid),
 
   /**
    * Finds the first prompt that satisfies the given predicate.
    * @param predicate The predicate function to test each prompt against.
    * @returns The first prompt that satisfies the predicate, or null if no such prompt exists.
    */
-  find: function (predicate: (prompt: KitPrompt) => boolean): KitPrompt | null {
-    return Array.from(promptMap.values()).find(predicate) ?? null;
-  },
+  find: (predicate: (prompt: KitPrompt) => boolean): KitPrompt | null =>
+    Array.from(promptMap.values()).find(predicate) ?? null,
 
   /**
    * Determines whether any prompt is currently visible.
    * @returns True if any prompt is visible, false otherwise.
    */
-  isAnyPromptVisible: function (): boolean {
-    return Array.from(promptMap.values()).some((prompt) => prompt.isVisible());
-  },
+  isAnyPromptVisible: (): boolean => Array.from(promptMap.values()).some((prompt) => prompt.isVisible()),
 
   /**
    * Gets the number of currently visible prompts.
    * @returns The number of currently visible prompts.
    */
-  getVisiblePromptCount: function (): number {
-    return Array.from(promptMap.values()).filter((prompt) => prompt.isVisible())
-      .length;
-  },
+  getVisiblePromptCount: (): number => Array.from(promptMap.values()).filter((prompt) => prompt.isVisible()).length,
 
   /**
    * Allows iteration over all prompts.

@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { useAtomValue } from 'jotai';
+import { useEffect } from 'react';
 import { enterPressedAtom } from '../jotai';
 
 export default (callback: () => void) => {

@@ -2,13 +2,13 @@
 
 // import '@johnlindquist/kit';
 
-let { chdir } = await import('process');
-let tar = await npm('tar');
+const { chdir } = await import('node:process');
+const tar = await npm('tar');
 
 chdir(process.env.PWD);
 
-let nodeModulesKit = kitPath();
-let outTarz = path.resolve(process.env.PWD, 'assets', 'kit.tar.gz');
+const nodeModulesKit = kitPath();
+const outTarz = path.resolve(process.env.PWD, 'assets', 'kit.tar.gz');
 
 console.log(`Tar ${nodeModulesKit} to ${outTarz}`);
 
@@ -20,13 +20,15 @@ await tar.c(
     follow: true,
     filter: (item) => {
       if (item.match(/^.{0,2}node/)) {
-        console.log(`SKIPPING`, item);
+        console.log('SKIPPING', item);
         return false;
       }
-      if (item.includes('kit.sock')) return false;
+      if (item.includes('kit.sock')) {
+        return false;
+      }
 
       return true;
     },
   },
-  ['.']
+  ['.'],
 );

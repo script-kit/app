@@ -1,41 +1,35 @@
+import path from 'node:path';
 import { app } from 'electron';
-import minimist from 'minimist';
 import log from 'electron-log';
-import path from 'path';
 import fsExtra from 'fs-extra';
+import minimist from 'minimist';
 const { pathExistsSync, readJson } = fsExtra;
-import { fork, ForkOptions } from 'child_process';
-import { homedir } from 'os';
+import { type ForkOptions, fork } from 'node:child_process';
+import { homedir } from 'node:os';
 
-import type { Script } from '@johnlindquist/kit/types/core';
+import type { ProcessInfo } from '@johnlindquist/kit';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import {
-  parseScript,
-  kitPath,
-  kenvPath,
-  getMainScriptPath,
   KIT_FIRST_PATH,
-  getLogFromScriptPath,
   execPath,
+  getLogFromScriptPath,
+  getMainScriptPath,
+  kenvPath,
+  kitPath,
+  parseScript,
   scriptsDbPath,
 } from '@johnlindquist/kit/core/utils';
-import { ProcessInfo } from '@johnlindquist/kit';
+import type { Script } from '@johnlindquist/kit/types/core';
 
 import { subscribeKey } from 'valtio/utils';
-import { emitter, KitEvent } from '../shared/events';
-import { getIdles, processes } from './process';
-import {
-  getKitScript,
-  kitCache,
-  kitState,
-  kitStore,
-  sponsorCheck,
-} from './state';
-import { pathsAreEqual } from './helpers';
 import { Trigger } from '../shared/enums';
-import { TrackEvent, trackEvent } from './track';
+import { KitEvent, emitter } from '../shared/events';
+import { pathsAreEqual } from './helpers';
+import { getIdles, processes } from './process';
 import { prompts } from './prompts';
 import { setShortcodes } from './search';
+import { getKitScript, kitCache, kitState, kitStore, sponsorCheck } from './state';
+import { TrackEvent, trackEvent } from './track';
 
 app.on('second-instance', async (_event, argv) => {
   log.info('second-instance', argv);
@@ -49,7 +43,7 @@ app.on('second-instance', async (_event, argv) => {
     app.emit('open-url', null, maybeProtocol);
   }
 
-  if (!argScript || !pathExistsSync(argScript)) {
+  if (!(argScript && pathExistsSync(argScript))) {
     log.info(`${argScript} does not exist. Ignoring.`);
     return;
   }
@@ -95,10 +89,7 @@ emitter.on(
       | string,
   ) => {
     if (!kitState.ready) {
-      log.warn(
-        'Kit not ready. Ignoring prompt process:',
-        scriptOrScriptAndData,
-      );
+      log.warn('Kit not ready. Ignoring prompt process:', scriptOrScriptAndData);
       return;
     }
     const { scriptPath, args, options } =
@@ -154,10 +145,7 @@ const findScript = async (scriptPath: string) => {
     return getKitScript(getMainScriptPath());
   }
 
-  if (
-    scriptPath.startsWith(kitPath()) &&
-    !scriptPath.startsWith(kitPath('tmp'))
-  ) {
+  if (scriptPath.startsWith(kitPath()) && !scriptPath.startsWith(kitPath('tmp'))) {
     return getKitScript(scriptPath);
   }
 
@@ -189,8 +177,7 @@ export const runPromptProcess = async (
     }
   }
 
-  const isMain =
-    options?.main || pathsAreEqual(promptScriptPath || '', getMainScriptPath());
+  const isMain = options?.main || pathsAreEqual(promptScriptPath || '', getMainScriptPath());
 
   emitter.emit(KitEvent.MAIN_SCRIPT_TRIGGERED);
 
@@ -233,7 +220,7 @@ export const runPromptProcess = async (
   log.info(`🗿 ${idlesLength} idles`);
 
   if (isSplash && isMain) {
-    log.info(`💦 Splash install screen visible. Preload Main Menu...`);
+    log.info('💦 Splash install screen visible. Preload Main Menu...');
     try {
       prompt.scriptPath = getMainScriptPath();
       prompt.preloaded = '';
@@ -260,9 +247,7 @@ export const runPromptProcess = async (
 
   const script = await findScript(promptScriptPath);
   const visible = prompt?.isVisible();
-  log.info(
-    `${pid}: ${visible ? '👀 visible' : '🙈 not visible'} before setScript ${script?.name}`,
-  );
+  log.info(`${pid}: ${visible ? '👀 visible' : '🙈 not visible'} before setScript ${script?.name}`);
 
   if (visible) {
     setShortcodes(prompt, kitCache.scripts);
@@ -270,11 +255,7 @@ export const runPromptProcess = async (
 
   const status = await prompt.setScript({ ...script }, pid, options?.force);
   if (status === 'denied') {
-    log.info(
-      `Another script is already controlling the UI. Denying UI control: ${path.basename(
-        promptScriptPath,
-      )}`,
-    );
+    log.info(`Another script is already controlling the UI. Denying UI control: ${path.basename(promptScriptPath)}`);
   }
 
   // processes.assignScriptToProcess(promptScriptPath, pid);
@@ -286,7 +267,7 @@ export const runPromptProcess = async (
 
   const argsWithTrigger = [
     ...args,
-    `--trigger`,
+    '--trigger',
     options?.trigger ? options.trigger : 'unknown',
     '--force',
     options?.force ? 'true' : 'false',
@@ -320,7 +301,7 @@ const forkOptions: ForkOptions = {
 };
 
 export const runScript = (...args: string[]) => {
-  log.info(`Run`, ...args);
+  log.info('Run', ...args);
 
   return new Promise((resolve, reject) => {
     try {
@@ -345,7 +326,7 @@ export const runScript = (...args: string[]) => {
 };
 
 subscribeKey(kitState, 'isSponsor', (isSponsor) => {
-  log.info(`🎨 Sponsor changed:`, isSponsor);
+  log.info('🎨 Sponsor changed:', isSponsor);
 
   // runScript(
   //   kitPath('config', 'toggle-sponsor.js'),
@@ -387,15 +368,11 @@ export const cliFromParams = async (cli: string, params: URLSearchParams) => {
   const content = params.get('content');
 
   if (content) {
-    await runPromptProcess(
-      kitPath(`cli/${cli}.js`),
-      [name || '', '--content', content],
-      {
-        force: true,
-        trigger: Trigger.Protocol,
-        sponsorCheck: false,
-      },
-    );
+    await runPromptProcess(kitPath(`cli/${cli}.js`), [name || '', '--content', content], {
+      force: true,
+      trigger: Trigger.Protocol,
+      sponsorCheck: false,
+    });
     return true;
   }
   return false;

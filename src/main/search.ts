@@ -1,41 +1,37 @@
-import { PROMPT, Channel, UI } from '@johnlindquist/kit/core/enum';
-import { Choice, Script, FlagsWithKeys } from '@johnlindquist/kit/types/core';
+import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
+import type { Choice, FlagsWithKeys, Script } from '@johnlindquist/kit/types/core';
 
-import log from 'electron-log';
-import { debounce } from 'lodash-es';
 import {
-  getMainScriptPath,
   defaultGroupClassName,
   defaultGroupNameClassName,
-  groupChoices,
   formatChoices,
+  getMainScriptPath,
+  groupChoices,
 } from '@johnlindquist/kit/core/utils';
+import log from 'electron-log';
+import { debounce } from 'lodash-es';
 
-import { quickScore, createConfig, QuickScore } from 'quick-score';
+import { QuickScore, createConfig, quickScore } from 'quick-score';
 import { AppChannel } from '../shared/enums';
-import { kitState } from './state';
-import { ScoredChoice } from '../shared/types';
+import type { ScoredChoice } from '../shared/types';
 import { createScoredChoice } from './helpers';
-import { KitPrompt } from './prompt';
 import { cacheChoices } from './messages';
+import type { KitPrompt } from './prompt';
+import { kitState } from './state';
 
-export const invokeSearch = (
-  prompt: KitPrompt,
-  rawInput: string,
-  reason = 'normal',
-) => {
+export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'normal') => {
   // log.info(`${prompt.pid}: ${reason}: Invoke search: '${rawInput}'`);
 
-  if (prompt.ui !== UI.arg) return;
+  if (prompt.ui !== UI.arg) {
+    return;
+  }
 
   // log.silly({ inputRegex: JSON.stringify(kitSearch.inputRegex) });
   let transformedInput = rawInput;
   if (prompt.kitSearch.inputRegex) {
     // eslint-disable-next-line no-param-reassign
     transformedInput = rawInput.match(prompt.kitSearch.inputRegex)?.[0] || '';
-    log.silly(
-      `Transformed input: ${transformedInput} using regex ${prompt.kitSearch.inputRegex}`,
-    );
+    log.silly(`Transformed input: ${transformedInput} using regex ${prompt.kitSearch.inputRegex}`);
   }
 
   if (prompt.kitSearch.choices.length === 0) {
@@ -65,17 +61,9 @@ export const invokeSearch = (
           misses.push(createScoredChoice(choice));
         }
       }
-      setScoredChoices(
-        prompt,
-        misses,
-        'transformedInput === "" && results.length === 0',
-      );
+      setScoredChoices(prompt, misses, 'transformedInput === "" && results.length === 0');
     } else {
-      setScoredChoices(
-        prompt,
-        results,
-        'transformedInput === "" && results.length > 0',
-      );
+      setScoredChoices(prompt, results, 'transformedInput === "" && results.length > 0');
     }
 
     return;
@@ -85,14 +73,10 @@ export const invokeSearch = (
     log.warn(`No qs for ${prompt.scriptPath}`);
     return;
   }
-  const result = (prompt.kitSearch?.qs as QuickScore<Choice>)?.search(
-    transformedInput,
-  ) as ScoredChoice[];
+  const result = (prompt.kitSearch?.qs as QuickScore<Choice>)?.search(transformedInput) as ScoredChoice[];
 
   // Get result length, but filter out info and miss choices
-  const resultLength = result.filter(
-    (r) => !r?.item?.info && !r?.item?.miss,
-  ).length;
+  const resultLength = result.filter((r) => !(r?.item?.info || r?.item?.miss)).length;
 
   if (prompt.kitSearch.hasGroup) {
     // Build a map for constant time access
@@ -121,8 +105,7 @@ export const invokeSearch = (
 
     for (const choice of prompt.kitSearch.choices) {
       const lowerCaseName = choice.name?.toLowerCase();
-      const lowerCaseKeyword =
-        choice.keyword?.toLowerCase() || choice?.tag?.toLowerCase() || '';
+      const lowerCaseKeyword = choice.keyword?.toLowerCase() || choice?.tag?.toLowerCase() || '';
       if (choice?.info) {
         infoGroup.push(createScoredChoice(choice));
       } else if ((choice as Script)?.alias === transformedInput) {
@@ -130,32 +113,25 @@ export const invokeSearch = (
         alias.pass = false;
         alias.group = 'Alias';
       } else if (
-        !choice?.skip &&
-        !choice?.miss &&
-        (lowerCaseName?.includes(lowerCaseInput) ||
-          lowerCaseKeyword.includes(lowerCaseInput))
+        !(choice?.skip || choice?.miss) &&
+        (lowerCaseName?.includes(lowerCaseInput) || lowerCaseKeyword.includes(lowerCaseInput))
       ) {
         const scoredChoice = resultMap.get(choice.id);
         if (scoredChoice && !scoredChoice?.item?.lastGroup) {
           const c = structuredClone(scoredChoice);
-          c.item.tag ||=
-            c?.item?.kenv || c?.item?.group === 'Pass' ? '' : c?.item?.group;
+          c.item.tag ||= c?.item?.kenv || c?.item?.group === 'Pass' ? '' : c?.item?.group;
           // This was breaking the choice.preview lookup in the SDK
           // c.item.id = Math.random();
           c.item.pass = false;
           c.item.exact = true;
-          if (
-            lowerCaseName.startsWith(lowerCaseInput) ||
-            scoredChoice?.item?.keyword?.startsWith(lowerCaseInput)
-          ) {
+          if (lowerCaseName.startsWith(lowerCaseInput) || scoredChoice?.item?.keyword?.startsWith(lowerCaseInput)) {
             startsWithGroup.push(c);
           } else {
             includesGroup.push(c);
           }
-        } else if (scoredChoice && scoredChoice?.item?.lastGroup) {
+        } else if (scoredChoice?.item?.lastGroup) {
           const c = structuredClone(scoredChoice);
-          c.item.tag =
-            c?.item?.kenv || c?.item?.group === 'Pass' ? '' : c?.item?.group;
+          c.item.tag = c?.item?.kenv || c?.item?.group === 'Pass' ? '' : c?.item?.group;
           // This was breaking the choice.preview lookup in the SDK
           // c.item.id = Math.random();
           c.item.pass = false;
@@ -191,26 +167,13 @@ export const invokeSearch = (
         } else if (!hide) {
           const scoredChoice = resultMap.get(choice.id);
           if (choice?.pass) {
-            if (
-              typeof choice?.pass === 'string' &&
-              (choice?.pass as string).startsWith('/')
-            ) {
+            if (typeof choice?.pass === 'string' && (choice?.pass as string).startsWith('/')) {
               // log.info(`Found regex pass: ${choice?.pass} on ${choice?.name}`);
               const lastSlashIndex = choice?.pass.lastIndexOf('/');
-              if (!lastSlashIndex) {
-                log.warn(
-                  `No terminating slashes found in regex pattern: ${choice?.pass} for ${choice?.name}`,
-                );
-              } else {
+              if (lastSlashIndex) {
                 const regexPatternWithFlags = choice?.pass;
-                const regexPattern = regexPatternWithFlags.slice(
-                  1,
-                  lastSlashIndex,
-                );
-                const flags =
-                  lastSlashIndex === -1
-                    ? ''
-                    : regexPatternWithFlags.slice(lastSlashIndex + 1);
+                const regexPattern = regexPatternWithFlags.slice(1, lastSlashIndex);
+                const flags = lastSlashIndex === -1 ? '' : regexPatternWithFlags.slice(lastSlashIndex + 1);
 
                 const regex = new RegExp(regexPattern, flags);
 
@@ -220,11 +183,11 @@ export const invokeSearch = (
                 const result = regex.test(transformedInput);
 
                 if (result) {
-                  log.info(
-                    `Matched regex pass: ${choice?.pass} on ${choice?.name}`,
-                  );
+                  log.info(`Matched regex pass: ${choice?.pass} on ${choice?.name}`);
                   groupedResults.push(createScoredChoice(choice));
                 }
+              } else {
+                log.warn(`No terminating slashes found in regex pattern: ${choice?.pass} for ${choice?.name}`);
               }
             } else {
               groupedResults.push(createScoredChoice(choice));
@@ -258,9 +221,7 @@ export const invokeSearch = (
 
     // loop through removeGroups and remove groups that have no results
     // Sort removeGroups by index in descending order
-    const sortedRemoveGroups = Array.from(removeGroups).sort(
-      (a, b) => b[1].index - a[1].index,
-    );
+    const sortedRemoveGroups = Array.from(removeGroups).sort((a, b) => b[1].index - a[1].index);
     for (const [group, { count, index }] of sortedRemoveGroups) {
       // log.info(`Group ${group} has ${count} results at ${index}`);
       // log.info(`The item at ${index} is ${groupedResults[index]?.item?.name}`);
@@ -277,11 +238,21 @@ export const invokeSearch = (
         const aKeyword = a?.item?.keyword;
         const bKeyword = b?.item?.keyword;
 
-        if (aKeyword === lowerCaseInput) return -1;
-        if (bKeyword === lowerCaseInput) return 1;
-        if (aKeyword && !bKeyword) return -1;
-        if (!aKeyword && bKeyword) return 1;
-        if (aKeyword && bKeyword) return aKeyword.length - bKeyword.length;
+        if (aKeyword === lowerCaseInput) {
+          return -1;
+        }
+        if (bKeyword === lowerCaseInput) {
+          return 1;
+        }
+        if (aKeyword && !bKeyword) {
+          return -1;
+        }
+        if (!aKeyword && bKeyword) {
+          return 1;
+        }
+        if (aKeyword && bKeyword) {
+          return aKeyword.length - bKeyword.length;
+        }
 
         return 0;
       });
@@ -307,8 +278,12 @@ export const invokeSearch = (
 
     if (matchLastGroup.length > 0) {
       matchLastGroup.sort((a, b) => {
-        if (a?.item?.keyword && !b?.item?.keyword) return -1;
-        if (!a?.item?.keyword && b?.item?.keyword) return 1;
+        if (a?.item?.keyword && !b?.item?.keyword) {
+          return -1;
+        }
+        if (!a?.item?.keyword && b?.item?.keyword) {
+          return 1;
+        }
 
         return 0;
       });
@@ -370,7 +345,8 @@ export const invokeSearch = (
           scoredChoice.score = 1;
           scoredChoices.push(scoredChoice);
           break;
-        } else if (choice?.miss || choice?.pass || choice?.info) {
+        }
+        if (choice?.miss || choice?.pass || choice?.info) {
           scoredChoices.push(createScoredChoice(choice));
           break;
         }
@@ -385,18 +361,23 @@ export const invokeSearch = (
     } else {
       const infos = [];
       for (const choice of prompt.kitSearch.choices) {
-        if (
-          choice?.info &&
-          !(choice?.hideWithoutInput && transformedInput === '')
-        ) {
+        if (choice?.info && !(choice?.hideWithoutInput && transformedInput === '')) {
           infos.push(createScoredChoice(choice));
         }
       }
       const filterConditions = result.filter((r) => {
-        if (r.item.miss) return false;
-        if (r.item.info) return false;
-        if (r.item.pass) return true;
-        if (transformedInput === '' && r.item.hideWithoutInput) return false;
+        if (r.item.miss) {
+          return false;
+        }
+        if (r.item.info) {
+          return false;
+        }
+        if (r.item.pass) {
+          return true;
+        }
+        if (transformedInput === '' && r.item.hideWithoutInput) {
+          return false;
+        }
 
         return true;
       });
@@ -437,9 +418,7 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
   if (input === '') {
     setScoredFlags(
       prompt,
-      prompt.flagSearch.choices
-        .filter((c) => !c?.pass && !c?.hideWithoutInput && !c?.miss)
-        .map(createScoredChoice),
+      prompt.flagSearch.choices.filter((c) => !(c?.pass || c?.hideWithoutInput || c?.miss)).map(createScoredChoice),
     );
     return;
   }
@@ -513,10 +492,7 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
   }
 };
 
-export const setFlags = (
-  prompt: KitPrompt,
-  f: FlagsWithKeys & Partial<Choice>,
-) => {
+export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys & Partial<Choice>) => {
   const order = f?.order || [];
   const sortChoicesKey = f?.sortChoicesKey || [];
 
@@ -561,7 +537,7 @@ export const setFlags = (
       undefined,
       createConfig({
         maxIterations: kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS
-          ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 32)
+          ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 32)
           : 3,
       }),
     );
@@ -573,7 +549,7 @@ export const setFlags = (
       scorer,
     })),
     minimumScore: kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE
-      ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
+      ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
       : 0.6,
   } as any);
 
@@ -601,19 +577,13 @@ export const setShortcodes = (prompt: KitPrompt, choices: Choice[]) => {
     }
 
     // TODO: Parse choice.trigger earlier during choice formatting?
-    const trigger = (
-      choice?.trigger ||
-      choice?.name?.match(/(?<=\[)\w+(?=\])/i)?.[0] ||
-      ''
-    ).toLowerCase();
+    const trigger = (choice?.trigger || choice?.name?.match(/(?<=\[)\w+(?=\])/i)?.[0] || '').toLowerCase();
 
     if (trigger) {
       prompt.kitSearch.triggers.set(trigger, choice);
     }
 
-    const postfix =
-      typeof choice?.pass === 'string' &&
-      !(choice?.pass as string).startsWith('/');
+    const postfix = typeof choice?.pass === 'string' && !(choice?.pass as string).startsWith('/');
 
     if (postfix) {
       prompt.kitSearch.postfixes.set(choice?.pass.trim(), choice);
@@ -634,11 +604,7 @@ export const appendChoices = (prompt: KitPrompt, choices: Choice[]) => {
   });
 };
 
-export function scorer(
-  string: string,
-  query: string,
-  matches: [number, number][] | undefined,
-) {
+export function scorer(string: string, query: string, matches: [number, number][] | undefined) {
   return quickScore(
     string,
     query,
@@ -647,7 +613,7 @@ export function scorer(
     undefined,
     createConfig({
       maxIterations: kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS
-        ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 32)
+        ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 32)
         : 3,
     }),
   );
@@ -656,11 +622,7 @@ export function scorer(
 export const setChoices = (
   prompt: KitPrompt,
   choices: Choice[],
-  {
-    preload,
-    skipInitialSearch,
-    generated,
-  }: { preload: boolean; skipInitialSearch?: boolean; generated?: boolean },
+  { preload, skipInitialSearch, generated }: { preload: boolean; skipInitialSearch?: boolean; generated?: boolean },
 ) => {
   log.info(
     `
@@ -682,24 +644,16 @@ export const setChoices = (
   );
 
   if (prompt.cacheScriptChoices) {
-    log.info(
-      `Caching script choices for ${prompt.scriptPath}: ${choices.length}`,
-    );
+    log.info(`Caching script choices for ${prompt.scriptPath}: ${choices.length}`);
     cacheChoices(prompt.scriptPath, choices);
     prompt.cacheScriptChoices = false;
   } else if (prompt?.scriptPath && choices?.length) {
-    log.info(
-      `Not caching script choices for ${prompt.scriptPath}: ${choices.length}`,
-    );
+    log.info(`Not caching script choices for ${prompt.scriptPath}: ${choices.length}`);
   }
 
-  if (!choices || !Array.isArray(choices) || choices?.length === 0) {
+  if (!(choices && Array.isArray(choices)) || choices?.length === 0) {
     prompt.kitSearch.choices = [];
-    setScoredChoices(
-      prompt,
-      [],
-      '!choices || !Array.isArray(choices) || choices.length === 0',
-    );
+    setScoredChoices(prompt, [], '!choices || !Array.isArray(choices) || choices.length === 0');
     prompt.kitSearch.hasGroup = false;
     prompt.kitSearch.qs = null;
     return;
@@ -720,7 +674,7 @@ export const setChoices = (
       scorer,
     })),
     minimumScore: kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE
-      ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
+      ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
       : 0.6,
   } as any);
   sendToPrompt(Channel.SET_CHOICES_CONFIG, { preload });
@@ -734,14 +688,8 @@ export const setChoices = (
   invokeSearch(prompt, input, 'setChoices');
 };
 
-export const setScoredChoices = (
-  prompt: KitPrompt,
-  choices: ScoredChoice[],
-  reason = 'default',
-) => {
-  log.verbose(
-    `${prompt.pid}: ${reason} 🎼 Scored choices count: ${choices.length}`,
-  );
+export const setScoredChoices = (prompt: KitPrompt, choices: ScoredChoice[], reason = 'default') => {
+  log.verbose(`${prompt.pid}: ${reason} 🎼 Scored choices count: ${choices.length}`);
 
   const sendToPrompt = prompt.sendToPrompt;
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
@@ -752,17 +700,12 @@ export const setScoredChoices = (
     !prompt.kitSearch.inputRegex &&
     choices?.length
   ) {
-    log.info(
-      `Caching main scored choices: ${choices.length}. First choice: ${choices[0]?.item?.name}`,
-    );
+    log.info(`Caching main scored choices: ${choices.length}. First choice: ${choices[0]?.item?.name}`);
     sendToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, choices);
   }
 };
 
-export const setScoredFlags = (
-  prompt: KitPrompt,
-  choices: ScoredChoice[] = [],
-) => {
+export const setScoredFlags = (prompt: KitPrompt, choices: ScoredChoice[] = []) => {
   log.silly(`🎼 Scored flags count: ${choices.length}`);
   prompt.sendToPrompt(Channel.SET_SCORED_FLAGS, choices);
 };

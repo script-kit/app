@@ -1,9 +1,9 @@
+import type fs from 'node:fs';
+import type fsPromises from 'node:fs/promises';
+import type os from 'node:os';
+import type path from 'node:path';
+import type url from 'node:url';
 import type { ipcRenderer, webFrame } from 'electron';
-import type path from 'path';
-import type os from 'os';
-import type fs from 'fs';
-import type fsPromises from 'fs/promises';
-import type url from 'url';
 
 interface ElectronAPI {
   ipcRenderer: typeof ipcRenderer;

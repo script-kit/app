@@ -1,11 +1,11 @@
+import os from 'node:os';
 import { kitPath } from '@johnlindquist/kit/core/utils';
+import { app } from 'electron';
 import log from 'electron-log';
 import { debounce } from 'lodash-es';
 import { Trigger } from '../shared/enums';
-import { emitter, KitEvent } from '../shared/events';
+import { KitEvent, emitter } from '../shared/events';
 import { TrackEvent, trackEvent } from './track';
-import { app } from 'electron';
-import os from 'os';
 
 const electronVersion = process.versions.electron ?? '0.0.0';
 export const debugInfo = () =>
@@ -27,7 +27,7 @@ export const displayError = debounce((error: Error) => {
     scriptPath: kitPath('cli', 'info.js'),
     args: [
       `${error?.name || 'An unknown error'} has occurred...`,
-      `Caught Error`,
+      'Caught Error',
       `# ${error?.message || 'Unknown error message'} 😅
 Please report to our [GitHub Discussions](https://github.com/johnlindquist/kit/discussions/categories/errors)
 
