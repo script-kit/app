@@ -35,34 +35,49 @@ const supportMap: Partial<Record<Target, OptionalDependency[]>> = {
   'linux-x64': [robot, uiohook],
 } as const;
 interface Shims {
+  //@ts-ignore This import might not work, depending on the platform
   [robot]: typeof import('@jitsi/robotjs');
+  //@ts-ignore This import might not work, depending on the platform
   [uiohook]: typeof import('uiohook-napi');
+  //@ts-ignore This import might not work, depending on the platform
   [nmp]: typeof import('node-mac-permissions');
+  //@ts-ignore This import might not work, depending on the platform
   [nwm]: typeof import('@johnlindquist/node-window-manager');
+  //@ts-ignore This import might not work, depending on the platform
   [mf]: typeof import('@johnlindquist/mac-frontmost');
+  //@ts-ignore This import might not work, depending on the platform
   [mcl]: typeof import('@johnlindquist/mac-clipboard-listener');
+  //@ts-ignore This import might not work, depending on the platform
   [mpw]: typeof import('@johnlindquist/mac-panel-window');
 }
 
-const notImplemented = new Proxy(
-  {},
-  {
-    get: (target, prop: string) => () => {
-      log.warn(`${prop} not supported on ${target}`);
+const createShim = <T extends keyof Shims>(packageName: T, depth = 0): Shims[T] =>
+  new Proxy(
+    {},
+    {
+      get: (_target, prop: string) => {
+        log.warn(`Accessing ${prop.toString()} not supported on ${packageName}`);
 
-      return notImplemented;
+        if (depth > 0) {
+          throw Error(
+            `The shim for ${packageName} appears to get accessed deeply with '${prop}', indicating ` +
+            'that platform checks are missing.'
+          );
+        }
+
+        return createShim(packageName, depth + 1);
+      },
     },
-  },
-);
+  ) as Shims[T];
 
 const shims: Shims = {
-  [robot]: notImplemented as Shims['@jitsi/robotjs'],
-  [uiohook]: notImplemented as Shims['uiohook-napi'],
-  [nmp]: notImplemented as Shims['node-mac-permissions'],
-  [nwm]: notImplemented as Shims['@johnlindquist/node-window-manager'],
-  [mf]: notImplemented as Shims['@johnlindquist/mac-frontmost'],
-  [mpw]: notImplemented as Shims['@johnlindquist/mac-panel-window'],
-  [mcl]: notImplemented as Shims['@johnlindquist/mac-clipboard-listener'],
+  [robot]: createShim('@jitsi/robotjs'),
+  [uiohook]: createShim('uiohook-napi'),
+  [nmp]: createShim('node-mac-permissions'),
+  [nwm]: createShim('@johnlindquist/node-window-manager'),
+  [mf]: createShim('@johnlindquist/mac-frontmost'),
+  [mpw]: createShim('@johnlindquist/mac-panel-window'),
+  [mcl]: createShim('@johnlindquist/mac-clipboard-listener')
 };
 
 export const include = () => {
@@ -78,7 +93,7 @@ export const external = () => {
   return deps;
 };
 
-export async function loadShims() {
+export async function loadSupportedOptionalLibraries() {
   log.info(`
 
 
