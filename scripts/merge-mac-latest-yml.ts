@@ -2,11 +2,11 @@
 
 import '@johnlindquist/kit';
 
-import { Octokit } from 'octokit';
-import { TextDecoder } from 'node:util';
+import { Buffer } from 'node:buffer';
 import fs from 'node:fs';
 import { Readable } from 'node:stream';
-import { Buffer } from 'node:buffer';
+import { TextDecoder } from 'node:util';
+import { Octokit } from 'octokit';
 
 const token = process.env.GITHUB_TOKEN;
 
@@ -16,8 +16,8 @@ const client = new Octokit({
 
 // let projectFiles = await readdir(projectPath());
 // let srcFiles = await readdir(projectPath('src'));
-let pkgJsonPath = projectPath('src', 'package.json');
-let pkg = await readJson(pkgJsonPath);
+const pkgJsonPath = projectPath('package.json');
+const pkg = await readJson(pkgJsonPath);
 
 console.log({
   pkgJsonPath,
@@ -50,24 +50,26 @@ const mergeFiles = (intel, arm) => {
   const intelLines = intel.split('\n');
   const armLines = arm.split('\n').splice(2, 6);
 
-  const merged = [
-    ...intelLines.slice(0, 8),
-    ...armLines,
-    ...intelLines.slice(8),
-  ];
+  const merged = [...intelLines.slice(0, 8), ...armLines, ...intelLines.slice(8)];
 
   return merged.join('\n');
 };
 
 const getPlatformFromLatestMacYml = (content) => {
-  const intelRe = `x64.dmg`;
-  const armRe = `arm64.dmg`;
+  const intelRe = 'x64.dmg';
+  const armRe = 'arm64.dmg';
   const isIntel = content.includes(intelRe);
   const isArm = content.includes(armRe);
 
-  if (isIntel && isArm) return 'both';
-  if (isIntel && !isArm) return 'intel';
-  if (!isIntel && isArm) return 'arm';
+  if (isIntel && isArm) {
+    return 'both';
+  }
+  if (isIntel && !isArm) {
+    return 'intel';
+  }
+  if (!isIntel && isArm) {
+    return 'arm';
+  }
 
   return 'none';
 };
@@ -80,34 +82,29 @@ const getPlatformFromLatestMacYml = (content) => {
     return release.name === VERSION;
   });
 
-  if (!currentRelease) {
+  if (currentRelease) {
+    console.log('Release found');
+  } else {
     console.log('No release found. Skipping merge');
     return;
-  } else {
-    console.log('Release found');
   }
 
   const localFilePathFiles = await readdir(path.dirname(LOCAL_FILE_PATH));
 
   console.log({ files: localFilePathFiles });
 
-  const localFileWithDirPathFiles = await readdir(
-    path.dirname(LOCAL_FILE_WITH_DIR_PATH)
-  );
+  const localFileWithDirPathFiles = await readdir(path.dirname(LOCAL_FILE_WITH_DIR_PATH));
 
   console.log({ files: localFileWithDirPathFiles });
 
-  const localLatestMacYmlExists =
-    fs.existsSync(LOCAL_FILE_PATH) || fs.existsSync(LOCAL_FILE_WITH_DIR_PATH);
-  const actualLocalFilePath = fs.existsSync(LOCAL_FILE_PATH)
-    ? LOCAL_FILE_PATH
-    : LOCAL_FILE_WITH_DIR_PATH;
+  const localLatestMacYmlExists = fs.existsSync(LOCAL_FILE_PATH) || fs.existsSync(LOCAL_FILE_WITH_DIR_PATH);
+  const actualLocalFilePath = fs.existsSync(LOCAL_FILE_PATH) ? LOCAL_FILE_PATH : LOCAL_FILE_WITH_DIR_PATH;
 
-  if (!localLatestMacYmlExists) {
+  if (localLatestMacYmlExists) {
+    console.log(`[local] ${FILE_NAME} found`);
+  } else {
     console.log(`[local] could not find ${FILE_NAME}. Skipping merge`);
     return;
-  } else {
-    console.log(`[local] ${FILE_NAME} found`);
   }
 
   const localLatestMacYmlContent = fs.readFileSync(actualLocalFilePath, {
@@ -117,13 +114,10 @@ const getPlatformFromLatestMacYml = (content) => {
   const localPlatform = getPlatformFromLatestMacYml(localLatestMacYmlContent);
 
   if (localPlatform === 'none' || localPlatform === 'both') {
-    console.log(
-      `[local] ${FILE_NAME} invalid. Platform: ${localPlatform}. Skipping merge`
-    );
+    console.log(`[local] ${FILE_NAME} invalid. Platform: ${localPlatform}. Skipping merge`);
     return;
-  } else {
-    console.log(`[local] ${FILE_NAME} valid: Platform: ${localPlatform}`);
   }
+  console.log(`[local] ${FILE_NAME} valid: Platform: ${localPlatform}`);
 
   const localPlatformPresentRemotely = currentRelease.assets.find((asset) => {
     return asset.name === `latest-mac-${localPlatform}.yml`;
@@ -131,14 +125,10 @@ const getPlatformFromLatestMacYml = (content) => {
 
   if (localPlatformPresentRemotely) {
     try {
-      await client.request(
-        `DELETE ${URL}/assets/${localPlatformPresentRemotely.id}`
-      );
+      await client.request(`DELETE ${URL}/assets/${localPlatformPresentRemotely.id}`);
       console.log(`[remote] deleted latest-mac-${localPlatform}.yml`);
     } catch (e) {
-      console.log(
-        `[remote] error deleting latest-mac-${localPlatform}.yml. Skipping merge`
-      );
+      console.log(`[remote] error deleting latest-mac-${localPlatform}.yml. Skipping merge`);
       console.log(e);
       return;
     }
@@ -161,9 +151,7 @@ const getPlatformFromLatestMacYml = (content) => {
     });
     console.log(`[remote] latest-mac-${localPlatform}.yml uploaded`);
   } catch (e) {
-    console.log(
-      `[remote] error uploading latest-mac-${localPlatform}.yml. Skipping merge`
-    );
+    console.log(`[remote] error uploading latest-mac-${localPlatform}.yml. Skipping merge`);
     console.log(e);
     return;
   }
@@ -174,49 +162,40 @@ const getPlatformFromLatestMacYml = (content) => {
     return asset.name === `latest-mac-${remotePlatform}.yml`;
   });
 
-  if (!remotePlatformFileExists) {
-    console.log(
-      `[remote] latest-mac-${remotePlatform}.yml does not exists. Skipping merge`
-    );
-    return;
-  } else {
+  if (remotePlatformFileExists) {
     console.log(`[remote] latest-mac-${remotePlatform}.yml found`);
+  } else {
+    console.log(`[remote] latest-mac-${remotePlatform}.yml does not exists. Skipping merge`);
+    return;
   }
 
   let remotePlatformFile = null;
 
   try {
-    remotePlatformFile = await client.request(
-      `GET ${URL}/assets/${remotePlatformFileExists.id}`,
-      {
-        headers: {
-          accept: 'application/octet-stream',
-        },
-      }
-    );
+    remotePlatformFile = await client.request(`GET ${URL}/assets/${remotePlatformFileExists.id}`, {
+      headers: {
+        accept: 'application/octet-stream',
+      },
+    });
     console.log(`[remote] latest-mac-${remotePlatform}.yml downloaded`);
   } catch (e) {
-    console.log(
-      `[remote] error downloading latest-mac-${remotePlatform}.yml. Skipping merge`
-    );
+    console.log(`[remote] error downloading latest-mac-${remotePlatform}.yml. Skipping merge`);
     console.log(e);
     return;
   }
 
-  const remoteLatestMacYmlContent = new TextDecoder().decode(
-    remotePlatformFile.data
-  );
+  const remoteLatestMacYmlContent = new TextDecoder().decode(remotePlatformFile.data);
 
   try {
     const originalAsset = currentRelease.assets.find((asset) => {
       return asset.name === FILE_NAME;
     });
 
-    if (!originalAsset) {
+    if (originalAsset) {
+      console.log(`[remote] ${FILE_NAME} found`);
+    } else {
       console.log(`[remote] ${FILE_NAME} not found. Skipping merge`);
       return;
-    } else {
-      console.log(`[remote] ${FILE_NAME} found`);
     }
 
     await client.request(`DELETE ${URL}/assets/${originalAsset.id}`);
@@ -260,10 +239,7 @@ const getPlatformFromLatestMacYml = (content) => {
   });
 
   const assetsToClean = updatedCurrentRelease.assets.filter((asset) => {
-    return (
-      asset.name === `latest-mac-arm.yml` ||
-      asset.name === `latest-mac-intel.yml`
-    );
+    return asset.name === 'latest-mac-arm.yml' || asset.name === 'latest-mac-intel.yml';
   });
 
   for (const assetToClean of assetsToClean) {

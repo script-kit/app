@@ -2,6 +2,65 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
   <dict>
+    <!-- Location Services -->
+    <key>com.apple.security.personal-information.location</key>
+    <true/>
+
+    <!-- Contacts -->
+    <key>com.apple.security.personal-information.addressbook</key>
+    <true/>
+
+    <!-- Calendars -->
+    <key>com.apple.security.personal-information.calendars</key>
+    <true/>
+
+    <!-- Reminders -->
+    <key>com.apple.security.personal-information.reminders</key>
+    <true/>
+
+    <!-- Photos -->
+    <key>com.apple.security.assets.photos-library</key>
+    <true/>
+
+    <!-- Bluetooth -->
+    <key>com.apple.security.device.bluetooth</key>
+    <true/>
+
+    <!-- Microphone -->
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
+
+    <!-- Camera -->
+    <key>com.apple.security.device.camera</key>
+    <true/>
+
+    <!-- Motion & Fitness -->
+    <key>com.apple.security.personal-information.motion</key>
+    <true/>
+
+    <!-- HomeKit -->
+    <key>com.apple.security.homekit</key>
+    <true/>
+
+    <!-- Media & Apple Music -->
+    <key>com.apple.security.media-library</key>
+    <true/>
+
+    <!-- Files and Folders -->
+    <!-- You must specify the path to the file or folder -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    <key>com.apple.security.files.downloads.read-write</key>
+    <true/>
+
+    <!-- Full Disk Access -->
+    <key>com.apple.security.files.all.read-write</key>
+    <true/>
+
+    <!-- Additional entitlements based on the screenshot -->
+    <!-- Add your specific entitlements here -->
+
+    <!-- These are the entitlements you've already specified -->
     <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
     <true/>
     <key>com.apple.security.cs.allow-jit</key>
@@ -10,11 +69,7 @@
     <true/>
     <key>com.apple.security.cs.allow-dyld-environment-variables</key>
     <true/>
-    <key>com.apple.security.device.audio-input</key>
-    <true/>
-    <key>com.apple.security.device.camera</key>
-    <true/>
-    <!-- Add mic access -->
+    <!-- Mic access already added -->
     <key>com.apple.security.device.microphone</key>
     <true/>
   </dict>

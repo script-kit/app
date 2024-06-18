@@ -2,9 +2,9 @@
  * Base webpack config used across other specific configs
  */
 
-import path from 'path';
+import path from 'node:path';
 import webpack from 'webpack';
-import { dependencies as externals } from '../../src/package.json';
+import { dependencies as externals } from '../package.json';
 
 export default {
   externals: ['fsevents', ...Object.keys(externals || {})],

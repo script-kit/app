@@ -1,13 +1,13 @@
 /* eslint-disable */
 
-console.log(`Removing tick 🐞`);
+console.log('Removing tick 🐞');
 
-let srcFilePath = path.resolve(process.env.PWD, 'src', '*').replace(/\\/g, '/');
+const srcFilePath = path.resolve(process.env.PWD, 'src', '**', '*').replace(/\\/g, '/');
 console.log({
   mainFilePath: srcFilePath,
 });
 
-let result = await replace({
+const result = await replace({
   files: [srcFilePath],
   from: './tick',
   to: './no-tick',
@@ -19,5 +19,5 @@ for (const entry of result) {
   }
 }
 
-let tickFilePath = path.resolve(process.env.PWD, 'src', 'tick.ts');
+const tickFilePath = path.resolve(process.env.PWD, 'src', 'tick.ts');
 await rm(tickFilePath);

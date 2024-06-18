@@ -1,29 +1,31 @@
 {
   "name": "kit",
   "productName": "Kit",
+  "version": "0.0.0-development",
   "description": "The Script Kit App",
+  "main": "./out/main/index.mjs",
   "scripts": {
     "build": "concurrently \"yarn build:main\" \"yarn build:renderer\"",
     "build:local": "node ./build/local-assets.js && concurrently \"yarn build:main\" \"yarn build:renderer\"",
     "build:main": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.main.prod.babel.js",
     "build:renderer": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.renderer.prod.babel.js",
-    "rebuild": "electron-rebuild --openssl_fips=0 --parallel --types prod,dev,optional --module-dir src",
+    "rebuild": "electron-rebuild",
+    "format:check": "biome check .",
+    "format:fix": "biome check . --write --unsafe",
     "lint": "cross-env NODE_ENV=development eslint . --cache --ext .js,.jsx,.ts,.tsx",
     "package": "yarn build && npx electron-builder build --publish never",
-    "webpack-dev": "yarn cross-env NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=development webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.babel.js",
-    "build-dll": "yarn cross-env NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=development webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.babel.js",
     "yarn-dedupe": "yarn-deduplicate yarn.lock",
     "install-electron-deps": "node -r @babel/register .erb/scripts/CheckNativeDep.js && npx electron-builder install-app-deps",
-    "rebuild-node-pty": "electron-rebuild -f -o node-pty -m target",
+    "rebuild-node-pty": "electron-rebuild -f -o node-pty -m ./",
     "silly": "cross-env LOG_LEVEL=silly yarn start",
     "super-silly": "cross-env ELECTRON_ENABLE_STACK_DUMPING=true ELECTRON_ENABLE_LOGGING=true LOG_LEVEL=silly yarn start",
-    "start": "node -r @babel/register ./.erb/scripts/CheckPortInUse.js && cross-env yarn start:renderer",
+    "start": "cross-env NODE_ENV=development yarn start-$(node -e \"console.log(process.platform === 'darwin' ? 'mac' : process.platform === 'win32' ? 'windows' : 'linux')\")",
+    "start-mac": "./vite-dev.sh",
+    "start-windows": "electron-vite preview",
+    "start-linux": "electron-vite preview",
     "sponsor": "KIT_SPONSOR=development yarn start",
     "tiktok": "KIT_SPONSOR=development KIT_TIKTOK=development yarn start",
     "splash": "KIT_SPLASH=true yarn start",
-    "start:install": "source ./build/tmp-kit.sh && node -r @babel/register ./.erb/scripts/CheckPortInUse.js && cross-env yarn start:renderer",
-    "start:main": "yarn build:main && cross-env NODE_ENV=development electron --trace-warnings ./src/main.prod.js",
-    "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
     "test-update": "TEST_UPDATE=true yarn start",
     "test-m1-update": "TEST_UPDATE=true yarn m1",
     "test": "jest",
@@ -37,127 +39,16 @@
     "release": "yarn build:local && DEBUG_PROD=true npx electron-builder -c.mac.identity=null --publish never --mac",
     "cp-vs-assets": "cp -R ./node_modules/monaco-editor/min/vs ./assets",
     "v": "PATH=~/.knode/bin:$PATH node --version",
-    "write-node-version": "node ./scripts/write-node-version.js"
-  },
-  "lint-staged": {
-    "*.{jsx,ts,tsx}": [
-      "cross-env NODE_ENV=development eslint --cache"
-    ],
-    "{*.json,.{babelrc,eslintrc,prettierrc}}": [
-      "prettier --ignore-path .eslintignore --parser json --write"
-    ],
-    "*.{css,scss}": [
-      "prettier --ignore-path .eslintignore --single-quote --write"
-    ],
-    "*.{html,md,yml}": [
-      "prettier --ignore-path .eslintignore --single-quote --write"
-    ]
-  },
-  "build": {
-    "buildDependenciesFromSource": false,
-    "generateUpdatesFilesForAllChannels": true,
-    "detectUpdateChannel": "true",
-    "productName": "Kit",
-    "appId": "app.scriptkit",
-    "asar": true,
-    "asarUnpack": [
-      "**/*.{node,dll}"
-    ],
-    "files": [
-      "dist/",
-      "fonts/**",
-      "node_modules/",
-      "index.html",
-      "debug.html",
-      "devTools.html",
-      "preload.js",
-      "main.prod.js",
-      "main.prod.js.map",
-      "package.json"
-    ],
-    "afterSign": ".erb/scripts/Notarize.js",
-    "protocols": [
-      {
-        "name": "kit",
-        "role": "Viewer",
-        "schemes": [
-          "kit"
-        ]
-      }
-    ],
-    "win": {
-      "artifactName": "${productName}-Windows-${version}-${arch}.${ext}"
-    },
-    "mac": {
-      "artifactName": "${productName}-macOS-${version}-${arch}.${ext}",
-      "type": "distribution",
-      "hardenedRuntime": true,
-      "entitlements": "assets/entitlements.mac.plist",
-      "entitlementsInherit": "assets/entitlements.mac.plist",
-      "gatekeeperAssess": false,
-      "notarize": false,
-      "extendInfo": {
-        "CFBundleDocumentTypes": [
-          {
-            "CFBundleTypeName": "Folders",
-            "CFBundleTypeRole": "Viewer",
-            "LSHandlerRank": "Alternate",
-            "LSItemContentTypes": [
-              "public.folder",
-              "com.apple.bundle",
-              "com.apple.package",
-              "com.apple.resolvable"
-            ]
-          },
-          {
-            "CFBundleTypeName": "UnixExecutables",
-            "CFBundleTypeRole": "Shell",
-            "LSHandlerRank": "Alternate",
-            "LSItemContentTypes": [
-              "public.unix-executable"
-            ]
-          }
-        ]
-      }
-    },
-    "dmg": {
-      "contents": [
-        {
-          "x": 130,
-          "y": 220
-        },
-        {
-          "x": 410,
-          "y": 220,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ]
-    },
-    "linux": {
-      "artifactName": "${productName}-Linux-${version}-${arch}.${ext}",
-      "category": "Development",
-      "executableName": "scriptkit"
-    },
-    "directories": {
-      "app": "src",
-      "buildResources": "assets",
-      "output": "release"
-    },
-    "extraResources": [
-      {
-        "from": "assets",
-        "to": "assets",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ],
-    "publish": {
-      "provider": "github",
-      "owner": "johnlindquist",
-      "repo": "kitapp"
-    }
+    "write-node-version": "node ./scripts/write-node-version.js",
+    "vite-dev": "./vite-dev.sh",
+    "vite-prebuild": "electron-vite build",
+    "vite-package": "electron-vite build && DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
+    "package:mac:arm64": "npm run vite-prebuild && npx kit ./build.ts mac arm64 never",
+    "vite-build": "DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
+    "electron-rebuild": "electron-builder install-app-deps",
+    "rimraf-kit-setup": "rimraf ~/.kit-setup ~/.kenv-setup ~/.knode-setup",
+    "kit-setup": "KIT=~/.kit-setup KENV=~/.kenv-setup KNODE=~/.knode-setup electron-vite dev",
+    "build:mac": "electron-vite build && electron-builder --mac --config"
   },
   "repository": {
     "type": "git",
@@ -172,12 +63,7 @@
   "bugs": {
     "url": "https://github.com/johnlindquist/kitapp/issues"
   },
-  "keywords": [
-    "electron",
-    "react",
-    "typescript",
-    "ts"
-  ],
+  "keywords": ["electron", "react", "typescript", "ts"],
   "homepage": "https://github.com/johnlindquist/kitapp#readme",
   "jest": {
     "resolver": "jest-node-exports-resolver",
@@ -186,300 +72,142 @@
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/.erb/mocks/fileMock.js",
       "\\.(css|less|sass|scss)$": "identity-obj-proxy"
     },
-    "moduleFileExtensions": [
-      "js",
-      "jsx",
-      "ts",
-      "tsx",
-      "json"
-    ],
-    "moduleDirectories": [
-      "node_modules",
-      "src/node_modules"
-    ],
-    "modulePathIgnorePatterns": [
-      ".history"
-    ],
-    "setupFiles": [
-      "./.erb/scripts/CheckBuildsExist.js"
-    ]
+    "moduleFileExtensions": ["js", "jsx", "ts", "tsx", "json"],
+    "moduleDirectories": ["node_modules"],
+    "modulePathIgnorePatterns": [".history"],
+    "setupFiles": ["./.erb/scripts/CheckBuildsExist.js"]
   },
   "devDependencies": {
-    "@babel/core": "7.23.3",
-    "@babel/plugin-proposal-class-properties": "7.18.6",
-    "@babel/plugin-proposal-decorators": "7.23.3",
-    "@babel/plugin-proposal-do-expressions": "7.23.3",
-    "@babel/plugin-proposal-export-default-from": "7.23.3",
-    "@babel/plugin-proposal-export-namespace-from": "7.18.9",
-    "@babel/plugin-proposal-function-bind": "7.23.3",
-    "@babel/plugin-proposal-function-sent": "7.23.3",
-    "@babel/plugin-proposal-json-strings": "7.18.6",
-    "@babel/plugin-proposal-logical-assignment-operators": "7.20.7",
-    "@babel/plugin-proposal-nullish-coalescing-operator": "7.18.6",
-    "@babel/plugin-proposal-numeric-separator": "^7.18.6",
-    "@babel/plugin-proposal-optional-chaining": "7.21.0",
-    "@babel/plugin-proposal-pipeline-operator": "7.23.3",
-    "@babel/plugin-proposal-private-methods": "^7.18.6",
-    "@babel/plugin-proposal-throw-expressions": "7.23.3",
-    "@babel/plugin-syntax-dynamic-import": "7.8.3",
-    "@babel/plugin-syntax-import-meta": "7.10.4",
-    "@babel/plugin-transform-react-constant-elements": "7.23.3",
-    "@babel/plugin-transform-react-inline-elements": "7.23.3",
-    "@babel/plugin-transform-runtime": "7.23.3",
-    "@babel/preset-env": "7.23.3",
-    "@babel/preset-react": "7.23.3",
-    "@babel/preset-typescript": "^7.23.3",
-    "@babel/register": "7.22.15",
-    "@electron/notarize": "^2.1.0",
-    "@electron/rebuild": "^3.4.1",
-    "@fullhuman/postcss-purgecss": "4.0.2",
-    "@pmmmwh/react-refresh-webpack-plugin": "0.4.3",
-    "@semantic-release/npm": "7.0.10",
-    "@svgr/webpack": "5.5.0",
-    "@tailwindcss/forms": "0.4.0",
-    "@tailwindcss/typography": "0.5.0",
-    "@teamsupercell/typings-for-css-modules-loader": "2.4.0",
-    "@testing-library/jest-dom": "5.11.6",
-    "@testing-library/react": "14.1.2",
-    "@testing-library/webdriverio": "3.2.1",
-    "@types/asap": "2.0.2",
-    "@types/bonjour": "3.5.13",
-    "@types/chokidar": "2.1.3",
-    "@types/cron": "2.0.1",
+    "@biomejs/biome": "^1.8.1",
+    "@electron-toolkit/tsconfig": "^1.0.1",
+    "@electron/notarize": "^2.3.2",
+    "@fontsource/jetbrains-mono": "^5.0.20",
+    "@heroicons/react": "^2.1.4",
+    "@monaco-editor/react": "^4.6.0",
+    "@react-hook/resize-observer": "^2.0.1",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@tailwindcss/forms": "^0.5.7",
+    "@tailwindcss/typography": "^0.5.13",
+    "@testing-library/jest-dom": "^6.4.6",
+    "@testing-library/react": "^16.0.0",
+    "@types/detect-port": "^1.3.5",
     "@types/dompurify": "^3.0.5",
     "@types/download": "8.0.5",
-    "@types/express": "^4.17.21",
-    "@types/express-ws": "^3.0.4",
-    "@types/he": "1.2.3",
-    "@types/history": "4.7.11",
-    "@types/jest": "29.5.11",
-    "@types/lodash": "4.14.202",
-    "@types/micro": "7.3.7",
+    "@types/madge": "^5.0.3",
     "@types/minimist": "1.2.5",
-    "@types/node": "20.10.4",
-    "@types/node-schedule": "2.1.5",
-    "@types/react": "^18.2.43",
-    "@types/react-dom": "^18.2.17",
-    "@types/react-router-dom": "5.3.3",
-    "@types/react-test-renderer": "18.0.7",
-    "@types/react-virtualized-auto-sizer": "1.0.3",
+    "@types/node": "^20.14.5",
+    "@types/node-schedule": "^2.1.7",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/react-virtualized-auto-sizer": "^1.0.4",
     "@types/react-window": "1.8.8",
-    "@types/sane": "^2.0.5",
-    "@types/sanitize-html": "2.9.5",
-    "@types/shelljs": "0.8.15",
-    "@types/simplebar": "5.1.2",
-    "@types/tar": "6.1.10",
-    "@types/unzipper": "0.10.9",
-    "@types/webpack-env": "1.18.4",
-    "@typescript-eslint/eslint-plugin": "6.13.2",
-    "@typescript-eslint/parser": "6.13.2",
-    "babel-eslint": "10.1.0",
-    "babel-jest": "26.1.0",
-    "babel-loader": "8.2.4",
-    "babel-plugin-dev-expression": "0.2.2",
-    "babel-plugin-transform-react-remove-prop-types": "0.4.24",
-    "browserslist-config-erb": "0.0.1",
-    "chalk": "4.1.0",
-    "concurrently": "5.3.0",
-    "core-js": "3.34.0",
-    "cross-env": "7.0.3",
-    "css-loader": "6.8.1",
-    "detect-port": "^1.5.1",
-    "download": "8.0.0",
-    "electron": "28.1.1",
-    "electron-builder": "^24.9.1",
-    "electron-devtools-installer": "3.2.0",
-    "electron-releases": "3.1171.0",
-    "eslint": "8.54.0",
-    "eslint-config-airbnb": "19.0.4",
-    "eslint-config-airbnb-typescript": "17.1.0",
-    "eslint-config-erb": "4.1.0",
-    "eslint-config-prettier": "9.0.0",
-    "eslint-import-resolver-webpack": "0.13.7",
-    "eslint-plugin-compat": "4.2.0",
-    "eslint-plugin-import": "2.28.1",
-    "eslint-plugin-jest": "27.4.2",
-    "eslint-plugin-jsx-a11y": "6.7.1",
-    "eslint-plugin-prettier": "5.0.1",
-    "eslint-plugin-promise": "6.1.1",
-    "eslint-plugin-react": "7.33.2",
-    "eslint-plugin-react-hooks": "4.6.0",
-    "execa": "^6.1.0",
-    "file-loader": "6.2.0",
-    "husky": "4.2.5",
-    "identity-obj-proxy": "3.0.0",
-    "jest": "27.0.6",
-    "jest-node-exports-resolver": "1.1.6",
-    "lint-staged": "12.1.2",
-    "mini-css-extract-plugin": "2.7.6",
-    "mocha": "9.0.3",
-    "node-gyp": "^10.0.1",
-    "opencollective-postinstall": "2.0.3",
-    "optimize-css-assets-webpack-plugin": "6.0.1",
-    "postcss-cli": "10.1.0",
-    "postcss-loader": "7.3.3",
-    "prettier": "^3.1.1",
-    "prettier-plugin-tailwindcss": "^0.5.5",
-    "purgecss": "4.0.2",
-    "react-refresh": "^0.14.0",
-    "react-test-renderer": "17.0.1",
-    "rimraf": "3.0.0",
-    "style-loader": "3.3.1",
-    "tailwindcss": "3.2.4",
-    "terser-webpack-plugin": "5.3.9",
-    "url-loader": "4.1.1",
-    "webpack": "5.89.0",
-    "webpack-bundle-analyzer": "4.9.0",
-    "webpack-cli": "^4.9.2",
-    "webpack-dev-server": "3.11.0",
-    "webpack-merge": "5.10.0",
-    "yarn-deduplicate": "6.0.2"
-  },
-  "dependencies": {
-    "@babel/parser": "^7.23.3",
-    "@babel/traverse": "^7.23.3",
-    "@babel/types": "^7.23.3",
-    "@fontsource/jetbrains-mono": "^5.0.17",
-    "@heroicons/react": "1.0.4",
-    "@johnlindquist/kit": "latest",
-    "@monaco-editor/react": "^4.6.0",
-    "@react-hook/resize-observer": "1.2.6",
-    "@types/detect-port": "^1.3.5",
     "@types/tail": "^2.2.3",
-    "@vscode/codicons": "0.0.35",
+    "@types/tar": "^6.1.13",
+    "@typescript/lib-dom": "npm:@types/web@^0.0.148",
+    "@vitejs/plugin-react": "^4.3.1",
+    "@vscode/codicons": "^0.0.36",
     "animate.css": "^4.1.1",
     "ansi-to-html": "0.7.2",
-    "autoprefixer": "10.4.16",
-    "axios": "1.5.1",
-    "builtin-modules": "^3.3.0",
-    "chokidar": "3.5.3",
-    "classnames": "^2.3.2",
-    "color-name": "^1.1.4",
-    "contrast-color": "^1.0.1",
-    "cron-parser": "4.9.0",
-    "date-fns": "2.30.0",
-    "detect-file-type": "0.2.8",
-    "dns-socket": "^4.2.2",
-    "dompurify": "^3.0.6",
-    "dotenv": "^16.3.1",
-    "electron-context-menu": "^3.6.1",
-    "electron-debug": "3.2.0",
-    "electron-log": "^5.0.3",
-    "electron-store": "^8.1.0",
-    "electron-unhandled": "^4.0.1",
-    "electron-updater": "6.1.7",
-    "electron-util": "^0.17.2",
-    "emoji-picker-react": "4.6.2",
-    "es-module-lexer": "^1.4.1",
-    "express-ws": "^5.0.2",
-    "file-type-cjs-fix": "^1.1.1",
-    "filter-async-rxjs-pipe": "1.0.0",
-    "framer-motion": "6.5.1",
-    "fs-extra": "10.0.0",
-    "get-port": "^6.1.2",
-    "got": "^12.5.3",
-    "gsap": "^3.12.2",
-    "he": "1.2.0",
-    "hex-rgb": "^5.0.0",
-    "history": "5.3.0",
-    "hotkeys-js": "3.12.0",
-    "hpagent": "^1.2.0",
-    "html-react-parser": "3.0.15",
-    "html-to-image": "1.11.11",
-    "image-size": "0.9.4",
-    "image-type": "^5.2.0",
-    "inclusion": "^1.0.1",
-    "internet-available": "^1.0.0",
-    "is-image": "3.0.0",
-    "jotai": "2.6.1",
-    "jotai-effect": "^0.2.3",
-    "lodash": "4.17.21",
-    "memoize-one": "5.2.1",
-    "million": "^2.6.4",
-    "minimist": "1.2.5",
-    "moize": "^6.1.6",
-    "monaco-editor": "0.45.0",
-    "monaco-editor-auto-typings": "^0.4.5",
-    "monaco-editor-webpack-plugin": "7.1.0",
-    "nanoid": "3.1.30",
-    "node-abi": "^3.54.0",
-    "node-downloader-helper": "1.0.18",
-    "node-schedule": "2.1.1",
-    "node-stream-zip": "^1.15.0",
-    "postcss": "8.4.32",
-    "query-string": "6.14.1",
-    "quick-score": "0.2.0",
-    "react": "18.2.0",
-    "react-chat-elements": "^12.0.11",
-    "react-dom": "18.2.0",
-    "react-hotkeys-hook": "3.3.2",
-    "react-icons": "^4.12.0",
-    "react-resizable-panels": "^0.0.59",
-    "react-toastify": "^9.1.3",
-    "react-virtualized-auto-sizer": "1.0.20",
+    "classnames": "^2.5.1",
+    "color-name": "^2.0.0",
+    "concurrently": "^8.2.2",
+    "cross-env": "7.0.3",
+    "date-fns": "^3.6.0",
+    "detect-port": "^1.6.1",
+    "dompurify": "^3.1.5",
+    "electron": "^30.1.0",
+    "electron-builder": "25.0.0-alpha.6",
+    "electron-vite": "^2.2.0",
+    "emoji-picker-react": "^4.10.0",
+    "eslint": "^9.5.0",
+    "eslint-config-erb": "4.1.0",
+    "framer-motion": "^11.2.10",
+    "html-react-parser": "^5.1.10",
+    "jotai": "^2.8.3",
+    "lodash-es": "^4.17.21",
+    "memoize-one": "^6.0.0",
+    "million": "^3.1.11",
+    "monaco-editor": "^0.47.0",
+    "patch-package": "^8.0.0",
+    "petite-vue": "^0.4.1",
+    "prettier": "^3.3.2",
+    "react-chat-elements": "^12.0.14",
+    "react-dom": "^18.3.1",
+    "react-hotkeys-hook": "4.5.0",
+    "react-icons": "^5.2.1",
+    "react-refresh": "^0.14.2",
+    "react-resizable-panels": "^2.0.19",
+    "react-toastify": "^10.0.5",
+    "react-virtualized-auto-sizer": "^1.0.24",
     "react-window": "1.8.10",
-    "regenerator-runtime": "0.13.11",
-    "rxjs": "6.6.7",
-    "sane": "^5.0.1",
-    "semver": "^7.3.8",
-    "simplebar-react": "2.4.3",
-    "source-map-support": "0.5.19",
-    "tail": "^2.2.6",
-    "tar": "6.2.0",
-    "typescript": "^5.3.3",
-    "untildify": "4.0.0",
-    "valtio": "1.13.0",
+    "rimraf": "^5.0.7",
+    "simplebar-react": "^3.2.6",
+    "tailwindcss": "^3.4.4",
+    "vite": "^5.3.1",
+    "vite-plugin-compression": "^0.5.1",
     "xterm": "5.3.0",
-    "xterm-addon-attach": "0.9.0",
     "xterm-addon-fit": "0.8.0",
     "xterm-addon-ligatures": "0.7.0",
     "xterm-addon-search": "0.13.0",
     "xterm-addon-serialize": "0.11.0",
     "xterm-addon-unicode11": "0.6.0",
-    "xterm-addon-web-links": "0.9.0",
-    "xterm-addon-webgl": "0.16.0",
-    "xterm-for-react": "1.0.4",
-    "xterm-webfont": "^2.0.0"
+    "xterm-addon-web-links": "0.9.0"
+  },
+  "dependencies": {
+    "@johnlindquist/clipboard": "^0.1.38",
+    "@johnlindquist/kit": "^2.7.0",
+    "@rollup/plugin-commonjs": "^26.0.1",
+    "axios": "^1.7.2",
+    "builtin-modules": "^4.0.0",
+    "chokidar": "^3.6.0",
+    "contrast-color": "^1.0.1",
+    "detect-file-type": "0.2.8",
+    "dns-socket": "^4.2.2",
+    "dotenv": "^16.4.5",
+    "download": "^8.0.0",
+    "electron-context-menu": "^4.0.0",
+    "electron-log": "^5.1.5",
+    "electron-store": "^10.0.0",
+    "electron-unhandled": "^5.0.0",
+    "electron-updater": "^6.2.1",
+    "fs-extra": "^11.2.0",
+    "globby": "^14.0.1",
+    "hpagent": "^1.2.0",
+    "image-size": "1.1.1",
+    "madge": "^7.0.0",
+    "minimist": "^1.2.8",
+    "nanoid": "5.0.7",
+    "native-keymap": "3.3.5",
+    "node-abi": "^3.65.0",
+    "node-downloader-helper": "^2.1.9",
+    "node-pty": "^1.1.0-beta14",
+    "node-schedule": "2.1.1",
+    "node-stream-zip": "^1.15.0",
+    "quick-score": "0.2.0",
+    "react": "^18.3.1",
+    "rebuild": "^0.1.2",
+    "rxjs": "^7.8.1",
+    "tail": "^2.2.6",
+    "tar": "^7.2.0",
+    "typescript": "^5.4.5",
+    "untildify": "5.0.0",
+    "valtio": "^1.13.2"
+  },
+  "optionalDependencies": {
+    "@jitsi/robotjs": "^0.6.13",
+    "@johnlindquist/mac-clipboard-listener": "^1.0.3",
+    "@johnlindquist/mac-frontmost": "^1.0.7",
+    "@johnlindquist/mac-panel-window": "^1.3.5",
+    "@johnlindquist/node-window-manager": "^1.0.24",
+    "node-mac-permissions": "^2.4.0",
+    "uiohook-napi": "^1.5.4"
   },
   "engines": {
-    "node": ">=14.17.0"
-  },
-  "devEngines": {
-    "node": ">=14.17.0",
-    "npm": ">=6.x",
-    "yarn": ">=1.21.3"
+    "node": "20.11.1"
   },
   "browserslist": [],
-  "prettier": {
-    "plugins": [
-      "prettier-plugin-tailwindcss"
-    ],
-    "overrides": [
-      {
-        "files": [
-          ".prettierrc",
-          ".babelrc",
-          ".eslintrc"
-        ],
-        "options": {
-          "parser": "json"
-        }
-      }
-    ],
-    "singleQuote": true,
-    "trailingComma": "es5"
-  },
   "renovate": {
-    "extends": [
-      "bliss"
-    ],
-    "baseBranches": [
-      "next"
-    ]
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
+    "extends": ["bliss"],
+    "baseBranches": ["next"]
   }
 }

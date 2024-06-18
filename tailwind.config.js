@@ -3,11 +3,11 @@ const defaultTheme = require('tailwindcss/defaultTheme');
 const colors = require('tailwindcss/colors');
 const peers = require('tailwindcss/peers');
 
-delete colors.lightBlue;
-delete colors.coolGray;
-delete colors.blueGray;
-delete colors.trueGray;
-delete colors.warmGray;
+colors.lightBlue = undefined;
+colors.coolGray = undefined;
+colors.blueGray = undefined;
+colors.trueGray = undefined;
+colors.warmGray = undefined;
 
 const colorVar = (name, opacityName) => (v) => {
   const { opacityVariable, opacityValue } = v;
@@ -55,7 +55,7 @@ const safeListStartsWith = [
   'min',
   'max',
   'grid',
-  `w{0,2}-(\d\/\d|\d.\d|\d{1,3}|full|screen|auto)`,
+  'w{0,2}-(d/d|d.d|d{1,3}|full|screen|auto)',
   'leading',
   'prose',
   'focus',
@@ -71,12 +71,7 @@ const safeListStartsWith = [
 /* eslint-disable global-require */
 module.exports = {
   mode: process.env.NODE_ENV === 'development' ? 'jit' : '',
-  content: [
-    './src/**/*.html',
-    './src/**/*.tsx',
-    './src/*.ts',
-    './safelist.txt',
-  ],
+  content: ['./src/**/*.html', './src/**/*.tsx', './src/*.ts', './safelist.txt'],
   safelist: [
     {
       pattern: new RegExp(`^(${safeListStartsWith.join('|')})`),
@@ -104,7 +99,6 @@ module.exports = {
       secondary: colorVar('secondary'),
       'ui-bg': colorVar('secondary', 'ui-bg-opacity'),
       'ui-border': colorVar('secondary', 'ui-border-opacity'),
-      'ui-text': colorVar('secondary', 'ui-border-opacity'),
       contrast: colorVar('contrast'),
       gradient: {
         white: '#ffffffcc',
@@ -146,8 +140,7 @@ module.exports = {
             transform: 'scale(2)',
             opacity: 0,
 
-            filter:
-              'drop-shadow(0 0 5px var(--color-secondary)) brightness(0%)',
+            filter: 'drop-shadow(0 0 5px var(--color-secondary)) brightness(0%)',
           },
         },
       },
@@ -305,7 +298,7 @@ module.exports = {
             },
             'input[type="submit"]:hover': {
               cursor: 'pointer',
-              backgroundColor: `rgba(0, 0, 0, 33%)`,
+              backgroundColor: 'rgba(0, 0, 0, 33%)',
             },
             'ul > li > *:last-child': {
               marginBottom: '.25rem',

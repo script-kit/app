@@ -1,15 +1,15 @@
-const { readdir, rm, readFile, writeFile } = require('fs/promises');
-const path = require('path');
+const { readdir, rm, readFile, writeFile } = require('node:fs/promises');
+const path = require('node:path');
 const { Arch, BeforePackContext } = require('electron-builder');
 
 // Use jsdoc to type the context to BeforePackContext
 
 /** @param {BeforePackContext} context */
 exports.default = async function notarizeMacos(context) {
-  let { electronPlatformName, appOutDir, arch } = context;
-  let archCode = Object.entries(Arch).find(([key, value]) => value === arch)[0];
+  const { electronPlatformName, appOutDir, arch } = context;
+  const archCode = Object.entries(Arch).find(([key, value]) => value === arch)[0];
 
-  await console.log(`\n\n ---------- Before Pack:`, {
+  await console.log('\n\n ---------- Before Pack:', {
     electronPlatformName,
     appOutDir,
     arch,
@@ -28,15 +28,15 @@ exports.default = async function notarizeMacos(context) {
     // remove node-mac-permissions from package.json
     const pkg = await readFile(srcPkgPath, 'utf-8');
     const pkgJson = JSON.parse(pkg);
-    console.log(`Deleting node-mac-permissions from package.json`);
-    delete pkgJson.dependencies['node-mac-permissions'];
+    console.log('Deleting node-mac-permissions from package.json');
+    pkgJson.dependencies['node-mac-permissions'] = undefined;
     await writeFile(srcPkgPath, JSON.stringify(pkgJson, null, 2));
 
     if (arm64) {
       // remove @nut-tree/nut-js from package.json
-      delete pkgJson.dependencies['@nut-tree/nut-js'];
+      pkgJson.dependencies['@nut-tree/nut-js'] = undefined;
       // remote uiohook-napi from package.json
-      delete pkgJson.dependencies['uiohook-napi'];
+      pkgJson.dependencies['uiohook-napi'] = undefined;
       await writeFile(srcPkgPath, JSON.stringify(pkgJson, null, 2));
     }
   }

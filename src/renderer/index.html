@@ -1,0 +1,28 @@
+<!doctype html>
+<html id="app" style="--opacity: 1" class="bg-bg-base bg-opacity-base">
+  <head>
+    <meta charset="utf-8" />
+    <title>Kit</title>
+    <style>
+      body {
+        pointer-events: none;
+      }
+      #root {
+        position: relative;
+        top: 0;
+        left: 0;
+      }
+
+      * {
+        pointer-events: all;
+      }
+      .draggable {
+        -webkit-app-region: drag;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
+</html>

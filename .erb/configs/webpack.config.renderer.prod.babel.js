@@ -2,16 +2,16 @@
  * Build config for electron renderer process
  */
 
-import path from 'path';
-import webpack from 'webpack';
+import path from 'node:path';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import OptimizeCSSAssetsPlugin from 'optimize-css-assets-webpack-plugin';
+import TerserPlugin from 'terser-webpack-plugin';
+import webpack from 'webpack';
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 import { merge } from 'webpack-merge';
-import TerserPlugin from 'terser-webpack-plugin';
-import baseConfig from './webpack.config.base';
 import CheckNodeEnv from '../scripts/CheckNodeEnv';
 import DeleteSourceMaps from '../scripts/DeleteSourceMaps';
+import baseConfig from './webpack.config.base';
 
 CheckNodeEnv('production');
 DeleteSourceMaps();
@@ -30,11 +30,7 @@ export default merge(baseConfig, {
 
   target: 'electron-renderer',
 
-  entry: [
-    'core-js',
-    'regenerator-runtime/runtime',
-    path.join(__dirname, '../../src/index.tsx'),
-  ],
+  entry: ['core-js', 'regenerator-runtime/runtime', path.join(__dirname, '../../src/index.tsx')],
 
   output: {
     hashFunction: 'xxhash64',
@@ -140,8 +136,7 @@ export default merge(baseConfig, {
     }),
 
     new BundleAnalyzerPlugin({
-      analyzerMode:
-        process.env.OPEN_ANALYZER === 'true' ? 'server' : 'disabled',
+      analyzerMode: process.env.OPEN_ANALYZER === 'true' ? 'server' : 'disabled',
       openAnalyzer: process.env.OPEN_ANALYZER === 'true',
     }),
   ],

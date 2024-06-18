@@ -2,14 +2,14 @@
  * Webpack config for production electron main process
  */
 
-import path from 'path';
-import webpack from 'webpack';
-import { merge } from 'webpack-merge';
+import path from 'node:path';
 import TerserPlugin from 'terser-webpack-plugin';
+import webpack from 'webpack';
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
-import baseConfig from './webpack.config.base';
+import { merge } from 'webpack-merge';
 import CheckNodeEnv from '../scripts/CheckNodeEnv';
 import DeleteSourceMaps from '../scripts/DeleteSourceMaps';
+import baseConfig from './webpack.config.base';
 
 CheckNodeEnv('production');
 DeleteSourceMaps();
@@ -52,8 +52,7 @@ export default merge(baseConfig, {
 
   plugins: [
     new BundleAnalyzerPlugin({
-      analyzerMode:
-        process.env.OPEN_ANALYZER === 'true' ? 'server' : 'disabled',
+      analyzerMode: process.env.OPEN_ANALYZER === 'true' ? 'server' : 'disabled',
       openAnalyzer: process.env.OPEN_ANALYZER === 'true',
     }),
     new webpack.optimize.LimitChunkCountPlugin({
