@@ -39,11 +39,12 @@ import { CACHED_GROUPED_SCRIPTS_WORKER } from '@johnlindquist/kit/workers';
 import { KitPrompt, destroyPromptWindow, makeSplashWindow } from './prompt';
 
 import { Worker } from 'node:worker_threads';
+import type { Stamp } from '@johnlindquist/kit/core/db';
 import { SPLASH_PATH } from '../shared/defaults';
 import { AppChannel } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
 import { sendToAllPrompts } from './channel';
-import { createScoredChoice } from './helpers';
+import { createScoredChoice, isInDirectory } from './helpers';
 import { mainLogPath } from './logs';
 import { showError } from './main.dev.templates';
 import { maybeConvertColors } from './process';
@@ -854,93 +855,103 @@ const cacheMainPreview = (preview: string) => {
   }
 };
 
-export const cacheMainScripts = debounce(async (stamp = null) => {
-  try {
-    const receiveScripts = ({
-      scripts,
-      preview,
-      shortcuts,
-      scriptFlags,
-    }: {
-      scripts: Script[];
-      preview: string;
-      shortcuts: Shortcut[];
-      scriptFlags: FlagsOptions;
-    }) => {
-      if (Array.isArray(scripts) && scripts.length > 0) {
-        log.info('Caching scripts and preview...', {
-          scripts: scripts?.length,
-          preview: preview?.length,
+export const cacheMainScripts = debounce(
+  async (stamp?: Stamp) => {
+    try {
+      const receiveScripts = ({
+        scripts,
+        preview,
+        shortcuts,
+        scriptFlags,
+      }: {
+        scripts: Script[];
+        preview: string;
+        shortcuts: Shortcut[];
+        scriptFlags: FlagsOptions;
+      }) => {
+        if (Array.isArray(scripts) && scripts.length > 0) {
+          log.info('Caching scripts and preview...', {
+            scripts: scripts?.length,
+            preview: preview?.length,
+          });
+          preloadChoicesMap.set(getMainScriptPath(), scripts);
+          log.info('✉️ Sending scripts to prompt...');
+          if (preview) {
+            cacheMainPreview(preview);
+          }
+          if (scripts) {
+            // log.info the scripts with triggers
+            // log.info(
+            //   scripts
+            //     .filter((s) => s.trigger)
+            //     .map((s) => ({
+            //       trigger: s.trigger,
+            //       path: s.filePath,
+            //     })),
+            // );;
+            scoreAndCacheMainChoices(scripts);
+          }
+          if (shortcuts) {
+            kitCache.shortcuts = shortcuts;
+          }
+
+          if (scriptFlags) {
+            kitCache.scriptFlags = scriptFlags;
+          }
+
+          sendToAllPrompts(AppChannel.SET_CACHED_MAIN_PREVIEW, kitCache.preview);
+          sendToAllPrompts(AppChannel.INIT_PROMPT, {});
+        }
+      };
+      // const child = fork(
+      //   kitPath('run', 'terminal.js'),
+      //   [kitPath('setup', 'cache-grouped-scripts.js')],
+      //   forkOptions,
+      // );
+
+      if (!workers.cacheScripts) {
+        log.info(`Creating worker: ${CACHED_GROUPED_SCRIPTS_WORKER}...`);
+        workers.cacheScripts = new Worker(CACHED_GROUPED_SCRIPTS_WORKER);
+        workers.cacheScripts.on('exit', (exitCode) => {
+          log.error('Worker exited', {
+            exitCode,
+          });
         });
-        preloadChoicesMap.set(getMainScriptPath(), scripts);
-        log.info('✉️ Sending scripts to prompt...');
-        if (preview) {
-          cacheMainPreview(preview);
-        }
-        if (scripts) {
-          // log.info the scripts with triggers
-          // log.info(
-          //   scripts
-          //     .filter((s) => s.trigger)
-          //     .map((s) => ({
-          //       trigger: s.trigger,
-          //       path: s.filePath,
-          //     })),
-          // );;
-          scoreAndCacheMainChoices(scripts);
-        }
-        if (shortcuts) {
-          kitCache.shortcuts = shortcuts;
-        }
-
-        if (scriptFlags) {
-          kitCache.scriptFlags = scriptFlags;
-        }
-
-        sendToAllPrompts(AppChannel.SET_CACHED_MAIN_PREVIEW, kitCache.preview);
-        sendToAllPrompts(AppChannel.INIT_PROMPT, {});
+        workers.cacheScripts.on('message', receiveScripts);
+        workers.cacheScripts.on('messageerror', (error) => {
+          log.error('MessageError: Failed to cache main scripts', error);
+        });
+        // handle errors
+        workers.cacheScripts.on('error', (error) => {
+          if (error instanceof Error) {
+            log.error('Failed to cache main scripts', {
+              message: error.message,
+              stack: error.stack,
+              name: error.name,
+            });
+          } else {
+            log.error('Failed to cache main scripts', {
+              error: error,
+            });
+          }
+        });
       }
-    };
-    // const child = fork(
-    //   kitPath('run', 'terminal.js'),
-    //   [kitPath('setup', 'cache-grouped-scripts.js')],
-    //   forkOptions,
-    // );
 
-    if (!workers.cacheScripts) {
-      log.info(`Creating worker: ${CACHED_GROUPED_SCRIPTS_WORKER}...`);
-      workers.cacheScripts = new Worker(CACHED_GROUPED_SCRIPTS_WORKER);
-      workers.cacheScripts.on('exit', (exitCode) => {
-        log.error('Worker exited', {
-          exitCode,
-        });
-      });
-      workers.cacheScripts.on('message', receiveScripts);
-      workers.cacheScripts.on('messageerror', (error) => {
-        log.error('MessageError: Failed to cache main scripts', error);
-      });
-      // handle errors
-      workers.cacheScripts.on('error', (error) => {
-        if (error instanceof Error) {
-          log.error('Failed to cache main scripts', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name,
-          });
-        } else {
-          log.error('Failed to cache main scripts', {
-            error: error,
-          });
-        }
-      });
+      if (stamp?.filePath && isInDirectory(stamp?.filePath, kitPath())) {
+        log.info(`Ignore stamping .kit script: ${stamp.filePath}`);
+      } else {
+        log.info(`Stamping ${stamp?.filePath || 'cache only'} 💟`);
+        workers.cacheScripts.postMessage(stamp);
+      }
+    } catch (error) {
+      log.warn('Failed to cache main scripts at startup', error);
     }
-
-    log.info('Posting');
-    workers.cacheScripts.postMessage(stamp);
-  } catch (error) {
-    log.warn('Failed to cache main scripts at startup', error);
-  }
-}, 100);
+  },
+  250,
+  {
+    leading: true,
+  },
+);
 
 export const matchPackageJsonEngines = async () => {
   const KIT = kitPath();
