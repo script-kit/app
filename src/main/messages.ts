@@ -160,6 +160,7 @@ export const formatScriptChoices = (data: Choice[]) => {
 };
 
 export const createMessageMap = (info: ProcessAndPrompt) => {
+  const robot = shims['@jitsi/robotjs'];
   let exiting = false;
   const resetting = false;
 
