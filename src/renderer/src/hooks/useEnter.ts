@@ -78,7 +78,7 @@ export default () => {
         return;
       }
 
-      if (focusedChoice?.scrap && !flagValue) {
+      if (focusedChoice?.scriptlet && !flagValue) {
         // If any of the choice inputs are empty, don't submit
         if (choiceInputs.some((input) => input === '') || choiceInputs?.length !== focusedChoice?.inputs?.length) {
           setInvalidateChoiceInputs(true);
@@ -104,7 +104,7 @@ export default () => {
       let value;
       if (hasFocusedChoice) {
         // This should cover the flagged scrap scenario
-        if (focusedChoice?.scrap) {
+        if (focusedChoice?.scriptlet) {
           value = focusedChoice;
         } else {
           value = focusedChoice?.value;

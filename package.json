@@ -63,7 +63,12 @@
   "bugs": {
     "url": "https://github.com/johnlindquist/kitapp/issues"
   },
-  "keywords": ["electron", "react", "typescript", "ts"],
+  "keywords": [
+    "electron",
+    "react",
+    "typescript",
+    "ts"
+  ],
   "homepage": "https://github.com/johnlindquist/kitapp#readme",
   "jest": {
     "resolver": "jest-node-exports-resolver",
@@ -72,13 +77,25 @@
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/.erb/mocks/fileMock.js",
       "\\.(css|less|sass|scss)$": "identity-obj-proxy"
     },
-    "moduleFileExtensions": ["js", "jsx", "ts", "tsx", "json"],
-    "moduleDirectories": ["node_modules"],
-    "modulePathIgnorePatterns": [".history"],
-    "setupFiles": ["./.erb/scripts/CheckBuildsExist.js"]
+    "moduleFileExtensions": [
+      "js",
+      "jsx",
+      "ts",
+      "tsx",
+      "json"
+    ],
+    "moduleDirectories": [
+      "node_modules"
+    ],
+    "modulePathIgnorePatterns": [
+      ".history"
+    ],
+    "setupFiles": [
+      "./.erb/scripts/CheckBuildsExist.js"
+    ]
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.8.1",
+    "@biomejs/biome": "^1.8.2",
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@electron/notarize": "^2.3.2",
     "@fontsource/jetbrains-mono": "^5.0.20",
@@ -95,7 +112,7 @@
     "@types/download": "8.0.5",
     "@types/madge": "^5.0.3",
     "@types/minimist": "1.2.5",
-    "@types/node": "^20.14.6",
+    "@types/node": "^20.14.8",
     "@types/node-schedule": "^2.1.7",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -127,7 +144,7 @@
     "lodash-es": "^4.17.21",
     "memoize-one": "^6.0.0",
     "million": "^3.1.11",
-    "monaco-editor": "^0.47.0",
+    "monaco-editor": "^0.50.0",
     "patch-package": "^8.0.0",
     "petite-vue": "^0.4.1",
     "prettier": "^3.3.2",
@@ -189,9 +206,10 @@
     "rxjs": "^7.8.1",
     "tail": "^2.2.6",
     "tar": "^7.4.0",
-    "typescript": "^5.4.5",
+    "typescript": "^5.5.2",
     "untildify": "5.0.0",
-    "valtio": "^1.13.2"
+    "valtio": "^1.13.2",
+    "xstate": "^5.14.0"
   },
   "optionalDependencies": {
     "@jitsi/robotjs": "^0.6.13",
@@ -207,7 +225,11 @@
   },
   "browserslist": [],
   "renovate": {
-    "extends": ["bliss"],
-    "baseBranches": ["next"]
+    "extends": [
+      "bliss"
+    ],
+    "baseBranches": [
+      "next"
+    ]
   }
 }

@@ -86,11 +86,15 @@ function ResizableInput({ placeholder, className, index }) {
   const [inputWidth, setInputWidth] = useState(minWidth); // Minimum width
   const [currentInput, setCurrentInput] = useState('');
   const [choiceInputs, setChoiceInputs] = useAtom(choiceInputsAtom);
-  const [invalidateChoiceInputs, setInvalidateChoiceInputs] = useAtom(invalidateChoiceInputsAtom);
+  const [invalidateChoiceInputs, setInvalidateChoiceInputs] = useAtom(
+    invalidateChoiceInputsAtom,
+  );
   const [submitted] = useAtom(submittedAtom);
 
   useResizeObserver(hiddenInputRef, () => {
-    const newWidth = Math.ceil((hiddenInputRef?.current?.offsetWidth || minWidth) + 9);
+    const newWidth = Math.ceil(
+      (hiddenInputRef?.current?.offsetWidth || minWidth) + 9,
+    );
     const inputWidth = Math.max(newWidth, minWidth);
     setInputWidth(inputWidth); // Using 128 as minimum width
   });
@@ -109,10 +113,9 @@ function ResizableInput({ placeholder, className, index }) {
     }
   }, [invalidateChoiceInputs, currentInput]);
 
-  const hiddenInputString = (placeholder.length > currentInput.length ? placeholder : currentInput).replaceAll(
-    ' ',
-    '.',
-  );
+  const hiddenInputString = (
+    placeholder.length > currentInput.length ? placeholder : currentInput
+  ).replaceAll(' ', '.');
 
   return (
     <>
@@ -209,7 +212,10 @@ function MainInput() {
   const [fontSize] = useAtom(inputFontSizeAtom);
   const [onInputSubmit] = useAtom(onInputSubmitAtom);
   const [, setSubmitValue] = useAtom(submitValueAtom);
-  const setLastKeyDownWasModifier = debounce(useSetAtom(lastKeyDownWasModifierAtom), 300);
+  const setLastKeyDownWasModifier = debounce(
+    useSetAtom(lastKeyDownWasModifierAtom),
+    300,
+  );
   const _setLastKeyDownWasModifier = useSetAtom(_lastKeyDownWasModifierAtom);
   const setTyping = useSetAtom(typingAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
@@ -222,7 +228,9 @@ function MainInput() {
   const [currentModifiers, setModifiers] = useAtom(_modifiers);
   const [inputFocus, setInputFocus] = useAtom(inputFocusAtom);
 
-  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(miniShortcutsHoveredAtom);
+  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(
+    miniShortcutsHoveredAtom,
+  );
   const flags = useAtomValue(flagsAtom);
 
   const [pendingInput, setPendingInput] = useState('');
@@ -285,7 +293,9 @@ function MainInput() {
       }
 
       if (event.ctrlKey) {
-        const shortcut = shortcuts.find((s) => (s?.key || '')?.includes('ctrl'));
+        const shortcut = shortcuts.find((s) =>
+          (s?.key || '')?.includes('ctrl'),
+        );
         const key = shortcut?.key || '';
 
         if (key) {
@@ -309,10 +319,16 @@ function MainInput() {
       //   modifiers,
       // });
 
-      const currentModifiers = modifiers.filter((m) => event.getModifierState(m)).flatMap(remapModifiers);
+      const currentModifiers = modifiers
+        .filter((m) => event.getModifierState(m))
+        .flatMap(remapModifiers);
 
       const modifiersNotShift = currentModifiers.filter((m) => m !== 'shift');
-      if (input && shortcodes.includes(input) && modifiersNotShift.length === 0) {
+      if (
+        input &&
+        shortcodes.includes(input) &&
+        modifiersNotShift.length === 0
+      ) {
         log.info(`${window.pid}: preventDefault(): found: '${input}'`);
         // setAppendToLog(`${window.pid}: preventDefault(): found: '${input}'`);
         // event.preventDefault();
@@ -328,7 +344,9 @@ function MainInput() {
       if (typeof setLastKeyDownWasModifier?.cancel === 'function') {
         setLastKeyDownWasModifier.cancel();
       }
-      setLastKeyDownWasModifier(modifiers.includes(event.key) && event.key !== 'Shift');
+      setLastKeyDownWasModifier(
+        modifiers.includes(event.key) && event.key !== 'Shift',
+      );
 
       // If not Enter, Tab, or a modifier, setTyping to true
       if (event.key !== 'Enter' && event.key !== 'Tab' && !modifiers.length) {
@@ -343,12 +361,25 @@ function MainInput() {
         });
       }
     },
-    [setSelectionStart, setModifiers, setLastKeyDownWasModifier, setTyping, shortcuts, flags, setInput, shortcodes],
+    [
+      setSelectionStart,
+      setModifiers,
+      setLastKeyDownWasModifier,
+      setTyping,
+      shortcuts,
+      flags,
+      setInput,
+      shortcodes,
+    ],
   );
 
   const onKeyUp = useCallback(
     (event) => {
-      setModifiers(modifiers.filter((m) => event.getModifierState(m)).flatMap(remapModifiers));
+      setModifiers(
+        modifiers
+          .filter((m) => event.getModifierState(m))
+          .flatMap(remapModifiers),
+      );
 
       if (typeof setLastKeyDownWasModifier?.cancel === 'function') {
         setLastKeyDownWasModifier.cancel();
@@ -423,9 +454,13 @@ export default function Input() {
   const actions = useAtomValue(actionsAtom);
   const enterButtonName = useAtomValue(enterButtonNameAtom);
   const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
-  const shouldActionButtonShowOnInput = useAtomValue(shouldActionButtonShowOnInputAtom);
+  const shouldActionButtonShowOnInput = useAtomValue(
+    shouldActionButtonShowOnInputAtom,
+  );
   const miniShortcutsVisible = useAtomValue(miniShortcutsVisibleAtom);
-  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(miniShortcutsHoveredAtom);
+  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(
+    miniShortcutsHoveredAtom,
+  );
 
   const footerHidden = useAtomValue(footerHiddenAtom);
   const inputHeight = useAtomValue(inputHeightAtom);
@@ -462,7 +497,7 @@ export default function Input() {
         {name} - {description}
       </div> */}
       <div
-        className="max-w-screen flex-1 flex flex-nowrap items-center max-h-full"
+        className="max-w-screen flex-1 flex flex-nowrap items-center max-h-full mt-0.5"
         style={
           {
             // WebkitAppRegion: 'drag',
@@ -475,7 +510,7 @@ export default function Input() {
       </div>
       {footerHidden && (
         <div
-          className="flex flex-row items-center justify-end overflow-x-clip"
+          className="flex flex-row items-center justify-end overflow-x-clip mt-0.5"
           style={{
             maxWidth: '80%',
           }}
@@ -499,7 +534,10 @@ export default function Input() {
                   if (!action?.visible && miniShortcutsVisible) {
                     return [
                       // eslint-disable-next-line react/jsx-key
-                      <ActionButton key={`${action?.key}-button`} {...action} />,
+                      <ActionButton
+                        key={`${action?.key}-button`}
+                        {...action}
+                      />,
                       // eslint-disable-next-line no-nested-ternary
                       i < array.length - 1 ? (
                         <ActionSeparator key={`${action?.key}-separator`} />

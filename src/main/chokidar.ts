@@ -11,7 +11,7 @@ export const startWatching = (callback: WatcherCallback) => {
     [
       path.resolve(kenvPath('snippets', '*')),
       path.resolve(kenvPath('scripts', '*')),
-      path.resolve(kenvPath('scraps', '*')),
+      path.resolve(kenvPath('scriptlets', '*')),
     ],
     {
       depth: 0,
@@ -37,7 +37,8 @@ export const startWatching = (callback: WatcherCallback) => {
     const globs = [
       path.resolve(filePath, 'snippets', '*'),
       path.resolve(filePath, 'scripts', '*'),
-      path.resolve(filePath, 'scraps', '*'),
+      path.resolve(filePath, 'scriptlets', '*'),
+      path.resolve(filePath, '*'),
     ];
 
     setTimeout(() => {
@@ -49,7 +50,12 @@ export const startWatching = (callback: WatcherCallback) => {
   kenvsWatcher.on('unlinkDir', (filePath) => {
     log.info(`🕵️‍♂️ Detected removed dir in "kenvs": ${filePath}`);
 
-    const globs = [path.resolve(filePath, 'scripts', '*')];
+    const globs = [
+      path.resolve(filePath, 'snippets', '*'),
+      path.resolve(filePath, 'scripts', '*'),
+      path.resolve(filePath, 'scriptlets', '*'),
+      path.resolve(filePath, '*'),
+    ];
 
     setTimeout(() => {
       log.info(`Removing globs: ${globs}`);
@@ -61,8 +67,8 @@ export const startWatching = (callback: WatcherCallback) => {
     kenvScriptsWatcher.unwatch(path.resolve(filePath, 'scripts', '*'));
   });
 
-  const fileWatcher = chokidar.watch([userDbPath, kenvPath('.env'), kenvPath('kit.css'), kenvPath('package.json')], {
-    disableGlobbing: true,
+  const fileWatcher = chokidar.watch([userDbPath, kenvPath('*')], {
+    depth: 0,
     ignoreInitial: kitState.ignoreInitial,
   });
 

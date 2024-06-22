@@ -1920,7 +1920,6 @@ export const submitValueAtom = atom(
     // if (submitted) return;
 
     const flag = g(focusedFlagValueAtom);
-    log.info({ a });
     const value = checkSubmitFormat(g, a);
 
     // log.info({

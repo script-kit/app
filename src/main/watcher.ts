@@ -16,7 +16,7 @@ import { subscribeKey } from 'valtio/utils';
 import {
   kenvPath,
   kitPath,
-  parseMarkdownAsScraps,
+  parseMarkdownAsScriptlets,
   parseScript,
   resolveToScriptPath,
 } from '@johnlindquist/kit/core/utils';
@@ -316,9 +316,9 @@ export const onScriptsChanged = async (event: WatchEvent, filePath: string, rebu
     const scripts: Script[] = [];
     if (filePath.endsWith('.md')) {
       const markdown = await readFile(filePath, 'utf8');
-      const scraps = await parseMarkdownAsScraps(markdown);
-      for (const scrap of scraps) {
-        scripts.push(scrap);
+      const scriptlets = await parseMarkdownAsScriptlets(markdown);
+      for (const scriptlet of scriptlets) {
+        scripts.push(scriptlet);
       }
     } else {
       const script = await parseScript(filePath);
@@ -682,6 +682,16 @@ export const parseEnvFile = debounce(async (filePath: string, eventName: WatchEv
   }
 }, 100);
 
+export const restartWatchers = debounce(
+  async () => {
+    log.info(`🔄 Restarting watchers ----------------------------------------------------------------------`);
+    await teardownWatchers();
+    await setupWatchers();
+  },
+  500,
+  { leading: false },
+);
+
 export const setupWatchers = async () => {
   await teardownWatchers();
   if (kitState.ignoreInitial) {
@@ -692,7 +702,18 @@ export const setupWatchers = async () => {
 
   watchers = startWatching(async (eventName: WatchEvent, filePath: string) => {
     // if (!filePath.match(/\.(ts|js|json|txt|env)$/)) return;
-    const { base, dir } = path.parse(filePath);
+    const { base, dir, name } = path.parse(filePath);
+
+    log.info({
+      base,
+      dir,
+      name,
+    });
+    if (base === name && (name === 'scriptlets' || name === 'scripts' || name === 'snippets')) {
+      log.info(`${base} changed. Restarting all watchers`);
+      await restartWatchers();
+      return;
+    }
 
     if (base === 'run.txt') {
       log.info(`run.txt ${eventName}`);
@@ -799,17 +820,22 @@ export const setupWatchers = async () => {
       return;
     }
 
-    if (dir.endsWith('scraps')) {
+    if (dir.endsWith('scriptlets')) {
       // onScriptsChanged(eventName, filePath);
       await cacheMainScripts();
       return;
     }
 
-    onScriptsChanged(eventName, filePath);
+    if (dir.endsWith('scripts')) {
+      onScriptsChanged(eventName, filePath);
+      return;
+    }
+
+    log.warn(`🔄 ${eventName} ${filePath}, but not handled... Is this a bug?`);
   });
 };
 
-subscribeKey(kitState, 'suspendWatchers', async (suspendWatchers) => {
+subscribeKey(kitState, 'suspendWatchers', (suspendWatchers) => {
   if (suspendWatchers) {
     log.info('⌚️ Suspending Watchers');
     teardownWatchers();
@@ -829,6 +855,6 @@ emitter.on(KitEvent.RestartWatcher, async () => {
   }
 });
 
-emitter.on(KitEvent.Sync, async () => {
+emitter.on(KitEvent.Sync, () => {
   checkUserDb('sync');
 });
