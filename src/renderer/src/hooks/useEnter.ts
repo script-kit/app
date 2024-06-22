@@ -3,6 +3,7 @@ import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
+  choiceInputsAtom,
   choicesAtom,
   cmdAtom,
   enterButtonDisabledAtom,
@@ -13,6 +14,7 @@ import {
   hasFocusedChoiceAtom,
   indexAtom,
   inputAtom,
+  invalidateChoiceInputsAtom,
   panelHTMLAtom,
   promptDataAtom,
   selectedChoicesAtom,
@@ -37,8 +39,9 @@ export default () => {
   const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
   const focusedChoice = useAtomValue(focusedChoiceAtom);
   const hasFocusedChoice = useAtomValue(hasFocusedChoiceAtom);
-  const selectedChoices = useAtomValue(selectedChoicesAtom);
   const toggleSelectedChoice = useSetAtom(toggleSelectedChoiceAtom);
+  const choiceInputs = useAtomValue(choiceInputsAtom);
+  const setInvalidateChoiceInputs = useSetAtom(invalidateChoiceInputsAtom);
 
   useHotkeys(
     'enter',
@@ -75,6 +78,16 @@ export default () => {
         return;
       }
 
+      if (focusedChoice?.scrap && !flagValue) {
+        // If any of the choice inputs are empty, don't submit
+        if (choiceInputs.some((input) => input === '') || choiceInputs?.length !== focusedChoice?.inputs?.length) {
+          setInvalidateChoiceInputs(true);
+          return;
+        }
+        submit(choiceInputs);
+        return;
+      }
+
       if (promptData?.multiple && !flagValue) {
         toggleSelectedChoice(focusedChoice?.id as string);
         return;
@@ -84,10 +97,23 @@ export default () => {
         if ((choices.length && hasFocusedChoice) || flagValue) {
           // log.info(`submitting focused choice: ${focusedChoice?.value}`);
           submit(focusedChoice?.value);
+          return;
+        }
+      }
+
+      let value;
+      if (hasFocusedChoice) {
+        // This should cover the flagged scrap scenario
+        if (focusedChoice?.scrap) {
+          value = focusedChoice;
+        } else {
+          value = focusedChoice?.value;
         }
       } else {
-        submit(hasFocusedChoice ? focusedChoice?.value : input);
+        value = input;
       }
+
+      submit(value);
     },
     hotkeysOptions,
     [
@@ -102,6 +128,7 @@ export default () => {
       hasFocusedChoice,
       toggleSelectedChoice,
       flagValue,
+      choiceInputs,
     ],
   );
 };

@@ -615,6 +615,7 @@ export const hasFocusedChoiceAtom = atom((g) => g(_focused) && g(_focused)?.name
 
 const throttleChoiceFocused = throttle(
   (g, s, choice: Choice) => {
+    s(choiceInputsAtom, []);
     if (choice?.skip) {
       return;
     }
@@ -1396,12 +1397,17 @@ export const mainHeightAtom = atom(
   },
 );
 
-const checkSubmitFormat = (checkValue: any) => {
+const checkSubmitFormat = (g: Getter, checkValue: any) => {
   // check for array buffer
   if (checkValue instanceof ArrayBuffer) {
     return checkValue;
   }
   if (Array.isArray(checkValue)) {
+    // TODO: I don't like all this checkValue nonsense
+    if (g(choiceInputsAtom).length > 0) {
+      return checkValue;
+    }
+
     const files = checkValue.map((file) => {
       const fileObject: any = {};
 
@@ -1607,6 +1613,7 @@ export const promptDataAtom = atom(
       s(focusedFlagValueAtom, '');
 
       s(flagsAtom, a?.flags || {});
+      s(choiceInputsAtom, []);
 
       s(headerHiddenAtom, !!a?.headerClassName?.includes('hidden'));
       s(footerHiddenAtom, !!a?.footerClassName?.includes('hidden'));
@@ -1913,7 +1920,8 @@ export const submitValueAtom = atom(
     // if (submitted) return;
 
     const flag = g(focusedFlagValueAtom);
-    const value = checkSubmitFormat(a);
+    log.info({ a });
+    const value = checkSubmitFormat(g, a);
 
     // log.info({
     //   submitValue: value,
@@ -2982,6 +2990,7 @@ export const lastKeyDownWasModifierAtom = atom(
 );
 
 export const miniShortcutsVisibleAtom = atom((g) => {
+  return false;
   const ms = g(_modifiers).filter((m) => !m.toLowerCase().includes('shift'));
   const justOpened = g(justOpenedAtom);
   const flagValue = g(flaggedChoiceValueAtom);
@@ -3393,3 +3402,19 @@ export const setFlagByShortcutAtom = atom(null, (g, s, a: string) => {
   const flag = Object.keys(flags).find((key) => flags[key]?.shortcut === a);
   s(flaggedChoiceValueAtom, flag);
 });
+
+const _choiceInputsAtom = atom<string[]>([]);
+export const choiceInputsAtom = atom(
+  (g) => g(_choiceInputsAtom),
+  (g, s, a: string[]) => {
+    s(_choiceInputsAtom, a);
+  },
+);
+
+const _invalidateChoiceInputsAtom = atom(false);
+export const invalidateChoiceInputsAtom = atom(
+  (g) => g(_invalidateChoiceInputsAtom),
+  (g, s, a: boolean) => {
+    s(_invalidateChoiceInputsAtom, a);
+  },
+);

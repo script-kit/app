@@ -1,7 +1,16 @@
 import { Channel, PROMPT } from '@johnlindquist/kit/core/enum';
 import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { type ChangeEvent, type KeyboardEvent, type LegacyRef, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type ChangeEvent,
+  type KeyboardEvent,
+  type LegacyRef,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import useResizeObserver from '@react-hook/resize-observer';
 import { debounce } from 'lodash-es';
@@ -10,23 +19,21 @@ import {
   _lastKeyDownWasModifierAtom,
   _modifiers,
   actionsAtom,
-  appendToLogHTMLAtom,
   cachedAtom,
   channelAtom,
-  choicesConfigAtom,
+  choiceInputsAtom,
   enterButtonDisabledAtom,
   enterButtonNameAtom,
   flagsAtom,
   focusedChoiceAtom,
   footerHiddenAtom,
-  headerHiddenAtom,
   inputAtom,
   inputFocusAtom,
   inputFontSizeAtom,
   inputHeightAtom,
+  invalidateChoiceInputsAtom,
   kitStateAtom,
   lastKeyDownWasModifierAtom,
-  loadingAtom,
   miniShortcutsHoveredAtom,
   miniShortcutsVisibleAtom,
   modifiers,
@@ -41,9 +48,7 @@ import {
   signInActionAtom,
   submitValueAtom,
   submittedAtom,
-  tabIndexAtom,
   typingAtom,
-  uiAtom,
   userAtom,
 } from '../jotai';
 import { ActionButton } from './actionbutton';
@@ -66,57 +71,168 @@ const remapModifiers = (m: string) => {
   return m.toLowerCase();
 };
 
-export default function Input() {
+const debouncedFocus = debounce(
+  (inputRef: RefObject<HTMLInputElement>) => {
+    inputRef.current?.focus();
+  },
+  100,
+  { leading: true, trailing: false },
+);
+
+const minWidth = 24;
+function ResizableInput({ placeholder, className, index }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const hiddenInputRef = useRef<HTMLSpanElement>(null);
+  const [inputWidth, setInputWidth] = useState(minWidth); // Minimum width
+  const [currentInput, setCurrentInput] = useState('');
+  const [choiceInputs, setChoiceInputs] = useAtom(choiceInputsAtom);
+  const [invalidateChoiceInputs, setInvalidateChoiceInputs] = useAtom(invalidateChoiceInputsAtom);
+  const [submitted] = useAtom(submittedAtom);
+
+  useResizeObserver(hiddenInputRef, () => {
+    const newWidth = Math.ceil((hiddenInputRef?.current?.offsetWidth || minWidth) + 9);
+    const inputWidth = Math.max(newWidth, minWidth);
+    setInputWidth(inputWidth); // Using 128 as minimum width
+  });
+
+  useEffect(() => {
+    choiceInputs[index] = currentInput;
+    if (currentInput) {
+      setInvalidateChoiceInputs(false);
+    }
+  }, [currentInput]);
+
+  useEffect(() => {
+    if (invalidateChoiceInputs && currentInput === '') {
+      // focus the input
+      debouncedFocus(inputRef);
+    }
+  }, [invalidateChoiceInputs, currentInput]);
+
+  const hiddenInputString = (placeholder.length > currentInput.length ? placeholder : currentInput).replaceAll(
+    ' ',
+    '.',
+  );
+
+  return (
+    <>
+      <span
+        ref={hiddenInputRef}
+        style={{
+          position: 'absolute',
+          visibility: 'hidden',
+          // don't break on any lines
+          whiteSpace: 'nowrap',
+          boxSizing: 'border-box',
+        }}
+        className={'px-2 tracking-normal absolute bg-red-500'}
+      >
+        {hiddenInputString}
+      </span>
+      <input
+        ref={inputRef}
+        onChange={(e) => setCurrentInput(e.target.value)}
+        placeholder={placeholder}
+        className={`
+ring-0 focus:ring-0 outline-none
+
+
+outline-offset-0
+outline-1
+focus:outline-1
+focus:outline-offset-0
+
+${currentInput === '' && invalidateChoiceInputs ? 'outline-primary/50 focus:outline-primary/90' : 'outline-secondary/20 focus:outline-primary/50'}
+border-none
+overflow-hidden
+tracking-normal
+text-text-base placeholder-text-base
+placeholder-opacity-25
+placeholder:tracking-normal
+bg-secondary/5
+rounded-md
+text-md
+${submitted && 'text-opacity-50'}
+outline-none
+outline-hidden pr-1
+mx-1
+        `}
+        style={{
+          minWidth: `${inputWidth}px`,
+          width: `${inputWidth}px`,
+          height: '60%',
+          whiteSpace: 'nowrap',
+          boxSizing: 'border-box',
+        }}
+      />
+    </>
+  );
+}
+
+function QuickInputs() {
+  const focusedChoice = useAtomValue(focusedChoiceAtom);
+  const [fontSize] = useAtom(inputFontSizeAtom);
+  const [submitted] = useAtom(submittedAtom);
+  const [promptData] = useAtom(promptDataAtom);
+  const setChoiceInputs = useSetAtom(choiceInputsAtom);
+
+  useEffect(() => {
+    if (Array.isArray(focusedChoice?.inputs)) {
+      setChoiceInputs(focusedChoice?.inputs?.map(() => ''));
+    }
+  }, [focusedChoice]);
+
+  if (!focusedChoice?.inputs) {
+    return null;
+  }
+
+  return focusedChoice.inputs.map((placeholder, i) => (
+    <ResizableInput key={placeholder} index={i} placeholder={placeholder} />
+  ));
+}
+
+function MainInput() {
+  const inputRef = useRef<HTMLInputElement>(null);
+
   useFocus(inputRef);
 
-  const shortcodes = useAtomValue(shortcodesAtom);
-  const setAppendToLog = useSetAtom(appendToLogHTMLAtom);
-  const [inputValue, setInput] = useAtom(inputAtom);
-  const [, setTabIndex] = useAtom(tabIndexAtom);
-  const [unfilteredChoices] = useAtom(choicesConfigAtom);
-  const [, setSubmitValue] = useAtom(submitValueAtom);
-  const [placeholder] = useAtom(placeholderAtom);
-  const [promptData] = useAtom(promptDataAtom);
-  const [submitted] = useAtom(submittedAtom);
-  const [, setSelectionStart] = useAtom(selectionStartAtom);
-  const [currentModifiers, setModifiers] = useAtom(_modifiers);
-  const [onInputSubmit] = useAtom(onInputSubmitAtom);
-  const [inputFocus, setInputFocus] = useAtom(inputFocusAtom);
-  const [ui] = useAtom(uiAtom);
-  const [fontSize] = useAtom(inputFontSizeAtom);
-  const actions = useAtomValue(actionsAtom);
-  const enterButtonName = useAtomValue(enterButtonNameAtom);
-  const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
-  const flags = useAtomValue(flagsAtom);
-  const shouldActionButtonShowOnInput = useAtomValue(shouldActionButtonShowOnInputAtom);
-  const miniShortcutsVisible = useAtomValue(miniShortcutsVisibleAtom);
-  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(miniShortcutsHoveredAtom);
-  const loading = useAtomValue(loadingAtom);
-  const headerHidden = useAtomValue(headerHiddenAtom);
-  const footerHidden = useAtomValue(footerHiddenAtom);
-  const inputHeight = useAtomValue(inputHeightAtom);
+  const minWidth = 96; // Set a minimum width for the input
+  const [hiddenInputMeasurerWidth, setHiddenInputMeasurerWidth] = useState(0);
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
 
+  useResizeObserver(hiddenInputRef, () => {
+    const newWidth = Math.ceil((hiddenInputRef?.current?.offsetWidth || 0) + 1); // Adding 1px for better accuracy
+    setHiddenInputMeasurerWidth(Math.max(newWidth, minWidth));
+  });
+
+  const [inputValue, setInput] = useAtom(inputAtom);
+  const [fontSize] = useAtom(inputFontSizeAtom);
+  const [onInputSubmit] = useAtom(onInputSubmitAtom);
+  const [, setSubmitValue] = useAtom(submitValueAtom);
   const setLastKeyDownWasModifier = debounce(useSetAtom(lastKeyDownWasModifierAtom), 300);
   const _setLastKeyDownWasModifier = useSetAtom(_lastKeyDownWasModifierAtom);
   const setTyping = useSetAtom(typingAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
-  const user = useAtomValue(userAtom);
-  const kitState = useAtomValue(kitStateAtom);
   const channel = useAtomValue(channelAtom);
+  const shortcodes = useAtomValue(shortcodesAtom);
+
+  const [promptData] = useAtom(promptDataAtom);
+  const [submitted] = useAtom(submittedAtom);
+  const [, setSelectionStart] = useAtom(selectionStartAtom);
+  const [currentModifiers, setModifiers] = useAtom(_modifiers);
+  const [inputFocus, setInputFocus] = useAtom(inputFocusAtom);
+
+  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(miniShortcutsHoveredAtom);
+  const flags = useAtomValue(flagsAtom);
+
+  const [pendingInput, setPendingInput] = useState('');
+  const cached = useAtomValue(cachedAtom);
   const focusedChoice = useAtomValue(focusedChoiceAtom);
-  const sendShortcut = useSetAtom(sendShortcutAtom);
-  const action = useAtomValue(signInActionAtom);
 
-  const onClick = useCallback(
-    (event) => {
-      if (action) {
-        sendShortcut(action.key);
-      }
-    },
-    [action, sendShortcut],
-  );
-
+  let [placeholder] = useAtom(placeholderAtom);
+  if (focusedChoice && focusedChoice?.inputs?.length > 0) {
+    placeholder = focusedChoice.name;
+  }
   useEffect(() => {
     setInputFocus(Math.random());
     setMiniShortcutsHovered(false);
@@ -127,8 +243,29 @@ export default function Input() {
     };
   }, [setInputFocus, setMiniShortcutsHovered, setModifiers]);
 
-  useTab();
-  useKeyIndex();
+  useEffect(() => {
+    if (!cached && pendingInput) {
+      setInput(pendingInput);
+      setPendingInput('');
+    }
+  }, [cached, pendingInput, setInput]);
+
+  const onChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      // log.info(event.target.value, { cached: cached ? 'true' : 'false' });
+      if (onInputSubmit[event.target.value] && !submitted) {
+        const submitValue = onInputSubmit[event.target.value];
+        setSubmitValue(submitValue);
+      } else if (cached) {
+        setPendingInput(event.target.value);
+      } else {
+        log.info(`Setting input: ${event.target.value}`);
+        setInput(event.target.value);
+        setPendingInput('');
+      }
+    },
+    [onInputSubmit, submitted, setSubmitValue, setInput, cached],
+  );
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
@@ -221,47 +358,97 @@ export default function Input() {
     [setModifiers],
   );
 
-  const minWidth = 128; // Set a minimum width for the input
-  const [hiddenInputMeasurerWidth, setHiddenInputMeasurerWidth] = useState(0);
-  const hiddenInputRef = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <span
+        ref={hiddenInputRef}
+        id="hidden-input-measurer"
+        className={`${fontSize} p-1 tracking-normal absolute`}
+        style={{
+          position: 'absolute',
+          visibility: 'hidden',
+          // don't break on any lines
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {`${inputValue || placeholder}-pr`}
+      </span>
+      <input
+        id="input"
+        spellCheck="false"
+        style={
+          {
+            width: `${hiddenInputMeasurerWidth}px`,
+            // WebkitAppRegion: 'no-drag',
+            // WebkitUserSelect: 'none',
+            ...(submitted && { caretColor: 'transparent' }),
+          } as any
+        }
+        disabled={submitted}
+        className={`
 
-  useResizeObserver(hiddenInputRef, (entry) => {
-    const newWidth = Math.ceil(hiddenInputRef?.current?.offsetWidth + 1); // Adding 1px for better accuracy
-    setHiddenInputMeasurerWidth(Math.max(newWidth, minWidth));
-  });
+bg-transparent tracking-normal text-text-base placeholder-text-base
+placeholder-opacity-25
+placeholder:tracking-normal
+outline-none
+focus:outline-none
+focus:border-none
+border-none
+${fontSize}
+${submitted && 'text-opacity-50'}
 
-  const cached = useAtomValue(cachedAtom);
+max-w-full  pl-4 pr-0 py-0 ring-0 ring-opacity-0
+focus:ring-0
+focus:ring-opacity-0
 
-  const onChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      // log.info(event.target.value, { cached: cached ? 'true' : 'false' });
-      if (onInputSubmit[event.target.value] && !submitted) {
-        const submitValue = onInputSubmit[event.target.value];
-        setSubmitValue(submitValue);
-      } else if (cached) {
-        setPendingInput(event.target.value);
-      } else {
-        log.info(`Setting input: ${event.target.value}`);
-        setInput(event.target.value);
-        setPendingInput('');
-      }
-    },
-    [onInputSubmit, submitted, setSubmitValue, setInput, cached],
+${promptData?.inputClassName || ''}
+`}
+        onChange={onChange}
+        onKeyDown={onKeyDown}
+        onKeyUp={onKeyUp}
+        onKeyUpCapture={onKeyUp}
+        placeholder={placeholder}
+        ref={inputRef as LegacyRef<HTMLInputElement>}
+        type={promptData?.secret ? 'password' : promptData?.type || 'text'}
+        value={inputValue}
+      />
+    </>
   );
+}
 
-  const [pendingInput, setPendingInput] = useState('');
+export default function Input() {
+  const [inputFocus, setInputFocus] = useAtom(inputFocusAtom);
 
-  useEffect(() => {
-    if (!cached && pendingInput) {
-      setInput(pendingInput);
-      setPendingInput('');
+  const [fontSize] = useAtom(inputFontSizeAtom);
+  const actions = useAtomValue(actionsAtom);
+  const enterButtonName = useAtomValue(enterButtonNameAtom);
+  const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
+  const shouldActionButtonShowOnInput = useAtomValue(shouldActionButtonShowOnInputAtom);
+  const miniShortcutsVisible = useAtomValue(miniShortcutsVisibleAtom);
+  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(miniShortcutsHoveredAtom);
+
+  const footerHidden = useAtomValue(footerHiddenAtom);
+  const inputHeight = useAtomValue(inputHeightAtom);
+
+  const user = useAtomValue(userAtom);
+  const kitState = useAtomValue(kitStateAtom);
+  const focusedChoice = useAtomValue(focusedChoiceAtom);
+  const sendShortcut = useSetAtom(sendShortcutAtom);
+  const action = useAtomValue(signInActionAtom);
+
+  const onClick = useCallback(() => {
+    if (action) {
+      sendShortcut(action.key);
     }
-  }, [cached, pendingInput, setInput]);
+  }, [action, sendShortcut]);
+
+  useTab();
+  useKeyIndex();
 
   return (
     <div
       key="input"
-      className={`flex flex-row ${footerHidden && '-mt-px'} max-w-screen relative`}
+      className={`flex flex-row justify-between ${footerHidden && '-mt-px'} max-w-screen relative overflow-x-hidden`}
       style={{
         height: inputHeight || PROMPT.INPUT.HEIGHT.SM,
       }}
@@ -275,59 +462,16 @@ export default function Input() {
         {name} - {description}
       </div> */}
       <div
-        className="max-w-screen flex-1"
-        style={{
-          WebkitAppRegion: 'drag',
-          WebkitUserSelect: 'none',
-        }}
-      >
-        <input
-          id="input"
-          spellCheck="false"
-          style={
-            {
-              width: `${Math.max(hiddenInputMeasurerWidth, inputValue?.length > 12 ? 256 : 128)}px`,
-              WebkitAppRegion: 'no-drag',
-              WebkitUserSelect: 'none',
-              ...(submitted && { caretColor: 'transparent' }),
-            } as any
+        className="max-w-screen flex-1 flex flex-nowrap items-center max-h-full"
+        style={
+          {
+            // WebkitAppRegion: 'drag',
+            // WebkitUserSelect: 'none',
           }
-          disabled={submitted}
-          className={`
-      flex-1 bg-transparent tracking-normal text-text-base placeholder-text-base
-      placeholder-opacity-25 outline-none
-      placeholder:tracking-normal
-      focus:outline-none
-      ${fontSize}
-      ${submitted && 'text-opacity-50'}
-      h-full
-      max-w-full border-none px-4 py-0 ring-0 ring-opacity-0
-      focus:border-none focus:ring-0
-      focus:ring-opacity-0
-      ${promptData?.inputClassName || ''}
-      `}
-          onChange={onChange}
-          onKeyDown={onKeyDown}
-          onKeyUp={onKeyUp}
-          onKeyUpCapture={onKeyUp}
-          placeholder={placeholder}
-          ref={inputRef as LegacyRef<HTMLInputElement>}
-          type={promptData?.secret ? 'password' : promptData?.type || 'text'}
-          value={inputValue}
-        />
-        <span
-          ref={hiddenInputRef}
-          id="hidden-input-measurer"
-          className={`${fontSize} px-4 tracking-normal`}
-          style={{
-            position: 'absolute',
-            visibility: 'hidden',
-            // don't break on any lines
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {`${inputValue || placeholder}-pr`}
-        </span>
+        }
+      >
+        <MainInput />
+        <QuickInputs />
       </div>
       {footerHidden && (
         <div
@@ -336,6 +480,7 @@ export default function Input() {
             maxWidth: '80%',
           }}
         >
+          {/* biome-ignore lint/a11y/useKeyWithMouseEvents: <explanation> */}
           <div
             onMouseOver={() => setMiniShortcutsHovered(true)}
             onMouseLeave={() => setMiniShortcutsHovered(false)}
@@ -354,7 +499,7 @@ export default function Input() {
                   if (!action?.visible && miniShortcutsVisible) {
                     return [
                       // eslint-disable-next-line react/jsx-key
-                      <ActionButton {...action} />,
+                      <ActionButton key={`${action?.key}-button`} {...action} />,
                       // eslint-disable-next-line no-nested-ternary
                       i < array.length - 1 ? (
                         <ActionSeparator key={`${action?.key}-separator`} />
@@ -417,6 +562,7 @@ export default function Input() {
               <span
                 className={`relative ${inputHeight === PROMPT.INPUT.HEIGHT.XS ? 'w-[28px]' : 'w-[30px]'} pl-1 pr-1`}
               >
+                {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
                 <img
                   onClick={onClick}
                   alt="avatar"
@@ -424,6 +570,7 @@ export default function Input() {
                   className="z-0 w-[22px] cursor-pointer rounded-full hover:opacity-75"
                 />
 
+                {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
                 <svg
                   height="24"
                   width="24"

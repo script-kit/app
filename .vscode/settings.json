@@ -46,5 +46,6 @@
     "commandCenter.border": "#15202b99"
   },
   "peacock.color": "#f9e64f",
-  "editor.defaultFormatter": "biomejs.biome"
+  "editor.defaultFormatter": "biomejs.biome",
+  "prettier.enable": false
 }

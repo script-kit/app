@@ -211,14 +211,14 @@ export default () => {
       if (selectionStart === input.length && event.key !== 'ArrowLeft') {
         event.preventDefault();
         if (!flagValue && (flagsArray.length || Boolean(choices?.[index]?.actions))) {
-          setFlagValue(choices.length ? choices[index].value : input);
+          // setFlagValue(choices.length ? choices[index].value : input);
         }
         channel(Channel.FORWARD);
       } else if (selectionStart === 0 && event.key !== 'ArrowRight') {
         event.preventDefault();
 
         if (flagValue) {
-          setFlagValue('');
+          // setFlagValue('');
         }
         channel(Channel.BACK);
       }

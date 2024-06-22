@@ -341,7 +341,7 @@ ${data.error}
   });
 
   ipcMain.on(AppChannel.EDIT_SCRIPT, async (event, { script }: Required<AppState>) => {
-    if ((isInDir(kitPath()), script.filePath)) {
+    if (isInDir(kitPath())(script.filePath)) {
       return;
     }
     await runPromptProcess(kitPath('main/edit.js'), [script.filePath], {

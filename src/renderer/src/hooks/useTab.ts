@@ -1,8 +1,8 @@
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
-import { channelAtom, inputAtom, tabIndexAtom, tabsAtom } from '../jotai';
+import { channelAtom, focusedChoiceAtom, inputAtom, isMainScriptAtom, tabIndexAtom, tabsAtom } from '../jotai';
 import { hotkeysOptions } from './shared';
 
 export default () => {
@@ -10,10 +10,15 @@ export default () => {
   const [tabs] = useAtom(tabsAtom);
   const [channel] = useAtom(channelAtom);
   const [inputValue, setInput] = useAtom(inputAtom);
+  const isMainScript = useAtom(isMainScriptAtom);
+  const focusedChoice = useAtomValue(focusedChoiceAtom);
 
   useHotkeys(
     'tab,shift+tab',
     (event) => {
+      if (focusedChoice?.inputs?.length) {
+        return;
+      }
       event.preventDefault();
       if (tabs?.length) {
         let ti = 0;
@@ -38,6 +43,6 @@ export default () => {
       channel(Channel.TAB);
     },
     hotkeysOptions,
-    [tabIndex, tabs, channel, inputValue],
+    [tabIndex, tabs, channel, inputValue, isMainScript],
   );
 };

@@ -31,7 +31,7 @@ import type { ChannelMap, SendData } from '@johnlindquist/kit/types/kitapp';
 import { getMainScriptPath, kenvPath, kitPath } from '@johnlindquist/kit/core/utils';
 
 // const { pathExistsSync, readJson } = fsExtra;
-import { getTimestamps } from '@johnlindquist/kit/core/db';
+import { type Stamp, getTimestamps } from '@johnlindquist/kit/core/db';
 import { type Logger, getLog, warn } from './logs';
 import { clearPromptCache, getCurrentScreenFromMouse } from './prompt';
 import {
@@ -60,6 +60,7 @@ import { AppChannel, Trigger } from '../shared/enums';
 import { stripAnsi } from './ansi';
 import { getClipboardHistory, removeFromClipboardHistory, syncClipboardStore } from './clipboard';
 import { convertShortcut, isLocalPath } from './helpers';
+import { cacheMainScripts } from './install';
 import { deleteText } from './keyboard';
 import {
   HANDLER_CHANNELS,
@@ -118,6 +119,14 @@ export const formatScriptChoices = (data: Choice[]) => {
   const choices = dataChoices.map((script) => {
     // TODO: I'm kinda torn about showing descriptions in the main menu...
     // if (script.group !== 'Kit') script.description = '';
+    // if (script.group === 'Scraps' && script.filePath) {
+    // log.info({ scrap: script });
+    // script.value = Object.assign({}, script);
+    // remove anchor from the end
+    // script.filePath = script.filePath.replace(/\#.*$/, '');
+    // script.value.filePath = script.filePath;
+    // }
+
     if (script.background) {
       const backgroundScript = getBackgroundTasks().find((t) => t.filePath === script.filePath);
 
@@ -2202,6 +2211,15 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     OPEN_ACTIONS: onChildChannel(async ({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_FLAG_VALUE, 'action');
+    }),
+    STAMP_SCRIPT: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      const stamp: Stamp = {
+        filePath: value.filePath,
+      };
+
+      log.info(`${child.pid}: 📌 ${channel}`, value);
+
+      await cacheMainScripts(stamp);
     }),
     SCREENSHOT: onChildChannelOverride(async ({ child }, { channel, value }) => {
       log.info('📸 Screenshot', {

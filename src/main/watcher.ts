@@ -4,7 +4,7 @@ import { debounce } from 'lodash-es';
 import { existsSync, readFileSync } from 'node:fs';
 import { lstat, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
-import { getScripts, getUserJson } from '@johnlindquist/kit/core/db';
+import { getScripts, getUserJson, parseScripts } from '@johnlindquist/kit/core/db';
 import { Channel, Env } from '@johnlindquist/kit/core/enum';
 import type { Script } from '@johnlindquist/kit/types';
 import dotenv from 'dotenv';
@@ -13,7 +13,13 @@ import madge, { type MadgeModuleDependencyGraph } from 'madge';
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 
-import { kenvPath, kitPath, parseScript, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
+import {
+  kenvPath,
+  kitPath,
+  parseMarkdownAsScraps,
+  parseScript,
+  resolveToScriptPath,
+} from '@johnlindquist/kit/core/utils';
 
 import chokidar, { type FSWatcher } from 'chokidar';
 import { shortcutScriptChanged, unlinkShortcuts } from './shortcuts';
@@ -285,7 +291,7 @@ export const onScriptsChanged = async (event: WatchEvent, filePath: string, rebu
 
   madgeAllScripts();
 
-  log.verbose(`👀 ${event} ${filePath}`);
+  log.info(`👀 ${event} ${filePath}`);
   if (event === 'unlink') {
     unlink(filePath);
     unlinkBin(filePath);
@@ -305,31 +311,44 @@ export const onScriptsChanged = async (event: WatchEvent, filePath: string, rebu
       log.info(`🤔 Attempting to parse ${filePath}, but it doesn't exist...`);
       return;
     }
-    const script = await parseScript(filePath);
-    shortcutScriptChanged(script);
-    scheduleScriptChanged(script);
-    systemScriptChanged(script);
-    watchScriptChanged(script);
-    backgroundScriptChanged(script);
-    addSnippet(script);
 
-    if (kitState.ready && !rebuilt && !firstBatch) {
-      debounceSetScriptTimestamp({
-        filePath,
-        changeStamp: Date.now(),
-        reason: `${event} ${filePath}`,
-      });
-      if (event === 'change') {
-        checkFileImports(script);
-        sendToAllActiveChildren({
-          channel: Channel.SCRIPT_CHANGED,
-          state: filePath,
-        });
+    const scripts: Script[] = [];
+    if (filePath.endsWith('.md')) {
+      const markdown = await readFile(filePath, 'utf8');
+      const scraps = await parseMarkdownAsScraps(markdown);
+      for (const scrap of scraps) {
+        scripts.push(scrap);
       }
     } else {
-      log.verbose(`⌚️ ${filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`);
+      const script = await parseScript(filePath);
+      scripts.push(script);
+      if (kitState.ready && !rebuilt && !firstBatch) {
+        debounceSetScriptTimestamp({
+          filePath,
+          changeStamp: Date.now(),
+          reason: `${event} ${filePath}`,
+        });
+        if (event === 'change') {
+          checkFileImports(script);
+          sendToAllActiveChildren({
+            channel: Channel.SCRIPT_CHANGED,
+            state: filePath,
+          });
+        }
+      } else {
+        log.verbose(
+          `⌚️ ${filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`,
+        );
+      }
     }
-
+    for (const script of scripts) {
+      shortcutScriptChanged(script);
+      scheduleScriptChanged(script);
+      systemScriptChanged(script);
+      watchScriptChanged(script);
+      backgroundScriptChanged(script);
+      addSnippet(script);
+    }
     sendToAllActiveChildren({
       channel: Channel.SCRIPT_ADDED,
       state: filePath,
@@ -776,6 +795,11 @@ export const setupWatchers = async () => {
         removeSnippet(filePath);
       }
 
+      return;
+    }
+
+    if (dir.endsWith('scraps')) {
+      // onScriptsChanged(eventName, filePath);
       return;
     }
 

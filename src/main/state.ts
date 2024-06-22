@@ -18,7 +18,7 @@ import { subscribeKey } from 'valtio/utils';
 const { app, nativeTheme } = electron;
 
 import { readdir } from 'node:fs/promises';
-import { AppDb, type Stamp, type UserDb, setScriptTimestamp } from '@johnlindquist/kit/core/db';
+import type { Stamp, UserDb } from '@johnlindquist/kit/core/db';
 import type { Choice, FlagsOptions, PromptData, ScoredChoice, Script, Shortcut } from '@johnlindquist/kit/types/core';
 import schedule, { type Job } from 'node-schedule';
 

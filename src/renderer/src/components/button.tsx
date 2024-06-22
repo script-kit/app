@@ -164,7 +164,9 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
   const scale = calculateScale(choice.height || promptData?.itemHeight);
 
   return (
+    // biome-ignore lint/a11y/useKeyWithMouseEvents: <explanation>
     <button
+      tabIndex={-1}
       type="button"
       draggable={!!choice?.drag}
       onDragStart={choice?.drag ? onDragStart : undefined}

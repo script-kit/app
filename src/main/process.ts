@@ -1,7 +1,6 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
-import { importNodeMacPermissionsOrShim } from '../shims/macos/nmp';
 
 import os from 'node:os';
 import { pathToFileURL } from 'node:url';

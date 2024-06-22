@@ -1,11 +1,9 @@
-import log from 'electron-log/renderer';
 import { useAtom } from 'jotai';
-import { Ref, type RefObject, useEffect, useRef } from 'react';
+import { type RefObject, useEffect } from 'react';
 import {
   flaggedChoiceValueAtom,
   inputFocusAtom,
   isHiddenAtom,
-  isMouseDownAtom,
   openAtom,
   processingAtom,
   promptDataAtom,
@@ -17,7 +15,6 @@ export default (ref: RefObject<HTMLElement>) => {
   const [flagValue] = useAtom(flaggedChoiceValueAtom);
   const [submitted] = useAtom(submittedAtom);
   const [open] = useAtom(openAtom);
-  const [mouseDown] = useAtom(isMouseDownAtom);
   const [inputFocus] = useAtom(inputFocusAtom);
   const [processing] = useAtom(processingAtom);
   const [script] = useAtom(scriptAtom);
