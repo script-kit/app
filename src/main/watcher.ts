@@ -46,6 +46,7 @@ import { clearPromptCache, clearPromptCacheFor, setKitStateAtom } from './prompt
 import { prompts } from './prompts';
 import { readKitCss, setCSSVariable } from './theme';
 import { addSnippet, addTextSnippet, removeSnippet } from './tick';
+import { cacheMainScripts } from './install';
 
 const unlink = (filePath: string) => {
   unlinkShortcuts(filePath);
@@ -800,6 +801,7 @@ export const setupWatchers = async () => {
 
     if (dir.endsWith('scraps')) {
       // onScriptsChanged(eventName, filePath);
+      await cacheMainScripts();
       return;
     }
 
