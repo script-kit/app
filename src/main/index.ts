@@ -69,9 +69,9 @@ import {
   extractKitTar,
   extractNode,
   forkOptions,
-  installEsbuild,
+  installLoaderTools,
   installKitInKenv,
-  installNoDom,
+  installNoDomInKenv,
   installPlatformDeps,
   matchPackageJsonEngines,
   ohNo,
@@ -806,7 +806,7 @@ const checkKit = async () => {
 
     await setupLog('.kit installed');
 
-    await installEsbuild();
+    await installLoaderTools();
 
     try {
       await setupScript(kitPath('setup', 'chmod-helpers.js'));
@@ -894,7 +894,7 @@ const checkKit = async () => {
   optionalSetupScript(kitPath('cli', 'create-all-bins-no-trash.js'));
 
   if (!process.env.MAIN_SKIP_SETUP) {
-    await Promise.all([installKitInKenv(), installEsbuild(), installPlatformDeps(), installNoDom()]);
+    await Promise.all([installKitInKenv(), installLoaderTools(), installPlatformDeps(), installNoDomInKenv()]);
   }
 
   log.info('installKitInKenv');

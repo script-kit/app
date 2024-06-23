@@ -283,17 +283,18 @@ export const installPackage = async (installCommand: string, cwd: string) => {
   log.info({ npmResult });
 };
 
-const installDependency = async (dependencyName, installCommand) => {
-  if (await kenvPackageJsonExists()) {
+const installDependency = async (dependencyName: string, installCommand: string, cwd: string) => {
+  const cwdIsKenvPath = path.normalize(cwd) === path.normalize(kenvPath());
+  if (cwdIsKenvPath && (await kenvPackageJsonExists())) {
     const pkgJson = await readJson(kenvPath('package.json'));
     const allDeps = [...Object.keys(pkgJson.dependencies || {}), ...Object.keys(pkgJson.devDependencies || {})];
     if (allDeps.includes(dependencyName)) {
-      log.info(`${dependencyName} already installed in ${kenvPath()}`);
+      log.info(`${dependencyName} already installed in ${cwd}`);
       return null;
     }
-    log.info(`Installing ${dependencyName} in ${kenvPath()}`);
+    log.info(`Installing ${dependencyName} in ${cwd}`);
     try {
-      return installPackage(installCommand, kenvPath());
+      return installPackage(installCommand, cwd);
     } catch (error) {
       log.error(error);
       return null;
@@ -304,23 +305,36 @@ const installDependency = async (dependencyName, installCommand) => {
   return null;
 };
 
-export const installEsbuild = async () => {
-  const result = await installDependency(
+export const installLoaderTools = async () => {
+  const esbuildResult = await installDependency(
     'esbuild',
     'i -D esbuild@0.21.4 --save-exact --production --prefer-dedupe --loglevel=verbose',
+    kitPath(),
   );
 
-  if (result) {
+  if (esbuildResult) {
     log.info('Installed esbuild');
   } else {
     log.info('Failed to install esbuild');
   }
+
+  const tsxResult = await installDependency(
+    'tsx',
+    'i -D tsx@4.15.7 --save-exact --production --prefer-dedupe --loglevel=verbose',
+    kitPath(),
+  );
+  if (tsxResult) {
+    log.info('Installed tsx');
+  } else {
+    log.info('Failed to install tsx');
+  }
 };
 
-export const installNoDom = async () => {
+export const installNoDomInKenv = async () => {
   const result = await installDependency(
     '@typescript/lib-dom',
     'i -D @typescript/lib-dom@npm:@johnlindquist/no-dom --save-exact --production --prefer-dedupe --loglevel=verbose',
+    kenvPath(),
   );
   if (result) {
     log.info('Installed @johnlindquist/no-dom');
@@ -334,6 +348,7 @@ export const installPlatformDeps = async () => {
     const result = await installDependency(
       '@johnlindquist/mac-dictionary',
       'i -D @johnlindquist/mac-dictionary --save-exact --production --prefer-dedupe --loglevel=verbose',
+      kitPath(),
     );
     if (result) {
       log.info('Installed @johnlindquist/mac-dictionary');
@@ -349,6 +364,7 @@ export const installKitInKenv = async () => {
   const result = await installDependency(
     '@johnlindquist/kit',
     `i -D ${kitPath()} --production --prefer-dedupe --loglevel=verbose`,
+    kenvPath(),
   );
   if (result) {
     log.info('Installed @johnlindquist/kit');
