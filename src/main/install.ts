@@ -284,15 +284,36 @@ export const installPackage = async (installCommand: string, cwd: string) => {
 };
 
 const installDependency = async (dependencyName: string, installCommand: string, cwd: string) => {
-  const cwdIsKenvPath = path.normalize(cwd) === path.normalize(kenvPath());
-  if (cwdIsKenvPath && (await kenvPackageJsonExists())) {
-    const pkgJson = await readJson(kenvPath('package.json'));
-    const allDeps = [...Object.keys(pkgJson.dependencies || {}), ...Object.keys(pkgJson.devDependencies || {})];
-    if (allDeps.includes(dependencyName)) {
-      log.info(`${dependencyName} already installed in ${cwd}`);
+  const normalizedCwd = path.normalize(cwd);
+  const normalizedKenvPath = path.normalize(kenvPath());
+  const normalizedKitPath = path.normalize(kitPath());
+  const cwdIsKenvPath = normalizedCwd === normalizedKenvPath;
+  const cwdIsKitPath = normalizedCwd === normalizedKitPath;
+  log.info({ normalizedCwd, normalizedKenvPath, cwdIsKenvPath, normalizedKitPath, cwdIsKitPath });
+  log.info(`Installing ${dependencyName} in ${cwd}...`);
+
+  if (cwdIsKenvPath) {
+    if (await kenvPackageJsonExists()) {
+      const pkgJson = await readJson(kenvPath('package.json'));
+      const allDeps = [...Object.keys(pkgJson.dependencies || {}), ...Object.keys(pkgJson.devDependencies || {})];
+      if (allDeps.includes(dependencyName)) {
+        log.info(`${dependencyName} already installed in ${cwd}`);
+        return null;
+      }
+      log.info(`Installing ${dependencyName} in ${cwd}`);
+      try {
+        return installPackage(installCommand, cwd);
+      } catch (error) {
+        log.error(error);
+        return null;
+      }
+    } else {
+      log.info(`No package.json found in ${cwd}. Skipping installation of ${dependencyName}`);
       return null;
     }
-    log.info(`Installing ${dependencyName} in ${cwd}`);
+  }
+
+  if (cwdIsKitPath) {
     try {
       return installPackage(installCommand, cwd);
     } catch (error) {
@@ -301,7 +322,7 @@ const installDependency = async (dependencyName: string, installCommand: string,
     }
   }
 
-  log.info(`No package.json found in ${kenvPath()}. Skipping installation of ${dependencyName}`);
+  log.info(`Did not recognize cwd as valid target: ${cwd}`);
   return null;
 };
 
