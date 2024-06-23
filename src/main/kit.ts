@@ -169,6 +169,8 @@ export const runPromptProcess = async (
     sponsorCheck: false,
   },
 ): Promise<ProcessInfo | null> => {
+  // log.info(`->>> Prompt script path: ${promptScriptPath}`);
+
   const count = prompts.getVisiblePromptCount();
   if (count >= 2 && options?.sponsorCheck) {
     const isSponsor = await sponsorCheck('More than 2 prompts');
@@ -245,7 +247,9 @@ export const runPromptProcess = async (
     force: options.force,
   });
 
-  const script = await findScript(promptScriptPath);
+  const scriptlet = kitState.scriptlets.find((scriptlet) => scriptlet.filePath === promptScriptPath);
+
+  const script = scriptlet || (await findScript(promptScriptPath));
   const visible = prompt?.isVisible();
   log.info(`${pid}: ${visible ? '👀 visible' : '🙈 not visible'} before setScript ${script?.name}`);
 
@@ -253,7 +257,7 @@ export const runPromptProcess = async (
     setShortcodes(prompt, kitCache.scripts);
   }
 
-  const status = await prompt.setScript({ ...script }, pid, options?.force);
+  const status = await prompt.setScript(script, pid, options?.force);
   if (status === 'denied') {
     log.info(`Another script is already controlling the UI. Denying UI control: ${path.basename(promptScriptPath)}`);
   }
@@ -281,6 +285,9 @@ export const runPromptProcess = async (
       script: promptScriptPath,
       args: argsWithTrigger,
       trigger: options?.trigger,
+      choices: scriptlet ? [scriptlet] : [],
+      name: script?.name,
+      scriptlet,
     },
   });
 

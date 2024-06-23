@@ -556,6 +556,10 @@ export const addTextSnippet = async (filePath: string) => {
 };
 
 export const addSnippet = (script: Script) => {
+  log.info(`👀 Adding snippet: ${script.filePath}`, {
+    snippet: script.snippet,
+    kenv: script.kenv,
+  });
   for (const [key, value] of snippetMap.entries()) {
     if (value.filePath === script.filePath) {
       snippetMap.delete(key);
@@ -570,6 +574,8 @@ export const addSnippet = (script: Script) => {
 
     return;
   }
+
+  log.info(`👀 Adding snippet: ${script.filePath}`);
 
   if (script?.snippet) {
     log.info(`Set snippet: ${script.snippet}`);

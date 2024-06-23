@@ -91,6 +91,15 @@ function ResizableInput({ placeholder, className, index }) {
   );
   const [submitted] = useAtom(submittedAtom);
 
+  const [promptData] = useAtom(promptDataAtom);
+
+  useEffect(() => {
+    if (promptData?.scriptlet) {
+      // focus
+      debouncedFocus(inputRef);
+    }
+  }, [promptData]);
+
   useResizeObserver(hiddenInputRef, () => {
     const newWidth = Math.ceil(
       (hiddenInputRef?.current?.offsetWidth || minWidth) + 9,
@@ -415,7 +424,7 @@ function MainInput() {
             ...(submitted && { caretColor: 'transparent' }),
           } as any
         }
-        disabled={submitted}
+        disabled={submitted || promptData?.scriptlet}
         className={`
 
 bg-transparent tracking-normal text-text-base placeholder-text-base

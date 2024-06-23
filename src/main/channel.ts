@@ -35,7 +35,7 @@ export const sendToAllPrompts = <K extends keyof ChannelMap>(channel: K | AppCha
         continue;
       }
       if (channel) {
-        log.info(`${prompt.pid}: ${prompt.id}: ALL -> ${channel}`);
+        // log.info(`${prompt.pid}: ${prompt.id}: ALL -> ${channel}`);
         prompt.sendToPrompt(channel, data);
       } else {
         log.error('channel is undefined', { data });

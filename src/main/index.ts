@@ -47,8 +47,8 @@ import { getPrefsDb } from '@johnlindquist/kit/core/db';
 import { debounce, throttle } from 'lodash-es';
 import { subscribeKey } from 'valtio/utils';
 import { getAssetPath, getPlatformExtension, getReleaseChannel } from '../shared/assets';
-import { clearPromptCache, clearPromptTimers, logPromptState, prepQuitWindow } from './prompt';
-import { startClipboardAndKeyboardWatchers, stopClipboardAndKeyboardWatchers } from './tick';
+import { clearPromptCache, clearPromptTimers, logPromptState } from './prompt';
+import { startClipboardAndKeyboardWatchers } from './tick';
 import { checkTray, setupTray } from './tray';
 import { setupWatchers, teardownWatchers } from './watcher';
 
@@ -98,6 +98,7 @@ import { readKitCss } from './theme';
 import { TrackEvent, trackEvent } from './track';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { getStoredVersion, getVersion, storeVersion } from './version';
+import { prepQuitWindow } from './window/utils';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 

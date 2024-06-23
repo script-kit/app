@@ -19,7 +19,15 @@ const { app, nativeTheme } = electron;
 
 import { readdir } from 'node:fs/promises';
 import type { Stamp, UserDb } from '@johnlindquist/kit/core/db';
-import type { Choice, FlagsOptions, PromptData, ScoredChoice, Script, Shortcut } from '@johnlindquist/kit/types/core';
+import type {
+  Choice,
+  FlagsOptions,
+  PromptData,
+  ScoredChoice,
+  Script,
+  Scriptlet,
+  Shortcut,
+} from '@johnlindquist/kit/types/core';
 import schedule, { type Job } from 'node-schedule';
 
 import type { Worker } from 'node:worker_threads';
@@ -200,6 +208,7 @@ export const getThemes = () => ({
 export const theme = nativeTheme.shouldUseDarkColors ? getThemes().scriptKitTheme : getThemes().scriptKitLightTheme;
 
 const initState = {
+  scriptlets: [] as Scriptlet[],
   displays: [] as Display[],
   debugging: false,
   hiddenByUser: false,
@@ -342,6 +351,13 @@ const subReady = subscribeKey(kitState, 'ready', (ready) => {
       message: '',
     };
   }
+});
+
+const scriptletsSub = subscribeKey(kitState, 'scriptlets', (scriptlets) => {
+  log.info(
+    `👀 Scriptlets: ${scriptlets.length}`,
+    scriptlets.map((scriptlet) => scriptlet.filePath),
+  );
 });
 
 // Widgets not showing up in Dock
@@ -498,6 +514,7 @@ subs.push(
   subReady,
   subWaking,
   subIgnoreBlur,
+  scriptletsSub,
 );
 
 const defaultKeyMap: {

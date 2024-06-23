@@ -1278,26 +1278,35 @@ const resize = debounce(
     // mh = Math.ceil(mh || -3) + 3;
 
     if (mh === 0 && promptData?.preventCollapse) {
-      // log.info(`🍃 Prevent collapse to zero...`);
+      log.info(`🍃 Prevent collapse to zero...`);
       return;
     }
 
-    if (window.pid) {
-      // log.info(
-      //   `Jotai PID: ${window.pid}: ${promptData?.scriptPath}: ${choicesHeight}\n` +
-      //     `+----------------+----------------+----------------+----------------+\n` +
-      //     `|                | Prompt Bounds  | Prompt Data    | Computed Values|\n` +
-      //     `+----------------+----------------+----------------+----------------+\n` +
-      //     `| Width          | ${promptBounds?.width.toString().padEnd(14)} | ${promptData?.width?.toString().padEnd(14)} |                |\n` +
-      //     `| Height         | ${promptBounds?.height.toString().padEnd(14)} | ${promptData?.height?.toString().padEnd(14) || ''.padEnd(14)} |                |\n` +
-      //     `+----------------+----------------+----------------+----------------+\n` +
-      //     `| Same Prompt    | ${samePrompt ? 'Yes'.padEnd(14) : 'No'.padEnd(14)} |                |                |\n` +
-      //     `| Force Width    | ${forceWidth ? 'Yes'.padEnd(14) : 'No'.padEnd(14)} |                |                |\n` +
-      //     `| Force Height   | ${forceHeight ? forceHeight.toString().padEnd(14) : 'No'.padEnd(14)} |                |                |\n` +
-      //     `| Main Height    |                |                | ${mh.toString().padEnd(14)} |\n` +
-      //     `+----------------+----------------+----------------+----------------+`
-      // );
-    }
+    // if (promptData?.scriptlet) {
+    //   mh = 0;
+    //   forceResize = true;
+    //   hasPanel = false;
+    //   forceHeight = false;
+    //   totalChoices = 0;
+    // }
+
+    // if (window.pid) {
+    //   log.info(
+    //     `Jotai PID: ${window.pid}: ${promptData?.scriptPath}: ${choicesHeight}\n` +
+    //       `+----------------+----------------+----------------+----------------+\n` +
+    //       `|                | Prompt Bounds  | Prompt Data    | Computed Values|\n` +
+    //       `+----------------+----------------+----------------+----------------+\n` +
+    //       `| Width          | ${promptBounds?.width.toString().padEnd(14)} | ${promptData?.width?.toString().padEnd(14)} |                |\n` +
+    //       `| Height         | ${promptBounds?.height.toString().padEnd(14)} | ${promptData?.height?.toString().padEnd(14) || ''.padEnd(14)} |                |\n` +
+    //       `+----------------+----------------+----------------+----------------+\n` +
+    //       `| Same Prompt    | ${samePrompt ? 'Yes'.padEnd(14) : 'No'.padEnd(14)} |                |                |\n` +
+    //       `| Force Width    | ${forceWidth ? 'Yes'.padEnd(14) : 'No'.padEnd(14)} |                |                |\n` +
+    //       `| Force Height   | ${forceHeight ? forceHeight.toString().padEnd(14) : 'No'.padEnd(14)} |                |                |\n` +
+    //       `| Main Height    |                |                | ${mh.toString().padEnd(14)} |\n` +
+    //       `| Scriptlet      | ${promptData?.scriptlet ? 'Yes'.padEnd(14) : 'No'.padEnd(14)} |                |                |\n` +
+    //       `+----------------+----------------+----------------+----------------+`,
+    //   );
+    // }
 
     const data: ResizeData = {
       id: promptData?.id || 'missing',
@@ -1336,7 +1345,7 @@ const resize = debounce(
 
     debounceSendResize.cancel();
 
-    if (justOpened) {
+    if (justOpened && !promptData?.scriptlet) {
       debounceSendResize(data);
     } else {
       sendResize(data);

@@ -18,6 +18,7 @@ import {
   kitPath,
   parseMarkdownAsScriptlets,
   parseScript,
+  parseScriptletsFromPath,
   resolveToScriptPath,
 } from '@johnlindquist/kit/core/utils';
 
@@ -279,7 +280,7 @@ const madgeAllScripts = debounce(async () => {
 
 let firstBatch = true;
 let firstBatchTimeout: NodeJS.Timeout;
-export const onScriptsChanged = async (event: WatchEvent, filePath: string, rebuilt = false) => {
+export const onScriptsChanged = async (event: WatchEvent, script: Script, rebuilt = false) => {
   if (firstBatch) {
     if (firstBatchTimeout) {
       clearTimeout(firstBatchTimeout);
@@ -292,13 +293,13 @@ export const onScriptsChanged = async (event: WatchEvent, filePath: string, rebu
 
   madgeAllScripts();
 
-  log.info(`👀 ${event} ${filePath}`);
+  log.info(`👀 ${event} ${script.filePath}`);
   if (event === 'unlink') {
-    unlink(filePath);
-    unlinkBin(filePath);
+    unlink(script.filePath);
+    unlinkBin(script.filePath);
     sendToAllActiveChildren({
       channel: Channel.SCRIPT_REMOVED,
-      state: filePath,
+      state: script.filePath,
     });
   }
 
@@ -307,63 +308,48 @@ export const onScriptsChanged = async (event: WatchEvent, filePath: string, rebu
     // event === 'ready' ||
     event === 'add'
   ) {
-    logQueue(event, filePath);
-    if (!existsSync(filePath)) {
-      log.info(`🤔 Attempting to parse ${filePath}, but it doesn't exist...`);
-      return;
-    }
+    logQueue(event, script.filePath);
 
-    const scripts: Script[] = [];
-    if (filePath.endsWith('.md')) {
-      const markdown = await readFile(filePath, 'utf8');
-      const scriptlets = await parseMarkdownAsScriptlets(markdown);
-      for (const scriptlet of scriptlets) {
-        scripts.push(scriptlet);
+    if (kitState.ready && !rebuilt && !firstBatch) {
+      debounceSetScriptTimestamp({
+        filePath: script.filePath,
+        changeStamp: Date.now(),
+        reason: `${event} ${script.filePath}`,
+      });
+      if (event === 'change') {
+        checkFileImports(script);
+        sendToAllActiveChildren({
+          channel: Channel.SCRIPT_CHANGED,
+          state: script.filePath,
+        });
       }
     } else {
-      const script = await parseScript(filePath);
-      scripts.push(script);
-      if (kitState.ready && !rebuilt && !firstBatch) {
-        debounceSetScriptTimestamp({
-          filePath,
-          changeStamp: Date.now(),
-          reason: `${event} ${filePath}`,
-        });
-        if (event === 'change') {
-          checkFileImports(script);
-          sendToAllActiveChildren({
-            channel: Channel.SCRIPT_CHANGED,
-            state: filePath,
-          });
-        }
-      } else {
-        log.verbose(
-          `⌚️ ${filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`,
-        );
-      }
+      log.verbose(
+        `⌚️ ${script.filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`,
+      );
     }
-    for (const script of scripts) {
-      shortcutScriptChanged(script);
-      scheduleScriptChanged(script);
-      systemScriptChanged(script);
-      watchScriptChanged(script);
-      backgroundScriptChanged(script);
-      addSnippet(script);
-    }
+
+    shortcutScriptChanged(script);
+    scheduleScriptChanged(script);
+    systemScriptChanged(script);
+    watchScriptChanged(script);
+    backgroundScriptChanged(script);
+    addSnippet(script);
+
     sendToAllActiveChildren({
       channel: Channel.SCRIPT_ADDED,
-      state: filePath,
+      state: script.filePath,
     });
 
-    clearPromptCacheFor(filePath);
+    clearPromptCacheFor(script.filePath);
   }
 
   if (event === 'add') {
     if (kitState.ready) {
       setTimeout(async () => {
         try {
-          const binDirPath = path.resolve(path.dirname(path.dirname(filePath)), 'bin');
-          const command = path.parse(filePath).name;
+          const binDirPath = path.resolve(path.dirname(path.dirname(script.filePath)), 'bin');
+          const command = path.parse(script.filePath).name;
           const binFilePath = path.resolve(binDirPath, command);
           if (existsSync(binFilePath)) {
             log.info(`🔗 Bin already exists for ${command}`);
@@ -384,7 +370,7 @@ export const onScriptsChanged = async (event: WatchEvent, filePath: string, rebu
             });
 
             log.info(`🔗 Post message for bin for ${command}`);
-            workers.createBin.postMessage(filePath);
+            workers.createBin.postMessage(script.filePath);
           }
         } catch (error) {
           log.error(error);
@@ -481,7 +467,7 @@ const refreshScripts = debounce(
     log.info('🌈 Refreshing Scripts...');
     const scripts = await getScripts();
     for (const script of scripts) {
-      onScriptsChanged('change', script.filePath, true);
+      onScriptsChanged('change', script, true);
     }
   },
   500,
@@ -822,12 +808,34 @@ export const setupWatchers = async () => {
 
     if (dir.endsWith('scriptlets')) {
       // onScriptsChanged(eventName, filePath);
-      await cacheMainScripts();
+      log.info(`🎬 Starting cacheMainScripts...`);
+      try {
+        await cacheMainScripts();
+      } catch (error) {
+        log.error(error);
+      }
+      log.info(`...cacheMainScripts done 🎬`);
+
+      const scriptlets = await parseScriptletsFromPath(filePath);
+      for (const scriptlet of scriptlets) {
+        log.info(`👀 -->>> ${eventName} ${scriptlet.filePath}`);
+        await onScriptsChanged(eventName, scriptlet);
+      }
       return;
     }
 
     if (dir.endsWith('scripts')) {
-      onScriptsChanged(eventName, filePath);
+      let script;
+      try {
+        script = await parseScript(filePath);
+      } catch (error) {
+        log.warn(error);
+        script = {
+          filePath,
+          name: path.basename(filePath),
+        };
+      }
+      onScriptsChanged(eventName, script);
       return;
     }
 

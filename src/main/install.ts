@@ -33,7 +33,7 @@ import {
   kitPath,
   knodePath,
 } from '@johnlindquist/kit/core/utils';
-import type { FlagsOptions, Script, Shortcut } from '@johnlindquist/kit/types';
+import type { FlagsOptions, Script, Scriptlet, Shortcut } from '@johnlindquist/kit/types';
 import { CACHED_GROUPED_SCRIPTS_WORKER } from '@johnlindquist/kit/workers';
 
 import { KitPrompt, destroyPromptWindow, makeSplashWindow } from './prompt';
@@ -165,7 +165,7 @@ export const setupDone = () => {
   sendSplashHeader('Kit SDK Install verified ✅');
 };
 
-export const handleLogMessage = async (message: string, result: SpawnSyncReturns<any>, required = true) => {
+export const handleLogMessage = (message: string, result: SpawnSyncReturns<any>, required = true) => {
   log.info('stdout:', result?.stdout?.toString());
   log.info('stderr:', result?.stderr?.toString());
   const { stdout, stderr, error } = result;
@@ -855,60 +855,56 @@ const cacheMainPreview = (preview: string) => {
   }
 };
 
-export const cacheMainScripts = debounce(
-  async (stamp?: Stamp) => {
+const receiveScripts = ({
+  scripts,
+  preview,
+  shortcuts,
+  scriptFlags,
+}: {
+  scripts: Script[];
+  preview: string;
+  shortcuts: Shortcut[];
+  scriptFlags: FlagsOptions;
+}) => {
+  if (Array.isArray(scripts) && scripts.length > 0) {
+    log.info('Caching scripts and preview...', {
+      scripts: scripts?.length,
+      preview: preview?.length,
+    });
+    preloadChoicesMap.set(getMainScriptPath(), scripts);
+    log.info('✉️ Sending scripts to prompt...');
+    if (preview) {
+      cacheMainPreview(preview);
+    }
+    if (scripts) {
+      scoreAndCacheMainChoices(scripts);
+    }
+    if (shortcuts) {
+      kitCache.shortcuts = shortcuts;
+    }
+    if (scriptFlags) {
+      kitCache.scriptFlags = scriptFlags;
+    }
+    sendToAllPrompts(AppChannel.SET_CACHED_MAIN_PREVIEW, kitCache.preview);
+    sendToAllPrompts(AppChannel.INIT_PROMPT, {});
+
+    const scriptlets: Scriptlet[] = [];
+    for (const script of scripts) {
+      if ((script as Scriptlet).scriptlet) {
+        scriptlets.push(script as Scriptlet);
+      }
+    }
+    kitState.scriptlets = scriptlets;
+  }
+  log.info(`---->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> RESOLVE PLEASE`);
+};
+
+let postMessage: (message: any) => void;
+export const cacheMainScripts = (stamp?: Stamp) => {
+  return new Promise<boolean>((resolve, reject) => {
+    // Wrap the function body in a new Promise
+
     try {
-      const receiveScripts = ({
-        scripts,
-        preview,
-        shortcuts,
-        scriptFlags,
-      }: {
-        scripts: Script[];
-        preview: string;
-        shortcuts: Shortcut[];
-        scriptFlags: FlagsOptions;
-      }) => {
-        if (Array.isArray(scripts) && scripts.length > 0) {
-          log.info('Caching scripts and preview...', {
-            scripts: scripts?.length,
-            preview: preview?.length,
-          });
-          preloadChoicesMap.set(getMainScriptPath(), scripts);
-          log.info('✉️ Sending scripts to prompt...');
-          if (preview) {
-            cacheMainPreview(preview);
-          }
-          if (scripts) {
-            // log.info the scripts with triggers
-            // log.info(
-            //   scripts
-            //     .filter((s) => s.trigger)
-            //     .map((s) => ({
-            //       trigger: s.trigger,
-            //       path: s.filePath,
-            //     })),
-            // );;
-            scoreAndCacheMainChoices(scripts);
-          }
-          if (shortcuts) {
-            kitCache.shortcuts = shortcuts;
-          }
-
-          if (scriptFlags) {
-            kitCache.scriptFlags = scriptFlags;
-          }
-
-          sendToAllPrompts(AppChannel.SET_CACHED_MAIN_PREVIEW, kitCache.preview);
-          sendToAllPrompts(AppChannel.INIT_PROMPT, {});
-        }
-      };
-      // const child = fork(
-      //   kitPath('run', 'terminal.js'),
-      //   [kitPath('setup', 'cache-grouped-scripts.js')],
-      //   forkOptions,
-      // );
-
       if (!workers.cacheScripts) {
         log.info(`Creating worker: ${CACHED_GROUPED_SCRIPTS_WORKER}...`);
         workers.cacheScripts = new Worker(CACHED_GROUPED_SCRIPTS_WORKER);
@@ -917,12 +913,30 @@ export const cacheMainScripts = debounce(
             exitCode,
           });
         });
-        workers.cacheScripts.on('message', receiveScripts);
-        workers.cacheScripts.on('messageerror', (error) => {
+      }
+
+      if (stamp?.filePath && isInDirectory(stamp?.filePath, kitPath())) {
+        log.info(`Ignore stamping .kit script: ${stamp.filePath}`);
+      } else {
+        log.info(`Stamping ${stamp?.filePath || 'cache only'} 💟`);
+        if (!postMessage && workers.cacheScripts) {
+          postMessage = debounce(
+            (message) => {
+              workers?.cacheScripts?.postMessage(message);
+            },
+            250,
+            {
+              leading: true,
+            },
+          );
+        }
+        const messageErrorHandler = (error) => {
           log.error('MessageError: Failed to cache main scripts', error);
-        });
-        // handle errors
-        workers.cacheScripts.on('error', (error) => {
+          reject(error); // Reject the promise on message error
+          cleanHandlers();
+        };
+
+        const errorHandler = (error) => {
           if (error instanceof Error) {
             log.error('Failed to cache main scripts', {
               message: error.message,
@@ -934,24 +948,33 @@ export const cacheMainScripts = debounce(
               error: error,
             });
           }
-        });
-      }
+          reject(error); // Reject the promise on error
+          cleanHandlers();
+        };
 
-      if (stamp?.filePath && isInDirectory(stamp?.filePath, kitPath())) {
-        log.info(`Ignore stamping .kit script: ${stamp.filePath}`);
-      } else {
-        log.info(`Stamping ${stamp?.filePath || 'cache only'} 💟`);
-        workers.cacheScripts.postMessage(stamp);
+        const messageHandler = (message) => {
+          receiveScripts(message);
+          resolve(message);
+          cleanHandlers();
+        };
+
+        const cleanHandlers = () => {
+          workers.cacheScripts?.removeListener('message', messageHandler);
+          workers.cacheScripts?.removeListener('messageerror', messageErrorHandler);
+          workers.cacheScripts?.removeListener('error', errorHandler);
+        };
+
+        workers.cacheScripts.once('messageerror', messageErrorHandler);
+        workers.cacheScripts.once('error', errorHandler);
+        workers.cacheScripts.once('message', messageHandler);
+        postMessage(stamp);
       }
     } catch (error) {
       log.warn('Failed to cache main scripts at startup', error);
+      reject(error); // Reject the promise on catch
     }
-  },
-  250,
-  {
-    leading: true,
-  },
-);
+  });
+};
 
 export const matchPackageJsonEngines = async () => {
   const KIT = kitPath();

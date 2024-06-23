@@ -200,10 +200,10 @@ export const setTheme = async (value: any = {}, reason = '') => {
 
 export const updateTheme = async () => {
   kitState.isDark = nativeTheme.shouldUseDarkColors;
-  log.info({
-    isDarkState: kitState.isDark ? 'true' : 'false',
-    isDarkNative: nativeTheme.shouldUseDarkColors ? 'true' : 'false',
-  });
+  // log.info({
+  //   isDarkState: kitState.isDark ? 'true' : 'false',
+  //   isDarkNative: nativeTheme.shouldUseDarkColors ? 'true' : 'false',
+  // });
 
   const themePath = kitState.isDark ? kitState.kenvEnv?.KIT_THEME_DARK : kitState.kenvEnv?.KIT_THEME_LIGHT;
 
@@ -373,7 +373,7 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
   });
 
   const kitLoadingHandler = (data) => {
-    if (data?.channel === Channel.KIT_LOADING) {
+    if (data?.channel === Channel.KIT_LOADING || data?.channel === Channel.KIT_READY) {
       log.info(`${child.pid}: KIT_LOADING ${data?.value} in ${performance.now() - beforeChildForkPerfMark}ms`);
       // child.off('message', kitLoadingHandler);
     }
