@@ -279,6 +279,8 @@ export const installPackage = async (installCommand: string, cwd: string) => {
       clearId();
     });
   });
+
+  log.info({ npmResult });
 };
 
 const installDependency = async (dependencyName, installCommand) => {
@@ -291,7 +293,7 @@ const installDependency = async (dependencyName, installCommand) => {
     }
     log.info(`Installing ${dependencyName} in ${kenvPath()}`);
     try {
-      return installPackage(installCommand, kitPath());
+      return installPackage(installCommand, kenvPath());
     } catch (error) {
       log.error(error);
       return null;
