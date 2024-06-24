@@ -20,8 +20,8 @@ import fsExtra from 'fs-extra';
 import { assign, debounce } from 'lodash-es';
 import StreamZip from 'node-stream-zip';
 import * as tar from 'tar';
-const { ensureDir, writeFile, readdir, readJson, writeJson } = fsExtra;
-import { lstat, readFile, rm } from 'node:fs/promises';
+const { ensureDir, writeFile, readJson, writeJson } = fsExtra;
+import { access, lstat, readFile, rm } from 'node:fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import {
   KIT_FIRST_PATH,
@@ -285,70 +285,76 @@ export const installPackage = async (installCommand: string, cwd: string) => {
 
 const installDependency = async (dependencyName: string, installCommand: string, cwd: string) => {
   const normalizedCwd = path.normalize(cwd);
-  const normalizedKenvPath = path.normalize(kenvPath());
-  const normalizedKitPath = path.normalize(kitPath());
-  const cwdIsKenvPath = normalizedCwd === normalizedKenvPath;
-  const cwdIsKitPath = normalizedCwd === normalizedKitPath;
-  log.info({ normalizedCwd, normalizedKenvPath, cwdIsKenvPath, normalizedKitPath, cwdIsKitPath });
+  const isKenvPath = normalizedCwd === path.normalize(kenvPath());
+  const isKitPath = normalizedCwd === path.normalize(kitPath());
+
   log.info(`Installing ${dependencyName} in ${cwd}...`);
 
-  if (cwdIsKenvPath) {
-    if (await kenvPackageJsonExists()) {
-      const pkgJson = await readJson(kenvPath('package.json'));
-      const allDeps = [...Object.keys(pkgJson.dependencies || {}), ...Object.keys(pkgJson.devDependencies || {})];
-      if (allDeps.includes(dependencyName)) {
-        log.info(`${dependencyName} already installed in ${cwd}`);
-        return null;
-      }
-      log.info(`Installing ${dependencyName} in ${cwd}`);
-      try {
-        return installPackage(installCommand, cwd);
-      } catch (error) {
-        log.error(error);
-        return null;
-      }
-    } else {
-      log.info(`No package.json found in ${cwd}. Skipping installation of ${dependencyName}`);
-      return null;
-    }
+  if (!(isKenvPath || isKitPath)) {
+    log.info(`Did not recognize cwd as valid target: ${cwd}`);
+    return null;
   }
 
-  if (cwdIsKitPath) {
-    try {
-      return installPackage(installCommand, cwd);
-    } catch (error) {
-      log.error(error);
-      return null;
-    }
+  if (isKenvPath && !(await kenvPackageJsonExists())) {
+    log.info(`No package.json found in ${cwd}. Skipping installation of ${dependencyName}`);
+    return null;
   }
 
-  log.info(`Did not recognize cwd as valid target: ${cwd}`);
-  return null;
+  if (isKenvPath && await isDependencyInstalled(dependencyName, cwd)) {
+    log.info(`${dependencyName} already installed in ${cwd}`);
+    return null;
+  }
+
+  try {
+    const result = await installPackage(installCommand, cwd);
+    await verifyInstallation(dependencyName, cwd);
+    return result;
+  } catch (error) {
+    log.error(error);
+    return null;
+  }
+};
+
+const isDependencyInstalled = async (dependencyName: string, cwd: string) => {
+  try {
+    const nodeModulesPath = path.join(cwd, 'node_modules', dependencyName);
+    await access(nodeModulesPath);
+    return true;
+  } catch (error) {
+    return false;
+  }
+
+};
+
+const verifyInstallation = async (dependencyName: string, cwd: string) => {
+  try {
+    await access(path.join(cwd, 'node_modules', dependencyName));
+    log.info(`${dependencyName} installed in ${cwd}`);
+  } catch (error) {
+    log.error(`${dependencyName} not installed in ${cwd}`);
+    // We can't log the contents of node_modules here as we're not reading the directory
+    // If you still want to log something, you could log the error message
+    log.info(`Error accessing ${dependencyName}: ${(error as Error).message}`);
+  }
 };
 
 export const installLoaderTools = async () => {
+
   const esbuildResult = await installDependency(
     'esbuild',
     'i -D esbuild@0.21.4 --save-exact --prefer-dedupe --loglevel=verbose',
     kitPath(),
   );
 
-  if (esbuildResult) {
-    log.info('Installed esbuild');
-  } else {
-    log.info('Failed to install esbuild');
-  }
+  log.info({ esbuildResult });
 
   const tsxResult = await installDependency(
     'tsx',
     'i -D tsx@4.15.7 --save-exact --prefer-dedupe --loglevel=verbose',
     kitPath(),
   );
-  if (tsxResult) {
-    log.info('Installed tsx');
-  } else {
-    log.info('Failed to install tsx');
-  }
+
+  log.info({ tsxResult });
 };
 
 export const installNoDomInKenv = async () => {
