@@ -329,7 +329,7 @@ const installDependency = async (dependencyName: string, installCommand: string,
 export const installLoaderTools = async () => {
   const esbuildResult = await installDependency(
     'esbuild',
-    'i -D esbuild@0.21.4 --save-exact --production --prefer-dedupe --loglevel=verbose',
+    'i -D esbuild@0.21.4 --save-exact --prefer-dedupe --loglevel=verbose',
     kitPath(),
   );
 
@@ -341,7 +341,7 @@ export const installLoaderTools = async () => {
 
   const tsxResult = await installDependency(
     'tsx',
-    'i -D tsx@4.15.7 --save-exact --production --prefer-dedupe --loglevel=verbose',
+    'i -D tsx@4.15.7 --save-exact --prefer-dedupe --loglevel=verbose',
     kitPath(),
   );
   if (tsxResult) {
@@ -354,7 +354,7 @@ export const installLoaderTools = async () => {
 export const installNoDomInKenv = async () => {
   const result = await installDependency(
     '@typescript/lib-dom',
-    'i -D @typescript/lib-dom@npm:@johnlindquist/no-dom --save-exact --production --prefer-dedupe --loglevel=verbose',
+    'i -D @typescript/lib-dom@npm:@johnlindquist/no-dom --save-exact --prefer-dedupe --loglevel=verbose',
     kenvPath(),
   );
   if (result) {
@@ -368,7 +368,7 @@ export const installPlatformDeps = async () => {
   if (os.platform().startsWith('darwin')) {
     const result = await installDependency(
       '@johnlindquist/mac-dictionary',
-      'i -D @johnlindquist/mac-dictionary --save-exact --production --prefer-dedupe --loglevel=verbose',
+      'i -D @johnlindquist/mac-dictionary --save-exact --prefer-dedupe --loglevel=verbose',
       kitPath(),
     );
     if (result) {
@@ -384,7 +384,7 @@ export const installPlatformDeps = async () => {
 export const installKitInKenv = async () => {
   const result = await installDependency(
     '@johnlindquist/kit',
-    `i -D ${kitPath()} --production --prefer-dedupe --loglevel=verbose`,
+    `i -D ${kitPath()} --prefer-dedupe --loglevel=verbose`,
     kenvPath(),
   );
   if (result) {
