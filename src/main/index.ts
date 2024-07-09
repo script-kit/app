@@ -615,6 +615,57 @@ const isNewVersion = async () => {
   return !versionMatch;
 };
 
+const setupScript = (...args: string[]) => {
+  if (process.env.MAIN_SKIP_SETUP) {
+    log.info('⏭️ Skipping setupScript', args);
+    return;
+  }
+  return new Promise((resolve, reject) => {
+    log.info(`🔨 Running Setup Script ${args.join(' ')}`);
+    const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
+
+    if (child.stdout) {
+      child.stdout.on('data', (data) => {
+        const dataString = typeof data === 'string' ? data : data.toString();
+        log.info(dataString);
+        sendSplashBody(dataString);
+      });
+    }
+
+    if (child.stderr) {
+      child.stderr.on('data', (data) => {
+        const dataString = typeof data === 'string' ? data : data.toString();
+        log.info(dataString);
+        sendSplashBody(dataString);
+      });
+    }
+
+    child.on('exit', (code) => {
+      log.info(`🔨 Setup Script exited with code ${code}`);
+      if (code === 0) {
+        resolve('success');
+      } else {
+        reject(new Error('Setup script failed'));
+      }
+    });
+
+    child.on('error', (error: Error) => {
+      reject(error);
+      ohNo(error);
+    });
+  });
+};
+
+const ensureEnv = async () => {
+  log.info('🧑‍🔧 ensureEnv...');
+  if (!(await kenvConfigured())) {
+    await setupLog('Run .kenv setup script...');
+
+    await setupScript(kitPath('setup', 'setup.js'));
+    await kenvConfigured();
+  }
+};
+
 const checkKit = async () => {
   log.info('checkKit');
   // log.info(`Waiting 10 seconds...`);
@@ -642,47 +693,6 @@ const checkKit = async () => {
   };
 
   log.info(`🧐 Checking ${KIT}`, options);
-
-  const setupScript = (...args: string[]) => {
-    if (process.env.MAIN_SKIP_SETUP) {
-      log.info('⏭️ Skipping setupScript', args);
-      return;
-    }
-    return new Promise((resolve, reject) => {
-      log.info(`🔨 Running Setup Script ${args.join(' ')}`);
-      const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
-
-      if (child.stdout) {
-        child.stdout.on('data', (data) => {
-          const dataString = typeof data === 'string' ? data : data.toString();
-          log.info(dataString);
-          sendSplashBody(dataString);
-        });
-      }
-
-      if (child.stderr) {
-        child.stderr.on('data', (data) => {
-          const dataString = typeof data === 'string' ? data : data.toString();
-          log.info(dataString);
-          sendSplashBody(dataString);
-        });
-      }
-
-      child.on('exit', (code) => {
-        log.info(`🔨 Setup Script exited with code ${code}`);
-        if (code === 0) {
-          resolve('success');
-        } else {
-          reject(new Error('Setup script failed'));
-        }
-      });
-
-      child.on('error', (error: Error) => {
-        reject(error);
-        ohNo(error);
-      });
-    });
-  };
 
   if (process.env.NODE_ENV === 'development') {
     try {
@@ -877,13 +887,7 @@ const checkKit = async () => {
     optionalSetupScript(kitPath('setup', 'clone-sponsors.js'));
   }
 
-  if (!(await kenvConfigured())) {
-    await setupLog('Run .kenv setup script...');
-
-    await setupScript(kitPath('setup', 'setup.js'));
-    await kenvConfigured();
-  }
-
+  await ensureEnv();
   await setupLog('Update .kenv');
 
   // patch now creates an kenvPath(".npmrc") file
@@ -910,6 +914,8 @@ const checkKit = async () => {
       await optionalSetupScript(kitPath('cli', 'kenv-trust.js'), [kenv, kenv]);
     }
   }
+
+  await ensureEnv();
 
   try {
     log.info('verifyInstall');

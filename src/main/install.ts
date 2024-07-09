@@ -34,7 +34,7 @@ import {
   knodePath,
 } from '@johnlindquist/kit/core/utils';
 import type { FlagsOptions, Script, Scriptlet, Shortcut } from '@johnlindquist/kit/types';
-import { CACHED_GROUPED_SCRIPTS_WORKER } from '@johnlindquist/kit/workers';
+import { CACHED_GROUPED_SCRIPTS_WORKER, CREATE_BIN_WORKER } from '@johnlindquist/kit/workers';
 
 import { KitPrompt, destroyPromptWindow, makeSplashWindow } from './prompt';
 
@@ -142,7 +142,9 @@ export const sendSplashBody = (message: string) => {
   }
 
   log.info(`🌊 body: ${message}`);
-  splashPrompt?.sendToPrompt(Channel.SET_SPLASH_BODY, message);
+  if (splashPrompt && !splashPrompt.window?.isDestroyed()) {
+    splashPrompt.sendToPrompt(Channel.SET_SPLASH_BODY, message);
+  }
 };
 
 export const sendSplashHeader = (message: string) => {
@@ -300,7 +302,7 @@ const installDependency = async (dependencyName: string, installCommand: string,
     return null;
   }
 
-  if (isKenvPath && await isDependencyInstalled(dependencyName, cwd)) {
+  if (isKenvPath && (await isDependencyInstalled(dependencyName, cwd))) {
     log.info(`${dependencyName} already installed in ${cwd}`);
     return null;
   }
@@ -323,7 +325,6 @@ const isDependencyInstalled = async (dependencyName: string, cwd: string) => {
   } catch (error) {
     return false;
   }
-
 };
 
 const verifyInstallation = async (dependencyName: string, cwd: string) => {
@@ -339,7 +340,6 @@ const verifyInstallation = async (dependencyName: string, cwd: string) => {
 };
 
 export const installLoaderTools = async () => {
-
   const esbuildResult = await installDependency(
     'esbuild',
     'i -D esbuild@0.21.4 --save-exact --prefer-dedupe --loglevel=verbose',
@@ -900,6 +900,53 @@ const cacheMainPreview = (preview: string) => {
   }
 };
 
+const getBinWorker = () => {
+  if (!workers.createBin) {
+    workers.createBin = new Worker(CREATE_BIN_WORKER);
+    workers.createBin.on('exit', (exitCode) => {
+      log.info('🔗 Bin worker exited', exitCode);
+    });
+    workers.createBin.on('error', (error) => {
+      log.error('🔗 Bin worker error', error);
+    });
+    workers.createBin.on('message', (message) => {
+      log.info('🔗 Created bin for', message);
+    });
+  }
+  return workers.createBin;
+};
+
+export const syncBins = async () => {
+  setTimeout(async () => {
+    log.info('🔗 Syncing bins...');
+    try {
+      const binDirPath = kenvPath('bin');
+      const binFiles = await readdir(binDirPath);
+      const worker = getBinWorker();
+
+      for (const bin of binFiles) {
+        const script = kitState.scripts.find((s) => s.command === bin);
+        if (!script) {
+          log.info(`🔗 Deleting bin ${bin}`);
+          await unlink(path.resolve(binDirPath, bin));
+        }
+      }
+
+      for (const script of kitState.scripts as Scriptlet[]) {
+        if (binFiles.includes(script.command) && !script.scriptlet) {
+          continue;
+        }
+
+        log.info({ script });
+        log.info(`🔗 Creating bin for ${script.filePath} -> ${script.command}`);
+        worker.postMessage(script.filePath);
+      }
+    } catch (error) {
+      log.error(error);
+    }
+  }, 1000);
+};
+
 const receiveScripts = ({
   scripts,
   preview,
@@ -907,6 +954,7 @@ const receiveScripts = ({
   scriptFlags,
 }: {
   scripts: Script[];
+  kenvScripts: Script[];
   preview: string;
   shortcuts: Shortcut[];
   scriptFlags: FlagsOptions;
@@ -940,8 +988,20 @@ const receiveScripts = ({
       }
     }
     kitState.scriptlets = scriptlets;
+    kitState.scripts = [];
+
+    const isBinnableScript = (s: Script) =>
+      s?.group !== 'Kit' && s?.kenv !== '.kit' && !s?.skip && s?.command && s.filePath;
+
+    for (const s of scripts) {
+      if (isBinnableScript(s)) {
+        kitState.scripts.push(s);
+      }
+    }
+
+    syncBins();
   }
-  log.info(`---->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> RESOLVE PLEASE`);
+  log.info('---->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> RESOLVE PLEASE');
 };
 
 let postMessage: (message: any) => void;

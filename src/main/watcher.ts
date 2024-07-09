@@ -4,7 +4,7 @@ import { debounce } from 'lodash-es';
 import { existsSync, readFileSync } from 'node:fs';
 import { lstat, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
-import { getScripts, getUserJson, parseScripts } from '@johnlindquist/kit/core/db';
+import { getScripts, getUserJson } from '@johnlindquist/kit/core/db';
 import { Channel, Env } from '@johnlindquist/kit/core/enum';
 import type { Script } from '@johnlindquist/kit/types';
 import dotenv from 'dotenv';
@@ -16,7 +16,6 @@ import { subscribeKey } from 'valtio/utils';
 import {
   kenvPath,
   kitPath,
-  parseMarkdownAsScriptlets,
   parseScript,
   parseScriptletsFromPath,
   resolveToScriptPath,
@@ -26,14 +25,12 @@ import chokidar, { type FSWatcher } from 'chokidar';
 import { shortcutScriptChanged, unlinkShortcuts } from './shortcuts';
 
 import type { kenvEnv } from '@johnlindquist/kit/types/env';
-import { CREATE_BIN_WORKER } from '@johnlindquist/kit/workers';
 import { backgroundScriptChanged, removeBackground } from './background';
 import { cancelSchedule, scheduleScriptChanged } from './schedule';
-import { debounceSetScriptTimestamp, kitState, sponsorCheck, workers } from './state';
+import { debounceSetScriptTimestamp, kitState, sponsorCheck } from './state';
 import { systemScriptChanged, unlinkEvents } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 
-import { Worker } from 'node:worker_threads';
 import { AppChannel, Trigger } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
 import { sendToAllPrompts } from './channel';
@@ -342,41 +339,6 @@ export const onScriptsChanged = async (event: WatchEvent, script: Script, rebuil
     });
 
     clearPromptCacheFor(script.filePath);
-  }
-
-  if (event === 'add') {
-    if (kitState.ready) {
-      setTimeout(async () => {
-        try {
-          const binDirPath = path.resolve(path.dirname(path.dirname(script.filePath)), 'bin');
-          const command = path.parse(script.filePath).name;
-          const binFilePath = path.resolve(binDirPath, command);
-          if (existsSync(binFilePath)) {
-            log.info(`🔗 Bin already exists for ${command}`);
-          } else {
-            log.info(`🔗 Creating bin for ${command}`);
-            // runScript(kitPath('cli', 'create-bin'), 'scripts', filePath);
-            if (!workers.createBin) {
-              workers.createBin = new Worker(CREATE_BIN_WORKER);
-            }
-
-            workers.createBin.removeAllListeners();
-
-            workers.createBin.once('message', (message) => {
-              log.info(`Bin created for ${command}`, message);
-            });
-            workers.createBin.once('error', (error) => {
-              log.error(`Error creating bin for ${command}`, error);
-            });
-
-            log.info(`🔗 Post message for bin for ${command}`);
-            workers.createBin.postMessage(script.filePath);
-          }
-        } catch (error) {
-          log.error(error);
-        }
-      }, 1000);
-    }
   }
 };
 
@@ -808,13 +770,13 @@ export const setupWatchers = async () => {
 
     if (dir.endsWith('scriptlets')) {
       // onScriptsChanged(eventName, filePath);
-      log.info(`🎬 Starting cacheMainScripts...`);
+      log.info('🎬 Starting cacheMainScripts...');
       try {
         await cacheMainScripts();
       } catch (error) {
         log.error(error);
       }
-      log.info(`...cacheMainScripts done 🎬`);
+      log.info('...cacheMainScripts done 🎬');
 
       const scriptlets = await parseScriptletsFromPath(filePath);
       for (const scriptlet of scriptlets) {

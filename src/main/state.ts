@@ -208,6 +208,7 @@ export const getThemes = () => ({
 export const theme = nativeTheme.shouldUseDarkColors ? getThemes().scriptKitTheme : getThemes().scriptKitLightTheme;
 
 const initState = {
+  scripts: [] as Script[],
   scriptlets: [] as Scriptlet[],
   displays: [] as Display[],
   debugging: false,
@@ -625,7 +626,7 @@ export const initKeymap = async () => {
   if (!kitState.keymap) {
     try {
       let keymap = nativeKeymap.getKeyMap();
-      keymapLog.verbose('🔑 Detected Keymap:', { keymap });
+      // keymapLog.verbose('🔑 Detected Keymap:', { keymap });
       writeJson(kitPath('db', 'keymap.json'), keymap);
       let value = keymap?.KeyA?.value;
 
