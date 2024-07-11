@@ -937,9 +937,11 @@ export const syncBins = async () => {
           continue;
         }
 
-        log.info({ script });
         log.info(`🔗 Creating bin for ${script.filePath} -> ${script.command}`);
-        worker.postMessage(script.filePath);
+        worker.postMessage({
+          command: script.command,
+          filePath: script.filePath,
+        });
       }
     } catch (error) {
       log.error(error);
