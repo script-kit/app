@@ -9,8 +9,7 @@ import {
   screen,
 } from 'electron';
 import log from 'electron-log';
-import fsExtra from 'fs-extra';
-const { ensureDir } = fsExtra;
+import { ensureDir } from './cjs-exports';
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { isDir, kenvPath } from '@johnlindquist/kit/core/utils';

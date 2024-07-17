@@ -123,6 +123,19 @@ export const prompts = {
   getVisiblePromptCount: (): number => Array.from(promptMap.values()).filter((prompt) => prompt.isVisible()).length,
 
   /**
+   * Gets the last focused prompt, if any.
+   * @returns The last focused prompt, or null if no prompt is focused or the last focused prompt is destroyed.
+   */
+  getPrevFocusedPrompt: function (): KitPrompt | null {
+    for (const prompt of this) {
+      if (prompt.isFocused()) {
+        return null;
+      }
+    }
+    return this.focused && !this.focused.isDestroyed() && !this.focused.isFocused() ? this.focused : null;
+  },
+
+  /**
    * Allows iteration over all prompts.
    */
   *[Symbol.iterator]() {

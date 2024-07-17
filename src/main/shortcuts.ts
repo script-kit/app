@@ -242,6 +242,14 @@ export const updateMainShortcut = async (shortcut?: string) => {
 ----------------------------------------
 🏚  Main shortcut pressed: ${finalShortcut}`);
 
+    if (kitState.kenvEnv?.KIT_MAIN_SHORTCUT_RETURN_FOCUS) {
+      const prevFocusedPrompt = prompts.getPrevFocusedPrompt();
+      if (prevFocusedPrompt) {
+        prevFocusedPrompt?.window?.focus();
+        return;
+      }
+    }
+
     await runPromptProcess(getMainScriptPath(), [], {
       force: true,
       trigger: Trigger.Menu,

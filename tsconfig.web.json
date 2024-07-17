@@ -9,12 +9,15 @@
   ],
   "compilerOptions": {
     "target": "esnext",
-    "module": "esnext",
+    "module": "NodeNext",
     "composite": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
+    "moduleResolution": "NodeNext",
     "paths": {
-      "@renderer/*": ["src/renderer/src/*"]
+      "@renderer/*": [
+        "src/renderer/src/*"
+      ]
     }
   }
 }

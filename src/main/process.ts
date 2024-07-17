@@ -16,8 +16,7 @@ import type { GenericSendData } from '@johnlindquist/kit/types/kitapp';
 
 import { KIT_APP, KIT_APP_PROMPT, execPath, kitPath, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
 
-import fsExtra from 'fs-extra';
-const { pathExistsSync, readJson } = fsExtra;
+import { pathExistsSync, readJson } from './cjs-exports';
 import { getLog, mainLog, warn } from './logs';
 import type { KitPrompt } from './prompt';
 import { debounceSetScriptTimestamp, getThemes, kitState, kitStore } from './state';

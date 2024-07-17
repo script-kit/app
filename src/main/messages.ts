@@ -1107,7 +1107,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     //   showNotification(data.html || 'You forgot html', data.options);
     // },
-    SET_PROMPT_DATA: onChildChannel(async (pap, { channel, value, promptId }) => {
+    SET_PROMPT_DATA: onChildChannel((pap, { channel, value, promptId }) => {
       performance.measure('SET_PROMPT_DATA', 'script');
       log.info(`${prompt.pid}: 📝 SET_PROMPT_DATA`, {
         preloaded: prompt.preloaded,
@@ -1132,7 +1132,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           promptId,
         });
         prompt.preloaded = '';
-        return;
+        // return;
       }
 
       prompt.id = promptId;

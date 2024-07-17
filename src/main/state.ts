@@ -4,9 +4,7 @@
 import Store, { type Schema } from 'electron-store';
 
 import type { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
-import fsExtra from 'fs-extra';
 import { proxy } from 'valtio/vanilla';
-const { writeJson } = fsExtra;
 import type { ChildProcess } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
@@ -45,6 +43,7 @@ import { Trigger } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
 import internetAvailable from '../shared/internet-available';
 import shims from './shims';
+import { writeJson, pathExists } from './cjs-exports';
 
 const schema: Schema<{
   KENV: string;

@@ -25,9 +25,8 @@ const { autoUpdater } = electronUpdater;
 import { type SpawnSyncOptions, execFileSync, fork } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
-import fsExtra from 'fs-extra';
+
 import semver from 'semver';
-const { ensureDir, pathExistsSync } = fsExtra;
 import { existsSync, readFileSync } from 'node:fs';
 import { copyFile, readdir } from 'node:fs/promises';
 
@@ -99,6 +98,7 @@ import { TrackEvent, trackEvent } from './track';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { getStoredVersion, getVersion, storeVersion } from './version';
 import { prepQuitWindow } from './window/utils';
+import { loadKenvEnvironment } from './env-utils';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -179,13 +179,9 @@ if (!app.requestSingleInstanceLock()) {
 log.info('Appending switch: ignore-certificate-errors');
 app.commandLine.appendSwitch('ignore-certificate-errors');
 
-const kenvEnvPath = kenvPath('.env');
-const envExists = pathExistsSync(kenvEnvPath);
-if (envExists) {
-  const envData = dotenv.parse(readFileSync(kenvEnvPath)) as kenvEnv;
-  if (envData.KIT_DISABLE_GPU) {
-    app.disableHardwareAcceleration();
-  }
+const envData = loadKenvEnvironment();
+if (envData.KIT_DISABLE_GPU) {
+  app.disableHardwareAcceleration();
 }
 
 app.setName(APP_NAME);
@@ -959,8 +955,10 @@ const checkKit = async () => {
 
     const envPath = kenvPath('.env');
     const envData = dotenv.parse(readFileSync(envPath));
+    const envKitPath = kenvPath('.env.kit');
+    const envKitData = dotenv.parse(readFileSync(envKitPath));
     // log.info(`envData`, envPath, envData);
-    kitState.kenvEnv = envData;
+    kitState.kenvEnv = { ...envData, ...envKitData };
     createIdlePty();
 
     // focusPrompt();

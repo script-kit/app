@@ -21,7 +21,7 @@ import type {
 } from '@johnlindquist/kit/types/core';
 import Convert from 'ansi-to-html';
 import DOMPurify from 'dompurify';
-import log from 'electron-log/renderer';
+import { createLogger } from '../../shared/log-utils';
 import { type Atom, type Getter, type Setter, atom } from 'jotai';
 
 import type {
@@ -43,6 +43,8 @@ import { DEFAULT_HEIGHT, SPLASH_PATH, closedDiv, noChoice, noScript } from '../.
 import { AppChannel } from '../../shared/enums';
 import type { ResizeData, ScoredChoice, Survey, TermConfig } from '../../shared/types';
 import { formatShortcut } from './components/formatters';
+
+const { info } = createLogger('jotai');
 
 function arraysEqual(a: string[], b: string[]): boolean {
   if (a.length !== b.length) {
@@ -75,7 +77,7 @@ export const shortcutsAtom = atom(
     return g(_shortcuts);
   },
   (g, s, a: Shortcut[]) => {
-    // log.info(`🔥 Setting shortcuts to ${a.length}`, a);
+    // info.info(`🔥 Setting shortcuts to ${a.length}`, a);
     s(_shortcuts, a);
   },
 );
@@ -226,7 +228,7 @@ export const panelHTMLAtom = atom(
 const _previewHTML = atom('');
 
 const throttleSetPreview = throttle((g, s, a: string) => {
-  // log.info(`${window.pid} 👀👀 throttleSetPreview ->> ${a.slice(0, 24)}`);
+  // info(`${window.pid} 👀👀 throttleSetPreview ->> ${a.slice(0, 24)}`);
   s(_previewHTML, a);
   resize(g, s, 'SET_PREVIEW');
 }, 25);
@@ -243,7 +245,7 @@ export const previewHTMLAtom = atom(
   },
 
   (g, s, a: string) => {
-    // log.info(`${window.pid} 👀 previewHTMLAtom ->> ${a.slice(0, 24)}`);
+    // info(`${window.pid} 👀 previewHTMLAtom ->> ${a.slice(0, 24)}`);
     const prevPreview = g(_previewHTML);
     if (prevPreview === a) {
       return;
@@ -493,7 +495,7 @@ export const flagsIndexAtom = atom(
     }
 
     if (prevIndex !== calcIndex) {
-      // log.info(`Setting to ${calcIndex}`);
+      // info(`Setting to ${calcIndex}`);
       s(flagsIndex, calcIndex);
     }
 
@@ -529,7 +531,7 @@ export const indexAtom = atom(
     // Check if going up/down by comparing the prevIndex to the clampedIndex
     let choice = cs?.[clampedIndex]?.item;
 
-    // log .id vs. prevChoiceIndexId
+    // info .id vs. prevChoiceIndexId
     if (choice?.id === prevChoiceIndexId) {
       return;
     }
@@ -537,7 +539,7 @@ export const indexAtom = atom(
     const direction = g(directionAtom);
     if (g(allSkipAtom)) {
       s(focusedChoiceAtom, noChoice);
-      // log.info(`⏩ All choices skipped, no focus`);
+      // info(`⏩ All choices skipped, no focus`);
       if (!g(promptDataAtom)?.preview) {
         s(previewHTMLAtom, closedDiv);
       }
@@ -593,14 +595,14 @@ export const indexAtom = atom(
 
     // Not sure why I was preventing setting the focusedChoice when the id didn't match the prevId...
     // if (!selected && id && id !== prevId) {
-    // log.info(`Focusing index: ${choice?.id}`);
+    // info(`Focusing index: ${choice?.id}`);
 
     if (id) {
       s(focusedChoiceAtom, choice);
       if (typeof choice?.preview === 'string') {
         s(previewHTMLAtom, choice?.preview);
       }
-      // console.log.info(
+      // console.info(
       //   `!selected && id && id !== prevId: Setting prevChoiceId to ${id}`
       // );
       // s(prevChoiceId, id);
@@ -628,10 +630,10 @@ const throttleChoiceFocused = throttle(
     }
     // if (g(_focused)?.id === choice?.id) return;
 
-    // log.info(`Focusing ${choice?.name} with ${choice?.id}`);
+    // info(`Focusing ${choice?.name} with ${choice?.id}`);
     s(_focused, choice || noChoice);
 
-    // log.info(`Focusing id:${choice?.id}, name:${choice?.name}`);
+    // info(`Focusing id:${choice?.id}, name:${choice?.name}`);
     if (choice?.id || (choice?.name && choice?.name !== noChoice.name)) {
       if (typeof choice?.preview === 'string') {
         s(previewHTMLAtom, choice?.preview);
@@ -644,7 +646,7 @@ const throttleChoiceFocused = throttle(
         channel(Channel.CHOICE_FOCUSED);
       }
 
-      // log.info(`CHOICE_FOCUSED ${choice?.name}`);
+      // info(`CHOICE_FOCUSED ${choice?.name}`);
       // resize(g, s);
     }
   },
@@ -670,7 +672,7 @@ export const scoredChoicesAtom = atom(
   // Setting to `null` should only happen when using setPanel
   // This helps skip sending `onNoChoices`
   (g, s, cs: ScoredChoice[]) => {
-    // log.info(
+    // info(
     //   `${window.pid} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Setting scoredChoices to ${a?.length}`
     // );
     s(cachedAtom, false);
@@ -680,14 +682,14 @@ export const scoredChoicesAtom = atom(
     const csIds = cs.map((c) => c.item.id) as string[];
     const prevIds = g(prevScoredChoicesIdsAtom);
     const changed = !arraysEqual(prevIds, csIds);
-    // log.info({
+    // info({
     //   csIds,
     //   prevIds,
     //   changed,
     // });
     s(prevScoredChoicesIdsAtom, csIds);
 
-    // log.info(`⚽️ Scored choices length: ${a?.length}`);
+    // info(`⚽️ Scored choices length: ${a?.length}`);
 
     // s(submittedAtom, false);
 
@@ -696,7 +698,7 @@ export const scoredChoicesAtom = atom(
       cs[0].item.className = cs?.[0]?.item?.className.replace('border-t-1', '');
     }
 
-    // log.info(`⚽️ Scored choices length: ${cs?.length}`);
+    // info(`⚽️ Scored choices length: ${cs?.length}`);
     s(choices, cs || []);
     s(currentChoiceHeightsAtom, cs || []);
 
@@ -704,7 +706,7 @@ export const scoredChoicesAtom = atom(
     //   const prevChoice = prevChoices?.[i];
 
     //   if (!prevChoice || newChoice.item.id !== prevChoice?.item?.id) {
-    //     log.info(
+    //     info(
     //       `Mismatch: ${newChoice.item.name}: ${newChoice.item.id} vs. ${prevChoice?.item?.name}: ${prevChoice?.item?.id}`
     //     );
     //   }
@@ -742,7 +744,7 @@ export const scoredChoicesAtom = atom(
           const foundChoice = cs[i].item;
           if (foundChoice?.id) {
             s(indexAtom, i);
-            // log.info(`🤔 Found choice: ${foundChoice?.id}`);
+            // info(`🤔 Found choice: ${foundChoice?.id}`);
             s(focusedChoiceAtom, foundChoice);
             s(requiresScrollAtom, i);
           }
@@ -753,7 +755,7 @@ export const scoredChoicesAtom = atom(
         s(requiresScrollAtom, g(requiresScrollAtom) > 0 ? 0 : -1);
 
         const keyword = g(promptDataAtom)?.keyword;
-        log.info({ keyword, inputLength: input.length });
+        info({ keyword, inputLength: input.length });
         if (changed) {
           s(indexAtom, 0);
         }
@@ -786,7 +788,7 @@ export const scoredChoicesAtom = atom(
     }
 
     s(choicesHeightAtom, choicesHeight);
-    // log.info({ choicesHeight, here: '🤷‍♂️', count: a?.length, pid: window.pid });
+    // info({ choicesHeight, here: '🤷‍♂️', count: a?.length, pid: window.pid });
     const ui = g(uiAtom);
     if (ui === UI.arg) {
       s(mainHeightAtom, choicesHeight);
@@ -842,7 +844,7 @@ const _actionsInputAtom = atom('');
 export const actionsInputAtom = atom(
   (g) => g(_actionsInputAtom),
   async (g, s, a: string) => {
-    // log.info(`✉️ inputAtom: ${a}`);
+    // info(`✉️ inputAtom: ${a}`);
     s(directionAtom, 1);
 
     s(_actionsInputAtom, a);
@@ -860,7 +862,7 @@ export const actionsInputAtom = atom(
 export const inputAtom = atom(
   (g) => g(_inputAtom),
   async (g, s, a: string) => {
-    // log.info(`✉️ inputAtom: ${a}`);
+    // info(`✉️ inputAtom: ${a}`);
     s(directionAtom, 1);
     const selected = g(showSelectedAtom);
     const prevInput = g(_inputAtom);
@@ -918,11 +920,11 @@ export const inputAtom = atom(
 const _flagsAtom = atom<FlagsOptions>({});
 export const flagsAtom = atom(
   (g) => {
-    const _flags = g(_flagsAtom);
-    return _flags;
+    const { sortChoicesKey, ...flags } = g(_flagsAtom);
+    return flags;
   },
   (g, s, a: FlagsOptions) => {
-    // log.info(
+    // info(
     //   Object.entries(a).map(([k, v]) => {
     //     return {
     //       [k]: v?.hasAction ? 'hasAction' : 'noAction',
@@ -963,7 +965,7 @@ export const tabIndexAtom = atom(
     s(prevIndexAtom, 0);
     if (g(_tabIndex) !== a) {
       s(_tabIndex, a);
-      // log.info(`tabIndexAtom clearing flagsAtom`);
+      // info(`tabIndexAtom clearing flagsAtom`);
       s(flagsAtom, {});
       s(_flaggedValue, '');
 
@@ -998,7 +1000,7 @@ export const scriptAtom = atom(
 
     const isMainScript = a?.filePath === g(kitConfigAtom).mainScriptPath;
 
-    // log.info(`>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // info(`>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     // ${isMainScript ? 'MAIN SCRIPT' : 'NOT MAIN SCRIPT'}
 
@@ -1015,13 +1017,13 @@ export const scriptAtom = atom(
     if (!isMainScript) {
       s(choicesConfigAtom, { preload: false });
       const preloaded = g(preloadedAtom);
-      log.info(`${g(pidAtom)}: Preloaded? ${preloaded ? 'YES' : 'NO'}`);
+      info(`${g(pidAtom)}: Preloaded? ${preloaded ? 'YES' : 'NO'}`);
 
       if (!preloaded) {
         // Removed: Caused a flash of white from no choices
         // s(scoredChoicesAtom, []);
         // s(focusedChoiceAtom, noChoice);
-        // log.info(`>>>>>>>>>>>>>>>>>>>>>>>>> NOT MAIN SCRIPT< CLEARING`);
+        // info(`>>>>>>>>>>>>>>>>>>>>>>>>> NOT MAIN SCRIPT< CLEARING`);
         s(_previewHTML, '');
       }
       //
@@ -1065,7 +1067,7 @@ let prevTopHeight = 0;
 
 export const domUpdatedAtom = atom(null, (g, s) => {
   return debounce((reason = '') => {
-    // log.info(`domUpdated: ${reason}`);
+    // info(`domUpdated: ${reason}`);
     resize(g, s, reason);
   }, 25); // TODO: think about panel resizing debouncing
 });
@@ -1085,13 +1087,13 @@ const resize = debounce(
     if (human) {
       return;
     }
-    // log.info(`${g(pidAtom)}: ${g(scriptAtom)?.filePath}: 🌈 resize: ${reason}`);
+    // info(`${g(pidAtom)}: ${g(scriptAtom)?.filePath}: 🌈 resize: ${reason}`);
     if (reason !== 'SETTLE') {
       resizeSettle(g, s);
     }
 
     const active = g(promptActiveAtom);
-    // log.info(`🌈 ${active ? 'active' : 'inactive'} resize: ${reason}`);
+    // info(`🌈 ${active ? 'active' : 'inactive'} resize: ${reason}`);
 
     if (!active) {
       return;
@@ -1101,7 +1103,7 @@ const resize = debounce(
     const ui = g(uiAtom);
 
     const scoredChoicesLength = g(scoredChoicesAtom)?.length;
-    // log.info(`resize: ${reason} - ${ui} length ${scoredChoicesLength}`);
+    // info(`resize: ${reason} - ${ui} length ${scoredChoicesLength}`);
     const hasPanel = g(_panelHTML) !== '';
     const promptData = g(promptDataAtom);
 
@@ -1159,12 +1161,12 @@ const resize = debounce(
           return;
         }
       } else if (ui === UI.arg && hasPanel) {
-        // log.info(`Force resize: has panel`);
+        // info(`Force resize: has panel`);
         ch = (document as any)?.getElementById('panel')?.offsetHeight;
         mh = ch;
         forceResize = true;
       } else if (ui === UI.arg && !hasPanel && !scoredChoicesLength && !document.getElementById('list')) {
-        // log.info(`List and panel gone`);
+        // info(`List and panel gone`);
         ch = 0;
         mh = 0;
         forceResize = true;
@@ -1180,7 +1182,7 @@ const resize = debounce(
         forceResize = Boolean(ch > g(prevMh));
       }
     } catch (error) {
-      // log.info(`Force resize error`);
+      // info(`Force resize error`);
     }
 
     if (topHeight !== prevTopHeight) {
@@ -1193,12 +1195,12 @@ const resize = debounce(
       mh = Math.max(g(flagsHeightAtom), choicesHeight, previewHeight, promptData?.height || PROMPT.HEIGHT.BASE);
       forceResize = true;
 
-      // log.info(`hasPreview: ${PROMPT.HEIGHT.BASE} mh ${mh}`);
+      // info(`hasPreview: ${PROMPT.HEIGHT.BASE} mh ${mh}`);
     }
 
     if (g(logVisibleAtom)) {
       const logHeight = document.getElementById('log')?.offsetHeight;
-      // log.info(`logHeight: ${logHeight}`);
+      // info(`logHeight: ${logHeight}`);
       mh += logHeight || 0;
     }
 
@@ -1246,12 +1248,12 @@ const resize = debounce(
 
     const hasInput = Boolean(g(inputAtom)?.length);
 
-    // log.info({
+    // info({
     //   forceHeight: forceHeight || 'no forced height',
     //   forceWidth: forceWidth || 'no forced width',
     // });
 
-    // log.info({
+    // info({
     //   reason,
     //   ui,
     //   ch,
@@ -1268,7 +1270,7 @@ const resize = debounce(
     // forceResize ||= hasChoices;
 
     // const hasPreview = g(previewCheckAtom);
-    // log.info({
+    // info({
     //   hasPreview: hasPreview ? 'has preview' : 'no preview',
     // });
 
@@ -1278,7 +1280,7 @@ const resize = debounce(
     // mh = Math.ceil(mh || -3) + 3;
 
     if (mh === 0 && promptData?.preventCollapse) {
-      log.info(`🍃 Prevent collapse to zero...`);
+      info(`🍃 Prevent collapse to zero...`);
       return;
     }
 
@@ -1291,7 +1293,7 @@ const resize = debounce(
     // }
 
     // if (window.pid) {
-    //   log.info(
+    //   info(
     //     `Jotai PID: ${window.pid}: ${promptData?.scriptPath}: ${choicesHeight}\n` +
     //       `+----------------+----------------+----------------+----------------+\n` +
     //       `|                | Prompt Bounds  | Prompt Data    | Computed Values|\n` +
@@ -1337,9 +1339,9 @@ const resize = debounce(
 
     s(prevMh, mh);
 
-    // console.log.info(`👋`, data);
+    // console.info(`👋`, data);
 
-    // log.info({
+    // info({
     //   justOpened: justOpened ? 'JUST OPENED' : 'NOT JUST OPENED',
     // });
 
@@ -1381,7 +1383,7 @@ export const mainHeightAtom = atom(
 
     const nextMainHeight = a < 0 ? 0 : a;
 
-    // log.info(
+    // info(
     //   `${g(pidAtom)}:${g(scriptAtom)?.filePath}: 🌈 mainHeight: ${nextMainHeight} (${a})`,
     // );
 
@@ -1470,7 +1472,7 @@ const setCSSVars = (theme: Record<string, string>) => {
   }
 
   if (logMessages.length > 0) {
-    log.verbose(logMessages.join('\n'));
+    info(logMessages.join('\n'));
   }
 };
 
@@ -1482,11 +1484,11 @@ export const themeAtom = atom(
       s(appearanceAtom, theme.appearance as Appearance);
     }
 
-    log.info(`${window.pid}: themeAtom`);
+    info(`${window.pid}: themeAtom`);
     setCSSVars(theme);
     const newTheme = { ...prevTheme, ...theme };
 
-    // log.info(`theme: ${JSON.stringify(newTheme)}`);
+    // info(`theme: ${JSON.stringify(newTheme)}`);
 
     s(_themeAtom, newTheme);
     s(_tempThemeAtom, newTheme);
@@ -1511,7 +1513,7 @@ export const promptDataAtom = atom(
   (g, s, a: null | PromptData) => {
     const pid = g(pidAtom);
     // s(appendToLogHTMLAtom, a?.id || 'id missing');
-    log.info(`${pid}: 👂 Prompt Data ${a?.id}, ${a?.ui}`);
+    info(`${pid}: 👂 Prompt Data ${a?.id}, ${a?.ui}`);
 
     const isMainScript = a?.scriptPath === g(kitConfigAtom).mainScriptPath;
     s(isMainScriptAtom, isMainScript);
@@ -1526,7 +1528,7 @@ export const promptDataAtom = atom(
     const prevPromptData = g(promptData);
 
     wasPromptDataPreloaded = Boolean(prevPromptData?.preload && !a?.preload);
-    log.info(
+    info(
       `${g(pidAtom)}: 👀 Preloaded: ${a?.scriptPath} ${
         wasPromptDataPreloaded ? 'true' : 'false'
       } and keyword: ${a?.keyword}
@@ -1593,11 +1595,11 @@ export const promptDataAtom = atom(
       //   isMainScriptAtom: g(isMainScriptAtom) ? 'true' : 'false',
       // });
 
-      if (!(a?.keyword || g(isMainScriptAtom))) {
+      if (!(a?.keyword || (g(isMainScriptAtom) && a?.ui === UI.arg))) {
         // log.info(`👍 Setting input to ${a?.input || '_'}`);
         const inputWhileSubmitted = g(inputWhileSubmittedAtom);
         const forceInput = a?.input || inputWhileSubmitted || '';
-        log.info(`${pid}: 👂 FORCE INPUT:`, {
+        info(`${pid}: 👂 FORCE INPUT:`, {
           input: forceInput,
           inputWhileSubmitted,
           a: a?.input,
@@ -1886,13 +1888,13 @@ export const submitValueAtom = atom(
     const channel = g(channelAtom);
 
     const action = g(focusedActionAtom);
-    log.info({
+    info({
       action,
     });
     if ((action as FlagsWithKeys).hasAction) {
       channel(Channel.ACTION);
       if (action?.close) {
-        log.info('Closing actions <<<<<<<<<<<<<<<<<<<<<<<<');
+        info('Closing actions <<<<<<<<<<<<<<<<<<<<<<<<');
         s(flaggedChoiceValueAtom, '');
       }
       return;
@@ -2089,7 +2091,7 @@ export const escapeAtom = atom<any>((g) => {
       synth.cancel();
     }
 
-    log.info('👋 Sending Channel.ESCAPE');
+    info('👋 Sending Channel.ESCAPE');
     channel(Channel.ESCAPE);
   };
 });
@@ -2121,7 +2123,7 @@ export const tempThemeAtom = atom(
       s(appearanceAtom, theme.appearance as Appearance);
     }
 
-    log.info(`${window.pid}: tempThemeAtom`);
+    info(`${window.pid}: tempThemeAtom`);
     setCSSVars(theme);
     s(_tempThemeAtom, theme);
   },
@@ -2362,7 +2364,7 @@ export const onShortcutAtom = atom<OnShortcut>({});
 export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
   const channel = g(channelAtom);
   // const log = log;
-  log.info(`🎬 Send shortcut ${shortcut}`);
+  info(`🎬 Send shortcut ${shortcut}`);
 
   channel(Channel.SHORTCUT, { shortcut });
   s(focusedFlagValueAtom, '');
@@ -2469,8 +2471,7 @@ export const _audioAtom = atom<AudioOptions | null>(null);
 export const audioAtom = atom(
   (g) => g(_audioAtom),
   (g, s, a: AudioOptions | null) => {
-    // console.log.info(`Audio options`, a);
-    log.info('Audio options', { a });
+    info('Audio options', { a });
 
     let audio: null | HTMLAudioElement = document.querySelector('#audio') as HTMLAudioElement;
 
@@ -2482,18 +2483,18 @@ export const audioAtom = atom(
     }
 
     const endHandler = () => {
-      log.info('Audio ended');
+      info('Audio ended');
       s(_audioAtom, null);
       g(channelAtom)(Channel.PLAY_AUDIO);
     };
 
     const playHandler = () => {
-      log.info('Audio playing');
+      info('Audio playing');
       audio.removeEventListener('play', playHandler);
     };
 
     const pauseHandler = () => {
-      log.info('Audio paused');
+      info('Audio paused');
       audio.removeEventListener('pause', pauseHandler);
     };
 
@@ -2501,23 +2502,23 @@ export const audioAtom = atom(
       // Handle the error based on the error code
       switch (e.target.error.code) {
         case e.target.error.MEDIA_ERR_ABORTED:
-          log.error('Audio playback aborted by the user.');
+          info('Audio playback aborted by the user.');
           break;
         case e.target.error.MEDIA_ERR_NETWORK:
-          log.error('A network error caused the audio download to fail.');
+          info('A network error caused the audio download to fail.');
           break;
         case e.target.error.MEDIA_ERR_DECODE:
-          log.error(
+          info(
             'The audio playback was aborted due to a corruption problem or because the audio used features your browser did not support.',
           );
           break;
         case e.target.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-          log.error(
+          info(
             'The audio could not be loaded, either because the server or network failed or because the format is not supported.',
           );
           break;
         default:
-          log.error('An unknown error occurred.');
+          info('An unknown error occurred.');
           break;
       }
 
@@ -2534,7 +2535,7 @@ export const audioAtom = atom(
       // allow all file types
       // if filePath is a file on the system, use the `file://` protocol
       audio.setAttribute('src', filePath);
-      log.info('Playing audio', {
+      info('Playing audio', {
         audio: typeof audio,
         filePath,
       });
@@ -2570,12 +2571,12 @@ export const speechAtom = atom(
   (g) => g(_speechAtom),
   (g, _s, a: SpeakOptions) => {
     const pid = g(pidAtom);
-    log.info(`${pid}: 🔊 Speak`, { a });
+    info(`${pid}: 🔊 Speak`, { a });
     if (a) {
       // If SpeechSynthesis is playing, cancel
       const synth = window.speechSynthesis;
       if (synth.speaking) {
-        log.info(`${pid}: 🔊 Cancelling speak`);
+        info(`${pid}: 🔊 Cancelling speak`);
         synth.cancel();
       }
 
@@ -2588,7 +2589,7 @@ export const speechAtom = atom(
 
       // on speak complete
       const handler = () => {
-        log.info(`${pid}: 🔊 Speak complete`);
+        info(`${pid}: 🔊 Speak complete`);
         g(channelAtom)(Channel.SPEAK_TEXT);
         utterThis.removeEventListener('end', handler);
       };
@@ -2612,7 +2613,7 @@ export const _kitStateAtom = atom({
 export const kitStateAtom = atom(
   (g) => g(_kitStateAtom),
   (g, s, a: any) => {
-    // log.info({
+    // info({
     //   type: 'kitStateAtom',
     //   a,
     // });
@@ -2773,14 +2774,14 @@ export const termExitAtom = atom(
   null,
   debounce(
     (g, s, a: string) => {
-      log.info('🐲 Term exit from prompt', { a });
+      info('🐲 Term exit from prompt', { a });
       const ui = g(uiAtom);
       const submitted = g(submittedAtom);
       const currentTermConfig = g(termConfigAtom);
       const currentPromptData = g(promptDataAtom);
 
       if (ui === UI.term && !submitted && currentTermConfig.promptId === currentPromptData.id) {
-        log.info('🐲 Term exit and submit');
+        info('🐲 Term exit and submit');
         s(submitValueAtom, a);
       }
     },
@@ -2814,7 +2815,7 @@ const _micIdAtom = atom<string | null>(null);
 export const micIdAtom = atom(
   (g) => g(_micIdAtom),
   (g, s, a: string | null) => {
-    log.info('🎙 micIdAtom', { a });
+    info('🎙 micIdAtom', { a });
     s(_micIdAtom, a);
   },
 );
@@ -2992,7 +2993,7 @@ export const _lastKeyDownWasModifierAtom = atom(false);
 export const lastKeyDownWasModifierAtom = atom(
   (g) => g(_lastKeyDownWasModifierAtom),
   (g, s, a: boolean) => {
-    // log.info(`🔑 Last key down was modifier: ${a}`);
+    // info(`🔑 Last key down was modifier: ${a}`);
     s(_lastKeyDownWasModifierAtom, a);
   },
 );
@@ -3094,7 +3095,7 @@ export const promptBoundsAtom = atom(
     },
   ) => {
     if (a?.human) {
-      log.info(`😙 Prompt resized by human: ${a.width}x${a.height}`);
+      info(`😙 Prompt resized by human: ${a.width}x${a.height}`);
       s(promptResizedByHumanAtom, true);
     }
     s(_promptBoundsAtom, a);
@@ -3306,17 +3307,17 @@ export const beforeInputAtom = atom('');
 export const cssAtom = atom('');
 
 export const initPromptAtom = atom(null, (g, s) => {
-  log.info(`${window.pid}: 🚀 Init prompt`);
+  info(`${window.pid}: 🚀 Init prompt`);
   const promptData = g(cachedMainPromptDataAtom) as PromptData;
   // log.info({ promptData });
   const currentPromptData = g(promptDataAtom);
   if (currentPromptData?.id) {
-    log.info(`🚪 Init prompt skipped. Already initialized as ${currentPromptData?.id}`);
+    info(`🚪 Init prompt skipped. Already initialized as ${currentPromptData?.id}`);
     return;
   }
   s(promptDataAtom, promptData);
   const scoredChoices = g(cachedMainScoredChoicesAtom);
-  log.info(
+  info(
     `${window.pid}: scoredChoices`,
     scoredChoices.slice(0, 2).map((c) => c.item.name),
   );
@@ -3355,7 +3356,7 @@ const _inputWhileSubmittedAtom = atom('');
 export const inputWhileSubmittedAtom = atom(
   (g) => g(_inputWhileSubmittedAtom),
   (g, s, a: string) => {
-    log.info(`🔥 Input while submitted: ${a}`);
+    info(`🔥 Input while submitted: ${a}`);
     s(_inputWhileSubmittedAtom, a);
   },
 );
@@ -3388,16 +3389,20 @@ export const shortcutStringsAtom: Atom<
       .filter(Boolean);
   }
 
+  const actionsThatArentShortcuts = actions.filter((a) => !shortcuts.find((s) => s.key === a.key));
+
   const shortcutKeys = transformKeys(shortcuts, 'key', 'shortcut');
-  const actionKeys = transformKeys(actions, 'key', 'action');
+  const actionKeys = transformKeys(actionsThatArentShortcuts, 'key', 'action');
   const flagKeys = transformKeys(Object.values(flags), 'shortcut', 'flag');
 
-  log.verbose({
+  info('shortcutStringsAtom', {
     shortcuts: shortcutKeys,
     actions: actionKeys,
     flags: flagKeys,
   });
-  return new Set([...shortcutKeys, ...actionKeys, ...flagKeys]);
+  const shortcutStrings = new Set([...shortcutKeys, ...actionKeys, ...flagKeys]);
+  info(`🔥 Shortcut strings: `, Array.from(shortcutStrings));
+  return shortcutStrings;
 });
 
 export const submitInputAtom = atom(null, (g, s) => {

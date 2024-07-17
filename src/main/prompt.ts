@@ -1866,9 +1866,6 @@ export class KitPrompt {
     log.verbose(`setPromptData ${promptData.scriptPath}`);
 
     this.id = promptData.id;
-    if (kitState.suspended || kitState.screenLocked) {
-      return;
-    }
     this.ui = promptData.ui;
 
     if (this.kitSearch.keyword) {
@@ -2460,7 +2457,7 @@ export class KitPrompt {
     this.sendToPrompt(AppChannel.INIT_PROMPT, {});
   };
 
-  preloadPromptData = async (promptData: PromptData) => {
+  preloadPromptData = (promptData: PromptData) => {
     let input = '';
     if (this.kitSearch.keyword) {
       input = `${this.kitSearch.keyword} `;

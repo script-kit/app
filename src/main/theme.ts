@@ -2,8 +2,7 @@ import { kenvPath } from '@johnlindquist/kit/core/utils';
 
 import { readFile } from 'node:fs/promises';
 import log from 'electron-log';
-import fsExtra from 'fs-extra';
-const { pathExists } = fsExtra;
+import { pathExists } from './cjs-exports';
 import { AppChannel } from '../shared/enums';
 import { sendToAllPrompts } from './channel';
 import type { WatchEvent } from './chokidar';

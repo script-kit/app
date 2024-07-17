@@ -1,6 +1,7 @@
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import type { EditorOptions } from '@johnlindquist/kit/types/kitapp';
 import MonacoEditor, { type Monaco, useMonaco } from '@monaco-editor/react';
+
 import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -231,7 +232,15 @@ export default function Editor() {
             for (const { content, filePath } of config.extraLibs) {
               // console.log(filePath);
               // console.log(content);
-              monaco.languages.typescript.typescriptDefaults.addExtraLib(content, filePath);
+
+              try {
+                monaco.languages.typescript.typescriptDefaults.addExtraLib(content, filePath);
+              } catch (e) {
+                log.error({
+                  error: e,
+                  filePath,
+                });
+              }
             }
           }
         }
@@ -239,7 +248,14 @@ export default function Editor() {
         if (config?.language === 'javascript') {
           if (config?.extraLibs?.length) {
             for (const { content, filePath } of config.extraLibs) {
-              monaco.languages.typescript.javascriptDefaults.addExtraLib(content, filePath);
+              try {
+                monaco.languages.typescript.javascriptDefaults.addExtraLib(content, filePath);
+              } catch (e) {
+                log.error({
+                  error: e,
+                  filePath,
+                });
+              }
             }
           }
         }
@@ -533,15 +549,18 @@ export default function Editor() {
             log.info('🏆', { value, type });
             if (type === 'shortcut') {
               sendShortcut(value);
+              return;
             }
             if (type === 'flag') {
               setFlagByShortcut(value);
               submitInput();
+              return;
             }
 
             if (type === 'action') {
               setFlagByShortcut(value);
               submitInput();
+              return;
             }
           });
         }

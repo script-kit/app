@@ -16,11 +16,9 @@ import { promisify } from 'node:util';
 import dotenv from 'dotenv';
 import download from 'download';
 import log from 'electron-log';
-import fsExtra from 'fs-extra';
 import { assign, debounce } from 'lodash-es';
 import StreamZip from 'node-stream-zip';
 import * as tar from 'tar';
-const { ensureDir, writeFile, readJson, writeJson } = fsExtra;
 import { access, lstat, readFile, rm } from 'node:fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import {
@@ -51,6 +49,7 @@ import { maybeConvertColors } from './process';
 import { prompts } from './prompts';
 import { INSTALL_ERROR, show } from './show';
 import { getThemes, kitCache, kitState, preloadChoicesMap, workers } from './state';
+import { ensureDir, writeFile, readJson, writeJson, pathExists, readdir, remove } from './cjs-exports';
 
 let isOhNo = false;
 export const ohNo = async (error: Error) => {

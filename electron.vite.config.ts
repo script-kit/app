@@ -43,5 +43,10 @@ export default defineConfig({
       },
     },
     plugins: [million.vite({ auto: true }), react()],
+    server: {
+      watch: {
+        ignored: ['**/*.txt'],
+      },
+    },
   },
 });

@@ -1,9 +1,9 @@
 import path from 'node:path';
 import { app } from 'electron';
 import log from 'electron-log';
-import fsExtra from 'fs-extra';
+
 import minimist from 'minimist';
-const { pathExistsSync, readJson } = fsExtra;
+import { pathExistsSync, readJson } from './cjs-exports';
 import { type ForkOptions, fork } from 'node:child_process';
 import { homedir } from 'node:os';
 
