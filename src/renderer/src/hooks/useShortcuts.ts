@@ -25,6 +25,7 @@ import {
 
 import type { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
 import { hotkeysOptions } from './shared';
+import { useCallback, useMemo } from 'react';
 
 const { info, warn, err } = createLogger('useShortcuts');
 
@@ -96,29 +97,34 @@ export default () => {
     [setPreviewEnabled, previewEnabled],
   );
 
-  const flagsArray = Object.entries(flags) as [string, { shortcut: string }][];
+  const flagsWithShortcuts = useMemo(() => {
+    const flagsArray = Object.entries(flags) as [string, { shortcut: string }][];
+    return flagsArray.filter(([key, value]) => value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter');
+  }, [flags]);
 
-  const flagsWithShortcuts = flagsArray.filter(
-    ([key, value]) => value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter',
-  );
-
-  const flagShortcuts: string[] = [];
-  for (const [key, value] of flagsWithShortcuts) {
-    if (value?.shortcut) {
-      flagShortcuts.push(value.shortcut.replace('cmd', 'mod').replace(',', 'comma'));
-    }
-  }
-
-  const flagByHandler = (event: HotkeysEvent) => {
-    info('Checking flag shortcuts', { event, flagsWithShortcuts });
-    for (const [flag, value] of flagsWithShortcuts) {
-      if (isEventShortcut(event, value.shortcut)) {
-        info('Flag shortcut matched', { flag, shortcut: value.shortcut });
-        return flag;
+  const flagShortcuts = useMemo(() => {
+    const shortcuts: string[] = [];
+    for (const [, value] of flagsWithShortcuts) {
+      if (value?.shortcut) {
+        shortcuts.push(value.shortcut.replace('cmd', 'mod').replace(',', 'comma'));
       }
     }
-    return null;
-  };
+    return shortcuts;
+  }, [flagsWithShortcuts]);
+
+  const flagByHandler = useCallback(
+    (event: HotkeysEvent) => {
+      info('Checking flag shortcuts', { event, flagsWithShortcuts });
+      for (const [flag, value] of flagsWithShortcuts) {
+        if (isEventShortcut(event, value.shortcut)) {
+          info('Flag shortcut matched', { flag, shortcut: value.shortcut });
+          return flag;
+        }
+      }
+      return null;
+    },
+    [flagsWithShortcuts],
+  );
 
   useHotkeys(
     flagShortcuts.length ? flagShortcuts : ['f19'],
@@ -142,31 +148,32 @@ export default () => {
     [flags, input, inputFocus, choices, index, flagValue, flagShortcuts],
   );
 
-  let onShortcuts = 'f19';
-  if (promptShortcuts.length) {
-    const moddedPromptShortcuts = promptShortcuts.map((ps) => {
-      return {
+  const onShortcuts = useMemo(() => {
+    let onShortcuts = 'f19';
+    if (promptShortcuts.length) {
+      const moddedPromptShortcuts = promptShortcuts.map((ps) => ({
         ...ps,
         key: ps?.key?.replace('cmd', 'mod') || undefined,
-      };
-    });
-    let keys = '';
-    for (const ps of moddedPromptShortcuts) {
-      if (ps?.key) {
-        info(`Comparing ${ps.key} to ${flagShortcuts}`);
-        if (flagShortcuts.includes(ps.key)) {
-          warn('Prompt shortcut is a flag shortcut', { ps });
-        } else {
-          keys += `${ps.key},`;
+      }));
+      let keys = '';
+      for (const ps of moddedPromptShortcuts) {
+        if (ps?.key) {
+          // info(`Comparing ${ps.key} to ${flagShortcuts}`);
+          if (flagShortcuts.includes(ps.key)) {
+            warn('Prompt shortcut is a flag shortcut', { ps });
+          } else {
+            keys += `${ps.key},`;
+          }
         }
       }
+      if (keys.length > 0) {
+        // Remove the last comma
+        onShortcuts = keys.slice(0, -1);
+        // info('All flags and shortcuts', { flagShortcuts, onShortcuts });
+      }
     }
-    if (keys.length > 0) {
-      // Remove the last comma
-      onShortcuts = keys.slice(0, -1);
-      info('All flags and shortcuts', { flagShortcuts, onShortcuts });
-    }
-  }
+    return onShortcuts;
+  }, [promptShortcuts, flagShortcuts]);
 
   useHotkeys(
     onShortcuts,
@@ -257,7 +264,7 @@ export default () => {
         info('Clearing flag value');
         setFlagValue('');
       } else if (choices.length) {
-        info('Setting flag value to focused choice', { focusedChoice });
+        info('Setting flag value to focused choice', { name: focusedChoice?.name });
         setFlagValue(focusedChoice?.value);
       } else {
         info('Setting flag value to input or UI', { input, ui });

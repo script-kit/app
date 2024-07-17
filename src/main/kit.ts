@@ -247,7 +247,7 @@ export const runPromptProcess = async (
     force: options.force,
   });
 
-  const scriptlet = kitState.scriptlets.find((scriptlet) => scriptlet.filePath === promptScriptPath);
+  const scriptlet = kitState.scriptlets.get(promptScriptPath);
 
   const script = scriptlet || (await findScript(promptScriptPath));
   const visible = prompt?.isVisible();

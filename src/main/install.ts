@@ -922,17 +922,16 @@ export const syncBins = async () => {
       const binDirPath = kenvPath('bin');
       const binFiles = await readdir(binDirPath);
       const worker = getBinWorker();
-
       for (const bin of binFiles) {
-        const script = kitState.scripts.find((s) => s.command === bin);
+        const script = Array.from(kitState.scripts.values()).find((s) => s.command === bin);
         if (!script) {
           log.info(`🔗 Deleting bin ${bin}`);
           await unlink(path.resolve(binDirPath, bin));
         }
       }
 
-      for (const script of kitState.scripts as Scriptlet[]) {
-        if (binFiles.includes(script.command) && !script.scriptlet) {
+      for (const script of kitState.scripts.values()) {
+        if (binFiles.includes(script.command) && !(script as Scriptlet).scriptlet) {
           continue;
         }
 
@@ -982,21 +981,18 @@ const receiveScripts = ({
     sendToAllPrompts(AppChannel.SET_CACHED_MAIN_PREVIEW, kitCache.preview);
     sendToAllPrompts(AppChannel.INIT_PROMPT, {});
 
-    const scriptlets: Scriptlet[] = [];
-    for (const script of scripts) {
-      if ((script as Scriptlet).scriptlet) {
-        scriptlets.push(script as Scriptlet);
-      }
-    }
-    kitState.scriptlets = scriptlets;
-    kitState.scripts = [];
+    kitState.scriptlets.clear();
+    kitState.scripts.clear();
 
     const isBinnableScript = (s: Script) =>
       s?.group !== 'Kit' && s?.kenv !== '.kit' && !s?.skip && s?.command && s.filePath;
 
-    for (const s of scripts) {
-      if (isBinnableScript(s)) {
-        kitState.scripts.push(s);
+    for (const script of scripts) {
+      if ((script as Scriptlet).scriptlet) {
+        kitState.scriptlets.set(script.filePath, script as Scriptlet);
+      }
+      if (isBinnableScript(script)) {
+        kitState.scripts.set(script.filePath, script);
       }
     }
 

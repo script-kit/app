@@ -207,8 +207,8 @@ export const getThemes = () => ({
 export const theme = nativeTheme.shouldUseDarkColors ? getThemes().scriptKitTheme : getThemes().scriptKitLightTheme;
 
 const initState = {
-  scripts: [] as Script[],
-  scriptlets: [] as Scriptlet[],
+  scripts: new Map<string, Script>(),
+  scriptlets: new Map<string, Scriptlet>(),
   displays: [] as Display[],
   debugging: false,
   hiddenByUser: false,

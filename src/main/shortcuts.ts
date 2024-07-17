@@ -37,7 +37,7 @@ const mainFail = (shortcut: string, filePath: string) =>
 const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
   try {
     const shortcutAction = debounce(
-      async () => {
+      () => {
         kitState.shortcutPressed = shortcut;
 
         if (shebang) {
@@ -204,7 +204,7 @@ export const shortcutScriptChanged = ({
   }
 };
 
-export const updateMainShortcut = async (shortcut?: string) => {
+export const updateMainShortcut = (shortcut?: string) => {
   const checkShortcut = shortcut ? shortcut : kitState.isMac ? 'cmd ;' : 'ctrl ;';
   log.info(`updateMainShortcut with ${checkShortcut}`);
 
