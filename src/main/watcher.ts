@@ -391,7 +391,10 @@ export const checkUserDb = async (eventName: string) => {
   }
 
   const user = snapshot(kitState.user);
-  info('Send user.json to prompt', user);
+  info('Send user.json to prompt', {
+    login: user?.login,
+    name: user?.name,
+  });
 
   // TODO: Reimplement this
   sendToAllPrompts(AppChannel.USER_CHANGED, user);

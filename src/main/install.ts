@@ -913,8 +913,8 @@ const getBinWorker = () => {
     workers.createBin.on('error', (error) => {
       err('🔗 Bin worker error', error);
     });
-    workers.createBin.on('message', (message) => {
-      info('🔗 Created bin for', message);
+    workers.createBin.on('message', (message: { command: string; filePath: string }) => {
+      info('🔗 Created bin for', message?.filePath, 'to', message?.command);
     });
   }
   return workers.createBin;

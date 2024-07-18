@@ -45,6 +45,9 @@ import internetAvailable from '../shared/internet-available';
 import shims from './shims';
 import { writeJson, pathExists } from './cjs-exports';
 
+import { createLogger } from '../shared/log-utils';
+const { info, err, warn, verbose, silly } = createLogger('state.ts');
+
 const schema: Schema<{
   KENV: string;
   accessibilityAuthorized: boolean;
@@ -74,8 +77,8 @@ export const kitStore = new Store({
 });
 
 const storedKenv = process.env?.KENV || kitStore.get('KENV');
-log.info(`📀 Stored KENV: ${storedKenv}`);
-log.info(`Path to kitStore: ${kitStore.path}`);
+info(`📀 Stored KENV: ${storedKenv}`);
+info(`Path to kitStore: ${kitStore.path}`);
 // process.exit();
 
 process.env.KENV = storedKenv;
@@ -136,7 +139,7 @@ export const workers = {
 };
 
 export const debounceSetScriptTimestamp = debounce((stamp: Stamp & { reason?: string }) => {
-  log.info(`💮 Stamping ${stamp?.filePath} - ${stamp?.reason}`);
+  info(`💮 Stamping ${stamp?.filePath} - ${stamp?.reason}`);
   if (!kitState.hasOpenedMainMenu) {
     return;
   }
@@ -162,8 +165,12 @@ export const cacheKitScripts = async () => {
   }
 };
 
-export const getKitScript = (filePath: string): Script => {
-  return kitState.kitScripts.find((script) => script.filePath === filePath) as Script;
+export const getKitScript = async (filePath: string): Promise<Script> => {
+  let script = kitState.kitScripts.find((script) => script.filePath === filePath) as Script;
+  if (!script) {
+    script = await parseScript(filePath);
+  }
+  return script;
 };
 
 export const kitCache = {
@@ -331,7 +338,7 @@ export const promptState = proxy({
 });
 
 const subStatus = subscribeKey(kitState, 'status', (status: KitStatus) => {
-  log.info(`👀 Status: ${JSON.stringify(status)}`);
+  info(`👀 Status: ${JSON.stringify(status)}`);
 
   if (status.status !== 'default' && status.message) {
     kitState.notifications.push(status);
@@ -341,7 +348,7 @@ const subStatus = subscribeKey(kitState, 'status', (status: KitStatus) => {
 });
 
 const subWaking = subscribeKey(kitState, 'waking', (waking) => {
-  log.info(`👀 Waking: ${waking}`);
+  info(`👀 Waking: ${waking}`);
 });
 
 const subReady = subscribeKey(kitState, 'ready', (ready) => {
@@ -354,7 +361,7 @@ const subReady = subscribeKey(kitState, 'ready', (ready) => {
 });
 
 const scriptletsSub = subscribeKey(kitState, 'scriptlets', (scriptlets) => {
-  log.info(
+  info(
     `👀 Scriptlets: ${scriptlets.length}`,
     scriptlets.map((scriptlet) => scriptlet.filePath),
   );
@@ -364,7 +371,7 @@ const scriptletsSub = subscribeKey(kitState, 'scriptlets', (scriptlets) => {
 // TODO: Dock is showing when main prompt is open. Check mac panel? Maybe setIcon?
 
 const subIgnoreBlur = subscribeKey(kitState, 'ignoreBlur', (ignoreBlur) => {
-  log.info(`👀 Ignore blur: ${ignoreBlur ? 'true' : 'false'}`);
+  info(`👀 Ignore blur: ${ignoreBlur ? 'true' : 'false'}`);
   if (ignoreBlur) {
     emitter.emit(KitEvent.ShowDock);
   } else {
@@ -389,11 +396,11 @@ const subDevToolsCount = subscribeKey(kitState, 'devToolsCount', (count) => {
 });
 
 export const online = async () => {
-  log.info('Checking online status...');
+  info('Checking online status...');
   try {
     const result = await internetAvailable();
 
-    log.info(`🗼 Status: ${result ? 'Online' : 'Offline'}`);
+    info(`🗼 Status: ${result ? 'Online' : 'Offline'}`);
 
     return result;
   } catch (error) {
@@ -406,7 +413,7 @@ export const online = async () => {
 // };
 
 export const forceQuit = () => {
-  log.info('Begin force quit...');
+  info('Begin force quit...');
   kitState.allowQuit = true;
 };
 
@@ -417,7 +424,7 @@ const subRequiresAuthorizedRestart = subscribeKey(
   'requiresAuthorizedRestart',
   (requiresAuthorizedRestart) => {
     if (requiresAuthorizedRestart) {
-      log.info('👋 Restarting...');
+      info('👋 Restarting...');
       kitState.relaunch = true;
       forceQuit();
     }
@@ -433,7 +440,7 @@ const subScriptErrorPath = subscribeKey(kitState, 'scriptErrorPath', (scriptErro
 
 // TODO: I don't need to return booleans AND set kitState.isSponsor. Pick one.
 export const sponsorCheck = async (feature: string, block = true) => {
-  log.info(`Checking sponsor status... login: ${kitState?.user?.login} ${kitState.isSponsor ? '✅' : '❌'}`);
+  info(`Checking sponsor status... login: ${kitState?.user?.login} ${kitState.isSponsor ? '✅' : '❌'}`);
   const isOnline = await online();
   if (!isOnline || (process.env.KIT_SPONSOR === 'development' && os.userInfo().username === 'johnlindquist')) {
     kitState.isSponsor = true;
@@ -448,41 +455,41 @@ export const sponsorCheck = async (feature: string, block = true) => {
         feature,
       });
     } catch (error) {
-      log.error('Error checking sponsor status', error);
+      errr('Error checking sponsor status', error);
       kitState.isSponsor = true;
       return true;
     }
 
     // check for axios post error
     if (!response) {
-      log.error('Error checking sponsor status', response);
+      errr('Error checking sponsor status', response);
       kitState.isSponsor = true;
       return true;
     }
 
-    log.info(`Response status: ${response.status}`);
+    info(`Response status: ${response.status}`);
 
     // check for axios post error
     if (response.status !== 200) {
-      log.error('Error checking sponsor status', response);
+      errr('Error checking sponsor status', response);
     }
 
-    log.info('🕵️‍♀️ Sponsor check response', JSON.stringify(response.data));
+    info('🕵️‍♀️ Sponsor check response', JSON.stringify(response.data));
 
     if (response.data && kitState.user.node_id && response.data.id === kitState.user.node_id) {
-      log.info('User is sponsor');
+      info('User is sponsor');
       kitState.isSponsor = true;
       return true;
     }
 
     if (response.status !== 200) {
-      log.error('Sponsor check service is down. Granting temp sponsor status');
+      errr('Sponsor check service is down. Granting temp sponsor status');
       kitState.isSponsor = true;
       return true;
     }
 
     if (block) {
-      log.info('User is not sponsor');
+      info('User is not sponsor');
       kitState.isSponsor = false;
 
       emitter.emit(KitEvent.RunPromptProcess, {
@@ -651,7 +658,7 @@ export const initKeymap = async () => {
               kitState.keymap = keymap;
               prevKeyMap = keymap;
             } else {
-              log.verbose('Keymap not changed');
+              verbose('Keymap not changed');
             }
           } else {
             keymapLog.verbose(`Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`);

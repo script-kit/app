@@ -590,7 +590,7 @@ export default function Input() {
 
             {kitState.isSponsor ? (
               <span
-                className={`relative ${inputHeight === PROMPT.INPUT.HEIGHT.XS ? 'w-[28px]' : 'w-[30px]'} pl-1 pr-1`}
+                className={`relative ${inputHeight === PROMPT.INPUT.HEIGHT.XS ? 'w-[28px]' : 'w-[30px]'} pl-1 pr-1 mr-1`}
               >
                 {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
                 {user.avatar_url ? (
@@ -599,7 +599,7 @@ export default function Input() {
                     onClick={onClick}
                     alt="avatar"
                     src={user.avatar_url}
-                    className="z-0 w-[22px] cursor-pointer rounded-full hover:opacity-75"
+                    className="z-0 w-[22px] cursor-pointer rounded-full hover:opacity-75 -mt-[2px]"
                   />
                 ) : (
                   // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
@@ -615,18 +615,19 @@ export default function Input() {
                   width="24"
                   viewBox="0 0 24 24"
                   xmlns="http://www.w3.org/2000/svg"
-                  className="absolute right-[-7px] top-[-5px] z-10 h-[15px] text-primary opacity-90"
+                  className="absolute right-[-7px] top-[-7px] z-10 h-[15px] text-primary opacity-90"
                 >
                   <g fill="currentColor">
                     <path
                       d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z"
-                      fill="currentColor"
+                      fill="current"
+                      fillOpacity="0.9"
                     />
                   </g>
                 </svg>
               </span>
             ) : (
-              <>
+              <div className="pr-1.5 pl-1">
                 {/* <span className="text-xxs">
                   Process: {pid}
                   Choices: {scoredChoices.length}
@@ -634,8 +635,7 @@ export default function Input() {
                 </span> */}
 
                 <LoginButton key="login-button" />
-                <ActionSeparator key="close-login-separator" />
-              </>
+              </div>
             )}
 
             <div className="relative mx-2 flex min-w-0">

@@ -159,6 +159,25 @@ export const prompts = {
     return prevFocused;
   },
 
+  bringAllPromptsToFront: () => {
+    const sortedPrompts = Array.from(promptMap.values()).sort((a, b) => {
+      const posA = a.window?.getPosition() || [0, 0];
+      const posB = b.window?.getPosition() || [0, 0];
+      if (posA[1] !== posB[1]) {
+        return posA[1] - posB[1]; // Sort by y-coordinate first
+      }
+      return posA[0] - posB[0]; // Then sort by x-coordinate
+    });
+
+    for (const prompt of sortedPrompts) {
+      // ignore this
+      if (prompt === prompts.idle) {
+        continue;
+      }
+      prompt.window?.focus();
+    }
+  },
+
   /**
    * Allows iteration over all prompts.
    */
