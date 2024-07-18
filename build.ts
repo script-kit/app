@@ -61,6 +61,7 @@ const afterSign = async function notarizeMacos(context: AfterPackContext) {
     console.log('Notarization result', notarizationResult);
   } catch (e) {
     console.error('Notarization failed', e);
+    process.exit(1);
   }
 };
 
