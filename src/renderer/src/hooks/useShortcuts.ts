@@ -114,10 +114,10 @@ export default () => {
 
   const flagByHandler = useCallback(
     (event: HotkeysEvent) => {
-      info('Checking flag shortcuts', { event, flagsWithShortcuts });
+      // info('Checking flag shortcuts', { event, flagsWithShortcuts });
       for (const [flag, value] of flagsWithShortcuts) {
         if (isEventShortcut(event, value.shortcut)) {
-          info('Flag shortcut matched', { flag, shortcut: value.shortcut });
+          // info('Flag shortcut matched', { flag, shortcut: value.shortcut });
           return flag;
         }
       }

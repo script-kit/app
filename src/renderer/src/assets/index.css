@@ -61,12 +61,12 @@ img:before {
   content: ' ';
 }
 
-img:after {
+/* img:after {
   content: '🙈 missing image';
   @apply text-xxs;
   @apply font-mono;
   @apply break-words;
-}
+} */
 
 body {
   @apply bg-bg-base bg-opacity-base !important;

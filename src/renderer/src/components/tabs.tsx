@@ -30,7 +30,6 @@ const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
     }
     return (
       <div className="flex flex-row items-center justify-center">
-        <span>Sign In</span>
         <GithubIcon
           className={`ml-2
         opacity-100`}

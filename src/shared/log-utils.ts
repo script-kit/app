@@ -6,16 +6,16 @@ function createInfoLogger(prefix: string) {
   if (disabledPrefixes.has(prefix)) {
     return () => {};
   }
-  return (message: string, ...args: any[]) => {
-    log.info(`${prefix}: ${message}`, ...args);
+  return (...args: any[]) => {
+    log.info(`${prefix}:`, ...args);
   };
 }
 function createWarnLogger(prefix: string) {
   if (disabledPrefixes.has(prefix)) {
     return () => {};
   }
-  return (message: string, ...args: any[]) => {
-    log.warn(`${prefix}: ${message}`, ...args);
+  return (...args: any[]) => {
+    log.warn(`${prefix}:`, ...args);
   };
 }
 
@@ -23,8 +23,8 @@ function createErrorLogger(prefix: string) {
   if (disabledPrefixes.has(prefix)) {
     return () => {};
   }
-  return (message: string, ...args: any[]) => {
-    log.error(`${prefix}: ${message}`, ...args);
+  return (...args: any[]) => {
+    log.error(`${prefix}:`, ...args);
   };
 }
 
@@ -32,8 +32,8 @@ function createVerboseLogger(prefix: string) {
   if (disabledPrefixes.has(prefix)) {
     return () => {};
   }
-  return (message: string, ...args: any[]) => {
-    log.verbose(`${prefix}: ${message}`, ...args);
+  return (...args: any[]) => {
+    log.verbose(`${prefix}:`, ...args);
   };
 }
 
@@ -41,8 +41,8 @@ function createDebugLogger(prefix: string) {
   if (disabledPrefixes.has(prefix)) {
     return () => {};
   }
-  return (message: string, ...args: any[]) => {
-    log.debug(`${prefix}: ${message}`, ...args);
+  return (...args: any[]) => {
+    log.debug(`${prefix}:`, ...args);
   };
 }
 
@@ -50,8 +50,8 @@ function createSillyLogger(prefix: string) {
   if (disabledPrefixes.has(prefix)) {
     return () => {};
   }
-  return (message: string, ...args: any[]) => {
-    log.silly(`${prefix}: ${message}`, ...args);
+  return (...args: any[]) => {
+    log.silly(`${prefix}:`, ...args);
   };
 }
 

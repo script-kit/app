@@ -414,7 +414,7 @@ export const startClipboardMonitor = async () => {
       }
 
       // eslint-disable-next-line no-nested-ternary
-      const appName = prompts?.focused ? 'Script Kit' : app?.localizedName ? app.localizedName : 'Unknown';
+      const appName = prompts?.prevFocused ? 'Script Kit' : app?.localizedName ? app.localizedName : 'Unknown';
 
       const clipboardItem = {
         id: nanoid(),

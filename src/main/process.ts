@@ -38,6 +38,10 @@ import { prompts } from './prompts';
 import shims from './shims';
 import { TrackEvent, trackEvent } from './track';
 
+import { createLogger } from '../shared/log-utils';
+
+const { info } = createLogger('process.ts');
+
 export type ProcessAndPrompt = ProcessInfo & {
   prompt: KitPrompt;
   promptId?: string;
@@ -58,7 +62,7 @@ export const clearFlags = () => {
 };
 
 export const maybeConvertColors = async (theme: any = {}) => {
-  // log.info(`🎨 Convert Colors:`, theme);
+  // info(`🎨 Convert Colors:`, theme);
 
   // eslint-disable-next-line prettier/prettier
   theme.foreground ||= theme?.['--color-text'];
@@ -173,7 +177,7 @@ export const maybeConvertColors = async (theme: any = {}) => {
 };
 
 export const setTheme = async (value: any = {}, reason = '') => {
-  log.info(`🎨 Setting theme because ${reason}`);
+  info(`🎨 Setting theme because ${reason}`);
   // log.verbose(`🎨 Setting theme:`, {
   //   hasCss: kitState.hasCss,
   //   value,
@@ -190,7 +194,7 @@ export const setTheme = async (value: any = {}, reason = '') => {
   // TODO: https://github.com/electron/electron/issues/37705
   // const promptWindow = getMainPrompt();
   // const backgroundColor = `rgba(${kitState.theme['--color-background']}, ${kitState.theme['--opacity']})`;
-  // log.info(`🎨 Setting backgroundColor: ${backgroundColor}`);
+  // info(`🎨 Setting backgroundColor: ${backgroundColor}`);
 
   // promptWindow.setBackgroundColor(backgroundColor);
 
@@ -199,7 +203,7 @@ export const setTheme = async (value: any = {}, reason = '') => {
 
 export const updateTheme = async () => {
   kitState.isDark = nativeTheme.shouldUseDarkColors;
-  // log.info({
+  // info({
   //   isDarkState: kitState.isDark ? 'true' : 'false',
   //   isDarkNative: nativeTheme.shouldUseDarkColors ? 'true' : 'false',
   // });
@@ -207,7 +211,7 @@ export const updateTheme = async () => {
   const themePath = kitState.isDark ? kitState.kenvEnv?.KIT_THEME_DARK : kitState.kenvEnv?.KIT_THEME_LIGHT;
 
   if (themePath && pathExistsSync(themePath)) {
-    log.info(`▓ ${kitState.isDark ? 'true' : 'false'} 👀 Theme path: ${themePath}`);
+    info(`▓ ${kitState.isDark ? 'true' : 'false'} 👀 Theme path: ${themePath}`);
     try {
       const currentTheme = await readJson(themePath);
       setTheme(currentTheme, `updateTheme() with themePath: ${themePath}`);
@@ -215,7 +219,7 @@ export const updateTheme = async () => {
       log.warn(error);
     }
   } else {
-    log.info('👀 No themes configured in .env. Using defaults');
+    info('👀 No themes configured in .env. Using defaults');
     const { scriptKitLightTheme, scriptKitTheme } = getThemes();
     setTheme(kitState.isDark ? scriptKitTheme : scriptKitLightTheme, 'updateTheme() with no themePath');
   }
@@ -253,7 +257,7 @@ export const childSend = (child: ChildProcess, data: any) => {
       if (prompt) {
         data.promptId = prompt.id;
       }
-      // log.info(`✉️: ${data.channel}`);
+      // info(`✉️: ${data.channel}`);
       child.send(data, (error) => {
         if (error) {
           log.warn(`${child?.pid}: ${data?.channel} ignored. Already finished: ${data?.promptId}`);
@@ -269,13 +273,13 @@ export const sendToAllActiveChildren = (data: {
   channel: Channel;
   state?: any;
 }) => {
-  // log.info(`Sending ${data?.channel} to all active children`);
+  // info(`Sending ${data?.channel} to all active children`);
   for (const processInfo of processes.getActiveProcesses()) {
     const prevent = processInfo.preventChannels?.has(data.channel);
     if (prevent) {
       continue;
     }
-    log.info({ pid: processInfo?.pid, prevent, channel: data.channel });
+    info({ pid: processInfo?.pid, prevent, channel: data.channel });
     childSend(processInfo.child, data);
   }
 };
@@ -283,7 +287,7 @@ export const sendToAllActiveChildren = (data: {
 export const createMessageHandler = (info: ProcessInfo) => {
   const { type } = info;
   const kitMessageMap = createMessageMap(info);
-  // log.info({ kitMessageMap });
+  // info({ kitMessageMap });
 
   return async (data: GenericSendData) => {
     if (
@@ -291,7 +295,7 @@ export const createMessageHandler = (info: ProcessInfo) => {
       data?.channel !== Channel.HEARTBEAT &&
       ![Channel.KIT_LOADING, Channel.KIT_READY, Channel.MAIN_MENU_READY].includes(data.channel)
     ) {
-      log.info(data);
+      info(data);
     }
     const channelFn = kitMessageMap[data.channel as Channel];
 
@@ -373,7 +377,7 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
 
   const kitLoadingHandler = (data) => {
     if (data?.channel === Channel.KIT_LOADING || data?.channel === Channel.KIT_READY) {
-      log.info(`${child.pid}: KIT_LOADING ${data?.value} in ${performance.now() - beforeChildForkPerfMark}ms`);
+      info(`${child.pid}: KIT_LOADING ${data?.value} in ${performance.now() - beforeChildForkPerfMark}ms`);
       // child.off('message', kitLoadingHandler);
     }
   };
@@ -382,7 +386,7 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
 
   const kitReadyHandler = (data) => {
     if (data?.channel === Channel.KIT_READY) {
-      log.info(`${child.pid}: KIT_READY in ${performance.now() - beforeChildForkPerfMark}ms`);
+      info(`${child.pid}: KIT_READY in ${performance.now() - beforeChildForkPerfMark}ms`);
       child.off('message', kitReadyHandler);
     }
   };
@@ -391,25 +395,25 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
 
   const mainMenuReadyHandler = (data) => {
     if (data?.channel === Channel.MAIN_MENU_READY) {
-      log.info(`${child.pid}: MAIN_MENU_READY in ${performance.now() - beforeChildForkPerfMark}ms`);
+      info(`${child.pid}: MAIN_MENU_READY in ${performance.now() - beforeChildForkPerfMark}ms`);
       child.off('message', mainMenuReadyHandler);
     }
   };
 
   child.on('spawn', () => {
-    log.info(`${child?.pid}: SPAWN in ${performance.now() - beforeChildForkPerfMark}ms`);
+    info(`${child?.pid}: SPAWN in ${performance.now() - beforeChildForkPerfMark}ms`);
   });
 
-  log.info(`
+  info(`
   ${child.pid}: 🚀 Create child process: ${entry} ${args.join(' ')}`);
 
   let win: BrowserWindow | null = null;
 
   if (port && child && child.stdout && child.stderr) {
     const closeWindowIfNotDestroyed = () => {
-      log.info(`${child?.pid}: 🚪 Close window if not destroyed`);
+      info(`${child?.pid}: 🚪 Close window if not destroyed`);
       if (child && !child.killed) {
-        log.info(`${child.pid}: 🐞 Remove debugger process by pid`);
+        info(`${child.pid}: 🐞 Remove debugger process by pid`);
         child.kill();
       }
 
@@ -423,22 +427,22 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
 
     const parentPid = child.pid;
     emitter.once(KitEvent.ProcessGone, (pid) => {
-      log.info(`Kill process: ${pid}, checking if it's the parent of ${child.pid}`);
+      info(`Kill process: ${pid}, checking if it's the parent of ${child.pid}`);
       if (pid === parentPid) {
         closeWindowIfNotDestroyed();
       }
     });
 
     child.stderr.once('data', async (data) => {
-      log.info(data?.toString());
+      info(data?.toString());
       const [debugUrl] = data.toString().match(/(?<=ws:\/\/).*/g) || [''];
 
       if (debugUrl) {
         // TODO: I'm going to have to handle this outside of creatChild so it has access to the prompt created after it or something
         // setPromptAlwaysOnTop(true);
-        log.info({ debugUrl, pid: child?.pid });
+        info({ debugUrl, pid: child?.pid });
         const devToolsUrl = `devtools://devtools/bundled/inspector.html?experiments=true&v8only=true&ws=${debugUrl}`;
-        log.info(`DevTools URL: ${devToolsUrl}`);
+        info(`DevTools URL: ${devToolsUrl}`);
 
         win = showInspector(devToolsUrl);
       }
@@ -447,7 +451,7 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
     const scriptLog = getLog(scriptPath);
 
     const routeToScriptLog = (d: any) => {
-      scriptLog.info(`\n${stripAnsi(d.toString())}`);
+      scriptinfo(`\n${stripAnsi(d.toString())}`);
     };
 
     child.stdout?.on('data', routeToScriptLog);
@@ -472,13 +476,13 @@ const processesChanged = debounce(() => {
 
   for (const pinfo of processes) {
     pinfo.prompt.sendToPrompt(AppChannel.PROCESSES, pinfos);
-    log.info(`🏃‍♂️💨 Active process: ${pinfo.pid} - ${pinfo.scriptPath || 'Idle'}`);
+    info(`🏃‍♂️💨 Active process: ${pinfo.pid} - ${pinfo.scriptPath || 'Idle'}`);
   }
 }, 10);
 
 export const clearIdleProcesses = () => {
   // return;
-  log.info('Reset all idle processes');
+  info('Reset all idle processes');
   processes.getAllProcessInfo().forEach((processInfo) => {
     if (processInfo.type === ProcessType.Prompt && processInfo.scriptPath === '') {
       processes.removeByPid(processInfo.pid);
@@ -496,7 +500,7 @@ export const ensureIdleProcess = () => {
   if (!kitState.ready) {
     return;
   }
-  log.info('Ensure idle process');
+  info('Ensure idle process');
   setTimeout(() => {
     const idles = getIdles();
     const requiredIdleProcesses = kitState?.kenvEnv?.KIT_IDLE_PROCESSES
@@ -504,7 +508,7 @@ export const ensureIdleProcess = () => {
       : 1;
     const missingProcesses = requiredIdleProcesses - idles.length;
     if (missingProcesses > 0) {
-      log.info(`Adding ${missingProcesses} idle process(es)`);
+      info(`Adding ${missingProcesses} idle process(es)`);
       for (let i = 0; i < missingProcesses; i++) {
         processes.add(ProcessType.Prompt);
       }
@@ -538,7 +542,7 @@ class Processes extends Array<ProcessAndPrompt> {
   }
 
   public addExistingProcess(child: ChildProcess, scriptPath: string) {
-    const info = {
+    const promptInfo = {
       pid: child.pid,
       child,
       type: ProcessType.Prompt,
@@ -547,12 +551,12 @@ class Processes extends Array<ProcessAndPrompt> {
       date: Date.now(),
     } as Partial<ProcessAndPrompt>;
 
-    this.push(info as ProcessAndPrompt);
+    this.push(promptInfo as ProcessAndPrompt);
     processesChanged();
   }
 
   public stampPid(pid: number) {
-    log.info(`${pid}: 📅 Stamp PID`);
+    info(`${pid}: 📅 Stamp PID`);
     const processInfo = this.getByPid(pid);
     if (!processInfo?.launchedFromMain) {
       return;
@@ -567,7 +571,7 @@ class Processes extends Array<ProcessAndPrompt> {
         exitStamp: now,
       };
 
-      log.info('>>>>>>>>>>>>>>>>>>>>>>>> STAMPING!!!!!', stamp);
+      info('>>>>>>>>>>>>>>>>>>>>>>>> STAMPING!!!!!', stamp);
 
       debounceSetScriptTimestamp({
         ...stamp,
@@ -630,9 +634,9 @@ class Processes extends Array<ProcessAndPrompt> {
 
     const prompt = prompts.attachIdlePromptToProcess(child.pid);
 
-    log.info(`${child.pid}: 👶 Create child ${type} process: ${child.pid}`, scriptPath, args);
+    info(`${child.pid}: 👶 Create child ${type} process: ${child.pid}`, scriptPath, args);
 
-    const info = {
+    const promptInfo = {
       pid: child.pid,
       child,
       type,
@@ -648,41 +652,41 @@ class Processes extends Array<ProcessAndPrompt> {
     //   info.prompt = null;
     // });
 
-    this.push(info);
+    this.push(promptInfo);
 
     processesChanged();
 
     if (scriptPath) {
-      log.info(`${child.pid}: 🟢 start ${type} ${scriptPath}`);
+      info(`${child.pid}: 🟢 start ${type} ${scriptPath}`);
     } else {
-      log.info(`${child.pid}: 🟢 start idle ${type}`);
+      info(`${child.pid}: 🟢 start idle ${type}`);
     }
 
     const id =
       ![ProcessType.Background, ProcessType.Prompt].includes(type) &&
       setTimeout(() => {
-        log.info(`${child.pid}: ${type} process: ${scriptPath} took > ${DEFAULT_TIMEOUT} seconds. Ending...`);
+        info(`${child.pid}: ${type} process: ${scriptPath} took > ${DEFAULT_TIMEOUT} seconds. Ending...`);
         child?.kill();
       }, DEFAULT_TIMEOUT);
 
-    const messageHandler = createMessageHandler(info);
+    const messageHandler = createMessageHandler(promptInfo);
     child?.on('message', messageHandler);
 
     const { pid } = child;
 
     child.once('close', () => {
-      log.info(`${pid}: CLOSE`);
+      info(`${pid}: CLOSE`);
       processes.removeByPid(pid);
     });
 
     child.once('disconnect', () => {
-      log.info(`${pid}: DISCONNECTED`);
+      info(`${pid}: DISCONNECTED`);
       this.stampPid(pid);
       processes.removeByPid(pid);
     });
 
     child.once('exit', (code) => {
-      log.info('EXIT', { pid, code });
+      info('EXIT', { pid, code });
       if (id) {
         clearTimeout(id);
       }
@@ -701,7 +705,7 @@ class Processes extends Array<ProcessAndPrompt> {
       }
 
       if (code === 0) {
-        log.info(`${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`);
+        info(`${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`);
 
         if (child.pid) {
           this.stampPid(child.pid);
@@ -738,11 +742,11 @@ class Processes extends Array<ProcessAndPrompt> {
       }
     });
 
-    return info;
+    return promptInfo;
   }
 
   public findIdlePromptProcess(): ProcessAndPrompt {
-    log.info('>>>>>>>>>>>>>> FINDING IDLE PROCESS <<<<<<<<<<<<<<<<');
+    info('>>>>>>>>>>>>>> FINDING IDLE PROCESS <<<<<<<<<<<<<<<<');
     const idles = this.filter(
       (processInfo) => processInfo.type === ProcessType.Prompt && processInfo?.scriptPath === '',
     );
@@ -753,7 +757,7 @@ class Processes extends Array<ProcessAndPrompt> {
       return idles[0];
     }
 
-    log.info('>>>>>>>>>>>>>> NO IDLE PROCESS FOUND <<<<<<<<<<<<<<<<');
+    info('>>>>>>>>>>>>>> NO IDLE PROCESS FOUND <<<<<<<<<<<<<<<<');
 
     return processes.add(ProcessType.Prompt);
   }
@@ -773,20 +777,20 @@ class Processes extends Array<ProcessAndPrompt> {
   public removeAllRunningProcesses() {
     const runningIds = this.filter(({ scriptPath }) => scriptPath).map(({ pid, scriptPath }) => ({ pid, scriptPath }));
     for (const { pid, scriptPath } of runningIds) {
-      log.info(`🔥 Attempt removeAllRunningProcesses: ${pid} - ${scriptPath}`);
+      info(`🔥 Attempt removeAllRunningProcesses: ${pid} - ${scriptPath}`);
       this.removeByPid(pid);
     }
   }
 
   public removeByPid(pid: number) {
-    log.info(`🛑 removeByPid: ${pid}`);
+    info(`🛑 removeByPid: ${pid}`);
     if (pid === 0) {
-      log.info(`Invalid pid: ${pid} 🤔`);
+      info(`Invalid pid: ${pid} 🤔`);
     }
     prompts.delete(pid);
     const index = this.findIndex((info) => info.pid === pid);
     if (index === -1) {
-      log.info(`No process found for pid: ${pid}`);
+      info(`No process found for pid: ${pid}`);
       // Find a system process with the pid and kill it
       let systemProcess: ChildProcess | null = null;
       try {
@@ -795,7 +799,7 @@ class Processes extends Array<ProcessAndPrompt> {
         } else {
           systemProcess = spawn('kill', ['-9', pid.toString()]);
         }
-        log.info(`${pid}: Killed system process using ${systemProcess.spawnargs}`);
+        info(`${pid}: Killed system process using ${systemProcess.spawnargs}`);
       } catch (error) {
         log.error(`${pid}: Error killing system process: ${error}`);
       }
@@ -807,16 +811,16 @@ class Processes extends Array<ProcessAndPrompt> {
     if (!child?.killed) {
       emitter.emit(KitEvent.RemoveProcess, scriptPath);
       emitter.emit(KitEvent.ProcessGone, pid);
-      log.info(`Emitting ${KitEvent.TERM_KILL} for ${pid}`);
+      info(`Emitting ${KitEvent.TERM_KILL} for ${pid}`);
       emitter.emit(KitEvent.TERM_KILL, pid);
       child?.removeAllListeners();
       child?.kill();
 
       if (child?.pid && childShortcutMap.has(child.pid)) {
-        log.info(`${child.pid}: Unregistering shortcuts`);
+        info(`${child.pid}: Unregistering shortcuts`);
         const shortcuts = childShortcutMap.get(child.pid) || [];
         shortcuts.forEach((shortcut) => {
-          log.info(`${child.pid}: Unregistering shortcut: ${shortcut}`);
+          info(`${child.pid}: Unregistering shortcut: ${shortcut}`);
 
           try {
             globalShortcut.unregister(shortcut);
@@ -827,7 +831,7 @@ class Processes extends Array<ProcessAndPrompt> {
         childShortcutMap.delete(child.pid);
       }
 
-      log.info(`${pid}: 🛑 removed`);
+      info(`${pid}: 🛑 removed`);
 
       kitState.shortcutsPaused = false;
     }
@@ -871,7 +875,7 @@ export const removeAbandonnedKit = () => {
 
   if (kitProcess) {
     setTimeout(() => {
-      log.info(`🛑 Cancel main menu process: ${kitProcess.scriptPath}`);
+      info(`🛑 Cancel main menu process: ${kitProcess.scriptPath}`);
       processes.removeByPid(kitProcess.pid);
     }, 250);
   }
@@ -901,7 +905,7 @@ export const handleWidgetEvents = () => {
       return;
     }
 
-    log.info(`👋 ${widgetId} Initialized`);
+    info(`👋 ${widgetId} Initialized`);
 
     childSend(pInfo.child, {
       ...data,
@@ -915,7 +919,7 @@ export const handleWidgetEvents = () => {
     const { widgetId } = data;
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
-    log.info(`🔎 click ${widgetId}`, {
+    info(`🔎 click ${widgetId}`, {
       w,
       widgets: widgetState.widgets.map((w) => w.id),
     });
@@ -960,7 +964,7 @@ export const handleWidgetEvents = () => {
       return;
     }
 
-    log.info(`💧 drop ${widgetId}`);
+    info(`💧 drop ${widgetId}`);
 
     if (!widget) {
       return;
@@ -988,7 +992,7 @@ export const handleWidgetEvents = () => {
       return;
     }
 
-    log.info(`💧 custom ${widgetId}`);
+    info(`💧 custom ${widgetId}`);
 
     childSend(child, {
       ...data,
@@ -1002,7 +1006,7 @@ export const handleWidgetEvents = () => {
     const { widgetId } = data;
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
-    log.info(`🔽 mouseDown ${widgetId}`, { w });
+    info(`🔽 mouseDown ${widgetId}`, { w });
     if (!w) {
       return;
     }
@@ -1031,7 +1035,7 @@ export const handleWidgetEvents = () => {
 
   const mouseUpHandler: WidgetHandler = (event, data) => {
     const { widgetId } = data;
-    log.info(`🔽 mouseUp ${widgetId}`);
+    info(`🔽 mouseUp ${widgetId}`);
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
     if (!w) {
@@ -1086,7 +1090,7 @@ export const handleWidgetEvents = () => {
 
   const dragHandler: WidgetHandler = (event, data) => {
     const { widgetId } = data;
-    log.info(`📦 ${data.widgetId} Widget: Dragging file`, data);
+    info(`📦 ${data.widgetId} Widget: Dragging file`, data);
     const options = widgetState.widgets.find(({ id }) => id === widgetId);
     if (!options) {
       return;
@@ -1110,7 +1114,7 @@ export const handleWidgetEvents = () => {
 
   const measureHandler: WidgetHandler = (event, data: any) => {
     const { widgetId } = data;
-    log.info(`📏 ${widgetId} Widget: Fitting to inner child`);
+    info(`📏 ${widgetId} Widget: Fitting to inner child`);
 
     const options = (widgetState?.widgets || []).find(({ id }) => id === widgetId);
     if (!options) {
@@ -1140,12 +1144,12 @@ export const handleWidgetEvents = () => {
 };
 
 emitter.on(KitEvent.KillProcess, (pid) => {
-  log.info(`🛑 Kill Process: ${pid}`);
+  info(`🛑 Kill Process: ${pid}`);
   processes.removeByPid(pid);
 });
 
 emitter.on(KitEvent.TermExited, (pid) => {
-  log.info('🛑 Term Exited: SUMBMITTING');
+  info('🛑 Term Exited: SUBMITTING');
   const prompt = prompts.get(pid);
   if (prompt && prompt.ui === UI.term) {
     prompt.sendToPrompt(AppChannel.TERM_EXIT, '');
@@ -1153,7 +1157,7 @@ emitter.on(KitEvent.TermExited, (pid) => {
 });
 
 export const destroyAllProcesses = () => {
-  mainLog.info('Destroy all processes');
+  maininfo('Destroy all processes');
   processes.forEach((pinfo) => {
     if (!pinfo?.child.killed) {
       pinfo?.child?.removeAllListeners();
@@ -1174,7 +1178,7 @@ export const spawnShebang = async ({
   const child = spawn(command, [...args, filePath]);
   processes.addExistingProcess(child, filePath);
 
-  log.info(`🚀 Spawned process ${child.pid} for ${filePath} with command ${command}`);
+  info(`🚀 Spawned process ${child.pid} for ${filePath} with command ${command}`);
 
   child.unref();
 
@@ -1188,7 +1192,7 @@ export const spawnShebang = async ({
         return;
       }
       const result = d.toString();
-      scriptLog.info(`\n${stripAnsi(result)}`);
+      scriptinfo(`\n${stripAnsi(result)}`);
     };
 
     child.stdout?.on('data', routeToScriptLog);
@@ -1199,7 +1203,7 @@ export const spawnShebang = async ({
 
     // Log out when the process exits
     child.on('exit', (code) => {
-      scriptLog.info(`\nProcess exited with code ${code}`);
+      scriptinfo(`\nProcess exited with code ${code}`);
       processes.removeByPid(child.pid);
     });
   }
@@ -1232,7 +1236,7 @@ emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
       //   observer = new PerformanceObserver((list) => {
       //     const entries = list.getEntries();
       //     const entry = entries[0];
-      //     log.info(`⌚️ [Perf] ${entry.name}: ${entry.duration}`);
+      //     info(`⌚️ [Perf] ${entry.name}: ${entry.duration}`);
       //   });
       //   observer.observe({ entryTypes: ['measure'] });
       // }

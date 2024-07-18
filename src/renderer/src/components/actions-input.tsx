@@ -216,18 +216,6 @@ export default function ActionsInput() {
           <div className="text-primary/90 text-xs absolute right-[8px] top-[5px] font-normal-medium">{focusedName}</div>
         )}
       </div>
-
-      {/* <div className="flex flex-row items-center justify-center mr-2">
-        <ActionsEnterButton
-          key="actions-enter-button"
-          name=""
-          position="right"
-          shortcut="⏎"
-          value="enter"
-          flag=""
-          disabled={false}
-        />
-      </div> */}
     </div>
   );
 }

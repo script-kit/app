@@ -90,8 +90,8 @@ const checkShortcodesAndKeywords = (prompt: KitPrompt, rawInput: string): boolea
   // });
   if (trigger) {
     if (prompt.ready) {
+      info(`${prompt.pid}: 👢 Trigger: ${transformedInput} triggered`, trigger);
       sendToPrompt(Channel.SET_SUBMIT_VALUE, trigger?.value ? trigger.value : trigger);
-      info(`${prompt.pid}: 👢 Trigger: ${transformedInput} triggered`);
       return false;
     }
     info(`${prompt.pid}: 😩 Not ready`, JSON.stringify(trigger));
@@ -523,12 +523,11 @@ ${data.error}
         }
 
         if (channel === Channel.VALUE_SUBMITTED) {
-          // info(
-          //   `${child?.pid} 📝 Submitting...
-
-          // `,
-          //   message,
-          // );
+          info(
+            `---
+${child?.pid} 📝 Submitting...
+---`,
+          );
 
           if (!message?.state?.value && message?.state?.script) {
             message.state.value = message.state.focused;

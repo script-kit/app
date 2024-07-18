@@ -929,7 +929,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       });
       await prompt?.setScript(data.value, processInfo.pid);
     }),
-    SET_STATUS: onChildChannel(async (_, data) => {
+    SET_STATUS: onChildChannel((_, data) => {
       if (data?.value) {
         kitState.status = data?.value;
       }

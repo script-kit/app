@@ -44,7 +44,7 @@ import { AppChannel } from '../../shared/enums';
 import type { ResizeData, ScoredChoice, Survey, TermConfig } from '../../shared/types';
 import { formatShortcut } from './components/formatters';
 
-const { info } = createLogger('jotai');
+const { info } = createLogger('jotai.ts');
 
 function arraysEqual(a: string[], b: string[]): boolean {
   if (a.length !== b.length) {
@@ -843,7 +843,7 @@ export const modeAtom = atom((g) => g(promptData)?.mode || Mode.FILTER);
 const _actionsInputAtom = atom('');
 export const actionsInputAtom = atom(
   (g) => g(_actionsInputAtom),
-  async (g, s, a: string) => {
+  (g, s, a: string) => {
     // info(`✉️ inputAtom: ${a}`);
     s(directionAtom, 1);
 
@@ -920,7 +920,7 @@ export const inputAtom = atom(
 const _flagsAtom = atom<FlagsOptions>({});
 export const flagsAtom = atom(
   (g) => {
-    const { sortChoicesKey, ...flags } = g(_flagsAtom);
+    const { sortChoicesKey, order, ...flags } = g(_flagsAtom);
     return flags;
   },
   (g, s, a: FlagsOptions) => {
@@ -1599,11 +1599,7 @@ export const promptDataAtom = atom(
         // log.info(`👍 Setting input to ${a?.input || '_'}`);
         const inputWhileSubmitted = g(inputWhileSubmittedAtom);
         const forceInput = a?.input || inputWhileSubmitted || '';
-        info(`${pid}: 👂 FORCE INPUT:`, {
-          input: forceInput,
-          inputWhileSubmitted,
-          a: a?.input,
-        });
+        info(`${pid}: 👂 Force input due to keyword or mainScript`);
 
         const prevInput = g(_inputAtom);
         if (forceInput && !prevInput.startsWith(forceInput)) {
@@ -2364,7 +2360,7 @@ export const onShortcutAtom = atom<OnShortcut>({});
 export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
   const channel = g(channelAtom);
   // const log = log;
-  info(`🎬 Send shortcut ${shortcut}`);
+  info(`🎬 Send shortcut`, shortcut);
 
   channel(Channel.SHORTCUT, { shortcut });
   s(focusedFlagValueAtom, '');
@@ -2942,8 +2938,11 @@ export const listProcessesActionAtom = atom((g) => {
 });
 
 export const signInActionAtom = atom((g) => {
+  const actions = g(actionsAtom);
+  const flags = g(flagsAtom);
   const shortcuts = g(shortcutsAtom);
-  const action = shortcuts.find((s) => s?.flag === 'sign-in-to-script-kit');
+  // info(`actions`, { actions });
+  const action = actions.find((s) => s?.flag === 'sign-in-to-script-kit');
   return action;
 });
 
@@ -2952,12 +2951,9 @@ export const actionsAtom = atom((g) => {
   const shortcuts = g(shortcutsAtom);
   const disabled = g(flaggedChoiceValueAtom);
   return Object.entries(flags)
-    .filter(([_, flag]) => {
-      return flag?.bar && flag?.shortcut;
-    })
     .map(([key, flag]) => {
       const action = {
-        key,
+        key: flag?.key || flag?.shortcut,
         value: key,
         name: flag?.name,
         shortcut: formatShortcut(flag?.shortcut),
@@ -3395,13 +3391,13 @@ export const shortcutStringsAtom: Atom<
   const actionKeys = transformKeys(actionsThatArentShortcuts, 'key', 'action');
   const flagKeys = transformKeys(Object.values(flags), 'shortcut', 'flag');
 
-  info('shortcutStringsAtom', {
-    shortcuts: shortcutKeys,
-    actions: actionKeys,
-    flags: flagKeys,
-  });
+  // info('shortcutStringsAtom', {
+  //   shortcuts: shortcutKeys,
+  //   actions: actionKeys,
+  //   flags: flagKeys,
+  // });
   const shortcutStrings = new Set([...shortcutKeys, ...actionKeys, ...flagKeys]);
-  info(`🔥 Shortcut strings: `, Array.from(shortcutStrings));
+  // info(`🔥 Shortcut strings: `, Array.from(shortcutStrings));
   return shortcutStrings;
 });
 

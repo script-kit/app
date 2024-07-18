@@ -3,10 +3,21 @@ import { kenvPath, kitPath, userDbPath } from '@johnlindquist/kit/core/utils';
 import chokidar from 'chokidar';
 import log from 'electron-log';
 import { kitState } from './state';
+import { createLogger } from '../shared/log-utils';
+
+const { info } = createLogger('chokidar.ts');
 
 export type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
 type WatcherCallback = (eventName: WatchEvent, filePath: string) => Promise<void>;
 export const startWatching = (callback: WatcherCallback) => {
+  info(`🔍 Watching ${userDbPath}`);
+  const userDbPathWatcher = chokidar.watch(userDbPath);
+
+  userDbPathWatcher.on('all', (eventName, filePath) => {
+    info(`🔍 Watching ${userDbPath} -> ${eventName} ${filePath}`);
+    callback(eventName as WatchEvent, filePath);
+  });
+
   const kenvScriptsWatcher = chokidar.watch(
     [
       path.resolve(kenvPath('snippets', '*')),
@@ -32,7 +43,7 @@ export const startWatching = (callback: WatcherCallback) => {
     },
   });
   kenvsWatcher.on('addDir', (filePath) => {
-    log.info(`🕵️‍♀️ Detected new dir in "kenvs": ${filePath}`);
+    info(`🕵️‍♀️ Detected new dir in "kenvs": ${filePath}`);
 
     const globs = [
       path.resolve(filePath, 'snippets', '*'),
@@ -42,13 +53,13 @@ export const startWatching = (callback: WatcherCallback) => {
     ];
 
     setTimeout(() => {
-      log.info(`Adding globs: ${globs}`);
+      info(`Adding globs: ${globs}`);
       kenvScriptsWatcher.add(globs);
     }, 1000);
   });
 
   kenvsWatcher.on('unlinkDir', (filePath) => {
-    log.info(`🕵️‍♂️ Detected removed dir in "kenvs": ${filePath}`);
+    info(`🕵️‍♂️ Detected removed dir in "kenvs": ${filePath}`);
 
     const globs = [
       path.resolve(filePath, 'snippets', '*'),
@@ -58,7 +69,7 @@ export const startWatching = (callback: WatcherCallback) => {
     ];
 
     setTimeout(() => {
-      log.info(`Removing globs: ${globs}`);
+      info(`Removing globs: ${globs}`);
       kenvScriptsWatcher.unwatch(globs);
     }, 1000);
   });
@@ -67,12 +78,12 @@ export const startWatching = (callback: WatcherCallback) => {
     kenvScriptsWatcher.unwatch(path.resolve(filePath, 'scripts', '*'));
   });
 
-  const fileWatcher = chokidar.watch([userDbPath, kenvPath('*')], {
+  const kenvRootWatcher = chokidar.watch(kenvPath('*'), {
     depth: 0,
     ignoreInitial: kitState.ignoreInitial,
   });
 
-  fileWatcher.on('all', callback);
+  kenvRootWatcher.on('all', callback);
 
   const runWatcher = chokidar.watch(kitPath('run.txt'), {
     disableGlobbing: true,
@@ -83,7 +94,7 @@ export const startWatching = (callback: WatcherCallback) => {
 
   kitState.ignoreInitial = true;
 
-  return [kenvScriptsWatcher, kenvsWatcher, fileWatcher, runWatcher];
+  return [kenvScriptsWatcher, kenvsWatcher, userDbPathWatcher, kenvRootWatcher, runWatcher];
 
   // TODO: Do I need to watch scripts.json?
   // const scriptsJsonWatcher = chokidar.watch(kitPath('db', 'scripts.json'), {

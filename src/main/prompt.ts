@@ -407,7 +407,7 @@ const subEmoji = subscribeKey(kitState, 'emojiActive', (emoji) => {
   const emojiShortcut = getEmojiShortcut();
   if (emoji) {
     globalShortcut.register(emojiShortcut, () => {
-      prompts?.focused?.setPromptAlwaysOnTop(false);
+      prompts?.prevFocused?.setPromptAlwaysOnTop(false);
       app.showEmojiPanel();
     });
   } else {
@@ -425,7 +425,7 @@ export const setKitStateAtom = (partialState: Partial<typeof kitState>) => {
 };
 
 export const setFocusedKitStateAtom = (partialState: Partial<typeof kitState>) => {
-  prompts?.focused?.sendToPrompt(AppChannel.KIT_STATE, partialState);
+  prompts?.prevFocused?.sendToPrompt(AppChannel.KIT_STATE, partialState);
 };
 
 const subUpdateDownloaded = subscribeKey(kitState, 'updateDownloaded', (updateDownloaded) => {
@@ -914,7 +914,7 @@ export class KitPrompt {
 
     emitter.on(KitEvent.OpenDevTools, () => {
       log.silly('event: OpenDevTools');
-      if (prompts.focused?.pid === this?.pid) {
+      if (prompts.prevFocused?.pid === this?.pid) {
         this.window.webContents?.openDevTools({
           activate: true,
           mode: 'detach',
@@ -1317,7 +1317,17 @@ export class KitPrompt {
     //   yNotChanged,
     // });
 
-    const noChange = heightNotChanged && widthNotChanged && xNotChanged && yNotChanged;
+    let sameXAndYAsAnotherPrompt = false;
+    for (const prompt of prompts) {
+      if (prompt.id === this.id) {
+        continue;
+      }
+      if (prompt.getBounds().x === bounds.x && prompt.getBounds().y === bounds.y) {
+        log.info(`🔀 Prompt ${prompt.id} has same x and y as ${this.id}. Scooching x and y!`);
+        sameXAndYAsAnotherPrompt = true;
+      }
+    }
+    const noChange = heightNotChanged && widthNotChanged && xNotChanged && yNotChanged && !sameXAndYAsAnotherPrompt;
 
     if (noChange) {
       log.info('📐 No change in bounds, ignoring');
@@ -1431,12 +1441,39 @@ export class KitPrompt {
       // }
 
       log.info(`${this.pid}: Apply ${this.scriptName}: setBounds reason: ${reason}`, bounds);
+
       const finalBounds = {
         x: Math.round(bounds.x),
         y: Math.round(bounds.y),
         width: Math.round(bounds.width),
         height: Math.round(bounds.height),
       };
+
+      let hasMatch = true;
+
+      while (hasMatch) {
+        hasMatch = false;
+        for (const prompt of prompts) {
+          if (!prompt.id || prompt.id === this.id) {
+            continue;
+          }
+
+          const bounds = prompt.getBounds();
+          if (bounds.x === finalBounds.x) {
+            log.info(`🔀 Prompt ${prompt.id} has same x as ${this.id}. Scooching x!`);
+            finalBounds.x += 40;
+            hasMatch = true;
+          }
+          if (bounds.y === finalBounds.y) {
+            log.info(`🔀 Prompt ${prompt.id} has same y as ${this.id}. Scooching y!`);
+            finalBounds.y += 40;
+            hasMatch = true;
+          }
+          if (hasMatch) {
+            break;
+          }
+        }
+      }
 
       // log.info(`Final bounds:`, finalBounds);
 
@@ -1459,7 +1496,7 @@ export class KitPrompt {
     }
   };
 
-  togglePromptEnv = async (envName: string) => {
+  togglePromptEnv = (envName: string) => {
     log.info(`Toggle prompt env: ${envName} to ${kitState.kenvEnv?.[envName]}`);
 
     if (process.env[envName]) {
@@ -2497,7 +2534,7 @@ export class KitPrompt {
   };
 
   attemptPreload = debounce(
-    async (promptScriptPath: string, show = true, init = true) => {
+    (promptScriptPath: string, show = true, init = true) => {
       const isMainScript = getMainScriptPath() === promptScriptPath;
       if (!promptScriptPath || isMainScript) {
         return;

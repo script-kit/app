@@ -59,6 +59,7 @@ export function IconButton() {
         </IconContext.Provider>
       )} */}
       <a
+        // biome-ignore lint/a11y/useValidAnchor: <explanation>
         onClick={(e) => {
           e.preventDefault();
           if (isMainScript) {
@@ -69,9 +70,10 @@ export function IconButton() {
         }}
         tabIndex={-1}
       >
+        {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
         <svg
           className={`
-        -ml-0.5
+        -ml-2
       mr-0.5 mb-0.5
       flex
       h-6
@@ -80,7 +82,8 @@ export function IconButton() {
       items-center
       justify-center
       rounded
-      p-1
+      py-1
+      px-1.5
       ${textContrast}
 
       ${bg}

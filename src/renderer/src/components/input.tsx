@@ -86,9 +86,7 @@ function ResizableInput({ placeholder, className, index }) {
   const [inputWidth, setInputWidth] = useState(minWidth); // Minimum width
   const [currentInput, setCurrentInput] = useState('');
   const [choiceInputs, setChoiceInputs] = useAtom(choiceInputsAtom);
-  const [invalidateChoiceInputs, setInvalidateChoiceInputs] = useAtom(
-    invalidateChoiceInputsAtom,
-  );
+  const [invalidateChoiceInputs, setInvalidateChoiceInputs] = useAtom(invalidateChoiceInputsAtom);
   const [submitted] = useAtom(submittedAtom);
 
   const [promptData] = useAtom(promptDataAtom);
@@ -101,9 +99,7 @@ function ResizableInput({ placeholder, className, index }) {
   }, [promptData]);
 
   useResizeObserver(hiddenInputRef, () => {
-    const newWidth = Math.ceil(
-      (hiddenInputRef?.current?.offsetWidth || minWidth) + 9,
-    );
+    const newWidth = Math.ceil((hiddenInputRef?.current?.offsetWidth || minWidth) + 9);
     const inputWidth = Math.max(newWidth, minWidth);
     setInputWidth(inputWidth); // Using 128 as minimum width
   });
@@ -122,9 +118,10 @@ function ResizableInput({ placeholder, className, index }) {
     }
   }, [invalidateChoiceInputs, currentInput]);
 
-  const hiddenInputString = (
-    placeholder.length > currentInput.length ? placeholder : currentInput
-  ).replaceAll(' ', '.');
+  const hiddenInputString = (placeholder.length > currentInput.length ? placeholder : currentInput).replaceAll(
+    ' ',
+    '.',
+  );
 
   return (
     <>
@@ -221,10 +218,7 @@ function MainInput() {
   const [fontSize] = useAtom(inputFontSizeAtom);
   const [onInputSubmit] = useAtom(onInputSubmitAtom);
   const [, setSubmitValue] = useAtom(submitValueAtom);
-  const setLastKeyDownWasModifier = debounce(
-    useSetAtom(lastKeyDownWasModifierAtom),
-    300,
-  );
+  const setLastKeyDownWasModifier = debounce(useSetAtom(lastKeyDownWasModifierAtom), 300);
   const _setLastKeyDownWasModifier = useSetAtom(_lastKeyDownWasModifierAtom);
   const setTyping = useSetAtom(typingAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
@@ -237,9 +231,7 @@ function MainInput() {
   const [currentModifiers, setModifiers] = useAtom(_modifiers);
   const [inputFocus, setInputFocus] = useAtom(inputFocusAtom);
 
-  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(
-    miniShortcutsHoveredAtom,
-  );
+  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(miniShortcutsHoveredAtom);
   const flags = useAtomValue(flagsAtom);
 
   const [pendingInput, setPendingInput] = useState('');
@@ -302,9 +294,7 @@ function MainInput() {
       }
 
       if (event.ctrlKey) {
-        const shortcut = shortcuts.find((s) =>
-          (s?.key || '')?.includes('ctrl'),
-        );
+        const shortcut = shortcuts.find((s) => (s?.key || '')?.includes('ctrl'));
         const key = shortcut?.key || '';
 
         if (key) {
@@ -328,16 +318,10 @@ function MainInput() {
       //   modifiers,
       // });
 
-      const currentModifiers = modifiers
-        .filter((m) => event.getModifierState(m))
-        .flatMap(remapModifiers);
+      const currentModifiers = modifiers.filter((m) => event.getModifierState(m)).flatMap(remapModifiers);
 
       const modifiersNotShift = currentModifiers.filter((m) => m !== 'shift');
-      if (
-        input &&
-        shortcodes.includes(input) &&
-        modifiersNotShift.length === 0
-      ) {
+      if (input && shortcodes.includes(input) && modifiersNotShift.length === 0) {
         log.info(`${window.pid}: preventDefault(): found: '${input}'`);
         // setAppendToLog(`${window.pid}: preventDefault(): found: '${input}'`);
         // event.preventDefault();
@@ -353,9 +337,7 @@ function MainInput() {
       if (typeof setLastKeyDownWasModifier?.cancel === 'function') {
         setLastKeyDownWasModifier.cancel();
       }
-      setLastKeyDownWasModifier(
-        modifiers.includes(event.key) && event.key !== 'Shift',
-      );
+      setLastKeyDownWasModifier(modifiers.includes(event.key) && event.key !== 'Shift');
 
       // If not Enter, Tab, or a modifier, setTyping to true
       if (event.key !== 'Enter' && event.key !== 'Tab' && !modifiers.length) {
@@ -370,25 +352,12 @@ function MainInput() {
         });
       }
     },
-    [
-      setSelectionStart,
-      setModifiers,
-      setLastKeyDownWasModifier,
-      setTyping,
-      shortcuts,
-      flags,
-      setInput,
-      shortcodes,
-    ],
+    [setSelectionStart, setModifiers, setLastKeyDownWasModifier, setTyping, shortcuts, flags, setInput, shortcodes],
   );
 
   const onKeyUp = useCallback(
     (event) => {
-      setModifiers(
-        modifiers
-          .filter((m) => event.getModifierState(m))
-          .flatMap(remapModifiers),
-      );
+      setModifiers(modifiers.filter((m) => event.getModifierState(m)).flatMap(remapModifiers));
 
       if (typeof setLastKeyDownWasModifier?.cancel === 'function') {
         setLastKeyDownWasModifier.cancel();
@@ -463,13 +432,9 @@ export default function Input() {
   const actions = useAtomValue(actionsAtom);
   const enterButtonName = useAtomValue(enterButtonNameAtom);
   const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
-  const shouldActionButtonShowOnInput = useAtomValue(
-    shouldActionButtonShowOnInputAtom,
-  );
+  const shouldActionButtonShowOnInput = useAtomValue(shouldActionButtonShowOnInputAtom);
   const miniShortcutsVisible = useAtomValue(miniShortcutsVisibleAtom);
-  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(
-    miniShortcutsHoveredAtom,
-  );
+  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(miniShortcutsHoveredAtom);
 
   const footerHidden = useAtomValue(footerHiddenAtom);
   const inputHeight = useAtomValue(inputHeightAtom);
@@ -479,24 +444,45 @@ export default function Input() {
   const focusedChoice = useAtomValue(focusedChoiceAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
   const action = useAtomValue(signInActionAtom);
+  const channel = useAtomValue(channelAtom);
 
-  const onClick = useCallback(() => {
-    if (action) {
-      sendShortcut(action.key);
-    }
-  }, [action, sendShortcut]);
+  const onClick = useCallback(
+    (event) => {
+      if (action) {
+        channel(Channel.ACTION, { action });
+      }
+    },
+    [action, sendShortcut],
+  );
 
   useTab();
   useKeyIndex();
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (document.activeElement === document.body) {
+        log.info('🔍 Clicked on the document, so focusing input');
+        setInputFocus(Math.random());
+      }
+    };
+
+    document.addEventListener('click', handleDocumentClick);
+
+    return () => {
+      document.removeEventListener('click', handleDocumentClick);
+    };
+  }, []);
+
   return (
     <div
       key="input"
+      ref={inputRef}
       className={`flex flex-row justify-between ${footerHidden && '-mt-px'} max-w-screen relative overflow-x-hidden`}
       style={{
         height: inputHeight || PROMPT.INPUT.HEIGHT.SM,
       }}
-      onMouseEnter={setInputFocus}
       // initial={{ opacity: 0 }}
       // animate={{ opacity: processing ? 0 : 1 }}
       // transition={{ duration: 0.2 }}
@@ -543,10 +529,7 @@ export default function Input() {
                   if (!action?.visible && miniShortcutsVisible) {
                     return [
                       // eslint-disable-next-line react/jsx-key
-                      <ActionButton
-                        key={`${action?.key}-button`}
-                        {...action}
-                      />,
+                      <ActionButton key={`${action?.key}-button`} {...action} />,
                       // eslint-disable-next-line no-nested-ternary
                       i < array.length - 1 ? (
                         <ActionSeparator key={`${action?.key}-separator`} />
@@ -610,12 +593,21 @@ export default function Input() {
                 className={`relative ${inputHeight === PROMPT.INPUT.HEIGHT.XS ? 'w-[28px]' : 'w-[30px]'} pl-1 pr-1`}
               >
                 {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                <img
-                  onClick={onClick}
-                  alt="avatar"
-                  src={user.avatar_url}
-                  className="z-0 w-[22px] cursor-pointer rounded-full hover:opacity-75"
-                />
+                {user.avatar_url ? (
+                  // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+                  <img
+                    onClick={onClick}
+                    alt="avatar"
+                    src={user.avatar_url}
+                    className="z-0 w-[22px] cursor-pointer rounded-full hover:opacity-75"
+                  />
+                ) : (
+                  // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+                  <div
+                    onClick={onClick}
+                    className="z-0 w-[22px] h-[22px] cursor-pointer rounded-full hover:opacity-75 bg-current"
+                  />
+                )}
 
                 {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
                 <svg

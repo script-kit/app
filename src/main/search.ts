@@ -159,8 +159,8 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
       } else {
         const hide = choice?.hideWithoutInput && transformedInput === '';
         const miss = choice?.miss && !hide;
-        const info = choice?.info && !hide;
-        if (info) {
+        const choiceInfo = choice?.info && !hide;
+        if (choiceInfo) {
           infoGroup.push(createScoredChoice(choice));
         } else if (miss) {
           missGroup.push(createScoredChoice(choice));

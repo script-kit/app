@@ -1,5 +1,8 @@
 import log from 'electron-log';
 import { KitPrompt } from './prompt';
+import { createLogger } from '../shared/log-utils';
+
+const { info, warn } = createLogger('prompts.ts');
 
 const promptMap = new Map<number, KitPrompt>();
 
@@ -21,7 +24,7 @@ export const prompts = {
   createPromptIfNoIdle: function (): boolean {
     if (this.idle === null && this.appRunning) {
       this.idle = new KitPrompt();
-      log.info(`🌅 Initializing idle prompt with window id:${this.idle?.window?.id}`);
+      info(`🌅 Initializing idle prompt with window id:${this.idle?.window?.id}`);
       return true;
     }
     return false;
@@ -36,10 +39,10 @@ export const prompts = {
     this.createPromptIfNoIdle();
     const idlePrompt = this.idle;
     if (idlePrompt && !idlePrompt.ready) {
-      log.info('🐞 Waiting for prompt to be ready...');
+      info('🐞 Waiting for prompt to be ready...');
       await idlePrompt.waitForReady();
     }
-    log.info(`${idlePrompt?.pid}: 🌅 Idle prompt ready with window id:${idlePrompt?.window?.id}`);
+    info(`${idlePrompt?.pid}: 🌅 Idle prompt ready with window id:${idlePrompt?.window?.id}`);
     return idlePrompt!;
   },
 
@@ -47,6 +50,7 @@ export const prompts = {
    * The currently focused prompt.
    */
   focused: null as KitPrompt | null,
+  prevFocused: null as KitPrompt | null,
 
   /**
    * Attaches the idle prompt to a process with the given PID.
@@ -55,13 +59,26 @@ export const prompts = {
    */
   attachIdlePromptToProcess(pid: number): KitPrompt {
     const created = this.createPromptIfNoIdle();
-    log.info(`🔗 Attaching idle prompt ${this.idle?.window?.id} to process ${pid}`);
+    info(`🔗 Attaching idle prompt ${this.idle?.window?.id} to process ${pid}`);
     const prompt = this.idle as KitPrompt;
     this.idle = null;
     prompt.bindToProcess(pid);
     prompt.window?.on('focus', () => {
       this.focused = prompt;
-      log.info(`${pid}: Focusing on prompt ${prompt.id}`);
+      this.prevFocused = null;
+      info(`${pid}: Focusing on prompt ${prompt.id}`);
+    });
+    prompt.window?.on('blur', () => {
+      this.prevFocused = prompt;
+    });
+
+    prompt.window?.on('hide', () => {
+      if (this.focused === prompt) {
+        this.focused = null;
+      }
+      if (this.prevFocused === prompt) {
+        this.prevFocused = null;
+      }
     });
     promptMap.set(pid, prompt);
     // Only set a new idle prompt if the current one has been used
@@ -89,10 +106,13 @@ export const prompts = {
     if (this.focused === prompt) {
       this.focused = null;
     }
+    if (this.prevFocused === prompt) {
+      this.prevFocused = null;
+    }
     prompt.actualHide();
-    log.info(`${pid}: 🥱 Closing prompt`);
+    info(`${pid}: 🥱 Closing prompt`);
     prompt.close();
-    log.info(`${pid}: 🚮 Deleted prompt. ${promptMap.size} prompts remaining.`);
+    info(`${pid}: 🚮 Deleted prompt. ${promptMap.size} prompts remaining.`);
   },
 
   /**
@@ -126,13 +146,17 @@ export const prompts = {
    * Gets the last focused prompt, if any.
    * @returns The last focused prompt, or null if no prompt is focused or the last focused prompt is destroyed.
    */
-  getPrevFocusedPrompt: function (): KitPrompt | null {
-    for (const prompt of this) {
+  getPrevFocusedPrompt: (): KitPrompt | null => {
+    for (const prompt of prompts) {
       if (prompt.isFocused()) {
+        info(`🔍 Found focused prompt: ${prompt.id}.`);
         return null;
       }
     }
-    return this.focused && !this.focused.isDestroyed() && !this.focused.isFocused() ? this.focused : null;
+    const prevFocused = prompts.focused && !prompts.focused.isDestroyed() && !prompts.focused ? prompts.focused : null;
+
+    info(`🔍 Found prev-focused prompt that's not focused: ${prevFocused?.id}`);
+    return prevFocused;
   },
 
   /**

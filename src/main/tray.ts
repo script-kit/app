@@ -265,7 +265,7 @@ const buildPromptsSubmenu = (): MenuItemConstructorOptions[] => {
     label: 'Open Focused Prompt Dev Tools',
     click: async () => {
       log.info('Opening focused prompt dev tools...');
-      prompts?.focused?.window?.webContents?.openDevTools();
+      prompts?.prevFocused?.window?.webContents?.openDevTools();
     },
   });
 
@@ -273,7 +273,7 @@ const buildPromptsSubmenu = (): MenuItemConstructorOptions[] => {
     label: 'Center Focused Prompt',
     click: () => {
       log.info('Centering focused prompt...');
-      prompts.focused?.forcePromptToCenter();
+      prompts.prevFocused?.forcePromptToCenter();
     },
   });
 
