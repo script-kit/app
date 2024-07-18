@@ -284,12 +284,12 @@ export const sendToAllActiveChildren = (data: {
   }
 };
 
-export const createMessageHandler = (info: ProcessInfo) => {
-  const { type } = info;
-  const kitMessageMap = createMessageMap(info);
+export const createMessageHandler = (processInfo: ProcessInfo) => {
+  const { type } = processInfo;
+  const kitMessageMap = createMessageMap(processInfo as ProcessAndPrompt);
   // info({ kitMessageMap });
 
-  return async (data: GenericSendData) => {
+  return (data: GenericSendData) => {
     if (
       !data.kitScript &&
       data?.channel !== Channel.HEARTBEAT &&

@@ -168,12 +168,12 @@ export const formatScriptChoices = (data: Choice[]) => {
   return choices;
 };
 
-export const createMessageMap = (info: ProcessAndPrompt) => {
+export const createMessageMap = (processInfo: ProcessAndPrompt) => {
   const robot = shims['@jitsi/robotjs'];
   let exiting = false;
   const resetting = false;
 
-  const { prompt, scriptPath } = info;
+  const { prompt, scriptPath } = processInfo;
   const sendToPrompt = prompt.sendToPrompt;
   const waitForPrompt = async (channel: Channel, value: any) => {
     prompt.window?.webContents?.ipc?.once(channel, () => {
@@ -182,7 +182,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     sendToPrompt(channel, value);
   };
   const setLog = (value) => sendToPrompt(Channel.SET_LOG, value);
-  const childSend = createSendToChild(info);
+  const childSend = createSendToChild(processInfo);
 
   const handleChannelMessage = <K extends keyof ChannelMap>(
     data: SendData<K>,
@@ -920,7 +920,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           processInfo.child.stderr?.on('error', routeToScriptLog);
         }
 
-        info.scriptPath = filePath;
+        processInfo.scriptPath = filePath;
       }
       debounceSetScriptTimestamp({
         filePath,
@@ -2091,7 +2091,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       sendToPrompt(Channel.GET_COLOR);
     }),
     CHAT_GET_MESSAGES: onChildChannelOverride(async (_, { channel, value }) => {
-      prompt?.getFromPrompt(info.child, channel, value);
+      prompt?.getFromPrompt(processInfo.child, channel, value);
     }),
     CHAT_SET_MESSAGES: onChildChannel(async ({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
@@ -2250,14 +2250,14 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     ...HANDLER_CHANNELS.reduce((acc, channel) => {
       acc[channel] = onChildChannel(async ({ child }, { channel, value }) => {
         log.info('SYSTEM CHANNEL', { channel, value });
-        if (value && info?.preventChannels?.has(channel)) {
-          info?.preventChannels?.delete(channel);
+        if (value && processInfo?.preventChannels?.has(channel)) {
+          processInfo?.preventChannels?.delete(channel);
           log.info(`${child.pid} ${channel} removed from "prevent" list`, {
             channel,
             value,
           });
         } else {
-          info?.preventChannels?.add(channel);
+          processInfo?.preventChannels?.add(channel);
           log.info(`${child.pid} ${channel} added to "prevent" list`, {
             channel,
             value,

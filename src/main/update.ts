@@ -134,17 +134,17 @@ export const configureAutoUpdate = async () => {
     }
   });
 
-  autoUpdater.on('update-available', async (info) => {
-    updateInfo = info;
+  autoUpdater.on('update-available', async (updateAvailableInfo) => {
+    updateInfo = updateAvailableInfo;
 
     kitState.status = {
       status: 'update',
-      message: `Downloading update ${info.version}...`,
+      message: `Downloading update ${updateAvailableInfo.version}...`,
     };
-    updateLog.info('Update available.', info);
+    updateLog.info('Update available.', updateAvailableInfo);
 
     const version = getVersion();
-    const newVersion = info?.version;
+    const newVersion = updateAvailableInfo?.version;
 
     const currentChannel = parseChannel(version);
     const newChannel = parseChannel(newVersion);

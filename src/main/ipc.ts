@@ -592,8 +592,8 @@ ${child?.pid} 📝 Submitting...
           const dl = new DownloaderHelper(filePath, tmpDownloadsDir, {
             override: true,
           });
-          dl.on('end', (info) => {
-            const fp = info.filePath;
+          dl.on('end', (downloadInfo) => {
+            const fp = downloadInfo.filePath;
             detect.fromFile(fp, (err: any, result: { ext: string; mime: string }) => {
               if (err) {
                 throw err;
