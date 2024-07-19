@@ -353,7 +353,6 @@ export const teardownWatchers = () => {
   if (watchers.length) {
     for (const watcher of watchers) {
       try {
-        info('Closing watcher: ', watcher);
         watcher.removeAllListeners();
         watcher.close();
       } catch (error) {

@@ -952,7 +952,7 @@ export const syncBins = async () => {
   }, 1000);
 };
 
-const receiveScripts = ({
+export const cacheMainMenu = ({
   scripts,
   kenvScripts,
   preview,
@@ -960,10 +960,10 @@ const receiveScripts = ({
   scriptFlags,
 }: {
   scripts: Script[];
-  kenvScripts: Script[];
-  preview: string;
-  shortcuts: Shortcut[];
-  scriptFlags: FlagsOptions;
+  kenvScripts?: Script[];
+  preview?: string;
+  shortcuts?: Shortcut[];
+  scriptFlags?: FlagsOptions;
 }) => {
   info('Received scripts', {
     scripts: scripts?.length,
@@ -1071,7 +1071,7 @@ export const cacheMainScripts = (stamp?: Stamp) => {
 
         const messageHandler = (message) => {
           info('Received message for stamp', stamp);
-          receiveScripts(message);
+          cacheMainMenu(message);
           resolve(message);
           cleanHandlers();
         };

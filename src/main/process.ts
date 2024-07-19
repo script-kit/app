@@ -17,7 +17,7 @@ import type { GenericSendData } from '@johnlindquist/kit/types/kitapp';
 import { KIT_APP, KIT_APP_PROMPT, execPath, kitPath, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
 
 import { pathExistsSync, readJson } from './cjs-exports';
-import { getLog, mainLog, warn } from './logs';
+import { getLog, mainLog } from './logs';
 import type { KitPrompt } from './prompt';
 import { debounceSetScriptTimestamp, getThemes, kitState, kitStore } from './state';
 
@@ -40,7 +40,7 @@ import { TrackEvent, trackEvent } from './track';
 
 import { createLogger } from '../shared/log-utils';
 
-const { info } = createLogger('process.ts');
+const { info, warn, err, silly, verbose } = createLogger('process.ts');
 
 export type ProcessAndPrompt = ProcessInfo & {
   prompt: KitPrompt;
@@ -74,12 +74,12 @@ export const maybeConvertColors = async (theme: any = {}) => {
   theme.opacity ||= theme?.['--opacity'];
   nativeTheme.shouldUseDarkColors ? scriptKitTheme.opacity : scriptKitLightTheme.opacity;
 
-  log.verbose(`🫥 Theme opacity: ${theme.opacity}`);
+  verbose(`🫥 Theme opacity: ${theme.opacity}`);
   const themeUIBgOpacity = theme?.['ui-bg-opacity'] || scriptKitLightTheme['ui-bg-opacity'];
 
-  log.verbose(`🫥 Theme ui-bg-opacity: ${theme?.['ui-bg-opacity']}, ${themeUIBgOpacity}`);
+  verbose(`🫥 Theme ui-bg-opacity: ${theme?.['ui-bg-opacity']}, ${themeUIBgOpacity}`);
   theme['--ui-bg-opacity'] = themeUIBgOpacity;
-  log.verbose(`🫥 Theme ui-bg-opacity: ${theme['--ui-bg-opacity']}`);
+  verbose(`🫥 Theme ui-bg-opacity: ${theme['--ui-bg-opacity']}`);
   theme['--ui-border-opacity'] ||= theme?.['ui-border-opacity'] || scriptKitLightTheme['ui-border-opacity'];
 
   if (kitState.kenvEnv.KIT_DISABLE_BLUR === 'true') {
@@ -112,7 +112,7 @@ export const maybeConvertColors = async (theme: any = {}) => {
     result = cc.contrastColor();
 
     theme.appearance ||= result === '#FFFFFF' ? 'dark' : 'light';
-    log.verbose(`💄 Setting appearance to ${theme.appearance}`);
+    verbose(`💄 Setting appearance to ${theme.appearance}`);
   }
 
   theme['--opacity'] = `${theme.opacity}`;
@@ -171,14 +171,14 @@ export const maybeConvertColors = async (theme: any = {}) => {
 
   // setVibrancy(vibrancy);
 
-  log.verbose('🎨 Theme:', theme);
+  verbose('🎨 Theme:', theme);
 
   return theme;
 };
 
 export const setTheme = async (value: any = {}, reason = '') => {
   info(`🎨 Setting theme because ${reason}`);
-  // log.verbose(`🎨 Setting theme:`, {
+  // verbose(`🎨 Setting theme:`, {
   //   hasCss: kitState.hasCss,
   //   value,
   // });
@@ -216,7 +216,7 @@ export const updateTheme = async () => {
       const currentTheme = await readJson(themePath);
       setTheme(currentTheme, `updateTheme() with themePath: ${themePath}`);
     } catch (error) {
-      log.warn(error);
+      warn(error);
     }
   } else {
     info('👀 No themes configured in .env. Using defaults');
@@ -237,7 +237,7 @@ type WidgetData = {
 type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
 
 export const cachePreview = async () => {
-  // log.verbose(`🎁 Caching preview for ${kitState.scriptPath}`);
+  // verbose(`🎁 Caching preview for ${kitState.scriptPath}`);
   // preloadPreviewMap.set(scriptPath, preview);
   // if (
   //   kitState.scriptPath === getMainScriptPath() &&
@@ -260,12 +260,12 @@ export const childSend = (child: ChildProcess, data: any) => {
       // info(`✉️: ${data.channel}`);
       child.send(data, (error) => {
         if (error) {
-          log.warn(`${child?.pid}: ${data?.channel} ignored. Already finished: ${data?.promptId}`);
+          warn(`${child?.pid}: ${data?.channel} ignored. Already finished: ${data?.promptId}`);
         }
       });
     }
   } catch (error) {
-    log.error('childSend error', error);
+    err('childSend error', error);
   }
 };
 
@@ -305,10 +305,10 @@ export const createMessageHandler = (processInfo: ProcessInfo) => {
       //   data: SendData<C>
       // ) => void;
       try {
-        log.silly(`📬 ${data.channel}`);
+        silly(`📬 ${data.channel}`);
         channelFn(data);
       } catch (error) {
-        log.error(`Error in channel ${data.channel}`, error);
+        err(`Error in channel ${data.channel}`, error);
       }
     } else {
       warn(`Channel ${data?.channel} not found on ${type}.`);
@@ -628,7 +628,7 @@ class Processes extends Array<ProcessAndPrompt> {
     });
 
     if (!child.pid) {
-      log.error('Child process has no pid', child);
+      err('Child process has no pid', child);
       throw new Error('Child process has no pid');
     }
 
@@ -711,8 +711,8 @@ class Processes extends Array<ProcessAndPrompt> {
           this.stampPid(child.pid);
         }
       } else if (typeof code === 'number') {
-        log.error(`${child.pid}: 🟥 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`);
-        log.error('👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors');
+        err(`${child.pid}: 🟥 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`);
+        err('👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors');
 
         setTrayScriptError(pid);
       }
@@ -724,8 +724,8 @@ class Processes extends Array<ProcessAndPrompt> {
       if (error?.message?.includes('EPIPE')) {
         return;
       }
-      log.error('ERROR', { pid, error });
-      log.error('👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors');
+      err('ERROR', { pid, error });
+      err('👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors');
       kitState.status = {
         status: 'warn',
         message: '',
@@ -801,7 +801,7 @@ class Processes extends Array<ProcessAndPrompt> {
         }
         info(`${pid}: Killed system process using ${systemProcess.spawnargs}`);
       } catch (error) {
-        log.error(`${pid}: Error killing system process: ${error}`);
+        err(`${pid}: Error killing system process: ${error}`);
       }
 
       return;
@@ -825,7 +825,7 @@ class Processes extends Array<ProcessAndPrompt> {
           try {
             globalShortcut.unregister(shortcut);
           } catch (error) {
-            log.error(`${child.pid}: Error unregistering shortcut: ${shortcut}`, error);
+            err(`${child.pid}: Error unregistering shortcut: ${shortcut}`, error);
           }
         });
         childShortcutMap.delete(child.pid);
@@ -893,7 +893,7 @@ export const handleWidgetEvents = () => {
     const widget = BrowserWindow.fromId(wid);
     const pInfo = processes.getByPid(pid) as ProcessInfo;
     if (!pInfo) {
-      log.error(`No process found for widget ${widgetId}`);
+      err(`No process found for widget ${widgetId}`);
       return;
     }
     if (!pInfo.child) {
@@ -1108,7 +1108,7 @@ export const handleWidgetEvents = () => {
         icon: data?.iconPath as string,
       });
     } catch (error) {
-      log.error(error);
+      err(error);
     }
   };
 
@@ -1213,7 +1213,7 @@ emitter.on(KitEvent.RemoveMostRecent, processes.removeCurrentProcess.bind(proces
 // emitter.on(KitEvent.MainScript, () => {
 //   sendToPrompt(Channel.SET_DESCRIPTION, 'Run Script');
 //   const scripts = getScriptsSnapshot();
-//   log.verbose({ scripts });
+//   verbose({ scripts });
 //   setChoices(formatScriptChoices(scripts));
 // });
 
@@ -1244,7 +1244,7 @@ emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
 
     performance.mark('script');
   } catch (error) {
-    log.warn('Error reading kenv env', error);
+    warn('Error reading kenv env', error);
   }
 
   updateTheme();

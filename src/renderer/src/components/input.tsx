@@ -139,6 +139,8 @@ function ResizableInput({ placeholder, className, index }) {
         {hiddenInputString}
       </span>
       <input
+        // biome-ignore lint/a11y/noAutofocus: <explanation>
+        autoFocus={index === 0 && promptData?.scriptlet === true}
         ref={inputRef}
         onChange={(e) => setCurrentInput(e.target.value)}
         placeholder={placeholder}

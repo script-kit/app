@@ -8,7 +8,6 @@ import {
   getMainScriptPath,
   groupChoices,
 } from '@johnlindquist/kit/core/utils';
-import log from 'electron-log';
 import { debounce } from 'lodash-es';
 
 import { QuickScore, createConfig, quickScore } from 'quick-score';
@@ -17,7 +16,9 @@ import type { ScoredChoice } from '../shared/types';
 import { createScoredChoice } from './helpers';
 import { cacheChoices } from './messages';
 import type { KitPrompt } from './prompt';
-import { kitState } from './state';
+import { kitCache, kitState } from './state';
+import { createLogger } from '../shared/log-utils';
+const log = createLogger('search.ts');
 
 export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'normal') => {
   // log.info(`${prompt.pid}: ${reason}: Invoke search: '${rawInput}'`);
@@ -645,6 +646,7 @@ export const setChoices = (
 
   if (prompt.cacheScriptChoices) {
     log.info(`Caching script choices for ${prompt.scriptPath}: ${choices.length}`);
+    // TODO: Sync up the kitCache.choices approach with this older approach
     cacheChoices(prompt.scriptPath, choices);
     prompt.cacheScriptChoices = false;
   } else if (prompt?.scriptPath && choices?.length) {
@@ -663,6 +665,11 @@ export const setChoices = (
   if (generated) {
     setScoredChoices(prompt, scoredChoices, 'generated');
     return;
+  }
+
+  if (prompt.scriptPath === getMainScriptPath()) {
+    log.info(`💝 Caching main menu choices. First script: ${scoredChoices?.[1]?.item?.name}`);
+    kitCache.choices = scoredChoices;
   }
 
   prompt.kitSearch.choices = choices.filter((c) => !c?.exclude);
