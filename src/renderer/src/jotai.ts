@@ -12,6 +12,7 @@ import type {
   Action,
   AppState,
   Choice,
+  FlagsObject,
   FlagsOptions,
   FlagsWithKeys,
   ProcessInfo,
@@ -111,11 +112,6 @@ export const hasActionsAtom = atom((g) => {
     return false;
   }
   return true;
-});
-
-export const actionsPlaceholderAtom = atom((g) => {
-  const hasActions = g(hasActionsAtom);
-  return hasActions ? 'Actions' : 'No Actions Available';
 });
 
 export const placeholderAtom = atom(
@@ -917,13 +913,13 @@ export const inputAtom = atom(
   },
 );
 
-const _flagsAtom = atom<FlagsOptions>({});
+const _flagsAtom = atom<FlagsObject>({});
 export const flagsAtom = atom(
   (g) => {
     const { sortChoicesKey, order, ...flags } = g(_flagsAtom);
     return flags;
   },
-  (g, s, a: FlagsOptions) => {
+  (g, s, a: FlagsObject) => {
     // info(
     //   Object.entries(a).map(([k, v]) => {
     //     return {
@@ -3271,7 +3267,7 @@ export const cachedMainPromptDataAtom = atom<Partial<PromptData>>({
 });
 export const cachedMainShortcutsAtom = atom<Shortcut[]>([]);
 export const cachedMainPreviewAtom = atom<string>('');
-export const cachedMainFlagsAtom = atom<FlagsOptions>({});
+export const cachedMainFlagsAtom = atom<FlagsObject>({});
 
 export const shouldActionButtonShowOnInputAtom = atom((g) => {
   const hasFlags = Object.keys(g(flagsAtom)).length > 0;
@@ -3425,5 +3421,33 @@ export const invalidateChoiceInputsAtom = atom(
   (g) => g(_invalidateChoiceInputsAtom),
   (g, s, a: boolean) => {
     s(_invalidateChoiceInputsAtom, a);
+  },
+);
+
+export const sendActionAtom = atom((g) => {
+  return (action: Action) => {
+    const channel = g(channelAtom);
+    info(`👉 Sending action: ${action.name}`);
+    channel(Channel.ACTION, {
+      action,
+    });
+  };
+});
+
+export const actionsPlaceholderAtom = atom((g) => {
+  const hasActions = g(hasActionsAtom);
+  return hasActions ? 'Actions' : 'No Actions Available';
+});
+
+const _flagsOptionsAtom = atom<FlagsOptions>({});
+export const flagsOptionsAtom = atom(
+  (g) => {
+    return {
+      name: g(_flagsOptionsAtom)?.name || g(focusedChoiceAtom)?.name || '',
+      placeholder: g(_flagsOptionsAtom)?.placeholder || g(actionsPlaceholderAtom),
+    };
+  },
+  (g, s, a: FlagsOptions) => {
+    s(_flagsOptionsAtom, a);
   },
 );

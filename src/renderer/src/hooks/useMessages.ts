@@ -37,6 +37,7 @@ import {
   exitAtom,
   flaggedChoiceValueAtom,
   flagsAtom,
+  flagsOptionsAtom,
   footerAtom,
   getEditorHistoryAtom,
   hintAtom,
@@ -148,6 +149,7 @@ export default () => {
   const setEditorAppendValue = useSetAtom(editorAppendAtom);
   const setTextareaConfig = useSetAtom(textareaConfigAtom);
   const setFlags = useSetAtom(flagsAtom);
+  const setFlagsOptions = useSetAtom(flagsOptionsAtom);
 
   const setSubmitValue = useSetAtom(submitValueAtom);
   const setDescription = useSetAtom(descriptionAtom);
@@ -237,6 +239,7 @@ export default () => {
     [Channel.APPEND_EDITOR_VALUE]: setEditorAppendValue,
     [Channel.SET_TEXTAREA_CONFIG]: setTextareaConfig,
     [Channel.SET_FLAGS]: setFlags,
+    [Channel.SET_FLAGS_OPTIONS]: setFlagsOptions,
     [Channel.SET_FLAG_VALUE]: setFlagValue,
     [Channel.SET_FOCUSED]: setFocused,
     [Channel.SET_HINT]: (html) => setHint(DOMPurify.sanitize(html)),

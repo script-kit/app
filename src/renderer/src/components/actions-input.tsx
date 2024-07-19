@@ -14,6 +14,7 @@ import {
   cachedAtom,
   channelAtom,
   flagsAtom,
+  flagsOptionsAtom,
   focusedChoiceAtom,
   modifiers,
   shortcodesAtom,
@@ -42,7 +43,6 @@ export default function ActionsInput() {
 
   const shortcodes = useAtomValue(shortcodesAtom);
   const [inputValue, setInput] = useAtom(actionsInputAtom);
-  const [placeholder] = useAtom(actionsPlaceholderAtom);
   const [submitted] = useAtom(submittedAtom);
 
   const [, setInputFocus] = useAtom(actionsInputFocusAtom);
@@ -161,13 +161,12 @@ export default function ActionsInput() {
 
   const focusedChoice = useAtomValue(focusedChoiceAtom);
   const ui = useAtomValue(uiAtom);
-
-  const focusedName = ui === UI.arg && focusedChoice?.name ? focusedChoice.name : '';
+  const flagsOptions = useAtomValue(flagsOptionsAtom);
 
   return (
     <div
       key="input"
-      className={'flex flex-col max-w-screen border-b border-ui-border'}
+      className={'flex flex-col max-w-screen border-b border-ui-border px-0.5'}
       style={{
         height: inputHeight,
         minHeight: inputHeight,
@@ -206,14 +205,16 @@ export default function ActionsInput() {
       `}
           onChange={onChange}
           onKeyDown={onKeyDown}
-          placeholder={placeholder}
+          placeholder={flagsOptions.placeholder}
           ref={inputRef as LegacyRef<HTMLInputElement>}
           type={'text'}
           value={inputValue}
         />
 
-        {focusedName && (
-          <div className="text-primary/90 text-xs absolute right-[8px] top-[5px] font-normal-medium">{focusedName}</div>
+        {flagsOptions.name && (
+          <div className="text-primary/90 text-xs absolute right-[8px] top-[5px] font-normal-medium">
+            {flagsOptions.name}
+          </div>
         )}
       </div>
     </div>

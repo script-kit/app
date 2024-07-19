@@ -18,6 +18,7 @@ import { cacheChoices } from './messages';
 import type { KitPrompt } from './prompt';
 import { kitCache, kitState } from './state';
 import { createLogger } from '../shared/log-utils';
+import { compareArrays, compareChoices } from '../shared/utils';
 const log = createLogger('search.ts');
 
 export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'normal') => {

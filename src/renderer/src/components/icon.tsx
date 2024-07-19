@@ -11,6 +11,7 @@ import {
   loadingAtom,
   runMainScriptAtom,
   runProcessesAtom,
+  sendActionAtom,
   sendShortcutAtom,
 } from '../jotai';
 
@@ -41,6 +42,7 @@ export function IconButton() {
   const runMainProcess = useAtomValue(runMainScriptAtom);
   const listProcessesAction = useAtomValue(listProcessesActionAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
+  const sendAction = useAtomValue(sendActionAtom);
 
   if (lazyIcon.state === 'hasError') {
     return <span>{lazyIcon.error}</span>;
@@ -63,7 +65,7 @@ export function IconButton() {
         onClick={(e) => {
           e.preventDefault();
           if (isMainScript) {
-            sendShortcut(listProcessesAction?.key);
+            sendAction({ name: 'Help' });
           } else {
             runMainProcess();
           }

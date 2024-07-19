@@ -19,7 +19,7 @@ import { readdir } from 'node:fs/promises';
 import type { Stamp, UserDb } from '@johnlindquist/kit/core/db';
 import type {
   Choice,
-  FlagsOptions,
+  FlagsObject,
   PromptData,
   ScoredChoice,
   Script,
@@ -178,7 +178,7 @@ export const kitCache = {
   scripts: [] as Script[],
   preview: '',
   shortcuts: [] as Shortcut[],
-  scriptFlags: {} as FlagsOptions,
+  scriptFlags: {} as FlagsObject,
   triggers: new Map<string, Choice>(),
   postfixes: new Map<string, Choice>(),
   keywords: new Map<string, Choice>(),

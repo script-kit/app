@@ -129,7 +129,7 @@ function FlagButton({ index: buttonIndex, style, data: { choices } }: ChoiceButt
         items-center
         justify-between
         whitespace-nowrap
-        px-4
+        px-[18px]
 
         text-left
         outline-none

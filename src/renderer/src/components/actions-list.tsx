@@ -174,7 +174,7 @@ export default function ActionsList() {
       bg-bg-base/90
       backdrop-filter
       backdrop-blur-xl
-      border border-ui-border
+      border-2 border-ui-border
       shadow-lg
       "
       style={{
@@ -188,7 +188,7 @@ export default function ActionsList() {
           <AutoSizer disableWidth={true} className="w-full">
             {({ height }) => (
               <>
-                <InnerList height={height} />
+                <InnerList height={height + 2} />
               </>
             )}
           </AutoSizer>

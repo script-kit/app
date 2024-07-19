@@ -31,7 +31,7 @@ import {
   kitPath,
   knodePath,
 } from '@johnlindquist/kit/core/utils';
-import type { FlagsOptions, Script, Scriptlet, Shortcut } from '@johnlindquist/kit/types';
+import type { FlagsObject, Script, Scriptlet, Shortcut } from '@johnlindquist/kit/types';
 import { CACHED_GROUPED_SCRIPTS_WORKER, CREATE_BIN_WORKER } from '@johnlindquist/kit/workers';
 
 import { KitPrompt, destroyPromptWindow, makeSplashWindow } from './prompt';
@@ -963,7 +963,7 @@ export const cacheMainMenu = ({
   kenvScripts?: Script[];
   preview?: string;
   shortcuts?: Shortcut[];
-  scriptFlags?: FlagsOptions;
+  scriptFlags?: FlagsObject;
 }) => {
   info('Received scripts', {
     scripts: scripts?.length,

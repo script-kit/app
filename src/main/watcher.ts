@@ -36,7 +36,7 @@ import { KitEvent, emitter } from '../shared/events';
 import { sendToAllPrompts } from './channel';
 import { type WatchEvent, startWatching } from './chokidar';
 import { createEnv } from './env.utils';
-import { compareArrays, isInDirectory } from './helpers';
+import { isInDirectory } from './helpers';
 import { runScript } from './kit';
 import { getFileImports } from './npm';
 import { processes, sendToAllActiveChildren, spawnShebang, updateTheme } from './process';
@@ -48,6 +48,7 @@ import { cacheMainScripts } from './install';
 import { loadKenvEnvironment } from './env-utils';
 import { pathExists } from './cjs-exports';
 import { createLogger } from '../shared/log-utils';
+import { compareArrays } from '../shared/utils';
 
 const { info, err, warn, verbose } = createLogger('watcher.ts');
 

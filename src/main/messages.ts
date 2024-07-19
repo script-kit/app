@@ -1327,11 +1327,14 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     SET_FORM: (data) => {
       sendToPrompt(Channel.SET_FORM, data.value);
     },
-    SET_FLAGS: onChildChannel(async ({ child }, { channel, value, promptId }, samePrompt) => {
+    SET_FLAGS: onChildChannel(({ child }, { channel, value, promptId }, samePrompt) => {
+      const { flags, options } = value;
       if (samePrompt) {
-        info(`⛳️ Set flags ${Object.keys(value).length}`);
+        info(`⛳️ Set flags ${Object.keys(flags).length}`);
         sendToPrompt(Channel.SET_FLAGS, value);
-        setFlags(prompt, value as any);
+        setFlags(prompt, flags as any);
+        info(`🔥 Setting flags options: ${options.name} ${options.placeholder}`);
+        sendToPrompt(Channel.SET_FLAGS_OPTIONS, options);
       } else {
         warn(`${prompt.pid}: ⛔️ SET_FLAGS: Prompt ID mismatch`, {
           dataId: promptId,
@@ -1339,13 +1342,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         });
       }
     }),
-    SET_FLAG_VALUE: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_FLAG_VALUE: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_FLAG_VALUE, value);
     }),
-    SET_NAME: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_NAME: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_NAME, value);
     }),
-    SET_DESCRIPTION: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_DESCRIPTION: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_DESCRIPTION, value);
     }),
     SET_FOCUSED: (data) => {

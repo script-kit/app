@@ -41,6 +41,7 @@ import {
   placeholderAtom,
   promptDataAtom,
   selectionStartAtom,
+  sendActionAtom,
   sendShortcutAtom,
   shortcodesAtom,
   shortcutsAtom,
@@ -444,17 +445,16 @@ export default function Input() {
   const user = useAtomValue(userAtom);
   const kitState = useAtomValue(kitStateAtom);
   const focusedChoice = useAtomValue(focusedChoiceAtom);
-  const sendShortcut = useSetAtom(sendShortcutAtom);
   const action = useAtomValue(signInActionAtom);
-  const channel = useAtomValue(channelAtom);
+  const sendAction = useAtomValue(sendActionAtom);
 
   const onClick = useCallback(
     (event) => {
       if (action) {
-        channel(Channel.ACTION, { action });
+        sendAction(action);
       }
     },
-    [action, sendShortcut],
+    [action, sendAction],
   );
 
   useTab();
@@ -590,58 +590,60 @@ export default function Input() {
               </>
             )}
 
-            {kitState.isSponsor ? (
-              <span
-                className={`relative ${inputHeight === PROMPT.INPUT.HEIGHT.XS ? 'w-[28px]' : 'w-[30px]'} pl-1 pr-1 mr-1`}
-              >
-                {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                {user.avatar_url ? (
-                  // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-                  <img
-                    onClick={onClick}
-                    alt="avatar"
-                    src={user.avatar_url}
-                    className="z-0 w-[22px] cursor-pointer rounded-full hover:opacity-75 -mt-[2px]"
-                  />
-                ) : (
-                  // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-                  <div
-                    onClick={onClick}
-                    className="z-0 w-[22px] h-[22px] cursor-pointer rounded-full hover:opacity-75 bg-current"
-                  />
-                )}
-
-                {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
-                <svg
-                  height="24"
-                  width="24"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="absolute right-[-7px] top-[-7px] z-10 h-[15px] text-primary opacity-90"
+            <div className="flex flex-row items-center">
+              {kitState.isSponsor ? (
+                <span
+                  className={`relative ${inputHeight === PROMPT.INPUT.HEIGHT.XS ? 'w-[28px]' : 'w-[30px]'} pl-1 pr-1 mr-1`}
                 >
-                  <g fill="currentColor">
-                    <path
-                      d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z"
-                      fill="current"
-                      fillOpacity="0.9"
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+                  {user.avatar_url ? (
+                    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+                    <img
+                      onClick={onClick}
+                      alt="avatar"
+                      src={user.avatar_url}
+                      className="z-0 w-[22px] cursor-pointer rounded-full hover:opacity-75 -mt-[2px]"
                     />
-                  </g>
-                </svg>
-              </span>
-            ) : (
-              <div className="pr-1.5 pl-1">
-                {/* <span className="text-xxs">
+                  ) : (
+                    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+                    <div
+                      onClick={onClick}
+                      className="z-0 w-[22px] h-[22px] cursor-pointer rounded-full hover:opacity-75 bg-current"
+                    />
+                  )}
+
+                  {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
+                  <svg
+                    height="24"
+                    width="24"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="absolute right-[-7px] top-[-7px] z-10 h-[15px] text-primary opacity-90"
+                  >
+                    <g fill="currentColor">
+                      <path
+                        d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z"
+                        fill="current"
+                        fillOpacity="0.9"
+                      />
+                    </g>
+                  </svg>
+                </span>
+              ) : (
+                <div className="pr-1.5 pl-1">
+                  {/* <span className="text-xxs">
                   Process: {pid}
                   Choices: {scoredChoices.length}
                   Count: {count}
                 </span> */}
 
-                <LoginButton key="login-button" />
-              </div>
-            )}
+                  <LoginButton key="login-button" />
+                </div>
+              )}
 
-            <div className="relative mx-2 flex min-w-0">
-              <IconButton />
+              <div className="relative mx-2 flex min-w-0">
+                <IconButton />
+              </div>
             </div>
           </div>
         </div>
