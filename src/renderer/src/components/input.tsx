@@ -57,7 +57,6 @@ import { EnterButton } from './actionenterbutton';
 import { OptionsButton } from './actionoptionsbutton';
 import { ActionSeparator } from './actionseparator';
 import { IconButton } from './icon';
-import { LoginButton } from './loginbutton';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') {
@@ -446,7 +445,7 @@ export default function Input() {
   const kitState = useAtomValue(kitStateAtom);
   const focusedChoice = useAtomValue(focusedChoiceAtom);
   const action = useAtomValue(signInActionAtom);
-  const sendAction = useAtomValue(sendActionAtom);
+  const sendAction = useSetAtom(sendActionAtom);
 
   const onClick = useCallback(
     (event) => {
@@ -591,13 +590,11 @@ export default function Input() {
             )}
 
             <div className="flex flex-row items-center">
-              {kitState.isSponsor ? (
+              {kitState.isSponsor && (
                 <span
                   className={`relative ${inputHeight === PROMPT.INPUT.HEIGHT.XS ? 'w-[28px]' : 'w-[30px]'} pl-1 pr-1 mr-1`}
                 >
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
                   {user.avatar_url ? (
-                    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
                     <img
                       onClick={onClick}
                       alt="avatar"
@@ -605,14 +602,11 @@ export default function Input() {
                       className="z-0 w-[22px] cursor-pointer rounded-full hover:opacity-75 -mt-[2px]"
                     />
                   ) : (
-                    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
                     <div
                       onClick={onClick}
                       className="z-0 w-[22px] h-[22px] cursor-pointer rounded-full hover:opacity-75 bg-current"
                     />
                   )}
-
-                  {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
                   <svg
                     height="24"
                     width="24"
@@ -629,16 +623,6 @@ export default function Input() {
                     </g>
                   </svg>
                 </span>
-              ) : (
-                <div className="pr-1.5 pl-1">
-                  {/* <span className="text-xxs">
-                  Process: {pid}
-                  Choices: {scoredChoices.length}
-                  Count: {count}
-                </span> */}
-
-                  <LoginButton key="login-button" />
-                </div>
               )}
 
               <div className="relative mx-2 flex min-w-0">

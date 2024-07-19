@@ -6,6 +6,8 @@ import { loadable } from 'jotai/utils';
 
 import {
   createAssetAtom,
+  actionsConfigAtom,
+  focusedFlagValueAtom,
   isMainScriptAtom,
   listProcessesActionAtom,
   loadingAtom,
@@ -13,7 +15,13 @@ import {
   runProcessesAtom,
   sendActionAtom,
   sendShortcutAtom,
+  flaggedChoiceValueAtom,
 } from '../jotai';
+
+import { createLogger } from '../../../shared/log-utils';
+import { useState } from 'react';
+
+const log = createLogger('icon.tsx');
 
 const loadableIconAtom = loadable(createAssetAtom('svg', 'logo.svg'));
 const transition = { duration: 0.0, ease: 'easeInOut' };
@@ -42,7 +50,12 @@ export function IconButton() {
   const runMainProcess = useAtomValue(runMainScriptAtom);
   const listProcessesAction = useAtomValue(listProcessesActionAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
-  const sendAction = useAtomValue(sendActionAtom);
+  const sendAction = useSetAtom(sendActionAtom);
+  const [flagValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
+  const flagsOptions = useAtomValue(actionsConfigAtom);
+  const [isMouseDown, setIsMouseDown] = useState(false);
+
+  const isActionActive = flagValue && flagsOptions?.active === 'Script Kit Support';
 
   if (lazyIcon.state === 'hasError') {
     return <span>{lazyIcon.error}</span>;
@@ -61,11 +74,21 @@ export function IconButton() {
         </IconContext.Provider>
       )} */}
       <a
-        // biome-ignore lint/a11y/useValidAnchor: <explanation>
+        onMouseDown={() => setIsMouseDown(true)}
+        onMouseUp={() => setIsMouseDown(false)}
         onClick={(e) => {
           e.preventDefault();
+
+          log.info({
+            isMainScript,
+            flagValue,
+          });
           if (isMainScript) {
-            sendAction({ name: 'Help' });
+            if (flagValue) {
+              setFlagValue('');
+            } else {
+              sendAction({ name: 'Support' });
+            }
           } else {
             runMainProcess();
           }
@@ -86,11 +109,14 @@ export function IconButton() {
       rounded
       py-1
       px-1.5
+      ${isMouseDown ? 'hover:bg-opacity-20' : ''}
       ${textContrast}
 
       ${bg}
 
       transition-all duration-200 ease-in-out
+  ${isActionActive ? 'bg-opacity-10' : ''}
+
       `}
           xmlns="http://www.w3.org/2000/svg"
           width="32"

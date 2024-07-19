@@ -52,7 +52,7 @@ function FlagButton({ index: buttonIndex, style, data: { choices } }: ChoiceButt
     },
     [focusedChoice, setSubmitValue],
   );
-  const onMouseEnter = useCallback(() => {
+  const onMouseOver = useCallback(() => {
     if (mouseEnabled) {
       setIndex(buttonIndex);
     }
@@ -138,8 +138,7 @@ function FlagButton({ index: buttonIndex, style, data: { choices } }: ChoiceButt
         ${index === buttonIndex ? 'opacity-100' : 'opacity-90'}
       }`}
       onClick={onClick}
-      onMouseEnter={onMouseEnter}
-      onMouseMove={onMouseEnter}
+      onMouseOver={onMouseOver}
     >
       {/* <span className="text-primary/90 text-xxs">{JSON.stringify(choice)}</span> */}
       {choice?.html ? (

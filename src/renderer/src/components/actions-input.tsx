@@ -14,7 +14,7 @@ import {
   cachedAtom,
   channelAtom,
   flagsAtom,
-  flagsOptionsAtom,
+  actionsConfigAtom,
   focusedChoiceAtom,
   modifiers,
   shortcodesAtom,
@@ -161,7 +161,7 @@ export default function ActionsInput() {
 
   const focusedChoice = useAtomValue(focusedChoiceAtom);
   const ui = useAtomValue(uiAtom);
-  const flagsOptions = useAtomValue(flagsOptionsAtom);
+  const actionsConfig = useAtomValue(actionsConfigAtom);
 
   return (
     <div
@@ -205,15 +205,15 @@ export default function ActionsInput() {
       `}
           onChange={onChange}
           onKeyDown={onKeyDown}
-          placeholder={flagsOptions.placeholder}
+          placeholder={actionsConfig.placeholder}
           ref={inputRef as LegacyRef<HTMLInputElement>}
           type={'text'}
           value={inputValue}
         />
 
-        {flagsOptions.name && (
+        {actionsConfig.name && (
           <div className="text-primary/90 text-xs absolute right-[8px] top-[5px] font-normal-medium">
-            {flagsOptions.name}
+            {actionsConfig.name}
           </div>
         )}
       </div>

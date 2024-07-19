@@ -3,19 +3,30 @@ import { UI } from '@johnlindquist/kit/core/enum';
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
-import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import React, { useCallback } from 'react';
-import { appConfigAtom, focusedFlagValueAtom, sendShortcutAtom, uiAtom } from '../jotai';
+import {
+  appConfigAtom,
+  actionsConfigAtom,
+  focusedFlagValueAtom,
+  sendActionAtom,
+  sendShortcutAtom,
+  uiAtom,
+} from '../jotai';
 import { type Action, bg, textContrast } from './actions';
 import { IconSwapper } from './iconswapper';
+import { createLogger } from '../../../shared/log-utils';
 
-export function ActionButton(action: Action & { extraClassName?: string }) {
+const log = createLogger('actionbutton.tsx');
+
+export function ActionButton(action: Action) {
   const ui = useAtomValue(uiAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
-  const setFlag = useSetAtom(focusedFlagValueAtom);
+  const sendAction = useSetAtom(sendActionAtom);
+  const [flagValue, setFlagValue] = useAtom(focusedFlagValueAtom);
   const [app] = useAtom(appConfigAtom);
   const m = app?.isMac;
+  const flagsOptions = useAtomValue(actionsConfigAtom);
 
   const onClick = useCallback(
     (event) => {
@@ -29,16 +40,20 @@ export function ActionButton(action: Action & { extraClassName?: string }) {
         }
       } else {
         if (action?.flag) {
-          setFlag(action.flag);
+          log.info(`setFlagValue`, action.flag);
+          setFlagValue(action.flag);
         }
-        sendShortcut(action.value);
+
+        log.info(`sendAction`, action);
+        sendAction(action);
       }
     },
-    [ui, action, setFlag, sendShortcut],
+    [ui, action, setFlagValue, sendAction],
   );
 
+  const isActionActive = flagValue && flagsOptions?.active === action.name;
+
   return (
-    // eslint-disable-next-line jsx-a11y/mouse-events-have-key-events
     <button
       type="button"
       disabled={action?.disabled}
@@ -55,7 +70,7 @@ export function ActionButton(action: Action & { extraClassName?: string }) {
   outline-none
   transition-opacity duration-200 ease-out
   ${action?.disabled ? 'text-primary text-opacity-25' : `${bg} ${textContrast}`}
-  ${action?.extraClassName}
+  ${isActionActive ? 'bg-opacity-10' : ''}
   `}
       onClick={action?.onClick ?? onClick}
       // blur on mouse down

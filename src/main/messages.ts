@@ -1330,11 +1330,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     SET_FLAGS: onChildChannel(({ child }, { channel, value, promptId }, samePrompt) => {
       const { flags, options } = value;
       if (samePrompt) {
-        info(`⛳️ Set flags ${Object.keys(flags).length}`);
-        sendToPrompt(Channel.SET_FLAGS, value);
+        // info(`⛳️ Set flags`, Object.keys(flags));
+        sendToPrompt(Channel.SET_FLAGS, flags);
         setFlags(prompt, flags as any);
-        info(`🔥 Setting flags options: ${options.name} ${options.placeholder}`);
-        sendToPrompt(Channel.SET_FLAGS_OPTIONS, options);
+        // info(`🔥 Setting flags options: ${options.name} ${options.placeholder}`);
+        sendToPrompt(Channel.SET_ACTIONS_CONFIG, options);
       } else {
         warn(`${prompt.pid}: ⛔️ SET_FLAGS: Prompt ID mismatch`, {
           dataId: promptId,

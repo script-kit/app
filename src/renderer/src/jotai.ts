@@ -13,7 +13,7 @@ import type {
   AppState,
   Choice,
   FlagsObject,
-  FlagsOptions,
+  ActionsConfig,
   FlagsWithKeys,
   ProcessInfo,
   PromptData,
@@ -929,6 +929,8 @@ export const flagsAtom = atom(
     // );
     s(_flagsAtom, a);
 
+    // info(`👀 flagsAtom: ${Object.keys(a)}`);
+
     if (g(isMainScriptAtom)) {
       s(cachedMainFlagsAtom, a);
     }
@@ -1714,6 +1716,8 @@ export const promptDataAtom = atom(
 
       s(promptActiveAtom, true);
       s(tabChangedAtom, false);
+      info({ actionsConfig: a?.actionsConfig });
+      s(actionsConfigAtom, a?.actionsConfig || {});
     }
   },
 );
@@ -3424,14 +3428,12 @@ export const invalidateChoiceInputsAtom = atom(
   },
 );
 
-export const sendActionAtom = atom((g) => {
-  return (action: Action) => {
-    const channel = g(channelAtom);
-    info(`👉 Sending action: ${action.name}`);
-    channel(Channel.ACTION, {
-      action,
-    });
-  };
+export const sendActionAtom = atom(null, (g, s, action: Action) => {
+  const channel = g(channelAtom);
+  info(`👉 Sending action: ${action.name}`);
+  channel(Channel.ACTION, {
+    action,
+  });
 });
 
 export const actionsPlaceholderAtom = atom((g) => {
@@ -3439,15 +3441,16 @@ export const actionsPlaceholderAtom = atom((g) => {
   return hasActions ? 'Actions' : 'No Actions Available';
 });
 
-const _flagsOptionsAtom = atom<FlagsOptions>({});
-export const flagsOptionsAtom = atom(
+const _actionsConfigAtom = atom<ActionsConfig>({});
+export const actionsConfigAtom = atom(
   (g) => {
     return {
-      name: g(_flagsOptionsAtom)?.name || g(focusedChoiceAtom)?.name || '',
-      placeholder: g(_flagsOptionsAtom)?.placeholder || g(actionsPlaceholderAtom),
+      name: g(_actionsConfigAtom)?.name || g(focusedChoiceAtom)?.name || '',
+      placeholder: g(_actionsConfigAtom)?.placeholder || g(actionsPlaceholderAtom),
+      active: g(_actionsConfigAtom)?.active || '',
     };
   },
-  (g, s, a: FlagsOptions) => {
-    s(_flagsOptionsAtom, a);
+  (g, s, a: ActionsConfig) => {
+    s(_actionsConfigAtom, a);
   },
 );

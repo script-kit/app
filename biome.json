@@ -15,6 +15,11 @@
     "enabled": true,
     "rules": {
       "all": true,
+      "a11y": {
+        "useKeyWithMouseEvents": "off",
+        "useKeyWithClickEvents": "off",
+        "noSvgWithoutTitle": "off",
+      },
       "complexity": {
         "noExcessiveCognitiveComplexity": "off",
         "noForEach": "off"
