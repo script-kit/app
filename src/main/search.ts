@@ -18,7 +18,6 @@ import { cacheChoices } from './messages';
 import type { KitPrompt } from './prompt';
 import { kitCache, kitState } from './state';
 import { createLogger } from '../shared/log-utils';
-import { compareArrays, compareChoices } from '../shared/utils';
 const log = createLogger('search.ts');
 
 export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'normal') => {
@@ -495,6 +494,7 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
 };
 
 export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys & Partial<Choice>) => {
+  log.info(`🔥 Setting flags: ${Object.keys(f)}`);
   const order = f?.order || [];
   const sortChoicesKey = f?.sortChoicesKey || [];
 

@@ -1330,9 +1330,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     SET_FLAGS: onChildChannel(({ child }, { channel, value, promptId }, samePrompt) => {
       const { flags, options } = value;
       if (samePrompt) {
-        // info(`⛳️ Set flags`, Object.keys(flags));
-        sendToPrompt(Channel.SET_FLAGS, flags);
+        info(`⛳️ SET_FLAGS`, Object.keys(flags));
         setFlags(prompt, flags as any);
+        sendToPrompt(Channel.SET_FLAGS, flags);
         // info(`🔥 Setting flags options: ${options.name} ${options.placeholder}`);
         sendToPrompt(Channel.SET_ACTIONS_CONFIG, options);
       } else {

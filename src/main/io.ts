@@ -1,5 +1,6 @@
 import { Channel } from '@johnlindquist/kit/core/enum';
-import log from 'electron-log';
+import { createLogger } from '../shared/log-utils';
+const log = createLogger('io.ts');
 import { chars } from './chars';
 import { sendToAllActiveChildren } from './process';
 import shims from './shims';

@@ -3,6 +3,7 @@ import { useAtom, useAtomValue } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { createLogger } from '../../../shared/log-utils';
 import {
+  actionsConfigAtom,
   actionsInputFocusAtom,
   channelAtom,
   choicesAtom,
@@ -84,6 +85,7 @@ export default () => {
   const [, sendShortcut] = useAtom(sendShortcutAtom);
   const [ui] = useAtom(uiAtom);
   const [previewEnabled, setPreviewEnabled] = useAtom(previewEnabledAtom);
+  const [actionsConfig, setActionsConfig] = useAtom(actionsConfigAtom);
   const hasRightShortcut = useAtomValue(hasRightShortcutAtom);
   const actionsInputFocus = useAtomValue(actionsInputFocusAtom);
 
@@ -131,6 +133,11 @@ export default () => {
     (event, handler: HotkeysEvent) => {
       info('Flag shortcut triggered', { event, handler, flagShortcuts });
       event.preventDefault();
+
+      // A shortcut clears the active because a new one is incoming
+      setActionsConfig({
+        active: '',
+      });
 
       const key = handler?.keys?.[0];
       if (!key) {
@@ -180,6 +187,11 @@ export default () => {
     (event, handler: HotkeysEvent) => {
       info('Prompt shortcut triggered', { event, handler, promptShortcuts });
       event.preventDefault();
+
+      // A shortcut clears the active because a new one is incoming
+      setActionsConfig({
+        active: '',
+      });
 
       const key = handler?.keys?.[0];
       if (!key) {

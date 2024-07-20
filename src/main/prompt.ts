@@ -1837,6 +1837,7 @@ export class KitPrompt {
   };
 
   setPromptData = async (promptData: PromptData) => {
+    info(`🔥 Setting prompt data: ${promptData.scriptPath}`);
     this.promptData = promptData;
 
     if (promptData.ui === UI.term) {
@@ -1883,6 +1884,7 @@ export class KitPrompt {
     }
 
     if (promptData.flags) {
+      info(`🏳️‍🌈 Setting flags from setPromptData: ${Object.keys(promptData.flags)}`);
       setFlags(this, promptData.flags);
     }
 
@@ -2250,7 +2252,6 @@ export class KitPrompt {
   scriptSet = false;
 
   setScript = async (script: Script, pid: number, force = false): Promise<'denied' | 'allowed'> => {
-    info('setScript', script, pid, force);
     const { preview, scriptlet, inputs, tag, ...serializableScript } = script as Scriptlet;
     this.scriptSet = true;
     info(`${this.pid}: ${pid} setScript`, serializableScript, {
@@ -2301,7 +2302,7 @@ export class KitPrompt {
       }
     }
 
-    info(`${this.pid}: sendToPrompt: ${Channel.SET_SCRIPT}`, serializableScript);
+    // info(`${this.pid}: sendToPrompt: ${Channel.SET_SCRIPT}`, serializableScript);
     this.sendToPrompt(Channel.SET_SCRIPT, serializableScript);
 
     if (serializableScript.filePath === getMainScriptPath()) {
@@ -2526,6 +2527,7 @@ export class KitPrompt {
     }
     this.updateShortcodes();
     if (promptData.flags) {
+      info(`🏴‍☠️ Setting flags from preloadPromptData: ${Object.keys(promptData.flags)}`);
       setFlags(this, promptData.flags);
     }
     this.alwaysOnTop = typeof promptData?.alwaysOnTop === 'boolean' ? promptData.alwaysOnTop : false;

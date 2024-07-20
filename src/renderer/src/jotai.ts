@@ -920,6 +920,7 @@ export const flagsAtom = atom(
     return flags;
   },
   (g, s, a: FlagsObject) => {
+    info(`👀 flagsAtom: ${Object.keys(a)}`);
     // info(
     //   Object.entries(a).map(([k, v]) => {
     //     return {
@@ -928,8 +929,6 @@ export const flagsAtom = atom(
     //   })
     // );
     s(_flagsAtom, a);
-
-    // info(`👀 flagsAtom: ${Object.keys(a)}`);
 
     if (g(isMainScriptAtom)) {
       s(cachedMainFlagsAtom, a);
@@ -1725,9 +1724,17 @@ export const promptDataAtom = atom(
 export const flaggedChoiceValueAtom = atom(
   (g) => g(_flaggedValue),
   (g, s, a: any) => {
+    const currentFlaggedValue = g(_flaggedValue);
+    // info(`👀 flaggedChoiceValueAtom: current: ${currentFlaggedValue} new: ${a}`);
+    // TODO: OPEN_ACTIONS send 'action' as a hack here to force the menu open...
+    if (currentFlaggedValue && a === 'action') {
+      // If it's already open and receives another OPEN_ACTIONS, then clear the input... Is this safe?
+      info('👀 flaggedChoiceValueAtom: clearing actionsInputAtom because it was already open');
+      s(actionsInputAtom, '');
+      return;
+    }
     s(promptActiveAtom, true);
-    const flags = g(_flagsAtom);
-    // log.info({ flagValue: a, flags });
+    info({ flagValue: a });
     // if (Object.entries(flags).length === 0 && !g(focusedChoiceAtom)?.actions) {
     //   return;
     // }
@@ -1776,6 +1783,12 @@ export const focusedFlagValueAtom = atom(
 );
 
 export const focusedActionAtom = atom<Action>({} as Action);
+
+export const preventSubmitWithoutActionAtom = atom((g) => {
+  const flaggedValue = g(flaggedChoiceValueAtom);
+  const focusedAction = g(focusedActionAtom);
+  return flaggedValue && Object.keys(focusedAction).length === 0;
+});
 
 const _submitValue = atom('');
 export const searchDebounceAtom = atom(true);
@@ -1883,14 +1896,19 @@ export const submitValueAtom = atom(
     // );
     const channel = g(channelAtom);
 
+    const preventSubmitWithoutAction = g(preventSubmitWithoutActionAtom);
+    if (preventSubmitWithoutAction) {
+      info('👀 preventSubmitWithoutActionAtom');
+      return;
+    }
     const action = g(focusedActionAtom);
-    info({
+    info('submitValue', {
       action,
     });
     if ((action as FlagsWithKeys).hasAction) {
       channel(Channel.ACTION);
-      if (action?.close) {
-        info('Closing actions <<<<<<<<<<<<<<<<<<<<<<<<');
+      if (action?.close && g(flaggedChoiceValueAtom)) {
+        info('👋 Closing actions');
         s(flaggedChoiceValueAtom, '');
       }
       return;
@@ -2363,7 +2381,6 @@ export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
   info(`🎬 Send shortcut`, shortcut);
 
   channel(Channel.SHORTCUT, { shortcut });
-  s(focusedFlagValueAtom, '');
 });
 
 export const processesAtom = atom<ProcessInfo[]>([]);
@@ -3111,6 +3128,7 @@ export const scoredFlagsAtom = atom(
     return g(scoredFlags);
   },
   (g, s, a: ScoredChoice[]) => {
+    // info(`🇺🇸 Setting scored flags: ${Object.keys(a?.map((c) => c?.item?.name))}`);
     s(scoredFlags, a);
     s(flagsIndexAtom, 0);
 
@@ -3409,6 +3427,7 @@ export const submitInputAtom = atom(null, (g, s) => {
 export const setFlagByShortcutAtom = atom(null, (g, s, a: string) => {
   const flags = g(flagsAtom);
   const flag = Object.keys(flags).find((key) => flags[key]?.shortcut === a);
+  info(`🏴‍☠️ Setting flag by shortcut: ${flag}`);
   s(flaggedChoiceValueAtom, flag);
 });
 
@@ -3451,6 +3470,6 @@ export const actionsConfigAtom = atom(
     };
   },
   (g, s, a: ActionsConfig) => {
-    s(_actionsConfigAtom, a);
+    s(_actionsConfigAtom, { ...g(_actionsConfigAtom), ...a });
   },
 );

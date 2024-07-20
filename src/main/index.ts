@@ -355,7 +355,7 @@ const systemEvents = () => {
     'display-metrics-changed',
     debounce((_, metrics) => {
       log.info('🖥️ Display metrics changed');
-      log.info(metrics);
+      log.info(metrics?.id, metrics?.bounds);
       assignDisplays();
     }, 1000),
   );
