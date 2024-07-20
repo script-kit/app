@@ -96,6 +96,7 @@ import {
   valueInvalidAtom,
   webcamIdAtom,
   zoomAtom,
+  invalidateChoiceInputsAtom,
 } from '../jotai';
 
 import { AppChannel, WindowChannel } from '../../../shared/enums';
@@ -189,6 +190,7 @@ export default () => {
   const setBeforeInput = useSetAtom(beforeInputAtom);
   const setKitConfig = useSetAtom(kitConfigAtom);
   const setShortcodes = useSetAtom(shortcodesAtom);
+  const setInvalidateChoiceInputs = useSetAtom(invalidateChoiceInputsAtom);
   // log({
   //   previewCheck: previewCheck ? '✅' : '🚫',
   //   previewHTML: previewHTML?.length,
@@ -290,6 +292,7 @@ export default () => {
     [Channel.CHAT_PUSH_TOKEN]: chatPushToken,
     [Channel.CHAT_SET_MESSAGE]: setChatMessage,
     [Channel.MIC_STREAM]: setMicStreamEnabled,
+    [Channel.SET_INVALIDATE_CHOICE_INPUTS]: setInvalidateChoiceInputs,
     [Channel.START_MIC]: (config: any) => {
       setAudioDot(true);
       setMicConfig({

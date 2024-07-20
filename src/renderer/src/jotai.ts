@@ -1894,6 +1894,27 @@ export const submitValueAtom = atom(
     //     submitValueAtom`,
     //   JSON.stringify(a),
     // );
+
+    // info('submitValue', a);
+    // info(`scriptlet?`, a?.scriptlet);
+    const flaggedValue = g(flaggedChoiceValueAtom);
+    const flag = g(focusedFlagValueAtom);
+
+    /*
+     * TODO: Make a list of all the states that impact submission.
+     * For example, this is:
+     * 1 - Actions Prompt Closed (flaggedValue === '')
+     * 2 - Not a shortcut (flag === '')
+     * 3 - Scriptlet Focused (a?.scriptlet && a?.inputs?.length)
+     * 4 - Scriptlet Requires Inputs
+     * Others include drag and drop arrays, forms, terminal, etc
+     */
+
+    if (!flaggedValue && !flag && a?.scriptlet && a?.inputs?.length) {
+      info('Scriptlet requires inputs', a.inputs);
+
+      return;
+    }
     const channel = g(channelAtom);
 
     const preventSubmitWithoutAction = g(preventSubmitWithoutActionAtom);
@@ -1944,7 +1965,6 @@ export const submitValueAtom = atom(
     // let submitted = g(submittedAtom);
     // if (submitted) return;
 
-    const flag = g(focusedFlagValueAtom);
     const value = checkSubmitFormat(g, a);
 
     // log.info({
@@ -3443,6 +3463,7 @@ const _invalidateChoiceInputsAtom = atom(false);
 export const invalidateChoiceInputsAtom = atom(
   (g) => g(_invalidateChoiceInputsAtom),
   (g, s, a: boolean) => {
+    info(`🔄 Invalidate choice inputs: ${a ? 'true' : 'false'}`);
     s(_invalidateChoiceInputsAtom, a);
   },
 );

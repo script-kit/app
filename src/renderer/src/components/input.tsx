@@ -166,6 +166,7 @@ text-md
 ${submitted && 'text-opacity-50'}
 outline-none
 outline-hidden pr-1
+mt-0.5
 mx-1
         `}
         style={{

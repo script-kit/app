@@ -1,7 +1,7 @@
 import { existsSync, renameSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { AppState, Script } from '@johnlindquist/kit';
+import type { AppState, Script, Scriptlet } from '@johnlindquist/kit';
 import { Channel, Mode, UI } from '@johnlindquist/kit/core/enum';
 import {
   getLogFromScriptPath,
@@ -91,18 +91,30 @@ const checkShortcodesAndKeywords = (prompt: KitPrompt, rawInput: string): boolea
   if (trigger) {
     if (prompt.ready) {
       info(`${prompt.pid}: 👢 Trigger: ${transformedInput} triggered`, trigger);
-      sendToPrompt(Channel.SET_SUBMIT_VALUE, trigger?.value ? trigger.value : trigger);
-      return false;
+
+      if (trigger?.value?.inputs?.length) {
+        info(`${prompt.pid}: 📝 Trigger: ${transformedInput} blocked. Inputs required`, trigger.value.inputs);
+        sendToPrompt(Channel.SET_INVALIDATE_CHOICE_INPUTS, true);
+      } else {
+        sendToPrompt(Channel.SET_SUBMIT_VALUE, trigger?.value ? trigger.value : trigger);
+        return false;
+      }
+    } else {
+      info(`${prompt.pid}: 😩 Not ready`, JSON.stringify(trigger));
     }
-    info(`${prompt.pid}: 😩 Not ready`, JSON.stringify(trigger));
   }
 
   for (const [postfix, choice] of prompt.kitSearch.postfixes.entries()) {
     if (choice && lowerCaseInput.endsWith(postfix)) {
       info(`🥾 Postfix: ${transformedInput} triggered`, choice);
-      (choice as Script).postfix = transformedInput.replace(postfix, '');
-      sendToPrompt(Channel.SET_SUBMIT_VALUE, choice);
-      return false;
+      if ((choice as Scriptlet)?.inputs?.length) {
+        info(`${prompt.pid}: 📝 Postfix: ${transformedInput} blocked. Inputs required`, (choice as Scriptlet).inputs);
+        sendToPrompt(Channel.SET_INVALIDATE_CHOICE_INPUTS, true);
+      } else {
+        (choice as Script).postfix = transformedInput.replace(postfix, '');
+        sendToPrompt(Channel.SET_SUBMIT_VALUE, choice);
+        return false;
+      }
     }
   }
 

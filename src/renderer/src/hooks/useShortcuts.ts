@@ -167,7 +167,7 @@ export default () => {
         if (ps?.key) {
           // info(`Comparing ${ps.key} to ${flagShortcuts}`);
           if (flagShortcuts.includes(ps.key)) {
-            warn('Prompt shortcut is a flag shortcut', { ps });
+            warn('Prompt shortcut is a duplicated of a flag shortcut. Ignoring flag shortcut', { ps });
           } else {
             keys += `${ps.key},`;
           }

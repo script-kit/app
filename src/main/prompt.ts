@@ -1841,14 +1841,17 @@ export class KitPrompt {
     this.promptData = promptData;
 
     if (promptData.ui === UI.term) {
-      info({ termPromptData: promptData });
-      this.sendToPrompt(AppChannel.SET_TERM_CONFIG, {
-        command: promptData.command || '',
+      const termConfig = {
+        // TODO: Fix termConfig/promptData type
+        command: (promptData as any)?.command || '',
         cwd: promptData.cwd || '',
-        env: promptData.env || {},
-        shell: promptData.shell || '',
+        shell: (promptData as any)?.shell || '',
         promptId: this.id || '',
-      });
+        env: promptData.env || {},
+      };
+
+      info(`termConfig`, termConfig);
+      this.sendToPrompt(AppChannel.SET_TERM_CONFIG, termConfig);
       createPty(this);
     }
 

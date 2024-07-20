@@ -109,10 +109,11 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
       const lowerCaseKeyword = choice.keyword?.toLowerCase() || choice?.tag?.toLowerCase() || '';
       if (choice?.info) {
         infoGroup.push(createScoredChoice(choice));
-      } else if ((choice as Script)?.alias === transformedInput) {
+      } else if ((choice as Script)?.alias === transformedInput || (choice as Script)?.trigger === transformedInput) {
         alias = structuredClone(choice);
         alias.pass = false;
-        alias.group = 'Alias';
+        alias.group = choice?.trigger ? 'Trigger' : 'Alias';
+        log.info(`${prompt.pid}: 🔔 Alias: ${alias.name} with group ${alias.group}`);
       } else if (
         !(choice?.skip || choice?.miss) &&
         (lowerCaseName?.includes(lowerCaseInput) || lowerCaseKeyword.includes(lowerCaseInput))
@@ -310,8 +311,8 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
     if (alias) {
       groupedResults.unshift(
         createScoredChoice({
-          name: 'Alias',
-          group: 'Alias',
+          name: alias.group,
+          group: alias.group,
           pass: false,
           skip: true,
           nameClassName: defaultGroupNameClassName,
