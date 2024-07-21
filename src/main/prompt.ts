@@ -682,13 +682,14 @@ export class KitPrompt {
 
     makePanel(this.window);
 
-    if (kitState.isWindows) {
-      if (kitState?.kenvEnv?.KIT_DISABLE_ROUNDED_CORNERS !== 'true') {
-        shims['@johnlindquist/node-window-manager'].windowManager.setWindowAsPopupWithRoundedCorners(
-          this.window?.getNativeWindowHandle(),
-        );
-      }
-    }
+    // TODO: Windows prompt behavior
+    // if (kitState.isWindows) {
+    //   if (kitState?.kenvEnv?.KIT_DISABLE_ROUNDED_CORNERS !== 'true') {
+    //     shims['@johnlindquist/node-window-manager'].windowManager.setWindowAsPopupWithRoundedCorners(
+    //       this.window?.getNativeWindowHandle(),
+    //     );
+    //   }
+    // }
 
     // prompt.setVisibleOnAllWorkspaces(true, {
     //   visibleOnFullScreen: true,
