@@ -86,6 +86,7 @@ export const ohNo = async (error: Error) => {
 
 let splashPrompt: KitPrompt | null = null;
 export const showSplash = async () => {
+  kitState.isSplashShowing = true;
   info('🌊 Showing splash install screen...');
   splashPrompt = new KitPrompt();
   splashPrompt.ui = UI.splash;
@@ -93,8 +94,9 @@ export const showSplash = async () => {
   splashPrompt.initMain = false;
   splashPrompt.bindToProcess(99999);
 
-  emitter.once(KitEvent.MAIN_SCRIPT_TRIGGERED, () => {
+  emitter.once(KitEvent.CloseSplash, () => {
     try {
+      kitState.isSplashShowing = false;
       makeSplashWindow(splashPrompt?.window);
       splashPrompt?.window?.hide();
       splashPrompt?.window?.close();

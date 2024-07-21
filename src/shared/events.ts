@@ -34,7 +34,7 @@ export enum KitEvent {
   ShowDock = 'ShowDock',
   HideDock = 'HideDock',
   ForceQuit = 'ForceQuit',
-  MAIN_SCRIPT_TRIGGERED = 'MAIN_SCRIPT_TRIGGERED',
+  CloseSplash = 'SplashMightBeOpen',
   ProcessGone = 'ProcessGone',
   SetScriptTimestamp = 'SetScriptTimestamp',
 }

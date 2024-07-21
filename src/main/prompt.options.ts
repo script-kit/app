@@ -44,27 +44,32 @@ export const getPromptOptions = () => {
   }
 
   let x = Math.round(screenWidth / 2 - width / 2 + workX);
-  if (kitState.isWindows) {
-    x = OFFSCREEN_X;
-  }
+  // TODO: Windows prompt behavior
+  // if (kitState.isWindows) {
+  //   x = OFFSCREEN_X;
+  // }
 
   if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_X) {
     x = Number.parseInt(kitState?.kenvEnv?.KIT_PROMPT_INITIAL_X);
   }
 
   let y = Math.round(workY + screenHeight / 8);
-  if (kitState.isWindows) {
-    y = OFFSCREEN_Y;
-  }
+
+  // TODO: Windows prompt behavior
+  // if (kitState.isWindows) {
+  //   y = OFFSCREEN_Y;
+  // }
 
   if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_Y) {
     y = Number.parseInt(kitState?.kenvEnv?.KIT_PROMPT_INITIAL_Y);
   }
 
   let show = false;
-  if (kitState.isWindows) {
-    show = true;
-  }
+
+  // TODO: Windows prompt behavior
+  // if (kitState.isWindows) {
+  //   show = true;
+  // }
 
   if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_SHOW === 'true') {
     show = true;

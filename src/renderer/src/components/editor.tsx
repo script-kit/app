@@ -19,7 +19,6 @@ import {
   editorOptions,
   editorSuggestionsAtom,
   flaggedChoiceValueAtom,
-  focusedFlagValueAtom,
   inputAtom,
   openAtom,
   scrollToAtom,
@@ -27,7 +26,6 @@ import {
   setFlagByShortcutAtom,
   shortcutStringsAtom,
   submitInputAtom,
-  submitValueAtom,
   uiAtom,
 } from '../jotai';
 

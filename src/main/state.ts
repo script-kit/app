@@ -231,6 +231,7 @@ const initState = {
   isMac,
   isWin11,
   isWin10,
+  isSplashShowing: false,
   isWindows: os.platform() === 'win32',
   isLinux: os.platform() === 'linux',
   // transparencyEnabled: checkTransparencyEnabled(),

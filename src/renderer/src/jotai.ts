@@ -179,6 +179,24 @@ export const uiAtom = atom(
     if (a !== UI.arg && g(scoredChoicesAtom)?.length) {
       s(scoredChoicesAtom, []);
     }
+
+    let id: string = a;
+    if (a === UI.arg) {
+      id = 'input';
+    }
+    const timeoutId = setTimeout(() => {
+      console.warn(`Timeout reached after 250ms for element with id: ${a}`);
+      ipcRenderer.send(a);
+    }, 250);
+
+    requestAnimationFrame(function checkElement() {
+      if (document.getElementById(id)) {
+        clearTimeout(timeoutId);
+        ipcRenderer.send(a);
+      } else {
+        requestAnimationFrame(checkElement);
+      }
+    });
     // s(previewHTMLAtom, g(cachedMainPreview));
   },
 );
@@ -1103,6 +1121,9 @@ const resize = debounce(
     // info(`resize: ${reason} - ${ui} length ${scoredChoicesLength}`);
     const hasPanel = g(_panelHTML) !== '';
     const promptData = g(promptDataAtom);
+    if (!promptData?.scriptPath) {
+      return;
+    }
 
     let mh = g(mainHeightAtom);
 
@@ -1379,10 +1400,6 @@ export const mainHeightAtom = atom(
     const prevHeight = g(mainHeight);
 
     const nextMainHeight = a < 0 ? 0 : a;
-
-    // info(
-    //   `${g(pidAtom)}:${g(scriptAtom)?.filePath}: 🌈 mainHeight: ${nextMainHeight} (${a})`,
-    // );
 
     if (nextMainHeight === 0) {
       if (g(panelHTMLAtom) !== '') {

@@ -184,7 +184,7 @@ export const getCurrentScreenPromptCache = (
   }
 
   // info(`resetPromptBounds`, scriptPath);
-  const { width: screenWidth, height: screenHeight } = currentScreen.workAreaSize;
+  const { width: screenWidth, height: screenHeight, x: workX, y: workY } = currentScreen.workArea;
 
   let width = getDefaultWidth();
   let height = PROMPT.HEIGHT.BASE;
@@ -228,14 +228,36 @@ export const getCurrentScreenPromptCache = (
     height = bounds.height;
   }
 
-  const { x: workX, y: workY } = currentScreen.workArea;
   let x = Math.round(screenWidth / 2 - width / 2 + workX);
   let y = Math.round(workY + screenHeight / 8);
 
+  // Log screen and window bounds
+  const screenTopLeft = { x: workX, y: workY };
+  const screenBottomRight = { x: workX + screenWidth, y: workY + screenHeight };
+  const windowTopLeft = { x, y };
+  const windowBottomRight = { x: x + width, y: y + height };
+
+  info('Screen bounds:', {
+    topLeft: screenTopLeft,
+    bottomRight: screenBottomRight,
+  });
+
+  info('Center screen', {
+    x: screenWidth / 2,
+    y: screenHeight / 2,
+  });
+
+  info('Window bounds:', {
+    topLeft: windowTopLeft,
+    bottomRight: windowBottomRight,
+  });
+
   if (typeof bounds?.x === 'number' && bounds.x !== OFFSCREEN_X) {
+    info(`x is a number and not ${OFFSCREEN_X}`);
     x = bounds.x;
   }
   if (typeof bounds?.y === 'number' && bounds.y !== OFFSCREEN_Y) {
+    info(`y is a number and not ${OFFSCREEN_Y}`);
     y = bounds.y;
   }
 
@@ -926,7 +948,7 @@ export class KitPrompt {
       }
     });
 
-    const onBlur = async () => {
+    const onBlur = () => {
       // info(`🙈 Prompt window blurred`, {
       //   isPromptReady: this.ready,
       //   isActivated: kitState.isActivated,
@@ -1078,7 +1100,7 @@ export class KitPrompt {
       err({ event, details });
     });
 
-    const onResized = async () => {
+    const onResized = () => {
       silly('event: onResized');
       this.modifiedByUser = false;
       info(`Resized: ${this.window.getSize()}`);
@@ -1115,7 +1137,7 @@ export class KitPrompt {
       { leading: true },
     );
 
-    const onMoved = debounce(async () => {
+    const onMoved = debounce(() => {
       silly('event: onMove');
       this.modifiedByUser = false;
       this.saveCurrentPromptBounds();
@@ -1125,7 +1147,7 @@ export class KitPrompt {
     this.window.on('resized', onResized);
     this.window.on('moved', onMoved);
   }
-  forcePromptToCenter = async () => {
+  forcePromptToCenter = () => {
     this.window?.show();
     this.window?.setPosition(0, 0);
     this.window?.center();
@@ -1158,6 +1180,7 @@ export class KitPrompt {
   };
 
   initShowPrompt = () => {
+    info('🎪 initShowPrompt:', this.id, this.scriptPath);
     if (!kitState.isMac) {
       if (kitState?.kenvEnv?.KIT_PROMPT_RESTORE === 'true') {
         this.window?.restore();
@@ -1165,6 +1188,7 @@ export class KitPrompt {
     }
 
     this.setPromptAlwaysOnTop(true);
+    // TODO: Strongly consider waiting for the renderer to sending a "UI ready" event before focusing the prompt
     this.focusPrompt();
     this.sendToPrompt(Channel.SET_OPEN, true);
 
@@ -1225,8 +1249,19 @@ export class KitPrompt {
     }, 100);
   };
 
+  moveToMouseScreen = () => {
+    if (this?.window?.isDestroyed()) {
+      warn(`moveToMouseScreen. Window already destroyed`, this?.id);
+      return;
+    }
+
+    const mouseScreen = getCurrentScreenFromMouse();
+    this.window.setPosition(mouseScreen.workArea.x, mouseScreen.workArea.y);
+  };
+
   initBounds = (forceScriptPath?: string, show = false) => {
     if (this?.window?.isDestroyed()) {
+      warn(`initBounds. Window already destroyed`, this?.id);
       return;
     }
 
@@ -1235,30 +1270,39 @@ export class KitPrompt {
     //   return;
     // }
 
-    const bounds = getCurrentScreenPromptCache(forceScriptPath || this.scriptPath, {
+    const bounds = this.window.getBounds();
+    const cachedBounds = getCurrentScreenPromptCache(forceScriptPath || this.scriptPath, {
       ui: this.ui,
       resize: this.allowResize,
-      bounds: this.window.getBounds(),
+      bounds: {
+        width: bounds.width,
+        height: bounds.height,
+      },
     });
-    info(`${this.pid}:${path.basename(this?.scriptPath || '')}: ↖ Init bounds: ${this.ui} ui`, bounds);
+
+    const currentBounds = this?.window?.getBounds();
+    info(`${this.pid}:${path.basename(this?.scriptPath || '')}: ↖ Init bounds: ${this.ui} ui`, {
+      currentBounds,
+      cachedBounds,
+    });
 
     // If widths or height don't match, send SET_RESIZING to prompt
 
     const { width, height } = this.window?.getBounds();
-    if (bounds.width !== width || bounds.height !== height) {
+    if (cachedBounds.width !== width || cachedBounds.height !== height) {
       verbose(`Started resizing: ${this.window?.getSize()}. First prompt?: ${this.firstPrompt ? 'true' : 'false'}`);
 
       this.resizing = true;
     }
 
     if (this.promptData?.scriptlet) {
-      bounds.height = this.promptData?.inputHeight;
+      cachedBounds.height = this.promptData?.inputHeight;
     }
 
     // if (isKitScript(kitState.scriptPath)) return;
 
     this.setBounds(
-      bounds,
+      cachedBounds,
       'initBounds',
       // this.prompt?.isVisible() &&
       //   kitState.promptCount > 1 &&
@@ -1334,7 +1378,10 @@ export class KitPrompt {
     const noChange = heightNotChanged && widthNotChanged && xNotChanged && yNotChanged && !sameXAndYAsAnotherPrompt;
 
     if (noChange) {
-      info('📐 No change in bounds, ignoring');
+      info('📐 No change in bounds, ignoring', {
+        currentBounds,
+        bounds,
+      });
       return;
     }
 
@@ -1357,7 +1404,7 @@ export class KitPrompt {
     const boundsOnMouseScreen = isBoundsWithinDisplayById(bounds as Rectangle, mouseScreen.id);
 
     info(
-      `${this.pid}: boundsScreen.id ${boundsScreen.id} mouseScreen.id ${mouseScreen.id} boundsOnMouseScreen ${boundsOnMouseScreen ? 'true' : 'false'}`,
+      `${this.pid}: boundsScreen.id ${boundsScreen.id} mouseScreen.id ${mouseScreen.id} boundsOnMouseScreen ${boundsOnMouseScreen ? 'true' : 'false'} isVisible: ${this.isVisible() ? 'true' : 'false'}`,
     );
 
     if (boundsScreen.id !== mouseScreen.id && boundsOnMouseScreen) {
@@ -1481,12 +1528,13 @@ export class KitPrompt {
 
       // info(`Final bounds:`, finalBounds);
 
-      if (kitState.isWindows) {
-        if (!this.window?.isFocusable()) {
-          finalBounds.x = OFFSCREEN_X;
-          finalBounds.y = OFFSCREEN_Y;
-        }
-      }
+      // TODO: Windows prompt behavior
+      // if (kitState.isWindows) {
+      //   if (!this.window?.isFocusable()) {
+      //     finalBounds.x = OFFSCREEN_X;
+      //     finalBounds.y = OFFSCREEN_Y;
+      //   }
+      // }
 
       this.window.setBounds(finalBounds, false);
       this.promptBounds = {
@@ -1521,15 +1569,15 @@ export class KitPrompt {
     }
   };
 
-  centerPrompt = async () => {
+  centerPrompt = () => {
     this.window.center();
   };
 
-  getPromptBounds = async () => {
+  getPromptBounds = () => {
     return this.window?.getBounds();
   };
 
-  resetWindow = async () => {
+  resetWindow = () => {
     this.window.show();
     this.window.setPosition(0, 0);
     this.window.center();
@@ -1543,7 +1591,7 @@ export class KitPrompt {
     const promptLogPath = kenvPath('logs', 'prompt.log');
 
     (promptLog.transports.file as FileTransport).resolvePathFn = () => promptLogPath;
-    const getPromptInfo = async () => {
+    const getPromptInfo = () => {
       const activeAppBounds: any = {};
       const activeWindow = shims['@johnlindquist/node-window-manager'].windowManager.getActiveWindow();
       if (activeWindow) {
@@ -1559,7 +1607,7 @@ export class KitPrompt {
       const screenBounds = getCurrentScreen().bounds;
       const mouse = screen.getCursorScreenPoint();
 
-      promptinfo({
+      info({
         scriptPath: this.scriptPath,
         isVisible: this.window?.isVisible() ? 'true' : 'false',
         promptBounds,
@@ -1591,7 +1639,7 @@ export class KitPrompt {
     });
   };
 
-  savePromptBounds = async (scriptPath: string, bounds: Rectangle, b: number = Bounds.Position | Bounds.Size) => {
+  savePromptBounds = (scriptPath: string, bounds: Rectangle, b: number = Bounds.Position | Bounds.Size) => {
     if (!this.window || this.window.isDestroyed()) {
       return;
     }
@@ -1840,6 +1888,11 @@ export class KitPrompt {
     info(`🔥 Setting prompt data: ${promptData.scriptPath}`);
     this.promptData = promptData;
 
+    ipcMain.once(promptData.ui, () => {
+      info(`👍 ${this.pid}: ${promptData.ui} ready. Focusing prompt.`);
+      this.focusPrompt();
+    });
+
     if (promptData.ui === UI.term) {
       const termConfig = {
         // TODO: Fix termConfig/promptData type
@@ -1956,7 +2009,8 @@ export class KitPrompt {
       }
       this.initBounds();
       info(`${this.pid} After initBounds`);
-      this.focusPrompt();
+      // TODO: STRONGLY consider waiting for SET_PROMPT_DATA to complete and the UI to change before focusing the prompt
+      // this.focusPrompt();
       this.firstPrompt = false;
     }
     // TODO: Combine types for sendToPrompt and appToPrompt?
@@ -2062,7 +2116,7 @@ export class KitPrompt {
     return visible;
   };
 
-  maybeHide = async (reason: string) => {
+  maybeHide = (reason: string) => {
     if (!(this.isVisible() && this.boundToProcess)) {
       return;
     }
@@ -2106,7 +2160,10 @@ export class KitPrompt {
     }
     // if (kitState.promptCount === 1) {
     const currentBounds = this.window?.getBounds();
-    info(`${this.pid}: 💾 Save Current Bounds: ${this.scriptPath}`, currentBounds);
+    // info(
+    // 	`${this.pid}: 💾 Save Current Bounds: ${this.scriptPath}`,
+    // 	currentBounds,
+    // );
     this.savePromptBounds(this.scriptPath, currentBounds);
 
     this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, {

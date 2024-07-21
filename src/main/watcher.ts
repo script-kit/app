@@ -1,13 +1,11 @@
-import log from 'electron-log';
 import { debounce } from 'lodash-es';
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { lstat, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { getScripts, getUserJson } from '@johnlindquist/kit/core/db';
 import { Channel, Env } from '@johnlindquist/kit/core/enum';
 import type { Script } from '@johnlindquist/kit/types';
-import dotenv from 'dotenv';
 import { globby } from 'globby';
 import madge, { type MadgeModuleDependencyGraph } from 'madge';
 import { snapshot } from 'valtio';
@@ -24,7 +22,6 @@ import {
 import chokidar, { type FSWatcher } from 'chokidar';
 import { shortcutScriptChanged, unlinkShortcuts } from './shortcuts';
 
-import type { kenvEnv } from '@johnlindquist/kit/types/env';
 import { backgroundScriptChanged, removeBackground } from './background';
 import { cancelSchedule, scheduleScriptChanged } from './schedule';
 import { debounceSetScriptTimestamp, kitState, sponsorCheck } from './state';
@@ -351,6 +348,9 @@ export const onScriptsChanged = async (event: WatchEvent, script: Script, rebuil
 let watchers = [] as FSWatcher[];
 
 export const teardownWatchers = () => {
+  if (pingInterval) {
+    clearTimeout(pingInterval);
+  }
   if (watchers.length) {
     for (const watcher of watchers) {
       try {
@@ -646,6 +646,8 @@ export const restartWatchers = debounce(
   { leading: false },
 );
 
+let pingInterval: NodeJS.Timeout;
+let pinged = false;
 export const setupWatchers = async () => {
   await teardownWatchers();
   if (kitState.ignoreInitial) {
@@ -654,15 +656,37 @@ export const setupWatchers = async () => {
 
   info('--- 👀 Watching Scripts ---');
 
+  // Set up an interval to touch ping.txt every minute
+  if (pingInterval) {
+    clearInterval(pingInterval);
+  }
+  pingInterval = setInterval(async () => {
+    if (pinged) {
+      await restartWatchers();
+      return;
+    }
+    const pingPath = kitPath('ping.txt');
+    const currentDate = new Date().toISOString();
+
+    try {
+      await writeFile(pingPath, currentDate);
+      pinged = true;
+      info(`🏓 Updated ping.txt with current date: ${currentDate}`);
+    } catch (error) {
+      err(`Error writing to ping.txt: ${error}`);
+    }
+  }, 60000); // 60000 milliseconds = 1 minute
+
   watchers = startWatching(async (eventName: WatchEvent, filePath: string) => {
     // if (!filePath.match(/\.(ts|js|json|txt|env)$/)) return;
     const { base, dir, name } = path.parse(filePath);
 
-    info({
-      base,
-      dir,
-      name,
-    });
+    info(`${eventName}:	base: ${base}, dir: ${dir}, name: ${name}`);
+
+    if (base === 'ping.txt') {
+      pinged = false;
+      return;
+    }
 
     if (base === 'user.json') {
       checkUserDb(eventName);

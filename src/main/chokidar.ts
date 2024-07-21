@@ -1,7 +1,6 @@
 import path from 'node:path';
 import { kenvPath, kitPath, userDbPath } from '@johnlindquist/kit/core/utils';
 import chokidar from 'chokidar';
-import log from 'electron-log';
 import { kitState } from './state';
 import { createLogger } from '../shared/log-utils';
 
@@ -92,9 +91,16 @@ export const startWatching = (callback: WatcherCallback) => {
 
   runWatcher.on('all', callback);
 
+  const pingWatcher = chokidar.watch(kitPath('ping.txt'), {
+    disableGlobbing: true,
+    ignoreInitial: true,
+  });
+
+  pingWatcher.on('all', callback);
+
   kitState.ignoreInitial = true;
 
-  return [kenvScriptsWatcher, kenvsWatcher, userDbPathWatcher, kenvRootWatcher, runWatcher];
+  return [kenvScriptsWatcher, kenvsWatcher, userDbPathWatcher, kenvRootWatcher, runWatcher, pingWatcher];
 
   // TODO: Do I need to watch scripts.json?
   // const scriptsJsonWatcher = chokidar.watch(kitPath('db', 'scripts.json'), {

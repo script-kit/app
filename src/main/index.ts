@@ -9,12 +9,12 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-import log from 'electron-log';
-global.log = log.create({ logId: 'rendererLog' });
-log.initialize();
+import electronLog from 'electron-log';
+electronLog.initialize();
 
+import { createLogger } from '../shared/log-utils';
+const log = createLogger('index.ts');
 (global as any).log = log.info;
-performance.mark;
 
 import dotenv from 'dotenv';
 import unhandled from 'electron-unhandled';
@@ -51,7 +51,6 @@ import { startClipboardAndKeyboardWatchers } from './tick';
 import { checkTray, setupTray } from './tray';
 import { setupWatchers, teardownWatchers } from './watcher';
 
-import type { kenvEnv } from '@johnlindquist/kit/types/env';
 import { KitEvent, emitter } from '../shared/events';
 import { syncClipboardStore } from './clipboard';
 import { actualHideDock, clearStateTimers } from './dock';

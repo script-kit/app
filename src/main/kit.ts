@@ -1,6 +1,5 @@
 import path from 'node:path';
 import { app } from 'electron';
-import log from 'electron-log';
 
 import minimist from 'minimist';
 import { pathExistsSync, readJson } from './cjs-exports';
@@ -32,6 +31,7 @@ import { getKitScript, kitCache, kitState, kitStore, sponsorCheck } from './stat
 import { TrackEvent, trackEvent } from './track';
 
 import { createLogger } from '../shared/log-utils';
+import { getCurrentScreenFromMouse } from './prompt';
 
 const { info, warn, err, silly, verbose } = createLogger('kit.ts');
 
@@ -188,7 +188,9 @@ export const runPromptProcess = async (
 
   const isMain = options?.main || pathsAreEqual(promptScriptPath || '', getMainScriptPath());
 
-  emitter.emit(KitEvent.MAIN_SCRIPT_TRIGGERED);
+  if (kitState.isSplashShowing) {
+    emitter.emit(KitEvent.CloseSplash);
+  }
 
   // readJson(kitPath('db', 'mainShortcuts.json'))
   //   .then(setShortcuts)
@@ -221,6 +223,9 @@ export const runPromptProcess = async (
     info(`${pid}: 🏠 Main script: ${promptScriptPath}`);
     prompt.initMainBounds();
     prompt.initShowPrompt();
+  } else {
+    info(`${pid}: 🖱️ Moving prompt to mouse screen`);
+    prompt.moveToMouseScreen();
   }
 
   info(`${prompt.pid} 🐣 Alive for ${prompt.lifeTime()}`);
@@ -257,6 +262,10 @@ export const runPromptProcess = async (
   const scriptlet = kitState.scriptlets.get(promptScriptPath);
 
   const script = scriptlet || (await findScript(promptScriptPath));
+  if (!script) {
+    err(`Couldn't find script, blocking run: `, promptScriptPath);
+    return null;
+  }
   const visible = prompt?.isVisible();
   info(`${pid}: ${visible ? '👀 visible' : '🙈 not visible'} before setScript ${script?.name}`);
 
