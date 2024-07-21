@@ -1,11 +1,14 @@
 import { fileURLToPath } from 'node:url';
 import { PROMPT } from '@johnlindquist/kit/core/enum';
 import type { BrowserWindowConstructorOptions } from 'electron';
-import log from 'electron-log';
 import { getAssetPath } from '../shared/assets';
 import { MIN_WIDTH } from '../shared/defaults';
 import { getCurrentScreen } from './screen';
 import { kitState } from './state';
+
+import { createLogger } from '../shared/log-utils';
+
+const log = createLogger('prompt.options.ts');
 
 export const OFFSCREEN_X = -10000;
 export const OFFSCREEN_Y = -10000;
@@ -19,23 +22,23 @@ export const getPromptOptions = () => {
   const { x: workX, y: workY } = currentScreen.workArea;
 
   let backgroundThrottling = true;
-  if (kitState?.kenvEnv?.KIT_DISABLE_BACKGROUND_THROTTLE === 'true') {
-    backgroundThrottling = false;
+  if (kitState?.kenvEnv?.KIT_BACKGROUND_THROTTLE) {
+    backgroundThrottling = kitState.kenvEnv.KIT_BACKGROUND_THROTTLE === 'true';
   }
 
   let hasShadow = true;
-  if (kitState?.kenvEnv?.KIT_DISABLE_SHADOW === 'true') {
-    hasShadow = false;
+  if (kitState?.kenvEnv?.KIT_SHADOW) {
+    hasShadow = kitState.kenvEnv.KIT_SHADOW === 'true';
   }
 
   let frame = false;
-  if (kitState?.kenvEnv?.KIT_ENABLE_FRAME === 'true') {
-    frame = true;
+  if (kitState?.kenvEnv?.KIT_FRAME) {
+    frame = kitState.kenvEnv.KIT_FRAME === 'true';
   }
 
   let transparent = false;
-  if (kitState?.kenvEnv?.KIT_ENABLE_TRANSPARENT === 'true') {
-    transparent = true;
+  if (kitState?.kenvEnv?.KIT_TRANSPARENT) {
+    transparent = kitState.kenvEnv.KIT_TRANSPARENT === 'true';
   }
 
   let focusable = !kitState.isWindows;
@@ -87,6 +90,7 @@ export const getPromptOptions = () => {
 
   // Log all of the conditional options:
   log.info('Prompt Options:', {
+    gpu: kitState.gpuEnabled,
     backgroundThrottling,
     hasShadow,
     frame,

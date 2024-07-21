@@ -72,6 +72,7 @@ export enum AppChannel {
   CLOSE_PROMPT = 'CLOSE_PROMPT',
   GET_KIT_CONFIG = 'GET_KIT_CONFIG',
   FORCE_RENDER = 'FORCE_RENDER',
+  INPUT_READY = 'INPUT_READY',
 }
 
 export enum WindowChannel {

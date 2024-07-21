@@ -2023,13 +2023,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       childSend({ channel, value: returnValue });
     }),
-    REVEAL_FILE: onChildChannel(async ({ child }, { channel, value }) => {
+    REVEAL_FILE: onChildChannel(({ child }, { channel, value }) => {
       shell.showItemInFolder(value);
     }),
-    BEEP: onChildChannel(async ({ child }, { channel, value }) => {
+    BEEP: onChildChannel(({ child }, { channel, value }) => {
       shell.beep();
     }),
-    PLAY_AUDIO: onChildChannelOverride(async ({ child }, { channel, value }: any) => {
+    PLAY_AUDIO: onChildChannelOverride(({ child }, { channel, value }: any) => {
       try {
         info(`🔊 Playing ${value?.filePath || value}`);
       } catch (error) {
@@ -2047,10 +2047,10 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       waitForPrompt(channel, value);
     }),
-    STOP_AUDIO: onChildChannel(async ({ child }, { channel, value }) => {
+    STOP_AUDIO: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
     }),
-    SPEAK_TEXT: onChildChannelOverride(async ({ child }, { channel, value }) => {
+    SPEAK_TEXT: onChildChannelOverride(({ child }, { channel, value }) => {
       waitForPrompt(channel, value);
     }),
 
@@ -2073,15 +2073,15 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         value: isSponsor,
       });
     }),
-    OPEN_MENU: onChildChannel(async ({ child }, { channel, value }) => {
+    OPEN_MENU: onChildChannel(({ child }, { channel, value }) => {
       emitter.emit(KitEvent.TrayClick);
     }),
-    OPEN_DEV_TOOLS: onChildChannel(async ({ child }, { channel, value }) => {
+    OPEN_DEV_TOOLS: onChildChannel(({ child }, { channel, value }) => {
       if (prompt.window) {
         prompt.window.webContents.openDevTools();
       }
     }),
-    START_DRAG: onChildChannel(async ({ child }, { channel, value }) => {
+    START_DRAG: onChildChannel(({ child }, { channel, value }) => {
       if (prompt.window) {
         try {
           prompt.window.webContents.startDrag({
@@ -2093,59 +2093,59 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         }
       }
     }),
-    GET_COLOR: onChildChannelOverride(async ({ child }, { channel }) => {
+    GET_COLOR: onChildChannelOverride(({ child }, { channel }) => {
       sendToPrompt(Channel.GET_COLOR);
     }),
-    CHAT_GET_MESSAGES: onChildChannelOverride(async (_, { channel, value }) => {
+    CHAT_GET_MESSAGES: onChildChannelOverride((_, { channel, value }) => {
       prompt?.getFromPrompt(processInfo.child, channel, value);
     }),
-    CHAT_SET_MESSAGES: onChildChannel(async ({ child }, { channel, value }) => {
+    CHAT_SET_MESSAGES: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
     }),
-    CHAT_ADD_MESSAGE: onChildChannel(async ({ child }, { channel, value }) => {
+    CHAT_ADD_MESSAGE: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
     }),
-    CHAT_PUSH_TOKEN: onChildChannel(async ({ child }, { channel, value }) => {
+    CHAT_PUSH_TOKEN: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
     }),
-    CHAT_SET_MESSAGE: onChildChannel(async ({ child }, { channel, value }) => {
+    CHAT_SET_MESSAGE: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
     }),
-    TOAST: onChildChannel(async ({ child }, { channel, value }) => {
+    TOAST: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
     }),
-    TERM_EXIT: onChildChannel(async ({ child, promptId }, { channel, value }) => {
+    TERM_EXIT: onChildChannel(({ child, promptId }, { channel, value }) => {
       info('TERM EXIT FROM SCRIPT', value);
       sendToPrompt(channel, promptId || '');
     }),
-    GET_DEVICES: onChildChannelOverride(async ({ child }, { channel, value }) => {
+    GET_DEVICES: onChildChannelOverride(({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
     }),
-    SHEBANG: onChildChannel(async ({ child }, { channel, value }) => {
+    SHEBANG: onChildChannel(({ child }, { channel, value }) => {
       spawnShebang(value);
     }),
-    ERROR: onChildChannelOverride(async ({ child }, { channel, value }) => {
+    ERROR: onChildChannelOverride(({ child }, { channel, value }) => {
       err('ERROR', value);
       trackEvent(TrackEvent.Error, value);
     }),
-    GET_TYPED_TEXT: onChildChannelOverride(async ({ child }, { channel, value }) => {
+    GET_TYPED_TEXT: onChildChannelOverride(({ child }, { channel, value }) => {
       childSend({ channel, value: kitState.typedText });
     }),
-    TERM_WRITE: onChildChannel(async ({ child }, { channel, value }) => {
+    TERM_WRITE: onChildChannel(({ child }, { channel, value }) => {
       emitter.emit(KitEvent.TermWrite, value);
     }),
-    SET_FORM_DATA: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_FORM_DATA: onChildChannel(({ child }, { channel, value }) => {
       info('SET FORM DATA', value);
       sendToPrompt(channel, value);
     }),
-    SET_DISABLE_SUBMIT: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_DISABLE_SUBMIT: onChildChannel(({ child }, { channel, value }) => {
       info('SET DISABLE SUBMIT', value);
       sendToPrompt(channel, value);
     }),
-    START_MIC: onChildChannel(async ({ child }, { channel, value }) => {
+    START_MIC: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
     }),
-    STOP_MIC: onChildChannelOverride(async ({ child }, { channel, value }) => {
+    STOP_MIC: onChildChannelOverride(({ child }, { channel, value }) => {
       info('STOP MIC', value);
       sendToPrompt(channel, value);
     }),

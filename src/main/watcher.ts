@@ -139,7 +139,7 @@ const checkFileImports = debounce(async (script: Script) => {
 
   info({ imports });
 
-  if (imports?.length && kitState.kenvEnv?.KIT_DISABLE_AUTO_INSTALL !== 'true') {
+  if (imports?.length && kitState.kenvEnv?.KIT_AUTO_INSTALL !== 'false') {
     info(`📦 ${script.filePath} missing imports`, imports);
     emitter.emit(KitEvent.RunPromptProcess, {
       scriptPath: kitPath('cli', 'npm.js'),

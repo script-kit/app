@@ -16,7 +16,7 @@ export enum TrackEvent {
 }
 
 export const trackEvent = (event: TrackEvent, properties: any) => {
-  if (kitState.kenvEnv?.KIT_DISABLE_TELEMETRY) {
+  if (kitState.kenvEnv?.KIT_TELEMETRY) {
     return;
   }
   axios

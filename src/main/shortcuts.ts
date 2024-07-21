@@ -231,13 +231,20 @@ export const updateMainShortcut = (shortcut?: string) => {
   }
 
   const mainShortcutAction = async () => {
-    info('🏡 Main shortcut pressed');
     kitState.shortcutPressed = finalShortcut;
 
-    if (prompts.focused?.scriptPath === getMainScriptPath()) {
+    const isFocusedPromptMainScript = prompts.focused?.scriptPath === getMainScriptPath();
+
+    info(`🏡 Main shortcut pressed. Focused prompt script: ${prompts?.focused?.scriptPath}`);
+
+    if (isFocusedPromptMainScript) {
       if (prompts?.focused?.isFocused() && prompts?.focused?.isVisible()) {
-        info('🔍 Main shortcut pressed while focused prompt main script. Hiding focused prompt.', prompts.focused?.id);
-        prompts.focused?.hideInstant();
+        info(
+          '🔍 Main shortcut pressed while focused prompt main script. Hiding focused prompt.',
+          prompts.focused?.id,
+          prompts.focused?.pid,
+        );
+        // prompts.focused?.hideInstant();
         processes.removeByPid(prompts.focused?.pid);
         prompts.focused = null;
         return;

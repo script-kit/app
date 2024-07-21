@@ -1,61 +1,58 @@
 import log from 'electron-log';
 
-const disabledPrefixes = new Set<string>([]);
+const ignoredPrefixes = new Set<string>(process.env.KIT_LOG_IGNORE_PREFIX?.split(',') || []);
+const filteredPrefixes = new Set<string>(process.env.KIT_LOG_FILTER_PREFIX?.split(',') || []);
+
+function isLoggerDisabled(prefix: string): boolean {
+  return (filteredPrefixes.size > 0 && !filteredPrefixes.has(prefix)) || ignoredPrefixes.has(prefix);
+}
 
 function createInfoLogger(prefix: string) {
-  if (disabledPrefixes.has(prefix)) {
-    return () => {};
-  }
   return (...args: any[]) => {
     log.info(`${prefix}:`, ...args);
   };
 }
 function createWarnLogger(prefix: string) {
-  if (disabledPrefixes.has(prefix)) {
-    return () => {};
-  }
   return (...args: any[]) => {
     log.warn(`${prefix}:`, ...args);
   };
 }
 
 function createErrorLogger(prefix: string) {
-  if (disabledPrefixes.has(prefix)) {
-    return () => {};
-  }
   return (...args: any[]) => {
     log.error(`${prefix}:`, ...args);
   };
 }
 
 function createVerboseLogger(prefix: string) {
-  if (disabledPrefixes.has(prefix)) {
-    return () => {};
-  }
   return (...args: any[]) => {
     log.verbose(`${prefix}:`, ...args);
   };
 }
 
 function createDebugLogger(prefix: string) {
-  if (disabledPrefixes.has(prefix)) {
-    return () => {};
-  }
   return (...args: any[]) => {
     log.debug(`${prefix}:`, ...args);
   };
 }
 
 function createSillyLogger(prefix: string) {
-  if (disabledPrefixes.has(prefix)) {
-    return () => {};
-  }
   return (...args: any[]) => {
     log.silly(`${prefix}:`, ...args);
   };
 }
 
 export function createLogger(prefix: string) {
+  if (isLoggerDisabled(prefix)) {
+    return {
+      info: () => {},
+      warn: () => {},
+      err: () => {},
+      verbose: () => {},
+      debug: () => {},
+      silly: () => {},
+    };
+  }
   return {
     info: createInfoLogger(prefix),
     warn: createWarnLogger(prefix),

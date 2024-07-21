@@ -212,7 +212,7 @@ export const installPackage = async (installCommand: string, cwd: string) => {
 
   // Set up the options for the spawn command
   const options: SpawnSyncOptions = {
-    cwd, // Set the current working directory based on the provided parameter
+    cwd,
     encoding: 'utf-8',
     env: {
       KIT,
@@ -220,22 +220,16 @@ export const installPackage = async (installCommand: string, cwd: string) => {
       PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
     },
     stdio: 'pipe',
+    shell: true, // Use shell on all platforms for consistency
   };
 
-  const npmResult = await new Promise<string>((resolve, reject) => {
-    // Determine the platform and set the npm path accordingly
-    const isWin = os.platform().startsWith('win');
-    const npmPath = isWin ? knodePath('bin', 'npm.cmd') : knodePath('bin', 'npm');
-    info(`${cwd}: 👷 ${npmPath} ${installCommand}`);
+  const isWin = os.platform().startsWith('win');
+  const npmPath = isWin ? knodePath('bin', 'npm.cmd') : knodePath('bin', 'npm');
 
-    // Execute the spawn command with the appropriate npm path, install command and options
-    info('👷 Spawning npm install', {
-      npmPath,
-      installCommand,
-      options,
-    });
+  info(`${cwd}: 👷 ${npmPath} ${installCommand}`);
 
-    const child = spawn(npmPath, installCommand.split(' '), options);
+  return new Promise<string>((resolve, reject) => {
+    const child = spawn(npmPath, [installCommand], options);
 
     // Display a loading message with a spinner
     let dots = 1;
@@ -286,9 +280,6 @@ export const installPackage = async (installCommand: string, cwd: string) => {
       clearId();
     });
   });
-
-  info({ npmResult });
-  return npmResult;
 };
 
 const installDependency = async (dependencyName: string, installCommand: string, cwd: string) => {

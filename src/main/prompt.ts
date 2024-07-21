@@ -653,20 +653,22 @@ export class KitPrompt {
     const options = getPromptOptions();
     this.window = new BrowserWindow(options);
 
-    let timeout = 2000;
-    if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_HIDE_TIMEOUT) {
-      timeout = Number.parseInt(kitState?.kenvEnv?.KIT_PROMPT_INITIAL_HIDE_TIMEOUT);
-    }
-    if (kitState.isWindows) {
-      setTimeout(() => {
-        if (this?.window && !this.window.isDestroyed()) {
-          if (!this.window.isFocusable()) {
-            this.window.hide();
-          }
-          info('Hiding prompt window. Current position', this.window.getPosition());
-        }
-      }, timeout);
-    }
+    // TODO: Windows prompt behavior
+    // let timeout = 2000;
+    // if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_HIDE_TIMEOUT) {
+    //   timeout = Number.parseInt(kitState?.kenvEnv?.KIT_PROMPT_INITIAL_HIDE_TIMEOUT);
+    // }
+
+    // if (kitState.isWindows) {
+    //   setTimeout(() => {
+    //     if (this?.window && !this.window.isDestroyed()) {
+    //       if (!this.window.isFocusable()) {
+    //         this.window.hide();
+    //       }
+    //       info('Hiding prompt window. Current position', this.window.getPosition());
+    //     }
+    //   }, timeout);
+    // }
 
     this.sendToPrompt = (channel: Channel | AppChannel, data) => {
       silly(`sendToPrompt: ${String(channel)}`, data);
@@ -1190,7 +1192,21 @@ export class KitPrompt {
 
     this.setPromptAlwaysOnTop(true);
     // TODO: Strongly consider waiting for the renderer to sending a "UI ready" event before focusing the prompt
-    this.focusPrompt();
+
+    if (kitState.isMac) {
+      this.focusPrompt();
+    } else {
+      const handler = (event, channel, message) => {
+        if (channel === AppChannel.INPUT_READY) {
+          info(`Received ${AppChannel.INPUT_READY} from prompt`);
+          this.window.webContents.off('ipc-message', handler);
+          this.focusPrompt();
+        }
+      };
+      this.window.webContents.on('ipc-message', handler);
+      info(`Sending ${AppChannel.INPUT_READY} to prompt`);
+      this.window.webContents.send(AppChannel.INPUT_READY);
+    }
     this.sendToPrompt(Channel.SET_OPEN, true);
 
     if (topTimeout) {
@@ -2234,7 +2250,7 @@ export class KitPrompt {
   };
 
   setPromptAlwaysOnTop = (onTop: boolean, manual = false) => {
-    if (kitState?.kenvEnv?.KIT_DISABLE_ALWAYS_ON_TOP === 'true') {
+    if (kitState?.kenvEnv?.KIT_ALWAYS_ON_TOP === 'true') {
       return;
     }
     if (kitState.isMac) {

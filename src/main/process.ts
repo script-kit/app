@@ -61,7 +61,7 @@ export const clearFlags = () => {
   // setFlags({});
 };
 
-export const maybeConvertColors = async (theme: any = {}) => {
+export const maybeConvertColors = (theme: any = {}) => {
   // info(`🎨 Convert Colors:`, theme);
 
   // eslint-disable-next-line prettier/prettier
@@ -82,7 +82,7 @@ export const maybeConvertColors = async (theme: any = {}) => {
   verbose(`🫥 Theme ui-bg-opacity: ${theme['--ui-bg-opacity']}`);
   theme['--ui-border-opacity'] ||= theme?.['ui-border-opacity'] || scriptKitLightTheme['ui-border-opacity'];
 
-  if (kitState.kenvEnv.KIT_DISABLE_BLUR === 'true') {
+  if (kitState.kenvEnv.KIT_BLUR === 'false') {
     theme.opacity = '1';
   }
 

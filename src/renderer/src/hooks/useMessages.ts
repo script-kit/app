@@ -1,5 +1,5 @@
 import DOMPurify from 'dompurify';
-import log from 'electron-log/renderer';
+
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { debounce } from 'lodash-es';
 import { useEffect, useState } from 'react';
@@ -98,6 +98,9 @@ import {
   zoomAtom,
   invalidateChoiceInputsAtom,
 } from '../jotai';
+
+import { createLogger } from '../../../shared/log-utils';
+const log = createLogger('useMessages.ts');
 
 import { AppChannel, WindowChannel } from '../../../shared/enums';
 
@@ -573,6 +576,25 @@ export default () => {
     if (ipcRenderer.listenerCount(AppChannel.CLEAR_CACHE) === 0) {
       ipcRenderer.on(AppChannel.CLEAR_CACHE, handleClearCache);
     }
+
+    const handleInputReady = (event, data) => {
+      const timeoutId = setTimeout(() => {
+        console.warn(`Timeout reached after 250ms for element with id: "input"`);
+        ipcRenderer.send(AppChannel.INPUT_READY);
+      }, 250);
+
+      requestAnimationFrame(function checkElement() {
+        log.info('Checking for input');
+        if (document.getElementById('input')) {
+          clearTimeout(timeoutId);
+          log.info('Input found');
+          ipcRenderer.send(AppChannel.INPUT_READY);
+        } else {
+          requestAnimationFrame(checkElement);
+        }
+      });
+    };
+    ipcRenderer.once(AppChannel.INPUT_READY, handleInputReady);
 
     const config = ipcRenderer.sendSync(AppChannel.GET_KIT_CONFIG);
     // log.info({ config });

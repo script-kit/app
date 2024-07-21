@@ -3,7 +3,6 @@ import path from 'node:path';
 /* eslint-disable import/prefer-default-export */
 import { Clipboard } from '@johnlindquist/clipboard';
 import { format } from 'date-fns';
-import log from 'electron-log';
 import { nanoid } from 'nanoid';
 import { Observable, type Subscription } from 'rxjs';
 import { debounceTime, filter, share, switchMap } from 'rxjs/operators';
@@ -25,6 +24,9 @@ import { addToClipboardHistory, getClipboardHistory, syncClipboardStore } from '
 import { registerIO, toKey } from './io';
 import { prompts } from './prompts';
 import shims, { supportsDependency } from './shims';
+import { createLogger } from '../shared/log-utils';
+
+const log = createLogger('tick.ts');
 
 type FrontmostApp = {
   localizedName: string;
@@ -556,10 +558,6 @@ export const addTextSnippet = async (filePath: string) => {
 };
 
 export const addSnippet = (script: Script) => {
-  log.info(`👀 Adding snippet: ${script.filePath}`, {
-    snippet: script.snippet,
-    kenv: script.kenv,
-  });
   for (const [key, value] of snippetMap.entries()) {
     if (value.filePath === script.filePath) {
       snippetMap.delete(key);

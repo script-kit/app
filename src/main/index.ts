@@ -179,8 +179,10 @@ log.info('Appending switch: ignore-certificate-errors');
 app.commandLine.appendSwitch('ignore-certificate-errors');
 
 const envData = loadKenvEnvironment();
-if (envData.KIT_DISABLE_GPU) {
+// Legacy KIT_DISABLE_GPU
+if ((envData as any).KIT_DISABLE_GPU || envData.KIT_GPU === 'false') {
   app.disableHardwareAcceleration();
+  kitState.gpuEnabled = false;
 }
 
 app.setName(APP_NAME);
@@ -953,9 +955,9 @@ const checkKit = async () => {
     // ]);
 
     const envPath = kenvPath('.env');
-    const envData = dotenv.parse(readFileSync(envPath));
+    const envData = existsSync(envPath) ? dotenv.parse(readFileSync(envPath)) : {};
     const envKitPath = kenvPath('.env.kit');
-    const envKitData = dotenv.parse(readFileSync(envKitPath));
+    const envKitData = existsSync(envKitPath) ? dotenv.parse(readFileSync(envKitPath)) : {};
     // log.info(`envData`, envPath, envData);
     kitState.kenvEnv = { ...envData, ...envKitData };
     createIdlePty();

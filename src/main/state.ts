@@ -216,6 +216,7 @@ export const theme = nativeTheme.shouldUseDarkColors ? getThemes().scriptKitThem
 const initState = {
   scripts: new Map<string, Script>(),
   scriptlets: new Map<string, Scriptlet>(),
+  gpuEnabled: true,
   displays: [] as Display[],
   debugging: false,
   hiddenByUser: false,

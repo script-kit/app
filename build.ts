@@ -3,16 +3,33 @@ import { execSync } from 'node:child_process';
 import fsExtra from 'fs-extra';
 import { external, include } from './src/main/shims';
 
-import EventEmitter from 'node:events';
 import { notarize } from '@electron/notarize';
 import { Arch, Platform, build } from 'electron-builder';
 import type { AfterPackContext, Configuration, PackagerOptions } from 'electron-builder';
 import packageJson from './package.json';
 
-const platform = (await arg('platform')) as 'linux' | 'mac' | 'win';
-const arch = (await arg('arch')) as 'arm64' | 'x64';
+let platform: 'linux' | 'mac' | 'win';
+let arch: 'arm64' | 'x64';
+let publish: boolean | string;
 
-const publish = await arg('publish');
+if (process.argv.length <= 2) {
+  if (process.platform === 'darwin') {
+    platform = 'mac';
+  } else if (process.platform === 'win32') {
+    platform = 'win';
+  } else if (process.platform === 'linux') {
+    platform = 'linux';
+  } else {
+    throw new Error(`Unsupported platform: ${process.platform}`);
+  }
+  
+  arch = process.arch as 'arm64' | 'x64';
+  publish = false;
+} else {
+  platform = (await arg('platform')) as 'linux' | 'mac' | 'win';
+  arch = (await arg('arch')) as 'arm64' | 'x64';
+  publish = await arg('publish');
+}
 
 const electronVersion = packageJson.devDependencies.electron.replace('^', '');
 
