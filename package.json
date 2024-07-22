@@ -39,7 +39,12 @@
   "bugs": {
     "url": "https://github.com/johnlindquist/kitapp/issues"
   },
-  "keywords": ["electron", "react", "typescript", "ts"],
+  "keywords": [
+    "electron",
+    "react",
+    "typescript",
+    "ts"
+  ],
   "homepage": "https://github.com/johnlindquist/kitapp#readme",
   "jest": {
     "resolver": "jest-node-exports-resolver",
@@ -48,10 +53,22 @@
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/.erb/mocks/fileMock.js",
       "\\.(css|less|sass|scss)$": "identity-obj-proxy"
     },
-    "moduleFileExtensions": ["js", "jsx", "ts", "tsx", "json"],
-    "moduleDirectories": ["node_modules"],
-    "modulePathIgnorePatterns": [".history"],
-    "setupFiles": ["./.erb/scripts/CheckBuildsExist.js"]
+    "moduleFileExtensions": [
+      "js",
+      "jsx",
+      "ts",
+      "tsx",
+      "json"
+    ],
+    "moduleDirectories": [
+      "node_modules"
+    ],
+    "modulePathIgnorePatterns": [
+      ".history"
+    ],
+    "setupFiles": [
+      "./.erb/scripts/CheckBuildsExist.js"
+    ]
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
@@ -91,7 +108,7 @@
     "date-fns": "^3.6.0",
     "detect-port": "^1.6.1",
     "dompurify": "^3.1.6",
-    "electron": "^30.2.0",
+    "electron": "^30.3.0",
     "electron-builder": "25.0.0-alpha.6",
     "electron-vite": "^2.3.0",
     "emoji-picker-react": "^4.11.1",
@@ -180,11 +197,15 @@
     "uiohook-napi": "^1.5.4"
   },
   "engines": {
-    "node": "20.15.0"
+    "node": "20.15.1"
   },
   "browserslist": [],
   "renovate": {
-    "extends": ["bliss"],
-    "baseBranches": ["next"]
+    "extends": [
+      "bliss"
+    ],
+    "baseBranches": [
+      "next"
+    ]
   }
 }

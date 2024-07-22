@@ -263,7 +263,7 @@ export const childSend = (child: ChildProcess, data: any) => {
       });
     }
   } catch (error) {
-    log.err('childSend error', error);
+    log.error('childSend error', error);
   }
 };
 
@@ -306,7 +306,7 @@ export const createMessageHandler = (processInfo: ProcessInfo) => {
         log.silly(`📬 ${data.channel}`);
         channelFn(data);
       } catch (error) {
-        log.err(`Error in channel ${data.channel}`, error);
+        log.error(`Error in channel ${data.channel}`, error);
       }
     } else {
       log.warn(`Channel ${data?.channel} not found on ${type}.`);
@@ -626,7 +626,7 @@ class Processes extends Array<ProcessAndPrompt> {
     });
 
     if (!child.pid) {
-      log.err('Child process has no pid', child);
+      log.error('Child process has no pid', child);
       throw new Error('Child process has no pid');
     }
 
@@ -709,8 +709,8 @@ class Processes extends Array<ProcessAndPrompt> {
           this.stampPid(child.pid);
         }
       } else if (typeof code === 'number') {
-        log.err(`${child.pid}: 🟥 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`);
-        log.err('👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors');
+        log.error(`${child.pid}: 🟥 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`);
+        log.error('👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors');
 
         setTrayScriptError(pid);
       }
@@ -722,8 +722,8 @@ class Processes extends Array<ProcessAndPrompt> {
       if (error?.message?.includes('EPIPE')) {
         return;
       }
-      log.err('ERROR', { pid, error });
-      log.err('👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors');
+      log.error('ERROR', { pid, error });
+      log.error('👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors');
       kitState.status = {
         status: 'warn',
         message: '',
@@ -799,7 +799,7 @@ class Processes extends Array<ProcessAndPrompt> {
         }
         log.info(`${pid}: Killed system process using ${systemProcess.spawnargs}`);
       } catch (error) {
-        log.err(`${pid}: Error killing system process: ${error}`);
+        log.error(`${pid}: Error killing system process: ${error}`);
       }
 
       return;
@@ -823,7 +823,7 @@ class Processes extends Array<ProcessAndPrompt> {
           try {
             globalShortcut.unregister(shortcut);
           } catch (error) {
-            log.err(`${child.pid}: Error unregistering shortcut: ${shortcut}`, error);
+            log.error(`${child.pid}: Error unregistering shortcut: ${shortcut}`, error);
           }
         });
         childShortcutMap.delete(child.pid);
@@ -891,7 +891,7 @@ export const handleWidgetEvents = () => {
     const widget = BrowserWindow.fromId(wid);
     const pInfo = processes.getByPid(pid) as ProcessInfo;
     if (!pInfo) {
-      log.err(`No process found for widget ${widgetId}`);
+      log.error(`No process found for widget ${widgetId}`);
       return;
     }
     if (!pInfo.child) {
@@ -1106,7 +1106,7 @@ export const handleWidgetEvents = () => {
         icon: data?.iconPath as string,
       });
     } catch (error) {
-      log.err(error);
+      log.error(error);
     }
   };
 
@@ -1155,7 +1155,7 @@ emitter.on(KitEvent.TermExited, (pid) => {
 });
 
 export const destroyAllProcesses = () => {
-  maininfo('Destroy all processes');
+  log.info('Destroy all processes');
   processes.forEach((pinfo) => {
     if (!pinfo?.child.killed) {
       pinfo?.child?.removeAllListeners();

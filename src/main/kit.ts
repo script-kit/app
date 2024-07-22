@@ -238,7 +238,7 @@ export const runPromptProcess = async (
       prompt.scriptPath = getMainScriptPath();
       prompt.preloaded = '';
     } catch (error) {
-      log.err(error);
+      log.error(error);
     }
   }
 
@@ -262,7 +262,7 @@ export const runPromptProcess = async (
 
   const script = scriptlet || (await findScript(promptScriptPath));
   if (!script) {
-    log.err(`Couldn't find script, blocking run: `, promptScriptPath);
+    log.error(`Couldn't find script, blocking run: `, promptScriptPath);
     return null;
   }
   const visible = prompt?.isVisible();

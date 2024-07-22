@@ -133,7 +133,7 @@ const checkFileImports = debounce(async (script: Script) => {
       script.kenv ? kenvPath('kenvs', script.kenv, 'package.json') : undefined,
     );
   } catch (error) {
-    log.err(error);
+    log.error(error);
     imports = [];
   }
 
@@ -357,7 +357,7 @@ export const teardownWatchers = () => {
         watcher.removeAllListeners();
         watcher.close();
       } catch (error) {
-        log.err('Error closing watcher:', error);
+        log.error('Error closing watcher:', error);
       }
     }
     log.info(`Cleared ${watchers.length} watchers`);
@@ -427,7 +427,7 @@ const triggerRunText = debounce(
           });
         }
       } catch (error) {
-        log.err(error);
+        log.error(error);
       }
     } else {
       log.info('run.txt removed');
@@ -552,11 +552,6 @@ export const parseEnvFile = debounce(async () => {
     await refreshScripts();
   }
 
-  // TODO: Debug a single prompt? All of them?
-  if (envData?.KIT_DEBUG_PROMPT) {
-    prompts?.prevFocused?.debugPrompt();
-  }
-
   if (envData?.KIT_NO_PREVIEW) {
     setKitStateAtom({
       noPreview: envData?.KIT_NO_PREVIEW === 'true',
@@ -677,7 +672,7 @@ export const setupWatchers = async () => {
       pinged = true;
       //   log.info(`🏓 Updated ping.txt with current date: ${currentDate}`);
     } catch (error) {
-      log.err(`Error writing to ping.txt: ${error}`);
+      log.error(`Error writing to ping.txt: ${error}`);
     }
   }, 60000); // 60000 milliseconds = 1 minute
 
@@ -810,7 +805,7 @@ export const setupWatchers = async () => {
       try {
         await cacheMainScripts();
       } catch (error) {
-        log.err(error);
+        log.error(error);
       }
       log.info('...cacheMainScripts done 🎬');
 
@@ -862,7 +857,7 @@ emitter.on(KitEvent.RestartWatcher, async () => {
   try {
     await setupWatchers();
   } catch (error) {
-    log.err(error);
+    log.error(error);
   }
 });
 

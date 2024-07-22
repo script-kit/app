@@ -22,6 +22,7 @@ import {
   shell,
 } from 'electron';
 import contextMenu from 'electron-context-menu';
+import electronLog from 'electron-log';
 import type { FileTransport } from 'electron-log';
 import type { Display } from 'electron/main';
 import { debounce } from 'lodash-es';
@@ -472,7 +473,7 @@ export const clearPromptCacheFor = async (scriptPath: string) => {
       }
     }
   } catch (e) {
-    log.err(e);
+    log.error(e);
   }
 
   if (preloadChoicesMap.has(scriptPath)) {
@@ -497,7 +498,7 @@ export const clearPromptTimers = async () => {
       clearTimeout(topTimeout);
     }
   } catch (e) {
-    log.err(e);
+    log.error(e);
   }
 };
 
@@ -677,7 +678,7 @@ export class KitPrompt {
         if (channel) {
           this.window?.webContents.send(String(channel), data);
         } else {
-          log.err('channel is undefined', { data });
+          log.error('channel is undefined', { data });
         }
       }
     };
@@ -721,7 +722,7 @@ export class KitPrompt {
       try {
         this.window.setTouchBar(touchbar);
       } catch (error) {
-        log.err(error);
+        log.error(error);
       }
     }
 
@@ -849,9 +850,9 @@ export class KitPrompt {
 
     // reload if unresponsive
     this.window.webContents?.on('unresponsive', () => {
-      log.err(`${this.pid}: ${this.scriptName}: Prompt window unresponsive. Reloading`);
+      log.error(`${this.pid}: ${this.scriptName}: Prompt window unresponsive. Reloading`);
       if (this.window.isDestroyed()) {
-        log.err(`${this.pid}: ${this.scriptName}: Prompt window is destroyed. Not reloading`);
+        log.error(`${this.pid}: ${this.scriptName}: Prompt window is destroyed. Not reloading`);
         return;
       }
 
@@ -1076,7 +1077,7 @@ export class KitPrompt {
     });
 
     this.window.webContents?.on('did-fail-load', (errorCode, errorDescription, validatedURL, isMainFrame) => {
-      log.err(`${this.pid} did-fail-load:`, {
+      log.error(`${this.pid} did-fail-load:`, {
         errorCode,
         errorDescription,
         isMainFrame,
@@ -1099,8 +1100,8 @@ export class KitPrompt {
       this.sendToPrompt = () => {};
       this.window.webContents.send = () => {};
       // processes.removeByPid(this.pid);
-      log.err(`${this.pid}: ${this.scriptName}: 🫣 Render process gone...`);
-      log.err({ event, details });
+      log.error(`${this.pid}: ${this.scriptName}: 🫣 Render process gone...`);
+      log.error({ event, details });
     });
 
     const onResized = () => {
@@ -1602,48 +1603,6 @@ export class KitPrompt {
     this.window.focus();
   };
 
-  debugPrompt = async () => {
-    const promptLog = log.create({
-      logId: 'promptLog',
-    });
-    const promptLogPath = kenvPath('logs', 'prompt.log');
-
-    (promptLog.transports.file as FileTransport).resolvePathFn = () => promptLogPath;
-    const getPromptInfo = () => {
-      const activeAppBounds: any = {};
-      const activeWindow = shims['@johnlindquist/node-window-manager'].windowManager.getActiveWindow();
-      if (activeWindow) {
-        const bounds = activeWindow.getBounds();
-        activeAppBounds.x = bounds.x;
-        activeAppBounds.y = bounds.y;
-        activeAppBounds.width = bounds.width;
-        activeAppBounds.height = bounds.height;
-        activeAppBounds.title = activeWindow.getTitle();
-      }
-
-      const promptBounds = this.window?.getBounds();
-      const screenBounds = getCurrentScreen().bounds;
-      const mouse = screen.getCursorScreenPoint();
-
-      log.info({
-        scriptPath: this.scriptPath,
-        isVisible: this.window?.isVisible() ? 'true' : 'false',
-        promptBounds,
-        screenBounds,
-        mouse,
-        activeAppBounds,
-      });
-    };
-
-    shell.openPath(promptLogPath);
-
-    const id = setInterval(getPromptInfo, 3000);
-    // stop after 1 minute.
-    setTimeout(() => {
-      clearInterval(id);
-    }, 60000);
-  };
-
   pingPrompt = async (channel: AppChannel, data?: any) => {
     log.silly(`sendToPrompt: ${String(channel)} ${data?.kitScript}`);
     return new Promise((resolve) => {
@@ -1695,7 +1654,7 @@ export class KitPrompt {
 
       writePromptState(this, String(currentScreen.id), scriptPath, promptBounds);
     } catch (error) {
-      log.err(error);
+      log.error(error);
     }
   };
 
@@ -1716,7 +1675,7 @@ export class KitPrompt {
             child.send({ channel, value });
           }
         } catch (error) {
-          log.err('childSend error', error);
+          log.error('childSend error', error);
         }
       });
       this.window?.webContents.send(String(channel), data);
@@ -2208,7 +2167,7 @@ export class KitPrompt {
       try {
         this.window.setVibrancy(vibrancy);
       } catch (error) {
-        log.err(error);
+        log.error(error);
       }
     } else {
       log.info('Custom vibrancy not supported on this platform');
@@ -2233,7 +2192,7 @@ export class KitPrompt {
           this.window?.focus();
         }
       } catch (error) {
-        log.err(error);
+        log.error(error);
       }
     }
   };
@@ -2436,7 +2395,7 @@ export class KitPrompt {
         this.window.close();
         log.info(`${this?.pid}: window ${this?.window?.id}: closed`);
       } catch (error) {
-        log.err(error);
+        log.error(error);
       }
 
       setImmediate(() => {
@@ -2445,7 +2404,7 @@ export class KitPrompt {
 
       // this.window = null;
     } catch (error) {
-      log.err(error);
+      log.error(error);
     }
 
     // prompts.delete(this.pid);

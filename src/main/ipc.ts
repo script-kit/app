@@ -199,7 +199,7 @@ const handleChannel =
       try {
         fn(processInfo, message);
       } catch (error) {
-        log.err(`${message.channel} errored on ${message?.pid}`, message);
+        log.error(`${message.channel} errored on ${message?.pid}`, message);
       }
 
       // log.info(`${message.channel}`, message.pid);
@@ -338,7 +338,7 @@ ${data.error}
           sponsorCheck: false,
         });
       } catch (error) {
-        log.err(error);
+        log.error(error);
       }
       return;
     }
@@ -589,8 +589,8 @@ ${child?.pid} 📝 Submitting...
             }
           } catch (e) {
             // ignore logging EPIPE errors
-            log.err(`📤 ${channel} ERROR`, message);
-            log.err(e);
+            log.error(`📤 ${channel} ERROR`, message);
+            log.error(e);
           }
         }
       }),
@@ -656,7 +656,7 @@ ${child?.pid} 📝 Submitting...
         log.info(subResponse.data);
       }
     } catch (error) {
-      log.err(`Error sending feedback: ${error}`);
+      log.error(`Error sending feedback: ${error}`);
     }
   });
 

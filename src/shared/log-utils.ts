@@ -29,7 +29,7 @@ export class Logger {
     }
   }
 
-  err(...args: any[]) {
+  error(...args: any[]) {
     if (!(this.disabled || this.off)) {
       log.error(`${this.prefix}:`, ...args);
     }

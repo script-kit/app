@@ -102,7 +102,7 @@ export const showSplash = async () => {
       splashPrompt?.window?.destroy();
       splashPrompt = null;
     } catch (error) {
-      log.err(error);
+      log.error(error);
     }
   });
 
@@ -308,7 +308,7 @@ const installDependency = async (dependencyName: string, installCommand: string,
     await verifyInstallation(dependencyName, cwd);
     return result;
   } catch (error) {
-    log.err(error);
+    log.error(error);
     return null;
   }
 };
@@ -327,7 +327,7 @@ const verifyInstallation = async (dependencyName: string, cwd: string) => {
   try {
     return await pathExists(path.join(cwd, 'node_modules', dependencyName));
   } catch (error) {
-    log.err(`${dependencyName} not installed in ${cwd}`);
+    log.error(`${dependencyName} not installed in ${cwd}`);
     // We can't log the contents of node_modules here as we're not reading the directory
     // If you still want to log something, you could log the error message
     log.info(`Error accessing ${dependencyName}: ${(error as Error).message}`);
@@ -472,7 +472,7 @@ export const downloadKenv = async () => {
 
     return file;
   } catch (error) {
-    log.err(error);
+    log.error(error);
     ohNo(error as Error);
     return '';
   }
@@ -487,7 +487,7 @@ export const cleanKit = async () => {
       force: true,
     });
   } catch (error) {
-    log.err(error);
+    log.error(error);
   }
 
   // const pathToClean = kitPath();
@@ -562,7 +562,7 @@ export const downloadKit = async () => {
 
     return file;
   } catch (error) {
-    log.err(error);
+    log.error(error);
     ohNo(error as Error);
     return '';
   }
@@ -614,7 +614,7 @@ export const downloadNode = async () => {
 
     return file;
   } catch (error) {
-    log.err(error);
+    log.error(error);
     ohNo(error as Error);
 
     return '';
@@ -636,7 +636,7 @@ export const extractNode = async (file: string) => {
       await zip.extract(fileName, knodePath('bin'));
       await zip.close();
     } catch (error) {
-      log.err({ error });
+      log.error({ error });
       ohNo(error);
     }
   } else {
@@ -649,7 +649,7 @@ export const extractNode = async (file: string) => {
         strip: 1,
       });
     } catch (error) {
-      log.err({ error });
+      log.error({ error });
       ohNo(error);
     }
   }
@@ -747,7 +747,7 @@ export const optionalSpawnSetup = (...args: string[]) => {
       if (id) {
         clearTimeout(id);
       }
-      log.err(`⚠️ Errored on setup script: ${args.join(' ')}`, error.message);
+      log.error(`⚠️ Errored on setup script: ${args.join(' ')}`, error.message);
       resolve('error');
       // reject(error);
       // throw new Error(error.message);
@@ -816,7 +816,7 @@ export const optionalSetupScript = (scriptPath: string, argsParam?: string[], ca
       if (id) {
         clearTimeout(id);
       }
-      log.err(`⚠️ Errored on setup script: ${scriptPath.join(' ')}`, error.message);
+      log.error(`⚠️ Errored on setup script: ${scriptPath.join(' ')}`, error.message);
       resolve('error');
       // reject(error);
       // throw new Error(error.message);
@@ -903,7 +903,7 @@ const getBinWorker = () => {
       log.info('🔗 Bin worker exited', exitCode);
     });
     workers.createBin.on('error', (error) => {
-      log.err('🔗 Bin worker error', error);
+      log.error('🔗 Bin worker error', error);
     });
     workers.createBin.on('message', (message: { command: string; filePath: string }) => {
       log.info('🔗 Created bin for', message?.filePath, 'to', message?.command);
@@ -939,7 +939,7 @@ export const syncBins = async () => {
         });
       }
     } catch (error) {
-      log.err(error);
+      log.error(error);
     }
   }, 1000);
 };
@@ -1016,7 +1016,7 @@ export const cacheMainScripts = (stamp?: Stamp) => {
         log.info(`Creating worker: ${CACHED_GROUPED_SCRIPTS_WORKER}...`);
         workers.cacheScripts = new Worker(CACHED_GROUPED_SCRIPTS_WORKER);
         workers.cacheScripts.on('exit', (exitCode) => {
-          log.err('Worker exited', {
+          log.error('Worker exited', {
             exitCode,
           });
         });
@@ -1039,7 +1039,7 @@ export const cacheMainScripts = (stamp?: Stamp) => {
         }
         const messageErrorHandler = (error) => {
           log.info('Received message error for stamp', stamp);
-          log.err('MessageError: Failed to cache main scripts', error);
+          log.error('MessageError: Failed to cache main scripts', error);
           reject(error); // Reject the promise on message error
           cleanHandlers();
         };
@@ -1047,13 +1047,13 @@ export const cacheMainScripts = (stamp?: Stamp) => {
         const errorHandler = (error) => {
           log.info('Received error for stamp', stamp);
           if (error instanceof Error) {
-            log.err('Failed to cache main scripts', {
+            log.error('Failed to cache main scripts', {
               message: error.message,
               stack: error.stack,
               name: error.name,
             });
           } else {
-            log.err('Failed to cache main scripts', {
+            log.error('Failed to cache main scripts', {
               error: error,
             });
           }

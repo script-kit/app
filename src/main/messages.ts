@@ -398,7 +398,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         try {
           (widget as any)?.[method]?.(...args);
         } catch (error) {
-          log.err(error);
+          log.error(error);
         }
       } else {
         log.warn(`${widgetId}: widget not found. Terminating process.`);
@@ -842,7 +842,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       try {
         port = await detect(51515);
       } catch (e) {
-        log.err(e);
+        log.error(e);
       }
       log.info(`🐞 Debugger port: ${port}`);
 
@@ -1438,7 +1438,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         try {
           processes.removeByPid(process?.pid);
         } catch (error) {
-          log.err(`Error terminating process ${process?.pid}`, error);
+          log.error(`Error terminating process ${process?.pid}`, error);
         }
       });
     }),
@@ -1562,7 +1562,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
           value,
         });
       } else {
-        log.err(`${child?.pid}: 😅 Kit.app: Global shortcut: ${value} as ${properShortcut} failed to register`);
+        log.error(`${child?.pid}: 😅 Kit.app: Global shortcut: ${value} as ${properShortcut} failed to register`);
         const infoScript = kitPath('cli', 'info.js');
         const markdown = `# Failed to register global shortcut: ${value}`;
         emitter.emit(KitEvent.RunPromptProcess, {
@@ -1638,7 +1638,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
           shims['@jitsi/robotjs'].typeString(text);
         }
       } catch (error) {
-        log.err('KEYBOARD ERROR TYPE', error);
+        log.error('KEYBOARD ERROR TYPE', error);
       }
 
       setTimeout(
@@ -1697,7 +1697,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
           shims['@jitsi/robotjs'].typeString(text);
         }
       } catch (error) {
-        log.err('KEYBOARD ERROR TYPE', error);
+        log.error('KEYBOARD ERROR TYPE', error);
       }
 
       setTimeout(
@@ -1738,7 +1738,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       const activeModifiers = (value as Key[]).filter((v) => modifiers.includes(v));
 
       if (!key) {
-        log.err('KEYBOARD ERROR PRESS KEY', { value });
+        log.error('KEYBOARD ERROR PRESS KEY', { value });
         childSend({ channel, value: false });
         return;
       }
@@ -1854,7 +1854,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       const activeModifiers = (value as Key[]).filter((v) => modifiers.includes(v));
 
       if (!key) {
-        log.err('KEYBOARD ERROR PRESS KEY', { value });
+        log.error('KEYBOARD ERROR PRESS KEY', { value });
         childSend({ channel, value: false });
         return;
       }
@@ -2033,7 +2033,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       try {
         log.info(`🔊 Playing ${value?.filePath || value}`);
       } catch (error) {
-        log.err(`🔊 Error playing ${value}`, error);
+        log.error(`🔊 Error playing ${value}`, error);
       }
 
       // if value?.filePath is a file on the system, use the `file://` protocol ensure cross-platform compatibility
@@ -2089,7 +2089,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
             icon: value?.iconPath || getAssetPath('icons8-file-50.png'),
           });
         } catch (error) {
-          log.err('Error starting drag', error);
+          log.error('Error starting drag', error);
         }
       }
     }),
@@ -2125,7 +2125,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       spawnShebang(value);
     }),
     ERROR: onChildChannelOverride(({ child }, { channel, value }) => {
-      log.err('ERROR', value);
+      log.error('ERROR', value);
       trackEvent(TrackEvent.Error, value);
     }),
     GET_TYPED_TEXT: onChildChannelOverride(({ child }, { channel, value }) => {
@@ -2249,7 +2249,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         log.info(`Sending screenshot to ${channel}`);
         childSend({ channel, value: tmpPath });
       } else {
-        log.err('❌ No screenshot source found. Returning null');
+        log.error('❌ No screenshot source found. Returning null');
         childSend({ channel, value: null });
       }
     }),

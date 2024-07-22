@@ -369,7 +369,7 @@ const systemEvents = () => {
     log.info('🔌  on ac');
   });
 
-  powerMonitor.addListener('suspend', async () => {
+  powerMonitor.addListener('suspend', () => {
     log.info('😴 System suspending. Removing watchers.');
     // if (kitState.scriptPath === getMainScriptPath())
     // TODO: Hide main prompts when sleep?
@@ -968,7 +968,7 @@ const checkKit = async () => {
       await cacheMainScripts();
     }, 1000);
   } catch (error) {
-    ohNo(error);
+    ohNo(error as Error);
   }
 };
 
