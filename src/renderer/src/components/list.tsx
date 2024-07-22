@@ -1,4 +1,4 @@
-import log from 'electron-log/renderer';
+import log from 'electron-log';
 import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
 import React, { useEffect, useRef, useState } from 'react';

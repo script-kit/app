@@ -174,7 +174,7 @@ export default function ActionsList() {
       bg-bg-base/90
       backdrop-filter
       backdrop-blur-xl
-      border-2 border-ui-border
+      border border-ui-border
       shadow-lg
       "
       style={{

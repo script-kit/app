@@ -4,16 +4,16 @@ import chokidar from 'chokidar';
 import { kitState } from './state';
 import { createLogger } from '../shared/log-utils';
 
-const { info } = createLogger('chokidar.ts');
+const log = createLogger('chokidar.ts');
 
 export type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
 type WatcherCallback = (eventName: WatchEvent, filePath: string) => Promise<void>;
 export const startWatching = (callback: WatcherCallback) => {
-  info(`🔍 Watching ${userDbPath}`);
+  log.info(`🔍 Watching ${userDbPath}`);
   const userDbPathWatcher = chokidar.watch(userDbPath);
 
   userDbPathWatcher.on('all', (eventName, filePath) => {
-    info(`🔍 Watching ${userDbPath} -> ${eventName} ${filePath}`);
+    log.info(`🔍 Watching ${userDbPath} -> ${eventName} ${filePath}`);
     callback(eventName as WatchEvent, filePath);
   });
 
@@ -42,7 +42,7 @@ export const startWatching = (callback: WatcherCallback) => {
     },
   });
   kenvsWatcher.on('addDir', (filePath) => {
-    info(`🕵️‍♀️ Detected new dir in "kenvs": ${filePath}`);
+    log.info(`🕵️‍♀️ Detected new dir in "kenvs": ${filePath}`);
 
     const globs = [
       path.resolve(filePath, 'snippets', '*'),
@@ -52,13 +52,13 @@ export const startWatching = (callback: WatcherCallback) => {
     ];
 
     setTimeout(() => {
-      info(`Adding globs: ${globs}`);
+      log.info(`Adding globs: ${globs}`);
       kenvScriptsWatcher.add(globs);
     }, 1000);
   });
 
   kenvsWatcher.on('unlinkDir', (filePath) => {
-    info(`🕵️‍♂️ Detected removed dir in "kenvs": ${filePath}`);
+    log.info(`🕵️‍♂️ Detected removed dir in "kenvs": ${filePath}`);
 
     const globs = [
       path.resolve(filePath, 'snippets', '*'),
@@ -68,7 +68,7 @@ export const startWatching = (callback: WatcherCallback) => {
     ];
 
     setTimeout(() => {
-      info(`Removing globs: ${globs}`);
+      log.info(`Removing globs: ${globs}`);
       kenvScriptsWatcher.unwatch(globs);
     }, 1000);
   });

@@ -1,9 +1,11 @@
 import type { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import type { BrowserWindow } from 'electron';
-import log from 'electron-log';
 import { AppChannel } from '../shared/enums';
 import type { ProcessAndPrompt } from './process';
 import { prompts } from './prompts';
+import { createLogger } from '../shared/log-utils';
+
+const log = createLogger('channel.ts');
 
 export const sendToSpecificPrompt = <K extends keyof ChannelMap>(
   prompt: BrowserWindow,

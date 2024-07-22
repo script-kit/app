@@ -1,6 +1,5 @@
 import path from 'node:path';
 import { globalShortcut } from 'electron';
-import log from 'electron-log';
 import { debounce } from 'lodash-es';
 import { subscribeKey } from 'valtio/utils';
 
@@ -16,7 +15,7 @@ import { prompts } from './prompts';
 import { convertKey, kitState, subs } from './state';
 import { createLogger } from '../shared/log-utils';
 
-const { info, warn } = createLogger('shortcuts.ts');
+const log = createLogger('shortcuts.ts');
 
 const registerFail = (shortcut: string, filePath: string) =>
   `# Shortcut Registration Failed
@@ -52,7 +51,7 @@ const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
 
         // I attempted to use "attemptPreload" here, but I need to check if the same script is already running...
 
-        info(`
+        log.info(`
 ----------------------------------------
 🏡  Shortcut pressed: ${shortcut} -> ${filePath}`);
 
@@ -70,9 +69,9 @@ const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
     const success = globalShortcut.register(shortcut, shortcutAction);
 
     if (success) {
-      // info(`Registered: ${shortcut} to ${filePath}`);
+      // log.info(`Registered: ${shortcut} to ${filePath}`);
     } else {
-      info(`Failed to register: ${shortcut} to ${filePath}`);
+      log.info(`Failed to register: ${shortcut} to ${filePath}`);
       shortcutInfo(shortcut, filePath, registerFail);
     }
 
@@ -113,7 +112,7 @@ export const registerKillLatestShortcut = () => {
 // });
 
 // if (!success) {
-//   info(`Failed to register: ${shortcut} to ${filePath}`);
+//   log.info(`Failed to register: ${shortcut} to ${filePath}`);
 // }
 
 // return success;
@@ -151,8 +150,8 @@ export const shortcutScriptChanged = ({
   // TODO: Bring back trusted kenvs
   if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
     if (shortcut) {
-      info(`Ignoring ${filePath} // Shortcut metadata because it's not trusted.`);
-      info(`Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`);
+      log.info(`Ignoring ${filePath} // Shortcut metadata because it's not trusted.`);
+      log.info(`Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`);
     }
 
     if (old) {
@@ -167,7 +166,7 @@ export const shortcutScriptChanged = ({
 
   const exists = [...shortcutMap.entries()].find(([, s]) => s?.shortcut === convertedShortcut);
   if (exists && !sameScript) {
-    info(`Shortcut ${convertedShortcut} already registered to ${exists[0]}`);
+    log.info(`Shortcut ${convertedShortcut} already registered to ${exists[0]}`);
     shortcutInfo(convertedShortcut, filePath, alreadyFail, exists[0]);
 
     return;
@@ -177,7 +176,7 @@ export const shortcutScriptChanged = ({
     // No change
     if (sameScript) {
       const message = `${convertedShortcut} is already registered to ${filePath}`;
-      info(message);
+      log.info(message);
 
       return;
     }
@@ -185,21 +184,21 @@ export const shortcutScriptChanged = ({
     // User removed an existing shortcut
     globalShortcut.unregister(old.shortcut);
     shortcutMap.delete(filePath);
-    info(`Unregistered ${old.shortcut} from ${filePath}`);
+    log.info(`Unregistered ${old.shortcut} from ${filePath}`);
   }
 
   if (!convertedShortcut) {
-    // info(`No shortcut found for ${filePath}`);
+    // log.info(`No shortcut found for ${filePath}`);
     return;
   }
 
-  info(`Found shortcut: ${convertedShortcut} for ${filePath}`);
+  log.info(`Found shortcut: ${convertedShortcut} for ${filePath}`);
   // At this point, we know it's a new shortcut, so register it
 
   const registerSuccess = registerShortcut(convertedShortcut, filePath, shebang);
 
   if (registerSuccess && globalShortcut.isRegistered(convertedShortcut)) {
-    info(`Registered ${convertedShortcut} to ${filePath}`);
+    log.info(`Registered ${convertedShortcut} to ${filePath}`);
     shortcutMap.set(filePath, {
       shortcut: convertedShortcut,
       shebang: shebang || '',
@@ -209,14 +208,14 @@ export const shortcutScriptChanged = ({
 
 export const updateMainShortcut = (shortcut?: string) => {
   const checkShortcut = shortcut ? shortcut : kitState.isMac ? 'cmd ;' : 'ctrl ;';
-  info(`updateMainShortcut with ${checkShortcut}`);
+  log.info(`updateMainShortcut with ${checkShortcut}`);
 
   const finalShortcut = convertShortcut(checkShortcut, getMainScriptPath());
   if (!finalShortcut) {
     return;
   }
 
-  info(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
+  log.info(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
 
   const old = shortcutMap.get(getMainScriptPath());
 
@@ -225,7 +224,7 @@ export const updateMainShortcut = (shortcut?: string) => {
   }
 
   if (old?.shortcut) {
-    info(`Unregistering old main shortcut: ${old?.shortcut}`);
+    log.info(`Unregistering old main shortcut: ${old?.shortcut}`);
     globalShortcut.unregister(old?.shortcut);
     shortcutMap.delete(getMainScriptPath());
   }
@@ -235,11 +234,11 @@ export const updateMainShortcut = (shortcut?: string) => {
 
     const isFocusedPromptMainScript = prompts.focused?.scriptPath === getMainScriptPath();
 
-    info(`🏡 Main shortcut pressed. Focused prompt script: ${prompts?.focused?.scriptPath}`);
+    log.info(`🏡 Main shortcut pressed. Focused prompt script: ${prompts?.focused?.scriptPath}`);
 
     if (isFocusedPromptMainScript) {
       if (prompts?.focused?.isFocused() && prompts?.focused?.isVisible()) {
-        info(
+        log.info(
           '🔍 Main shortcut pressed while focused prompt main script. Hiding focused prompt.',
           prompts.focused?.id,
           prompts.focused?.pid,
@@ -251,13 +250,13 @@ export const updateMainShortcut = (shortcut?: string) => {
       }
     }
 
-    info(`
+    log.info(`
 
 ----------------------------------------
 🏚  Main shortcut pressed: ${finalShortcut}`);
 
     if (kitState.kenvEnv?.KIT_MAIN_SHORTCUT_RETURN_FOCUS) {
-      info(
+      log.info(
         '🔍 Because KIT_MAIN_SHORTCUT_RETURN_FOCUS is set, attempting to return focus to the previous focused prompt',
       );
 
@@ -277,13 +276,13 @@ export const updateMainShortcut = (shortcut?: string) => {
   const ret = globalShortcut.register(finalShortcut, mainShortcutAction);
 
   if (!ret) {
-    warn(`Failed to register: ${finalShortcut} to ${getMainScriptPath(process.env.KIT_MAIN_SCRIPT)}`);
+    log.warn(`Failed to register: ${finalShortcut} to ${getMainScriptPath(process.env.KIT_MAIN_SCRIPT)}`);
     shortcutInfo(finalShortcut, getMainScriptPath(), mainFail);
   }
 
   if (ret && globalShortcut.isRegistered(finalShortcut)) {
     kitState.mainShortcut = finalShortcut;
-    info(`Registered ${finalShortcut} to ${getMainScriptPath(process.env.KIT_MAIN_SCRIPT)}`);
+    log.info(`Registered ${finalShortcut} to ${getMainScriptPath(process.env.KIT_MAIN_SCRIPT)}`);
     shortcutMap.set(getMainScriptPath(), {
       shortcut: finalShortcut,
       shebang: '',
@@ -292,15 +291,15 @@ export const updateMainShortcut = (shortcut?: string) => {
 };
 
 const pauseShortcuts = () => {
-  info('PAUSING GLOBAL SHORTCUTS');
+  log.info('PAUSING GLOBAL SHORTCUTS');
   globalShortcut.unregisterAll();
 };
 
 const resumeShortcuts = () => {
-  info('RESUMING GLOBAL SHORTCUTS');
+  log.info('RESUMING GLOBAL SHORTCUTS');
   shortcutMap.forEach(({ shortcut }, filePath) => {
     const convertedShortcut = convertShortcut(shortcut, filePath);
-    info({
+    log.info({
       filePath,
       shortcut,
       convertedShortcut,
@@ -314,7 +313,7 @@ const subShortcutsPaused = subscribeKey(kitState, 'shortcutsPaused', (shortcutsP
   if (paused === shortcutsPaused) {
     return;
   }
-  info('✂️ shortcutsPaused change...', {
+  log.info('✂️ shortcutsPaused change...', {
     oldPaused: paused,
     newPaused: shortcutsPaused,
   });
@@ -335,7 +334,7 @@ const subKeymap = subscribeKey(
   kitState,
   'keymap',
   debounce(async (keymap) => {
-    info('Handling keymap change...');
+    log.info('Handling keymap change...');
     if (prevKeymap) {
       pauseShortcuts();
       await new Promise((resolve) => setTimeout(resolve, 200));

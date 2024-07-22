@@ -1,9 +1,10 @@
 import { BrowserWindow } from 'electron';
 import { kitState } from '../state';
 import { getPromptOptions } from '../prompt.options';
-import log from 'electron-log';
 import shims from '../shims';
 import { prompts } from '../prompts';
+import { createLogger } from '../../shared/log-utils';
+const log = createLogger('utils.ts');
 
 export const makeWindow = (window: BrowserWindow) => {
   if (kitState.isMac) {

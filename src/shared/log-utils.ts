@@ -7,58 +7,75 @@ function isLoggerDisabled(prefix: string): boolean {
   return (filteredPrefixes.size > 0 && !filteredPrefixes.has(prefix)) || ignoredPrefixes.has(prefix);
 }
 
-function createInfoLogger(prefix: string) {
-  return (...args: any[]) => {
-    log.info(`${prefix}:`, ...args);
-  };
-}
-function createWarnLogger(prefix: string) {
-  return (...args: any[]) => {
-    log.warn(`${prefix}:`, ...args);
-  };
-}
+export class Logger {
+  private prefix: string;
+  private disabled = false;
+  public off = false;
 
-function createErrorLogger(prefix: string) {
-  return (...args: any[]) => {
-    log.error(`${prefix}:`, ...args);
-  };
-}
-
-function createVerboseLogger(prefix: string) {
-  return (...args: any[]) => {
-    log.verbose(`${prefix}:`, ...args);
-  };
-}
-
-function createDebugLogger(prefix: string) {
-  return (...args: any[]) => {
-    log.debug(`${prefix}:`, ...args);
-  };
-}
-
-function createSillyLogger(prefix: string) {
-  return (...args: any[]) => {
-    log.silly(`${prefix}:`, ...args);
-  };
-}
-
-export function createLogger(prefix: string) {
-  if (isLoggerDisabled(prefix)) {
-    return {
-      info: () => {},
-      warn: () => {},
-      err: () => {},
-      verbose: () => {},
-      debug: () => {},
-      silly: () => {},
-    };
+  constructor(prefix: string) {
+    this.prefix = prefix;
+    this.disabled = isLoggerDisabled(prefix);
   }
-  return {
-    info: createInfoLogger(prefix),
-    warn: createWarnLogger(prefix),
-    err: createErrorLogger(prefix),
-    verbose: createVerboseLogger(prefix),
-    debug: createDebugLogger(prefix),
-    silly: createSillyLogger(prefix),
-  };
+
+  info(...args: any[]) {
+    if (!(this.disabled || this.off)) {
+      log.info(`${this.prefix}:`, ...args);
+    }
+  }
+
+  warn(...args: any[]) {
+    if (!(this.disabled || this.off)) {
+      log.warn(`${this.prefix}:`, ...args);
+    }
+  }
+
+  err(...args: any[]) {
+    if (!(this.disabled || this.off)) {
+      log.error(`${this.prefix}:`, ...args);
+    }
+  }
+
+  verbose(...args: any[]) {
+    if (!(this.disabled || this.off)) {
+      log.verbose(`${this.prefix}:`, ...args);
+    }
+  }
+
+  debug(...args: any[]) {
+    if (!(this.disabled || this.off)) {
+      log.debug(`${this.prefix}:`, ...args);
+    }
+  }
+
+  silly(...args: any[]) {
+    if (!(this.disabled || this.off)) {
+      log.silly(`${this.prefix}:`, ...args);
+    }
+  }
+
+  // TODO: Need to reach across the electron-log/renderer bounds to disable them too
+  only(...args: any[]) {
+    // Disable all other loggers
+    for (const [prefix, logger] of loggers) {
+      logger.off = true;
+    }
+
+    this.off = true;
+
+    log.info(`${this.prefix}:`, ...args);
+  }
+}
+
+const loggers = new Map<string, Logger>();
+
+export function createLogger(prefix: string): Logger {
+  if (loggers.has(prefix)) {
+    const existingLogger = loggers.get(prefix);
+    if (existingLogger) {
+      return existingLogger;
+    }
+  }
+  const logger = new Logger(prefix);
+  loggers.set(prefix, logger);
+  return logger;
 }

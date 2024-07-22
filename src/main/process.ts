@@ -1,7 +1,5 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
-import log from 'electron-log';
-
 import os from 'node:os';
 import { pathToFileURL } from 'node:url';
 import ContrastColor from 'contrast-color';
@@ -40,7 +38,7 @@ import { TrackEvent, trackEvent } from './track';
 
 import { createLogger } from '../shared/log-utils';
 
-const { info, warn, err, silly, verbose } = createLogger('process.ts');
+const log = createLogger('process.ts');
 
 export type ProcessAndPrompt = ProcessInfo & {
   prompt: KitPrompt;
@@ -62,7 +60,7 @@ export const clearFlags = () => {
 };
 
 export const maybeConvertColors = (theme: any = {}) => {
-  // info(`🎨 Convert Colors:`, theme);
+  // log.info(`🎨 Convert Colors:`, theme);
 
   // eslint-disable-next-line prettier/prettier
   theme.foreground ||= theme?.['--color-text'];
@@ -74,12 +72,12 @@ export const maybeConvertColors = (theme: any = {}) => {
   theme.opacity ||= theme?.['--opacity'];
   nativeTheme.shouldUseDarkColors ? scriptKitTheme.opacity : scriptKitLightTheme.opacity;
 
-  verbose(`🫥 Theme opacity: ${theme.opacity}`);
+  log.verbose(`🫥 Theme opacity: ${theme.opacity}`);
   const themeUIBgOpacity = theme?.['ui-bg-opacity'] || scriptKitLightTheme['ui-bg-opacity'];
 
-  verbose(`🫥 Theme ui-bg-opacity: ${theme?.['ui-bg-opacity']}, ${themeUIBgOpacity}`);
+  log.verbose(`🫥 Theme ui-bg-opacity: ${theme?.['ui-bg-opacity']}, ${themeUIBgOpacity}`);
   theme['--ui-bg-opacity'] = themeUIBgOpacity;
-  verbose(`🫥 Theme ui-bg-opacity: ${theme['--ui-bg-opacity']}`);
+  log.verbose(`🫥 Theme ui-bg-opacity: ${theme['--ui-bg-opacity']}`);
   theme['--ui-border-opacity'] ||= theme?.['ui-border-opacity'] || scriptKitLightTheme['ui-border-opacity'];
 
   if (kitState.kenvEnv.KIT_BLUR === 'false') {
@@ -112,7 +110,7 @@ export const maybeConvertColors = (theme: any = {}) => {
     result = cc.contrastColor();
 
     theme.appearance ||= result === '#FFFFFF' ? 'dark' : 'light';
-    verbose(`💄 Setting appearance to ${theme.appearance}`);
+    log.verbose(`💄 Setting appearance to ${theme.appearance}`);
   }
 
   theme['--opacity'] = `${theme.opacity}`;
@@ -171,14 +169,14 @@ export const maybeConvertColors = (theme: any = {}) => {
 
   // setVibrancy(vibrancy);
 
-  verbose('🎨 Theme:', theme);
+  log.verbose('🎨 Theme:', theme);
 
   return theme;
 };
 
 export const setTheme = async (value: any = {}, reason = '') => {
-  info(`🎨 Setting theme because ${reason}`);
-  // verbose(`🎨 Setting theme:`, {
+  log.info(`🎨 Setting theme because ${reason}`);
+  // log.verbose(`🎨 Setting theme:`, {
   //   hasCss: kitState.hasCss,
   //   value,
   // });
@@ -194,7 +192,7 @@ export const setTheme = async (value: any = {}, reason = '') => {
   // TODO: https://github.com/electron/electron/issues/37705
   // const promptWindow = getMainPrompt();
   // const backgroundColor = `rgba(${kitState.theme['--color-background']}, ${kitState.theme['--opacity']})`;
-  // info(`🎨 Setting backgroundColor: ${backgroundColor}`);
+  // log.info(`🎨 Setting backgroundColor: ${backgroundColor}`);
 
   // promptWindow.setBackgroundColor(backgroundColor);
 
@@ -203,7 +201,7 @@ export const setTheme = async (value: any = {}, reason = '') => {
 
 export const updateTheme = async () => {
   kitState.isDark = nativeTheme.shouldUseDarkColors;
-  // info({
+  // log.info({
   //   isDarkState: kitState.isDark ? 'true' : 'false',
   //   isDarkNative: nativeTheme.shouldUseDarkColors ? 'true' : 'false',
   // });
@@ -211,15 +209,15 @@ export const updateTheme = async () => {
   const themePath = kitState.isDark ? kitState.kenvEnv?.KIT_THEME_DARK : kitState.kenvEnv?.KIT_THEME_LIGHT;
 
   if (themePath && pathExistsSync(themePath)) {
-    info(`▓ ${kitState.isDark ? 'true' : 'false'} 👀 Theme path: ${themePath}`);
+    log.info(`▓ ${kitState.isDark ? 'true' : 'false'} 👀 Theme path: ${themePath}`);
     try {
       const currentTheme = await readJson(themePath);
       setTheme(currentTheme, `updateTheme() with themePath: ${themePath}`);
     } catch (error) {
-      warn(error);
+      log.warn(error);
     }
   } else {
-    info('👀 No themes configured in .env. Using defaults');
+    log.info('👀 No themes configured in .env. Using defaults');
     const { scriptKitLightTheme, scriptKitTheme } = getThemes();
     setTheme(kitState.isDark ? scriptKitTheme : scriptKitLightTheme, 'updateTheme() with no themePath');
   }
@@ -237,7 +235,7 @@ type WidgetData = {
 type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
 
 export const cachePreview = async () => {
-  // verbose(`🎁 Caching preview for ${kitState.scriptPath}`);
+  // log.verbose(`🎁 Caching preview for ${kitState.scriptPath}`);
   // preloadPreviewMap.set(scriptPath, preview);
   // if (
   //   kitState.scriptPath === getMainScriptPath() &&
@@ -257,15 +255,15 @@ export const childSend = (child: ChildProcess, data: any) => {
       if (prompt) {
         data.promptId = prompt.id;
       }
-      // info(`✉️: ${data.channel}`);
+      // log.info(`✉️: ${data.channel}`);
       child.send(data, (error) => {
         if (error) {
-          warn(`${child?.pid}: ${data?.channel} ignored. Already finished: ${data?.promptId}`);
+          log.warn(`${child?.pid}: ${data?.channel} ignored. Already finished: ${data?.promptId}`);
         }
       });
     }
   } catch (error) {
-    err('childSend error', error);
+    log.err('childSend error', error);
   }
 };
 
@@ -273,13 +271,13 @@ export const sendToAllActiveChildren = (data: {
   channel: Channel;
   state?: any;
 }) => {
-  // info(`Sending ${data?.channel} to all active children`);
+  // log.info(`Sending ${data?.channel} to all active children`);
   for (const processInfo of processes.getActiveProcesses()) {
     const prevent = processInfo.preventChannels?.has(data.channel);
     if (prevent) {
       continue;
     }
-    info({ pid: processInfo?.pid, prevent, channel: data.channel });
+    log.info({ pid: processInfo?.pid, prevent, channel: data.channel });
     childSend(processInfo.child, data);
   }
 };
@@ -287,7 +285,7 @@ export const sendToAllActiveChildren = (data: {
 export const createMessageHandler = (processInfo: ProcessInfo) => {
   const { type } = processInfo;
   const kitMessageMap = createMessageMap(processInfo as ProcessAndPrompt);
-  // info({ kitMessageMap });
+  // log.info({ kitMessageMap });
 
   return (data: GenericSendData) => {
     if (
@@ -295,7 +293,7 @@ export const createMessageHandler = (processInfo: ProcessInfo) => {
       data?.channel !== Channel.HEARTBEAT &&
       ![Channel.KIT_LOADING, Channel.KIT_READY, Channel.MAIN_MENU_READY].includes(data.channel)
     ) {
-      info(data);
+      log.info(data);
     }
     const channelFn = kitMessageMap[data.channel as Channel];
 
@@ -305,13 +303,13 @@ export const createMessageHandler = (processInfo: ProcessInfo) => {
       //   data: SendData<C>
       // ) => void;
       try {
-        silly(`📬 ${data.channel}`);
+        log.silly(`📬 ${data.channel}`);
         channelFn(data);
       } catch (error) {
-        err(`Error in channel ${data.channel}`, error);
+        log.err(`Error in channel ${data.channel}`, error);
       }
     } else {
-      warn(`Channel ${data?.channel} not found on ${type}.`);
+      log.warn(`Channel ${data?.channel} not found on ${type}.`);
     }
   };
 };
@@ -377,7 +375,7 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
 
   const kitLoadingHandler = (data) => {
     if (data?.channel === Channel.KIT_LOADING || data?.channel === Channel.KIT_READY) {
-      info(`${child.pid}: KIT_LOADING ${data?.value} in ${performance.now() - beforeChildForkPerfMark}ms`);
+      log.info(`${child.pid}: KIT_LOADING ${data?.value} in ${performance.now() - beforeChildForkPerfMark}ms`);
       // child.off('message', kitLoadingHandler);
     }
   };
@@ -386,7 +384,7 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
 
   const kitReadyHandler = (data) => {
     if (data?.channel === Channel.KIT_READY) {
-      info(`${child.pid}: KIT_READY in ${performance.now() - beforeChildForkPerfMark}ms`);
+      log.info(`${child.pid}: KIT_READY in ${performance.now() - beforeChildForkPerfMark}ms`);
       child.off('message', kitReadyHandler);
     }
   };
@@ -395,25 +393,25 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
 
   const mainMenuReadyHandler = (data) => {
     if (data?.channel === Channel.MAIN_MENU_READY) {
-      info(`${child.pid}: MAIN_MENU_READY in ${performance.now() - beforeChildForkPerfMark}ms`);
+      log.info(`${child.pid}: MAIN_MENU_READY in ${performance.now() - beforeChildForkPerfMark}ms`);
       child.off('message', mainMenuReadyHandler);
     }
   };
 
   child.on('spawn', () => {
-    info(`${child?.pid}: SPAWN in ${performance.now() - beforeChildForkPerfMark}ms`);
+    log.info(`${child?.pid}: SPAWN in ${performance.now() - beforeChildForkPerfMark}ms`);
   });
 
-  info(`
+  log.info(`
   ${child.pid}: 🚀 Create child process: ${entry} ${args.join(' ')}`);
 
   let win: BrowserWindow | null = null;
 
   if (port && child && child.stdout && child.stderr) {
     const closeWindowIfNotDestroyed = () => {
-      info(`${child?.pid}: 🚪 Close window if not destroyed`);
+      log.info(`${child?.pid}: 🚪 Close window if not destroyed`);
       if (child && !child.killed) {
-        info(`${child.pid}: 🐞 Remove debugger process by pid`);
+        log.info(`${child.pid}: 🐞 Remove debugger process by pid`);
         child.kill();
       }
 
@@ -427,22 +425,22 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
 
     const parentPid = child.pid;
     emitter.once(KitEvent.ProcessGone, (pid) => {
-      info(`Kill process: ${pid}, checking if it's the parent of ${child.pid}`);
+      log.info(`Kill process: ${pid}, checking if it's the parent of ${child.pid}`);
       if (pid === parentPid) {
         closeWindowIfNotDestroyed();
       }
     });
 
     child.stderr.once('data', async (data) => {
-      info(data?.toString());
+      log.info(data?.toString());
       const [debugUrl] = data.toString().match(/(?<=ws:\/\/).*/g) || [''];
 
       if (debugUrl) {
         // TODO: I'm going to have to handle this outside of creatChild so it has access to the prompt created after it or something
         // setPromptAlwaysOnTop(true);
-        info({ debugUrl, pid: child?.pid });
+        log.info({ debugUrl, pid: child?.pid });
         const devToolsUrl = `devtools://devtools/bundled/inspector.html?experiments=true&v8only=true&ws=${debugUrl}`;
-        info(`DevTools URL: ${devToolsUrl}`);
+        log.info(`DevTools URL: ${devToolsUrl}`);
 
         win = showInspector(devToolsUrl);
       }
@@ -476,13 +474,13 @@ const processesChanged = debounce(() => {
 
   for (const pinfo of processes) {
     pinfo.prompt.sendToPrompt(AppChannel.PROCESSES, pinfos);
-    info(`🏃‍♂️💨 Active process: ${pinfo.pid} - ${pinfo.scriptPath || 'Idle'}`);
+    log.info(`🏃‍♂️💨 Active process: ${pinfo.pid} - ${pinfo.scriptPath || 'Idle'}`);
   }
 }, 10);
 
 export const clearIdleProcesses = () => {
   // return;
-  info('Reset all idle processes');
+  log.info('Reset all idle processes');
   processes.getAllProcessInfo().forEach((processInfo) => {
     if (processInfo.type === ProcessType.Prompt && processInfo.scriptPath === '') {
       processes.removeByPid(processInfo.pid);
@@ -500,7 +498,7 @@ export const ensureIdleProcess = () => {
   if (!kitState.ready) {
     return;
   }
-  info('Ensure idle process');
+  log.info('Ensure idle process');
   setTimeout(() => {
     const idles = getIdles();
     const requiredIdleProcesses = kitState?.kenvEnv?.KIT_IDLE_PROCESSES
@@ -508,7 +506,7 @@ export const ensureIdleProcess = () => {
       : 1;
     const missingProcesses = requiredIdleProcesses - idles.length;
     if (missingProcesses > 0) {
-      info(`Adding ${missingProcesses} idle process(es)`);
+      log.info(`Adding ${missingProcesses} idle process(es)`);
       for (let i = 0; i < missingProcesses; i++) {
         processes.add(ProcessType.Prompt);
       }
@@ -556,7 +554,7 @@ class Processes extends Array<ProcessAndPrompt> {
   }
 
   public stampPid(pid: number) {
-    info(`${pid}: 📅 Stamp PID`);
+    log.info(`${pid}: 📅 Stamp PID`);
     const processInfo = this.getByPid(pid);
     if (!processInfo?.launchedFromMain) {
       return;
@@ -571,7 +569,7 @@ class Processes extends Array<ProcessAndPrompt> {
         exitStamp: now,
       };
 
-      info('>>>>>>>>>>>>>>>>>>>>>>>> STAMPING!!!!!', stamp);
+      log.info('>>>>>>>>>>>>>>>>>>>>>>>> STAMPING!!!!!', stamp);
 
       debounceSetScriptTimestamp({
         ...stamp,
@@ -628,13 +626,13 @@ class Processes extends Array<ProcessAndPrompt> {
     });
 
     if (!child.pid) {
-      err('Child process has no pid', child);
+      log.err('Child process has no pid', child);
       throw new Error('Child process has no pid');
     }
 
     const prompt = prompts.attachIdlePromptToProcess(child.pid);
 
-    info(`${child.pid}: 👶 Create child ${type} process: ${child.pid}`, scriptPath, args);
+    log.info(`${child.pid}: 👶 Create child ${type} process: ${child.pid}`, scriptPath, args);
 
     const promptInfo = {
       pid: child.pid,
@@ -657,15 +655,15 @@ class Processes extends Array<ProcessAndPrompt> {
     processesChanged();
 
     if (scriptPath) {
-      info(`${child.pid}: 🟢 start ${type} ${scriptPath}`);
+      log.info(`${child.pid}: 🟢 start ${type} ${scriptPath}`);
     } else {
-      info(`${child.pid}: 🟢 start idle ${type}`);
+      log.info(`${child.pid}: 🟢 start idle ${type}`);
     }
 
     const id =
       ![ProcessType.Background, ProcessType.Prompt].includes(type) &&
       setTimeout(() => {
-        info(`${child.pid}: ${type} process: ${scriptPath} took > ${DEFAULT_TIMEOUT} seconds. Ending...`);
+        log.info(`${child.pid}: ${type} process: ${scriptPath} took > ${DEFAULT_TIMEOUT} seconds. Ending...`);
         child?.kill();
       }, DEFAULT_TIMEOUT);
 
@@ -675,18 +673,18 @@ class Processes extends Array<ProcessAndPrompt> {
     const { pid } = child;
 
     child.once('close', () => {
-      info(`${pid}: CLOSE`);
+      log.info(`${pid}: CLOSE`);
       processes.removeByPid(pid);
     });
 
     child.once('disconnect', () => {
-      info(`${pid}: DISCONNECTED`);
+      log.info(`${pid}: DISCONNECTED`);
       this.stampPid(pid);
       processes.removeByPid(pid);
     });
 
     child.once('exit', (code) => {
-      info('EXIT', { pid, code });
+      log.info('EXIT', { pid, code });
       if (id) {
         clearTimeout(id);
       }
@@ -705,14 +703,14 @@ class Processes extends Array<ProcessAndPrompt> {
       }
 
       if (code === 0) {
-        info(`${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`);
+        log.info(`${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`);
 
         if (child.pid) {
           this.stampPid(child.pid);
         }
       } else if (typeof code === 'number') {
-        err(`${child.pid}: 🟥 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`);
-        err('👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors');
+        log.err(`${child.pid}: 🟥 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`);
+        log.err('👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors');
 
         setTrayScriptError(pid);
       }
@@ -724,8 +722,8 @@ class Processes extends Array<ProcessAndPrompt> {
       if (error?.message?.includes('EPIPE')) {
         return;
       }
-      err('ERROR', { pid, error });
-      err('👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors');
+      log.err('ERROR', { pid, error });
+      log.err('👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors');
       kitState.status = {
         status: 'warn',
         message: '',
@@ -746,7 +744,7 @@ class Processes extends Array<ProcessAndPrompt> {
   }
 
   public findIdlePromptProcess(): ProcessAndPrompt {
-    info('>>>>>>>>>>>>>> FINDING IDLE PROCESS <<<<<<<<<<<<<<<<');
+    log.info('>>>>>>>>>>>>>> FINDING IDLE PROCESS <<<<<<<<<<<<<<<<');
     const idles = this.filter(
       (processInfo) => processInfo.type === ProcessType.Prompt && processInfo?.scriptPath === '',
     );
@@ -757,7 +755,7 @@ class Processes extends Array<ProcessAndPrompt> {
       return idles[0];
     }
 
-    info('>>>>>>>>>>>>>> NO IDLE PROCESS FOUND <<<<<<<<<<<<<<<<');
+    log.info('>>>>>>>>>>>>>> NO IDLE PROCESS FOUND <<<<<<<<<<<<<<<<');
 
     return processes.add(ProcessType.Prompt);
   }
@@ -777,20 +775,20 @@ class Processes extends Array<ProcessAndPrompt> {
   public removeAllRunningProcesses() {
     const runningIds = this.filter(({ scriptPath }) => scriptPath).map(({ pid, scriptPath }) => ({ pid, scriptPath }));
     for (const { pid, scriptPath } of runningIds) {
-      info(`🔥 Attempt removeAllRunningProcesses: ${pid} - ${scriptPath}`);
+      log.info(`🔥 Attempt removeAllRunningProcesses: ${pid} - ${scriptPath}`);
       this.removeByPid(pid);
     }
   }
 
   public removeByPid(pid: number) {
-    info(`🛑 removeByPid: ${pid}`);
+    log.info(`🛑 removeByPid: ${pid}`);
     if (pid === 0) {
-      info(`Invalid pid: ${pid} 🤔`);
+      log.info(`Invalid pid: ${pid} 🤔`);
     }
     prompts.delete(pid);
     const index = this.findIndex((info) => info.pid === pid);
     if (index === -1) {
-      info(`No process found for pid: ${pid}`);
+      log.info(`No process found for pid: ${pid}`);
       // Find a system process with the pid and kill it
       let systemProcess: ChildProcess | null = null;
       try {
@@ -799,9 +797,9 @@ class Processes extends Array<ProcessAndPrompt> {
         } else {
           systemProcess = spawn('kill', ['-9', pid.toString()]);
         }
-        info(`${pid}: Killed system process using ${systemProcess.spawnargs}`);
+        log.info(`${pid}: Killed system process using ${systemProcess.spawnargs}`);
       } catch (error) {
-        err(`${pid}: Error killing system process: ${error}`);
+        log.err(`${pid}: Error killing system process: ${error}`);
       }
 
       return;
@@ -811,27 +809,27 @@ class Processes extends Array<ProcessAndPrompt> {
     if (!child?.killed) {
       emitter.emit(KitEvent.RemoveProcess, scriptPath);
       emitter.emit(KitEvent.ProcessGone, pid);
-      info(`Emitting ${KitEvent.TERM_KILL} for ${pid}`);
+      log.info(`Emitting ${KitEvent.TERM_KILL} for ${pid}`);
       emitter.emit(KitEvent.TERM_KILL, pid);
       child?.removeAllListeners();
       child?.kill();
 
       if (child?.pid && childShortcutMap.has(child.pid)) {
-        info(`${child.pid}: Unregistering shortcuts`);
+        log.info(`${child.pid}: Unregistering shortcuts`);
         const shortcuts = childShortcutMap.get(child.pid) || [];
         shortcuts.forEach((shortcut) => {
-          info(`${child.pid}: Unregistering shortcut: ${shortcut}`);
+          log.info(`${child.pid}: Unregistering shortcut: ${shortcut}`);
 
           try {
             globalShortcut.unregister(shortcut);
           } catch (error) {
-            err(`${child.pid}: Error unregistering shortcut: ${shortcut}`, error);
+            log.err(`${child.pid}: Error unregistering shortcut: ${shortcut}`, error);
           }
         });
         childShortcutMap.delete(child.pid);
       }
 
-      info(`${pid}: 🛑 removed`);
+      log.info(`${pid}: 🛑 removed`);
 
       kitState.shortcutsPaused = false;
     }
@@ -875,7 +873,7 @@ export const removeAbandonnedKit = () => {
 
   if (kitProcess) {
     setTimeout(() => {
-      info(`🛑 Cancel main menu process: ${kitProcess.scriptPath}`);
+      log.info(`🛑 Cancel main menu process: ${kitProcess.scriptPath}`);
       processes.removeByPid(kitProcess.pid);
     }, 250);
   }
@@ -893,7 +891,7 @@ export const handleWidgetEvents = () => {
     const widget = BrowserWindow.fromId(wid);
     const pInfo = processes.getByPid(pid) as ProcessInfo;
     if (!pInfo) {
-      err(`No process found for widget ${widgetId}`);
+      log.err(`No process found for widget ${widgetId}`);
       return;
     }
     if (!pInfo.child) {
@@ -905,7 +903,7 @@ export const handleWidgetEvents = () => {
       return;
     }
 
-    info(`👋 ${widgetId} Initialized`);
+    log.info(`👋 ${widgetId} Initialized`);
 
     childSend(pInfo.child, {
       ...data,
@@ -919,7 +917,7 @@ export const handleWidgetEvents = () => {
     const { widgetId } = data;
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
-    info(`🔎 click ${widgetId}`, {
+    log.info(`🔎 click ${widgetId}`, {
       w,
       widgets: widgetState.widgets.map((w) => w.id),
     });
@@ -964,7 +962,7 @@ export const handleWidgetEvents = () => {
       return;
     }
 
-    info(`💧 drop ${widgetId}`);
+    log.info(`💧 drop ${widgetId}`);
 
     if (!widget) {
       return;
@@ -992,7 +990,7 @@ export const handleWidgetEvents = () => {
       return;
     }
 
-    info(`💧 custom ${widgetId}`);
+    log.info(`💧 custom ${widgetId}`);
 
     childSend(child, {
       ...data,
@@ -1006,7 +1004,7 @@ export const handleWidgetEvents = () => {
     const { widgetId } = data;
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
-    info(`🔽 mouseDown ${widgetId}`, { w });
+    log.info(`🔽 mouseDown ${widgetId}`, { w });
     if (!w) {
       return;
     }
@@ -1035,7 +1033,7 @@ export const handleWidgetEvents = () => {
 
   const mouseUpHandler: WidgetHandler = (event, data) => {
     const { widgetId } = data;
-    info(`🔽 mouseUp ${widgetId}`);
+    log.info(`🔽 mouseUp ${widgetId}`);
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
     if (!w) {
@@ -1090,7 +1088,7 @@ export const handleWidgetEvents = () => {
 
   const dragHandler: WidgetHandler = (event, data) => {
     const { widgetId } = data;
-    info(`📦 ${data.widgetId} Widget: Dragging file`, data);
+    log.info(`📦 ${data.widgetId} Widget: Dragging file`, data);
     const options = widgetState.widgets.find(({ id }) => id === widgetId);
     if (!options) {
       return;
@@ -1108,13 +1106,13 @@ export const handleWidgetEvents = () => {
         icon: data?.iconPath as string,
       });
     } catch (error) {
-      err(error);
+      log.err(error);
     }
   };
 
   const measureHandler: WidgetHandler = (event, data: any) => {
     const { widgetId } = data;
-    info(`📏 ${widgetId} Widget: Fitting to inner child`);
+    log.info(`📏 ${widgetId} Widget: Fitting to inner child`);
 
     const options = (widgetState?.widgets || []).find(({ id }) => id === widgetId);
     if (!options) {
@@ -1144,12 +1142,12 @@ export const handleWidgetEvents = () => {
 };
 
 emitter.on(KitEvent.KillProcess, (pid) => {
-  info(`🛑 Kill Process: ${pid}`);
+  log.info(`🛑 Kill Process: ${pid}`);
   processes.removeByPid(pid);
 });
 
 emitter.on(KitEvent.TermExited, (pid) => {
-  info('🛑 Term Exited: SUBMITTING');
+  log.info('🛑 Term Exited: SUBMITTING');
   const prompt = prompts.get(pid);
   if (prompt && prompt.ui === UI.term) {
     prompt.sendToPrompt(AppChannel.TERM_EXIT, '');
@@ -1178,7 +1176,7 @@ export const spawnShebang = async ({
   const child = spawn(command, [...args, filePath]);
   processes.addExistingProcess(child, filePath);
 
-  info(`🚀 Spawned process ${child.pid} for ${filePath} with command ${command}`);
+  log.info(`🚀 Spawned process ${child.pid} for ${filePath} with command ${command}`);
 
   child.unref();
 
@@ -1213,7 +1211,7 @@ emitter.on(KitEvent.RemoveMostRecent, processes.removeCurrentProcess.bind(proces
 // emitter.on(KitEvent.MainScript, () => {
 //   sendToPrompt(Channel.SET_DESCRIPTION, 'Run Script');
 //   const scripts = getScriptsSnapshot();
-//   verbose({ scripts });
+//   log.verbose({ scripts });
 //   setChoices(formatScriptChoices(scripts));
 // });
 
@@ -1236,7 +1234,7 @@ emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
       //   observer = new PerformanceObserver((list) => {
       //     const entries = list.getEntries();
       //     const entry = entries[0];
-      //     info(`⌚️ [Perf] ${entry.name}: ${entry.duration}`);
+      //     log.info(`⌚️ [Perf] ${entry.name}: ${entry.duration}`);
       //   });
       //   observer.observe({ entryTypes: ['measure'] });
       // }
@@ -1244,7 +1242,7 @@ emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
 
     performance.mark('script');
   } catch (error) {
-    warn('Error reading kenv env', error);
+    log.warn('Error reading kenv env', error);
   }
 
   updateTheme();

@@ -112,7 +112,7 @@
     "react-hotkeys-hook": "4.5.0",
     "react-icons": "^5.2.1",
     "react-refresh": "^0.14.2",
-    "react-resizable-panels": "^2.0.21",
+    "react-resizable-panels": "^2.0.22",
     "react-toastify": "^10.0.5",
     "react-virtualized-auto-sizer": "^1.0.24",
     "react-window": "1.8.10",

@@ -43,11 +43,11 @@ import { readKitCss, setCSSVariable } from './theme';
 import { addSnippet, addTextSnippet, removeSnippet } from './tick';
 import { cacheMainScripts } from './install';
 import { loadKenvEnvironment } from './env-utils';
-import { pathExists } from './cjs-exports';
+import { pathExists, writeFile } from './cjs-exports';
 import { createLogger } from '../shared/log-utils';
 import { compareArrays } from '../shared/utils';
 
-const { info, err, warn, verbose } = createLogger('watcher.ts');
+const log = createLogger('watcher.ts');
 
 const unlink = (filePath: string) => {
   unlinkShortcuts(filePath);
@@ -88,13 +88,13 @@ const logAllEvents = () => {
   });
 
   if (adds.length) {
-    verbose('adds', adds);
+    log.verbose('adds', adds);
   }
   if (changes.length) {
-    verbose('changes', changes);
+    log.verbose('changes', changes);
   }
   if (removes.length) {
-    verbose('removes', removes);
+    log.verbose('removes', removes);
   }
 
   adds.length = 0;
@@ -133,14 +133,14 @@ const checkFileImports = debounce(async (script: Script) => {
       script.kenv ? kenvPath('kenvs', script.kenv, 'package.json') : undefined,
     );
   } catch (error) {
-    err(error);
+    log.err(error);
     imports = [];
   }
 
-  info({ imports });
+  log.info({ imports });
 
   if (imports?.length && kitState.kenvEnv?.KIT_AUTO_INSTALL !== 'false') {
-    info(`📦 ${script.filePath} missing imports`, imports);
+    log.info(`📦 ${script.filePath} missing imports`, imports);
     emitter.emit(KitEvent.RunPromptProcess, {
       scriptPath: kitPath('cli', 'npm.js'),
       args: imports,
@@ -164,7 +164,7 @@ const getDepWatcher = () => {
   });
 
   depWatcher.on('all', async (eventName, filePath) => {
-    info(
+    log.info(
       `🔍 ${filePath} triggered a ${eventName} event. It's a known dependency of one of more scripts. Doing a reverse lookup...`,
     );
 
@@ -172,8 +172,8 @@ const getDepWatcher = () => {
     const relativeFilePath = path.relative(kenvPath(), filePath).replace(/\\/g, '/');
     const affectedScripts = findEntryScripts(depGraph, relativeFilePath);
 
-    info(`🔍 ${filePath} is a dependency of these scripts:`, Array.from(affectedScripts));
-    info('Clearing their respective caches...');
+    log.info(`🔍 ${filePath} is a dependency of these scripts:`, Array.from(affectedScripts));
+    log.info('Clearing their respective caches...');
 
     for await (const relativeScriptPath of affectedScripts) {
       const cachePath = path.join(
@@ -182,14 +182,14 @@ const getDepWatcher = () => {
         path.basename(relativeScriptPath) + '.js',
       );
       if (await lstat(cachePath).catch(() => false)) {
-        info(`🔥 Clearing cache for ${relativeScriptPath} at ${cachePath}`);
+        log.info(`🔥 Clearing cache for ${relativeScriptPath} at ${cachePath}`);
         await rm(cachePath);
       } else {
-        info(`🤔 Cache for ${relativeScriptPath} at ${cachePath} does not exist`);
+        log.info(`🤔 Cache for ${relativeScriptPath} at ${cachePath} does not exist`);
       }
 
       const fullPath = kenvPath(relativeScriptPath);
-      info(`Sending ${fullPath} to all active children`, {
+      log.info(`Sending ${fullPath} to all active children`, {
         event: Channel.SCRIPT_CHANGED,
         state: fullPath,
       });
@@ -212,7 +212,7 @@ function findEntryScripts(
   for (const [script, deps] of Object.entries(graph)) {
     if (deps.length === 0) {
     } else if (deps.includes(relativeDepPath) && !checkedScripts.has(script)) {
-      info(`🔍 Found ${relativeDepPath} as a dependency of`, script);
+      log.info(`🔍 Found ${relativeDepPath} as a dependency of`, script);
       checkedScripts.add(script);
       // Recursively find other scripts that depend on this script
       const more = findEntryScripts(graph, script, checkedScripts);
@@ -241,7 +241,7 @@ const madgeAllScripts = debounce(async () => {
       .map((kenv) => kenvPath('kenvs', kenv.name, 'scripts', '*').replace(/\\/g, '/')),
   ]);
 
-  info(`🔍 ${allScriptPaths.length} scripts found`);
+  log.info(`🔍 ${allScriptPaths.length} scripts found`);
 
   const fileMadge = await madge(allScriptPaths, {
     baseDir: kenvPath(),
@@ -259,7 +259,7 @@ const madgeAllScripts = debounce(async () => {
   for (const [dir, files] of Object.entries(watched)) {
     for (const file of files) {
       const filePath = path.join(dir, file);
-      verbose(`Unwatching ${filePath}`);
+      log.verbose(`Unwatching ${filePath}`);
       depWatcher.unwatch(filePath);
     }
   }
@@ -268,12 +268,12 @@ const madgeAllScripts = debounce(async () => {
 
     for (const dep of deps) {
       const depKenvPath = kenvPath(dep);
-      verbose(`Watching ${depKenvPath}`);
+      log.verbose(`Watching ${depKenvPath}`);
       depWatcher.add(depKenvPath);
     }
 
     if (deps.length > 0) {
-      verbose(`${scriptKey} has ${deps.length} dependencies`, deps);
+      log.verbose(`${scriptKey} has ${deps.length} dependencies`, deps);
     }
   }
 }, 100);
@@ -287,13 +287,13 @@ export const onScriptsChanged = async (event: WatchEvent, script: Script, rebuil
     }
     firstBatchTimeout = setTimeout(() => {
       firstBatch = false;
-      info('Finished parsing scripts ✅');
+      log.info('Finished parsing scripts ✅');
     }, 1000);
   }
 
   madgeAllScripts();
 
-  info(`👀 ${event} ${script.filePath}`);
+  log.info(`👀 ${event} ${script.filePath}`);
   if (event === 'unlink') {
     unlink(script.filePath);
     unlinkBin(script.filePath);
@@ -324,7 +324,7 @@ export const onScriptsChanged = async (event: WatchEvent, script: Script, rebuil
         });
       }
     } else {
-      verbose(
+      log.verbose(
         `⌚️ ${script.filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`,
       );
     }
@@ -357,30 +357,30 @@ export const teardownWatchers = () => {
         watcher.removeAllListeners();
         watcher.close();
       } catch (error) {
-        err('Error closing watcher:', error);
+        log.err('Error closing watcher:', error);
       }
     }
-    info(`Cleared ${watchers.length} watchers`);
+    log.info(`Cleared ${watchers.length} watchers`);
     watchers.length = 0;
   }
 };
 
 export const checkUserDb = async (eventName: string) => {
-  info(`checkUserDb ${eventName}`);
+  log.info(`checkUserDb ${eventName}`);
 
   let currentUser;
 
   try {
-    info('🔍 Getting user.json');
+    log.info('🔍 Getting user.json');
     currentUser = await getUserJson();
   } catch (error) {
-    info('🔍 Error getting user.json', error);
+    log.info('🔍 Error getting user.json', error);
     currentUser = {};
   }
 
   kitState.user = currentUser;
 
-  info('🔍 Running set-login', kitState.user.login || Env.REMOVE);
+  log.info('🔍 Running set-login', kitState.user.login || Env.REMOVE);
   await runScript(kitPath('config', 'set-login'), kitState.user.login || Env.REMOVE);
 
   if (kitState?.user?.login) {
@@ -391,7 +391,7 @@ export const checkUserDb = async (eventName: string) => {
   }
 
   const user = snapshot(kitState.user);
-  info('Send user.json to prompt', {
+  log.info('Send user.json to prompt', {
     login: user?.login,
     name: user?.name,
   });
@@ -406,7 +406,7 @@ const triggerRunText = debounce(
     if (eventName === 'add' || eventName === 'change') {
       const runText = await readFile(runPath, 'utf8');
       const [filePath, ...args] = runText.trim().split(' ');
-      info(`run.txt ${eventName}`, filePath, args);
+      log.info(`run.txt ${eventName}`, filePath, args);
 
       try {
         const { shebang } = await parseScript(filePath);
@@ -427,10 +427,10 @@ const triggerRunText = debounce(
           });
         }
       } catch (error) {
-        err(error);
+        log.err(error);
       }
     } else {
-      info('run.txt removed');
+      log.info('run.txt removed');
     }
   },
   1000,
@@ -441,7 +441,7 @@ const triggerRunText = debounce(
 
 const refreshScripts = debounce(
   async () => {
-    info('🌈 Refreshing Scripts...');
+    log.info('🌈 Refreshing Scripts...');
     const scripts = await getScripts();
     for (const script of scripts) {
       onScriptsChanged('change', script, true);
@@ -470,25 +470,25 @@ export const parseEnvFile = debounce(async () => {
   //   }
   // };
 
-  // info({
+  // log.info({
   //   KIT_THEME_LIGHT: envData?.KIT_THEME_LIGHT,
   //   KIT_THEME_DARK: envData?.KIT_THEME_DARK,
   // });
 
   if (envData?.KIT_THEME_LIGHT) {
-    info('Setting light theme', envData?.KIT_THEME_LIGHT);
+    log.info('Setting light theme', envData?.KIT_THEME_LIGHT);
     kitState.kenvEnv.KIT_THEME_LIGHT = envData?.KIT_THEME_LIGHT;
   } else if (kitState.kenvEnv.KIT_THEME_LIGHT) {
     kitState.kenvEnv.KIT_THEME_LIGHT = undefined;
-    info('Removing light theme');
+    log.info('Removing light theme');
   }
 
   if (envData?.KIT_THEME_DARK) {
-    info('Setting dark theme', envData?.KIT_THEME_DARK);
+    log.info('Setting dark theme', envData?.KIT_THEME_DARK);
     kitState.kenvEnv.KIT_THEME_DARK = envData?.KIT_THEME_DARK;
   } else if (kitState.kenvEnv.KIT_THEME_DARK) {
     kitState.kenvEnv.KIT_THEME_DARK = undefined;
-    info('Removing dark theme');
+    log.info('Removing dark theme');
   }
 
   updateTheme();
@@ -524,12 +524,12 @@ export const parseEnvFile = debounce(async () => {
   }
 
   if (envData?.KIT_MIC) {
-    info('Setting mic', envData?.KIT_MIC);
+    log.info('Setting mic', envData?.KIT_MIC);
     sendToAllPrompts(AppChannel.SET_MIC_ID, envData?.KIT_MIC);
   }
 
   if (envData?.KIT_WEBCAM) {
-    info('Setting webcam', envData?.KIT_WEBCAM);
+    log.info('Setting webcam', envData?.KIT_WEBCAM);
     sendToAllPrompts(AppChannel.SET_WEBCAM_ID, envData?.KIT_WEBCAM);
   }
 
@@ -542,7 +542,7 @@ export const parseEnvFile = debounce(async () => {
     .filter(Boolean)
     .map((kenv) => kenv.trim());
 
-  info('👩‍⚖️ Trusted Kenvs', trustedKenvs);
+  log.info('👩‍⚖️ Trusted Kenvs', trustedKenvs);
 
   const trustedKenvsChanged = !compareArrays(trustedKenvs, kitState.trustedKenvs);
 
@@ -576,19 +576,19 @@ export const parseEnvFile = debounce(async () => {
   // if (envData?.KIT_LOW_CPU) {
   //   kitState.kenvEnv.KIT_LOW_CPU = envData?.KIT_LOW_CPU;
   //   if (envData?.KIT_LOW_CPU === 'true') {
-  //     info(`🔋 Low CPU Mode. KIT_LOW_CPU=true`);
+  //     log.info(`🔋 Low CPU Mode. KIT_LOW_CPU=true`);
   //     envData.KIT_SUSPEND_WATCHERS = 'true';
   //     kitState.kenvEnv.KIT_CLIPBOARD = 'false';
   //     kitState.kenvEnv.KIT_KEYBOARD = 'false';
   //   } else {
-  //     info(`🔋 Normal CPU Mode. KIT_LOW_CPU=false`);
+  //     log.info(`🔋 Normal CPU Mode. KIT_LOW_CPU=false`);
   //     envData.KIT_SUSPEND_WATCHERS = 'false';
   //     resetKeyboardAndClipboard();
   //   }
   //   startClipboardAndKeyboardWatchers();
   // } else if (kitState.kenvEnv.KIT_LOW_CPU) {
   //   delete kitState.kenvEnv.KIT_LOW_CPU;
-  //   info(`🔋 Normal CPU Mode. KIT_LOW_CPU=empty string`);
+  //   log.info(`🔋 Normal CPU Mode. KIT_LOW_CPU=empty string`);
   //   envData.KIT_SUSPEND_WATCHERS = 'false';
   //   resetKeyboardAndClipboard();
   //   startClipboardAndKeyboardWatchers();
@@ -606,15 +606,15 @@ export const parseEnvFile = debounce(async () => {
     kitState.suspendWatchers = suspendWatchers;
 
     if (suspendWatchers) {
-      info('⌚️ Suspending Watchers');
+      log.info('⌚️ Suspending Watchers');
       teardownWatchers();
     } else {
-      info('⌚️ Resuming Watchers');
+      log.info('⌚️ Resuming Watchers');
       setupWatchers();
     }
   } else if (kitState.suspendWatchers) {
     kitState.suspendWatchers = false;
-    info('⌚️ Resuming Watchers');
+    log.info('⌚️ Resuming Watchers');
     setupWatchers();
   }
 
@@ -638,7 +638,11 @@ export const parseEnvFile = debounce(async () => {
 
 export const restartWatchers = debounce(
   async () => {
-    info(`🔄 Restarting watchers ----------------------------------------------------------------------`);
+    log.info(`
+
+    🔄 Restarting watchers ----------------------------------------------------------------------
+
+`);
     await teardownWatchers();
     await setupWatchers();
   },
@@ -654,7 +658,7 @@ export const setupWatchers = async () => {
     refreshScripts();
   }
 
-  info('--- 👀 Watching Scripts ---');
+  log.info('--- 👀 Watching Scripts ---');
 
   // Set up an interval to touch ping.txt every minute
   if (pingInterval) {
@@ -671,9 +675,9 @@ export const setupWatchers = async () => {
     try {
       await writeFile(pingPath, currentDate);
       pinged = true;
-      info(`🏓 Updated ping.txt with current date: ${currentDate}`);
+      //   log.info(`🏓 Updated ping.txt with current date: ${currentDate}`);
     } catch (error) {
-      err(`Error writing to ping.txt: ${error}`);
+      log.err(`Error writing to ping.txt: ${error}`);
     }
   }, 60000); // 60000 milliseconds = 1 minute
 
@@ -681,7 +685,7 @@ export const setupWatchers = async () => {
     // if (!filePath.match(/\.(ts|js|json|txt|env)$/)) return;
     const { base, dir, name } = path.parse(filePath);
 
-    info(`${eventName}:	base: ${base}, dir: ${dir}, name: ${name}`);
+    log.info(`${eventName}:	base: ${base}, dir: ${dir}, name: ${name}`);
 
     if (base === 'ping.txt') {
       pinged = false;
@@ -694,19 +698,19 @@ export const setupWatchers = async () => {
     }
 
     if (base === name && (name === 'scriptlets' || name === 'scripts' || name === 'snippets')) {
-      info(`${base} changed. Restarting all watchers`);
+      log.info(`${base} changed. Restarting all watchers`);
       await restartWatchers();
       return;
     }
 
     if (base === 'run.txt') {
-      info(`run.txt ${eventName}`);
+      log.info(`run.txt ${eventName}`);
       triggerRunText(eventName);
       return;
     }
 
     if (base === '.env' || base.startsWith('.env.')) {
-      info(`🌎 .env: ${filePath} -> ${eventName}`);
+      log.info(`🌎 .env: ${filePath} -> ${eventName}`);
       parseEnvFile();
       return;
     }
@@ -717,13 +721,13 @@ export const setupWatchers = async () => {
     }
 
     if (base === 'package.json') {
-      info('package.json changed');
+      log.info('package.json changed');
 
       return;
     }
 
     if (base === 'scripts.json') {
-      info('scripts.json changed');
+      log.info('scripts.json changed');
       try {
         for (const info of processes) {
           info?.child?.send({
@@ -731,7 +735,7 @@ export const setupWatchers = async () => {
           });
         }
       } catch (error) {
-        warn(error);
+        log.warn(error);
       }
 
       return;
@@ -749,14 +753,14 @@ export const setupWatchers = async () => {
       //   const obj = fileMadge.obj();
       // Remove kenvPath() from filePath
 
-      // info(`🔍 ${filePath}`, obj, { filePathWithoutKenv });
+      // log.info(`🔍 ${filePath}`, obj, { filePathWithoutKenv });
       // performance.mark('madge-end');
       // const madgeDuration = performance.measure(
       //   'madge',
       //   'madge-start',
       //   'madge-end',
       // );
-      // info(
+      // log.info(
       //   `🔍 ${filePath} analysis duration: ${madgeDuration.duration}ms`,
       // );
       //   }
@@ -764,7 +768,7 @@ export const setupWatchers = async () => {
 
       // Remove the kenvPath("scripts/.cache") files
       // const scriptsDir = kenvPath('scripts', '.cache');
-      // info(
+      // log.info(
       //   `Detected changes in ${kenvPath('lib')}. Clearing ${scriptsDir}...`,
       // );
       // const files = await readdir(scriptsDir);
@@ -772,9 +776,9 @@ export const setupWatchers = async () => {
       //   const filePath = path.join(scriptsDir, file);
       //   try {
       //     await rm(filePath);
-      //     info(`Removed cached file: ${filePath}`);
+      //     log.info(`Removed cached file: ${filePath}`);
       //   } catch (error) {
-      //     warn(`Failed to remove cached file: ${filePath}`, error);
+      //     log.warn(`Failed to remove cached file: ${filePath}`, error);
       //   }
       // }
       try {
@@ -783,7 +787,7 @@ export const setupWatchers = async () => {
           kenv: '',
         } as Script);
       } catch (error) {
-        warn(error);
+        log.warn(error);
       }
 
       return;
@@ -791,7 +795,7 @@ export const setupWatchers = async () => {
 
     if (dir.endsWith('snippets')) {
       if (eventName === 'add' || eventName === 'change') {
-        info('Snippet added/changed', filePath);
+        log.info('Snippet added/changed', filePath);
         addTextSnippet(filePath);
       } else {
         removeSnippet(filePath);
@@ -802,22 +806,22 @@ export const setupWatchers = async () => {
 
     if (dir.endsWith('scriptlets')) {
       // onScriptsChanged(eventName, filePath);
-      info('🎬 Starting cacheMainScripts...');
+      log.info('🎬 Starting cacheMainScripts...');
       try {
         await cacheMainScripts();
       } catch (error) {
-        err(error);
+        log.err(error);
       }
-      info('...cacheMainScripts done 🎬');
+      log.info('...cacheMainScripts done 🎬');
 
       const exists = await pathExists(filePath);
       if (!exists) {
-        info(`Scriptlet file ${filePath} has been deleted.`);
+        log.info(`Scriptlet file ${filePath} has been deleted.`);
         return;
       }
       const scriptlets = await parseScriptletsFromPath(filePath);
       for (const scriptlet of scriptlets) {
-        info(`👀 -->>> ${eventName} ${scriptlet.filePath}`);
+        log.info(`👀 -->>> ${eventName} ${scriptlet.filePath}`);
         await onScriptsChanged(eventName, scriptlet);
       }
       return;
@@ -828,7 +832,7 @@ export const setupWatchers = async () => {
       try {
         script = await parseScript(filePath);
       } catch (error) {
-        warn(error);
+        log.warn(error);
         script = {
           filePath,
           name: path.basename(filePath),
@@ -838,16 +842,16 @@ export const setupWatchers = async () => {
       return;
     }
 
-    warn(`🔄 ${eventName} ${filePath}, but not handled... Is this a bug?`);
+    log.warn(`🔄 ${eventName} ${filePath}, but not handled... Is this a bug?`);
   });
 };
 
 subscribeKey(kitState, 'suspendWatchers', (suspendWatchers) => {
   if (suspendWatchers) {
-    info('⌚️ Suspending Watchers');
+    log.info('⌚️ Suspending Watchers');
     teardownWatchers();
   } else {
-    info('⌚️ Resuming Watchers');
+    log.info('⌚️ Resuming Watchers');
     setupWatchers();
   }
 });
@@ -858,7 +862,7 @@ emitter.on(KitEvent.RestartWatcher, async () => {
   try {
     await setupWatchers();
   } catch (error) {
-    err(error);
+    log.err(error);
   }
 });
 

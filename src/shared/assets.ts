@@ -4,7 +4,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 /* eslint-disable import/prefer-default-export */
 import { app } from 'electron';
-import log from 'electron-log';
+import { createLogger } from '../shared/log-utils';
+const log = createLogger('assets.ts');
 
 export function slash(p: string) {
   const isExtendedLengthPath = /^\\\\\?\\/.test(p);

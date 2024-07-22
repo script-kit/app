@@ -1,4 +1,3 @@
-import log from 'electron-log/renderer';
 import { debounce } from 'lodash-es';
 import React, { type ErrorInfo, type RefObject, useCallback, useEffect, useRef } from 'react';
 import { ToastContainer, cssTransition } from 'react-toastify';
@@ -111,6 +110,9 @@ self.MonacoEnvironment = {
 };
 
 loader.config({ monaco });
+
+import { createLogger } from '../../shared/log-utils';
+const log = createLogger('App.tsx');
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor

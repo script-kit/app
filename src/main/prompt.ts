@@ -22,7 +22,7 @@ import {
   shell,
 } from 'electron';
 import contextMenu from 'electron-context-menu';
-import log, { type FileTransport } from 'electron-log';
+import type { FileTransport } from 'electron-log';
 import type { Display } from 'electron/main';
 import { debounce } from 'lodash-es';
 
@@ -65,7 +65,7 @@ import { makeKeyWindow, makePanel, makeWindow } from './window/utils';
 
 import { createLogger } from '../shared/log-utils';
 
-const { info, warn, err, silly, verbose } = createLogger('prompt.ts');
+const log = createLogger('prompt.ts');
 
 contextMenu({
   showInspectElement: process.env.NODE_ENV === 'development',
@@ -143,7 +143,7 @@ export const logPromptState = () => {
 
     // If there are any differences, log them
     if (Object.keys(diff).length) {
-      info(
+      log.info(
         `
   👙 Prompt State:`,
         JSON.stringify(diff, null, 2),
@@ -172,18 +172,18 @@ export const getCurrentScreenPromptCache = (
 ): Partial<Rectangle> & { screenId: string } => {
   const currentScreen = getCurrentScreen();
   const screenId = String(currentScreen.id);
-  // info(`screens:`, promptState.screens);
+  // log.info(`screens:`, promptState.screens);
 
   const savedPromptBounds = promptState?.screens?.[screenId]?.[scriptPath];
 
   if (savedPromptBounds) {
-    info(`📱 Screen: ${screenId}: `, savedPromptBounds);
-    info(`Bounds: found saved bounds for ${scriptPath}`);
+    log.info(`📱 Screen: ${screenId}: `, savedPromptBounds);
+    log.info(`Bounds: found saved bounds for ${scriptPath}`);
     // TODO: Reimplement div UI based on promptWindow?
     return savedPromptBounds;
   }
 
-  // info(`resetPromptBounds`, scriptPath);
+  // log.info(`resetPromptBounds`, scriptPath);
   const { width: screenWidth, height: screenHeight, x: workX, y: workY } = currentScreen.workArea;
 
   let width = getDefaultWidth();
@@ -237,27 +237,27 @@ export const getCurrentScreenPromptCache = (
   const windowTopLeft = { x, y };
   const windowBottomRight = { x: x + width, y: y + height };
 
-  info('Screen bounds:', {
+  log.info('Screen bounds:', {
     topLeft: screenTopLeft,
     bottomRight: screenBottomRight,
   });
 
-  info('Center screen', {
+  log.info('Center screen', {
     x: screenWidth / 2,
     y: screenHeight / 2,
   });
 
-  info('Window bounds:', {
+  log.info('Window bounds:', {
     topLeft: windowTopLeft,
     bottomRight: windowBottomRight,
   });
 
   if (typeof bounds?.x === 'number' && bounds.x !== OFFSCREEN_X) {
-    info(`x is a number and not ${OFFSCREEN_X}`);
+    log.info(`x is a number and not ${OFFSCREEN_X}`);
     x = bounds.x;
   }
   if (typeof bounds?.y === 'number' && bounds.y !== OFFSCREEN_Y) {
-    info(`y is a number and not ${OFFSCREEN_Y}`);
+    log.info(`y is a number and not ${OFFSCREEN_Y}`);
     y = bounds.y;
   }
 
@@ -271,11 +271,11 @@ export const getCurrentScreenPromptCache = (
       screenId,
     };
 
-    verbose('Bounds: No UI', bounds);
+    log.verbose('Bounds: No UI', bounds);
     return bounds;
   }
 
-  info(`Bounds: No saved bounds for ${scriptPath}, returning default bounds`, promptBounds);
+  log.info(`Bounds: No saved bounds for ${scriptPath}, returning default bounds`, promptBounds);
   return promptBounds;
 };
 
@@ -290,7 +290,7 @@ enum Bounds {
 }
 
 export const pointOnMouseScreen = ({ x, y }: Point) => {
-  silly('function: pointOnMouseScreen');
+  log.silly('function: pointOnMouseScreen');
   const mouseScreen = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
   // if bounds are off screen, don't save
   const onMouseScreen =
@@ -309,7 +309,7 @@ const writePromptState = (prompt: KitPrompt, screenId: string, scriptPath: strin
   if (prompt.kitSearch.input !== '' || prompt.kitSearch.inputRegex) {
     return;
   }
-  verbose('writePromptState', { screenId, scriptPath, bounds });
+  log.verbose('writePromptState', { screenId, scriptPath, bounds });
 
   if (!promptState?.screens) {
     promptState.screens = {};
@@ -343,7 +343,7 @@ export const clearPromptCache = async () => {
   // try {
   //   promptState.screens = {};
   // } catch (error) {
-  //   info(error);
+  //   log.info(error);
   // }
   // promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
   // kitState.resizePaused = true;
@@ -366,7 +366,7 @@ export const destroyPromptWindow = () => {
 // const boundsMatch = async (bounds: Rectangle) => {
 //   const { width, height } = promptWindow?.getBounds();
 //   if (width === bounds.width && height === bounds.height) {
-//     info(`↖ Bounds attempt: ${attempts}`);
+//     log.info(`↖ Bounds attempt: ${attempts}`);
 //     return true;
 //   }
 
@@ -388,7 +388,7 @@ export const destroyPromptWindow = () => {
 //   kitState,
 //   'scriptPath',
 //   async (scriptPath) => {
-//     verbose(`📄 scriptPath changed: ${scriptPath}`);
+//     log.verbose(`📄 scriptPath changed: ${scriptPath}`);
 
 //     if (promptWindow?.isDestroyed()) return;
 //     const noScript = kitState.scriptPath === '';
@@ -401,7 +401,7 @@ export const destroyPromptWindow = () => {
 //     }
 
 //     if (noScript) {
-//       info(
+//       log.info(
 //         `
 // 🎬: scriptPath changed: ${kitState.scriptPath}, prompt count: ${kitState.promptCount}
 // ---`
@@ -429,7 +429,7 @@ const subEmoji = subscribeKey(kitState, 'emojiActive', (emoji) => {
     return;
   }
   prevEmoji = emoji;
-  info(`👆 Emoji changed: ${emoji ? 'on' : 'off'}`);
+  log.info(`👆 Emoji changed: ${emoji ? 'on' : 'off'}`);
   const emojiShortcut = getEmojiShortcut();
   if (emoji) {
     globalShortcut.register(emojiShortcut, () => {
@@ -442,7 +442,7 @@ const subEmoji = subscribeKey(kitState, 'emojiActive', (emoji) => {
 });
 
 const subIsSponsor = subscribeKey(kitState, 'isSponsor', (isSponsor) => {
-  info('🎨 Sponsor changed:', isSponsor);
+  log.info('🎨 Sponsor changed:', isSponsor);
   setKitStateAtom({ isSponsor });
 });
 
@@ -468,11 +468,11 @@ export const clearPromptCacheFor = async (scriptPath: string) => {
     for await (const display of displays) {
       if (promptState?.screens?.[display.id]?.[scriptPath]) {
         delete promptState.screens[display.id][scriptPath];
-        verbose(`🗑 Clear prompt cache for ${scriptPath} on ${display.id}`);
+        log.verbose(`🗑 Clear prompt cache for ${scriptPath} on ${display.id}`);
       }
     }
   } catch (e) {
-    err(e);
+    log.err(e);
   }
 
   if (preloadChoicesMap.has(scriptPath)) {
@@ -497,7 +497,7 @@ export const clearPromptTimers = async () => {
       clearTimeout(topTimeout);
     }
   } catch (e) {
-    err(e);
+    log.err(e);
   }
 };
 
@@ -546,7 +546,7 @@ export class KitPrompt {
 
   public window: BrowserWindow;
   public sendToPrompt: (channel: Channel | AppChannel, data?: any) => void = (channel, data) => {
-    warn('sendToPrompt not set', { channel, data });
+    log.warn('sendToPrompt not set', { channel, data });
   };
 
   modifiedByUser = false;
@@ -583,7 +583,7 @@ export class KitPrompt {
       return;
     }
 
-    info('🧹 Clearing search...');
+    log.info('🧹 Clearing search...');
     this.kitSearch.keyword = '';
     this.kitSearch.choices = [];
     this.kitSearch.input = '';
@@ -619,7 +619,7 @@ export class KitPrompt {
     }
     this.pid = pid;
     this.boundToProcess = true;
-    info(`${pid} -> ${this?.window?.id}: 🔗 Binding prompt to process`);
+    log.info(`${pid} -> ${this?.window?.id}: 🔗 Binding prompt to process`);
   };
 
   promptBounds = {
@@ -635,7 +635,7 @@ export class KitPrompt {
   waitForReady = async () => {
     return new Promise<void>((resolve) => {
       this.readyEmitter.once('ready', () => {
-        info(`${this?.window?.id} 🎉 Ready because ready emit`);
+        log.info(`${this?.window?.id} 🎉 Ready because ready emit`);
         resolve();
       });
     });
@@ -665,19 +665,19 @@ export class KitPrompt {
     //       if (!this.window.isFocusable()) {
     //         this.window.hide();
     //       }
-    //       info('Hiding prompt window. Current position', this.window.getPosition());
+    //       log.info('Hiding prompt window. Current position', this.window.getPosition());
     //     }
     //   }, timeout);
     // }
 
     this.sendToPrompt = (channel: Channel | AppChannel, data) => {
-      silly(`sendToPrompt: ${String(channel)}`, data);
+      log.silly(`sendToPrompt: ${String(channel)}`, data);
 
       if (this?.window?.webContents?.send) {
         if (channel) {
           this.window?.webContents.send(String(channel), data);
         } else {
-          err('channel is undefined', { data });
+          log.err('channel is undefined', { data });
         }
       }
     };
@@ -721,14 +721,14 @@ export class KitPrompt {
       try {
         this.window.setTouchBar(touchbar);
       } catch (error) {
-        err(error);
+        log.err(error);
       }
     }
 
     this.window.webContents?.on('will-navigate', async (event, navigationUrl) => {
       try {
         const url = new URL(navigationUrl);
-        info(`👉 Prevent navigating to ${navigationUrl}`);
+        log.info(`👉 Prevent navigating to ${navigationUrl}`);
         event.preventDefault();
 
         const pathname = url.pathname.replace('//', '');
@@ -739,27 +739,27 @@ export class KitPrompt {
           const repo = url.searchParams.get('repo');
           await runPromptProcess(kitPath('cli', 'kenv-clone.js'), [repo || '']);
         } else if (url.protocol === 'kit:') {
-          info('Attempting to run kit protocol:', JSON.stringify(url));
+          log.info('Attempting to run kit protocol:', JSON.stringify(url));
           await cliFromParams(url.pathname, url.searchParams);
         } else if (url.protocol === 'submit:') {
           // TODO: Handle submit protocol
-          info('Attempting to run submit protocol:', JSON.stringify(url));
+          log.info('Attempting to run submit protocol:', JSON.stringify(url));
           this.sendToPrompt(Channel.SET_SUBMIT_VALUE, url.pathname);
         } else if (url.protocol.startsWith('http')) {
           shell.openExternal(url.href);
         }
       } catch (e) {
-        warn(e);
+        log.warn(e);
       }
     });
 
     this.window.once('ready-to-show', async () => {
-      info(`${this.pid}: 👍 Ready to show`);
+      log.info(`${this.pid}: 👍 Ready to show`);
       updateTheme();
     });
 
     this.window.webContents?.on('dom-ready', () => {
-      info(`${this.pid}: 📦 dom-ready`);
+      log.info(`${this.pid}: 📦 dom-ready`);
       this.window?.webContents?.setZoomLevel(ZOOM_LEVEL);
     });
 
@@ -767,7 +767,7 @@ export class KitPrompt {
       kitState.hiddenByUser = false;
       kitState.promptHidden = true;
 
-      silly('event: did-finish-load');
+      log.silly('event: did-finish-load');
       this.sendToPrompt(Channel.APP_CONFIG, {
         delimiter: path.delimiter,
         sep: path.sep,
@@ -783,7 +783,7 @@ export class KitPrompt {
       });
 
       const user = snapshot(kitState.user);
-      info(`${this.pid}: did-finish-load, setting prompt user to: ${user?.login}`);
+      log.info(`${this.pid}: did-finish-load, setting prompt user to: ${user?.login}`);
 
       this.sendToPrompt(AppChannel.USER_CHANGED, user);
       setKitStateAtom({
@@ -794,7 +794,7 @@ export class KitPrompt {
       const messagesReadyHandler = async (event, pid) => {
         // this.window.webContents.setBackgroundThrottling(false);
 
-        info(`${this.pid}: 📬 Messages ready. `);
+        log.info(`${this.pid}: 📬 Messages ready. `);
         if (this.initMain) {
           this.initPromptData();
           this.initMainChoices();
@@ -802,22 +802,22 @@ export class KitPrompt {
           this.initMainShortcuts();
           this.initMainFlags();
 
-          info(`${pid}: 🚀 Prompt init`);
+          log.info(`${pid}: 🚀 Prompt init`);
           this.initPrompt();
 
           // this.window.webContents
           //   .executeJavaScript(`document.querySelector('#main').innerHTML`)
           //   .then((main) => {
-          //     info({ pid: this.pid, main });
+          //     log.info({ pid: this.pid, main });
           //   })
           //   .catch((e) => {
-          //     err({
+          //     log.err({
           //       pid: this.pid,
           //       error: e,
           //     });
           //   })
           //   .finally(() => {
-          //     info(`${this.pid}: 🚀 Prompt js ready`);
+          //     log.info(`${this.pid}: 🚀 Prompt js ready`);
           //   });
         }
 
@@ -827,7 +827,7 @@ export class KitPrompt {
         // Force render
         // Trigger re-layout without visual change
 
-        info(
+        log.info(
           `${this.pid}:${this.window.id}: 🚀 Prompt ready. Forcing render. ${this.window?.isVisible() ? 'visible' : 'hidden'}`,
         );
 
@@ -849,14 +849,14 @@ export class KitPrompt {
 
     // reload if unresponsive
     this.window.webContents?.on('unresponsive', () => {
-      err(`${this.pid}: ${this.scriptName}: Prompt window unresponsive. Reloading`);
+      log.err(`${this.pid}: ${this.scriptName}: Prompt window unresponsive. Reloading`);
       if (this.window.isDestroyed()) {
-        err(`${this.pid}: ${this.scriptName}: Prompt window is destroyed. Not reloading`);
+        log.err(`${this.pid}: ${this.scriptName}: Prompt window is destroyed. Not reloading`);
         return;
       }
 
       this.window.webContents?.once('did-finish-load', () => {
-        info(`${this.pid}: Prompt window reloaded`);
+        log.info(`${this.pid}: Prompt window reloaded`);
       });
 
       this.window.reload();
@@ -873,9 +873,9 @@ export class KitPrompt {
         (this.firstPrompt && this.scriptPath === getMainScriptPath() && isEscape && !this.wasActionsJustOpen)
       ) {
         if (isW) {
-          info(`Closing prompt window with ${kitState.isMac ? '⌘' : '⌃'}+w`);
+          log.info(`Closing prompt window with ${kitState.isMac ? '⌘' : '⌃'}+w`);
         } else if (isEscape) {
-          info('Closing prompt window with escape');
+          log.info('Closing prompt window with escape');
           this.hideInstant();
         }
 
@@ -888,7 +888,7 @@ export class KitPrompt {
         if (currentTime - lastEscapePressTime <= 300) {
           escapePressCount += 1;
           if (escapePressCount >= 5) {
-            info('Escape pressed 5 times quickly, reloading');
+            log.info('Escape pressed 5 times quickly, reloading');
             this.window.reload();
             escapePressCount = 0;
           }
@@ -905,7 +905,7 @@ export class KitPrompt {
     // })
 
     this.window.webContents?.setWindowOpenHandler(({ url }) => {
-      info(`Opening ${url}`);
+      log.info(`Opening ${url}`);
 
       // Only allow websites to open in the browser
       if (!url.startsWith('http')) {
@@ -917,7 +917,7 @@ export class KitPrompt {
       return { action: 'deny' };
     });
 
-    silly('Loading prompt window html');
+    log.silly('Loading prompt window html');
 
     if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
       this.window.loadURL(`${process.env.ELECTRON_RENDERER_URL}/index.html`);
@@ -929,11 +929,11 @@ export class KitPrompt {
       makeWindow(this.window);
     });
 
-    this.window.webContents.on('devtools-closed', () => {
-      silly('event: devtools-closed');
+    this.window.webContents?.on('devtools-closed', () => {
+      log.silly('event: devtools-closed');
 
       if (kitState.isMac) {
-        info(`${this.pid}: 👋 setPromptAlwaysOnTop: false, so makeWindow`);
+        log.info(`${this.pid}: 👋 setPromptAlwaysOnTop: false, so makeWindow`);
         makeWindow(this.window);
       } else {
         this.setPromptAlwaysOnTop(false);
@@ -942,7 +942,7 @@ export class KitPrompt {
     });
 
     emitter.on(KitEvent.OpenDevTools, () => {
-      silly('event: OpenDevTools');
+      log.silly('event: OpenDevTools');
       if (prompts.prevFocused?.pid === this?.pid) {
         this.window.webContents?.openDevTools({
           activate: true,
@@ -952,7 +952,7 @@ export class KitPrompt {
     });
 
     const onBlur = () => {
-      // info(`🙈 Prompt window blurred`, {
+      // log.info(`🙈 Prompt window blurred`, {
       //   isPromptReady: this.ready,
       //   isActivated: kitState.isActivated,
       // });
@@ -962,7 +962,7 @@ export class KitPrompt {
       }
 
       if (this.justFocused && this.isVisible()) {
-        info('🙈 Prompt window was just focused. Ignore blur');
+        log.info('🙈 Prompt window was just focused. Ignore blur');
 
         // this.focusPrompt();
         return;
@@ -1004,31 +1004,31 @@ export class KitPrompt {
     };
 
     this.window.on('always-on-top-changed', () => {
-      info(`📌 always-on-top-changed: ${this.window.isAlwaysOnTop()}`);
+      log.info(`📌 always-on-top-changed: ${this.window.isAlwaysOnTop()}`);
     });
 
     this.window.on('minimize', () => {
-      info('📌 minimize');
+      log.info('📌 minimize');
     });
 
     this.window.on('restore', () => {
-      info('📌 restore');
+      log.info('📌 restore');
     });
 
     this.window.on('maximize', () => {
-      info('📌 maximize');
+      log.info('📌 maximize');
     });
 
     this.window.on('unmaximize', () => {
-      info('📌 unmaximize');
+      log.info('📌 unmaximize');
     });
 
     this.window.on('close', () => {
-      info('📌 close');
+      log.info('📌 close');
     });
 
     this.window.on('closed', () => {
-      info('📌 closed');
+      log.info('📌 closed');
       kitState.emojiActive = false;
       // if (!this.window.isDestroyed()) {
       //   this?.window?.destroy();
@@ -1038,14 +1038,14 @@ export class KitPrompt {
     });
 
     this.window.webContents?.on('focus', () => {
-      info('WebContents Focus');
+      log.info('WebContents Focus');
     });
 
     this.window.on('focus', () => {
-      info('👓 Focus bounds:', this.window.getBounds());
+      log.info('👓 Focus bounds:', this.window.getBounds());
 
       if (!kitState.isLinux) {
-        verbose('Registering emoji shortcut');
+        log.verbose('Registering emoji shortcut');
         // Grab cmd+ctrl+space shortcut to use electron's emoji picker
         kitState.emojiActive = true;
         // globalShortcut.register(getEmojiShortcut(), showEmoji);
@@ -1061,7 +1061,7 @@ export class KitPrompt {
     this.window.on('blur', onBlur);
 
     this.window.on('hide', () => {
-      info('🫣 Prompt window hidden');
+      log.info('🫣 Prompt window hidden');
       kitState.promptHidden = true;
 
       if (!kitState.isLinux) {
@@ -1071,12 +1071,12 @@ export class KitPrompt {
     });
 
     this.window.on('show', async () => {
-      info(`${this.pid} 😳 Prompt window shown`);
+      log.info(`${this.pid} 😳 Prompt window shown`);
       kitState.promptHidden = false;
     });
 
     this.window.webContents?.on('did-fail-load', (errorCode, errorDescription, validatedURL, isMainFrame) => {
-      err(`${this.pid} did-fail-load:`, {
+      log.err(`${this.pid} did-fail-load:`, {
         errorCode,
         errorDescription,
         isMainFrame,
@@ -1084,11 +1084,11 @@ export class KitPrompt {
     });
 
     this.window.webContents?.on('did-stop-loading', () => {
-      info(`${this.pid}:${this?.window?.id}: ${this.scriptName}: did-stop-loading`);
+      log.info(`${this.pid}:${this?.window?.id}: ${this.scriptName}: did-stop-loading`);
     });
 
     this.window.webContents?.on('dom-ready', () => {
-      info(`${this.pid}:${this?.window?.id} 🍀 dom-ready on ${this?.scriptPath}`);
+      log.info(`${this.pid}:${this?.window?.id} 🍀 dom-ready on ${this?.scriptPath}`);
 
       // hideAppIfNoWindows(HideReason.DomReady);
       this.sendToPrompt(Channel.SET_READY, true);
@@ -1099,14 +1099,14 @@ export class KitPrompt {
       this.sendToPrompt = () => {};
       this.window.webContents.send = () => {};
       // processes.removeByPid(this.pid);
-      err(`${this.pid}: ${this.scriptName}: 🫣 Render process gone...`);
-      err({ event, details });
+      log.err(`${this.pid}: ${this.scriptName}: 🫣 Render process gone...`);
+      log.err({ event, details });
     });
 
     const onResized = () => {
-      silly('event: onResized');
+      log.silly('event: onResized');
       this.modifiedByUser = false;
-      info(`Resized: ${this.window.getSize()}`);
+      log.info(`Resized: ${this.window.getSize()}`);
 
       if (this.resizing) {
         this.resizing = false;
@@ -1121,7 +1121,7 @@ export class KitPrompt {
       });
     } else {
       this.window.on('will-resize', (event, rect) => {
-        silly(`Will Resize ${rect.width} ${rect.height}`);
+        log.silly(`Will Resize ${rect.width} ${rect.height}`);
         this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, {
           id: this.id,
           ...rect,
@@ -1133,7 +1133,7 @@ export class KitPrompt {
 
     const willMoveHandler = debounce(
       () => {
-        silly('event: will-move');
+        log.silly('event: will-move');
         kitState.modifiedByUser = true;
       },
       250,
@@ -1141,7 +1141,7 @@ export class KitPrompt {
     );
 
     const onMoved = debounce(() => {
-      silly('event: onMove');
+      log.silly('event: onMove');
       this.modifiedByUser = false;
       this.saveCurrentPromptBounds();
     }, 250);
@@ -1158,9 +1158,9 @@ export class KitPrompt {
   };
 
   reload = () => {
-    info('Reloading prompt window...');
+    log.info('Reloading prompt window...');
     if (this.window.isDestroyed()) {
-      warn('Prompt window is destroyed. Not reloading.');
+      log.warn('Prompt window is destroyed. Not reloading.');
       return;
     }
 
@@ -1178,12 +1178,12 @@ export class KitPrompt {
   hasFocus = () => this.window.isFocused();
 
   clearCache = () => {
-    info('--> 📦 CLEARING CACHE, Not main!');
+    log.info('--> 📦 CLEARING CACHE, Not main!');
     this.sendToPrompt(AppChannel.CLEAR_CACHE, {});
   };
 
   initShowPrompt = () => {
-    info('🎪 initShowPrompt:', this.id, this.scriptPath);
+    log.info('🎪 initShowPrompt:', this.id, this.scriptPath);
     if (!kitState.isMac) {
       if (kitState?.kenvEnv?.KIT_PROMPT_RESTORE === 'true') {
         this.window?.restore();
@@ -1198,13 +1198,13 @@ export class KitPrompt {
     } else {
       const handler = (event, channel, message) => {
         if (channel === AppChannel.INPUT_READY) {
-          info(`Received ${AppChannel.INPUT_READY} from prompt`);
+          log.info(`Received ${AppChannel.INPUT_READY} from prompt`);
           this.window.webContents.off('ipc-message', handler);
           this.focusPrompt();
         }
       };
       this.window.webContents.on('ipc-message', handler);
-      info(`Sending ${AppChannel.INPUT_READY} to prompt`);
+      log.info(`Sending ${AppChannel.INPUT_READY} to prompt`);
       this.window.webContents.send(AppChannel.INPUT_READY);
     }
     this.sendToPrompt(Channel.SET_OPEN, true);
@@ -1219,9 +1219,9 @@ export class KitPrompt {
   };
 
   hide = () => {
-    info('Hiding prompt window...');
+    log.info('Hiding prompt window...');
     if (this.window.isDestroyed()) {
-      warn('Prompt window is destroyed. Not hiding.');
+      log.warn('Prompt window is destroyed. Not hiding.');
       return;
     }
     this.actualHide();
@@ -1268,7 +1268,7 @@ export class KitPrompt {
 
   moveToMouseScreen = () => {
     if (this?.window?.isDestroyed()) {
-      warn(`moveToMouseScreen. Window already destroyed`, this?.id);
+      log.warn(`moveToMouseScreen. Window already destroyed`, this?.id);
       return;
     }
 
@@ -1278,12 +1278,12 @@ export class KitPrompt {
 
   initBounds = (forceScriptPath?: string, show = false) => {
     if (this?.window?.isDestroyed()) {
-      warn(`initBounds. Window already destroyed`, this?.id);
+      log.warn(`initBounds. Window already destroyed`, this?.id);
       return;
     }
 
     // if (this.window?.isVisible()) {
-    //   info(`↖ Ignore init bounds, already visible`);
+    //   log.info(`↖ Ignore init bounds, already visible`);
     //   return;
     // }
 
@@ -1298,7 +1298,7 @@ export class KitPrompt {
     });
 
     const currentBounds = this?.window?.getBounds();
-    info(`${this.pid}:${path.basename(this?.scriptPath || '')}: ↖ Init bounds: ${this.ui} ui`, {
+    log.info(`${this.pid}:${path.basename(this?.scriptPath || '')}: ↖ Init bounds: ${this.ui} ui`, {
       currentBounds,
       cachedBounds,
     });
@@ -1307,7 +1307,7 @@ export class KitPrompt {
 
     const { width, height } = this.window?.getBounds();
     if (cachedBounds.width !== width || cachedBounds.height !== height) {
-      verbose(`Started resizing: ${this.window?.getSize()}. First prompt?: ${this.firstPrompt ? 'true' : 'false'}`);
+      log.verbose(`Started resizing: ${this.window?.getSize()}. First prompt?: ${this.firstPrompt ? 'true' : 'false'}`);
 
       this.resizing = true;
     }
@@ -1330,12 +1330,12 @@ export class KitPrompt {
       return;
     }
 
-    info(`👋 Show Prompt from preloaded ${this.scriptPath}`);
+    log.info(`👋 Show Prompt from preloaded ${this.scriptPath}`);
     // this.showPrompt();
   };
 
   blurPrompt = () => {
-    info('blurPrompt');
+    log.info('blurPrompt');
     if (this.window.isDestroyed()) {
       return;
     }
@@ -1365,7 +1365,7 @@ export class KitPrompt {
     if (!this.window || this.window.isDestroyed()) {
       return;
     }
-    info(`${this.pid}: 🆒 Attempt ${this.scriptName}: setBounds reason: ${reason}`, bounds);
+    log.info(`${this.pid}: 🆒 Attempt ${this.scriptName}: setBounds reason: ${reason}`, bounds);
     if (!kitState.ready) {
       return;
     }
@@ -1375,7 +1375,7 @@ export class KitPrompt {
     const xNotChanged = bounds?.x && Math.abs(bounds.x - currentBounds.x) < 4;
     const yNotChanged = bounds?.y && Math.abs(bounds.y - currentBounds.y) < 4;
 
-    // info({
+    // log.info({
     //   widthNotChanged,
     //   heightNotChanged,
     //   xNotChanged,
@@ -1388,14 +1388,14 @@ export class KitPrompt {
         continue;
       }
       if (prompt.getBounds().x === bounds.x && prompt.getBounds().y === bounds.y) {
-        info(`🔀 Prompt ${prompt.id} has same x and y as ${this.id}. Scooching x and y!`);
+        log.info(`🔀 Prompt ${prompt.id} has same x and y as ${this.id}. Scooching x and y!`);
         sameXAndYAsAnotherPrompt = true;
       }
     }
     const noChange = heightNotChanged && widthNotChanged && xNotChanged && yNotChanged && !sameXAndYAsAnotherPrompt;
 
     if (noChange) {
-      info('📐 No change in bounds, ignoring', {
+      log.info('📐 No change in bounds, ignoring', {
         currentBounds,
         bounds,
       });
@@ -1420,12 +1420,12 @@ export class KitPrompt {
     const mouseScreen = getCurrentScreen();
     const boundsOnMouseScreen = isBoundsWithinDisplayById(bounds as Rectangle, mouseScreen.id);
 
-    info(
+    log.info(
       `${this.pid}: boundsScreen.id ${boundsScreen.id} mouseScreen.id ${mouseScreen.id} boundsOnMouseScreen ${boundsOnMouseScreen ? 'true' : 'false'} isVisible: ${this.isVisible() ? 'true' : 'false'}`,
     );
 
     if (boundsScreen.id !== mouseScreen.id && boundsOnMouseScreen) {
-      info('🔀 Mouse screen is different, but bounds are within display. Using mouse screen.');
+      log.info('🔀 Mouse screen is different, but bounds are within display. Using mouse screen.');
       // return
     }
 
@@ -1486,7 +1486,7 @@ export class KitPrompt {
       bounds.height = screenHeight;
     }
 
-    // info(`📐 setBounds: ${reason}`, {
+    // log.info(`📐 setBounds: ${reason}`, {
     //   ...bounds,
     // });
 
@@ -1508,7 +1508,7 @@ export class KitPrompt {
       //   );
       // }
 
-      info(`${this.pid}: Apply ${this.scriptName}: setBounds reason: ${reason}`, bounds);
+      log.info(`${this.pid}: Apply ${this.scriptName}: setBounds reason: ${reason}`, bounds);
 
       const finalBounds = {
         x: Math.round(bounds.x),
@@ -1528,12 +1528,12 @@ export class KitPrompt {
 
           const bounds = prompt.getBounds();
           if (bounds.x === finalBounds.x) {
-            info(`🔀 Prompt ${prompt.id} has same x as ${this.id}. Scooching x!`);
+            log.info(`🔀 Prompt ${prompt.id} has same x as ${this.id}. Scooching x!`);
             finalBounds.x += 40;
             hasMatch = true;
           }
           if (bounds.y === finalBounds.y) {
-            info(`🔀 Prompt ${prompt.id} has same y as ${this.id}. Scooching y!`);
+            log.info(`🔀 Prompt ${prompt.id} has same y as ${this.id}. Scooching y!`);
             finalBounds.y += 40;
             hasMatch = true;
           }
@@ -1543,7 +1543,7 @@ export class KitPrompt {
         }
       }
 
-      // info(`Final bounds:`, finalBounds);
+      // log.info(`Final bounds:`, finalBounds);
 
       // TODO: Windows prompt behavior
       // if (kitState.isWindows) {
@@ -1553,6 +1553,7 @@ export class KitPrompt {
       //   }
       // }
 
+      log.info('setBounds', finalBounds);
       this.window.setBounds(finalBounds, false);
       this.promptBounds = {
         id: this.id,
@@ -1561,12 +1562,12 @@ export class KitPrompt {
 
       this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, this.promptBounds);
     } catch (error) {
-      info(`setBounds error ${reason}`, error);
+      log.info(`setBounds error ${reason}`, error);
     }
   };
 
   togglePromptEnv = (envName: string) => {
-    info(`Toggle prompt env: ${envName} to ${kitState.kenvEnv?.[envName]}`);
+    log.info(`Toggle prompt env: ${envName} to ${kitState.kenvEnv?.[envName]}`);
 
     if (process.env[envName]) {
       delete process.env[envName];
@@ -1624,7 +1625,7 @@ export class KitPrompt {
       const screenBounds = getCurrentScreen().bounds;
       const mouse = screen.getCursorScreenPoint();
 
-      info({
+      log.info({
         scriptPath: this.scriptPath,
         isVisible: this.window?.isVisible() ? 'true' : 'false',
         promptBounds,
@@ -1644,11 +1645,11 @@ export class KitPrompt {
   };
 
   pingPrompt = async (channel: AppChannel, data?: any) => {
-    silly(`sendToPrompt: ${String(channel)} ${data?.kitScript}`);
+    log.silly(`sendToPrompt: ${String(channel)} ${data?.kitScript}`);
     return new Promise((resolve) => {
       if (this.window && !this.window.isDestroyed() && this.window?.webContents) {
         ipcMain.once(channel, () => {
-          info(`🎤 ${channel} !!! <<<<`);
+          log.info(`🎤 ${channel} !!! <<<<`);
           resolve(true);
         });
         this.sendToPrompt(channel, data);
@@ -1661,10 +1662,10 @@ export class KitPrompt {
       return;
     }
     if (kitState.kenvEnv?.KIT_CACHE_PROMPT === 'false') {
-      info('Cache prompt disabled. Ignore saving bounds');
+      log.info('Cache prompt disabled. Ignore saving bounds');
       return;
     }
-    info(`${this.pid}: 💾 Save Initial Bounds: ${scriptPath}`, bounds);
+    log.info(`${this.pid}: 💾 Save Initial Bounds: ${scriptPath}`, bounds);
     // const isMain = scriptPath.includes('.kit') && scriptPath.includes('cli');
     // if (isMain) return;
 
@@ -1694,7 +1695,7 @@ export class KitPrompt {
 
       writePromptState(this, String(currentScreen.id), scriptPath, promptBounds);
     } catch (error) {
-      err(error);
+      log.err(error);
     }
   };
 
@@ -1702,20 +1703,20 @@ export class KitPrompt {
 
   getFromPrompt = <K extends keyof ChannelMap>(child: ChildProcess, channel: K, data?: ChannelMap[K]) => {
     if (process.env.KIT_SILLY) {
-      silly(`sendToPrompt: ${String(channel)}`, data);
+      log.silly(`sendToPrompt: ${String(channel)}`, data);
     }
-    // info(`>_ ${channel}`);
+    // log.info(`>_ ${channel}`);
     if (this.window && !this.window.isDestroyed() && this.window?.webContents) {
       ipcMain.removeAllListeners(String(channel));
       ipcMain.once(String(channel), (event, { value }) => {
-        silly(`getFromPrompt: ${String(channel)}`, value);
+        log.silly(`getFromPrompt: ${String(channel)}`, value);
         try {
-          // info('childSend', channel, value, child, child?.connected);
+          // log.info('childSend', channel, value, child, child?.connected);
           if (child?.connected) {
             child.send({ channel, value });
           }
         } catch (error) {
-          err('childSend error', error);
+          log.err('childSend error', error);
         }
       });
       this.window?.webContents.send(String(channel), data);
@@ -1723,7 +1724,7 @@ export class KitPrompt {
   };
 
   resize = async (resizeData: ResizeData) => {
-    // info(`${this.pid}: 🌈 Resize: ${resizeData.reason}`, {
+    // log.info(`${this.pid}: 🌈 Resize: ${resizeData.reason}`, {
     //   resizeData,
     //   scriptPath: this.scriptPath,
     // });
@@ -1763,8 +1764,8 @@ export class KitPrompt {
       this.showPrompt();
     }
 
-    info(`📐 Resize main height: ${mainHeight}`);
-    // info({
+    log.info(`📐 Resize main height: ${mainHeight}`);
+    // log.info({
     //   reason,
     //   topHeight,
     //   mainHeight,
@@ -1784,7 +1785,7 @@ export class KitPrompt {
         if (!this?.window || this.window?.isDestroyed()) {
           return;
         }
-        info(`📬 ${this.pid} 📐 Resize settled. Saving bounds`);
+        log.info(`📬 ${this.pid} 📐 Resize settled. Saving bounds`);
         this.saveCurrentPromptBounds();
       }, 50);
     }
@@ -1828,7 +1829,7 @@ export class KitPrompt {
     let height = cachedHeight || forceHeight || Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
 
     if (isSplash) {
-      info(`isSplash: ${isSplash ? 'true' : 'false'}`);
+      log.info(`isSplash: ${isSplash ? 'true' : 'false'}`);
       width = PROMPT.WIDTH.BASE;
       height = PROMPT.HEIGHT.BASE;
     }
@@ -1851,7 +1852,7 @@ export class KitPrompt {
     }
 
     if (hasPreview && !isMainScript) {
-      info(`hasPreview: ${hasPreview} && !isMainScript: ${isMainScript ? 'true' : 'false'}`);
+      log.info(`hasPreview: ${hasPreview} && !isMainScript: ${isMainScript ? 'true' : 'false'}`);
       width = Math.max(getDefaultWidth(), width);
     }
 
@@ -1867,8 +1868,8 @@ export class KitPrompt {
 
     const bounds = { x: newX, y: newY, width, height };
 
-    // info({ topHeight, mainHeight, footerHeight });
-    // info(
+    // log.info({ topHeight, mainHeight, footerHeight });
+    // log.info(
     //   `Resize Details for PID: ${this.pid} - ${this.scriptPath}\n` +
     //     `+----------------+----------------+----------------+----------------+----------------+\n` +
     //     `|                | Current        | Cached         | Forced         | Actual          |\n` +
@@ -1896,17 +1897,34 @@ export class KitPrompt {
       ...this.kitSearch.triggers.keys(),
     ];
 
-    info(`${this.pid}: Shortcodes:`, shortcodes.join(', '));
+    log.info(`${this.pid}: Shortcodes:`, shortcodes.join(', '));
 
     this.sendToPrompt(Channel.SET_SHORTCODES, shortcodes);
   };
 
+  checkPromptDataBounds = (promptData: PromptData) => {
+    const { x, y, width, height } = promptData;
+    if (x !== undefined || y !== undefined) {
+      const [currentX, currentY] = this.window?.getPosition() || [];
+      if ((x !== undefined && x !== currentX) || (y !== undefined && y !== currentY)) {
+        this.window?.setPosition(x !== undefined ? x : currentX, y !== undefined ? y : currentY);
+      }
+    }
+
+    if (promptData?.ui !== UI.arg && (width !== undefined || height !== undefined)) {
+      const [currentWidth, currentHeight] = this.window?.getSize() || [];
+      if ((width !== undefined && width !== currentWidth) || (height !== undefined && height !== currentHeight)) {
+        this.window?.setSize(width !== undefined ? width : currentWidth, height !== undefined ? height : currentHeight);
+      }
+    }
+  };
+
   setPromptData = async (promptData: PromptData) => {
-    info(`🔥 Setting prompt data: ${promptData.scriptPath}`);
+    log.info(`🔥 Setting prompt data: ${promptData.scriptPath}`);
     this.promptData = promptData;
 
     ipcMain.once(promptData.ui, () => {
-      info(`👍 ${this.pid}: ${promptData.ui} ready. Focusing prompt.`);
+      log.info(`👍 ${this.pid}: ${promptData.ui} ready. Focusing prompt.`);
       this.focusPrompt();
     });
 
@@ -1920,7 +1938,7 @@ export class KitPrompt {
         env: promptData.env || {},
       };
 
-      info(`termConfig`, termConfig);
+      log.info(`termConfig`, termConfig);
       this.sendToPrompt(AppChannel.SET_TERM_CONFIG, termConfig);
       createPty(this);
     }
@@ -1948,7 +1966,7 @@ export class KitPrompt {
       this.cacheScriptPromptData = false;
       promptData.name ||= this.script.name || '';
       promptData.description ||= this.script.description || '';
-      info(`💝 Caching prompt data: ${this?.scriptPath}`);
+      log.info(`💝 Caching prompt data: ${this?.scriptPath}`);
       preloadPromptDataMap.set(this.scriptPath, {
         ...promptData,
         input: promptData?.keyword ? '' : promptData?.input || '',
@@ -1957,7 +1975,7 @@ export class KitPrompt {
     }
 
     if (promptData.flags) {
-      info(`🏳️‍🌈 Setting flags from setPromptData: ${Object.keys(promptData.flags)}`);
+      log.info(`🏳️‍🌈 Setting flags from setPromptData: ${Object.keys(promptData.flags)}`);
       setFlags(this, promptData.flags);
     }
 
@@ -1971,7 +1989,7 @@ export class KitPrompt {
     // if (!pidMatch(pid, `setPromptData`)) return;
 
     if (typeof promptData?.alwaysOnTop === 'boolean') {
-      info(`📌 setPromptAlwaysOnTop from promptData: ${promptData.alwaysOnTop ? 'true' : 'false'}`);
+      log.info(`📌 setPromptAlwaysOnTop from promptData: ${promptData.alwaysOnTop ? 'true' : 'false'}`);
 
       this.setPromptAlwaysOnTop(promptData.alwaysOnTop, true);
     }
@@ -1979,7 +1997,7 @@ export class KitPrompt {
     this.allowResize = promptData?.resize;
     kitState.shortcutsPaused = promptData.ui === UI.hotkey;
 
-    verbose(`setPromptData ${promptData.scriptPath}`);
+    log.verbose(`setPromptData ${promptData.scriptPath}`);
 
     this.id = promptData.id;
     this.ui = promptData.ui;
@@ -1992,43 +2010,20 @@ export class KitPrompt {
 
     const isMainScript = getMainScriptPath() === promptData.scriptPath;
 
-    // browse.js passes a height of 46px which causes a "shrink flash" here. I'm not sure if this setBounds call is necessary
-    // There's still an issue with setBounds when using a shortcut where the prompt needs to resize before its shown
-    // if (
-    //   !isMainScript &&
-    //   (typeof promptData?.x === 'number' ||
-    //     typeof promptData?.y === 'number' ||
-    //     typeof promptData?.width === 'number' ||
-    //     typeof promptData?.height === 'number')
-    // ) {
-    //   info(`Found bounds`, {
-    //     x: promptData.x,
-    //     y: promptData.y,
-    //     width: promptData.width,
-    //     height: promptData.height,
-    //   });
-
-    //   this.setBounds(
-    //     {
-    //       x: promptData.x,
-    //       y: promptData.y,
-    //       width: promptData.width,
-    //       height: promptData.height,
-    //     },
-    //     'setPromptData has bounds',
-    //   );
-    // }
-
     if (this.firstPrompt && !isMainScript) {
-      info(`${this.pid} Before initBounds`);
+      log.info(`${this.pid} Before initBounds`);
       if (kitState.isWindows) {
         this.window?.setFocusable(true);
       }
       this.initBounds();
-      info(`${this.pid} After initBounds`);
+      log.info(`${this.pid} After initBounds`);
       // TODO: STRONGLY consider waiting for SET_PROMPT_DATA to complete and the UI to change before focusing the prompt
       // this.focusPrompt();
       this.firstPrompt = false;
+    }
+
+    if (!isMainScript) {
+      this.checkPromptDataBounds(promptData);
     }
     // TODO: Combine types for sendToPrompt and appToPrompt?
     this.sendToPrompt(AppChannel.USER_CHANGED, snapshot(kitState.user));
@@ -2052,7 +2047,7 @@ export class KitPrompt {
 
     if (!this.isVisible() && promptData?.show) {
       this.showAfterNextResize = true;
-      // info(`👋 Show Prompt from setPromptData for ${this.scriptPath}`);
+      // log.info(`👋 Show Prompt from setPromptData for ${this.scriptPath}`);
       // this.showPrompt();
     } else if (this.isVisible() && !promptData?.show) {
       this.actualHide();
@@ -2072,9 +2067,9 @@ export class KitPrompt {
       const validBounds = isBoundsWithinDisplays(currentBounds);
 
       if (validBounds) {
-        info('Prompt window in bounds.');
+        log.info('Prompt window in bounds.');
       } else {
-        info('Prompt window out of bounds. Clearing cache and resetting.');
+        log.info('Prompt window out of bounds. Clearing cache and resetting.');
         await clearPromptCacheFor(this.scriptPath);
         this.initBounds();
       }
@@ -2088,7 +2083,7 @@ export class KitPrompt {
         description: promptData?.description || this?.script?.description || '',
       });
     } else {
-      // warn({
+      // log.warn({
       //   promptData,
       //   script: this?.script,
       // });
@@ -2107,7 +2102,7 @@ export class KitPrompt {
       kitState.emojiActive = false;
     }
     // if (kitState.isMac) {
-    //   info(`🙈 Hiding prompt window`);
+    //   log.info(`🙈 Hiding prompt window`);
     //   makeWindow(this.window);
     // }
     this.setPromptAlwaysOnTop(false);
@@ -2115,7 +2110,7 @@ export class KitPrompt {
       return;
     }
 
-    info('🙈 Hiding prompt window');
+    log.info('🙈 Hiding prompt window');
 
     this.hideInstant();
   };
@@ -2129,7 +2124,7 @@ export class KitPrompt {
       return false;
     }
     const visible = this.window?.isVisible();
-    // silly(`function: isVisible: ${visible ? 'true' : 'false'}`);
+    // log.silly(`function: isVisible: ${visible ? 'true' : 'false'}`);
     return visible;
   };
 
@@ -2137,7 +2132,7 @@ export class KitPrompt {
     if (!(this.isVisible() && this.boundToProcess)) {
       return;
     }
-    info(`Attempt Hide: ${reason}`);
+    log.info(`Attempt Hide: ${reason}`);
 
     if (reason === HideReason.NoScript || reason === HideReason.Escape || reason === HideReason.BeforeExit) {
       this.actualHide();
@@ -2148,7 +2143,7 @@ export class KitPrompt {
     }
 
     if (reason === HideReason.PingTimeout) {
-      info('⛑ Attempting recover...');
+      log.info('⛑ Attempting recover...');
 
       emitter.emit(KitEvent.KillProcess, this.pid);
       this.actualHide();
@@ -2163,7 +2158,7 @@ export class KitPrompt {
     }
 
     if (this.window?.isVisible()) {
-      info(`Hiding because ${reason}`);
+      log.info(`Hiding because ${reason}`);
       if (!kitState.preventClose) {
         this.actualHide();
       }
@@ -2172,12 +2167,12 @@ export class KitPrompt {
 
   saveCurrentPromptBounds = async () => {
     if (!this?.window || this.window?.isDestroyed()) {
-      info(`${this.pid} Prompt window is destroyed. Not saving bounds for ${this.scriptPath}`);
+      log.info(`${this.pid} Prompt window is destroyed. Not saving bounds for ${this.scriptPath}`);
       return;
     }
     // if (kitState.promptCount === 1) {
     const currentBounds = this.window?.getBounds();
-    // info(
+    // log.info(
     // 	`${this.pid}: 💾 Save Current Bounds: ${this.scriptPath}`,
     // 	currentBounds,
     // );
@@ -2213,10 +2208,10 @@ export class KitPrompt {
       try {
         this.window.setVibrancy(vibrancy);
       } catch (error) {
-        err(error);
+        log.err(error);
       }
     } else {
-      info('Custom vibrancy not supported on this platform');
+      log.info('Custom vibrancy not supported on this platform');
     }
   };
 
@@ -2226,7 +2221,7 @@ export class KitPrompt {
   };
 
   focusPrompt = () => {
-    info('👁️  this.focusPrompt');
+    log.info('👁️  this.focusPrompt');
     if (this.window && !this.window.isDestroyed() && !this.window?.isFocused()) {
       try {
         if (kitState.isMac) {
@@ -2238,13 +2233,13 @@ export class KitPrompt {
           this.window?.focus();
         }
       } catch (error) {
-        err(error);
+        log.err(error);
       }
     }
   };
 
   forceFocus = () => {
-    info(`${this.pid}: forceFocus`);
+    log.info(`${this.pid}: forceFocus`);
     this.window?.show();
     this.window?.focus();
   };
@@ -2260,7 +2255,7 @@ export class KitPrompt {
       }
     }
 
-    // info(`function: setPromptAlwaysOnTop: ${onTop ? 'true' : 'false'}`);
+    // log.info(`function: setPromptAlwaysOnTop: ${onTop ? 'true' : 'false'}`);
     if (this.window && !this.window.isDestroyed()) {
       const changed = onTop !== this.alwaysOnTop;
       this.alwaysOnTop = onTop;
@@ -2274,7 +2269,7 @@ export class KitPrompt {
           this.window.setVisibleOnAllWorkspaces(true);
         }
       } else if (changed) {
-        info({ onTop });
+        log.info({ onTop });
         this.window.setAlwaysOnTop(true, 'screen-saver');
         setTimeout(() => {
           if (!this?.window || this.window?.isDestroyed()) {
@@ -2295,13 +2290,13 @@ export class KitPrompt {
   };
 
   devToolsVisible = () => {
-    silly('function: devToolsVisible');
+    log.silly('function: devToolsVisible');
     return this.window.webContents.isDevToolsOpened();
   };
 
   isFocused = () => {
     const focused = this.window?.isFocused();
-    silly(`function: isFocused: ${focused ? 'true' : 'false'}`);
+    log.silly(`function: isFocused: ${focused ? 'true' : 'false'}`);
     return focused;
   };
 
@@ -2309,13 +2304,13 @@ export class KitPrompt {
     if (this.window?.isVisible() && !this.firstPrompt) {
       const [x, y] = this.window?.getPosition();
       const currentScreen = screen.getDisplayNearestPoint({ x, y });
-      info(`Current screen from mouse: ${currentScreen.id}`, {
+      log.info(`Current screen from mouse: ${currentScreen.id}`, {
         visible: this.isVisible,
         firstPrompt: this.firstPrompt,
       });
     }
     const currentScreen = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-    info(`Current screen from mouse: ${currentScreen.id}`, {
+    log.info(`Current screen from mouse: ${currentScreen.id}`, {
       visible: this.isVisible,
       firstPrompt: this.firstPrompt,
     });
@@ -2331,7 +2326,7 @@ export class KitPrompt {
   setScript = async (script: Script, pid: number, force = false): Promise<'denied' | 'allowed'> => {
     const { preview, scriptlet, inputs, tag, ...serializableScript } = script as Scriptlet;
     this.scriptSet = true;
-    info(`${this.pid}: ${pid} setScript`, serializableScript, {
+    log.info(`${this.pid}: ${pid} setScript`, serializableScript, {
       preloaded: this.preloaded || 'none',
     });
     performance.mark('script');
@@ -2344,7 +2339,7 @@ export class KitPrompt {
     // if (script.filePath === prevScriptPath && pid === prevPid) {
     //   // Using a keyboard shortcut to launch a script will hit this scenario
     //   // Because the app will call `setScript` immediately, then the process will call it too
-    //   info(`${this.pid}: Script already set. Ignore`);
+    //   log.info(`${this.pid}: Script already set. Ignore`);
     //   return 'denied';
     // }
 
@@ -2358,7 +2353,7 @@ export class KitPrompt {
 
     // if (promptWindow?.isAlwaysOnTop() && !script?.debug) {
     //   // promptWindow?.setAlwaysOnTop(false);
-    //   // warn(`Prompt is always on top, but not a debug script`);
+    //   // log.warn(`Prompt is always on top, but not a debug script`);
     // }
     this.scriptPath = serializableScript.filePath;
     kitState.hasSnippet = Boolean(serializableScript?.snippet);
@@ -2367,26 +2362,26 @@ export class KitPrompt {
     this.script = serializableScript;
 
     // if (promptScript?.id === script?.id) return;
-    // info(script);
+    // log.info(script);
 
     if (serializableScript.filePath === getMainScriptPath()) {
       serializableScript.tabs = serializableScript?.tabs?.filter((tab: string) => !tab.match(/join|live/i));
 
       const sinceLast = differenceInHours(Date.now(), kitState.previousDownload);
-      info(`Hours since sync: ${sinceLast}`);
+      log.info(`Hours since sync: ${sinceLast}`);
       if (sinceLast > 6) {
         kitState.previousDownload = new Date();
       }
     }
 
-    // info(`${this.pid}: sendToPrompt: ${Channel.SET_SCRIPT}`, serializableScript);
+    // log.info(`${this.pid}: sendToPrompt: ${Channel.SET_SCRIPT}`, serializableScript);
     this.sendToPrompt(Channel.SET_SCRIPT, serializableScript);
 
     if (serializableScript.filePath === getMainScriptPath()) {
       emitter.emit(KitEvent.MainScript, serializableScript);
     }
 
-    info('setScript done');
+    log.info('setScript done');
 
     return 'allowed';
   };
@@ -2395,7 +2390,7 @@ export class KitPrompt {
     if (!this.window || this.window.isDestroyed()) {
       return;
     }
-    info(`${this.pid} ${this.window.id} 👋 Close prompt`);
+    log.info(`${this.pid} ${this.window.id} 👋 Close prompt`);
     try {
       // this.sendToPrompt(AppChannel.CLOSE_PROMPT);
       // makeWindow(this.window);
@@ -2413,7 +2408,7 @@ export class KitPrompt {
       // makeWindow(this.window);
 
       if (this?.window && kitState.isMac) {
-        info('Before willClosePanel');
+        log.info('Before willClosePanel');
         // makeKeyWindow(prompts.idle)
         // this.setPromptAlwaysOnTop(false);
 
@@ -2421,7 +2416,7 @@ export class KitPrompt {
         // closeWindow(this.window);
         // this.window.emit('close');
         // this.window.emit('closed');
-        info('After willClosePanel');
+        log.info('After willClosePanel');
       }
 
       this.sendToPrompt = () => {};
@@ -2432,16 +2427,16 @@ export class KitPrompt {
       // this.window?.destroy();
       try {
         if (kitState.isMac) {
-          info('Before makeWindow(this.window)');
+          log.info('Before makeWindow(this.window)');
           makeWindow(this.window);
-          info('After makeWindow(this.window)');
+          log.info('After makeWindow(this.window)');
         }
 
         this.window.setClosable(true);
         this.window.close();
-        info(`${this?.pid}: window ${this?.window?.id}: closed`);
+        log.info(`${this?.pid}: window ${this?.window?.id}: closed`);
       } catch (error) {
-        err(error);
+        log.err(error);
       }
 
       setImmediate(() => {
@@ -2450,7 +2445,7 @@ export class KitPrompt {
 
       // this.window = null;
     } catch (error) {
-      err(error);
+      log.err(error);
     }
 
     // prompts.delete(this.pid);
@@ -2528,9 +2523,9 @@ export class KitPrompt {
     //     return `PID: ${p.pid} | Script: ${p.scriptPath}`;
     //   });
 
-    //   info(`Prompt States:\n${promptTable}`);
-    //   info(`Process States:\n${processTable}`);
-    //   info(`Browser Window States:\n${stateTable}`);
+    //   log.info(`Prompt States:\n${promptTable}`);
+    //   log.info(`Process States:\n${processTable}`);
+    //   log.info(`Browser Window States:\n${stateTable}`);
 
     //   // this.window.destroy();
     // }, 2000);
@@ -2545,8 +2540,8 @@ export class KitPrompt {
 
   initMainChoices = () => {
     // TODO: Reimplement cache?
-    info(`Caching main scored choices: ${kitCache.choices.length}`);
-    info(
+    log.info(`Caching main scored choices: ${kitCache.choices.length}`);
+    log.info(
       'Most recent 3:',
       kitCache.choices.slice(1, 4).map((c) => c?.item?.name),
     );
@@ -2556,7 +2551,7 @@ export class KitPrompt {
   };
 
   initMainPreview = () => {
-    // info({
+    // log.info({
     //   preview: kitCache.preview,
     // });
     this.sendToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, kitCache.preview);
@@ -2585,7 +2580,7 @@ export class KitPrompt {
       input = this.kitSearch.input || '';
     }
     input = promptData.input || input;
-    info(`🏋️‍♂️ Preload promptData for ${promptData?.scriptPath} with input:${input}<<<`);
+    log.info(`🏋️‍♂️ Preload promptData for ${promptData?.scriptPath} with input:${input}<<<`);
     promptData.preload = true;
     if (this.kitSearch.keyword) {
       promptData.keyword = this.kitSearch.keyword;
@@ -2604,7 +2599,7 @@ export class KitPrompt {
     }
     this.updateShortcodes();
     if (promptData.flags) {
-      info(`🏴‍☠️ Setting flags from preloadPromptData: ${Object.keys(promptData.flags)}`);
+      log.info(`🏴‍☠️ Setting flags from preloadPromptData: ${Object.keys(promptData.flags)}`);
       setFlags(this, promptData.flags);
     }
     this.alwaysOnTop = typeof promptData?.alwaysOnTop === 'boolean' ? promptData.alwaysOnTop : false;
@@ -2627,13 +2622,13 @@ export class KitPrompt {
       this.preloaded = '';
 
       const cachedPromptData = preloadPromptDataMap.has(promptScriptPath);
-      info(`${this.pid}: 🏋️‍♂️ attemptPreload: ${promptScriptPath}`, {
+      log.info(`${this.pid}: 🏋️‍♂️ attemptPreload: ${promptScriptPath}`, {
         hasData: cachedPromptData ? 'true' : 'false',
       });
 
       if (isMainScript) {
       } else if (cachedPromptData) {
-        info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`, { init, show });
+        log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`, { init, show });
 
         if (init) {
           this.initBounds(promptScriptPath, show);
@@ -2651,7 +2646,7 @@ export class KitPrompt {
 
         if (hasCachedChoices) {
           const choices = preloadChoicesMap.get(promptScriptPath) as Choice[];
-          info(`🏋️‍♂️ Preload choices: ${promptScriptPath}`, choices.length);
+          log.info(`🏋️‍♂️ Preload choices: ${promptScriptPath}`, choices.length);
           setChoices(this, choices, {
             preload: true,
             generated: false,
@@ -2673,18 +2668,18 @@ export class KitPrompt {
 
           const preview = preloadPreviewMap.get(promptScriptPath) as string;
           if (preview) {
-            info(`${this.pid}: 🏋️‍♂️ Preload preview: ${promptScriptPath}`);
+            log.info(`${this.pid}: 🏋️‍♂️ Preload preview: ${promptScriptPath}`);
           }
           this.sendToPrompt(Channel.SET_PREVIEW, preview || closedDiv);
 
           this.preloaded = promptScriptPath;
         } else {
-          info(`No cached choices for ${promptScriptPath}`);
+          log.info(`No cached choices for ${promptScriptPath}`);
           this.preloaded = '';
         }
       }
 
-      info('end of attemptPreload. Assigning preloaded');
+      log.info('end of attemptPreload. Assigning preloaded');
     },
     25,
     {
@@ -2702,7 +2697,7 @@ export class KitPrompt {
     }
 
     if (kitState.isMac) {
-      info(`${this.pid}: 📌 Hiding instant`);
+      log.info(`${this.pid}: 📌 Hiding instant`);
       shims['@johnlindquist/mac-panel-window'].hideInstant(this.window);
     }
 
@@ -2718,7 +2713,7 @@ export const makeSplashWindow = async (window?: BrowserWindow) => {
   if (!kitState.isMac) {
     return;
   }
-  info('👋 Make splash window');
+  log.info('👋 Make splash window');
   if (!window) {
     return;
   }

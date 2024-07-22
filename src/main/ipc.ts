@@ -19,7 +19,6 @@ import detect from 'detect-file-type';
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable no-restricted-syntax */
 import { ipcMain } from 'electron';
-import log from 'electron-log';
 import { debounce } from 'lodash-es';
 import { DownloaderHelper } from 'node-downloader-helper';
 import { KitEvent, emitter } from '../shared/events';
@@ -35,13 +34,12 @@ import { prompts } from './prompts';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
 import { kitCache, kitState } from './state';
 import { createLogger } from '../shared/log-utils';
-
-const { info, warn, verbose, err, silly } = createLogger('ipc');
+const log = createLogger('ipc.ts');
 
 let actionsOpenTimeout: NodeJS.Timeout;
 let prevTransformedInput = '';
 const checkShortcodesAndKeywords = (prompt: KitPrompt, rawInput: string): boolean => {
-  //   info(`
+  //   log.info(`
 
   //   🔍🔍🔍
   // ${prompt.pid}: 🔍 Checking shortcodes and keywords... '${rawInput}'
@@ -84,31 +82,34 @@ const checkShortcodesAndKeywords = (prompt: KitPrompt, rawInput: string): boolea
 
   const lowerCaseInput = transformedInput.toLowerCase();
   const trigger = prompt.kitSearch.triggers.get(lowerCaseInput);
-  // verbose(`${prompt.pid}: 🚀 Trigger:`, {
+  // log.verbose(`${prompt.pid}: 🚀 Trigger:`, {
   //   trigger,
   //   triggers: prompt.kitSearch.triggers.keys(),
   // });
   if (trigger) {
     if (prompt.ready) {
-      info(`${prompt.pid}: 👢 Trigger: ${transformedInput} triggered`, trigger);
+      log.info(`${prompt.pid}: 👢 Trigger: ${transformedInput} triggered`, trigger);
 
       if (trigger?.value?.inputs?.length) {
-        info(`${prompt.pid}: 📝 Trigger: ${transformedInput} blocked. Inputs required`, trigger.value.inputs);
+        log.info(`${prompt.pid}: 📝 Trigger: ${transformedInput} blocked. Inputs required`, trigger.value.inputs);
         sendToPrompt(Channel.SET_INVALIDATE_CHOICE_INPUTS, true);
       } else {
         sendToPrompt(Channel.SET_SUBMIT_VALUE, trigger?.value ? trigger.value : trigger);
         return false;
       }
     } else {
-      info(`${prompt.pid}: 😩 Not ready`, JSON.stringify(trigger));
+      log.info(`${prompt.pid}: 😩 Not ready`, JSON.stringify(trigger));
     }
   }
 
   for (const [postfix, choice] of prompt.kitSearch.postfixes.entries()) {
     if (choice && lowerCaseInput.endsWith(postfix)) {
-      info(`🥾 Postfix: ${transformedInput} triggered`, choice);
+      log.info(`🥾 Postfix: ${transformedInput} triggered`, choice);
       if ((choice as Scriptlet)?.inputs?.length) {
-        info(`${prompt.pid}: 📝 Postfix: ${transformedInput} blocked. Inputs required`, (choice as Scriptlet).inputs);
+        log.info(
+          `${prompt.pid}: 📝 Postfix: ${transformedInput} blocked. Inputs required`,
+          (choice as Scriptlet).inputs,
+        );
         sendToPrompt(Channel.SET_INVALIDATE_CHOICE_INPUTS, true);
       } else {
         (choice as Script).postfix = transformedInput.replace(postfix, '');
@@ -125,7 +126,7 @@ const checkShortcodesAndKeywords = (prompt: KitPrompt, rawInput: string): boolea
     }
     prompt.kitSearch.keyword = keyword;
     prompt.kitSearch.inputRegex = undefined;
-    info(`🔑 ${keyword} cleared`);
+    log.info(`🔑 ${keyword} cleared`);
     prompt.kitSearch.keywordCleared = true;
     sendToPrompt(AppChannel.TRIGGER_KEYWORD, {
       keyword,
@@ -140,7 +141,7 @@ const checkShortcodesAndKeywords = (prompt: KitPrompt, rawInput: string): boolea
       const shortcodeChoice = prompt.kitSearch.shortcodes.get(transformedInput.toLowerCase().trimEnd());
       if (shortcodeChoice) {
         sendToPrompt(Channel.SET_SUBMIT_VALUE, shortcodeChoice.value);
-        info(`🔑 Shortcode: ${transformedInput} triggered`);
+        log.info(`🔑 Shortcode: ${transformedInput} triggered`);
         return false;
       }
     }
@@ -151,7 +152,7 @@ const checkShortcodesAndKeywords = (prompt: KitPrompt, rawInput: string): boolea
       if (keywordChoice) {
         prompt.kitSearch.keyword = keyword;
         prompt.kitSearch.inputRegex = new RegExp(`^${keyword} `, 'gi');
-        info(`🔑 ${keyword} triggered`);
+        log.info(`🔑 ${keyword} triggered`);
         sendToPrompt(AppChannel.TRIGGER_KEYWORD, {
           keyword,
           choice: keywordChoice,
@@ -171,7 +172,7 @@ const checkShortcodesAndKeywords = (prompt: KitPrompt, rawInput: string): boolea
 
 const handleMessageFail = debounce(
   (message: AppMessage) => {
-    warn(`${message?.pid}: pid closed. Attempted ${message.channel}, but ignored.`);
+    log.warn(`${message?.pid}: pid closed. Attempted ${message.channel}, but ignored.`);
 
     processes.removeByPid(message?.pid);
     // TODO: Reimplement failed message with specific prompt
@@ -185,10 +186,10 @@ const handleMessageFail = debounce(
 const handleChannel =
   (fn: (processInfo: ProcessAndPrompt, message: AppMessage) => void) => (_event: any, message: AppMessage) => {
     // TODO: Remove logging
-    // info({
+    // log.info({
     //   message,
     // });
-    silly(`📤 ${message.channel} ${message?.pid}`);
+    log.silly(`📤 ${message.channel} ${message?.pid}`);
     if (message?.pid === 0) {
       return;
     }
@@ -198,10 +199,10 @@ const handleChannel =
       try {
         fn(processInfo, message);
       } catch (error) {
-        err(`${message.channel} errored on ${message?.pid}`, message);
+        log.err(`${message.channel} errored on ${message?.pid}`, message);
       }
 
-      // info(`${message.channel}`, message.pid);
+      // log.info(`${message.channel}`, message.pid);
       // TODO: Handler preloaded?
     } else if (message.pid !== -1) {
       handleMessageFail(message);
@@ -212,11 +213,11 @@ export const startIpc = () => {
   ipcMain.on(
     AppChannel.ERROR_RELOAD,
     debounce(
-      async (event, data: any) => {
-        info('AppChannel.ERROR_RELOAD');
+      (event, data: any) => {
+        log.info('AppChannel.ERROR_RELOAD');
         const { scriptPath, pid } = data;
         const prompt = prompts.get(pid);
-        const onReload = async () => {
+        const onReload = () => {
           const markdown = `# Error
 
 ${data.message}
@@ -237,7 +238,7 @@ ${data.error}
         if (prompt) {
           prompt.reload();
         } else {
-          warn(`No prompt found for pid: ${pid}`);
+          log.warn(`No prompt found for pid: ${pid}`);
         }
       },
       5000,
@@ -249,8 +250,8 @@ ${data.error}
     Channel.PROMPT_ERROR,
     debounce(
       (_event, { error }) => {
-        info('AppChannel.PROMPT_ERROR');
-        warn(error);
+        log.info('AppChannel.PROMPT_ERROR');
+        log.warn(error);
         if (!kitState.hiddenByUser) {
           setTimeout(() => {
             // TODO: Reimplement
@@ -266,15 +267,15 @@ ${data.error}
   );
 
   ipcMain.on(AppChannel.GET_ASSET, (event, { parts }) => {
-    // info(`📁 GET_ASSET ${parts.join('/')}`);
+    // log.info(`📁 GET_ASSET ${parts.join('/')}`);
     const assetPath = getAssetPath(...parts);
-    info(`📁 Asset path: ${assetPath}`);
+    log.info(`📁 Asset path: ${assetPath}`);
     event.sender.send(AppChannel.GET_ASSET, { assetPath });
   });
 
   ipcMain.on(AppChannel.RESIZE, (event, resizeData: ResizeData) => {
     const prompt = prompts.get(resizeData.pid);
-    // info(`>>>>>>>>>>>>> AppChannel.RESIZE`, {
+    // log.info(`>>>>>>>>>>>>> AppChannel.RESIZE`, {
     //   prompt,
     //   pid: resizeData.pid,
     //   pids: prompts.pids(),
@@ -285,7 +286,7 @@ ${data.error}
   });
 
   ipcMain.on(AppChannel.RELOAD, async () => {
-    info('AppChannel.RELOAD');
+    log.info('AppChannel.RELOAD');
     // TODO: Reimplement
     // reload();
 
@@ -337,7 +338,7 @@ ${data.error}
           sponsorCheck: false,
         });
       } catch (error) {
-        err(error);
+        log.err(error);
       }
       return;
     }
@@ -376,7 +377,7 @@ ${data.error}
     });
   });
 
-  ipcMain.on(AppChannel.RUN_MAIN_SCRIPT, async () => {
+  ipcMain.on(AppChannel.RUN_MAIN_SCRIPT, () => {
     runPromptProcess(getMainScriptPath(), [], {
       force: true,
       trigger: Trigger.Kit,
@@ -384,7 +385,7 @@ ${data.error}
     });
   });
 
-  ipcMain.on(AppChannel.RUN_PROCESSES_SCRIPT, async () => {
+  ipcMain.on(AppChannel.RUN_PROCESSES_SCRIPT, () => {
     runPromptProcess(kitPath('cli', 'processes.js'), [], {
       force: true,
       trigger: Trigger.Kit,
@@ -439,18 +440,18 @@ ${data.error}
     Channel.MIC_STREAM,
     Channel.STOP_MIC,
   ]) {
-    // info(`😅 Registering ${channel}`);
+    // log.info(`😅 Registering ${channel}`);
     ipcMain.on(
       channel,
       handleChannel(async ({ child, prompt, promptId }, message) => {
-        // info(`${prompt.pid}: IPC: 📤 ${channel}`, message.state);
+        // log.info(`${prompt.pid}: IPC: 📤 ${channel}`, message.state);
         const sendToPrompt = prompt.sendToPrompt;
 
         prompt.kitSearch.flaggedValue = message.state?.flaggedValue;
 
         message.promptId = promptId || '';
 
-        verbose(`⬅ ${channel} ${prompt.ui} ${prompt.scriptPath}`);
+        log.verbose(`⬅ ${channel} ${prompt.ui} ${prompt.scriptPath}`);
 
         if (channel === Channel.MIC_STREAM) {
           const micStreamMessage: any = message;
@@ -465,9 +466,9 @@ ${data.error}
 
         if (channel === Channel.INPUT) {
           const input = message.state.input as string;
-          // info(`📝 Input: ${input}`);
+          // log.info(`📝 Input: ${input}`);
           if (!input) {
-            info(`${prompt.pid}: 📝 No prompt input`);
+            log.info(`${prompt.pid}: 📝 No prompt input`);
             prompt.kitSearch.input = '';
             // keyword and regex will be cleared by checkShortcodesAndKeywords
             // prompt.kitSearch.inputRegex = undefined;
@@ -499,7 +500,7 @@ ${data.error}
 
         if (channel === Channel.ON_MENU_TOGGLE) {
           const hasFlaggedValue = Boolean(message.state.flaggedValue);
-          info(`🔍 Actions menu ${hasFlaggedValue ? 'open' : 'closed'}`);
+          log.info(`🔍 Actions menu ${hasFlaggedValue ? 'open' : 'closed'}`);
           prompt.actionsOpen = hasFlaggedValue;
 
           if (hasFlaggedValue) {
@@ -517,7 +518,7 @@ ${data.error}
         }
 
         if (channel === Channel.ESCAPE) {
-          info(`␛ hideOnEscape ${prompt.hideOnEscape ? 'true' : 'false'}`);
+          log.info(`␛ hideOnEscape ${prompt.hideOnEscape ? 'true' : 'false'}`);
           if (prompt.hideOnEscape) {
             prompt.maybeHide(HideReason.Escape);
             sendToPrompt(Channel.SET_INPUT, '');
@@ -525,9 +526,9 @@ ${data.error}
         }
 
         if (channel === Channel.ABANDON) {
-          info('⚠️ ABANDON', message.pid);
+          log.info('⚠️ ABANDON', message.pid);
         }
-        // info({ channel, message });
+        // log.info({ channel, message });
         if ([Channel.VALUE_SUBMITTED, Channel.TAB_CHANGED].includes(channel)) {
           emitter.emit(KitEvent.ResumeShortcuts);
           kitState.tabIndex = message.state.tabIndex as number;
@@ -535,7 +536,7 @@ ${data.error}
         }
 
         if (channel === Channel.VALUE_SUBMITTED) {
-          info(
+          log.info(
             `---
 ${child?.pid} 📝 Submitting...
 ---`,
@@ -546,7 +547,7 @@ ${child?.pid} 📝 Submitting...
           }
 
           if (!prompt.ready) {
-            info(`${prompt.pid}: Prompt not ready..`, message);
+            log.info(`${prompt.pid}: Prompt not ready..`, message);
           }
           prompt.clearSearch();
 
@@ -563,7 +564,7 @@ ${child?.pid} 📝 Submitting...
 
         if (channel === Channel.ESCAPE || (channel === Channel.SHORTCUT && message.state.shortcut === 'escape')) {
           kitState.shortcutsPaused = false;
-          verbose({
+          log.verbose({
             submitted: message.state.submitted,
             pid: child.pid,
           });
@@ -576,7 +577,7 @@ ${child?.pid} 📝 Submitting...
         if (child) {
           try {
             // if (channel === Channel.VALUE_SUBMITTED) {
-            //   info(`${prompt.pid}: child.send: ${channel}`, message, {
+            //   log.info(`${prompt.pid}: child.send: ${channel}`, message, {
             //     scriptPath: prompt.scriptPath,
             //     scriptSet: prompt.scriptSet,
             //   });
@@ -584,12 +585,12 @@ ${child?.pid} 📝 Submitting...
             if (child?.channel && child.connected) {
               child?.send(message);
             } else {
-              warn(`${prompt.pid}: Child not connected: ${channel}`, message);
+              log.warn(`${prompt.pid}: Child not connected: ${channel}`, message);
             }
           } catch (e) {
             // ignore logging EPIPE errors
-            err(`📤 ${channel} ERROR`, message);
-            err(e);
+            log.err(`📤 ${channel} ERROR`, message);
+            log.err(e);
           }
         }
       }),
@@ -636,7 +637,7 @@ ${child?.pid} 📝 Submitting...
         });
       }
     } catch (error) {
-      warn(error);
+      log.warn(error);
     }
   });
 
@@ -645,26 +646,26 @@ ${child?.pid} 📝 Submitting...
 
     try {
       const feedbackResponse = await axios.post(`${kitState.url}/api/feedback`, data);
-      info(feedbackResponse.data);
+      log.info(feedbackResponse.data);
 
       if (data?.email && data?.subscribe) {
         const subResponse = await axios.post(`${kitState.url}/api/subscribe`, {
           email: data?.email,
         });
 
-        info(subResponse.data);
+        log.info(subResponse.data);
       }
     } catch (error) {
-      err(`Error sending feedback: ${error}`);
+      log.err(`Error sending feedback: ${error}`);
     }
   });
 
   type levelType = 'debug' | 'info' | 'warn' | 'error' | 'silly';
-  ipcMain.on(AppChannel.LOG, async (event, { message, level }: { message: any; level: levelType }) => {
+  ipcMain.on(AppChannel.LOG, (event, { message, level }: { message: any; level: levelType }) => {
     log[level](message);
   });
 
-  ipcMain.on(AppChannel.LOGIN, async () => {
+  ipcMain.on(AppChannel.LOGIN, () => {
     runPromptProcess(kitPath('pro', 'login.js'), [], {
       force: true,
       trigger: Trigger.App,
@@ -672,8 +673,8 @@ ${child?.pid} 📝 Submitting...
     });
   });
 
-  ipcMain.on(AppChannel.APPLY_UPDATE, async (event, data: any) => {
-    info('🚀 Applying update');
+  ipcMain.on(AppChannel.APPLY_UPDATE, (event, data: any) => {
+    log.info('🚀 Applying update');
     kitState.applyUpdate = true;
   });
 };

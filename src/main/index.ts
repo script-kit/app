@@ -419,7 +419,7 @@ const systemEvents = () => {
     ),
   );
 
-  powerMonitor.addListener('lock-screen', async () => {
+  powerMonitor.addListener('lock-screen', () => {
     kitState.screenLocked = true;
 
     // TODO: Hide main prompts when sleep?
@@ -428,7 +428,7 @@ const systemEvents = () => {
     // }
   });
 
-  powerMonitor.addListener('unlock-screen', async () => {
+  powerMonitor.addListener('unlock-screen', () => {
     kitState.screenLocked = false;
   });
 };
@@ -447,7 +447,7 @@ const ready = async () => {
       kitStore.set('accessibilityAuthorized', authorized);
 
       if (!authorized) {
-        setInterval(async () => {
+        setInterval(() => {
           authorized = shims['node-mac-permissions'].getAuthStatus('accessibility') === 'authorized';
           if (authorized) {
             kitStore.set('accessibilityAuthorized', authorized);
@@ -485,7 +485,7 @@ const ready = async () => {
 
     scheduleDownloads();
 
-    subscribeKey(kitState, 'previousDownload', async () => {
+    subscribeKey(kitState, 'previousDownload', () => {
       scheduleDownloads();
     });
 

@@ -9,7 +9,7 @@ import type { ChildProcess } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import electron, { type Display } from 'electron';
-import log, { type FileTransport, type LevelOption, type LogLevel } from 'electron-log';
+import electronLog, { type FileTransport, type LevelOption, type LogLevel } from 'electron-log';
 import { debounce } from 'lodash-es';
 import * as nativeKeymap from 'native-keymap';
 import { subscribeKey } from 'valtio/utils';
@@ -46,7 +46,7 @@ import shims from './shims';
 import { writeJson, pathExists } from './cjs-exports';
 
 import { createLogger } from '../shared/log-utils';
-const { info, err, warn, verbose, silly } = createLogger('state.ts');
+const log = createLogger('state.ts');
 
 const schema: Schema<{
   KENV: string;
@@ -77,8 +77,8 @@ export const kitStore = new Store({
 });
 
 const storedKenv = process.env?.KENV || kitStore.get('KENV');
-info(`📀 Stored KENV: ${storedKenv}`);
-info(`Path to kitStore: ${kitStore.path}`);
+log.info(`📀 Stored KENV: ${storedKenv}`);
+log.info(`Path to kitStore: ${kitStore.path}`);
 // process.exit();
 
 process.env.KENV = storedKenv;
@@ -139,7 +139,7 @@ export const workers = {
 };
 
 export const debounceSetScriptTimestamp = debounce((stamp: Stamp & { reason?: string }) => {
-  info(`💮 Stamping ${stamp?.filePath} - ${stamp?.reason}`);
+  log.info(`💮 Stamping ${stamp?.filePath} - ${stamp?.reason}`);
   if (!kitState.hasOpenedMainMenu) {
     return;
   }
@@ -340,7 +340,7 @@ export const promptState = proxy({
 });
 
 const subStatus = subscribeKey(kitState, 'status', (status: KitStatus) => {
-  info(`👀 Status: ${JSON.stringify(status)}`);
+  log.info(`👀 Status: ${JSON.stringify(status)}`);
 
   if (status.status !== 'default' && status.message) {
     kitState.notifications.push(status);
@@ -350,7 +350,7 @@ const subStatus = subscribeKey(kitState, 'status', (status: KitStatus) => {
 });
 
 const subWaking = subscribeKey(kitState, 'waking', (waking) => {
-  info(`👀 Waking: ${waking}`);
+  log.info(`👀 Waking: ${waking}`);
 });
 
 const subReady = subscribeKey(kitState, 'ready', (ready) => {
@@ -363,7 +363,7 @@ const subReady = subscribeKey(kitState, 'ready', (ready) => {
 });
 
 const scriptletsSub = subscribeKey(kitState, 'scriptlets', (scriptlets) => {
-  info(
+  log.info(
     `👀 Scriptlets: ${scriptlets.length}`,
     scriptlets.map((scriptlet) => scriptlet.filePath),
   );
@@ -373,7 +373,7 @@ const scriptletsSub = subscribeKey(kitState, 'scriptlets', (scriptlets) => {
 // TODO: Dock is showing when main prompt is open. Check mac panel? Maybe setIcon?
 
 const subIgnoreBlur = subscribeKey(kitState, 'ignoreBlur', (ignoreBlur) => {
-  info(`👀 Ignore blur: ${ignoreBlur ? 'true' : 'false'}`);
+  log.info(`👀 Ignore blur: ${ignoreBlur ? 'true' : 'false'}`);
   if (ignoreBlur) {
     emitter.emit(KitEvent.ShowDock);
   } else {
@@ -398,11 +398,11 @@ const subDevToolsCount = subscribeKey(kitState, 'devToolsCount', (count) => {
 });
 
 export const online = async () => {
-  info('Checking online status...');
+  log.info('Checking online status...');
   try {
     const result = await internetAvailable();
 
-    info(`🗼 Status: ${result ? 'Online' : 'Offline'}`);
+    log.info(`🗼 Status: ${result ? 'Online' : 'Offline'}`);
 
     return result;
   } catch (error) {
@@ -415,7 +415,7 @@ export const online = async () => {
 // };
 
 export const forceQuit = () => {
-  info('Begin force quit...');
+  log.info('Begin force quit...');
   kitState.allowQuit = true;
 };
 
@@ -426,7 +426,7 @@ const subRequiresAuthorizedRestart = subscribeKey(
   'requiresAuthorizedRestart',
   (requiresAuthorizedRestart) => {
     if (requiresAuthorizedRestart) {
-      info('👋 Restarting...');
+      log.info('👋 Restarting...');
       kitState.relaunch = true;
       forceQuit();
     }
@@ -442,7 +442,7 @@ const subScriptErrorPath = subscribeKey(kitState, 'scriptErrorPath', (scriptErro
 
 // TODO: I don't need to return booleans AND set kitState.isSponsor. Pick one.
 export const sponsorCheck = async (feature: string, block = true) => {
-  info(`Checking sponsor status... login: ${kitState?.user?.login} ${kitState.isSponsor ? '✅' : '❌'}`);
+  log.info(`Checking sponsor status... login: ${kitState?.user?.login} ${kitState.isSponsor ? '✅' : '❌'}`);
   const isOnline = await online();
   if (!isOnline || (process.env.KIT_SPONSOR === 'development' && os.userInfo().username === 'johnlindquist')) {
     kitState.isSponsor = true;
@@ -469,17 +469,17 @@ export const sponsorCheck = async (feature: string, block = true) => {
       return true;
     }
 
-    info(`Response status: ${response.status}`);
+    log.info(`Response status: ${response.status}`);
 
     // check for axios post error
     if (response.status !== 200) {
       errr('Error checking sponsor status', response);
     }
 
-    info('🕵️‍♀️ Sponsor check response', JSON.stringify(response.data));
+    log.info('🕵️‍♀️ Sponsor check response', JSON.stringify(response.data));
 
     if (response.data && kitState.user.node_id && response.data.id === kitState.user.node_id) {
-      info('User is sponsor');
+      log.info('User is sponsor');
       kitState.isSponsor = true;
       return true;
     }
@@ -491,7 +491,7 @@ export const sponsorCheck = async (feature: string, block = true) => {
     }
 
     if (block) {
-      info('User is not sponsor');
+      log.info('User is not sponsor');
       kitState.isSponsor = false;
 
       emitter.emit(KitEvent.RunPromptProcess, {
@@ -594,7 +594,7 @@ const defaultKeyMap: {
 };
 
 const keymapLogPath = path.resolve(app.getPath('logs'), 'keymap.log');
-const keymapLog = log.create({ logId: 'keymapLog' });
+const keymapLog = electronLog.create({ logId: 'keymapLog' });
 (keymapLog.transports.file as FileTransport).resolvePathFn = () => keymapLogPath;
 
 keymapLog.transports.console.level = (process.env.VITE_LOG_LEVEL || 'info') as LevelOption;
@@ -660,7 +660,7 @@ export const initKeymap = async () => {
               kitState.keymap = keymap;
               prevKeyMap = keymap;
             } else {
-              verbose('Keymap not changed');
+              log.verbose('Keymap not changed');
             }
           } else {
             keymapLog.verbose(`Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`);

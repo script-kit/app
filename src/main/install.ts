@@ -15,7 +15,6 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import dotenv from 'dotenv';
 import download from 'download';
-import log from 'electron-log';
 import { assign, debounce } from 'lodash-es';
 import StreamZip from 'node-stream-zip';
 import * as tar from 'tar';
@@ -51,9 +50,9 @@ import { INSTALL_ERROR, show } from './show';
 import { getThemes, kitCache, kitState, preloadChoicesMap, workers } from './state';
 import { ensureDir, writeFile, readJson, writeJson, pathExists, readdir, remove } from './cjs-exports';
 
+import electronLog from 'electron-log';
 import { createLogger } from '../shared/log-utils';
-
-const { info, err, warn } = createLogger('install');
+const log = createLogger('install.ts');
 
 let isOhNo = false;
 export const ohNo = async (error: Error) => {
@@ -61,8 +60,8 @@ export const ohNo = async (error: Error) => {
     return;
   }
   isOhNo = true;
-  warn(error.message);
-  warn(error.stack);
+  log.warn(error.message);
+  log.warn(error.stack);
   const mainLogContents = await readFile(mainLogPath, {
     encoding: 'utf8',
   });
@@ -87,7 +86,7 @@ export const ohNo = async (error: Error) => {
 let splashPrompt: KitPrompt | null = null;
 export const showSplash = async () => {
   kitState.isSplashShowing = true;
-  info('🌊 Showing splash install screen...');
+  log.info('🌊 Showing splash install screen...');
   splashPrompt = new KitPrompt();
   splashPrompt.ui = UI.splash;
   splashPrompt.scriptPath = SPLASH_PATH;
@@ -103,7 +102,7 @@ export const showSplash = async () => {
       splashPrompt?.window?.destroy();
       splashPrompt = null;
     } catch (error) {
-      err(error);
+      log.err(error);
     }
   });
 
@@ -146,7 +145,7 @@ export const sendSplashBody = (message: string) => {
     return;
   }
 
-  info(`🌊 body: ${message}`);
+  log.info(`🌊 body: ${message}`);
   if (splashPrompt && !splashPrompt.window?.isDestroyed()) {
     splashPrompt.sendToPrompt(Channel.SET_SPLASH_BODY, message);
   }
@@ -158,12 +157,12 @@ export const sendSplashHeader = (message: string) => {
     return;
   }
 
-  info(`🌊 header: ${message}`);
+  log.info(`🌊 header: ${message}`);
   splashPrompt?.sendToPrompt(Channel.SET_SPLASH_HEADER, message);
 };
 
 export const sendSplashProgress = (progress: number) => {
-  info(`🌊 progress: ${progress}`);
+  log.info(`🌊 progress: ${progress}`);
   splashPrompt?.sendToPrompt(Channel.SET_SPLASH_PROGRESS, progress);
 };
 
@@ -173,13 +172,13 @@ export const setupDone = () => {
 };
 
 export const handleLogMessage = (message: string, result: SpawnSyncReturns<any>, required = true) => {
-  info('stdout:', result?.stdout?.toString());
-  info('stderr:', result?.stderr?.toString());
+  log.info('stdout:', result?.stdout?.toString());
+  log.info('stderr:', result?.stderr?.toString());
   const { stdout, stderr, error } = result;
 
   if (stdout?.toString().length) {
     const out = stdout.toString();
-    info(message, out);
+    log.info(message, out);
     sendSplashBody(out.slice(0, 200));
   }
 
@@ -189,7 +188,7 @@ export const handleLogMessage = (message: string, result: SpawnSyncReturns<any>,
 
   if (stderr?.toString().length) {
     sendSplashBody(stderr.toString());
-    info({ stderr: stderr.toString() });
+    log.info({ stderr: stderr.toString() });
     // throw new Error(stderr.toString());
   }
 
@@ -226,7 +225,7 @@ export const installPackage = async (installCommand: string, cwd: string) => {
   const isWin = os.platform().startsWith('win');
   const npmPath = isWin ? knodePath('bin', 'npm.cmd') : knodePath('bin', 'npm');
 
-  info(`${cwd}: 👷 ${npmPath} ${installCommand}`);
+  log.info(`${cwd}: 👷 ${npmPath} ${installCommand}`);
 
   return new Promise<string>((resolve, reject) => {
     const child = spawn(npmPath, [installCommand], options);
@@ -249,7 +248,7 @@ export const installPackage = async (installCommand: string, cwd: string) => {
           clearInterval(id);
         }
       } catch (error) {
-        info('Failed to clear id');
+        log.info('Failed to clear id');
       }
     };
 
@@ -275,7 +274,7 @@ export const installPackage = async (installCommand: string, cwd: string) => {
     });
 
     child.on('error', (error) => {
-      warn(`Error: ${error?.message}`);
+      log.warn(`Error: ${error?.message}`);
       resolve(`Deps install error ${error}`);
       clearId();
     });
@@ -287,20 +286,20 @@ const installDependency = async (dependencyName: string, installCommand: string,
   const isKenvPath = normalizedCwd === path.normalize(kenvPath());
   const isKitPath = normalizedCwd === path.normalize(kitPath());
 
-  info(`Installing ${dependencyName} in ${cwd}...`);
+  log.info(`Installing ${dependencyName} in ${cwd}...`);
 
   if (!(isKenvPath || isKitPath)) {
-    info(`Did not recognize cwd as valid target: ${cwd}`);
+    log.info(`Did not recognize cwd as valid target: ${cwd}`);
     return null;
   }
 
   if (isKenvPath && !(await kenvPackageJsonExists())) {
-    info(`No package.json found in ${cwd}. Skipping installation of ${dependencyName}`);
+    log.info(`No package.json found in ${cwd}. Skipping installation of ${dependencyName}`);
     return null;
   }
 
   if (isKenvPath && (await isDependencyInstalled(dependencyName, cwd))) {
-    info(`${dependencyName} already installed in ${cwd}`);
+    log.info(`${dependencyName} already installed in ${cwd}`);
     return null;
   }
 
@@ -309,7 +308,7 @@ const installDependency = async (dependencyName: string, installCommand: string,
     await verifyInstallation(dependencyName, cwd);
     return result;
   } catch (error) {
-    err(error);
+    log.err(error);
     return null;
   }
 };
@@ -317,7 +316,7 @@ const installDependency = async (dependencyName: string, installCommand: string,
 const isDependencyInstalled = async (dependencyName: string, cwd: string) => {
   try {
     const nodeModulesPath = path.join(cwd, 'node_modules', dependencyName);
-    info(`Checking if ${nodeModulesPath} exists`);
+    log.info(`Checking if ${nodeModulesPath} exists`);
     return await pathExists(nodeModulesPath);
   } catch (error) {
     return false;
@@ -328,10 +327,10 @@ const verifyInstallation = async (dependencyName: string, cwd: string) => {
   try {
     return await pathExists(path.join(cwd, 'node_modules', dependencyName));
   } catch (error) {
-    err(`${dependencyName} not installed in ${cwd}`);
+    log.err(`${dependencyName} not installed in ${cwd}`);
     // We can't log the contents of node_modules here as we're not reading the directory
     // If you still want to log something, you could log the error message
-    info(`Error accessing ${dependencyName}: ${(error as Error).message}`);
+    log.info(`Error accessing ${dependencyName}: ${(error as Error).message}`);
     return false;
   }
 };
@@ -343,7 +342,7 @@ export const installLoaderTools = async () => {
     kitPath(),
   );
 
-  info({ esbuildResult });
+  log.info({ esbuildResult });
 
   const tsxResult = await installDependency(
     'tsx',
@@ -351,7 +350,7 @@ export const installLoaderTools = async () => {
     kitPath(),
   );
 
-  info({ tsxResult });
+  log.info({ tsxResult });
 };
 
 export const installNoDomInKenv = async () => {
@@ -361,9 +360,9 @@ export const installNoDomInKenv = async () => {
     kenvPath(),
   );
   if (result) {
-    info('Installed @johnlindquist/no-dom');
+    log.info('Installed @johnlindquist/no-dom');
   } else {
-    info('Failed to install @johnlindquist/no-dom');
+    log.info('Failed to install @johnlindquist/no-dom');
   }
 };
 
@@ -375,9 +374,9 @@ export const installPlatformDeps = async () => {
       kitPath(),
     );
     if (result) {
-      info('Installed @johnlindquist/mac-dictionary');
+      log.info('Installed @johnlindquist/mac-dictionary');
     } else {
-      info('Failed to install @johnlindquist/mac-dictionary');
+      log.info('Failed to install @johnlindquist/mac-dictionary');
     }
   }
 
@@ -391,9 +390,9 @@ export const installKitInKenv = async () => {
     kenvPath(),
   );
   if (result) {
-    info('Installed @johnlindquist/kit');
+    log.info('Installed @johnlindquist/kit');
   } else {
-    info('Failed to install @johnlindquist/kit');
+    log.info('Failed to install @johnlindquist/kit');
   }
 };
 
@@ -405,7 +404,7 @@ const getOptions = () => {
   };
   const proxy = process.env.HTTPS_PROXY || process.env.https_proxy || process.env.HTTP_PROXY || process.env.http_proxy;
   if (proxy) {
-    info(`Using proxy ${proxy}`);
+    log.info(`Using proxy ${proxy}`);
     options.agent = new HttpsProxyAgent({
       keepAlive: true,
       keepAliveMsecs: 1000,
@@ -449,7 +448,7 @@ export const downloadKenv = async () => {
   try {
     stat = await lstat(kitrcPath);
   } catch (error) {
-    info('No ~/.kitrc found');
+    log.info('No ~/.kitrc found');
   }
 
   if (stat?.isFile()) {
@@ -459,7 +458,7 @@ export const downloadKenv = async () => {
 
     const kitRc = dotenv.parse(kitRcContents);
     if (kitRc.KENV_ZIP_URL) {
-      info(`Using KENV_ZIP_URL from ${kitrcPath}`);
+      log.info(`Using KENV_ZIP_URL from ${kitrcPath}`);
       url = kitRc.KENV_ZIP_URL;
     }
   }
@@ -473,14 +472,14 @@ export const downloadKenv = async () => {
 
     return file;
   } catch (error) {
-    err(error);
+    log.err(error);
     ohNo(error as Error);
     return '';
   }
 };
 
 export const cleanKit = async () => {
-  info(`🧹 Cleaning ${kitPath()}`);
+  log.info(`🧹 Cleaning ${kitPath()}`);
   // Remove the entire kit directory
   try {
     await rm(kitPath(), {
@@ -488,7 +487,7 @@ export const cleanKit = async () => {
       force: true,
     });
   } catch (error) {
-    err(error);
+    log.err(error);
   }
 
   // const pathToClean = kitPath();
@@ -499,7 +498,7 @@ export const cleanKit = async () => {
   // // eslint-disable-next-line no-restricted-syntax
   // for await (const file of await readdir(pathToClean)) {
   //   if (keep(file)) {
-  //     info(`👍 Keeping ${file}`);
+  //     log.info(`👍 Keeping ${file}`);
   //     // eslint-disable-next-line no-continue
   //     continue;
   //   }
@@ -508,10 +507,10 @@ export const cleanKit = async () => {
   //   const stat = await lstat(filePath);
   //   if (stat.isDirectory()) {
   //     await rm(filePath, { recursive: true, force: true });
-  //     info(`🧹 Cleaning dir ${filePath}`);
+  //     log.info(`🧹 Cleaning dir ${filePath}`);
   //   } else {
   //     await rm(filePath);
-  //     info(`🧹 Cleaning file ${filePath}`);
+  //     log.info(`🧹 Cleaning file ${filePath}`);
   //   }
   // }
 };
@@ -563,7 +562,7 @@ export const downloadKit = async () => {
 
     return file;
   } catch (error) {
-    err(error);
+    log.err(error);
     ohNo(error as Error);
     return '';
   }
@@ -598,14 +597,14 @@ export const downloadNode = async () => {
   const url = `https://nodejs.org/dist/${nodeVersion}/${node}`;
 
   const downloadingMessage = `Downloading node from ${url}`;
-  info(downloadingMessage);
+  log.info(downloadingMessage);
   sendSplashBody(downloadingMessage);
 
   try {
     const buffer = await download(url, undefined, getOptions());
 
     const writingNodeMessage = `Writing node to ${file}`;
-    info(writingNodeMessage);
+    log.info(writingNodeMessage);
     sendSplashBody(writingNodeMessage);
     await writeFile(file, buffer);
 
@@ -615,7 +614,7 @@ export const downloadNode = async () => {
 
     return file;
   } catch (error) {
-    err(error);
+    log.err(error);
     ohNo(error as Error);
 
     return '';
@@ -623,7 +622,7 @@ export const downloadNode = async () => {
 };
 
 export const extractNode = async (file: string) => {
-  info(`extractNode ${file}`);
+  log.info(`extractNode ${file}`);
   if (file.endsWith('.zip')) {
     try {
       // eslint-disable-next-line
@@ -632,12 +631,12 @@ export const extractNode = async (file: string) => {
       sendSplashBody(`Unzipping ${file} to ${knodePath()}`);
       // node-18.18.2-win-x64
       const fileName = path.parse(file).name;
-      info(`Extacting ${fileName} to ${knodePath('bin')}`);
+      log.info(`Extacting ${fileName} to ${knodePath('bin')}`);
       // node-18.18.2-win-x64
       await zip.extract(fileName, knodePath('bin'));
       await zip.close();
     } catch (error) {
-      err({ error });
+      log.err({ error });
       ohNo(error);
     }
   } else {
@@ -650,19 +649,19 @@ export const extractNode = async (file: string) => {
         strip: 1,
       });
     } catch (error) {
-      err({ error });
+      log.err({ error });
       ohNo(error);
     }
   }
 };
 
 export const createLogs = () => {
-  log.transports.file.resolvePathFn = () => kitPath('logs', 'kit.log');
+  electronLog.transports.file.resolvePathFn = () => kitPath('logs', 'kit.log');
 };
 
 export const setupLog = async (message: string) => {
   sendSplashBody(message);
-  info(message);
+  log.info(message);
   if (process.env.KIT_SPLASH) {
     await new Promise((resolve, reject) =>
       setTimeout(() => {
@@ -689,18 +688,18 @@ export const forkOptions: ForkOptions = {
 
 export const optionalSpawnSetup = (...args: string[]) => {
   if (process.env.MAIN_SKIP_SETUP) {
-    info(`⏭️ Skipping setup script: ${args.join(' ')}`);
+    log.info(`⏭️ Skipping setup script: ${args.join(' ')}`);
     return Promise.resolve('done');
   }
   return new Promise((resolve, reject) => {
-    info(`Running optional setup script: ${args.join(' ')}`);
+    log.info(`Running optional setup script: ${args.join(' ')}`);
     const child = spawn(knodePath('bin', 'node'), [kitPath('run', 'terminal.js'), ...args], forkOptions);
 
     const id = setTimeout(() => {
       if (child && !child.killed) {
         child.kill();
         resolve('timeout');
-        info(`⚠️ Setup script timed out: ${args.join(' ')}`);
+        log.info(`⚠️ Setup script timed out: ${args.join(' ')}`);
       }
     }, 5000);
 
@@ -709,7 +708,7 @@ export const optionalSpawnSetup = (...args: string[]) => {
         if (kitState.ready) {
           return;
         }
-        info(data.toString());
+        log.info(data.toString());
       });
     }
 
@@ -718,7 +717,7 @@ export const optionalSpawnSetup = (...args: string[]) => {
         return;
       }
       child.stderr.on('data', (data) => {
-        warn(data.toString());
+        log.warn(data.toString());
       });
     }
 
@@ -726,7 +725,7 @@ export const optionalSpawnSetup = (...args: string[]) => {
       const dataString = typeof data === 'string' ? data : data.toString();
 
       if (!dataString.includes('[object')) {
-        info(args[0], dataString);
+        log.info(args[0], dataString);
         // sendSplashBody(dataString.slice(0, 200));
       }
     });
@@ -736,10 +735,10 @@ export const optionalSpawnSetup = (...args: string[]) => {
         if (id) {
           clearTimeout(id);
         }
-        info(`✅ Setup script completed: ${args.join(' ')}`);
+        log.info(`✅ Setup script completed: ${args.join(' ')}`);
         resolve('done');
       } else {
-        info(`⚠️ Setup script exited with code ${code}: ${args.join(' ')}`);
+        log.info(`⚠️ Setup script exited with code ${code}: ${args.join(' ')}`);
         resolve('error');
       }
     });
@@ -748,7 +747,7 @@ export const optionalSpawnSetup = (...args: string[]) => {
       if (id) {
         clearTimeout(id);
       }
-      err(`⚠️ Errored on setup script: ${args.join(' ')}`, error.message);
+      log.err(`⚠️ Errored on setup script: ${args.join(' ')}`, error.message);
       resolve('error');
       // reject(error);
       // throw new Error(error.message);
@@ -758,20 +757,20 @@ export const optionalSpawnSetup = (...args: string[]) => {
 
 export const optionalSetupScript = (scriptPath: string, argsParam?: string[], callback?: (object: any) => void) => {
   if (process.env.MAIN_SKIP_SETUP) {
-    info(`⏭️ Skipping setup script: ${scriptPath}`);
+    log.info(`⏭️ Skipping setup script: ${scriptPath}`);
     return Promise.resolve('done');
   }
 
   const args = argsParam || [];
   return new Promise((resolve, reject) => {
-    info(`Running optional setup script: ${scriptPath} with ${args}`);
+    log.info(`Running optional setup script: ${scriptPath} with ${args}`);
     const child = fork(kitPath('run', 'terminal.js'), [scriptPath, ...args], forkOptions);
 
     const id = setTimeout(() => {
       if (child && !child.killed) {
         child.kill();
         resolve('timeout');
-        info(`⚠️ Setup script timed out: ${scriptPath}`);
+        log.info(`⚠️ Setup script timed out: ${scriptPath}`);
       }
     }, 5000);
 
@@ -795,7 +794,7 @@ export const optionalSetupScript = (scriptPath: string, argsParam?: string[], ca
 
     child.on('message', (data) => {
       if (callback) {
-        info(`📞 ${scriptPath}: callback firing...`);
+        log.info(`📞 ${scriptPath}: callback firing...`);
         callback(data);
       }
     });
@@ -805,10 +804,10 @@ export const optionalSetupScript = (scriptPath: string, argsParam?: string[], ca
         if (id) {
           clearTimeout(id);
         }
-        info(`✅ Setup script completed: ${scriptPath}`);
+        log.info(`✅ Setup script completed: ${scriptPath}`);
         resolve('done');
       } else {
-        info(`⚠️ Setup script exited with code ${code}: ${scriptPath}`);
+        log.info(`⚠️ Setup script exited with code ${code}: ${scriptPath}`);
         resolve('error');
       }
     });
@@ -817,7 +816,7 @@ export const optionalSetupScript = (scriptPath: string, argsParam?: string[], ca
       if (id) {
         clearTimeout(id);
       }
-      err(`⚠️ Errored on setup script: ${scriptPath.join(' ')}`, error.message);
+      log.err(`⚠️ Errored on setup script: ${scriptPath.join(' ')}`, error.message);
       resolve('error');
       // reject(error);
       // throw new Error(error.message);
@@ -838,7 +837,7 @@ const cacheTriggers = (choices: Choice[]) => {
     }
 
     if (choice?.keyword) {
-      // info(`🗝 Found keyword ${choice.keyword}`);
+      // log.info(`🗝 Found keyword ${choice.keyword}`);
       kitCache.keywords.set(choice.keyword.toLowerCase(), choice);
     }
 
@@ -853,7 +852,7 @@ const cacheTriggers = (choices: Choice[]) => {
       typeof choice?.pass === 'string' && choice?.pass !== 'true' && choice?.pass !== 'false' ? choice.pass : '';
 
     if (postfix) {
-      // info(`🔚 Found postfix ${choice.pass}`);
+      // log.info(`🔚 Found postfix ${choice.pass}`);
       kitCache.postfixes.set(choice?.pass.trim(), choice);
     }
   }
@@ -875,11 +874,11 @@ const scoreAndCacheMainChoices = (scripts: Script[]) => {
   cacheTriggers(results);
 
   for (const prompt of prompts) {
-    info(`${prompt.pid}: initMainChoices`);
+    log.info(`${prompt.pid}: initMainChoices`);
     // if (!prompt.isVisible()) {
     prompt.initMainChoices();
     if (!prompt.isVisible()) {
-      // info(`${prompt.pid}: setShortcodes`, {
+      // log.info(`${prompt.pid}: setShortcodes`, {
       //   triggers: scripts.filter((s) => s.trigger).map((s) => s.trigger),
       // });
     }
@@ -901,13 +900,13 @@ const getBinWorker = () => {
   if (!workers.createBin) {
     workers.createBin = new Worker(CREATE_BIN_WORKER);
     workers.createBin.on('exit', (exitCode) => {
-      info('🔗 Bin worker exited', exitCode);
+      log.info('🔗 Bin worker exited', exitCode);
     });
     workers.createBin.on('error', (error) => {
-      err('🔗 Bin worker error', error);
+      log.err('🔗 Bin worker error', error);
     });
     workers.createBin.on('message', (message: { command: string; filePath: string }) => {
-      info('🔗 Created bin for', message?.filePath, 'to', message?.command);
+      log.info('🔗 Created bin for', message?.filePath, 'to', message?.command);
     });
   }
   return workers.createBin;
@@ -915,7 +914,7 @@ const getBinWorker = () => {
 
 export const syncBins = async () => {
   setTimeout(async () => {
-    info('🔗 Syncing bins...');
+    log.info('🔗 Syncing bins...');
     try {
       const binDirPath = kenvPath('bin');
       const binFiles = await readdir(binDirPath);
@@ -923,7 +922,7 @@ export const syncBins = async () => {
       for (const bin of binFiles) {
         const script = Array.from(kitState.scripts.values()).find((s) => s.command === bin);
         if (!script) {
-          info(`🔗 Deleting bin ${bin}`);
+          log.info(`🔗 Deleting bin ${bin}`);
           await unlink(path.resolve(binDirPath, bin));
         }
       }
@@ -933,14 +932,14 @@ export const syncBins = async () => {
           continue;
         }
 
-        info(`🔗 Creating bin for ${script.filePath} -> ${script.command}`);
+        log.info(`🔗 Creating bin for ${script.filePath} -> ${script.command}`);
         worker.postMessage({
           command: script.command,
           filePath: script.filePath,
         });
       }
     } catch (error) {
-      err(error);
+      log.err(error);
     }
   }, 1000);
 };
@@ -958,19 +957,19 @@ export const cacheMainMenu = ({
   shortcuts?: Shortcut[];
   scriptFlags?: FlagsObject;
 }) => {
-  info('Received scripts', {
+  log.info('Received scripts', {
     scripts: scripts?.length,
     kenvScripts: kenvScripts?.length,
     preview: preview?.length,
   });
   if (Array.isArray(scripts) && scripts.length > 0) {
-    info('Caching scripts and preview...', {
+    log.info('Caching scripts and preview...', {
       scripts: scripts?.length,
       kenvScripts: kenvScripts?.length,
       preview: preview?.length,
     });
     preloadChoicesMap.set(getMainScriptPath(), scripts);
-    info('✉️ Sending scripts to prompt...');
+    log.info('✉️ Sending scripts to prompt...');
     if (preview) {
       cacheMainPreview(preview);
     }
@@ -994,11 +993,11 @@ export const cacheMainMenu = ({
 
     for (const script of scripts) {
       if ((script as Scriptlet).scriptlet) {
-        info(`📦 Adding scriptlet ${script.filePath}`);
+        log.info(`📦 Adding scriptlet ${script.filePath}`);
         kitState.scriptlets.set(script.filePath, script as Scriptlet);
       }
       if (isBinnableScript(script)) {
-        info(`📦 Adding script ${script.filePath}`);
+        log.info(`📦 Adding script ${script.filePath}`);
         kitState.scripts.set(script.filePath, script);
       }
     }
@@ -1014,19 +1013,19 @@ export const cacheMainScripts = (stamp?: Stamp) => {
 
     try {
       if (!workers.cacheScripts) {
-        info(`Creating worker: ${CACHED_GROUPED_SCRIPTS_WORKER}...`);
+        log.info(`Creating worker: ${CACHED_GROUPED_SCRIPTS_WORKER}...`);
         workers.cacheScripts = new Worker(CACHED_GROUPED_SCRIPTS_WORKER);
         workers.cacheScripts.on('exit', (exitCode) => {
-          err('Worker exited', {
+          log.err('Worker exited', {
             exitCode,
           });
         });
       }
 
       if (stamp?.filePath && isInDirectory(stamp?.filePath, kitPath())) {
-        info(`Ignore stamping .kit script: ${stamp.filePath}`);
+        log.info(`Ignore stamping .kit script: ${stamp.filePath}`);
       } else {
-        info(`Stamping ${stamp?.filePath || 'cache only'} 💟`);
+        log.info(`Stamping ${stamp?.filePath || 'cache only'} 💟`);
         if (!postMessage && workers.cacheScripts) {
           postMessage = debounce(
             (message) => {
@@ -1039,22 +1038,22 @@ export const cacheMainScripts = (stamp?: Stamp) => {
           );
         }
         const messageErrorHandler = (error) => {
-          info('Received message error for stamp', stamp);
-          err('MessageError: Failed to cache main scripts', error);
+          log.info('Received message error for stamp', stamp);
+          log.err('MessageError: Failed to cache main scripts', error);
           reject(error); // Reject the promise on message error
           cleanHandlers();
         };
 
         const errorHandler = (error) => {
-          info('Received error for stamp', stamp);
+          log.info('Received error for stamp', stamp);
           if (error instanceof Error) {
-            err('Failed to cache main scripts', {
+            log.err('Failed to cache main scripts', {
               message: error.message,
               stack: error.stack,
               name: error.name,
             });
           } else {
-            err('Failed to cache main scripts', {
+            log.err('Failed to cache main scripts', {
               error: error,
             });
           }
@@ -1063,14 +1062,14 @@ export const cacheMainScripts = (stamp?: Stamp) => {
         };
 
         const messageHandler = (message) => {
-          info('Received message for stamp', stamp);
+          log.info('Received message for stamp', stamp);
           cacheMainMenu(message);
           resolve(message);
           cleanHandlers();
         };
 
         const cleanHandlers = () => {
-          info('Cleaning handlers for stamp', stamp);
+          log.info('Cleaning handlers for stamp', stamp);
           workers.cacheScripts?.removeListener('message', messageHandler);
           workers.cacheScripts?.removeListener('messageerror', messageErrorHandler);
           workers.cacheScripts?.removeListener('error', errorHandler);
@@ -1079,11 +1078,11 @@ export const cacheMainScripts = (stamp?: Stamp) => {
         workers.cacheScripts.once('messageerror', messageErrorHandler);
         workers.cacheScripts.once('error', errorHandler);
         workers.cacheScripts.once('message', messageHandler);
-        info('Sending stamp to worker', stamp);
+        log.info('Sending stamp to worker', stamp);
         postMessage(stamp);
       }
     } catch (error) {
-      warn('Failed to cache main scripts at startup', error);
+      log.warn('Failed to cache main scripts at startup', error);
       reject(error); // Reject the promise on catch
     }
   });
@@ -1112,11 +1111,13 @@ export const matchPackageJsonEngines = async () => {
   const npmPath = isWin ? knodePath('bin', 'npm.cmd') : knodePath('bin', 'npm');
   const nodePath = isWin ? knodePath('bin', 'node.exe') : knodePath('bin', 'node');
 
-  const pkgJson = await readJson(kenvPath('package.json'));
+  const pkgJson = await readJson(kenvPath('package.json')).catch(() => ({
+    engines: undefined,
+  }));
   try {
     const npmVersion = await getCommandOutput(`${npmPath} --version`);
     const nodeVersion = await getCommandOutput(`${nodePath} --version`);
-    info({
+    log.info({
       npmVersion,
       nodeVersion,
     });

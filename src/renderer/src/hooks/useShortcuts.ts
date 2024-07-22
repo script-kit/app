@@ -28,7 +28,7 @@ import type { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
 import { hotkeysOptions } from './shared';
 import { useCallback, useMemo } from 'react';
 
-const { info, warn, err } = createLogger('useShortcuts');
+const log = createLogger('useShortcuts');
 
 function getKey(event: HotkeysEvent) {
   const key = event?.keys?.[0];
@@ -92,7 +92,7 @@ export default () => {
   useHotkeys(
     'mod+shift+w',
     (event) => {
-      info('Shortcut triggered: mod+shift+w', { previewEnabled });
+      log.info('Shortcut triggered: mod+shift+w', { previewEnabled });
       setPreviewEnabled(!previewEnabled);
     },
     hotkeysOptions,
@@ -116,10 +116,10 @@ export default () => {
 
   const flagByHandler = useCallback(
     (event: HotkeysEvent) => {
-      // info('Checking flag shortcuts', { event, flagsWithShortcuts });
+      // log.info('Checking flag shortcuts', { event, flagsWithShortcuts });
       for (const [flag, value] of flagsWithShortcuts) {
         if (isEventShortcut(event, value.shortcut)) {
-          // info('Flag shortcut matched', { flag, shortcut: value.shortcut });
+          // log.info('Flag shortcut matched', { flag, shortcut: value.shortcut });
           return flag;
         }
       }
@@ -131,7 +131,7 @@ export default () => {
   useHotkeys(
     flagShortcuts.length ? flagShortcuts : ['f19'],
     (event, handler: HotkeysEvent) => {
-      info('Flag shortcut triggered', { event, handler, flagShortcuts });
+      log.info('Flag shortcut triggered', { event, handler, flagShortcuts });
       event.preventDefault();
 
       // A shortcut clears the active because a new one is incoming
@@ -141,13 +141,13 @@ export default () => {
 
       const key = handler?.keys?.[0];
       if (!key) {
-        info('No key found in handler');
+        log.info('No key found in handler');
         return;
       }
 
       const flag = flagByHandler(handler) as string;
       const submitValue = focusedChoice?.value || input;
-      info('Submitting flagged value', { flag, submitValue });
+      log.info('Submitting flagged value', { flag, submitValue });
       setFlag(flag);
       submit(submitValue);
     },
@@ -165,9 +165,9 @@ export default () => {
       let keys = '';
       for (const ps of moddedPromptShortcuts) {
         if (ps?.key) {
-          // info(`Comparing ${ps.key} to ${flagShortcuts}`);
+          // log.info(`Comparing ${ps.key} to ${flagShortcuts}`);
           if (flagShortcuts.includes(ps.key)) {
-            warn('Prompt shortcut is a duplicated of a flag shortcut. Ignoring flag shortcut', { ps });
+            log.warn('Prompt shortcut is a duplicated of a flag shortcut. Ignoring flag shortcut', { ps });
           } else {
             keys += `${ps.key},`;
           }
@@ -176,7 +176,7 @@ export default () => {
       if (keys.length > 0) {
         // Remove the last comma
         onShortcuts = keys.slice(0, -1);
-        // info('All flags and shortcuts', { flagShortcuts, onShortcuts });
+        // log.info('All flags and shortcuts', { flagShortcuts, onShortcuts });
       }
     }
     return onShortcuts;
@@ -185,7 +185,7 @@ export default () => {
   useHotkeys(
     onShortcuts,
     (event, handler: HotkeysEvent) => {
-      info('Prompt shortcut triggered', { event, handler, promptShortcuts });
+      log.info('Prompt shortcut triggered', { event, handler, promptShortcuts });
       event.preventDefault();
 
       // A shortcut clears the active because a new one is incoming
@@ -195,24 +195,24 @@ export default () => {
 
       const key = handler?.keys?.[0];
       if (!key) {
-        info('No key found in handler');
+        log.info('No key found in handler');
         return;
       }
 
       if (key === 'escape' && actionsInputFocus) {
-        info('Escape pressed while actions input is focused');
+        log.info('Escape pressed while actions input is focused');
         return;
       }
 
       const found = promptShortcuts.find((ps) => isEventShortcut(handler, ps.key));
       if (found) {
-        info('Matching prompt shortcut found', { shortcut: found });
+        log.info('Matching prompt shortcut found', { shortcut: found });
         if (found?.flag) {
           setFlag(found.flag);
         }
         sendShortcut(found.key);
       } else {
-        info('No matching prompt shortcut found');
+        log.info('No matching prompt shortcut found');
       }
     },
     hotkeysOptions,
@@ -222,28 +222,28 @@ export default () => {
   useHotkeys(
     'right,left',
     (event) => {
-      info('Arrow key pressed', { event, inputFocus, hasRightShortcut, selectionStart, input });
+      log.info('Arrow key pressed', { event, inputFocus, hasRightShortcut, selectionStart, input });
       if (!inputFocus) {
-        info('Input not focused, ignoring arrow key');
+        log.info('Input not focused, ignoring arrow key');
         return;
       }
       if (hasRightShortcut) {
-        info('Has right shortcut, ignoring arrow key');
+        log.info('Has right shortcut, ignoring arrow key');
         return;
       }
       if (selectionStart === input.length && event.key !== 'ArrowLeft') {
-        info('Cursor at end, moving forward');
+        log.info('Cursor at end, moving forward');
         event.preventDefault();
         if (!flagValue && (flagsArray.length || Boolean(choices?.[index]?.actions))) {
-          info('Setting flag value');
+          log.info('Setting flag value');
           // setFlagValue(choices.length ? choices[index].value : input);
         }
         channel(Channel.FORWARD);
       } else if (selectionStart === 0 && event.key !== 'ArrowRight') {
-        info('Cursor at start, moving backward');
+        log.info('Cursor at start, moving backward');
         event.preventDefault();
         if (flagValue) {
-          info('Clearing flag value');
+          log.info('Clearing flag value');
           // setFlagValue('');
         }
         channel(Channel.BACK);
@@ -266,20 +266,20 @@ export default () => {
   useHotkeys(
     'mod+k,mod+shift+p',
     () => {
-      info('mod+k or mod+shift+p pressed', { ui, inputFocus, choicesLength: choices.length, flagValue });
+      log.info('mod+k or mod+shift+p pressed', { ui, inputFocus, choicesLength: choices.length, flagValue });
       if (ui === UI.arg && !inputFocus) {
-        info('Ignoring shortcut: UI is arg and input not focused');
+        log.info('Ignoring shortcut: UI is arg and input not focused');
         return;
       }
 
       if (flagValue) {
-        info('Clearing flag value');
+        log.info('Clearing flag value');
         setFlagValue('');
       } else if (choices.length) {
-        info('Setting flag value to focused choice', { name: focusedChoice?.name });
+        log.info('Setting flag value to focused choice', { name: focusedChoice?.name });
         setFlagValue(focusedChoice?.value);
       } else {
-        info('Setting flag value to input or UI', { input, ui });
+        log.info('Setting flag value to input or UI', { input, ui });
         setFlagValue(ui === UI.arg ? input : ui);
       }
     },

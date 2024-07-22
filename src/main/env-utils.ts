@@ -5,7 +5,7 @@ import type { kenvEnv } from '@johnlindquist/kit/types/env';
 import { pathExistsSync } from './cjs-exports';
 import { createLogger } from '../shared/log-utils';
 
-const { info } = createLogger('env-utils.ts');
+const log = createLogger('env-utils.ts');
 
 /**
  * Loads environment variables from .env and .env.kit files in the kenv directory.
@@ -19,13 +19,13 @@ export const loadKenvEnvironment = (): kenvEnv => {
   for (const file of envFiles) {
     const filePath = kenvPath(file);
     if (pathExistsSync(filePath)) {
-      info(`🔍 Loading .env data from ${filePath}`);
+      log.info(`🔍 Loading .env data from ${filePath}`);
       const fileData = dotenv.parse(readFileSync(filePath)) as kenvEnv;
       envData = { ...envData, ...fileData };
     }
   }
 
-  // info(`Loaded`, envData);
+  // log.info(`Loaded`, envData);
 
   return envData;
 };

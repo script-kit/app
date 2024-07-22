@@ -31,24 +31,23 @@ import { getKitScript, kitCache, kitState, kitStore, sponsorCheck } from './stat
 import { TrackEvent, trackEvent } from './track';
 
 import { createLogger } from '../shared/log-utils';
-import { getCurrentScreenFromMouse } from './prompt';
 
-const { info, warn, err, silly, verbose } = createLogger('kit.ts');
+const log = createLogger('kit.ts');
 
 app.on('second-instance', (_event, argv) => {
-  info('second-instance', argv);
+  log.info('second-instance', argv);
   const { _ } = minimist(argv);
   const [, , argScript, ...argArgs] = _;
 
   // on windows, the protocol is passed as the argScript
   const maybeProtocol = argv?.[2];
   if (maybeProtocol?.startsWith('kit:')) {
-    info('Detected kit: protocol:', maybeProtocol);
+    log.info('Detected kit: protocol:', maybeProtocol);
     app.emit('open-url', null, maybeProtocol);
   }
 
   if (!(argScript && pathExistsSync(argScript))) {
-    info(`${argScript} does not exist. Ignoring.`);
+    log.info(`${argScript} does not exist. Ignoring.`);
     return;
   }
   runPromptProcess(argScript, argArgs, {
@@ -68,14 +67,14 @@ app.on('activate', async (_event, hasVisibleWindows) => {
 });
 
 // process.on('unhandledRejection', (reason, p) => {
-//   warn('Unhandled Rejection at: Promise', p, 'reason:', reason);
+//   log.warn('Unhandled Rejection at: Promise', p, 'reason:', reason);
 
 //   // application specific logging, throwing an error, or other logic here
 // });
 
 process.on('uncaughtException', (error) => {
-  warn(`Uncaught Exception: ${error.message}`);
-  warn(error);
+  log.warn(`Uncaught Exception: ${error.message}`);
+  log.warn(error);
 });
 
 emitter.on(
@@ -93,7 +92,7 @@ emitter.on(
       | string,
   ) => {
     if (!kitState.ready) {
-      warn('Kit not ready. Ignoring prompt process:', scriptOrScriptAndData);
+      log.warn('Kit not ready. Ignoring prompt process:', scriptOrScriptAndData);
       return;
     }
     const { scriptPath, args, options } =
@@ -114,7 +113,7 @@ emitter.on(
     //   kitState.ignoreBlur = false;
     //   // hideAppIfNoWindows(HideReason.RunPromptProcess);
     // } else {
-    //   info(`Show App: ${scriptPath}`);
+    //   log.info(`Show App: ${scriptPath}`);
     // }
     runPromptProcess(scriptPath, args, options);
   },
@@ -133,11 +132,11 @@ export const getScriptFromDbWithFallback = async (scriptPath: string) => {
     const db = await readJson(scriptsDbPath);
     const script = db?.scripts?.find((s: Script) => s.filePath === scriptPath);
     if (script) {
-      info(`Found script in db: ${scriptPath}`, script);
+      log.info(`Found script in db: ${scriptPath}`, script);
       return script;
     }
   } catch (error) {
-    warn(error);
+    log.warn(error);
   }
 
   return await parseScript(scriptPath);
@@ -146,17 +145,17 @@ export const getScriptFromDbWithFallback = async (scriptPath: string) => {
 // TODO: Consider removing the "parseScript" and just reading from the scripts db?
 const findScript = async (scriptPath: string) => {
   if (scriptPath === getMainScriptPath()) {
-    info('findScript found main script');
+    log.info('findScript found main script');
     return await getKitScript(getMainScriptPath());
   }
 
   if (scriptPath.startsWith(kitPath()) && !scriptPath.startsWith(kitPath('tmp'))) {
-    info('findScript found kit script');
+    log.info('findScript found kit script');
     return await getKitScript(scriptPath);
   }
 
   const script = kitState.scripts.get(scriptPath);
-  info('find script found');
+  log.info('find script found');
   return script;
 };
 
@@ -175,7 +174,7 @@ export const runPromptProcess = async (
     sponsorCheck: false,
   },
 ): Promise<ProcessInfo | null> => {
-  // info(`->>> Prompt script path: ${promptScriptPath}`);
+  // log.info(`->>> Prompt script path: ${promptScriptPath}`);
 
   const count = prompts.getVisiblePromptCount();
   if (count >= 2 && options?.sponsorCheck) {
@@ -208,7 +207,7 @@ export const runPromptProcess = async (
   }
   const { prompt, pid, child } = promptInfo;
   const isSplash = prompt.ui === UI.splash;
-  info(`>>>
+  log.info(`>>>
 
   ${pid}:${prompt.window?.id}: 🧤 Show and focus ${promptScriptPath}
 
@@ -220,36 +219,36 @@ export const runPromptProcess = async (
 
   prompt.alwaysOnTop = true;
   if (isMain) {
-    info(`${pid}: 🏠 Main script: ${promptScriptPath}`);
+    log.info(`${pid}: 🏠 Main script: ${promptScriptPath}`);
     prompt.initMainBounds();
     prompt.initShowPrompt();
   } else {
-    info(`${pid}: 🖱️ Moving prompt to mouse screen`);
+    log.info(`${pid}: 🖱️ Moving prompt to mouse screen`);
     prompt.moveToMouseScreen();
   }
 
-  info(`${prompt.pid} 🐣 Alive for ${prompt.lifeTime()}`);
+  log.info(`${prompt.pid} 🐣 Alive for ${prompt.lifeTime()}`);
 
   const idlesLength = getIdles().length;
-  info(`🗿 ${idlesLength} idles`);
+  log.info(`🗿 ${idlesLength} idles`);
 
   if (isSplash && isMain) {
-    info('💦 Splash install screen visible. Preload Main Menu...');
+    log.info('💦 Splash install screen visible. Preload Main Menu...');
     try {
       prompt.scriptPath = getMainScriptPath();
       prompt.preloaded = '';
     } catch (error) {
-      err(error);
+      log.err(error);
     }
   }
 
   // ensureIdleProcess();
 
-  info(`🏃‍♀️ Run ${promptScriptPath}`);
+  log.info(`🏃‍♀️ Run ${promptScriptPath}`);
 
   // Add another to the process pool when exhausted.
 
-  // info(`${pid}: 🏎 ${promptScriptPath} `);
+  // log.info(`${pid}: 🏎 ${promptScriptPath} `);
   promptInfo.scriptPath = promptScriptPath;
   promptInfo.date = Date.now();
 
@@ -263,11 +262,11 @@ export const runPromptProcess = async (
 
   const script = scriptlet || (await findScript(promptScriptPath));
   if (!script) {
-    err(`Couldn't find script, blocking run: `, promptScriptPath);
+    log.err(`Couldn't find script, blocking run: `, promptScriptPath);
     return null;
   }
   const visible = prompt?.isVisible();
-  info(`${pid}: ${visible ? '👀 visible' : '🙈 not visible'} before setScript ${script?.name}`);
+  log.info(`${pid}: ${visible ? '👀 visible' : '🙈 not visible'} before setScript ${script?.name}`);
 
   if (visible) {
     setShortcodes(prompt, kitCache.scripts);
@@ -275,13 +274,13 @@ export const runPromptProcess = async (
 
   const status = await prompt.setScript(script, pid, options?.force);
   if (status === 'denied') {
-    info(`Another script is already controlling the UI. Denying UI control: ${path.basename(promptScriptPath)}`);
+    log.info(`Another script is already controlling the UI. Denying UI control: ${path.basename(promptScriptPath)}`);
   }
 
   // processes.assignScriptToProcess(promptScriptPath, pid);
   // alwaysOnTop(true);
   // if (!pathsAreEqual(promptScriptPath || '', getMainScriptPath())) {
-  //   info(`Enabling ignore blur: ${promptScriptPath}`);
+  //   log.info(`Enabling ignore blur: ${promptScriptPath}`);
   //   kitState.ignoreBlur = true;
   // }
 
@@ -293,7 +292,7 @@ export const runPromptProcess = async (
     options?.force ? 'true' : 'false',
   ];
 
-  info(`${pid}: 🚀 Send ${promptScriptPath}`);
+  log.info(`${pid}: 🚀 Send ${promptScriptPath}`);
   child?.send({
     channel: Channel.VALUE_SUBMITTED,
     input: '',
@@ -324,7 +323,7 @@ const forkOptions: ForkOptions = {
 };
 
 export const runScript = (...args: string[]) => {
-  info('Run', ...args);
+  log.info('Run', ...args);
 
   return new Promise((resolve, reject) => {
     try {
@@ -332,7 +331,7 @@ export const runScript = (...args: string[]) => {
 
       child.on('message', (data) => {
         const dataString = data.toString();
-        info(args[0], dataString);
+        log.info(args[0], dataString);
       });
 
       child.on('exit', () => {
@@ -343,13 +342,13 @@ export const runScript = (...args: string[]) => {
         reject(error);
       });
     } catch (error) {
-      warn(`Failed to run script ${args}`);
+      log.warn(`Failed to run script ${args}`);
     }
   });
 };
 
 subscribeKey(kitState, 'isSponsor', (isSponsor) => {
-  info('🎨 Sponsor changed:', isSponsor);
+  log.info('🎨 Sponsor changed:', isSponsor);
 
   // runScript(
   //   kitPath('config', 'toggle-sponsor.js'),
