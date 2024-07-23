@@ -76,7 +76,7 @@ export default () => {
         return;
       }
 
-      if (focusedChoice?.snippet && !flagValue) {
+      if (focusedChoice?.text && !flagValue) {
         submit(focusedChoice);
         return;
       }
