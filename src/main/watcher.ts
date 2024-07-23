@@ -46,6 +46,7 @@ import { loadKenvEnvironment } from './env-utils';
 import { pathExists, writeFile } from './cjs-exports';
 import { createLogger } from '../shared/log-utils';
 import { compareArrays } from '../shared/utils';
+import { clearInterval, setInterval } from 'node:timers';
 
 const log = createLogger('watcher.ts');
 
@@ -646,21 +647,22 @@ export const restartWatchers = debounce(
 );
 
 let pingInterval: NodeJS.Timeout;
-let pinged = false;
 export const setupWatchers = async () => {
+  log.green('🔄 Setup Watchers');
   await teardownWatchers();
   if (kitState.ignoreInitial) {
     refreshScripts();
   }
 
-  log.info('--- 👀 Watching Scripts ---');
+  // log.yellow('--- 👀 Watching Scripts ---', { pingInterval });
 
   // Set up an interval to touch ping.txt every minute
   if (pingInterval) {
     clearInterval(pingInterval);
   }
   pingInterval = setInterval(async () => {
-    if (pinged) {
+    // log.green('🏓 Updating ping.txt');
+    if (kitState.waitingForPing) {
       await restartWatchers();
       return;
     }
@@ -668,9 +670,10 @@ export const setupWatchers = async () => {
     const currentDate = new Date().toISOString();
 
     try {
+      // log.info(`🏓 Updating ping.txt with current date: ${currentDate}`);
+      kitState.waitingForPing = true;
       await writeFile(pingPath, currentDate);
-      pinged = true;
-      //   log.info(`🏓 Updated ping.txt with current date: ${currentDate}`);
+      // log.info(`🏓 Updated ping.txt with current date: ${currentDate}`);
     } catch (error) {
       log.error(`Error writing to ping.txt: ${error}`);
     }
@@ -680,10 +683,10 @@ export const setupWatchers = async () => {
     // if (!filePath.match(/\.(ts|js|json|txt|env)$/)) return;
     const { base, dir, name } = path.parse(filePath);
 
-    log.info(`${eventName}:	base: ${base}, dir: ${dir}, name: ${name}`);
+    log.green(`${eventName}:	base: ${base}, dir: ${dir}, name: ${name}`);
 
     if (base === 'ping.txt') {
-      pinged = false;
+      kitState.waitingForPing = false;
       return;
     }
 

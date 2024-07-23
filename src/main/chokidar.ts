@@ -6,11 +6,23 @@ import { createLogger } from '../shared/log-utils';
 
 const log = createLogger('chokidar.ts');
 
+const kitChokidarPath = (...parts: string[]) => {
+  return kitPath(...parts).replaceAll('\\', '/');
+};
+
+const kenvChokidarPath = (...parts: string[]) => {
+  return kenvPath(...parts).replaceAll('\\', '/');
+};
+
+const pathChokidarResolve = (...parts: string[]) => {
+  return path.resolve(...parts).replaceAll('\\', '/');
+};
+
 export type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
 type WatcherCallback = (eventName: WatchEvent, filePath: string) => Promise<void>;
 export const startWatching = (callback: WatcherCallback) => {
   log.info(`🔍 Watching ${userDbPath}`);
-  const userDbPathWatcher = chokidar.watch(userDbPath);
+  const userDbPathWatcher = chokidar.watch(userDbPath.replaceAll('\\', '/'));
 
   userDbPathWatcher.on('all', (eventName, filePath) => {
     log.info(`🔍 Watching ${userDbPath} -> ${eventName} ${filePath}`);
@@ -19,9 +31,9 @@ export const startWatching = (callback: WatcherCallback) => {
 
   const kenvScriptsWatcher = chokidar.watch(
     [
-      path.resolve(kenvPath('snippets', '*')),
-      path.resolve(kenvPath('scripts', '*')),
-      path.resolve(kenvPath('scriptlets', '*')),
+      pathChokidarResolve(kenvChokidarPath('snippets', '*')),
+      pathChokidarResolve(kenvChokidarPath('scripts', '*')),
+      pathChokidarResolve(kenvChokidarPath('scriptlets', '*')),
     ],
     {
       depth: 0,
@@ -32,12 +44,12 @@ export const startWatching = (callback: WatcherCallback) => {
   );
 
   kenvScriptsWatcher.on('all', callback);
-  const kenvsWatcher = chokidar.watch(kenvPath('kenvs'), {
+  const kenvsWatcher = chokidar.watch(kenvChokidarPath('kenvs'), {
     ignoreInitial: kitState.ignoreInitial,
     depth: 0,
     ignored: (filePath) => {
-      const relativePath = filePath.slice(kenvPath('kenvs').length);
-      const depth = relativePath.split(path.sep).filter((p) => p.length > 0).length;
+      const relativePath = filePath.slice(kenvChokidarPath('kenvs').length);
+      const depth = relativePath.split('/').filter((p) => p.length > 0).length;
       return depth > 1;
     },
   });
@@ -45,10 +57,10 @@ export const startWatching = (callback: WatcherCallback) => {
     log.info(`🕵️‍♀️ Detected new dir in "kenvs": ${filePath}`);
 
     const globs = [
-      path.resolve(filePath, 'snippets', '*'),
-      path.resolve(filePath, 'scripts', '*'),
-      path.resolve(filePath, 'scriptlets', '*'),
-      path.resolve(filePath, '*'),
+      pathChokidarResolve(filePath, 'snippets', '*'),
+      pathChokidarResolve(filePath, 'scripts', '*'),
+      pathChokidarResolve(filePath, 'scriptlets', '*'),
+      pathChokidarResolve(filePath, '*'),
     ];
 
     setTimeout(() => {
@@ -61,10 +73,10 @@ export const startWatching = (callback: WatcherCallback) => {
     log.info(`🕵️‍♂️ Detected removed dir in "kenvs": ${filePath}`);
 
     const globs = [
-      path.resolve(filePath, 'snippets', '*'),
-      path.resolve(filePath, 'scripts', '*'),
-      path.resolve(filePath, 'scriptlets', '*'),
-      path.resolve(filePath, '*'),
+      pathChokidarResolve(filePath, 'snippets', '*'),
+      pathChokidarResolve(filePath, 'scripts', '*'),
+      pathChokidarResolve(filePath, 'scriptlets', '*'),
+      pathChokidarResolve(filePath, '*'),
     ];
 
     setTimeout(() => {
@@ -74,25 +86,25 @@ export const startWatching = (callback: WatcherCallback) => {
   });
 
   kenvsWatcher.on('unlink', (filePath) => {
-    kenvScriptsWatcher.unwatch(path.resolve(filePath, 'scripts', '*'));
+    kenvScriptsWatcher.unwatch(pathChokidarResolve(filePath, 'scripts', '*'));
   });
 
-  const kenvRootWatcher = chokidar.watch(kenvPath('*'), {
+  const kenvRootWatcher = chokidar.watch(kenvChokidarPath('*'), {
     depth: 0,
     ignoreInitial: kitState.ignoreInitial,
   });
 
   kenvRootWatcher.on('all', callback);
 
-  const runWatcher = chokidar.watch(kitPath('run.txt'), {
-    disableGlobbing: true,
+  const runWatcher = chokidar.watch(kitChokidarPath('run.txt'), {
     ignoreInitial: true,
   });
 
   runWatcher.on('all', callback);
 
-  const pingWatcher = chokidar.watch(kitPath('ping.txt'), {
-    disableGlobbing: true,
+  const pingTxtPath = kitChokidarPath('ping.txt');
+  log.green({ pingTxtPath });
+  const pingWatcher = chokidar.watch(pingTxtPath, {
     ignoreInitial: true,
   });
 

@@ -1,5 +1,4 @@
 import { UI } from '@johnlindquist/kit/core/enum';
-import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
@@ -17,7 +16,6 @@ import {
   invalidateChoiceInputsAtom,
   panelHTMLAtom,
   promptDataAtom,
-  selectedChoicesAtom,
   submitValueAtom,
   toggleSelectedChoiceAtom,
   uiAtom,
@@ -75,6 +73,11 @@ export default () => {
 
       if ([UI.webcam, UI.mic].includes(ui)) {
         emitEnter();
+        return;
+      }
+
+      if (focusedChoice?.snippet && !flagValue) {
+        submit(focusedChoice);
         return;
       }
 

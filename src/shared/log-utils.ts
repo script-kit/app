@@ -53,6 +53,24 @@ export class Logger {
     }
   }
 
+  green(...args: any[]) {
+    if (!(this.disabled || this.off)) {
+      log.info(`\x1b[32m${this.prefix}:\x1b[0m`, ...args);
+    }
+  }
+
+  yellow(...args: any[]) {
+    if (!(this.disabled || this.off)) {
+      log.info(`\x1b[33m${this.prefix}:\x1b[0m`, ...args);
+    }
+  }
+
+  red(...args: any[]) {
+    if (!(this.disabled || this.off)) {
+      log.info(`\x1b[31m${this.prefix}:\x1b[0m`, ...args);
+    }
+  }
+
   // TODO: Need to reach across the electron-log/renderer bounds to disable them too
   only(...args: any[]) {
     // Disable all other loggers

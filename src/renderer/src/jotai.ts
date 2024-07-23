@@ -1732,7 +1732,8 @@ export const promptDataAtom = atom(
 
       s(promptActiveAtom, true);
       s(tabChangedAtom, false);
-      log.info({ actionsConfig: a?.actionsConfig });
+      s(actionsInputAtom, '');
+      // log.info({ actionsConfig: a?.actionsConfig });
       s(actionsConfigAtom, a?.actionsConfig || {});
     }
   },

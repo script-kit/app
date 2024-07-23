@@ -274,27 +274,27 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       app.relaunch();
       app.exit();
     },
-    ENABLE_ACCESSIBILITY: onChildChannelOverride(async ({ child }, { channel, value }) => {
+    ENABLE_ACCESSIBILITY: onChildChannelOverride(({ child }, { channel, value }) => {
       log.info('👋 Enabling accessibility');
       shims['node-mac-permissions'].askForAccessibilityAccess();
     }),
 
     CONSOLE_LOG: (data) => {
-      getLog(data.kitScript).log.info(data?.value || Value.Undefined);
+      getLog(data.kitScript).info(data?.value || Value.Undefined);
       setLog(data.value || Value.Undefined);
     },
     CONSOLE_INFO: (data) => {
-      getLog(data.kitScript).log.info(data?.value || Value.Undefined);
+      getLog(data.kitScript).info(data?.value || Value.Undefined);
       setLog(data.value || Value.Undefined);
     },
 
     CONSOLE_WARN: (data) => {
-      getLog(data.kitScript).log.warn(data.value);
+      getLog(data.kitScript).warn(data.value);
       setLog(data.value);
     },
 
     CONSOLE_ERROR: (data) => {
-      getLog(data.kitScript).log.warn(data.value);
+      getLog(data.kitScript).warn(data.value);
       setLog(data.value);
     },
 
@@ -1372,10 +1372,10 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       sendToPrompt(Channel.SEND_KEYSTROKE, data.value);
     },
     KIT_LOG: (data) => {
-      getLog(data.kitScript).log.info(data?.value || Value.Undefined);
+      getLog(data.kitScript).info(data?.value || Value.Undefined);
     },
     KIT_WARN: (data) => {
-      getLog(data.kitScript).log.warn(data?.value || Value.Undefined);
+      getLog(data.kitScript).warn(data?.value || Value.Undefined);
     },
     KIT_CLEAR: (data) => {
       getLog(data.kitScript).clear(data?.value || Value.Undefined);
@@ -2153,16 +2153,16 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     TRASH: onChildChannel(async ({ child }, { channel, value }) => {
       for await (const item of value) {
         log.info('🗑 Trashing', item);
-        await shell.trashItem(item);
+        await shell.trashItem(path.normalize(item));
       }
     }),
-    SET_SCORED_CHOICES: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_SCORED_CHOICES: onChildChannel(({ child }, { channel, value }) => {
       log.verbose('SET SCORED CHOICES');
       if (!prompt.kitSearch.input) {
         sendToPrompt(channel, value);
       }
     }),
-    PRELOAD: onChildChannel(async ({ child }, { channel, value }) => {
+    PRELOAD: onChildChannel(({ child }, { channel, value }) => {
       prompt.attemptPreload(value);
     }),
     CLEAR_TIMESTAMPS: onChildChannel(async ({ child }, { channel, value }) => {
@@ -2184,7 +2184,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     TOGGLE_WATCHER: onChildChannel(async ({ child }, { channel, value }) => {
       log.info('TOGGLE WATCHER DEPRECATED');
     }),
-    SET_SELECTED_CHOICES: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_SELECTED_CHOICES: onChildChannel(({ child }, { channel, value }) => {
       log.verbose('SET SELECTED CHOICES');
       sendToPrompt(channel, value);
     }),

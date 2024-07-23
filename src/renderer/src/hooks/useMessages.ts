@@ -578,21 +578,25 @@ export default () => {
     }
 
     const handleInputReady = (event, data) => {
+      let rafId: number;
       const timeoutId = setTimeout(() => {
         console.warn(`Timeout reached after 250ms for element with id: "input"`);
         ipcRenderer.send(AppChannel.INPUT_READY);
+        cancelAnimationFrame(rafId);
       }, 250);
 
-      requestAnimationFrame(function checkElement() {
+      const checkElement = () => {
         log.info('Checking for input');
         if (document.getElementById('input')) {
           clearTimeout(timeoutId);
           log.info('Input found');
           ipcRenderer.send(AppChannel.INPUT_READY);
         } else {
-          requestAnimationFrame(checkElement);
+          rafId = requestAnimationFrame(checkElement);
         }
-      });
+      };
+
+      rafId = requestAnimationFrame(checkElement);
     };
     ipcRenderer.once(AppChannel.INPUT_READY, handleInputReady);
 

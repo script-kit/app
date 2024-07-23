@@ -324,6 +324,7 @@ const initState = {
   dockShown: false,
   attemptingPreload: false,
   hasCss: false,
+  waitingForPing: false,
 };
 
 const initConfig: Config = {
