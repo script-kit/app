@@ -20,10 +20,10 @@ import { kitClipboard, kitConfig, kitState, kitStore, subs } from './state';
 import { Trigger } from '../shared/enums';
 import { deleteText } from './keyboard';
 
-import { addToClipboardHistory, getClipboardHistory, syncClipboardStore } from './clipboard';
-import { registerIO, toKey } from './io';
+import { addToClipboardHistory, getClipboardHistory } from './clipboard';
+import { registerIO } from './io';
 import { prompts } from './prompts';
-import shims, { supportsDependency } from './shims';
+import shims from './shims';
 import { createLogger } from '../shared/log-utils';
 
 const log = createLogger('tick.ts');
@@ -54,7 +54,7 @@ let prevKey = -1;
 import type { UiohookKey, UiohookKeyboardEvent, UiohookMouseEvent } from 'uiohook-napi';
 let uiohookKeyCode: typeof UiohookKey;
 
-const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
+const ioEvent = (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
   if (!uiohookKeyCode) {
     uiohookKeyCode = shims['uiohook-napi'].UiohookKey;
   }
@@ -573,10 +573,8 @@ export const addSnippet = (script: Script) => {
     return;
   }
 
-  log.info(`👀 Adding snippet: ${script.filePath}`);
-
   if (script?.snippet) {
-    log.info(`Set snippet: ${script.snippet}`);
+    log.info(`✂️ Set snippet: ${script.snippet}`);
 
     // If snippet starts with an '*' then it's a postfix
     snippetMap.set(script.snippet.replace(/^\*/, ''), {

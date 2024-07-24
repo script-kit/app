@@ -2181,7 +2181,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       stampDb.stamps.splice(stamp, 1);
       await stampDb.write();
     }),
-    TOGGLE_WATCHER: onChildChannel(async ({ child }, { channel, value }) => {
+    TOGGLE_WATCHER: onChildChannel(({ child }, { channel, value }) => {
       log.info('TOGGLE WATCHER DEPRECATED');
     }),
     SET_SELECTED_CHOICES: onChildChannel(({ child }, { channel, value }) => {
@@ -2189,20 +2189,20 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       sendToPrompt(channel, value);
     }),
 
-    TOGGLE_ALL_SELECTED_CHOICES: onChildChannel(async ({ child }, { channel, value }) => {
+    TOGGLE_ALL_SELECTED_CHOICES: onChildChannel(({ child }, { channel, value }) => {
       log.verbose('TOGGLE ALL SELECTED CHOICES');
       sendToPrompt(channel, value);
     }),
 
-    KENV_NEW_PATH: onChildChannel(async ({ child }, { channel, value }) => {
+    KENV_NEW_PATH: onChildChannel(({ child }, { channel, value }) => {
       log.verbose('KENV NEW PATH', { value });
       kitStore.set('KENV', value);
     }),
 
-    HEARTBEAT: onChildChannelOverride(async ({ child }, { channel }) => {
+    HEARTBEAT: onChildChannelOverride(({ child }, { channel }) => {
       log.verbose(`❤️ ${channel} from ${child.pid}`);
     }),
-    GET_THEME: onChildChannelOverride(async ({ child }, { channel }) => {
+    GET_THEME: onChildChannelOverride(({ child }, { channel }) => {
       const value = snapshot(kitState.theme);
       log.info(`${child?.pid}: ${channel}`, value);
       childSend({
@@ -2211,11 +2211,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       });
     }),
 
-    CLOSE_ACTIONS: onChildChannel(async ({ child }, { channel, value }) => {
+    CLOSE_ACTIONS: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_FLAG_VALUE, '');
     }),
 
-    OPEN_ACTIONS: onChildChannel(async ({ child }, { channel, value }) => {
+    OPEN_ACTIONS: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_FLAG_VALUE, 'action');
     }),
     STAMP_SCRIPT: onChildChannelOverride(async ({ child }, { channel, value }) => {
@@ -2254,7 +2254,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       }
     }),
     ...HANDLER_CHANNELS.reduce((acc, channel) => {
-      acc[channel] = onChildChannel(async ({ child }, { channel, value }) => {
+      acc[channel] = onChildChannel(({ child }, { channel, value }) => {
         log.info('SYSTEM CHANNEL', { channel, value });
         if (value && processInfo?.preventChannels?.has(channel)) {
           processInfo?.preventChannels?.delete(channel);

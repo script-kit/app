@@ -178,7 +178,7 @@ export default function ActionsList() {
       shadow-lg
       "
       style={{
-        height: actionsHeight + inputHeight + (actionsHeight === 0 ? 1 : 2), // 2px for the border, hmm....
+        height: actionsHeight + inputHeight + 2, // 2px for the border, hmm....
         minHeight: inputHeight,
       }}
     >

@@ -709,7 +709,7 @@ export const setScoredChoices = (prompt: KitPrompt, choices: ScoredChoice[], rea
     !prompt.kitSearch.inputRegex &&
     choices?.length
   ) {
-    log.info(`Caching main scored choices: ${choices.length}. First choice: ${choices[0]?.item?.name}`);
+    log.info(`${prompt.pid}: Caching main scored choices: ${choices.length}. First choice: ${choices[0]?.item?.name}`);
     sendToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, choices);
   }
 };

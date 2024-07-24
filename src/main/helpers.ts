@@ -130,14 +130,9 @@ Attempted to convert to a valid shortcut, but result was invalid:
 Please open ${path.basename(filePath)} and try again or ask a question in our [Github Discussions](https://github.com/johnlindquist/kit/discussions)
 `;
 
-export const shortcutInfo = async (
-  shortcut: string,
-  targetScriptPath: string,
-  md = conversionFail,
-  otherScriptPath = '',
-) => {
+export const shortcutInfo = (shortcut: string, targetScriptPath: string, md = conversionFail, otherScriptPath = '') => {
   const markdown = md(shortcut, targetScriptPath, otherScriptPath);
-  // log.info(markdown);
+  log.warn(markdown);
 
   emitter.emit(KitEvent.RunPromptProcess, {
     scriptPath: infoScript,
@@ -157,7 +152,7 @@ export const convertShortcut = (shortcut: string, filePath: string): string => {
   // log.info({ shortcut, normalizedShortcut });
   const [sourceKey, ...mods] = normalizedShortcut
     .trim()
-    ?.split(/\+| /)
+    .split(/\+| /)
     .map((str: string) => str.trim())
     .filter(Boolean)
     .reverse();

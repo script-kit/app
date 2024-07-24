@@ -1,25 +1,21 @@
-/* eslint-disable jsx-a11y/anchor-is-valid */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { loadable } from 'jotai/utils';
+import type React from 'react';
+import { useCallback } from 'react';
 
 import {
   createAssetAtom,
   actionsConfigAtom,
-  focusedFlagValueAtom,
   isMainScriptAtom,
-  listProcessesActionAtom,
-  loadingAtom,
   runMainScriptAtom,
-  runProcessesAtom,
   sendActionAtom,
-  sendShortcutAtom,
   flaggedChoiceValueAtom,
+  uiAtom,
 } from '../jotai';
 
 import { createLogger } from '../../../shared/log-utils';
 import { useState } from 'react';
+import { UI } from '@johnlindquist/kit/core/enum';
 
 const log = createLogger('icon.tsx');
 
@@ -43,19 +39,40 @@ const iconContext = {
   },
 };
 export function IconButton() {
-  const loading = useAtomValue(loadingAtom);
   const [lazyIcon] = useAtom(loadableIconAtom);
   const isMainScript = useAtomValue(isMainScriptAtom);
-  const runProcesses = useAtomValue(runProcessesAtom);
   const runMainProcess = useAtomValue(runMainScriptAtom);
-  const listProcessesAction = useAtomValue(listProcessesActionAtom);
-  const sendShortcut = useSetAtom(sendShortcutAtom);
   const sendAction = useSetAtom(sendActionAtom);
   const [flagValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
   const flagsOptions = useAtomValue(actionsConfigAtom);
   const [isMouseDown, setIsMouseDown] = useState(false);
+  const [ui] = useAtom(uiAtom);
 
   const isActionActive = flagValue && flagsOptions?.active === 'Script Kit Support';
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      if (ui === UI.splash) {
+        return;
+      }
+
+      log.info({
+        isMainScript,
+        flagValue,
+      });
+      if (isMainScript) {
+        if (flagValue) {
+          setFlagValue('');
+        } else {
+          sendAction({ name: 'Support' });
+        }
+      } else {
+        runMainProcess();
+      }
+    },
+    [isMainScript, flagValue, setFlagValue, sendAction, runMainProcess, ui],
+  );
 
   if (lazyIcon.state === 'hasError') {
     return <span>{lazyIcon.error}</span>;
@@ -76,26 +93,9 @@ export function IconButton() {
       <a
         onMouseDown={() => setIsMouseDown(true)}
         onMouseUp={() => setIsMouseDown(false)}
-        onClick={(e) => {
-          e.preventDefault();
-
-          log.info({
-            isMainScript,
-            flagValue,
-          });
-          if (isMainScript) {
-            if (flagValue) {
-              setFlagValue('');
-            } else {
-              sendAction({ name: 'Support' });
-            }
-          } else {
-            runMainProcess();
-          }
-        }}
+        onClick={handleClick}
         tabIndex={-1}
       >
-        {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
         <svg
           className={`
         -ml-2

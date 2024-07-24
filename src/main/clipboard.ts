@@ -1,8 +1,11 @@
 import { kitPath } from '@johnlindquist/kit/core/utils';
 import type { Choice } from '@johnlindquist/kit/types';
-import log from 'electron-log';
 import { remove } from 'lodash-es';
 import { kitClipboard, kitState, kitStore } from './state';
+
+import { createLogger } from '../shared/log-utils';
+
+const log = createLogger('clipboard.ts');
 
 export interface ClipboardItem extends Choice {
   type: string;

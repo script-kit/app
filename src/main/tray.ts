@@ -263,7 +263,7 @@ const buildPromptsSubmenu = (): MenuItemConstructorOptions[] => {
 
   promptsSubmenu.push({
     label: 'Open Focused Prompt Dev Tools',
-    click: async () => {
+    click: () => {
       log.info('Opening focused prompt dev tools...');
       prompts?.prevFocused?.window?.webContents?.openDevTools();
     },
@@ -283,6 +283,18 @@ const buildPromptsSubmenu = (): MenuItemConstructorOptions[] => {
       log.info('Gathering all prompts to center...');
       for (const prompt of prompts) {
         prompt.forcePromptToCenter();
+      }
+    },
+  });
+
+  promptsSubmenu.push({
+    label: 'Force close all prompts',
+    click: () => {
+      log.info('Force closing all prompts...');
+      for (const prompt of prompts) {
+        prompt.hide();
+        prompt.close();
+        processes.removeByPid(prompt.pid);
       }
     },
   });
@@ -382,9 +394,25 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
       log.warn('Repairing kit SDK node_modules...');
       emitter.emit(KitEvent.TeardownWatchers);
       try {
-        await rm(knodePath(), { recursive: true, force: true });
         await rm(kitPath(), { recursive: true, force: true });
       } catch (error) {
+        log.error(`Failed to remove ${kitPath()}. Repair won't work.`);
+        new Notification({
+          title: 'Failed to remove Kit SDK',
+          body: `Quit, remove ${kitPath()}, then open Kit again.`,
+        }).show();
+
+        log.error(error);
+      }
+
+      try {
+        await rm(knodePath(), { recursive: true, force: true });
+      } catch (error) {
+        log.error(`Failed to remove ${knodePath()}. Repair won't work.`);
+        new Notification({
+          title: `Failed to remove Kit's node executable`,
+          body: `Quit, remove ${knodePath()}, then open Kit again.`,
+        }).show();
         log.error(error);
       }
 

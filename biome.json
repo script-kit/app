@@ -16,9 +16,7 @@
     "rules": {
       "all": true,
       "a11y": {
-        "useKeyWithMouseEvents": "off",
-        "useKeyWithClickEvents": "off",
-        "noSvgWithoutTitle": "off"
+        "all": false
       },
       "complexity": {
         "noExcessiveCognitiveComplexity": "off",

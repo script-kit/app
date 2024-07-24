@@ -1,11 +1,3 @@
-/* eslint-disable no-console */
-/* eslint-disable no-bitwise */
-/* eslint-disable no-useless-escape */
-/* eslint-disable no-plusplus */
-/* eslint-disable no-nested-ternary */
-/* eslint-disable no-restricted-syntax */
-/* eslint-disable guard-for-in */
-
 import { AppDb, type UserDb } from '@johnlindquist/kit/core/db';
 import { Channel, Mode, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import type {

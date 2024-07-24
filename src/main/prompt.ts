@@ -2499,7 +2499,7 @@ export class KitPrompt {
 
   initMainChoices = () => {
     // TODO: Reimplement cache?
-    log.info(`Caching main scored choices: ${kitCache.choices.length}`);
+    log.info(`${this.pid}: Caching main scored choices: ${kitCache.choices.length}`);
     log.info(
       'Most recent 3:',
       kitCache.choices.slice(1, 4).map((c) => c?.item?.name),

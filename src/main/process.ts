@@ -285,7 +285,7 @@ export const sendToAllActiveChildren = (data: {
 export const createMessageHandler = (processInfo: ProcessInfo) => {
   const { type } = processInfo;
   const kitMessageMap = createMessageMap(processInfo as ProcessAndPrompt);
-  // log.info({ kitMessageMap });
+  log.info('✉️ kitMessageMap created.');
 
   return (data: GenericSendData) => {
     if (
@@ -431,7 +431,7 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
       }
     });
 
-    child.stderr.once('data', async (data) => {
+    child.stderr.once('data', (data) => {
       log.info(data?.toString());
       const [debugUrl] = data.toString().match(/(?<=ws:\/\/).*/g) || [''];
 
@@ -449,7 +449,7 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
     const scriptLog = getLog(scriptPath);
 
     const routeToScriptLog = (d: any) => {
-      scriptinfo(`\n${stripAnsi(d.toString())}`);
+      scriptLog.info(`\n${stripAnsi(d.toString())}`);
     };
 
     child.stdout?.on('data', routeToScriptLog);

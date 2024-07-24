@@ -18,7 +18,7 @@ import download from 'download';
 import { assign, debounce } from 'lodash-es';
 import StreamZip from 'node-stream-zip';
 import * as tar from 'tar';
-import { access, lstat, readFile, rm } from 'node:fs/promises';
+import { lstat, readFile, rm } from 'node:fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import {
   KIT_FIRST_PATH,
@@ -48,7 +48,7 @@ import { maybeConvertColors } from './process';
 import { prompts } from './prompts';
 import { INSTALL_ERROR, show } from './show';
 import { getThemes, kitCache, kitState, preloadChoicesMap, workers } from './state';
-import { ensureDir, writeFile, readJson, writeJson, pathExists, readdir, remove } from './cjs-exports';
+import { ensureDir, writeFile, readJson, writeJson, pathExists, readdir } from './cjs-exports';
 
 import electronLog from 'electron-log';
 import { createLogger } from '../shared/log-utils';
@@ -941,7 +941,7 @@ export const syncBins = async () => {
     } catch (error) {
       log.error(error);
     }
-  }, 1000);
+  }, 750);
 };
 
 export const cacheMainMenu = ({
@@ -969,7 +969,7 @@ export const cacheMainMenu = ({
       preview: preview?.length,
     });
     preloadChoicesMap.set(getMainScriptPath(), scripts);
-    log.info('✉️ Sending scripts to prompt...');
+
     if (preview) {
       cacheMainPreview(preview);
     }

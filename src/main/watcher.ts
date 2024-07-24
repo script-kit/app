@@ -792,6 +792,11 @@ export const setupWatchers = async () => {
     }
 
     if (dir.endsWith('snippets')) {
+      try {
+        await cacheMainScripts();
+      } catch (error) {
+        log.error(error);
+      }
       if (eventName === 'add' || eventName === 'change') {
         log.info('Snippet added/changed', filePath);
         addTextSnippet(filePath);
@@ -819,7 +824,7 @@ export const setupWatchers = async () => {
       }
       const scriptlets = await parseScriptletsFromPath(filePath);
       for (const scriptlet of scriptlets) {
-        log.info(`👀 -->>> ${eventName} ${scriptlet.filePath}`);
+        // log.info(`👀 -->>> ${eventName} ${scriptlet.filePath}`);
         await onScriptsChanged(eventName, scriptlet);
       }
       return;
