@@ -41,11 +41,6 @@ export const getPromptOptions = () => {
     transparent = kitState.kenvEnv.KIT_TRANSPARENT === 'true';
   }
 
-  let focusable = !kitState.isWindows;
-  if (kitState?.kenvEnv?.KIT_FORCE_FOCUSABLE === 'true') {
-    focusable = true;
-  }
-
   let x = Math.round(screenWidth / 2 - width / 2 + workX);
   // TODO: Windows prompt behavior
   // if (kitState.isWindows) {
@@ -103,7 +98,6 @@ export const getPromptOptions = () => {
   });
 
   const options = {
-    focusable,
     useContentSize: true,
     frame,
     hasShadow,

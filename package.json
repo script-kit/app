@@ -39,12 +39,7 @@
   "bugs": {
     "url": "https://github.com/johnlindquist/kitapp/issues"
   },
-  "keywords": [
-    "electron",
-    "react",
-    "typescript",
-    "ts"
-  ],
+  "keywords": ["electron", "react", "typescript", "ts"],
   "homepage": "https://github.com/johnlindquist/kitapp#readme",
   "jest": {
     "resolver": "jest-node-exports-resolver",
@@ -53,22 +48,10 @@
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/.erb/mocks/fileMock.js",
       "\\.(css|less|sass|scss)$": "identity-obj-proxy"
     },
-    "moduleFileExtensions": [
-      "js",
-      "jsx",
-      "ts",
-      "tsx",
-      "json"
-    ],
-    "moduleDirectories": [
-      "node_modules"
-    ],
-    "modulePathIgnorePatterns": [
-      ".history"
-    ],
-    "setupFiles": [
-      "./.erb/scripts/CheckBuildsExist.js"
-    ]
+    "moduleFileExtensions": ["js", "jsx", "ts", "tsx", "json"],
+    "moduleDirectories": ["node_modules"],
+    "modulePathIgnorePatterns": [".history"],
+    "setupFiles": ["./.erb/scripts/CheckBuildsExist.js"]
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
@@ -88,7 +71,7 @@
     "@types/download": "8.0.5",
     "@types/madge": "^5.0.3",
     "@types/minimist": "1.2.5",
-    "@types/node": "^20.14.11",
+    "@types/node": "^20.14.12",
     "@types/node-schedule": "^2.1.7",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -114,9 +97,9 @@
     "emoji-picker-react": "^4.11.1",
     "eslint": "^9.7.0",
     "eslint-config-erb": "4.1.0",
-    "framer-motion": "^11.3.8",
+    "framer-motion": "^11.3.17",
     "html-react-parser": "^5.1.12",
-    "jotai": "^2.9.0",
+    "jotai": "^2.9.1",
     "lodash-es": "^4.17.21",
     "memoize-one": "^6.0.0",
     "million": "^3.1.11",
@@ -148,7 +131,7 @@
   },
   "dependencies": {
     "@johnlindquist/clipboard": "^0.1.38",
-    "@johnlindquist/kit": "^2.7.0",
+    "@johnlindquist/kit": "2.18.1",
     "@rollup/plugin-commonjs": "^26.0.1",
     "axios": "^1.7.2",
     "builtin-modules": "^4.0.0",
@@ -159,7 +142,7 @@
     "dotenv": "^16.4.5",
     "download": "^8.0.0",
     "electron-context-menu": "^4.0.1",
-    "electron-log": "^5.1.6",
+    "electron-log": "^5.1.7",
     "electron-store": "^10.0.0",
     "electron-unhandled": "^5.0.0",
     "electron-updater": "^6.2.1",
@@ -181,8 +164,8 @@
     "rebuild": "^0.1.2",
     "rxjs": "^7.8.1",
     "tail": "^2.2.6",
-    "tar": "^7.4.0",
-    "typescript": "^5.5.3",
+    "tar": "^7.4.1",
+    "typescript": "^5.5.4",
     "untildify": "5.0.0",
     "valtio": "^1.13.2",
     "xstate": "^5.15.0"
@@ -201,11 +184,7 @@
   },
   "browserslist": [],
   "renovate": {
-    "extends": [
-      "bliss"
-    ],
-    "baseBranches": [
-      "next"
-    ]
+    "extends": ["bliss"],
+    "baseBranches": ["next"]
   }
 }

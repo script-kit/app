@@ -1,4 +1,4 @@
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import memoize from 'memoize-one';
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/require-default-props */
@@ -9,6 +9,7 @@ import type { ChoiceButtonProps } from '../../../shared/types';
 import {
   actionsInputHeightAtom,
   actionsItemHeightAtom,
+  flaggedChoiceValueAtom,
   flagsHeightAtom,
   flagsIndexAtom,
   flagsListAtom,
@@ -146,11 +147,20 @@ w-full
 export default function ActionsList() {
   const inputHeight = useAtomValue(actionsInputHeightAtom);
   const actionsHeight = useAtomValue(flagsHeightAtom);
-
   const [prevFocusedElement] = useAtom(focusedElementAtom);
+  const setFlagValue = useSetAtom(flaggedChoiceValueAtom);
+  const componentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (componentRef.current && !componentRef.current.contains(event.target as Node)) {
+        setFlagValue('');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
       if (prevFocusedElement) {
         prevFocusedElement.focus();
       }
@@ -160,6 +170,7 @@ export default function ActionsList() {
   return (
     <div
       id="flags"
+      ref={componentRef}
       className="
       z-50
       flags-component flex w-96 flex-col overflow-y-hidden

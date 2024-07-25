@@ -1215,7 +1215,7 @@ emitter.on(KitEvent.RemoveMostRecent, processes.removeCurrentProcess.bind(proces
 //   setChoices(formatScriptChoices(scripts));
 // });
 
-emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
+emitter.on(KitEvent.DID_FINISH_LOAD, () => {
   try {
     if (kitState.isMac) {
       const authorized = shims['node-mac-permissions'].getAuthStatus('accessibility') === 'authorized';

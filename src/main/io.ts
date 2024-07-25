@@ -1,10 +1,11 @@
+import { app, Notification } from 'electron';
 import { Channel } from '@johnlindquist/kit/core/enum';
 import { createLogger } from '../shared/log-utils';
 const log = createLogger('io.ts');
 import { chars } from './chars';
 import { sendToAllActiveChildren } from './process';
 import shims from './shims';
-import { getAccessibilityAuthorized, kitState } from './state';
+import { getAccessibilityAuthorized, kitState, kitStore } from './state';
 
 export const ShiftMap = {
   '`': '~',
@@ -202,8 +203,42 @@ export const registerIO = async (handler: (event: any) => void) => {
     }
   });
 
-  // TODO: Is there a way to detect that this has hung and restart the app if so?
+  if (kitState.kenvEnv?.KIT_UIHOOK?.trim() === 'true') {
+    kitStore.set('uIOhookEnabled', true);
+  }
+
+  if (kitState.kenvEnv?.KIT_UIHOOK?.trim() === 'false') {
+    kitStore.set('uIOhookEnabled', false);
+  }
+
+  const uIOhookEnabled = kitStore.get('uIOhookEnabled');
   log.info('The line right before uIOhook.start()...');
+  if (!uIOhookEnabled) {
+    log.warn('uIOhook is disabled by the user');
+    return;
+  }
+  const timeout = setTimeout(() => {
+    const retryCount = kitStore.get('retryCount') || 0;
+    if (retryCount > 2) {
+      log.error('uIOhook.start() failed after 3 attempts. Force quitting the app...');
+      new Notification({
+        title: 'uIOhook.start() failed after 3 attempts. Disabling uIOhook permanently...',
+      }).show();
+      kitStore.set('uIOhookEnabled', false);
+      app.relaunch();
+      app.exit(1);
+      return;
+    }
+    kitStore.set('retryCount', retryCount + 1);
+    new Notification(`uIOhook.start() timed out. Retrying... (Attempt ${retryCount + 2}/3)`).show();
+    log.error('uIOhook.start() timed out. Force quitting the app...');
+    log.info('Please try opening the app again.');
+    app.relaunch();
+    app.exit(1);
+  }, 3000);
+
   uIOhook.start();
+  clearTimeout(timeout);
+  kitStore.set('retryCount', 0);
   log.info('The line right after uIOhook.start()...');
 };

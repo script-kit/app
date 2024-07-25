@@ -70,6 +70,14 @@ const schema: Schema<{
     type: 'string',
     default: '0.0.0',
   },
+  retryCount: {
+    type: 'number',
+    default: 0,
+  },
+  uIOhookEnabled: {
+    type: 'boolean',
+    default: true,
+  },
 };
 export const kitStore = new Store({
   schema,

@@ -564,8 +564,10 @@ export const addSnippet = (script: Script) => {
     }
   }
 
+  const expand = script?.expand || script?.snippet;
+
   if (script?.kenv !== '' && !kitState.trustedKenvs.includes(script?.kenv)) {
-    if (script?.snippet) {
+    if (expand) {
       log.info(`Ignoring ${script?.filePath} // Snippet metadata because it's not trusted in a trusted kenv.`);
       log.info(`Add "${kitState.trustedKenvsKey}=${script?.kenv}" to your .env file to trust it.`);
     }
@@ -573,13 +575,13 @@ export const addSnippet = (script: Script) => {
     return;
   }
 
-  if (script?.snippet) {
-    log.info(`✂️ Set snippet: ${script.snippet}`);
+  if (expand) {
+    log.info(`✂️ Set expansion: ${expand}`);
 
     // If snippet starts with an '*' then it's a postfix
-    snippetMap.set(script.snippet.replace(/^\*/, ''), {
+    snippetMap.set(expand.replace(/^\*/, ''), {
       filePath: script.filePath,
-      postfix: script.snippet.startsWith('*'),
+      postfix: expand.startsWith('*'),
       txt: false,
     });
   }
