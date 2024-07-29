@@ -65,6 +65,12 @@ export class Logger {
     }
   }
 
+  purple(...args: any[]) {
+    if (!(this.disabled || this.off)) {
+      log.info(`\x1b[35m${this.prefix}:\x1b[0m`, ...args);
+    }
+  }
+
   red(...args: any[]) {
     if (!(this.disabled || this.off)) {
       log.info(`\x1b[31m${this.prefix}:\x1b[0m`, ...args);

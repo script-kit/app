@@ -1,5 +1,5 @@
 import { UI } from '@johnlindquist/kit/core/enum';
-import React, { type RefObject, useEffect, useRef } from 'react';
+import { type RefObject, useEffect, useRef } from 'react';
 const { ipcRenderer, shell } = window.electron;
 import useResizeObserver from '@react-hook/resize-observer';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
@@ -15,17 +15,20 @@ import {
   darkAtom,
   flaggedChoiceValueAtom,
   hasPreviewAtom,
-  logAtom,
   promptDataAtom,
   sendShortcutAtom,
   shortcutsAtom,
   termConfigAtom,
   termFontAtom,
+  termOutputAtom,
 } from './jotai';
 
 import { AppChannel } from '../../shared/enums';
 import XTerm from './components/xterm';
 import { AttachIPCAddon } from './term-attach-ipc-addon';
+
+import { createLogger } from '../../shared/log-utils';
+const log = createLogger('term.tsx');
 
 const defaultTheme = {
   foreground: '#2c3e50',
@@ -72,7 +75,9 @@ export default function Terminal() {
   const [hasPreview] = useAtom(hasPreviewAtom);
   const [fontFamily] = useAtom(termFontAtom);
   const [flagValue] = useAtom(flaggedChoiceValueAtom);
+  const [termOutput, setTermOutput] = useAtom(termOutputAtom);
 
+  const serializeAddonRef = useRef<SerializeAddon | null>(null);
   const attachAddonRef = useRef<AttachIPCAddon | null>(null);
 
   // useEscape();
@@ -99,7 +104,9 @@ export default function Terminal() {
       t.loadAddon(new Unicode11Addon());
       t.loadAddon(new SearchAddon());
       t.loadAddon(new LigaturesAddon());
-      t.loadAddon(new SerializeAddon());
+      const serializeAddon = new SerializeAddon();
+      serializeAddonRef.current = serializeAddon;
+      t.loadAddon(serializeAddon);
 
       if (fitRef?.current) {
         fitRef.current.fit();
@@ -151,6 +158,26 @@ export default function Terminal() {
   }, [sendShortcut, shortcuts]);
 
   useEffect(() => {
+    const termOutputHandler = (_event: any, data: string | Buffer) => {
+      if (xtermRef?.current?.terminal) {
+        const message = typeof data === 'string' ? data : new Uint8Array(data);
+        xtermRef?.current.terminal.write(message);
+
+        if (serializeAddonRef?.current) {
+          const serialized = serializeAddonRef?.current?.serialize();
+          setTermOutput(serialized);
+        }
+      }
+    };
+
+    ipcRenderer.on(AppChannel.TERM_OUTPUT, termOutputHandler);
+
+    return () => {
+      ipcRenderer.off(AppChannel.TERM_OUTPUT, termOutputHandler);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!xtermRef?.current?.terminal) {
       return;
     }
@@ -188,7 +215,6 @@ export default function Terminal() {
   }, [flagValue]);
 
   const appBounds = useAtomValue(appBoundsAtom);
-  const log = useAtomValue(logAtom);
 
   // useEffect(() => {
   //   if (!fitRef?.current) return;

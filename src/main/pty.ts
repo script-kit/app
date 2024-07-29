@@ -181,7 +181,7 @@ export const createPty = (prompt: KitPrompt) => {
   };
 
   const teardown = (pid?: number) => {
-    log.verbose(`🐲 >_ Shell teardown. pid: ${pid ? `pid: ${pid}` : ''}`);
+    log.info(`🐲 >_ Shell teardown. pid: ${pid ? `pid: ${pid}` : ''}`);
     ipcMain.off(AppChannel.TERM_RESIZE, resizeHandler);
     ipcMain.off(AppChannel.TERM_INPUT, inputHandler);
     try {
@@ -342,7 +342,7 @@ export const createPty = (prompt: KitPrompt) => {
       config.command = '';
     }, 200);
 
-    t.onData(async (data: any) => {
+    t.onData((data: any) => {
       try {
         sendData(data);
       } catch (ex) {
@@ -364,8 +364,8 @@ export const createPty = (prompt: KitPrompt) => {
             } else {
               teardown(t?.pid);
 
-              log.info('🐲 >_ Emit term process exited');
-              emitter.emit(KitEvent.TermExited, '');
+              log.info('🐲 >_ Emit term process exited', config.pid);
+              emitter.emit(KitEvent.TermExited, config.pid);
             }
             // t = null;
           } catch (error) {

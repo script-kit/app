@@ -3,7 +3,7 @@ import { globalShortcut } from 'electron';
 import { debounce } from 'lodash-es';
 import { subscribeKey } from 'valtio/utils';
 
-import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
+import { getMainScriptPath, parseScript, parseScriptletsFromPath } from '@johnlindquist/kit/core/utils';
 
 import { KitEvent, emitter } from '../shared/events';
 import { runPromptProcess } from './kit';
@@ -134,7 +134,7 @@ export const unlinkShortcuts = (filePath: string) => {
   }
 };
 
-export const shortcutScriptChanged = ({
+export const shortcutScriptChanged = async ({
   filePath,
   shortcut,
   shebang,
@@ -166,10 +166,26 @@ export const shortcutScriptChanged = ({
 
   const exists = [...shortcutMap.entries()].find(([, s]) => s?.shortcut === convertedShortcut);
   if (exists && !sameScript) {
-    log.info(`Shortcut ${convertedShortcut} already registered to ${exists[0]}`);
-    shortcutInfo(convertedShortcut, filePath, alreadyFail, exists[0]);
+    const otherPath = exists[0];
+    let script;
+    if (otherPath.includes('#')) {
+      const scripts = await parseScriptletsFromPath(otherPath);
+      script = scripts.find((s) => s.filePath === otherPath);
+    } else {
+      script = await parseScript(otherPath);
+    }
 
-    return;
+    log.green(`Checking if ${convertedShortcut} is still registered to ${otherPath}`, script);
+
+    const validateStillRegistered = convertShortcut(script?.shortcut, script?.filePath) === convertedShortcut;
+
+    if (validateStillRegistered) {
+      log.info(`Shortcut ${convertedShortcut} already registered to ${otherPath}`);
+      shortcutInfo(convertedShortcut, filePath, alreadyFail, otherPath);
+
+      return;
+    }
+    log.purple(`Shortcut ${convertedShortcut} is no longer registered to ${otherPath}`);
   }
 
   if (old?.shortcut) {

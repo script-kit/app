@@ -392,8 +392,9 @@ export default function Editor() {
     }
   }, [open, config, editor, ui]);
 
+  let prevAppendDate;
   useEffect(() => {
-    if (editor && editorAppend?.text) {
+    if (editor && editorAppend?.text && prevAppendDate !== editorAppend?.date) {
       // set position to the end of the file
       const lineNumber = editor.getModel()?.getLineCount() || 0;
       const column = editor.getModel()?.getLineMaxColumn(lineNumber) || 0;
@@ -407,6 +408,7 @@ export default function Editor() {
         forceMoveMarkers: true,
       };
 
+      log.info('Appending text to editor', { text: editorAppend?.text });
       editor.executeEdits('my-source', [op]);
 
       // if cursor is at the end of the file, scroll to bottom
@@ -416,8 +418,9 @@ export default function Editor() {
       }
 
       channel(Channel.APPEND_EDITOR_VALUE);
+      prevAppendDate = editorAppend?.date;
     }
-  }, [editor, editorAppend, channel]);
+  }, [editor, editorAppend]);
 
   useEffect(() => {
     const getSelectedText = () => {
@@ -528,7 +531,7 @@ export default function Editor() {
       ipcRenderer.removeListener(Channel.EDITOR_INSERT_TEXT, insertTextAtCursor);
       ipcRenderer.removeListener(Channel.EDITOR_MOVE_CURSOR, moveCursor);
     };
-  }, [editor, channel]);
+  }, [editor]);
 
   const shortcutStrings = useAtomValue(shortcutStringsAtom);
   const appConfig = useAtomValue(appConfigAtom);

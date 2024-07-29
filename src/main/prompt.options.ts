@@ -78,7 +78,7 @@ export const getPromptOptions = () => {
     backgroundColor = kitState.kenvEnv.KIT_BACKGROUND_COLOR;
   }
 
-  let backgroundMaterial = 'mica';
+  let backgroundMaterial = 'auto';
   if (kitState?.kenvEnv?.KIT_BACKGROUND_MATERIAL) {
     backgroundMaterial = kitState.kenvEnv.KIT_BACKGROUND_MATERIAL;
   }

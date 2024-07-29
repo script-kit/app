@@ -4,6 +4,8 @@ const { ipcRenderer } = window.electron;
 import type { ITerminalAddon, Terminal } from 'xterm';
 import { AppChannel } from '../../shared/enums';
 import type { TermConfig } from '../../shared/types';
+import { createLogger } from '../../shared/log-utils';
+const log = createLogger('term-attach-ipc-addon.ts');
 
 export class AttachIPCAddon implements ITerminalAddon {
   private terminal: Terminal | undefined;
@@ -14,16 +16,8 @@ export class AttachIPCAddon implements ITerminalAddon {
     this.config = config;
   }
 
-  private termOutputHandler = (_event: any, data: string | Buffer) => {
-    if (this.terminal) {
-      this.terminal.write(typeof data === 'string' ? data : new Uint8Array(data));
-    }
-  };
-
   public activate(terminal: Terminal): void {
     this.terminal = terminal;
-
-    ipcRenderer.on(AppChannel.TERM_OUTPUT, this.termOutputHandler);
 
     terminal.onData((data) => {
       if (this.terminal) {
@@ -50,7 +44,6 @@ export class AttachIPCAddon implements ITerminalAddon {
   }
 
   public dispose(): void {
-    ipcRenderer.off(AppChannel.TERM_OUTPUT, this.termOutputHandler);
     this.terminal?.dispose();
     this.terminal = undefined;
     ipcRenderer.send(AppChannel.TERM_EXIT, this.config);

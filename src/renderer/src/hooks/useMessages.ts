@@ -1,5 +1,5 @@
+import stripAnsi from 'strip-ansi';
 import DOMPurify from 'dompurify';
-
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { debounce } from 'lodash-es';
 import { useEffect, useState } from 'react';
@@ -97,12 +97,22 @@ import {
   webcamIdAtom,
   zoomAtom,
   invalidateChoiceInputsAtom,
+  termOutputAtom,
 } from '../jotai';
 
 import { createLogger } from '../../../shared/log-utils';
 const log = createLogger('useMessages.ts');
 
 import { AppChannel, WindowChannel } from '../../../shared/enums';
+
+export function ansiRegex({ onlyFirst = false } = {}) {
+  const pattern = [
+    '[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',
+    '(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))',
+  ].join('|');
+
+  return new RegExp(pattern, onlyFirst ? undefined : 'g');
+}
 
 export default () => {
   const [pid, setPid] = useAtom(pidAtom);
@@ -206,6 +216,7 @@ export default () => {
   const setMicId = useSetAtom(micIdAtom);
   const setWebcamId = useSetAtom(webcamIdAtom);
   const setAudioDot = useSetAtom(audioDotAtom);
+  const setTermOutput = useSetAtom(termOutputAtom);
 
   const clearCache = useSetAtom(clearCacheAtom);
   const [init, setInit] = useState(false);

@@ -210,7 +210,10 @@ export default () => {
         if (found?.flag) {
           setFlag(found.flag);
         }
-        sendShortcut(found.key);
+        if (found.key) {
+          log.info('Sending shortcut', { key: found.key });
+          sendShortcut(found.key);
+        }
       } else {
         log.info('No matching prompt shortcut found');
       }

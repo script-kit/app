@@ -8,13 +8,13 @@ import {
   app,
   screen,
 } from 'electron';
-import log from 'electron-log';
 import { ensureDir } from './cjs-exports';
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { isDir, kenvPath } from '@johnlindquist/kit/core/utils';
 import type { ShowOptions } from '@johnlindquist/kit/types/kitapp';
 import type { WidgetOptions } from '@johnlindquist/kit/types/pro';
+import { setTimeout } from 'node:timers/promises';
 
 import { fileURLToPath } from 'node:url';
 import { Channel } from '@johnlindquist/kit/core/enum';
@@ -24,6 +24,10 @@ import { getCurrentScreenFromMouse } from './prompt';
 import { forceQuit, kitState } from './state';
 
 export const INSTALL_ERROR = 'install-error';
+
+import { createLogger } from '../shared/log-utils';
+
+const log = createLogger('show.ts');
 
 // let t
 
@@ -223,6 +227,17 @@ export const showDevTools = async (value: any, url = '') => {
   });
 };
 
+const loadWidgetUrl = async (widgetWindow: BrowserWindow, url: string) => {
+  log.info(`Loading URL: ${url}`);
+  try {
+    await widgetWindow.loadURL(url);
+  } catch (error) {
+    log.error(error);
+  }
+  log.info('Ready to show. Inserting CSS');
+  await widgetWindow.webContents.insertCSS('.draggable { -webkit-app-region: drag; }');
+};
+
 export const show = async (
   name: string,
   html: string,
@@ -251,6 +266,7 @@ export const show = async (
     },
     ...position,
     show: false,
+    backgroundMaterial: 'auto',
     ...options,
   });
 
@@ -278,10 +294,9 @@ export const show = async (
   });
 
   if (options?.ttl) {
-    setTimeout(() => {
-      showWindow.removeAllListeners();
-      showWindow.destroy();
-    }, options?.ttl);
+    await setTimeout(options?.ttl);
+    showWindow.removeAllListeners();
+    showWindow.destroy();
   }
 
   return new Promise((resolve, reject) => {
@@ -327,6 +342,7 @@ export const showWidget = async (
     minHeight: 120,
     minWidth: 160,
     movable: true,
+    backgroundMaterial: 'auto',
 
     ...(options as BrowserWindowConstructorOptions),
   };
@@ -352,15 +368,17 @@ export const showWidget = async (
   }
 
   if (options?.ttl) {
-    setTimeout(() => {
-      log.info(`Close widget: ${widgetWindow.id} due to timeout of ${options.ttl}ms`);
-      widgetWindow.close();
-    }, options?.ttl);
+    await setTimeout(options?.ttl);
+    log.info(`Close widget: ${widgetWindow.id} due to timeout of ${options.ttl}ms`);
+    widgetWindow.close();
   }
 
   return new Promise((resolve, reject) => {
+    log.info('Waiting for WIDGET_GET');
     widgetWindow.webContents.ipc.once(Channel.WIDGET_GET, () => {
+      log.info('Received WIDGET_GET', { widgetWindow: widgetWindow?.id || 'unknown' });
       if (widgetWindow) {
+        log.info('Sending WIDGET_INIT from widgetWindow');
         widgetWindow.webContents.send(
           Channel.WIDGET_INIT,
           {
@@ -375,7 +393,7 @@ export const showWidget = async (
           channel: Channel.WIDGET_THEME,
           theme,
         });
-        widgetWindow.webContents.send('WIDGET_THEME', theme);
+        widgetWindow.webContents.send(Channel.WIDGET_THEME, theme);
 
         const noShow = typeof options?.show === 'boolean' && options?.show === false;
         if (!noShow) {
@@ -440,9 +458,22 @@ export const showWidget = async (
       html,
     });
 
-    if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
+    const isUrl = (string: string) => {
+      try {
+        new URL(string);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    if (isUrl(html)) {
+      loadWidgetUrl(widgetWindow, html);
+    } else if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
+      log.info(`Loading URL: ${process.env.ELECTRON_RENDERER_URL}/widget.html`);
       widgetWindow.loadURL(`${process.env.ELECTRON_RENDERER_URL}/widget.html`);
     } else {
+      log.info(`Loading file: ${fileURLToPath(new URL('../renderer/widget.html', import.meta.url))}`);
       widgetWindow.loadFile(fileURLToPath(new URL('../renderer/widget.html', import.meta.url)));
     }
   });

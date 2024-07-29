@@ -1727,6 +1727,7 @@ export const promptDataAtom = atom(
       s(actionsInputAtom, '');
       // log.info({ actionsConfig: a?.actionsConfig });
       s(actionsConfigAtom, a?.actionsConfig || {});
+      s(_termOutputAtom, '');
     }
   },
 );
@@ -1972,55 +1973,14 @@ export const submitValueAtom = atom(
         localStorage.setItem(key, JSON.stringify(prevStorageIds));
       }
     }
-    // let submitted = g(submittedAtom);
-    // if (submitted) return;
 
-    const value = checkSubmitFormat(g, a);
-
-    // log.info({
-    //   submitValue: value,
-    //   flag,
-    // });
-
-    // const fC = g(focusedChoiceAtom);
-
-    // skip if UI.chat
-
-    // if (g(uiAtom) !== UI.chat) {
-    //   channel(Channel.ON_SUBMIT);
-    // }
-
-    // There are "while(true)" cases where you want input/panels to persist
-    // s(_inputAtom, '');
-    // s(panelHTMLAtom, ``);
-
-    // log.info(
-    //   `😘😘😘😘😘😘😘
-
-    // `,
-    //   {
-    //     value,
-    //     flag,
-    //   },
-    // );
-    // s(appendToLogHTMLAtom, `VALUE_SUBMITTED: ${Object.keys(value).join('\n')}`);
+    const value = g(uiAtom) === UI.term ? g(termOutputAtom) : checkSubmitFormat(g, a);
 
     channel(Channel.VALUE_SUBMITTED, {
       value,
       flag,
     });
 
-    // invokeSearch('');
-
-    // ipcRenderer.send(Channel.VALUE_SUBMITTED, {
-    //   input: g(inputAtom),
-    //   value,
-    //   flag,
-    //   pid: g(pidAtom),
-    //   id: fC?.id || -1,
-    // });
-
-    // s(rawInputAtom, '');
     s(loadingAtom, false);
 
     if (placeholderTimeoutId) {
@@ -2825,7 +2785,7 @@ export const termExitAtom = atom(
 
       if (ui === UI.term && !submitted && currentTermConfig.promptId === currentPromptData.id) {
         log.info('🐲 Term exit and submit');
-        s(submitValueAtom, a);
+        s(submitValueAtom, g(termOutputAtom));
       }
     },
     100,
@@ -3502,5 +3462,13 @@ export const actionsConfigAtom = atom(
   },
   (g, s, a: ActionsConfig) => {
     s(_actionsConfigAtom, { ...g(_actionsConfigAtom), ...a });
+  },
+);
+
+const _termOutputAtom = atom('');
+export const termOutputAtom = atom(
+  (g) => g(_termOutputAtom),
+  (g, s, a: string) => {
+    s(_termOutputAtom, g(_termOutputAtom) + a);
   },
 );

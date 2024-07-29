@@ -231,6 +231,7 @@ type WidgetData = {
   height?: number;
   filePath?: string;
   iconPath?: string;
+  data?: any;
 };
 type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
 
@@ -1129,6 +1130,40 @@ export const handleWidgetEvents = () => {
     widget.setSize(data.width, data.height, true);
   };
 
+  const viteWidgetSendHandler: WidgetHandler = (event, data) => {
+    const { widgetId } = data;
+
+    const w = widgetState.widgets.find(({ id }) => id === widgetId);
+    // log.info(`🔎 VITE_WIDGET_SEND ${widgetId}`, {
+    //   w,
+    //   widgets: widgetState.widgets.map((w) => w.id),
+    // });
+    if (!w) {
+      return;
+    }
+    const { wid, moved, pid } = w;
+    const widget = BrowserWindow.fromId(wid);
+    const child = processes.getChildByPid(pid);
+    if (!child) {
+      return;
+    }
+
+    if (!widget) {
+      return;
+    }
+
+    const message = {
+      ...data,
+      pid: child.pid,
+      widgetData: data?.data,
+      channel: Channel.VITE_WIDGET_SEND,
+    };
+
+    // log.info('VITE_WIDGET_SEND', message);
+
+    childSend(child, message);
+  };
+
   // These events are not being caught in the script...
   ipcMain.on(Channel.WIDGET_INIT, initHandler);
   ipcMain.on(Channel.WIDGET_CLICK, clickHandler);
@@ -1139,6 +1174,7 @@ export const handleWidgetEvents = () => {
   ipcMain.on(Channel.WIDGET_DRAG_START, dragHandler);
   ipcMain.on(Channel.WIDGET_CUSTOM, customHandler);
   ipcMain.on(Channel.WIDGET_MEASURE, measureHandler);
+  ipcMain.on(Channel.VITE_WIDGET_SEND, viteWidgetSendHandler);
 };
 
 emitter.on(KitEvent.KillProcess, (pid) => {
@@ -1147,10 +1183,12 @@ emitter.on(KitEvent.KillProcess, (pid) => {
 });
 
 emitter.on(KitEvent.TermExited, (pid) => {
-  log.info('🛑 Term Exited: SUBMITTING');
   const prompt = prompts.get(pid);
+  log.info('🛑 Term Exited: SUBMITTING', pid, prompt?.ui);
   if (prompt && prompt.ui === UI.term) {
+    log.info('Term Exited: SUBMITTING');
     prompt.sendToPrompt(AppChannel.TERM_EXIT, '');
+    // prompt.sendToPrompt(Channel.SET_SUBMIT_VALUE, '');
   }
 });
 

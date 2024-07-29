@@ -683,12 +683,12 @@ export const setupWatchers = async () => {
     // if (!filePath.match(/\.(ts|js|json|txt|env)$/)) return;
     const { base, dir, name } = path.parse(filePath);
 
-    log.green(`${eventName}:	base: ${base}, dir: ${dir}, name: ${name}`);
-
     if (base === 'ping.txt') {
       kitState.waitingForPing = false;
       return;
     }
+
+    log.green(`${eventName}: base: ${base}, dir: ${dir}, name: ${name}`);
 
     if (base === 'user.json') {
       checkUserDb(eventName);

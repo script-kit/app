@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import url from 'node:url';
 import detect from 'detect-port';
-import log from 'electron-log';
 import sizeOf from 'image-size';
 import untildify from 'untildify';
 
@@ -405,6 +404,24 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         child?.kill();
       }
     }),
+    VITE_WIDGET_SEND: onChildChannel(({ child }, { channel, value }) => {
+      const { widgetId, data } = value as any;
+      // log.info({ widgetId }, `${channel}`);
+
+      const widget = findWidget(widgetId, channel);
+      if (!widget) {
+        return;
+      }
+
+      // log.purple('VITE_WIDGET_SEND', channel, value);
+      if (widget) {
+        widget?.webContents.send(value?.channel, data);
+      } else {
+        log.warn(`${widgetId}: widget not found. Terminating process.`);
+        child?.kill();
+      }
+    }),
+
     WIDGET_FIT: onChildChannel(({ child }, { channel, value }) => {
       const { widgetId, state } = value as any;
       // log.info({ widgetId }, `${channel}`);
@@ -471,30 +488,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         const { html, options } = value;
         kitState.blurredByKit = true;
         const widgetId = Date.now().toString();
+        log.green(`${child?.pid}: ⚙️ Creating widget ${widgetId}`);
         const widget = await showWidget(scriptPath, widgetId, html, options);
-        log.info(`${child?.pid}: ⚙️ Creating widget ${widgetId}`);
-
-        // widget.on('move', () => {
-        //   log.info(`${widget?.id}: 📦 widget moved`);
-        // });
-
-        // const ignoreMouseHandler = (event, data: boolean) => {
-        //   if (data) {
-        //     widget.setIgnoreMouseEvents(true, { forward: true });
-        //   } else {
-        //     widget.setIgnoreMouseEvents(false);
-        //   }
-        // };
-
-        // const resizeHandler = (
-        //   event,
-        //   size: { width: number; height: number }
-        // ) => {
-        //   log.info({ size });
-        //   if (size) {
-        //     widget.setSize(size.width, size.height);
-        //   }
-        // };
+        log.green(`${child?.pid}: ⚙️ Created widget ${widgetId}`);
 
         widgetState.widgets.push({
           id: widgetId,
@@ -799,11 +795,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       processes.removeByPid(pid);
     }),
 
-    QUIT_APP: onChildChannel(async ({ child }, { channel, value }) => {
+    QUIT_APP: onChildChannel(({ child }, { channel, value }) => {
       prompt?.window?.hide();
       forceQuit();
     }),
-    SET_KIT_STATE: onChildChannel(async (processInfo, data) => {
+    SET_KIT_STATE: onChildChannel((processInfo, data) => {
       log.info('SET_KIT_STATE', data?.value);
       for (const [key, value] of Object.entries(data?.value)) {
         if ((kitState as any)?.[key] !== undefined) {
@@ -812,7 +808,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         }
       }
     }),
-    FOCUS_PROMPT: onChildChannel(async ({ child }, { channel, value }) => {
+    FOCUS_PROMPT: onChildChannel(({ child }, { channel, value }) => {
       const { pid } = value;
       log.info('🧘 FOCUS_PROMPT', value);
       const process = processes.getByPid(Number.parseInt(pid, 10));
@@ -867,7 +863,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         },
       });
     }),
-    VALUE_SUBMITTED: onChildChannelOverride(async (processInfo, data: any) => {
+    VALUE_SUBMITTED: onChildChannelOverride((processInfo, data: any) => {
       // log.info(`VALUE_SUBMITTED`, data?.value);
 
       clearPreview();
