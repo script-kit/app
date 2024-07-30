@@ -99,7 +99,7 @@ function ResizableInput({ placeholder, className, index }) {
   }, [promptData]);
 
   useResizeObserver(hiddenInputRef, () => {
-    const newWidth = Math.ceil((hiddenInputRef?.current?.offsetWidth || minWidth) + 9);
+    const newWidth = Math.ceil((hiddenInputRef?.current?.offsetWidth || minWidth) + 12);
     const inputWidth = Math.max(newWidth, minWidth);
     setInputWidth(inputWidth); // Using 128 as minimum width
   });
