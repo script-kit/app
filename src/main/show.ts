@@ -339,8 +339,8 @@ export const showWidget = async (
     },
     ...position,
     show: false,
-    minHeight: 120,
-    minWidth: 160,
+    minHeight: 0,
+    minWidth: 0,
     movable: true,
     backgroundMaterial: 'auto',
 

@@ -671,12 +671,34 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       childSend({ channel, activeScreen });
     }),
-    GET_SCREENS_INFO: onChildChannelOverride(({ child }, { channel }) => {
+    GET_SCREENS_INFO: onChildChannelOverride(async ({ child }, { channel, value }) => {
       const displays = screen.getAllDisplays();
+      const displaysWithThumbnails = await Promise.all(
+        displays.map(async (display) => {
+          if (!value) {
+            display;
+          }
+          try {
+            const { id, bounds } = display;
+            const displaySource = await getSourceFromRectangle(id.toString(), bounds);
+            if (displaySource) {
+              const image = displaySource.thumbnail.toPNG();
+              const thumbnailPath = path.join(os.tmpdir(), `display-thumbnail-${id}-${randomUUID()}.png`);
+              await writeFile(thumbnailPath, image);
+              return { ...display, thumbnailPath };
+            }
+          } catch (error) {
+            log.error(`Error processing display ${display.id}:`, error);
+          }
+          return display;
+        }),
+      );
 
-      childSend({ channel, displays });
+      log.purple(`Sending`, { displays: displaysWithThumbnails });
+
+      childSend({ channel, displays: displaysWithThumbnails });
     }),
-    GET_ACTIVE_APP: onChildChannelOverride(async ({ child }, { channel }) => {
+    GET_ACTIVE_APP: onChildChannelOverride(({ child }, { channel }) => {
       if (kitState.isMac) {
         const frontmostApp = shims['@johnlindquist/mac-frontmost'].getFrontmostApp();
         childSend({ channel, app: frontmostApp });
