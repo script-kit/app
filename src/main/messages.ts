@@ -567,7 +567,6 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         });
 
         widget?.on('close', closeHandler);
-        child?.on('close', closeHandler);
 
         // TODO: Widget close logic?
         // const un = subscribe(kitState.ps, () => {

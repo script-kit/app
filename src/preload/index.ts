@@ -45,10 +45,16 @@ window.send = (channel: string, data: any = {}) => {
 
 // @ts-ignore (define in dts)
 window.on = (channel: string, callback: (data: any) => void) => {
-  ipcRenderer.on(channel, (_, data) => {
-    // console.log('on', channel, data);
+  const handler = (_: any, data: any) => {
     callback(sanitizeForIPC(data));
-  });
+  };
+
+  ipcRenderer.on(channel, handler);
+
+  // Return a teardown function
+  return () => {
+    ipcRenderer.removeListener(channel, handler);
+  };
 };
 
 // @ts-ignore (define in dts)

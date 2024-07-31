@@ -847,6 +847,14 @@ class Processes extends Array<ProcessAndPrompt> {
 
       processesChanged();
     }
+
+    const activeWidgets = widgetState.widgets.filter((w) => w.pid === pid);
+    if (activeWidgets.length) {
+      for (const w of activeWidgets) {
+        log.red(`${pid}: Removing active widget ${w.id}`);
+        BrowserWindow.fromId(w.wid)?.close();
+      }
+    }
   }
 
   public removeCurrentProcess() {
