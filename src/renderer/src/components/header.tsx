@@ -1,4 +1,3 @@
-import XIcon from '@heroicons/react/24/solid/XMarkIcon';
 import { useAtom, useAtomValue } from 'jotai';
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/function-component-definition */

@@ -450,76 +450,84 @@ const subScriptErrorPath = subscribeKey(kitState, 'scriptErrorPath', (scriptErro
 });
 
 // TODO: I don't need to return booleans AND set kitState.isSponsor. Pick one.
-export const sponsorCheck = async (feature: string, block = true) => {
-  log.info(`Checking sponsor status... login: ${kitState?.user?.login} ${kitState.isSponsor ? '✅' : '❌'}`);
-  const isOnline = await online();
-  if (!isOnline || (process.env.KIT_SPONSOR === 'development' && os.userInfo().username === 'johnlindquist')) {
-    kitState.isSponsor = true;
-    return true;
-  }
-
-  if (!kitState.isSponsor) {
-    let response = null;
-    try {
-      response = await axios.post(`${kitState.url}/api/check-sponsor`, {
-        ...kitState.user,
-        feature,
-      });
-    } catch (error) {
-      errr('Error checking sponsor status', error);
+export const sponsorCheck = debounce(
+  async (feature: string, block = true) => {
+    log.info(`Checking sponsor status... login: ${kitState?.user?.login} ${kitState.isSponsor ? '✅' : '❌'}`);
+    const isOnline = await online();
+    if (!isOnline || (process.env.KIT_SPONSOR === 'development' && os.userInfo().username === 'johnlindquist')) {
       kitState.isSponsor = true;
       return true;
     }
 
-    // check for axios post error
-    if (!response) {
-      errr('Error checking sponsor status', response);
-      kitState.isSponsor = true;
-      return true;
-    }
+    if (!kitState.isSponsor) {
+      let response = null;
+      try {
+        response = await axios.post(`${kitState.url}/api/check-sponsor`, {
+          ...kitState.user,
+          feature,
+        });
+      } catch (error) {
+        log.error('Error checking sponsor status', error);
+        kitState.isSponsor = true;
+        return true;
+      }
 
-    log.info(`Response status: ${response.status}`);
+      // check for axios post error
+      if (!response) {
+        log.error('Error checking sponsor status', response);
+        kitState.isSponsor = true;
+        return true;
+      }
 
-    // check for axios post error
-    if (response.status !== 200) {
-      errr('Error checking sponsor status', response);
-    }
+      log.info(`Response status: ${response.status}`);
 
-    log.info('🕵️‍♀️ Sponsor check response', JSON.stringify(response.data));
+      // check for axios post error
+      if (response.status !== 200) {
+        log.error('Error checking sponsor status', response);
+      }
 
-    if (response.data && kitState.user.node_id && response.data.id === kitState.user.node_id) {
-      log.info('User is sponsor');
-      kitState.isSponsor = true;
-      return true;
-    }
+      log.info('🕵️‍♀️ Sponsor check response', JSON.stringify(response.data));
 
-    if (response.status !== 200) {
-      errr('Sponsor check service is down. Granting temp sponsor status');
-      kitState.isSponsor = true;
-      return true;
-    }
+      if (response.data && kitState.user.node_id && response.data.id === kitState.user.node_id) {
+        log.info('User is sponsor');
+        kitState.isSponsor = true;
+        return true;
+      }
 
-    if (block) {
-      log.info('User is not sponsor');
-      kitState.isSponsor = false;
+      if (response.status !== 200) {
+        log.error('Sponsor check service is down. Granting temp sponsor status');
+        kitState.isSponsor = true;
+        return true;
+      }
 
-      emitter.emit(KitEvent.RunPromptProcess, {
-        scriptPath: kitPath('pro', 'sponsor.js'),
-        args: [feature],
-        options: {
-          force: true,
-          trigger: Trigger.App,
-          sponsorCheck: false,
-        },
-      });
+      if (block) {
+        kitState.isSponsor = false;
+
+        log.red(`
+-----------------------------------------------------------
+🚨 User attempted to use: ${feature}, but is not a sponsor.
+-----------------------------------------------------------
+        `);
+        emitter.emit(KitEvent.RunPromptProcess, {
+          scriptPath: kitPath('pro', 'sponsor.js'),
+          args: [feature],
+          options: {
+            force: true,
+            trigger: Trigger.App,
+            sponsorCheck: false,
+          },
+        });
+
+        return false;
+      }
 
       return false;
     }
-
-    return false;
-  }
-  return true;
-};
+    return true;
+  },
+  2500,
+  { leading: true, trailing: false },
+);
 
 // subs is an array of functions
 export const subs: (() => void)[] = [];

@@ -2364,13 +2364,17 @@ type OnShortcut = {
 
 export const onInputSubmitAtom = atom<OnInputSubmit>({});
 export const onShortcutAtom = atom<OnShortcut>({});
+export const enterLastPressedAtom = atom<Date | null>(null);
 
 export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
   const channel = g(channelAtom);
   // const log = log;
   log.info(`🎬 Send shortcut`, shortcut);
-
-  channel(Channel.SHORTCUT, { shortcut });
+  if (shortcut === 'enter') {
+    s(enterLastPressedAtom, new Date());
+  } else {
+    channel(Channel.SHORTCUT, { shortcut });
+  }
 });
 
 export const processesAtom = atom<ProcessInfo[]>([]);
@@ -2676,8 +2680,81 @@ export const colorAtom = atom((g) => {
   return async () => {
     // Create new EyeDropper
     try {
+      // @ts-ignore -- EyeDropper is not in the types
       const eyeDropper = new EyeDropper();
-      const color = await eyeDropper.open();
+      const { sRGBHex } = await eyeDropper.open();
+      const hexToRgb = (hex: string) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result
+          ? {
+              r: Number.parseInt(result[1], 16),
+              g: Number.parseInt(result[2], 16),
+              b: Number.parseInt(result[3], 16),
+            }
+          : null;
+      };
+
+      const rgbToHsl = (r: number, g: number, b: number) => {
+        r /= 255;
+        g /= 255;
+        b /= 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h;
+        let s;
+        const l = (max + min) / 2;
+
+        if (max === min) {
+          h = s = 0;
+        } else {
+          const d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          switch (max) {
+            case r:
+              h = (g - b) / d + (g < b ? 6 : 0);
+              break;
+            case g:
+              h = (b - r) / d + 2;
+              break;
+            case b:
+              h = (r - g) / d + 4;
+              break;
+          }
+          h /= 6;
+        }
+
+        return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+      };
+
+      const rgbToCmyk = (r: number, g: number, b: number) => {
+        let c = 1 - r / 255;
+        let m = 1 - g / 255;
+        let y = 1 - b / 255;
+        const k = Math.min(c, Math.min(m, y));
+
+        c = (c - k) / (1 - k);
+        m = (m - k) / (1 - k);
+        y = (y - k) / (1 - k);
+
+        return {
+          c: Math.round(c * 100),
+          m: Math.round(m * 100),
+          y: Math.round(y * 100),
+          k: Math.round(k * 100),
+        };
+      };
+
+      const rgb = hexToRgb(sRGBHex) || { r: 0, g: 0, b: 0 };
+      const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+      const cmyk = rgbToCmyk(rgb.r, rgb.g, rgb.b);
+      const color = {
+        sRGBHex,
+        rgb: `rgb(${rgb?.r}, ${rgb?.g}, ${rgb?.b})`,
+        rgba: `rgba(${rgb?.r}, ${rgb?.g}, ${rgb?.b}, 1)`,
+        hsl: `hsl(${hsl?.h}, ${hsl?.s}%, ${hsl?.l}%)`,
+        hsla: `hsla(${hsl?.h}, ${hsl?.s}%, ${hsl?.l}%, 1)`,
+        cmyk: `cmyk(${cmyk.c}%, ${cmyk.m}%, ${cmyk.y}%, ${cmyk.k}%)`,
+      };
       const channel = Channel.GET_COLOR;
 
       const pid = g(pidAtom);

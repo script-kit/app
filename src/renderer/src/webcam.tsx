@@ -15,6 +15,19 @@ export default function Webcam() {
   const [, submit] = useAtom(submitValueAtom);
   const [, setFlag] = useAtom(focusedFlagValueAtom);
 
+  const [videoAspectRatio, setVideoAspectRatio] = useState(16 / 9); // Default aspect ratio
+
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.onloadedmetadata = () => {
+        if (videoRef.current) {
+          setVideoAspectRatio(videoRef.current.videoWidth / videoRef.current.videoHeight);
+        }
+      };
+    }
+  }, [stream]);
+
   useEffect(() => {
     const getDevices = async () => {
       const mediaDevices = await navigator.mediaDevices.enumerateDevices();
@@ -80,19 +93,23 @@ export default function Webcam() {
   useOnEnter(takeSelfie);
 
   return (
-    <div id={UI.webcam} className="flex h-full w-full flex-col items-center justify-center text-xl text-text-base">
+    <div id={UI.webcam} className="flex h-full w-full items-center justify-center overflow-hidden">
       {stream && (
-        <video
-          id="webcam"
-          ref={videoRef}
-          autoPlay={true}
-          playsInline={true}
-          muted={true}
-          className="absolute"
-          onClick={takeSelfie}
-          // flip the video horizontally
-          style={{ transform: 'scaleX(-1)' }}
-        />
+        <div className="relative h-full w-full">
+          <video
+            id="webcam"
+            ref={videoRef}
+            autoPlay={true}
+            playsInline={true}
+            muted={true}
+            onClick={takeSelfie}
+            className="absolute left-1/2 top-1/2 h-full w-auto max-w-none object-cover"
+            style={{
+              transform: 'translate(-50%, -50%) scaleX(-1)',
+              aspectRatio: videoAspectRatio,
+            }}
+          />
+        </div>
       )}
     </div>
   );

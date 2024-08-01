@@ -58,7 +58,7 @@ import { getAssetPath } from '../shared/assets';
 import { AppChannel, Trigger } from '../shared/enums';
 import { stripAnsi } from './ansi';
 import { getClipboardHistory, removeFromClipboardHistory, syncClipboardStore } from './clipboard';
-import { convertShortcut, isLocalPath } from './helpers';
+import { convertShortcut, isLocalPath, isUrl } from './helpers';
 import { cacheMainScripts } from './install';
 import { deleteText } from './keyboard';
 import {
@@ -486,6 +486,17 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         },
       ) => {
         const { html, options } = value;
+
+        if (isUrl(html)) {
+          await sponsorCheck('Vite Widgets');
+          if (!kitState.isSponsor) {
+            if (prompt?.isVisible()) {
+              prompt?.hide();
+            }
+            return;
+          }
+        }
+
         kitState.blurredByKit = true;
         const widgetId = Date.now().toString();
         log.green(`${child?.pid}: ⚙️ Creating widget ${widgetId}`);
@@ -840,6 +851,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // TODO: Re-enable DEBUG_SCRIPT
       await sponsorCheck('Debugging Scripts');
       if (!kitState.isSponsor) {
+        if (prompt?.isVisible()) {
+          prompt?.hide();
+        }
         return;
       }
 
@@ -998,7 +1012,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       }
     }),
 
-    GET_INPUT: onChildChannel(async ({ child }, { channel }) => {
+    GET_INPUT: onChildChannel(({ child }, { channel }) => {
       sendToPrompt(Channel.GET_INPUT);
     }),
 
@@ -1106,6 +1120,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     SHOW_LOG_WINDOW: onChildChannel(async ({ scriptPath, pid }, { channel, value }) => {
       await sponsorCheck('Log Window');
       if (!kitState.isSponsor) {
+        if (prompt?.isVisible()) {
+          prompt?.hide();
+        }
         return;
       }
       await showLogWindow({
@@ -1127,7 +1144,27 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
     //   showNotification(data.html || 'You forgot html', data.options);
     // },
-    SET_PROMPT_DATA: onChildChannel((pap, { channel, value, promptId }) => {
+    SET_PROMPT_DATA: onChildChannel(async ({ pap, prompt }, { channel, value, promptId }) => {
+      if (value?.ui === UI.mic) {
+        await sponsorCheck('Mic Capture');
+        if (!kitState.isSponsor) {
+          if (prompt?.isVisible()) {
+            prompt?.hide();
+          }
+          return;
+        }
+      }
+
+      if (value?.ui === UI.webcam) {
+        await sponsorCheck('Webcam Capture');
+        if (!kitState.isSponsor) {
+          if (prompt?.isVisible()) {
+            prompt?.hide();
+          }
+          return;
+        }
+      }
+
       performance.measure('SET_PROMPT_DATA', 'script');
       log.info(`${prompt.pid}: 📝 SET_PROMPT_DATA`, {
         preloaded: prompt.preloaded,
@@ -1192,7 +1229,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       prompt.isScripts = Boolean(value?.scripts);
     }),
 
-    SET_PROMPT_PROP: async (data) => {
+    SET_PROMPT_PROP: (data) => {
       prompt?.setPromptProp(data.value);
     },
     SHOW_IMAGE,
@@ -2110,7 +2147,14 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         }
       }
     }),
-    GET_COLOR: onChildChannelOverride(({ child }, { channel }) => {
+    GET_COLOR: onChildChannelOverride(async ({ child }, { channel }) => {
+      await sponsorCheck('Color Picker');
+      if (!kitState.isSponsor) {
+        if (prompt?.isVisible()) {
+          prompt?.hide();
+        }
+        return;
+      }
       sendToPrompt(Channel.GET_COLOR);
     }),
     CHAT_GET_MESSAGES: onChildChannelOverride((_, { channel, value }) => {
@@ -2245,6 +2289,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       await cacheMainScripts(stamp);
     }),
     SCREENSHOT: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      await sponsorCheck('Screenshot');
+      if (!kitState.isSponsor) {
+        return;
+      }
+
       log.info('📸 Screenshot', {
         channel,
         value,

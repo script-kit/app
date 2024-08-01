@@ -899,14 +899,41 @@ const cacheMainPreview = (preview: string) => {
 const getBinWorker = () => {
   if (!workers.createBin) {
     workers.createBin = new Worker(CREATE_BIN_WORKER);
+    const logQueue: { type: 'info' | 'error'; message: string }[] = [];
+    let logTimeout: NodeJS.Timeout | null = null;
+
+    const flushLogs = () => {
+      if (logQueue.length > 0) {
+        const infos = logQueue.filter((l) => l.type === 'info').map((l) => l.message);
+        const errors = logQueue.filter((l) => l.type === 'error').map((l) => l.message);
+
+        if (infos.length > 0) {
+          log.info('🔗 Bin worker summary:', infos.join(', '));
+        }
+        if (errors.length > 0) {
+          log.error('🔗 Bin worker errors:', errors.join(', '));
+        }
+
+        logQueue.length = 0;
+      }
+    };
+
+    const queueLog = (type: 'info' | 'error', message: string) => {
+      logQueue.push({ type, message });
+      if (logTimeout) {
+        clearTimeout(logTimeout);
+      }
+      logTimeout = setTimeout(flushLogs, 1000);
+    };
+
     workers.createBin.on('exit', (exitCode) => {
-      log.info('🔗 Bin worker exited', exitCode);
+      queueLog('info', `Bin worker exited (${exitCode})`);
     });
     workers.createBin.on('error', (error) => {
-      log.error('🔗 Bin worker error', error);
+      queueLog('error', error.toString());
     });
     workers.createBin.on('message', (message: { command: string; filePath: string }) => {
-      log.info('🔗 Created bin for', message?.filePath, 'to', message?.command);
+      queueLog('info', `Created bin for ${path.basename(message?.filePath)} to ${message?.command}`);
     });
   }
   return workers.createBin;
@@ -991,16 +1018,35 @@ export const cacheMainMenu = ({
     const isBinnableScript = (s: Script) =>
       s?.group !== 'Kit' && s?.kenv !== '.kit' && !s?.skip && s?.command && s.filePath;
 
+    const logQueue: string[] = [];
+    let logTimeout;
+
+    const flushLogQueue = () => {
+      if (logQueue.length > 0) {
+        log.info(`📦 Added ${logQueue.length} items:`, logQueue);
+        logQueue.length = 0;
+      }
+    };
+
+    const queueLog = (message: string) => {
+      logQueue.push(message);
+      clearTimeout(logTimeout);
+      logTimeout = setTimeout(flushLogQueue, 1000);
+    };
+
     for (const script of scripts) {
       if ((script as Scriptlet).scriptlet) {
-        log.info(`📦 Adding scriptlet ${script.filePath}`);
+        queueLog(`Scriptlet ${script.filePath}`);
         kitState.scriptlets.set(script.filePath, script as Scriptlet);
       }
       if (isBinnableScript(script)) {
-        log.info(`📦 Adding script ${script.filePath}`);
+        queueLog(`Script ${script.filePath}`);
         kitState.scripts.set(script.filePath, script);
       }
     }
+
+    // Ensure any remaining logs are flushed
+    flushLogQueue();
 
     syncBins();
   }

@@ -292,7 +292,7 @@ export const runPromptProcess = async (
     options?.force ? 'true' : 'false',
   ];
 
-  log.info(`${pid}: 🚀 Send ${promptScriptPath}`);
+  log.info(`${pid}: 🚀 Send ${promptScriptPath} with `, { argsWithTrigger });
   child?.send({
     channel: Channel.VALUE_SUBMITTED,
     input: '',

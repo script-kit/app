@@ -26,6 +26,7 @@ import { forceQuit, kitState } from './state';
 export const INSTALL_ERROR = 'install-error';
 
 import { createLogger } from '../shared/log-utils';
+import { isUrl } from './helpers';
 
 const log = createLogger('show.ts');
 
@@ -457,15 +458,6 @@ export const showWidget = async (
     log.info({
       html,
     });
-
-    const isUrl = (string: string) => {
-      try {
-        new URL(string);
-        return true;
-      } catch {
-        return false;
-      }
-    };
 
     if (isUrl(html)) {
       loadWidgetUrl(widgetWindow, html);

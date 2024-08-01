@@ -596,7 +596,7 @@ text-text-base
           >
             {ui !== UI.log && (
               // header id using in resize measuring
-              <header id="header" ref={headerRef} className="relative z-10">
+              <header id="header" ref={headerRef} className="relative z-10 draggable">
                 {headerHidden === false && <Header />}
 
                 {ui === UI.hotkey && (
@@ -699,6 +699,7 @@ ${showTabs ? 'border-t border-ui-border' : ''}
 
                     <PanelChild
                       id="panel-right"
+                      className="draggable"
                       ref={panelChildRef}
                       // style={panelRightStyle}
                       order={2}
@@ -710,7 +711,7 @@ ${showTabs ? 'border-t border-ui-border' : ''}
               </PanelGroup>
             </main>
             {!footerHidden && (
-              <footer id="footer" className={`${promptData?.footerClassName || ''} z-50`}>
+              <footer id="footer" className={`draggable ${promptData?.footerClassName || ''} z-50`}>
                 <ActionBar />
               </footer>
             )}

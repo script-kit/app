@@ -215,3 +215,12 @@ export const isLocalPath = (input: string) => {
   // For now, we assume any non-URL is a local path
   return true;
 };
+
+export const isUrl = (input: string) => {
+  try {
+    new URL(input);
+    return true;
+  } catch (error) {
+    return false;
+  }
+};

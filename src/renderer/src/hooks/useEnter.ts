@@ -1,11 +1,12 @@
 import { UI } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useHotkeys } from 'react-hotkeys-hook';
+import { HotkeyCallback, useHotkeys } from 'react-hotkeys-hook';
 import {
   choiceInputsAtom,
   choicesAtom,
   cmdAtom,
   enterButtonDisabledAtom,
+  enterLastPressedAtom,
   enterPressedAtom,
   flaggedChoiceValueAtom,
   focusedChoiceAtom,
@@ -21,6 +22,7 @@ import {
   uiAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
+import { useCallback, useEffect } from 'react';
 
 export default () => {
   const [choices] = useAtom(choicesAtom);
@@ -40,10 +42,10 @@ export default () => {
   const toggleSelectedChoice = useSetAtom(toggleSelectedChoiceAtom);
   const choiceInputs = useAtomValue(choiceInputsAtom);
   const setInvalidateChoiceInputs = useSetAtom(invalidateChoiceInputsAtom);
+  const [enterLastPressed] = useAtom(enterLastPressedAtom);
 
-  useHotkeys(
-    'enter',
-    (event) => {
+  const handleEnter = useCallback(
+    (event: KeyboardEvent | null = null) => {
       if (
         [UI.editor, UI.textarea, UI.drop, UI.splash, UI.term, UI.drop, UI.form, UI.emoji, UI.fields, UI.chat].includes(
           ui,
@@ -52,22 +54,22 @@ export default () => {
       ) {
         return;
       }
-      event.preventDefault();
+      event?.preventDefault();
 
       if (enterButtonDisabled) {
         return;
       }
 
-      if (event.metaKey) {
+      if (event?.metaKey) {
         setFlag('cmd');
       }
-      if (event.shiftKey) {
+      if (event?.shiftKey) {
         setFlag('shift');
       }
-      if (event.altKey) {
+      if (event?.altKey) {
         setFlag('opt');
       }
-      if (event.ctrlKey) {
+      if (event?.ctrlKey) {
         setFlag('ctrl');
       }
 
@@ -118,20 +120,27 @@ export default () => {
 
       submit(value);
     },
-    hotkeysOptions,
     [
-      input,
-      choices,
-      index,
-      promptDataAtom,
-      panelHTML,
-      ui,
-      enterButtonDisabled,
+      submit,
       focusedChoice,
-      hasFocusedChoice,
-      toggleSelectedChoice,
       flagValue,
       choiceInputs,
+      setInvalidateChoiceInputs,
+      toggleSelectedChoice,
+      promptData,
+      choices,
+      hasFocusedChoice,
+      input,
+      ui,
+      enterButtonDisabled,
     ],
   );
+
+  useEffect(() => {
+    if (enterLastPressed) {
+      handleEnter();
+    }
+  }, [enterLastPressed]);
+
+  useHotkeys('enter', handleEnter, hotkeysOptions);
 };

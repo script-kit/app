@@ -929,3 +929,29 @@ pre > code {
 .font-normal-medium {
   font-weight: 450;
 }
+
+.draggable{
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Apply no-drag class to interactive elements */
+input,
+button,
+textarea,
+select,
+a,
+[role="button"],
+[tabindex]:not([tabindex="-1"]) {
+  @apply no-drag;
+}
+
+/* Ensure specific components are also non-draggable */
+.monaco-editor,
+.epr-emoji-category-label,
+pre,
+code {
+  @apply no-drag;
+}

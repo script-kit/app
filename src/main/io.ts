@@ -198,7 +198,7 @@ export const registerIO = async (handler: (event: any) => void) => {
       state: event,
     });
     if (event.keycode === UiohookKey.Escape) {
-      log.info('✋ Escape released');
+      // log.info('✋ Escape released');
       kitState.escapePressed = false;
     }
   });
