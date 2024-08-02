@@ -825,7 +825,7 @@ const checkKit = async () => {
     // Overwite node_modules/node-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/Resources/Terminal.icns with assets/icon.icns
     try {
       await copyFile(
-        getAssetPath('icon.icns'),
+        getAssetPath('icons/mac/icon.icns'),
         kitPath(
           'node_modules',
           'node-notifier',

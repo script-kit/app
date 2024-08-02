@@ -22,7 +22,7 @@ if (process.argv.length <= 2) {
   } else {
     throw new Error(`Unsupported platform: ${process.platform}`);
   }
-  
+
   arch = process.arch as 'arm64' | 'x64';
   publish = false;
 } else {
@@ -125,7 +125,7 @@ const config: Configuration = {
   },
   mac: {
     notarize: false,
-    icon: 'assets/icon.icns',
+    icon: 'assets/icons/mac/icon.icns',
     category: 'public.app-category.productivity', // Keep as is or update based on package.json if needed
     hardenedRuntime: true,
     entitlements: 'assets/entitlements.mac.plist',
@@ -152,7 +152,7 @@ const config: Configuration = {
     artifactName: '${productName}-Windows-${version}-${arch}.${ext}',
   },
   linux: {
-    icon: 'assets/icon.icns',
+    icon: 'assets/icons/mac/icon.icns',
     category: 'Development',
     executableName: 'scriptkit',
     artifactName: '${productName}-Linux-${version}-${arch}.${ext}',
