@@ -8,6 +8,7 @@ import log from 'electron-log';
 import { Trigger } from '../shared/enums';
 import { runPromptProcess } from './kit';
 import { kitState } from './state';
+import { slash } from './path-utils';
 
 export const watchMap = new Map();
 
@@ -32,7 +33,7 @@ const normalizePath = (scriptPath: string) => (filePath: string) => {
 
     return path.resolve(path.dirname(scriptPath), filePath);
   };
-  return path.normalize(resolvedPath());
+  return slash(path.normalize(resolvedPath()));
 };
 
 const validWatchEvents = ['add', 'change', 'unlink'];
@@ -43,7 +44,7 @@ const addWatch = (watchString: string, scriptPath: string) => {
 
     const [pathsString] = watchString.split('|');
 
-    const paths = pathsString.startsWith('[')
+    const paths: string | string[] = pathsString.startsWith('[')
       ? JSON.parse(pathsString).map(normalizePath(scriptPath))
       : normalizePath(scriptPath)(pathsString);
 

@@ -47,6 +47,7 @@ import { pathExists, pathExistsSync, writeFile } from './cjs-exports';
 import { createLogger } from '../shared/log-utils';
 import { compareArrays } from '../shared/utils';
 import { clearInterval, setInterval } from 'node:timers';
+import { kenvChokidarPath, slash } from './path-utils';
 
 const log = createLogger('watcher.ts');
 
@@ -160,7 +161,7 @@ const getDepWatcher = () => {
     return depWatcher;
   }
 
-  depWatcher = chokidar.watch(kenvPath('package.json'), {
+  depWatcher = chokidar.watch(kenvChokidarPath('package.json'), {
     ignoreInitial: kitState.ignoreInitial,
   });
 
@@ -236,16 +237,14 @@ const madgeAllScripts = debounce(async () => {
 
   // globby requires forward slashes
   const allScriptPaths = await globby([
-    kenvPath('scripts', '*').replace(/\\/g, '/'),
-    ...kenvs
-      .filter((k) => k.isDirectory())
-      .map((kenv) => kenvPath('kenvs', kenv.name, 'scripts', '*').replace(/\\/g, '/')),
+    slash(kenvPath('scripts', '*')),
+    ...kenvs.filter((k) => k.isDirectory()).map((kenv) => slash(kenvPath('kenvs', kenv.name, 'scripts', '*'))),
   ]);
 
   log.info(`🔍 ${allScriptPaths.length} scripts found`);
 
   const fileMadge = await madge(allScriptPaths, {
-    baseDir: kenvPath(),
+    baseDir: kenvChokidarPath(),
     dependencyFilter: (source) => {
       const isInKenvPath = isInDirectory(source, kenvPath());
       const notInKitSDK = !source.includes('.kit');
@@ -268,7 +267,7 @@ const madgeAllScripts = debounce(async () => {
     const deps = depGraph[scriptKey];
 
     for (const dep of deps) {
-      const depKenvPath = kenvPath(dep);
+      const depKenvPath = kenvChokidarPath(dep);
       log.verbose(`Watching ${depKenvPath}`);
       depWatcher.add(depKenvPath);
     }
@@ -289,7 +288,7 @@ function watchTheme() {
   }
   if (pathExistsSync(themePath)) {
     log.info(`🎨 Watching ${themePath}`);
-    themeWatcher = chokidar.watch(themePath.replace(/\\/g, '/'), {
+    themeWatcher = chokidar.watch(slash(themePath), {
       ignoreInitial: true,
     });
     themeWatcher.on('all', (eventName, filePath) => {

@@ -169,7 +169,7 @@ export default function ActionsList() {
 
   return (
     <div
-      id="flags"
+      id="actions"
       ref={componentRef}
       className="
       z-50

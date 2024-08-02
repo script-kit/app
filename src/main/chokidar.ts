@@ -1,28 +1,17 @@
 import path from 'node:path';
-import { kenvPath, kitPath, userDbPath } from '@johnlindquist/kit/core/utils';
+import { userDbPath } from '@johnlindquist/kit/core/utils';
 import chokidar from 'chokidar';
 import { kitState } from './state';
 import { createLogger } from '../shared/log-utils';
+import { kitChokidarPath, kenvChokidarPath, pathChokidarResolve, slash } from './path-utils';
 
 const log = createLogger('chokidar.ts');
-
-const kitChokidarPath = (...parts: string[]) => {
-  return kitPath(...parts).replaceAll('\\', '/');
-};
-
-const kenvChokidarPath = (...parts: string[]) => {
-  return kenvPath(...parts).replaceAll('\\', '/');
-};
-
-const pathChokidarResolve = (...parts: string[]) => {
-  return path.resolve(...parts).replaceAll('\\', '/');
-};
 
 export type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
 type WatcherCallback = (eventName: WatchEvent, filePath: string) => Promise<void>;
 export const startWatching = (callback: WatcherCallback) => {
   log.info(`🔍 Watching ${userDbPath}`);
-  const userDbPathWatcher = chokidar.watch(userDbPath.replaceAll('\\', '/'));
+  const userDbPathWatcher = chokidar.watch(slash(userDbPath));
 
   userDbPathWatcher.on('all', (eventName, filePath) => {
     log.info(`🔍 Watching ${userDbPath} -> ${eventName} ${filePath}`);
