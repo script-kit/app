@@ -27,7 +27,7 @@ import { snapshot } from 'valtio';
 
 import type { ChannelMap, SendData } from '@johnlindquist/kit/types/kitapp';
 
-import { getMainScriptPath, kenvPath, kitPath } from '@johnlindquist/kit/core/utils';
+import { getMainScriptPath, kenvPath, kitPath, processPlatformSpecificTheme } from '@johnlindquist/kit/core/utils';
 
 // const { pathExistsSync, readJson } = fsExtra;
 import { type Stamp, getTimestamps } from '@johnlindquist/kit/core/db';
@@ -1358,13 +1358,14 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
     SET_TEMP_THEME: onChildChannel(({ child }, { channel, value }) => {
       log.info('🎨 Setting temp theme', value);
-      kitState.tempTheme = value;
+      const platformSpecificTheme = processPlatformSpecificTheme(value);
+      kitState.tempTheme = platformSpecificTheme;
 
       const appearance = getAppearance(parseTheme(kitState.tempTheme || kitState.theme));
       for (const prompt of prompts) {
         prompt.setAppearance(appearance);
       }
-      sendToPrompt(Channel.SET_TEMP_THEME, value);
+      sendToPrompt(Channel.SET_TEMP_THEME, platformSpecificTheme);
     }),
 
     // SET_FORM_HTML: (data) => {

@@ -2,9 +2,8 @@
 /* eslint-disable import/prefer-default-export */
 import os from 'node:os';
 import { pathToFileURL } from 'node:url';
-import ContrastColor from 'contrast-color';
 import { BrowserWindow, type IpcMainEvent, globalShortcut, ipcMain, nativeTheme, powerMonitor } from 'electron';
-import { assign, debounce } from 'lodash-es';
+import { debounce } from 'lodash-es';
 
 import { type ChildProcess, fork, spawn } from 'node:child_process';
 import { Channel, ProcessType, UI } from '@johnlindquist/kit/core/enum';
@@ -12,10 +11,17 @@ import type { ProcessInfo } from '@johnlindquist/kit/types/core';
 
 import type { GenericSendData } from '@johnlindquist/kit/types/kitapp';
 
-import { KIT_APP, KIT_APP_PROMPT, execPath, kitPath, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
+import {
+  KIT_APP,
+  KIT_APP_PROMPT,
+  execPath,
+  kitPath,
+  processPlatformSpecificTheme,
+  resolveToScriptPath,
+} from '@johnlindquist/kit/core/utils';
 
 import { pathExistsSync } from './cjs-exports';
-import { getLog, mainLog } from './logs';
+import { getLog } from './logs';
 import type { KitPrompt } from './prompt';
 import { debounceSetScriptTimestamp, getThemes, kitState, kitStore } from './state';
 
@@ -26,11 +32,10 @@ import { sendToAllPrompts } from './channel';
 import { KitEvent, emitter } from '../shared/events';
 import { showInspector } from './show';
 
-import { toHex } from '../shared/color-utils';
 import { AppChannel } from '../shared/enums';
 import { stripAnsi } from './ansi';
 import { createEnv } from './env.utils';
-import { isKitScript, toRgb } from './helpers';
+import { isKitScript } from './helpers';
 import { createMessageMap } from './messages';
 import { prompts } from './prompts';
 import shims from './shims';
@@ -81,15 +86,16 @@ export const getAppearance = (themeObj: Record<string, string>): 'light' | 'dark
 };
 
 export const setTheme = (value: string, reason = '') => {
-  log.info(`🎨 Setting theme because ${reason}`, value);
-  kitState.theme = value;
+  const platformSpecificTheme = processPlatformSpecificTheme(value);
+  log.info(`🎨 Setting theme because ${reason}`, platformSpecificTheme);
+  kitState.theme = platformSpecificTheme;
 
-  const appearance = getAppearance(parseTheme(value));
+  const appearance = getAppearance(parseTheme(platformSpecificTheme));
   kitState.appearance = appearance;
   for (const prompt of prompts) {
     prompt.setAppearance(appearance);
   }
-  sendToAllPrompts(Channel.SET_THEME, value);
+  sendToAllPrompts(Channel.SET_THEME, platformSpecificTheme);
 };
 
 export const updateTheme = async () => {

@@ -15,7 +15,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import dotenv from 'dotenv';
 import download from 'download';
-import { assign, debounce } from 'lodash-es';
+import { debounce } from 'lodash-es';
 import StreamZip from 'node-stream-zip';
 import * as tar from 'tar';
 import { lstat, readFile, rm } from 'node:fs/promises';
@@ -29,6 +29,7 @@ import {
   kenvPath,
   kitPath,
   knodePath,
+  processPlatformSpecificTheme,
 } from '@johnlindquist/kit/core/utils';
 import type { FlagsObject, Script, Scriptlet, Shortcut } from '@johnlindquist/kit/types';
 import { CACHED_GROUPED_SCRIPTS_WORKER, CREATE_BIN_WORKER } from '@johnlindquist/kit/workers';
@@ -108,9 +109,10 @@ export const showSplash = async () => {
   splashPrompt.readyEmitter.once('ready', async () => {
     const { scriptKitTheme, scriptKitLightTheme } = getThemes();
     const value = nativeTheme.shouldUseDarkColors ? scriptKitTheme : scriptKitLightTheme;
-    kitState.theme = value;
+    const platformSpecificTheme = processPlatformSpecificTheme(value);
+    kitState.theme = platformSpecificTheme;
 
-    splashPrompt?.sendToPrompt(Channel.SET_THEME, value);
+    splashPrompt?.sendToPrompt(Channel.SET_THEME, platformSpecificTheme);
 
     splashPrompt?.setPromptData({
       show: true,
