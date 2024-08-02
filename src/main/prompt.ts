@@ -22,8 +22,6 @@ import {
   shell,
 } from 'electron';
 import contextMenu from 'electron-context-menu';
-import electronLog from 'electron-log';
-import type { FileTransport } from 'electron-log';
 import type { Display } from 'electron/main';
 import { debounce } from 'lodash-es';
 
@@ -62,7 +60,7 @@ import {
 } from './state';
 import { TrackEvent, trackEvent } from './track';
 import { getVersion } from './version';
-import { makeKeyWindow, makePanel, makeWindow } from './window/utils';
+import { makeKeyWindow, makePanel, makeWindow, setAppearance } from './window/utils';
 
 import { createLogger } from '../shared/log-utils';
 
@@ -683,6 +681,8 @@ export class KitPrompt {
       }
     };
 
+    log.info(`🎬 Init appearance: ${kitState.appearance}`);
+    setAppearance(this.window, kitState.appearance);
     makePanel(this.window);
 
     // TODO: Windows prompt behavior
@@ -754,7 +754,7 @@ export class KitPrompt {
       }
     });
 
-    this.window.once('ready-to-show', async () => {
+    this.window.once('ready-to-show', () => {
       log.info(`${this.pid}: 👍 Ready to show`);
       updateTheme();
     });
@@ -1151,6 +1151,12 @@ export class KitPrompt {
     this.window.on('resized', onResized);
     this.window.on('moved', onMoved);
   }
+
+  setAppearance = (appearance: 'light' | 'dark' | 'auto') => {
+    log.info(`👀 Setting appearance to ${appearance}`);
+    setAppearance(this.window, appearance);
+  };
+
   forcePromptToCenter = () => {
     this.window?.show();
     this.window?.setPosition(0, 0);

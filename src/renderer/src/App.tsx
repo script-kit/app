@@ -59,7 +59,9 @@ import {
   showTabsAtom,
   submitValueAtom,
   submittedAtom,
+  tempThemeAtom,
   termConfigAtom,
+  themeAtom,
   topRefAtom,
   triggerResizeAtom,
   uiAtom,
@@ -192,6 +194,8 @@ export default function App() {
   const processes = useAtomValue(processesAtom);
   const isMainScript = useAtomValue(isMainScriptAtom);
   const css = useAtomValue(cssAtom);
+  const theme = useAtomValue(themeAtom);
+  const tempTheme = useAtomValue(tempThemeAtom);
   const [submitted, setSubmitted] = useAtom(submittedAtom);
   const [inputWhileSubmitted, setInputWhileSubmitted] = useAtom(inputWhileSubmittedAtom);
 
@@ -532,6 +536,7 @@ text-text-base
           <span className="font-mono text-xxs font-bold absolute top-[-100px] left-[-100px]">.</span>
           {promptData?.css && <style>{promptData?.css}</style>}
           <style>{css}</style>
+          <style>{tempTheme || theme}</style>
           {/* {lighten && (
           <style
             dangerouslySetInnerHTML={{

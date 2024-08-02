@@ -389,7 +389,7 @@ export const showWidget = async (
         );
 
         // Set the css variables from kitState.theme
-        const theme = snapshot(kitState.theme);
+        const theme = kitState.theme;
         log.info('Current theme', {
           channel: Channel.WIDGET_THEME,
           theme,

@@ -6,7 +6,6 @@ import { pathExists } from './cjs-exports';
 import { AppChannel } from '../shared/enums';
 import { sendToAllPrompts } from './channel';
 import type { WatchEvent } from './chokidar';
-import { setTheme } from './process';
 import { kitState } from './state';
 
 export const setCSSVariable = (name: string, value: undefined | string) => {
@@ -17,30 +16,8 @@ export const setCSSVariable = (name: string, value: undefined | string) => {
   }
 };
 
-const extractAndSetCSSVariables = (css: string) => {
-  const cssVarRegex = /--[\w-]+:\s*[^;]+;/g;
-  const matches = css.match(cssVarRegex);
-
-  log.info('Extracting CSS Variables', matches);
-
-  const themeMap = matches?.reduce((acc, match) => {
-    const [name, value] = match.split(':').map((part) => part.trim().replace(';', ''));
-    acc[name] = value;
-    return acc;
-  }, {});
-
-  log.info('Setting Theme', themeMap);
-  setTheme(themeMap, 'extractAndSetCSSVariables()');
-
-  if (matches) {
-    for (const match of matches) {
-      const [name, value] = match.split(':').map((part) => part.trim().replace(';', ''));
-      setCSSVariable(name, value);
-    }
-  }
-};
-
 export const readKitCss = async (eventName: WatchEvent = 'change') => {
+  return;
   log.info(`kit.css ${eventName}`);
   let css = '';
   kitState.hasCss = eventName !== 'unlink';

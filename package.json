@@ -39,20 +39,13 @@
   "bugs": {
     "url": "https://github.com/johnlindquist/kitapp/issues"
   },
-  "keywords": ["electron", "react", "typescript", "ts"],
+  "keywords": [
+    "electron",
+    "react",
+    "typescript",
+    "ts"
+  ],
   "homepage": "https://github.com/johnlindquist/kitapp#readme",
-  "jest": {
-    "resolver": "jest-node-exports-resolver",
-    "testURL": "http://localhost/",
-    "moduleNameMapper": {
-      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/.erb/mocks/fileMock.js",
-      "\\.(css|less|sass|scss)$": "identity-obj-proxy"
-    },
-    "moduleFileExtensions": ["js", "jsx", "ts", "tsx", "json"],
-    "moduleDirectories": ["node_modules"],
-    "modulePathIgnorePatterns": [".history"],
-    "setupFiles": ["./.erb/scripts/CheckBuildsExist.js"]
-  },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@electron-toolkit/tsconfig": "^1.0.1",
@@ -99,6 +92,7 @@
     "eslint-config-erb": "4.1.0",
     "framer-motion": "^11.3.19",
     "html-react-parser": "^5.1.12",
+    "jest": "^29.7.0",
     "jotai": "^2.9.1",
     "lodash-es": "^4.17.21",
     "memoize-one": "^6.0.0",
@@ -119,6 +113,7 @@
     "rimraf": "^6.0.1",
     "simplebar-react": "^3.2.6",
     "tailwindcss": "^3.4.7",
+    "ts-jest": "^29.2.4",
     "vite": "^5.3.5",
     "vite-plugin-compression": "^0.5.1",
     "xterm": "5.3.0",
@@ -174,7 +169,7 @@
     "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/mac-clipboard-listener": "^1.0.3",
     "@johnlindquist/mac-frontmost": "^1.0.7",
-    "@johnlindquist/mac-panel-window": "^1.3.5",
+    "@johnlindquist/mac-panel-window": "^1.4.0",
     "@johnlindquist/node-window-manager": "^1.0.24",
     "node-mac-permissions": "^2.4.0",
     "uiohook-napi": "^1.5.4"
@@ -184,7 +179,11 @@
   },
   "browserslist": [],
   "renovate": {
-    "extends": ["bliss"],
-    "baseBranches": ["next"]
+    "extends": [
+      "bliss"
+    ],
+    "baseBranches": [
+      "next"
+    ]
   }
 }

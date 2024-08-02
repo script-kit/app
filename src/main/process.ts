@@ -14,7 +14,7 @@ import type { GenericSendData } from '@johnlindquist/kit/types/kitapp';
 
 import { KIT_APP, KIT_APP_PROMPT, execPath, kitPath, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
 
-import { pathExistsSync, readJson } from './cjs-exports';
+import { pathExistsSync } from './cjs-exports';
 import { getLog, mainLog } from './logs';
 import type { KitPrompt } from './prompt';
 import { debounceSetScriptTimestamp, getThemes, kitState, kitStore } from './state';
@@ -37,6 +37,7 @@ import shims from './shims';
 import { TrackEvent, trackEvent } from './track';
 
 import { createLogger } from '../shared/log-utils';
+import { readFile } from 'node:fs/promises';
 
 const log = createLogger('process.ts');
 
@@ -59,147 +60,42 @@ export const clearFlags = () => {
   // setFlags({});
 };
 
-export const maybeConvertColors = (theme: any = {}) => {
-  // log.info(`🎨 Convert Colors:`, theme);
+export const parseTheme = (theme: string): Record<string, string> => {
+  const themeObj: Record<string, string> = {};
+  const lines = theme.split('}')[0].split('{')[1].trim().split(';');
 
-  // eslint-disable-next-line prettier/prettier
-  theme.foreground ||= theme?.['--color-text'];
-  theme.background ||= theme?.['--color-background'];
-  theme.accent ||= theme?.['--color-primary'];
-  theme.ui ||= theme?.['--color-secondary'];
-
-  const { scriptKitTheme, scriptKitLightTheme } = getThemes();
-  theme.opacity ||= theme?.['--opacity'];
-  nativeTheme.shouldUseDarkColors ? scriptKitTheme.opacity : scriptKitLightTheme.opacity;
-
-  log.verbose(`🫥 Theme opacity: ${theme.opacity}`);
-  const themeUIBgOpacity = theme?.['ui-bg-opacity'] || scriptKitLightTheme['ui-bg-opacity'];
-
-  log.verbose(`🫥 Theme ui-bg-opacity: ${theme?.['ui-bg-opacity']}, ${themeUIBgOpacity}`);
-  theme['--ui-bg-opacity'] = themeUIBgOpacity;
-  log.verbose(`🫥 Theme ui-bg-opacity: ${theme['--ui-bg-opacity']}`);
-  theme['--ui-border-opacity'] ||= theme?.['ui-border-opacity'] || scriptKitLightTheme['ui-border-opacity'];
-
-  if (kitState.kenvEnv.KIT_BLUR === 'false') {
-    theme.opacity = '1';
+  for (const line of lines) {
+    const [key, value] = line.split(':').map((s) => s.trim());
+    if (key && value) {
+      themeObj[key.replace('--', '')] = value.replace(/;$/, '');
+    }
   }
 
-  if (theme.foreground) {
-    const foreground = toRgb(theme.foreground);
-    theme['--color-text'] = foreground;
-  }
-  if (theme.accent) {
-    const accent = toRgb(theme.accent);
-    theme['--color-primary'] = accent;
-  }
+  log.info(`🎨 Parsed theme: `, themeObj);
 
-  if (theme.ui) {
-    const ui = toRgb(theme.ui);
-    theme['--color-secondary'] = toRgb(ui);
-  }
-
-  let result = '';
-  if (theme.background) {
-    const background = toRgb(theme.background);
-    theme['--color-background'] = background;
-    const bgColor = toHex(theme.background);
-
-    const cc = new ContrastColor({
-      bgColor,
-    });
-    result = cc.contrastColor();
-
-    theme.appearance ||= result === '#FFFFFF' ? 'dark' : 'light';
-    log.verbose(`💄 Setting appearance to ${theme.appearance}`);
-  }
-
-  theme['--opacity'] = `${theme.opacity}`;
-
-  if (theme.ui) {
-    theme.ui = undefined;
-  }
-  if (theme.background) {
-    theme.background = undefined;
-  }
-  if (theme.foreground) {
-    theme.foreground = undefined;
-  }
-  if (theme.accent) {
-    theme.accent = undefined;
-  }
-  if (theme.opacity) {
-    theme.opacity = undefined;
-  }
-  if (theme?.['ui-bg-opacity']) {
-    theme['ui-bg-opacity'] = undefined;
-  }
-  if (theme?.['ui-border-opacity']) {
-    theme['ui-border-opacity'] = undefined;
-  }
-
-  // if(value?.['--color-text']) delete value['--color-text']
-  // if(value?.['--color-background']) delete value['--color-background']
-  // if(value?.['--color-primary']) delete value['--color-primary']
-  // if(value?.['--color-secondary']) delete value['--color-secondary']
-  // if(value?.['--opacity']) delete value['--opacity']
-
-  const validVibrancies = [
-    'appearance-based',
-    'light',
-    'dark',
-    'titlebar',
-    'selection',
-    'menu',
-    'popover',
-    'sidebar',
-    'medium-light',
-    'ultra-dark',
-    'header',
-    'sheet',
-    'window',
-    'hud',
-    'fullscreen-ui',
-    'tooltip',
-    'content',
-    'under-window',
-    'under-page',
-  ];
-
-  const defaultVibrancy = 'hud';
-
-  // setVibrancy(vibrancy);
-
-  log.verbose('🎨 Theme:', theme);
-
-  return theme;
+  return themeObj;
 };
 
-export const setTheme = async (value: any = {}, reason = '') => {
-  log.info(`🎨 Setting theme because ${reason}`);
-  // log.verbose(`🎨 Setting theme:`, {
-  //   hasCss: kitState.hasCss,
-  //   value,
-  // });
-  // if (kitState.hasCss) return;
-  // if (check) {
-  //   await sponsorCheck('Custom Themes');
-  //   if (!kitState.isSponsor) return;
-  // }
+export const getAppearance = (themeObj: Record<string, string>): 'light' | 'dark' => {
+  return (themeObj?.appearance as 'light' | 'dark') || 'dark';
+};
 
-  const newValue = await maybeConvertColors(value);
-  assign(kitState.theme, newValue);
+export const setTheme = (value: string, reason = '') => {
+  log.info(`🎨 Setting theme because ${reason}`, value);
+  kitState.theme = value;
 
-  // TODO: https://github.com/electron/electron/issues/37705
-  // const promptWindow = getMainPrompt();
-  // const backgroundColor = `rgba(${kitState.theme['--color-background']}, ${kitState.theme['--opacity']})`;
-  // log.info(`🎨 Setting backgroundColor: ${backgroundColor}`);
-
-  // promptWindow.setBackgroundColor(backgroundColor);
-
-  sendToAllPrompts(Channel.SET_THEME, newValue);
+  const appearance = getAppearance(parseTheme(value));
+  kitState.appearance = appearance;
+  for (const prompt of prompts) {
+    prompt.setAppearance(appearance);
+  }
+  sendToAllPrompts(Channel.SET_THEME, value);
 };
 
 export const updateTheme = async () => {
+  if (kitState.tempTheme) {
+    return;
+  }
   kitState.isDark = nativeTheme.shouldUseDarkColors;
   // log.info({
   //   isDarkState: kitState.isDark ? 'true' : 'false',
@@ -211,7 +107,7 @@ export const updateTheme = async () => {
   if (themePath && pathExistsSync(themePath)) {
     log.info(`▓ ${kitState.isDark ? 'true' : 'false'} 👀 Theme path: ${themePath}`);
     try {
-      const currentTheme = await readJson(themePath);
+      const currentTheme = await readFile(themePath, 'utf-8');
       setTheme(currentTheme, `updateTheme() with themePath: ${themePath}`);
     } catch (error) {
       log.warn(error);
@@ -222,7 +118,7 @@ export const updateTheme = async () => {
     setTheme(kitState.isDark ? scriptKitTheme : scriptKitLightTheme, 'updateTheme() with no themePath');
   }
 };
-nativeTheme.addListener('updated', updateTheme);
+// nativeTheme.addListener('updated', updateTheme);
 
 type WidgetData = {
   widgetId: string;

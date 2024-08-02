@@ -12,21 +12,40 @@ colors.warmGray = undefined;
 const colorVar = (name, opacityName) => (v) => {
   const { opacityVariable, opacityValue } = v;
 
-  if (typeof opacityName === 'number') {
-    return `rgba(var(--color-${name}), ${opacityName})`;
+  // Get the color value
+  const color = `var(--color-${name})`;
+
+  // Determine the alpha value
+  let alpha;
+
+  // opacityName example: 'ui-bg-opacity'
+  if (typeof opacityName === 'string') {
+    alpha = `calc(var(--${opacityName}) * 100%)`;
+  }
+  // opacityValue example: var(--ui-bg-opacity)
+  else if (typeof opacityValue === 'string') {
+    if (opacityValue.startsWith('var')) {
+      alpha = `calc(${opacityValue} * 100%)`;
+    } else {
+      alpha = `${Math.round(Number.parseFloat(opacityValue) * 100)}%`;
+    }
+  } else if (typeof opacityValue === 'undefined') {
+    alpha = '100%';
+  } else if (typeof opacityName === 'number') {
+    if (opacityName < 1) {
+      alpha = Math.round(opacityName * 100);
+    } else {
+      alpha = opacityName;
+    }
+    alpha = `${alpha}%`;
+  } else if (typeof opacityName === 'undefined') {
+    alpha = '100%';
   }
 
-  if (opacityName !== undefined) {
-    return `rgba(var(--color-${name}), var(--${opacityName}))`;
-  }
-  if (opacityValue !== undefined) {
-    return `rgba(var(--color-${name}), ${opacityValue})`;
-  }
+  // Return the color with alpha
+  const colorWithAlpha = `color-mix(in srgb, var(--color-${name}) ${alpha}, transparent)`;
 
-  if (opacityVariable !== undefined) {
-    return `rgba(var(--color-${name}), var(${opacityVariable}, 1))`;
-  }
-  return `rgb(var(--color-${name}))`;
+  return colorWithAlpha;
 };
 
 const round = (num) =>

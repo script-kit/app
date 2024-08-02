@@ -43,7 +43,7 @@ import { readKitCss, setCSSVariable } from './theme';
 import { addSnippet, addTextSnippet, removeSnippet } from './tick';
 import { cacheMainScripts } from './install';
 import { loadKenvEnvironment } from './env-utils';
-import { pathExists, writeFile } from './cjs-exports';
+import { pathExists, pathExistsSync, writeFile } from './cjs-exports';
 import { createLogger } from '../shared/log-utils';
 import { compareArrays } from '../shared/utils';
 import { clearInterval, setInterval } from 'node:timers';
@@ -279,6 +279,26 @@ const madgeAllScripts = debounce(async () => {
   }
 }, 100);
 
+let themeWatcher: FSWatcher;
+function watchTheme() {
+  const themePath: string =
+    (kitState.isDark ? kitState.kenvEnv?.KIT_THEME_DARK : kitState.kenvEnv?.KIT_THEME_LIGHT) || '';
+  if (themeWatcher) {
+    log.info(`🎨 Unwatching ${themePath}`);
+    themeWatcher.close();
+  }
+  if (pathExistsSync(themePath)) {
+    log.info(`🎨 Watching ${themePath}`);
+    themeWatcher = chokidar.watch(themePath.replace(/\\/g, '/'), {
+      ignoreInitial: true,
+    });
+    themeWatcher.on('all', (eventName, filePath) => {
+      log.info(`🎨 ${filePath} changed`);
+      updateTheme();
+    });
+  }
+}
+
 let firstBatch = true;
 let firstBatchTimeout: NodeJS.Timeout;
 export const onScriptsChanged = async (event: WatchEvent, script: Script, rebuilt = false) => {
@@ -492,7 +512,9 @@ export const parseEnvFile = debounce(async () => {
     log.info('Removing dark theme');
   }
 
+  kitState.tempTheme = '';
   updateTheme();
+  watchTheme();
 
   if (envData?.KIT_TERM_FONT) {
     sendToAllPrompts(AppChannel.SET_TERM_FONT, envData?.KIT_TERM_FONT);

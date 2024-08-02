@@ -15,3 +15,8 @@ export const toHex = (hexOrRgbOrName) => {
 
   return hexOrRgbOrName;
 };
+
+export const findCssVar = (varName: string) => {
+  const style = getComputedStyle(document.documentElement);
+  return style.getPropertyValue(varName).trim();
+};

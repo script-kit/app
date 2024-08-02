@@ -27,6 +27,13 @@ export const makePanel = (window: BrowserWindow) => {
   }
 };
 
+export const setAppearance = (window: BrowserWindow, appearance: 'light' | 'dark' | 'auto') => {
+  if (kitState.isMac) {
+    log.info(`${window.id}: 📌 Setting appearance to ${appearance}`);
+    shims['@johnlindquist/mac-panel-window'].setAppearance(window, appearance);
+  }
+};
+
 export const prepQuitWindow = async () => {
   if (!kitState.isMac) {
     return;

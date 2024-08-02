@@ -237,18 +237,10 @@ export default () => {
       if (selectionStart === input.length && event.key !== 'ArrowLeft') {
         log.info('Cursor at end, moving forward');
         event.preventDefault();
-        if (!flagValue && (flagsArray.length || Boolean(choices?.[index]?.actions))) {
-          log.info('Setting flag value');
-          // setFlagValue(choices.length ? choices[index].value : input);
-        }
         channel(Channel.FORWARD);
       } else if (selectionStart === 0 && event.key !== 'ArrowRight') {
         log.info('Cursor at start, moving backward');
         event.preventDefault();
-        if (flagValue) {
-          log.info('Clearing flag value');
-          // setFlagValue('');
-        }
         channel(Channel.BACK);
       }
     },

@@ -31,7 +31,7 @@ const { ipcRenderer } = window.electron;
 import type { Rectangle } from 'electron';
 import type { MessageType } from 'react-chat-elements';
 import type { VariableSizeList } from 'react-window';
-import { toHex } from '../../shared/color-utils';
+import { findCssVar, toHex } from '../../shared/color-utils';
 import { DEFAULT_HEIGHT, SPLASH_PATH, closedDiv, noChoice, noScript } from '../../shared/defaults';
 import { AppChannel } from '../../shared/enums';
 import type { ResizeData, ScoredChoice, Survey, TermConfig } from '../../shared/types';
@@ -1463,41 +1463,14 @@ const promptData = atom<null | Partial<PromptData>>({
   placeholder: 'Script Kit',
 });
 
-const _themeAtom = atom<Record<string, string>>({});
-
-const setCSSVars = (theme: Record<string, string>) => {
-  const sortedEntries = Object.entries(theme).sort((a, b) => (a[0].includes('opacity') ? -1 : 1));
-  const logMessages = [`${window.pid}: 🐠 Setting CSS Vars`];
-
-  for (const [key, value] of sortedEntries) {
-    if (key.startsWith('--')) {
-      const oldValue = document.documentElement.style.getPropertyValue(key);
-      document.documentElement.style.setProperty(key, value);
-      logMessages.push(`${key}: ${oldValue} -> ${value}`);
-    }
-  }
-
-  if (logMessages.length > 0) {
-    log.info(logMessages.join('\n'));
-  }
-};
+const _themeAtom = atom('');
 
 export const themeAtom = atom(
   (g) => g(_themeAtom),
-  (g, s, theme: Record<string, string> = {}) => {
-    const prevTheme: any = g(_themeAtom);
-    if (theme.appearance) {
-      s(appearanceAtom, theme.appearance as Appearance);
-    }
-
-    log.info(`${window.pid}: themeAtom`);
-    setCSSVars(theme);
-    const newTheme = { ...prevTheme, ...theme };
-
-    // log.info(`theme: ${JSON.stringify(newTheme)}`);
-
-    s(_themeAtom, newTheme);
-    s(_tempThemeAtom, newTheme);
+  (g, s, theme: string) => {
+    setAppearance(s, theme);
+    s(_themeAtom, theme);
+    s(_tempThemeAtom, theme);
   },
 );
 
@@ -1568,9 +1541,9 @@ export const promptDataAtom = atom(
         // s(inputAtom, '');
       }
       s(uiAtom, a.ui);
-      if (a?.theme) {
-        s(tempThemeAtom, { ...g(themeAtom), ...(a?.theme || {}) });
-      }
+      // if (a?.theme) {
+      //   s(tempThemeAtom, { ...g(themeAtom), ...(a?.theme || {}) });
+      // }
 
       s(_open, true);
       // if (!wasPromptDataPreloaded) s(_inputAtom, a?.input || '');
@@ -2119,16 +2092,32 @@ const emptyFilePathBounds: FilePathBounds = {
 };
 export const filePathBoundsAtom = atom<FilePathBounds>(emptyFilePathBounds);
 
-const _tempThemeAtom = atom<Record<string, string>>({});
+const setAppearance = (s: Setter, theme: string) => {
+  // Parse the theme string to extract CSS variables
+  const themeObj: Record<string, string> = {};
+  const lines = theme.split('}')[0].split('{')[1].trim().split(';');
+
+  for (const line of lines) {
+    const [key, value] = line.split(':').map((s) => s.trim());
+    if (key && value) {
+      themeObj[key.replace('--', '')] = value.replace(/;$/, '');
+    }
+  }
+
+  log.info(`🎨 Parsed theme: `, themeObj?.appearance);
+
+  // Read the --appearance CSS variable
+  const appearance = themeObj?.appearance;
+
+  log.info(`Appearance set to: ${appearance}`);
+  s(appearanceAtom, (appearance as Appearance) || 'dark');
+};
+
+const _tempThemeAtom = atom('');
 export const tempThemeAtom = atom(
   (g) => g(_tempThemeAtom),
-  (_g, s, theme: Record<string, string>) => {
-    if (theme.appearance) {
-      s(appearanceAtom, theme.appearance as Appearance);
-    }
-
-    log.info(`${window.pid}: tempThemeAtom`);
-    setCSSVars(theme);
+  (_g, s, theme: string) => {
+    setAppearance(s, theme);
     s(_tempThemeAtom, theme);
   },
 );
@@ -2449,7 +2438,7 @@ export const logAtom = atom((_g) => {
   };
 });
 
-type Appearance = 'light' | 'dark';
+type Appearance = 'light' | 'dark' | 'auto';
 export const appearanceAtom = atom<Appearance>('dark');
 
 const _boundsAtom = atom<Rectangle>({ x: 0, y: 0, width: 0, height: 0 });
@@ -2646,11 +2635,9 @@ export const lastLogLineAtom = atom<string>('');
 export const logValueAtom = atom<string>('');
 
 export const editorThemeAtom = atom<{ foreground: string; background: string }>((g) => {
-  const theme = g(themeAtom);
-
   const editorTheme = {
-    foreground: toHex(theme['--color-text']),
-    background: toHex(theme['--color-background']),
+    foreground: findCssVar('--color-text'),
+    background: findCssVar('--color-background'),
   };
 
   return editorTheme;

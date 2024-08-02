@@ -28,10 +28,10 @@ Favicon gradient
 /* This will get written to ~/.kit/db/theme.json on first pass */
 html {
   @apply h-screen min-h-screen;
-  --color-text: 255, 255, 255;
-  --color-primary: 251, 191, 36;
-  --color-secondary: 52, 52, 52;
-  --color-background: 15, 15, 15;
+  --color-text: #FFFFFF;
+  --color-primary: #FBBF24;
+  --color-secondary: #343434;
+  --color-background: #0F0F0F;
   --ui-bg-opacity: 0.05;
   --ui-border-opacity: 0.15;
   /* Check useThemeDetector... */

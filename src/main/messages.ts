@@ -67,7 +67,8 @@ import {
   childShortcutMap,
   clearFlags,
   clearPreview,
-  maybeConvertColors,
+  getAppearance,
+  parseTheme,
   processes,
   setTheme,
 } from './process';
@@ -940,7 +941,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
             }
             if (data?.value?.verbose) {
               const result = d.toString();
-              scriptLog.log.info(`\n${stripAnsi(result)}`);
+              scriptLog.info(`\n${stripAnsi(result)}`);
             }
           };
 
@@ -1145,16 +1146,6 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     //   showNotification(data.html || 'You forgot html', data.options);
     // },
     SET_PROMPT_DATA: onChildChannel(async ({ pap, prompt }, { channel, value, promptId }) => {
-      if (value?.ui === UI.mic) {
-        await sponsorCheck('Mic Capture');
-        if (!kitState.isSponsor) {
-          if (prompt?.isVisible()) {
-            prompt?.hide();
-          }
-          return;
-        }
-      }
-
       if (value?.ui === UI.webcam) {
         await sponsorCheck('Webcam Capture');
         if (!kitState.isSponsor) {
@@ -1323,16 +1314,16 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     //   setPlaceholder(data.info as string);
     // },
 
-    CLEAR_PROMPT_CACHE: onChildChannel(async ({ child }, { channel, value }) => {
+    CLEAR_PROMPT_CACHE: onChildChannel(({ child }, { channel, value }) => {
       log.verbose(`${channel}: Clearing prompt cache`);
-      await clearPromptCache();
+      clearPromptCache();
       prompt?.resetWindow();
     }),
-    FOCUS: onChildChannel(async ({ child }, { channel, value }) => {
+    FOCUS: onChildChannel(({ child }, { channel, value }) => {
       log.info(`${child.pid}: ${channel}: Manually focusing prompt`);
       prompt?.forceFocus();
     }),
-    SET_ALWAYS_ON_TOP: onChildChannel(async ({ child, prompt }, { channel, value }) => {
+    SET_ALWAYS_ON_TOP: onChildChannel(({ child, prompt }, { channel, value }) => {
       log.info(`${prompt.pid}: 🎩 Setting always on top to ${value}`);
       prompt?.setPromptAlwaysOnTop(value as boolean, true);
     }),
@@ -1340,7 +1331,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       sendToPrompt(Channel.CLEAR_TABS, []);
     },
 
-    SET_EDITOR_CONFIG: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_EDITOR_CONFIG: onChildChannel(({ child }, { channel, value }) => {
       setChoices(prompt, [], {
         preload: false,
         skipInitialSearch: true,
@@ -1348,11 +1339,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       sendToPrompt(Channel.SET_EDITOR_CONFIG, value);
     }),
 
-    SET_EDITOR_SUGGESTIONS: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_EDITOR_SUGGESTIONS: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_EDITOR_SUGGESTIONS, value);
     }),
 
-    APPEND_EDITOR_VALUE: onChildChannel(async ({ child }, { channel, value }) => {
+    APPEND_EDITOR_VALUE: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.APPEND_EDITOR_VALUE, value);
     }),
 
@@ -1361,18 +1352,19 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     },
 
     SET_THEME: onChildChannel(async ({ child }, { channel, value }) => {
+      kitState.tempTheme = '';
       await setTheme(value);
     }),
 
-    SET_TEMP_THEME: onChildChannel(async ({ child }, { channel, value }) => {
-      const newValue = await maybeConvertColors(value);
-      log.info('🎨 Setting temp theme', newValue);
-      sendToPrompt(Channel.SET_TEMP_THEME, newValue);
-      // TOOD: https://github.com/electron/electron/issues/37705
-      // const backgroundColor = `rgba(${newValue['--color-background']}, ${newValue['--opacity']})`;
-      // log.info(`🎨 Setting backgroundColor: ${backgroundColor}`);
+    SET_TEMP_THEME: onChildChannel(({ child }, { channel, value }) => {
+      log.info('🎨 Setting temp theme', value);
+      kitState.tempTheme = value;
 
-      // getMainPrompt().setBackgroundColor(backgroundColor);
+      const appearance = getAppearance(parseTheme(kitState.tempTheme || kitState.theme));
+      for (const prompt of prompts) {
+        prompt.setAppearance(appearance);
+      }
+      sendToPrompt(Channel.SET_TEMP_THEME, value);
     }),
 
     // SET_FORM_HTML: (data) => {
@@ -2264,7 +2256,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       log.verbose(`❤️ ${channel} from ${child.pid}`);
     }),
     GET_THEME: onChildChannelOverride(({ child }, { channel }) => {
-      const value = snapshot(kitState.theme);
+      const value = kitState.theme;
       log.info(`${child?.pid}: ${channel}`, value);
       childSend({
         channel,

@@ -194,29 +194,47 @@ export const kitCache = {
   keys: ['slicedName', 'tag', 'group', 'command'],
 };
 
+const scriptKitTheme = `
+html {
+  --appearance: dark;
+  --opacity: 0.66;
+  --color-text: #ffffff;
+  --color-primary: #fbbf24;
+  --color-secondary: #343434;
+  --color-background: #0f0f0f;
+  --ui-bg-opacity: 0.66;
+  --ui-border-opacity: 0.66;
+
+  --mono-font: JetBrains Mono;
+  --sans-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --serif-font: 'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
+    'serif';
+}
+`;
+
+const scriptKitLightTheme = `
+html {
+  --appearance: light;
+  --opacity: 0.9;
+  --color-text: #2C2C2C;
+  --color-primary: #2F86D3;
+  --color-secondary: #CCCCCC;
+  --color-background: #ffffff;
+  --ui-bg-opacity: 0.5;
+  --ui-border-opacity: 0.5;
+
+  --mono-font: JetBrains Mono;
+  --sans-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --serif-font: 'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
+    'serif';
+}
+`;
+
 export const getThemes = () => ({
-  scriptKitTheme: {
-    foreground: '255, 255, 255',
-    background: '22, 22, 22',
-    accent: '251, 191, 36',
-    opacity: os.platform() === 'darwin' ? '0.5' : '1',
-    ui: '255, 255, 255',
-    'ui-bg-opacity': '0.05',
-    'ui-border-opacity': '0.15',
-    vibrancy: 'popover',
-    appearance: 'dark',
-  },
-  scriptKitLightTheme: {
-    foreground: '2C2C2C',
-    accent: '2F86D3',
-    background: 'white',
-    opacity: os.platform() === 'darwin' ? '0.5' : '1',
-    ui: '204, 204, 204',
-    'ui-bg-opacity': '0.5',
-    'ui-border-opacity': '0.5',
-    vibrancy: 'popover',
-    appearance: 'light',
-  },
+  scriptKitTheme,
+  scriptKitLightTheme,
 });
 
 export const theme = nativeTheme.shouldUseDarkColors ? getThemes().scriptKitTheme : getThemes().scriptKitLightTheme;
@@ -294,6 +312,7 @@ const initState = {
   user: {} as UserDb,
   isSponsor: false,
   theme,
+  tempTheme: '',
   appearance: 'auto' as 'auto' | 'light' | 'dark',
   keymap: null as any,
   keyboardConfig: {

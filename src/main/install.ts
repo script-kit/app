@@ -44,7 +44,6 @@ import { sendToAllPrompts } from './channel';
 import { createScoredChoice, isInDirectory } from './helpers';
 import { mainLogPath } from './logs';
 import { showError } from './main.dev.templates';
-import { maybeConvertColors } from './process';
 import { prompts } from './prompts';
 import { INSTALL_ERROR, show } from './show';
 import { getThemes, kitCache, kitState, preloadChoicesMap, workers } from './state';
@@ -109,10 +108,9 @@ export const showSplash = async () => {
   splashPrompt.readyEmitter.once('ready', async () => {
     const { scriptKitTheme, scriptKitLightTheme } = getThemes();
     const value = nativeTheme.shouldUseDarkColors ? scriptKitTheme : scriptKitLightTheme;
-    const newValue = await maybeConvertColors(value);
-    assign(kitState.theme, newValue);
+    kitState.theme = value;
 
-    splashPrompt?.sendToPrompt(Channel.SET_THEME, newValue);
+    splashPrompt?.sendToPrompt(Channel.SET_THEME, value);
 
     splashPrompt?.setPromptData({
       show: true,
