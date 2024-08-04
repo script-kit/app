@@ -4,6 +4,7 @@ import log from 'electron-log';
 import parse from 'html-react-parser';
 import { useAtom, useAtomValue } from 'jotai';
 import React, { useCallback, useEffect, useState, type DragEvent, useMemo, useRef } from 'react';
+import debounce from 'lodash/debounce';
 const { ipcRenderer } = window.electron;
 
 import type { ChoiceButtonProps } from '../../../shared/types';
@@ -89,6 +90,9 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
     (e) => {
       log.info(`Clicked choice: ${choice?.id}`);
       e.preventDefault();
+      if (choice?.info || choice?.skip) {
+        return;
+      }
       if (promptData?.multiple) {
         toggleSelectedChoice(choice?.id);
       } else {
@@ -169,17 +173,28 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [hasScrolled, setHasScrolled] = useState(false);
 
+  const debouncedScrollIntoView = useCallback(
+    debounce(
+      (element: HTMLElement) => {
+        element.scrollIntoView({
+          block: 'nearest',
+          inline: 'nearest',
+        });
+        setHasScrolled(true);
+      },
+      100,
+      { leading: true, trailing: false },
+    ),
+    [],
+  );
+
   useEffect(() => {
     if (focusedChoice.id === choice.id && buttonRef.current && gridReady && !hasScrolled) {
-      buttonRef.current.scrollIntoView({
-        block: 'nearest',
-        inline: 'nearest',
-      });
-      setHasScrolled(true);
+      debouncedScrollIntoView(buttonRef.current);
     } else if (focusedChoice.id !== choice.id) {
       setHasScrolled(false);
     }
-  }, [focusedChoice, gridReady, choice.id, hasScrolled]);
+  }, [focusedChoice, gridReady, choice.id, hasScrolled, debouncedScrollIntoView]);
 
   return (
     // biome-ignore lint/a11y/useKeyWithMouseEvents: <explanation>

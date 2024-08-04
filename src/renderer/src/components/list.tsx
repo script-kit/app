@@ -1,25 +1,27 @@
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import memoize from 'memoize-one';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { VariableSizeList as List, VariableSizeGrid as Grid } from 'react-window';
 import type { ChoiceButtonProps, ListProps } from '../../../shared/types';
 import {
   currentChoiceHeightsAtom,
+  directionAtom,
   flaggedChoiceValueAtom,
   gridReadyAtom,
   indexAtom,
   isScrollingAtom,
   itemHeightAtom,
   listAtom,
+  mouseEnabledAtom,
   promptDataAtom,
   requiresScrollAtom,
   scoredChoicesAtom,
 } from '../jotai';
 import ChoiceButton from './button';
-import {createLogger} from "../../../shared/log-utils"
+import { createLogger } from '../../../shared/log-utils';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { hotkeysOptions } from '@renderer/hooks/shared';
-const log = createLogger("List.tsx")
+const log = createLogger('List.tsx');
 
 const createItemData = memoize(
   (choices) =>
@@ -40,10 +42,10 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [list, setList] = useAtom(listAtom);
   const [requiresScroll, setRequiresScroll] = useAtom(requiresScrollAtom);
   const [isScrolling, setIsScrolling] = useAtom(isScrollingAtom);
-  const flagValue = useAtomValue(flaggedChoiceValueAtom);
-
-  const currentChoiceHeights = useAtomValue(currentChoiceHeightsAtom);
+  const setMouseEnabled = useSetAtom(mouseEnabledAtom);
+  const setDirection = useSetAtom(directionAtom);
   const gridReady = useAtomValue(gridReadyAtom);
+
   useEffect(() => {
     if (listRef?.current) {
       setList(listRef.current);
@@ -55,8 +57,8 @@ export default function ChoiceList({ width, height }: ListProps) {
       return;
     }
 
-    if(promptData?.grid){
-      return
+    if (promptData?.grid) {
+      return;
     }
 
     const scroll = () => {
@@ -66,11 +68,11 @@ export default function ChoiceList({ width, height }: ListProps) {
       setIndex(requiresScroll);
       log.verbose(`📜 Scrolling to ${requiresScroll}`);
 
-      if(listRef.current) {
+      if (listRef.current) {
         listRef.current.scrollToItem(
           requiresScroll,
-        // eslint-disable-next-line no-nested-ternary
-        requiresScroll > 0 ? 'auto' : 'start',
+          // eslint-disable-next-line no-nested-ternary
+          requiresScroll > 0 ? 'auto' : 'start',
         );
       }
     };
@@ -121,26 +123,25 @@ export default function ChoiceList({ width, height }: ListProps) {
     columnCount: 0,
     rowCount: 0,
     columnWidth: 0,
-    rowHeight: promptData?.rowHeight || promptData?.columnWidth || 100
+    rowHeight: promptData?.rowHeight || promptData?.columnWidth || 100,
   });
 
   useEffect(() => {
     const { minColumnWidth } = gridDimensions;
-    const newColumnCount = promptData.columnWidth ? Math.min(choices.length, Math.floor(width / promptData.columnWidth)) : Math.min(choices.length, Math.floor(width / minColumnWidth));
-    const newColumnWidth = promptData.columnWidth || width / newColumnCount
+    const newColumnCount = promptData.columnWidth
+      ? Math.min(choices.length, Math.floor(width / promptData.columnWidth))
+      : Math.min(choices.length, Math.floor(width / minColumnWidth));
+    const newColumnWidth = promptData.columnWidth || width / newColumnCount;
     const newRowHeight = promptData.rowHeight || promptData.columnWidth || newColumnWidth;
 
-    log.info({newRowHeight})
-
-    setGridDimensions(prev => {
-      log.info({prev, length: choices.length, newColumnCount, newColumnWidth, newRowHeight})
-      return ({
+    setGridDimensions((prev) => {
+      return {
         ...prev,
         columnCount: newColumnCount,
         rowCount: Math.ceil(choices.length / newColumnCount),
         columnWidth: choices.length > newColumnCount ? newColumnWidth : prev.columnWidth,
-        rowHeight: choices.length > newColumnCount ? newRowHeight : prev.rowHeight
-      })
+        rowHeight: choices.length > newColumnCount ? newRowHeight : prev.rowHeight,
+      };
     });
   }, [choices.length, width, gridDimensions.minColumnWidth, promptData.columnWidth, promptData.rowHeight]);
 
@@ -148,16 +149,15 @@ export default function ChoiceList({ width, height }: ListProps) {
 
   const gridRef = useRef<Grid>(null);
   useEffect(() => {
-    log.info(`PromptData columnWidth: ${promptData.columnWidth} rowHeight: ${promptData.rowHeight}`)
-    if(gridRef?.current) {
+    if (gridRef?.current) {
+      log.info(`🛟 Grid reset: resetAfterIndices`);
       gridRef?.current?.resetAfterIndices({
         columnIndex: 0,
         rowIndex: 0,
-        shouldForceUpdate: true
-      })
+        shouldForceUpdate: true,
+      });
     }
   }, [choices, gridRef?.current, promptData.columnWidth, promptData.rowHeight]);
-
 
   useEffect(() => {
     if (choicesChanged) {
@@ -166,61 +166,96 @@ export default function ChoiceList({ width, height }: ListProps) {
     }
   }, [choicesChanged]);
 
-  const columnWidthCallback = useCallback((index: number) => {
-    const width = choices[index]?.item?.width || gridDimensions.columnWidth;
+  const columnWidthCallback = useCallback(
+    (index: number) => {
+      const width = choices[index]?.item?.width || gridDimensions.columnWidth;
 
-    return width;
-  }, [choices, gridDimensions.columnWidth, promptData?.grid]);
+      return width;
+    },
+    [choices, gridDimensions.columnWidth, promptData?.grid],
+  );
 
-  const rowHeightCallback = useCallback((index: number) => {
-    return choices[index]?.item?.height || gridDimensions.rowHeight;
-  }, [choices, gridDimensions.rowHeight, promptData?.grid]);
+  const rowHeightCallback = useCallback(
+    (index: number) => {
+      return choices[index]?.item?.height || gridDimensions.rowHeight;
+    },
+    [choices, gridDimensions.rowHeight, promptData?.grid],
+  );
 
   const [currentColumn, setCurrentColumn] = useState(0);
+  const [currentRow, setCurrentRow] = useState(0);
 
   useEffect(() => {
     if (gridReady) {
-      setCurrentColumn(index % gridDimensions.columnCount);
+      const column = index % gridDimensions.columnCount;
+      const row = Math.floor(index / gridDimensions.columnCount);
+      setCurrentColumn(column);
+      setCurrentRow(row);
+
+      log.info(`🔥 Grid position -> col: ${column} row: ${row} =  index: ${index}`);
     }
+    // log.info(`😩 Scrolling to ${column}, ${row}`,{column, row})
+    //   gridRef?.current?.scrollToItem({
+    //     columnIndex: column,
+    //     rowIndex: row,
+    //     align: 'auto'
+    //   })
+    // }
   }, [index, gridDimensions.columnCount, gridReady]);
 
-  useHotkeys('left', () => {
-    if (gridReady && currentColumn > 0) {
-      const newColumn = currentColumn - 1;
-      const newIndex = Math.floor(index / gridDimensions.columnCount) * gridDimensions.columnCount + newColumn;
-      if (newIndex !== index) {
-        setIndex(newIndex);
+  /*
+There's a lot of overlap between this useHotKeys and what's going on in useKeyIndex.
+This one does up, down, left, and right, whereas useKeyIndex only does up and down.
+But it's probably worth investigating in the future to see if I can combine the way that list and grid index behavior works into one hook or something.
+*/
+  useHotkeys(
+    ['up', 'down', 'left', 'right'],
+    (event) => {
+      if (!gridReady) {
+        return;
       }
-    }
-  }, hotkeysOptions, [currentColumn, gridDimensions.columnCount, index, gridReady]);
+      /*
+This can be a fun bug where it looks like you can't see the mouse cursor, but it's still detected and conflicting with the current index.
+So even though you're pressing left, right, up, and down arrow keys on the keyboard,
+there's a phantom mouse also conflicting with setting the index. So you have to disable the mouse here.
+*/
+      setMouseEnabled(0);
+      let newIndex = index;
 
-  useHotkeys('right', () => {
-    if (gridReady && currentColumn < gridDimensions.columnCount - 1) {
-      const newColumn = currentColumn + 1;
-      const newIndex = Math.min(Math.floor(index / gridDimensions.columnCount) * gridDimensions.columnCount + newColumn, choices.length - 1);
-      if (newIndex !== index) {
-        setIndex(newIndex);
+      switch (event.key) {
+        case 'ArrowLeft':
+          if (currentColumn > 0) {
+            setDirection(-1);
+            newIndex = currentRow * gridDimensions.columnCount + (currentColumn - 1);
+          }
+          break;
+        case 'ArrowRight':
+          if (currentColumn < gridDimensions.columnCount - 1) {
+            setDirection(1);
+            newIndex = Math.min(currentRow * gridDimensions.columnCount + (currentColumn + 1), choices.length - 1);
+          }
+          break;
+        case 'ArrowUp':
+          if (currentRow > 0) {
+            setDirection(-1);
+            newIndex = (currentRow - 1) * gridDimensions.columnCount + currentColumn;
+          }
+          break;
+        case 'ArrowDown':
+          if (currentRow < gridDimensions.rowCount - 1) {
+            setDirection(1);
+            newIndex = Math.min(choices.length - 1, (currentRow + 1) * gridDimensions.columnCount + currentColumn);
+          }
+          break;
       }
-    }
-  }, hotkeysOptions, [currentColumn, gridDimensions.columnCount, index, gridReady, choices.length]);
 
-  useHotkeys('up', () => {
-    if (gridReady && index >= gridDimensions.columnCount) {
-      const newIndex = Math.max(0, index - gridDimensions.columnCount);
       if (newIndex !== index) {
         setIndex(newIndex);
       }
-    }
-  }, hotkeysOptions, [gridDimensions.columnCount, index, gridReady]);
-
-  useHotkeys('down', () => {
-    if (gridReady && index < choices.length - gridDimensions.columnCount) {
-      const newIndex = Math.min(choices.length - 1, index + gridDimensions.columnCount);
-      if (newIndex !== index) {
-        setIndex(newIndex);
-      }
-    }
-  }, hotkeysOptions, [gridDimensions.columnCount, index, gridReady, choices.length]);
+    },
+    hotkeysOptions,
+    [currentColumn, currentRow, gridDimensions.columnCount, gridDimensions.rowCount, gridReady, choices.length, index],
+  );
 
   return (
     <div id="list" style={{ width }} className="list-component flex flex-col w-full overflow-y-hidden">
@@ -228,26 +263,21 @@ export default function ChoiceList({ width, height }: ListProps) {
         <Grid
           {...commonProps}
           ref={gridRef}
-
           columnCount={gridDimensions.columnCount}
           rowCount={gridDimensions.rowCount}
           columnWidth={columnWidthCallback}
           rowHeight={rowHeightCallback}
           width={width}
-
         >
           {({ columnIndex, rowIndex, style, data }) => {
             const index = rowIndex * gridDimensions.columnCount + columnIndex;
             if (index >= choices.length) return null;
-            return (
-              <ChoiceButton index={index} style={style} data={data} />
-            );
+            return <ChoiceButton index={index} style={style} data={data} />;
           }}
         </Grid>
       ) : (
         <List
           {...commonProps}
-
           ref={listRef}
           itemCount={choices?.length || 0}
           itemSize={(i) => {

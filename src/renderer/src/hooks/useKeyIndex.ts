@@ -56,7 +56,7 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [index, flagsIndex, channel, inputFocus, shortcuts, flagValue],
+    [index, flagsIndex, channel, inputFocus, shortcuts, flagValue, gridReady],
   );
 
   useHotkeys(
@@ -80,7 +80,7 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [index, flagsIndex, channel, inputFocus, shortcuts, flagValue],
+    [index, flagsIndex, channel, inputFocus, shortcuts, flagValue, gridReady],
   );
 
   useHotkeys(

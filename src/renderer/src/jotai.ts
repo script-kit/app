@@ -439,7 +439,8 @@ export const directionAtom = atom<1 | -1>(1);
 export const scrollToIndexAtom = atom((g) => {
   return (i: number) => {
     const list = g(listAtom);
-    if (list) {
+    const gridReady = g(gridReadyAtom);
+    if (list && !gridReady) {
       list?.scrollToItem(i);
     }
   };
@@ -553,32 +554,19 @@ export const indexAtom = atom(
       }
     }
     if (choice?.skip) {
-      // Find next choice that doesn't have "skip" set or 0 or length - 1
-      while (choice?.skip) {
-        calcIndex += direction;
+      // Find next choice that doesn't have "skip" set
+      let loopCount = 0;
+      while (choice?.skip && loopCount < cs.length) {
+        calcIndex = (calcIndex + direction + cs.length) % cs.length;
+        log.info(`calcIndex: ${calcIndex}, direction: ${direction}, cs.length: ${cs.length}`);
+        choice = cs[calcIndex]?.item;
+        loopCount++;
+      }
 
-        if (calcIndex <= 0) {
-          calcIndex = cs.length - 1;
-          while (cs[calcIndex]?.item?.skip) {
-            calcIndex += direction;
-            if (calcIndex === a) {
-              break;
-            }
-          }
-        } else if (calcIndex >= cs.length) {
-          calcIndex = 0;
-
-          while (cs[calcIndex]?.item?.skip) {
-            calcIndex += direction;
-            if (calcIndex === a) {
-              break;
-            }
-          }
-        }
-        choice = cs?.[calcIndex]?.item;
-        if (calcIndex === a) {
-          break;
-        }
+      // If we've looped through all choices and they're all skipped
+      if (loopCount === cs.length) {
+        calcIndex = a; // Reset to original index
+        choice = cs[calcIndex]?.item;
       }
     }
 
@@ -588,11 +576,12 @@ export const indexAtom = atom(
       s(_indexAtom, calcIndex);
     }
 
-    if (list && requiresScroll === -1) {
+    const gridReady = g(gridReadyAtom);
+    if (list && requiresScroll === -1 && !gridReady) {
       list?.scrollToItem(calcIndex);
     }
 
-    if (list && cs[0]?.item?.skip && calcIndex === 1) {
+    if (list && cs[0]?.item?.skip && calcIndex === 1 && !gridReady) {
       list?.scrollToItem(0);
     }
 
@@ -710,7 +699,7 @@ export const scoredChoicesAtom = atom(
     s(choices, cs || []);
     s(currentChoiceHeightsAtom, cs || []);
 
-    if(g(promptData)?.grid) {
+    if (g(promptData)?.grid) {
       s(gridReadyAtom, true);
     }
 
@@ -1123,8 +1112,8 @@ const resize = debounce(
       return;
     }
 
-    if(promptData?.grid){
-      return
+    if (promptData?.grid) {
+      return;
     }
 
     let mh = g(mainHeightAtom);
@@ -3547,6 +3536,5 @@ export const termOutputAtom = atom(
     s(_termOutputAtom, g(_termOutputAtom) + a);
   },
 );
-
 
 export const gridReadyAtom = atom(false);
