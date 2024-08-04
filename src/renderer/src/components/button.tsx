@@ -3,7 +3,7 @@ import type { Script } from '@johnlindquist/kit/types/core';
 import log from 'electron-log';
 import parse from 'html-react-parser';
 import { useAtom, useAtomValue } from 'jotai';
-import React, { useCallback, useEffect, useState, type DragEvent, useMemo } from 'react';
+import React, { useCallback, useEffect, useState, type DragEvent, useMemo, useRef } from 'react';
 const { ipcRenderer } = window.electron;
 
 import type { ChoiceButtonProps } from '../../../shared/types';
@@ -13,12 +13,13 @@ import {
   buttonNameFontSizeAtom,
   flaggedChoiceValueAtom,
   flagsAtom,
+  focusedChoiceAtom,
+  gridReadyAtom,
   hasRightShortcutAtom,
   indexAtom,
   inputAtom,
   isMouseDownAtom,
   isScrollingAtom,
-  kitStateAtom,
   mouseEnabledAtom,
   promptDataAtom,
   selectedChoicesAtom,
@@ -43,6 +44,7 @@ function calculateScale(height: number = PROMPT.ITEM.HEIGHT.SM): string {
 function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceButtonProps) {
   const scoredChoice = choices[buttonIndex];
   const choice = scoredChoice?.item;
+  const focusedChoice = useAtomValue(focusedChoiceAtom);
   const [index, setIndex] = useAtom(indexAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
 
@@ -60,6 +62,7 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
   const [, toggleSelectedChoice] = useAtom(toggleSelectedChoiceAtom);
   const [selectedChoices] = useAtom(selectedChoicesAtom);
   const [shouldHighlightDescription] = useAtom(shouldHighlightDescriptionAtom);
+  const gridReady = useAtomValue(gridReadyAtom);
 
   // Get the text after the last file separator
   const base = (input || '').split(/[\\/]/).pop() || '';
@@ -92,7 +95,7 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
         setSubmitValue(choice?.value);
       }
     },
-    [promptData, toggleSelectedChoice, choice.id, choice.value, setSubmitValue],
+    [promptData, toggleSelectedChoice, choice, setSubmitValue],
   );
   const onMouseEnter = useCallback(() => {
     if (mouseEnabled) {
@@ -131,8 +134,8 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
   );
 
   const memoizedChoiceName = useMemo(() => {
-    return choice.name?.replace(/{\s*input\s*}/g, input).replace(/{\s*base\s*}/g, base);
-  }, [choice.name, input, base]);
+    return choice?.name?.replace(/{\s*input\s*}/g, input).replace(/{\s*base\s*}/g, base) || '';
+  }, [choice, input, base]);
 
   const memoizedHtmlDomNode = useMemo(() => {
     if (!choice?.html) {
@@ -146,7 +149,7 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
         return domNode;
       },
     });
-  }, [choice?.html, index, buttonIndex]);
+  }, [choice, index, buttonIndex]);
 
   useEffect(() => {
     const modifier = modifiers.find((m) => {
@@ -163,9 +166,25 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
 
   const scale = calculateScale(choice.height || promptData?.itemHeight);
 
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [hasScrolled, setHasScrolled] = useState(false);
+
+  useEffect(() => {
+    if (focusedChoice.id === choice.id && buttonRef.current && gridReady && !hasScrolled) {
+      buttonRef.current.scrollIntoView({
+        block: 'nearest',
+        inline: 'nearest',
+      });
+      setHasScrolled(true);
+    } else if (focusedChoice.id !== choice.id) {
+      setHasScrolled(false);
+    }
+  }, [focusedChoice, gridReady, choice.id, hasScrolled]);
+
   return (
     // biome-ignore lint/a11y/useKeyWithMouseEvents: <explanation>
     <button
+      ref={buttonRef}
       tabIndex={-1}
       type="button"
       draggable={!!choice?.drag}

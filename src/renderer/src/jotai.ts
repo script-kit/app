@@ -439,7 +439,9 @@ export const directionAtom = atom<1 | -1>(1);
 export const scrollToIndexAtom = atom((g) => {
   return (i: number) => {
     const list = g(listAtom);
-    list?.scrollToItem(i);
+    if (list) {
+      list?.scrollToItem(i);
+    }
   };
 });
 
@@ -707,6 +709,10 @@ export const scoredChoicesAtom = atom(
     // log.info(`⚽️ Scored choices length: ${cs?.length}`);
     s(choices, cs || []);
     s(currentChoiceHeightsAtom, cs || []);
+
+    if(g(promptData)?.grid) {
+      s(gridReadyAtom, true);
+    }
 
     // a.forEach((newChoice, i) => {
     //   const prevChoice = prevChoices?.[i];
@@ -1117,6 +1123,10 @@ const resize = debounce(
       return;
     }
 
+    if(promptData?.grid){
+      return
+    }
+
     let mh = g(mainHeightAtom);
 
     // if (mh === 0 && [UI.form, UI.div].includes(ui)) return;
@@ -1492,7 +1502,8 @@ export const promptDataAtom = atom(
   (g, s, a: null | PromptData) => {
     const pid = g(pidAtom);
     // s(appendToLogHTMLAtom, a?.id || 'id missing');
-    log.info(`${pid}: 👂 Prompt Data ${a?.id}, ${a?.ui}`);
+
+    s(gridReadyAtom, false);
 
     const isMainScript = a?.scriptPath === g(kitConfigAtom).mainScriptPath;
     s(isMainScriptAtom, isMainScript);
@@ -3536,3 +3547,6 @@ export const termOutputAtom = atom(
     s(_termOutputAtom, g(_termOutputAtom) + a);
   },
 );
+
+
+export const gridReadyAtom = atom(false);

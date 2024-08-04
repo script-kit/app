@@ -11,6 +11,7 @@ import {
   flagsAtom,
   focusedChoiceAtom,
   focusedFlagValueAtom,
+  gridReadyAtom,
   hasRightShortcutAtom,
   indexAtom,
   inputAtom,
@@ -88,6 +89,7 @@ export default () => {
   const [actionsConfig, setActionsConfig] = useAtom(actionsConfigAtom);
   const hasRightShortcut = useAtomValue(hasRightShortcutAtom);
   const actionsInputFocus = useAtomValue(actionsInputFocusAtom);
+  const gridReady = useAtomValue(gridReadyAtom);
 
   useHotkeys(
     'mod+shift+w',
@@ -225,6 +227,9 @@ export default () => {
   useHotkeys(
     'right,left',
     (event) => {
+      if(gridReady){
+        return
+      }
       log.info('Arrow key pressed', { event, inputFocus, hasRightShortcut, selectionStart, input });
       if (!inputFocus) {
         log.info('Input not focused, ignoring arrow key');

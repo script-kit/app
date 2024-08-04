@@ -19,6 +19,7 @@ export interface ChoiceButtonProps {
   style: any;
 }
 export interface ListProps {
+  width: number;
   height: number;
 }
 

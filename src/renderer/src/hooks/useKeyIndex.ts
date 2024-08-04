@@ -7,6 +7,7 @@ import {
   directionAtom,
   flaggedChoiceValueAtom,
   flagsIndexAtom,
+  gridReadyAtom,
   indexAtom,
   inputFocusAtom,
   mouseEnabledAtom,
@@ -24,6 +25,7 @@ export default () => {
   const [shortcuts] = useAtom(shortcutsAtom);
   const [, setDirection] = useAtom(directionAtom);
   const flagValue = useAtomValue(flaggedChoiceValueAtom);
+  const gridReady = useAtomValue(gridReadyAtom);
 
   // useEffect(() => {
   //   const list = document.getElementById('list');
@@ -38,6 +40,10 @@ export default () => {
       if (!inputFocus) {
         return;
       }
+      if (gridReady) {
+        return;
+      }
+
       event.preventDefault();
       setMouseEnabled(0);
       setDirection(-1);
@@ -57,6 +63,9 @@ export default () => {
     'down',
     (event) => {
       if (!inputFocus) {
+        return;
+      }
+      if (gridReady) {
         return;
       }
       event.preventDefault();
@@ -80,6 +89,9 @@ export default () => {
       if (!inputFocus) {
         return;
       }
+      if (gridReady) {
+        return;
+      }
       // event.preventDefault();
       channel(Channel.LEFT);
     },
@@ -91,6 +103,9 @@ export default () => {
     'right',
     (event) => {
       if (!inputFocus) {
+        return;
+      }
+      if (gridReady) {
         return;
       }
       // event.preventDefault();

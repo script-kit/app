@@ -686,8 +686,8 @@ ${showTabs ? 'border-t border-ui-border' : ''}
                     {ui === UI.mic && open && <AudioRecorder />}
                     {ui === UI.webcam && open && <Webcam />}
 
-                    {((ui === UI.arg && !panelHTML && choices.length > 0) || ui === UI.hotkey) && (
-                      <AutoSizer disableWidth={true}>{({ height }) => <List height={height} />}</AutoSizer>
+                    {((ui === UI.arg && !panelHTML) || ui === UI.hotkey) && (
+                      <AutoSizer>{({ width, height }) => <List width={width} height={height} />}</AutoSizer>
                     )}
                     {(!!(ui === UI.arg || ui === UI.div) && panelHTML.length > 0 && <Panel />) ||
                       (ui === UI.form && <Form />)}

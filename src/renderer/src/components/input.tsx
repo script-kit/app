@@ -27,6 +27,7 @@ import {
   flagsAtom,
   focusedChoiceAtom,
   footerHiddenAtom,
+  gridReadyAtom,
   inputAtom,
   inputFocusAtom,
   inputFontSizeAtom,
@@ -233,6 +234,7 @@ function MainInput() {
   const [, setSelectionStart] = useAtom(selectionStartAtom);
   const [currentModifiers, setModifiers] = useAtom(_modifiers);
   const [inputFocus, setInputFocus] = useAtom(inputFocusAtom);
+  const gridReady = useAtomValue(gridReadyAtom);
 
   const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(miniShortcutsHoveredAtom);
   const flags = useAtomValue(flagsAtom);
@@ -282,6 +284,12 @@ function MainInput() {
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
       // if command is pressed
+      if(gridReady){
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        return;
+      }
+      }
       if (event.metaKey) {
         const shortcut = shortcuts.find((s) => (s?.key || '')?.includes('cmd'));
         const key = shortcut?.key || '';
