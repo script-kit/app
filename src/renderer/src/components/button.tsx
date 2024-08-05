@@ -210,6 +210,7 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
         ...style,
       }}
       className={`
+      choice
       text-text-base
       ${index === buttonIndex && !choice?.disableSubmit ? choice?.focusedClassName || 'bg-ui-bg' : ''}
         flex

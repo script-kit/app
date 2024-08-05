@@ -1,12 +1,10 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import memoize from 'memoize-one';
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { VariableSizeList as List, VariableSizeGrid as Grid } from 'react-window';
 import type { ChoiceButtonProps, ListProps } from '../../../shared/types';
 import {
-  currentChoiceHeightsAtom,
   directionAtom,
-  flaggedChoiceValueAtom,
   gridReadyAtom,
   indexAtom,
   isScrollingAtom,
@@ -105,11 +103,11 @@ export default function ChoiceList({ width, height }: ListProps) {
   const itemData = createItemData(choices);
 
   const commonProps = {
-    overscanCount: 2,
     width,
     height,
     itemData: itemData,
     className: `
+${gridReady ? 'grid' : 'list'}
       ${isScrolling ? 'scrollbar' : ''}
       wrapper
       bg-opacity-20
@@ -120,28 +118,39 @@ export default function ChoiceList({ width, height }: ListProps) {
 
   const [gridDimensions, setGridDimensions] = useState({
     minColumnWidth: promptData?.columnWidth || 100,
-    columnCount: 0,
-    rowCount: 0,
-    columnWidth: 0,
+    columnCount: promptData?.columns || 0,
+    rowCount: promptData?.rowCount || 0,
+    columnWidth: promptData?.columnWidth || 0,
     rowHeight: promptData?.rowHeight || promptData?.columnWidth || 100,
   });
 
   useEffect(() => {
     const { minColumnWidth } = gridDimensions;
-    const newColumnCount = promptData.columnWidth
-      ? Math.min(choices.length, Math.floor(width / promptData.columnWidth))
-      : Math.min(choices.length, Math.floor(width / minColumnWidth));
+    const newColumnCount =
+      promptData?.columns ||
+      (promptData?.columnWidth
+        ? Math.min(choices.length, Math.floor(width / promptData.columnWidth))
+        : Math.min(choices.length, Math.floor(width / minColumnWidth)));
     const newColumnWidth = promptData.columnWidth || width / newColumnCount;
     const newRowHeight = promptData.rowHeight || promptData.columnWidth || newColumnWidth;
 
     setGridDimensions((prev) => {
-      return {
+      const dimensions = {
         ...prev,
         columnCount: newColumnCount,
         rowCount: Math.ceil(choices.length / newColumnCount),
         columnWidth: choices.length > newColumnCount ? newColumnWidth : prev.columnWidth,
         rowHeight: choices.length > newColumnCount ? newRowHeight : prev.rowHeight,
       };
+
+      log.info(`🛟 Grid dimensions:`, dimensions);
+
+      gridRef?.current?.resetAfterIndices({
+        columnIndex: 0,
+        rowIndex: 0,
+      });
+
+      return dimensions;
     });
   }, [choices.length, width, gridDimensions.minColumnWidth, promptData.columnWidth, promptData.rowHeight]);
 
@@ -263,6 +272,7 @@ there's a phantom mouse also conflicting with setting the index. So you have to 
         <Grid
           {...commonProps}
           ref={gridRef}
+          overscanRowCount={2}
           columnCount={gridDimensions.columnCount}
           rowCount={gridDimensions.rowCount}
           columnWidth={columnWidthCallback}
@@ -271,6 +281,7 @@ there's a phantom mouse also conflicting with setting the index. So you have to 
         >
           {({ columnIndex, rowIndex, style, data }) => {
             const index = rowIndex * gridDimensions.columnCount + columnIndex;
+            // biome-ignore lint/style/useBlockStatements: <explanation>
             if (index >= choices.length) return null;
             return <ChoiceButton index={index} style={style} data={data} />;
           }}
@@ -279,6 +290,7 @@ there's a phantom mouse also conflicting with setting the index. So you have to 
         <List
           {...commonProps}
           ref={listRef}
+          overscanCount={2}
           itemCount={choices?.length || 0}
           itemSize={(i) => {
             const maybeHeight = choices?.[i]?.item?.height;

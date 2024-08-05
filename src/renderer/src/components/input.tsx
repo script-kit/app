@@ -284,11 +284,16 @@ function MainInput() {
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
       // if command is pressed
-      if(gridReady){
-      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-        event.preventDefault();
-        return;
-      }
+      if (gridReady) {
+        if (
+          event.key === 'ArrowLeft' ||
+          event.key === 'ArrowRight' ||
+          event.key === 'ArrowUp' ||
+          event.key === 'ArrowDown'
+        ) {
+          event.preventDefault();
+          return;
+        }
       }
       if (event.metaKey) {
         const shortcut = shortcuts.find((s) => (s?.key || '')?.includes('cmd'));
