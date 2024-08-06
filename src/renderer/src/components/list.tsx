@@ -28,6 +28,26 @@ const createItemData = memoize(
     }) as ChoiceButtonProps['data'],
 );
 
+function calculateColumnWidth(totalWidth: number, columnCount: number, cellGap: number, providedColumnWidth?: number) {
+  // If a column width is provided, use it
+  if (providedColumnWidth) {
+    return providedColumnWidth;
+  }
+
+  // Calculate the total gap space between columns
+  // We subtract 1 from columnCount because we don't need gaps on the outer edges
+  const totalGapSpace = cellGap * (columnCount - 2);
+
+  // Calculate the available space for all columns
+  const availableSpace = totalWidth - totalGapSpace;
+
+  // Calculate the width for each column
+  const calculatedColumnWidth = availableSpace / columnCount;
+
+  // Ensure the calculated width is not negative or zero
+  return Math.max(calculatedColumnWidth, 1);
+}
+
 export default function ChoiceList({ width, height }: ListProps) {
   const listRef = useRef<null | List>(null);
   // TODO: In case items ever have dynamic height
@@ -91,7 +111,9 @@ export default function ChoiceList({ width, height }: ListProps) {
 
     // log.info(`🧾 List reset due to choice height changes`);
 
-    if (typeof listRef?.current?.resetAfterIndex === 'function') listRef?.current?.resetAfterIndex(0);
+    if (typeof listRef?.current?.resetAfterIndex === 'function') {
+      listRef?.current?.resetAfterIndex(0);
+    }
   }, [choices, promptData]);
 
   const [scrollTimeout, setScrollTimeout] = useState<any>(null);
@@ -124,6 +146,8 @@ ${gridReady ? 'grid' : 'list'}
     rowHeight: promptData?.rowHeight || promptData?.columnWidth || 100,
   });
 
+  const CELL_GAP = promptData?.gridGap ? promptData?.gridGap / 2 : 0; // Define the gap between cells
+
   useEffect(() => {
     const { minColumnWidth } = gridDimensions;
     const newColumnCount =
@@ -131,7 +155,7 @@ ${gridReady ? 'grid' : 'list'}
       (promptData?.columnWidth
         ? Math.min(choices.length, Math.floor(width / promptData.columnWidth))
         : Math.min(choices.length, Math.floor(width / minColumnWidth)));
-    const newColumnWidth = promptData.columnWidth || width / newColumnCount;
+    const newColumnWidth = calculateColumnWidth(width, newColumnCount, CELL_GAP, promptData.columnWidth);
     const newRowHeight = promptData.rowHeight || promptData.columnWidth || newColumnWidth;
 
     setGridDimensions((prev) => {
@@ -143,7 +167,7 @@ ${gridReady ? 'grid' : 'list'}
         rowHeight: choices.length > newColumnCount ? newRowHeight : prev.rowHeight,
       };
 
-      log.info(`🛟 Grid dimensions:`, dimensions);
+      // log.info(`🛟 Grid dimensions:`, dimensions);
 
       gridRef?.current?.resetAfterIndices({
         columnIndex: 0,
@@ -281,9 +305,19 @@ there's a phantom mouse also conflicting with setting the index. So you have to 
         >
           {({ columnIndex, rowIndex, style, data }) => {
             const index = rowIndex * gridDimensions.columnCount + columnIndex;
-            // biome-ignore lint/style/useBlockStatements: <explanation>
             if (index >= choices.length) return null;
-            return <ChoiceButton index={index} style={style} data={data} />;
+
+            const gappedStyle = {
+              ...style,
+              left: columnIndex === 0 ? style.left : Number(style.left) + columnIndex * CELL_GAP,
+              top: rowIndex === 0 ? style.top : Number(style.top) + rowIndex * CELL_GAP,
+              width: Number(style.width) - CELL_GAP,
+              height: Number(style.height) - CELL_GAP,
+            };
+
+            log.info({ gappedStyle });
+
+            return <ChoiceButton index={index} style={gappedStyle} data={data} />;
           }}
         </Grid>
       ) : (

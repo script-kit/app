@@ -687,7 +687,9 @@ ${showTabs ? 'border-t border-ui-border' : ''}
                     {ui === UI.webcam && open && <Webcam />}
 
                     {((ui === UI.arg && !panelHTML) || ui === UI.hotkey) && (
-                      <AutoSizer>{({ width, height }) => <List width={width} height={height} />}</AutoSizer>
+                      <div className="w-full h-full" style={{ padding: promptData?.gridPadding || '0' }}>
+                        <AutoSizer>{({ width, height }) => <List width={width} height={height} />}</AutoSizer>
+                      </div>
                     )}
                     {(!!(ui === UI.arg || ui === UI.div) && panelHTML.length > 0 && <Panel />) ||
                       (ui === UI.form && <Form />)}

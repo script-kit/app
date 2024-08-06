@@ -12,6 +12,7 @@ import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 
 import {
+  getKenvFromPath,
   kenvPath,
   kitPath,
   parseScript,
@@ -199,6 +200,11 @@ const getDepWatcher = () => {
         channel: Channel.SCRIPT_CHANGED,
         state: fullPath,
       });
+
+      checkFileImports({
+        filePath,
+        kenv: getKenvFromPath(filePath),
+      } as Script);
     }
   });
 
@@ -273,7 +279,7 @@ const madgeAllScripts = debounce(async () => {
     }
 
     if (deps.length > 0) {
-      log.verbose(`${scriptKey} has ${deps.length} dependencies`, deps);
+      log.info(`${scriptKey} has ${deps.length} dependencies`, deps);
     }
   }
 }, 100);
@@ -801,6 +807,7 @@ export const setupWatchers = async () => {
       //   }
       // }
       try {
+        log.info(`🔍 Checking imports for ${filePath}...`);
         await checkFileImports({
           filePath,
           kenv: '',

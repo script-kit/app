@@ -2,9 +2,8 @@ import { PROMPT } from '@johnlindquist/kit/core/enum';
 import type { Script } from '@johnlindquist/kit/types/core';
 import log from 'electron-log';
 import parse from 'html-react-parser';
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import React, { useCallback, useEffect, useState, type DragEvent, useMemo, useRef } from 'react';
-import debounce from 'lodash/debounce';
 const { ipcRenderer } = window.electron;
 
 import type { ChoiceButtonProps } from '../../../shared/types';
@@ -14,6 +13,7 @@ import {
   buttonNameFontSizeAtom,
   flaggedChoiceValueAtom,
   flagsAtom,
+  focusedButtonAtom,
   focusedChoiceAtom,
   gridReadyAtom,
   hasRightShortcutAtom,
@@ -171,30 +171,14 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
   const scale = calculateScale(choice.height || promptData?.itemHeight);
 
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [hasScrolled, setHasScrolled] = useState(false);
 
-  const debouncedScrollIntoView = useCallback(
-    debounce(
-      (element: HTMLElement) => {
-        element.scrollIntoView({
-          block: 'nearest',
-          inline: 'nearest',
-        });
-        setHasScrolled(true);
-      },
-      100,
-      { leading: true, trailing: false },
-    ),
-    [],
-  );
+  const setFocusedButton = useSetAtom(focusedButtonAtom);
 
   useEffect(() => {
-    if (focusedChoice.id === choice.id && buttonRef.current && gridReady && !hasScrolled) {
-      debouncedScrollIntoView(buttonRef.current);
-    } else if (focusedChoice.id !== choice.id) {
-      setHasScrolled(false);
+    if (focusedChoice.id === choice.id && buttonRef.current && gridReady) {
+      setFocusedButton(buttonRef.current);
     }
-  }, [focusedChoice, gridReady, choice.id, hasScrolled, debouncedScrollIntoView]);
+  }, [gridReady, index]);
 
   return (
     // biome-ignore lint/a11y/useKeyWithMouseEvents: <explanation>
