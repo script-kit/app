@@ -1092,3 +1092,9 @@ drop-shadow-lg
 drop-shadow-xl
 drop-shadow-2xl
 drop-shadow-none
+hover:shadow-none
+hover:shadow-sm
+hover:shadow-md
+hover:shadow-lg
+hover:shadow-xl
+hover:shadow-2xl

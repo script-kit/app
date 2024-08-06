@@ -178,7 +178,7 @@ export const runPromptProcess = async (
 
   const count = prompts.getVisiblePromptCount();
   if (count >= 2 && options?.sponsorCheck) {
-    const isSponsor = await sponsorCheck('More than 2 prompts');
+    const isSponsor = await sponsorCheck('Unlimited Active Prompts');
     if (!isSponsor) {
       prompts.bringAllPromptsToFront();
       return null;

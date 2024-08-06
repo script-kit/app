@@ -2282,7 +2282,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       await cacheMainScripts(stamp);
     }),
     SCREENSHOT: onChildChannelOverride(async ({ child }, { channel, value }) => {
-      await sponsorCheck('Screenshot');
+      await sponsorCheck('Screenshots');
       if (!kitState.isSponsor) {
         return;
       }

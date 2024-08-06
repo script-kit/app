@@ -2862,14 +2862,6 @@ export const termExitAtom = atom(
 export const scrollToAtom = atom<'top' | 'bottom' | 'center' | null>(null);
 
 export const listAtom = atom<null | VariableSizeList>(null);
-export const focusedButtonAtom = atom(null, (g, s, a: HTMLButtonElement) => {
-  if (a) {
-    a.scrollIntoView({
-      block: 'nearest',
-      inline: 'nearest',
-    });
-  }
-});
 
 export const flagsListAtom = atom<null | VariableSizeList>(null);
 

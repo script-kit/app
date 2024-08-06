@@ -48,6 +48,7 @@ function calculateColumnWidth(totalWidth: number, columnCount: number, cellGap: 
   return Math.max(calculatedColumnWidth, 1);
 }
 
+let previousIndex = 0;
 export default function ChoiceList({ width, height }: ListProps) {
   const listRef = useRef<null | List>(null);
   // TODO: In case items ever have dynamic height
@@ -215,26 +216,18 @@ ${gridReady ? 'grid' : 'list'}
     [choices, gridDimensions.rowHeight, promptData?.grid],
   );
 
-  const [currentColumn, setCurrentColumn] = useState(0);
-  const [currentRow, setCurrentRow] = useState(0);
+  const currentColumn = index % gridDimensions.columnCount;
+  const currentRow = Math.floor(index / gridDimensions.columnCount);
 
-  useEffect(() => {
-    if (gridReady) {
-      const column = index % gridDimensions.columnCount;
-      const row = Math.floor(index / gridDimensions.columnCount);
-      setCurrentColumn(column);
-      setCurrentRow(row);
+  if (gridReady && gridRef?.current && index !== previousIndex) {
+    gridRef?.current?.scrollToItem({
+      align: 'auto',
+      columnIndex: currentColumn,
+      rowIndex: currentRow,
+    });
+  }
 
-      log.info(`🔥 Grid position -> col: ${column} row: ${row} =  index: ${index}`);
-    }
-    // log.info(`😩 Scrolling to ${column}, ${row}`,{column, row})
-    //   gridRef?.current?.scrollToItem({
-    //     columnIndex: column,
-    //     rowIndex: row,
-    //     align: 'auto'
-    //   })
-    // }
-  }, [index, gridDimensions.columnCount, gridReady]);
+  previousIndex = index;
 
   /*
 There's a lot of overlap between this useHotKeys and what's going on in useKeyIndex.
@@ -296,7 +289,7 @@ there's a phantom mouse also conflicting with setting the index. So you have to 
         <Grid
           {...commonProps}
           ref={gridRef}
-          overscanRowCount={2}
+          height={height}
           columnCount={gridDimensions.columnCount}
           rowCount={gridDimensions.rowCount}
           columnWidth={columnWidthCallback}
@@ -305,17 +298,17 @@ there's a phantom mouse also conflicting with setting the index. So you have to 
         >
           {({ columnIndex, rowIndex, style, data }) => {
             const index = rowIndex * gridDimensions.columnCount + columnIndex;
-            if (index >= choices.length) return null;
+            if (index >= choices.length) {
+              return null;
+            }
 
             const gappedStyle = {
               ...style,
               left: columnIndex === 0 ? style.left : Number(style.left) + columnIndex * CELL_GAP,
-              top: rowIndex === 0 ? style.top : Number(style.top) + rowIndex * CELL_GAP,
+              top: rowIndex === 0 ? style.top : Number(style.top) + CELL_GAP,
               width: Number(style.width) - CELL_GAP,
               height: Number(style.height) - CELL_GAP,
             };
-
-            log.info({ gappedStyle });
 
             return <ChoiceButton index={index} style={gappedStyle} data={data} />;
           }}

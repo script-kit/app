@@ -13,7 +13,6 @@ import {
   buttonNameFontSizeAtom,
   flaggedChoiceValueAtom,
   flagsAtom,
-  focusedButtonAtom,
   focusedChoiceAtom,
   gridReadyAtom,
   hasRightShortcutAtom,
@@ -171,14 +170,6 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
   const scale = calculateScale(choice.height || promptData?.itemHeight);
 
   const buttonRef = useRef<HTMLButtonElement>(null);
-
-  const setFocusedButton = useSetAtom(focusedButtonAtom);
-
-  useEffect(() => {
-    if (focusedChoice.id === choice.id && buttonRef.current && gridReady) {
-      setFocusedButton(buttonRef.current);
-    }
-  }, [gridReady, index]);
 
   return (
     // biome-ignore lint/a11y/useKeyWithMouseEvents: <explanation>

@@ -2,23 +2,31 @@ import type { Channel } from '@johnlindquist/kit/core/enum';
 import { parseScript } from '@johnlindquist/kit/core/utils';
 import type { Script } from '@johnlindquist/kit/types/core';
 import type { SendData } from '@johnlindquist/kit/types/kitapp';
-import log from 'electron-log';
 import { Trigger } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
 import { runPromptProcess } from './kit';
 import { processes } from './process';
 import { type Background, backgroundMap, kitState } from './state';
+import { createLogger } from '../shared/log-utils';
+
+const log = createLogger('background');
 
 export const removeBackground = (filePath: string) => {
+  log.info('Removing background task', filePath);
   if (!filePath) {
     return;
   }
-  if (backgroundMap.get(filePath)) {
+
+  const background = backgroundMap.get(filePath);
+
+  log.info('Checking background task for removal', { background });
+  if (background) {
     const { child } = backgroundMap.get(filePath) as Background;
     backgroundMap.delete(filePath);
 
-    log.info('Removing background task', filePath);
+    log.info('Pid checking background task', child?.pid);
     if (child?.pid) {
+      log.red('Removing background task', filePath);
       processes.removeByPid(child.pid);
     }
   }
@@ -32,6 +40,7 @@ export const startBackgroundTask = async (filePath: string, args: string[] = [])
     trigger: Trigger.Background,
     sponsorCheck: false,
   });
+
   if (processInfo) {
     const { child } = processInfo;
 
@@ -40,6 +49,8 @@ export const startBackgroundTask = async (filePath: string, args: string[] = [])
       start: new Date().toString(),
       child,
     });
+  } else {
+    log.info('Background task not running', filePath, processInfo);
   }
 };
 

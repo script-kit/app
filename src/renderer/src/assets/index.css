@@ -94,7 +94,7 @@ body {
 }
 
 .simplebar-scrollbar:before {
-  @apply bg-black bg-opacity-50 dark:bg-white;
+  @apply bg-secondary;
   position: absolute;
   content: '';
   border-radius: 7px;
@@ -105,7 +105,7 @@ body {
 }
 
 .log .simplebar-scrollbar:before {
-  @apply bg-white bg-opacity-60 opacity-100 dark:bg-black;
+  @apply bg-secondary bg-opacity-60 opacity-100;
 }
 
 *:not(textarea):not(.scrollbar):not(.chat-scrollbar)::-webkit-scrollbar {
