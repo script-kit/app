@@ -43,6 +43,7 @@ import {
   kitStore,
   preloadChoicesMap,
   sponsorCheck,
+  workers,
 } from './state';
 
 import { findWidget, widgetState } from '../shared/widget';
@@ -2219,21 +2220,17 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     PRELOAD: onChildChannel(({ child }, { channel, value }) => {
       prompt.attemptPreload(value);
     }),
-    CLEAR_TIMESTAMPS: onChildChannel(async ({ child }, { channel, value }) => {
-      const stampDb = await getTimestamps();
-      stampDb.stamps = [];
-      await stampDb.write();
-
-      log.verbose('CLEAR TIMESTAMPS');
+    CLEAR_TIMESTAMPS: onChildChannel(({ child }, { channel, value }) => {
+      workers.cacheScripts?.postMessage({
+        channel: Channel.CLEAR_TIMESTAMPS,
+        value,
+      });
     }),
-    REMOVE_TIMESTAMP: onChildChannel(async ({ child }, { channel, value }) => {
-      log.verbose(`REMOVE TIMESTAMP for ${value}`);
-
-      const stampDb = await getTimestamps();
-      const stamp = stampDb.stamps.findIndex((s) => s.filePath === value);
-
-      stampDb.stamps.splice(stamp, 1);
-      await stampDb.write();
+    REMOVE_TIMESTAMP: onChildChannel(({ child }, { channel, value }) => {
+      workers.cacheScripts?.postMessage({
+        channel: Channel.REMOVE_TIMESTAMP,
+        value,
+      });
     }),
     TOGGLE_WATCHER: onChildChannel(({ child }, { channel, value }) => {
       log.info('TOGGLE WATCHER DEPRECATED');

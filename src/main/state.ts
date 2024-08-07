@@ -223,8 +223,8 @@ const scriptKitLightTheme = `
     --color-primary: #2F86D3;
     --color-secondary: #2F86D3;
     --color-background: #ffffff;
-    --ui-bg-opacity: 0.1;
-    --ui-border-opacity: 0.1;
+    --ui-bg-opacity: 0.15;
+    --ui-border-opacity: 0.15;
 
     --mono-font: JetBrains Mono;
     --sans-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',

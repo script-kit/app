@@ -18,7 +18,7 @@ import download from 'download';
 import { debounce } from 'lodash-es';
 import StreamZip from 'node-stream-zip';
 import * as tar from 'tar';
-import { lstat, readFile, rm } from 'node:fs/promises';
+import { lstat, readFile, rm, unlink } from 'node:fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import {
   KIT_FIRST_PATH,
@@ -1062,28 +1062,14 @@ export const cacheMainScripts = (stamp?: Stamp) => {
             exitCode,
           });
         });
-      }
 
-      if (stamp?.filePath && isInDirectory(stamp?.filePath, kitPath())) {
-        log.info(`Ignore stamping .kit script: ${stamp.filePath}`);
-      } else {
-        log.info(`Stamping ${stamp?.filePath || 'cache only'} 💟`);
-        if (!postMessage && workers.cacheScripts) {
-          postMessage = debounce(
-            (message) => {
-              workers?.cacheScripts?.postMessage(message);
-            },
-            250,
-            {
-              leading: true,
-            },
-          );
-        }
-        const messageErrorHandler = (error) => {
-          log.info('Received message error for stamp', stamp);
-          log.error('MessageError: Failed to cache main scripts', error);
-          reject(error); // Reject the promise on message error
-          cleanHandlers();
+        const messageHandler = (message) => {
+          log.green('Worker message:', message.channel);
+          if (message.channel === Channel.CACHE_MAIN_SCRIPTS) {
+            log.info('Caching main scripts...');
+            cacheMainMenu(message);
+            resolve(message);
+          }
         };
 
         const errorHandler = (error) => {
@@ -1100,26 +1086,38 @@ export const cacheMainScripts = (stamp?: Stamp) => {
             });
           }
           reject(error); // Reject the promise on error
-          cleanHandlers();
         };
 
-        const messageHandler = (message) => {
-          log.info('Received message for stamp', stamp);
-          cacheMainMenu(message);
-          resolve(message);
-          cleanHandlers();
+        const messageErrorHandler = (error) => {
+          log.info('Received message error for stamp', stamp);
+          log.error('MessageError: Failed to cache main scripts', error);
+          reject(error); // Reject the promise on message error
         };
 
-        const cleanHandlers = () => {
-          log.info('Cleaning handlers for stamp', stamp);
-          workers.cacheScripts?.removeListener('message', messageHandler);
-          workers.cacheScripts?.removeListener('messageerror', messageErrorHandler);
-          workers.cacheScripts?.removeListener('error', errorHandler);
-        };
+        workers.cacheScripts.on('messageerror', messageErrorHandler);
+        workers.cacheScripts.on('error', errorHandler);
+        workers.cacheScripts.on('message', messageHandler);
+      }
 
-        workers.cacheScripts.once('messageerror', messageErrorHandler);
-        workers.cacheScripts.once('error', errorHandler);
-        workers.cacheScripts.once('message', messageHandler);
+      if (stamp?.filePath && isInDirectory(stamp?.filePath, kitPath())) {
+        log.info(`Ignore stamping .kit script: ${stamp.filePath}`);
+      } else {
+        log.info(`Stamping ${stamp?.filePath || 'cache only'} 💟`);
+        if (!postMessage && workers.cacheScripts) {
+          postMessage = debounce(
+            (message) => {
+              workers?.cacheScripts?.postMessage({
+                channel: Channel.CACHE_MAIN_SCRIPTS,
+                value: message,
+              });
+            },
+            250,
+            {
+              leading: true,
+            },
+          );
+        }
+
         log.info('Sending stamp to worker', stamp);
         postMessage(stamp);
       }

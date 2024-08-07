@@ -40,7 +40,7 @@ import { getFileImports } from './npm';
 import { processes, sendToAllActiveChildren, spawnShebang, updateTheme } from './process';
 import { clearPromptCache, clearPromptCacheFor, setKitStateAtom } from './prompt';
 import { prompts } from './prompts';
-import { readKitCss, setCSSVariable } from './theme';
+import { setCSSVariable } from './theme';
 import { addSnippet, addTextSnippet, removeSnippet } from './tick';
 import { cacheMainScripts } from './install';
 import { loadKenvEnvironment } from './env-utils';
@@ -51,6 +51,8 @@ import { clearInterval, setInterval } from 'node:timers';
 import { kenvChokidarPath, slash } from './path-utils';
 
 const log = createLogger('watcher.ts');
+
+const debounceCacheMainScripts = debounce(cacheMainScripts, 250);
 
 const unlink = (filePath: string) => {
   unlinkShortcuts(filePath);
@@ -369,6 +371,10 @@ export const onScriptsChanged = async (event: WatchEvent, script: Script, rebuil
     });
 
     clearPromptCacheFor(script.filePath);
+  }
+
+  if (event === 'add' || event === 'unlink') {
+    debounceCacheMainScripts();
   }
 };
 
@@ -741,11 +747,6 @@ export const setupWatchers = async () => {
       return;
     }
 
-    if (base === 'kit.css') {
-      readKitCss(eventName);
-      return;
-    }
-
     if (base === 'package.json') {
       log.info('package.json changed');
 
@@ -862,7 +863,14 @@ export const setupWatchers = async () => {
     if (dir.endsWith('scripts')) {
       let script;
       try {
-        script = await parseScript(filePath);
+        if (eventName !== 'unlink') {
+          script = await parseScript(filePath);
+        } else {
+          script = {
+            filePath,
+            name: path.basename(filePath),
+          };
+        }
       } catch (error) {
         log.warn(error);
         script = {
