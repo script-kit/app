@@ -335,61 +335,57 @@ const verifyInstallation = async (dependencyName: string, cwd: string) => {
   }
 };
 
+let loaderToolsInstalled = false;
 export const installLoaderTools = async () => {
-  const esbuildResult = await installDependency(
-    'esbuild',
-    'i -D esbuild@0.21.4 --save-exact --prefer-dedupe --loglevel=verbose',
-    kitPath(),
-  );
-
-  log.info({ esbuildResult });
-
-  const tsxResult = await installDependency(
-    'tsx',
-    'i -D tsx@4.15.7 --save-exact --prefer-dedupe --loglevel=verbose',
-    kitPath(),
-  );
-
-  log.info({ tsxResult });
-};
-
-export const installNoDomInKenv = async () => {
-  const result = await installDependency(
-    '@typescript/lib-dom',
-    'i -D @typescript/lib-dom@npm:@johnlindquist/no-dom --save-exact --prefer-dedupe --loglevel=verbose',
-    kenvPath(),
-  );
-  if (result) {
-    log.info('Installed @johnlindquist/no-dom');
-  } else {
-    log.info('Failed to install @johnlindquist/no-dom');
+  if (loaderToolsInstalled) {
+    log.info('Loader tools already installed, skipping...');
+    return;
   }
-};
 
-export const installPlatformDeps = async () => {
-  if (os.platform().startsWith('darwin')) {
-    const result = await installDependency(
-      '@johnlindquist/mac-dictionary',
-      'i -D @johnlindquist/mac-dictionary --save-exact --prefer-dedupe --loglevel=verbose',
+  async function readPackageJson() {
+    const packageJsonPath = kitPath('package.json');
+    try {
+      const data = await readFile(packageJsonPath, 'utf8');
+      return JSON.parse(data);
+    } catch (error) {
+      log.error(`Error reading package.json: ${error}`);
+      return null;
+    }
+  }
+
+  const packageJson = await readPackageJson();
+  if (packageJson) {
+    const esbuildVersion = packageJson.devDependencies?.esbuild || '0.21.4';
+    const tsxVersion = packageJson.devDependencies?.tsx || '4.15.7';
+    log.info(`Using esbuild version: ${esbuildVersion}`);
+    log.info(`Using tsx version: ${tsxVersion}`);
+
+    const npmResult = await installDependency(
+      'esbuild and tsx',
+      `i -D esbuild@${esbuildVersion} tsx@${tsxVersion} --save-exact --prefer-dedupe --loglevel=verbose`,
       kitPath(),
     );
-    if (result) {
-      log.info('Installed @johnlindquist/mac-dictionary');
-    } else {
-      log.info('Failed to install @johnlindquist/mac-dictionary');
-    }
+    loaderToolsInstalled = true;
+    return npmResult;
   }
 
   return null;
 };
 
-export const installKitInKenv = async () => {
+let kenvDepsInstalled = false;
+export const installKenvDeps = async () => {
+  if (kenvDepsInstalled) {
+    log.info('Kenv dependencies already installed, skipping...');
+    return;
+  }
+
   const result = await installDependency(
-    '@johnlindquist/kit',
-    `i -D ${kitPath()} --prefer-dedupe --loglevel=verbose`,
+    '@johnlindquist/kit and @typescript/lib-dom',
+    `i -D ${kitPath()} @typescript/lib-dom@npm:@johnlindquist/no-dom --prefer-dedupe --loglevel=verbose`,
     kenvPath(),
   );
   if (result) {
+    kenvDepsInstalled = true;
     log.info('Installed @johnlindquist/kit');
   } else {
     log.info('Failed to install @johnlindquist/kit');

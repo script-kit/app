@@ -68,9 +68,8 @@ import {
   extractNode,
   forkOptions,
   installLoaderTools,
-  installKitInKenv,
+  installKenvDeps,
   installNoDomInKenv,
-  installPlatformDeps,
   matchPackageJsonEngines,
   ohNo,
   optionalSetupScript,
@@ -692,11 +691,11 @@ const checkKit = async () => {
   log.info(`🧐 Checking ${KIT}`, options);
 
   if (process.env.NODE_ENV === 'development') {
-    try {
-      // await installExtensions();
-    } catch (error) {
-      log.info('Failed to install extensions', error);
-    }
+    // try {
+    //   // await installExtensions();
+    // } catch (error) {
+    //   log.info('Failed to install extensions', error);
+    // }
   }
   log.info('Starting IPC...');
   startIpc();
@@ -728,7 +727,6 @@ const checkKit = async () => {
   const storedVersion = await getStoredVersion();
   log.info(`Stored version: ${storedVersion}`);
 
-  const isMac = os.platform() === 'darwin';
   if (!(await kitExists()) || storedVersion === '0.0.0') {
     if (!process.env.KIT_SPLASH) {
       log.info(`🌑 shouldUseDarkColors: ${nativeTheme.shouldUseDarkColors ? 'true' : 'false'}`);
@@ -895,7 +893,7 @@ const checkKit = async () => {
   optionalSetupScript(kitPath('cli', 'create-all-bins-no-trash.js'));
 
   if (!process.env.MAIN_SKIP_SETUP) {
-    await Promise.all([installKitInKenv(), installLoaderTools(), installPlatformDeps(), installNoDomInKenv()]);
+    await Promise.all([installLoaderTools(), installKenvDeps()]);
   }
 
   log.info('installKitInKenv');

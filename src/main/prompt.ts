@@ -1312,7 +1312,7 @@ export class KitPrompt {
 
     // If widths or height don't match, send SET_RESIZING to prompt
 
-    const { width, height } = this.window?.getBounds();
+    const { x, y, width, height } = this.window.getBounds();
     if (cachedBounds.width !== width || cachedBounds.height !== height) {
       log.verbose(`Started resizing: ${this.window?.getSize()}. First prompt?: ${this.firstPrompt ? 'true' : 'false'}`);
 
@@ -1321,6 +1321,11 @@ export class KitPrompt {
 
     if (this.promptData?.scriptlet) {
       cachedBounds.height = this.promptData?.inputHeight;
+    }
+
+    if (this?.window?.isFocused()) {
+      cachedBounds.x = x;
+      cachedBounds.y = y;
     }
 
     // if (isKitScript(kitState.scriptPath)) return;
@@ -1395,8 +1400,10 @@ export class KitPrompt {
         continue;
       }
       if (prompt.getBounds().x === bounds.x && prompt.getBounds().y === bounds.y) {
-        log.info(`🔀 Prompt ${prompt.id} has same x and y as ${this.id}. Scooching x and y!`);
-        sameXAndYAsAnotherPrompt = true;
+        if (prompt.isVisible()) {
+          log.info(`🔀 Prompt ${prompt.id} has same x and y as ${this.id}. Scooching x and y!`);
+          sameXAndYAsAnotherPrompt = true;
+        }
       }
     }
     const noChange = heightNotChanged && widthNotChanged && xNotChanged && yNotChanged && !sameXAndYAsAnotherPrompt;
@@ -1701,6 +1708,7 @@ export class KitPrompt {
      *
      * Hoping to be able to discover a clever workaround in the future 🤞
      */
+
     if (kitState.isLinux) {
       return;
     }
