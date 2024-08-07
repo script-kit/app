@@ -350,11 +350,12 @@ export const onScriptsChanged = async (event: WatchEvent, script: Script, rebuil
         });
       }
     } else {
-      log.verbose(
+      log.info(
         `⌚️ ${script.filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`,
       );
     }
 
+    log.info('Shortcut script changed', script.filePath);
     shortcutScriptChanged(script);
     scheduleScriptChanged(script);
     systemScriptChanged(script);

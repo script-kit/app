@@ -1,4 +1,5 @@
 #!/bin/bash
+clear
 # Start electron-vite dev and keep track of its process ID
 export KIT=~/.kit
 export KENV=~/.kenv

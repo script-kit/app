@@ -9,31 +9,51 @@ import { processes } from './process';
 import { type Background, backgroundMap, kitState } from './state';
 import { createLogger } from '../shared/log-utils';
 
-const log = createLogger('background');
+const log = createLogger('background.ts');
 
 export const removeBackground = (filePath: string) => {
-  log.info('Removing background task', filePath);
   if (!filePath) {
     return;
   }
 
   const background = backgroundMap.get(filePath);
 
-  log.info('Checking background task for removal', { background });
-  if (background) {
+  if (background && background.status === 'ready') {
     const { child } = backgroundMap.get(filePath) as Background;
-    backgroundMap.delete(filePath);
 
-    log.info('Pid checking background task', child?.pid);
+    log.info('Removing background task. Checking pid:', child?.pid);
+    backgroundMap.delete(filePath);
     if (child?.pid) {
       log.red('Removing background task', filePath);
       processes.removeByPid(child.pid);
     }
+  } else {
+    log.info(`Background task starting up, skip removing...`);
   }
 };
 
 export const startBackgroundTask = async (filePath: string, args: string[] = []) => {
-  removeBackground(filePath);
+  const background = backgroundMap.get(filePath);
+  log.info(`Checking background`, background, backgroundMap.entries());
+  if (background && background.child === null) {
+    log.info('Background already starting up. Ignoring...', filePath);
+    return;
+  }
+
+  if (background) {
+    log.info('Found background task with child, removing', filePath);
+    if (background.child) {
+      removeBackground(filePath);
+    }
+  }
+
+  log.info('🌕 Starting background task', filePath);
+  backgroundMap.set(filePath, {
+    start: new Date().toString(),
+    child: null,
+    status: 'starting',
+  });
+  log.info('🌕 Starting background task set', backgroundMap.get(filePath));
 
   const processInfo = await runPromptProcess(filePath, args, {
     force: false,
@@ -44,10 +64,12 @@ export const startBackgroundTask = async (filePath: string, args: string[] = [])
   if (processInfo) {
     const { child } = processInfo;
 
-    log.info('Starting background task', filePath);
+    log.info('🟢 Background task started', filePath);
+
     backgroundMap.set(filePath, {
       start: new Date().toString(),
       child,
+      status: 'ready',
     });
   } else {
     log.info('Background task not running', filePath, processInfo);

@@ -174,6 +174,7 @@ export const runPromptProcess = async (
     sponsorCheck: false,
   },
 ): Promise<ProcessInfo | null> => {
+  log.info('runPromptProcess', { promptScriptPath, args, options });
   // log.info(`->>> Prompt script path: ${promptScriptPath}`);
 
   const count = prompts.getVisiblePromptCount();

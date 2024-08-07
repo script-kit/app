@@ -106,8 +106,9 @@ export const serverState = {
 };
 
 export interface Background {
-  child: ChildProcess;
+  child: ChildProcess | null;
   start: string;
+  status: 'starting' | 'ready';
 }
 export const backgroundMap = new Map<string, Background>();
 

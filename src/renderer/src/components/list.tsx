@@ -1,7 +1,7 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import memoize from 'memoize-one';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { VariableSizeList as List, VariableSizeGrid as Grid } from 'react-window';
+import { VariableSizeList as List, VariableSizeGrid as Grid, type GridOnItemsRenderedProps } from 'react-window';
 import type { ChoiceButtonProps, ListProps } from '../../../shared/types';
 import {
   directionAtom,
@@ -146,8 +146,7 @@ ${gridReady ? 'grid' : 'list'}
     columnWidth: promptData?.columnWidth || 0,
     rowHeight: promptData?.rowHeight || promptData?.columnWidth || 100,
   });
-
-  const CELL_GAP = promptData?.gridGap ? promptData?.gridGap / 2 : 0; // Define the gap between cells
+  const CELL_GAP = promptData?.gridGap ? promptData?.gridGap / 2 : 0;
 
   useEffect(() => {
     const { minColumnWidth } = gridDimensions;
@@ -178,7 +177,6 @@ ${gridReady ? 'grid' : 'list'}
       return dimensions;
     });
   }, [choices.length, width, gridDimensions.minColumnWidth, promptData.columnWidth, promptData.rowHeight]);
-
   const [choicesChanged, setChoicesChanged] = useState(false);
 
   const gridRef = useRef<Grid>(null);
@@ -283,11 +281,16 @@ there's a phantom mouse also conflicting with setting the index. So you have to 
     [currentColumn, currentRow, gridDimensions.columnCount, gridDimensions.rowCount, gridReady, choices.length, index],
   );
 
+  const [renderedProps, setRenderedProps] = useState<GridOnItemsRenderedProps>();
+
   return (
     <div id="list" style={{ width }} className="list-component flex flex-col w-full overflow-y-hidden">
       {gridReady ? (
         <Grid
           {...commonProps}
+          onItemsRendered={(props) => {
+            setRenderedProps(props);
+          }}
           ref={gridRef}
           height={height}
           columnCount={gridDimensions.columnCount}
@@ -298,14 +301,19 @@ there's a phantom mouse also conflicting with setting the index. So you have to 
         >
           {({ columnIndex, rowIndex, style, data }) => {
             const index = rowIndex * gridDimensions.columnCount + columnIndex;
-            if (index >= choices.length) {
+            if (index >= choices.length || !renderedProps) {
               return null;
             }
 
+            const focusedOnLastRow = currentRow === renderedProps.visibleRowStopIndex;
             const gappedStyle = {
               ...style,
               left: columnIndex === 0 ? style.left : Number(style.left) + columnIndex * CELL_GAP,
-              top: rowIndex === 0 ? style.top : Number(style.top) + CELL_GAP,
+              top:
+                Number(style.top) +
+                (rowIndex -
+                  (focusedOnLastRow ? renderedProps.visibleRowStopIndex - 1 : renderedProps.visibleRowStartIndex)) *
+                  CELL_GAP,
               width: Number(style.width) - CELL_GAP,
               height: Number(style.height) - CELL_GAP,
             };

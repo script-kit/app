@@ -1400,7 +1400,7 @@ export class KitPrompt {
         continue;
       }
       if (prompt.getBounds().x === bounds.x && prompt.getBounds().y === bounds.y) {
-        if (prompt.isVisible()) {
+        if (prompt?.isFocused() && prompt?.isVisible()) {
           log.info(`🔀 Prompt ${prompt.id} has same x and y as ${this.id}. Scooching x and y!`);
           sameXAndYAsAnotherPrompt = true;
         }
