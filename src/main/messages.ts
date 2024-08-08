@@ -2221,13 +2221,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       prompt.attemptPreload(value);
     }),
     CLEAR_TIMESTAMPS: onChildChannel(({ child }, { channel, value }) => {
-      workers.cacheScripts?.postMessage({
+      cacheMainScripts({
         channel: Channel.CLEAR_TIMESTAMPS,
         value,
       });
     }),
     REMOVE_TIMESTAMP: onChildChannel(({ child }, { channel, value }) => {
-      workers.cacheScripts?.postMessage({
+      cacheMainScripts({
         channel: Channel.REMOVE_TIMESTAMP,
         value,
       });
@@ -2276,7 +2276,10 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       log.info(`${child.pid}: 📌 ${channel}`, value);
 
-      await cacheMainScripts(stamp);
+      await cacheMainScripts({
+        channel: Channel.CACHE_MAIN_SCRIPTS,
+        value: stamp,
+      });
     }),
     SCREENSHOT: onChildChannelOverride(async ({ child }, { channel, value }) => {
       await sponsorCheck('Screenshots');

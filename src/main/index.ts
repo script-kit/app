@@ -96,6 +96,7 @@ import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { getStoredVersion, getVersion, storeVersion } from './version';
 import { prepQuitWindow } from './window/utils';
 import { loadKenvEnvironment } from './env-utils';
+import { Channel } from '@johnlindquist/kit/core/enum';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -968,7 +969,10 @@ const checkKit = async () => {
 };
 
 emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
-  await cacheMainScripts(stamp);
+  await cacheMainScripts({
+    channel: Channel.CACHE_MAIN_SCRIPTS,
+    value: stamp,
+  });
 });
 
 app.whenReady().then(loadSupportedOptionalLibraries).then(checkKit).catch(ohNo);

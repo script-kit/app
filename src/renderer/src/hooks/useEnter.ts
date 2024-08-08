@@ -23,6 +23,7 @@ import {
 } from '../jotai';
 import { hotkeysOptions } from './shared';
 import { useCallback, useEffect } from 'react';
+import log from 'electron-log';
 
 export default () => {
   const [choices] = useAtom(choicesAtom);
@@ -79,6 +80,7 @@ export default () => {
       }
 
       if (focusedChoice?.text && !flagValue) {
+        log.info(`submitting focused choice: `, { focusedChoice });
         submit(focusedChoice);
         return;
       }

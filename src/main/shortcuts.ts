@@ -145,6 +145,7 @@ export const shortcutScriptChanged = async ({
   shebang?: string;
   kenv: string;
 }) => {
+  log.info(`shortcutScriptChanged: ${filePath} ${shortcut} ${shebang} ${kenv}`);
   const convertedShortcut = convertShortcut(shortcut || '', filePath);
   const old = shortcutMap.get(filePath);
   // TODO: Bring back trusted kenvs
@@ -165,10 +166,12 @@ export const shortcutScriptChanged = async ({
   // Handle existing shortcuts
 
   const exists = [...shortcutMap.entries()].find(([, s]) => s?.shortcut === convertedShortcut);
+  log.purple({ sameScript, exists });
   if (exists && !sameScript) {
     const otherPath = exists[0];
     let script;
     if (otherPath.includes('#')) {
+      log.green(`Checking scriptlets in ${otherPath}`);
       const scripts = await parseScriptletsFromPath(otherPath);
       script = scripts.find((s) => s.filePath === otherPath);
     } else {
@@ -186,6 +189,12 @@ export const shortcutScriptChanged = async ({
       return;
     }
     log.purple(`Shortcut ${convertedShortcut} is no longer registered to ${otherPath}`);
+    try {
+      globalShortcut.unregister(convertedShortcut);
+      shortcutMap.delete(otherPath);
+    } catch (error) {
+      log.error(error);
+    }
   }
 
   if (old?.shortcut) {

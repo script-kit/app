@@ -1049,9 +1049,33 @@ export const cacheMainMenu = ({
 };
 
 let postMessage: (message: any) => void;
-export const cacheMainScripts = (stamp?: Stamp) => {
+let currentResolve: (value: any) => void;
+let currentReject: (reason?: any) => void;
+export const cacheMainScripts = (
+  {
+    channel,
+    value,
+  }: {
+    channel: Channel;
+    value: any;
+  } = {
+    channel: Channel.CACHE_MAIN_SCRIPTS,
+    value: null,
+  },
+) => {
+  log.info('🏆 Caching main scripts...', {
+    channel,
+    value,
+  });
   return new Promise<boolean>((resolve, reject) => {
+    currentResolve = resolve;
+    currentReject = reject;
     // Wrap the function body in a new Promise
+
+    let stamp: Stamp | null = null;
+    if (channel === Channel.CACHE_MAIN_SCRIPTS) {
+      stamp = value;
+    }
 
     try {
       if (!workers.cacheScripts) {
@@ -1068,7 +1092,7 @@ export const cacheMainScripts = (stamp?: Stamp) => {
           if (message.channel === Channel.CACHE_MAIN_SCRIPTS) {
             log.info('Caching main scripts...');
             cacheMainMenu(message);
-            resolve(message);
+            currentResolve(message);
           }
         };
 
@@ -1085,13 +1109,13 @@ export const cacheMainScripts = (stamp?: Stamp) => {
               error: error,
             });
           }
-          reject(error); // Reject the promise on error
+          currentReject(error); // Reject the promise on error
         };
 
         const messageErrorHandler = (error) => {
           log.info('Received message error for stamp', stamp);
           log.error('MessageError: Failed to cache main scripts', error);
-          reject(error); // Reject the promise on message error
+          currentReject(error); // Reject the promise on message error
         };
 
         workers.cacheScripts.on('messageerror', messageErrorHandler);
@@ -1106,10 +1130,7 @@ export const cacheMainScripts = (stamp?: Stamp) => {
         if (!postMessage && workers.cacheScripts) {
           postMessage = debounce(
             (message) => {
-              workers?.cacheScripts?.postMessage({
-                channel: Channel.CACHE_MAIN_SCRIPTS,
-                value: message,
-              });
+              workers?.cacheScripts?.postMessage(message);
             },
             250,
             {
@@ -1119,11 +1140,11 @@ export const cacheMainScripts = (stamp?: Stamp) => {
         }
 
         log.info('Sending stamp to worker', stamp);
-        postMessage(stamp);
+        postMessage({ channel, value });
       }
     } catch (error) {
       log.warn('Failed to cache main scripts at startup', error);
-      reject(error); // Reject the promise on catch
+      currentReject(error); // Reject the promise on catch
     }
   });
 };
