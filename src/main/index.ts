@@ -894,7 +894,6 @@ const checkKit = async () => {
     await Promise.all([installLoaderTools(), installKenvDeps()]);
   }
 
-  log.info('installKitInKenv');
   if (
     requiresInstall &&
     (await kenvExists()) &&
