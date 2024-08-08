@@ -281,12 +281,12 @@ export const installPackage = async (installCommand: string, cwd: string) => {
   });
 };
 
-const installDependency = async (dependencyName: string, installCommand: string, cwd: string) => {
+const installDependencies = async (dependencyNames: string[], installCommand: string, cwd: string) => {
   const normalizedCwd = path.normalize(cwd);
   const isKenvPath = normalizedCwd === path.normalize(kenvPath());
   const isKitPath = normalizedCwd === path.normalize(kitPath());
 
-  log.info(`Installing ${dependencyName} in ${cwd}...`);
+  log.info(`Installing ${dependencyNames.join(', ')} in ${cwd}...`);
 
   if (!(isKenvPath || isKitPath)) {
     log.info(`Did not recognize cwd as valid target: ${cwd}`);
@@ -294,18 +294,28 @@ const installDependency = async (dependencyName: string, installCommand: string,
   }
 
   if (isKenvPath && !(await kenvPackageJsonExists())) {
-    log.info(`No package.json found in ${cwd}. Skipping installation of ${dependencyName}`);
+    log.info(`No package.json found in ${cwd}. Skipping installation of ${dependencyNames.join(', ')}`);
     return null;
   }
 
-  if (isKenvPath && (await isDependencyInstalled(dependencyName, cwd))) {
-    log.info(`${dependencyName} already installed in ${cwd}`);
+  const missingDependencies: string[] = [];
+  for (const dependencyName of dependencyNames) {
+    if (isKenvPath && !(await isDependencyInstalled(dependencyName, cwd))) {
+      log.info(`${dependencyName} not installed in ${cwd}.`);
+      missingDependencies.push(dependencyName);
+    }
+  }
+
+  if (missingDependencies.length === 0) {
+    log.info(`All dependencies already installed in ${cwd}`);
     return null;
   }
 
   try {
     const result = await installPackage(installCommand, cwd);
-    await verifyInstallation(dependencyName, cwd);
+    for (const dependencyName of missingDependencies) {
+      await verifyInstallation(dependencyName, cwd);
+    }
     return result;
   } catch (error) {
     log.error(error);
@@ -317,7 +327,9 @@ const isDependencyInstalled = async (dependencyName: string, cwd: string) => {
   try {
     const nodeModulesPath = path.join(cwd, 'node_modules', dependencyName);
     log.info(`Checking if ${nodeModulesPath} exists`);
-    return await pathExists(nodeModulesPath);
+    const exists = await pathExists(nodeModulesPath);
+    log.info(`${nodeModulesPath} exists: ${exists}`);
+    return exists;
   } catch (error) {
     return false;
   }
@@ -360,8 +372,8 @@ export const installLoaderTools = async () => {
     log.info(`Using esbuild version: ${esbuildVersion}`);
     log.info(`Using tsx version: ${tsxVersion}`);
 
-    const npmResult = await installDependency(
-      'esbuild and tsx',
+    const npmResult = await installDependencies(
+      ['esbuild', 'tsx'],
       `i -D esbuild@${esbuildVersion} tsx@${tsxVersion} --save-exact --prefer-dedupe --loglevel=verbose`,
       kitPath(),
     );
@@ -379,8 +391,8 @@ export const installKenvDeps = async () => {
     return;
   }
 
-  const result = await installDependency(
-    '@johnlindquist/kit and @typescript/lib-dom',
+  const result = await installDependencies(
+    ['@johnlindquist/kit', '@typescript/lib-dom'],
     `i -D ${kitPath()} @typescript/lib-dom@npm:@johnlindquist/no-dom --prefer-dedupe --loglevel=verbose`,
     kenvPath(),
   );
