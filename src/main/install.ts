@@ -4,7 +4,7 @@ import { HttpsProxyAgent } from 'hpagent';
 import {
   type ExecOptions,
   type ForkOptions,
-  type SpawnSyncOptions,
+  type SpawnOptions,
   type SpawnSyncReturns,
   exec,
   fork,
@@ -209,26 +209,32 @@ export const installPackage = async (installCommand: string, cwd: string) => {
   const KIT = kitPath();
   const KENV = kenvPath();
 
+  const PATH = KIT_FIRST_PATH + path.delimiter + process?.env?.PATH;
+  log.info(`Installing ${installCommand} in ${cwd} with PATH: ${PATH}`);
   // Set up the options for the spawn command
-  const options: SpawnSyncOptions = {
+  const options: SpawnOptions = {
     cwd,
-    encoding: 'utf-8',
     env: {
       KIT,
       KENV,
-      PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
+      PATH,
     },
     stdio: 'pipe',
     shell: true, // Use shell on all platforms for consistency
   };
 
   const isWin = os.platform().startsWith('win');
-  const npmPath = isWin ? knodePath('bin', 'npm.cmd') : knodePath('bin', 'npm');
+  // .knode\bin\node .knode\bin\node_modules\npm\bin\npm-cli.js
+  const nodePath = isWin ? knodePath('bin', 'node.exe') : knodePath('bin', 'node');
+  const npmCliPath = isWin
+    ? knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js')
+    : knodePath('lib', 'node_modules', 'npm', 'bin', 'npm-cli.js');
+  const command = `${npmCliPath} ${installCommand}`;
 
-  log.info(`${cwd}: 👷 ${npmPath} ${installCommand}`);
+  log.info(`${cwd}: 👷 ${nodePath} ${command}`);
 
   return new Promise<string>((resolve, reject) => {
-    const child = spawn(npmPath, [installCommand], options);
+    const child = spawn(nodePath, [command], options);
 
     // Display a loading message with a spinner
     let dots = 1;
@@ -306,7 +312,7 @@ const installDependencies = async (dependencyNames: string[], installCommand: st
     }
   }
 
-  if (missingDependencies.length === 0) {
+  if (isKenvPath && missingDependencies.length === 0) {
     log.info(`All dependencies already installed in ${cwd}`);
     return null;
   }
