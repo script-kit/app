@@ -23,7 +23,11 @@ class PtyPool {
     const p = this.ptys.find((p) => p.pid === pid);
     if (p) {
       log.info(`🐲 Killing pty ${pid}`);
-      p.kill();
+      try {
+        p.kill();
+      } catch (error) {
+        log.error(error);
+      }
       this.ptys = this.ptys.filter((p) => p.pid !== pid);
     }
   }
@@ -36,7 +40,11 @@ class PtyPool {
       setTimeout(() => {
         this.ptys.forEach((p) => {
           log.info(`🐲 Killing stray pty ${p.pid}`);
-          p.kill();
+          try {
+            p.kill();
+          } catch (error) {
+            log.error(error);
+          }
         });
         resolve(null);
       }, 100);
