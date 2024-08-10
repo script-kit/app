@@ -49,6 +49,7 @@ import { createLogger } from '../shared/log-utils';
 import { compareArrays } from '../shared/utils';
 import { clearInterval, setInterval } from 'node:timers';
 import { kenvChokidarPath, slash } from './path-utils';
+import { actualHideDock, showDock } from './dock';
 
 const log = createLogger('watcher.ts');
 
@@ -507,6 +508,19 @@ export const parseEnvFile = debounce(async () => {
   //   KIT_THEME_LIGHT: envData?.KIT_THEME_LIGHT,
   //   KIT_THEME_DARK: envData?.KIT_THEME_DARK,
   // });
+
+  if (envData?.KIT_DOCK) {
+    kitState.kenvEnv.KIT_DOCK = envData?.KIT_DOCK;
+    if (envData?.KIT_DOCK === 'false') {
+      actualHideDock();
+    }
+    if (envData?.KIT_DOCK === 'true') {
+      showDock();
+    }
+  } else if (kitState.kenvEnv.KIT_DOCK) {
+    kitState.kenvEnv.KIT_DOCK = undefined;
+    showDock();
+  }
 
   if (envData?.KIT_THEME_LIGHT) {
     log.info('Setting light theme', envData?.KIT_THEME_LIGHT);

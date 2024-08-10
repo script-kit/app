@@ -38,6 +38,9 @@ export const hideDock = debounce(() => {
 }, 200);
 
 export const showDock = () => {
+  if (kitState.kenvEnv?.KIT_DOCK === 'false') {
+    return;
+  }
   if (!kitState.isMac) {
     return;
   }
