@@ -1,41 +1,23 @@
 import { useAtom, useAtomValue } from 'jotai';
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react/function-component-definition */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-/* eslint-disable no-nested-ternary */
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import {
   applyUpdateAtom,
   descriptionAtom,
   isMainScriptAtom,
   kitStateAtom,
-  loadingAtom,
   logoAtom,
-  mouseEnabledAtom,
   nameAtom,
-  openAtom,
   processesAtom,
   promptDataAtom,
-  runProcessesAtom,
-  scriptAtom,
   socialAtom,
 } from '../jotai';
 
 const TopRightButton = () => {
   const name = useAtomValue(nameAtom);
 
-  const isMainScript = useAtomValue(isMainScriptAtom);
-  const processes = useAtomValue(processesAtom);
-
-  const runProcesses = useAtomValue(runProcessesAtom);
   const applyUpdate = useAtomValue(applyUpdateAtom);
   const kitState = useAtomValue(kitStateAtom);
   const social = useAtomValue(socialAtom);
-
-  const onProcessButtonClick = useCallback(() => {
-    runProcesses();
-  }, [processes, runProcesses]);
 
   const onUpdateButtonClick = useCallback(() => {
     applyUpdate();
@@ -57,21 +39,6 @@ const TopRightButton = () => {
         "
       >
         <span className="pl-2">Update</span>
-        <i className="gg-play-button -ml-1.5 scale-75" />
-      </button>
-    );
-  }
-
-  if (isMainScript && processes?.length > 1) {
-    return (
-      <button
-        key="process"
-        type="button"
-        tabIndex={-1}
-        onClick={onProcessButtonClick}
-        className="primary -mr-2 -mt-0.5 flex cursor-pointer flex-row items-center rounded-md bg-text-base bg-opacity-10 font-bold text-primary text-opacity-90 hover:bg-opacity-20"
-      >
-        <span className="pl-2">{processes.length - 1}</span>
         <i className="gg-play-button -ml-1.5 scale-75" />
       </button>
     );
@@ -100,21 +67,13 @@ const TopRightButton = () => {
 };
 
 export default function Header() {
-  const [script] = useAtom(scriptAtom);
-  const [mouseEnabled] = useAtom(mouseEnabledAtom);
-  const [, setOpen] = useAtom(openAtom);
   const [description] = useAtom(descriptionAtom);
   const [logo] = useAtom(logoAtom);
   const [name] = useAtom(nameAtom);
   const [processes] = useAtom(processesAtom);
   const [isMainScript] = useAtom(isMainScriptAtom);
-  const [loading] = useAtom(loadingAtom);
-  const [open] = useAtom(openAtom);
   const [promptData] = useAtom(promptDataAtom);
 
-  const onXClick = useCallback(() => {
-    setOpen(false);
-  }, [setOpen]);
 
   return (
     <div
