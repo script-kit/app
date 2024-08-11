@@ -818,26 +818,6 @@ const checkKit = async () => {
     }
     await clearPromptCache();
 
-    // Overwite node_modules/node-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/Resources/Terminal.icns with assets/icon.icns
-    try {
-      await copyFile(
-        getAssetPath('icons/mac/icon.icns'),
-        kitPath(
-          'node_modules',
-          'node-notifier',
-          'vendor',
-          'mac.noindex',
-          'terminal-notifier.app',
-          'Contents',
-          'Resources',
-          'Terminal.icns',
-        ),
-      );
-    } catch (error) {
-      log.error(error);
-    }
-  }
-
   // await handleSpawnReturns(`docs-pull`, pullDocsResult);
 
   log.info('kenvExists');
