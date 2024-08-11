@@ -2200,6 +2200,7 @@ export class KitPrompt {
         if (kitState.isMac) {
           makeKeyWindow(this.window);
           this.window?.showInactive();
+          makeKeyWindow(this.window);
         } else {
           this?.window?.setFocusable(true);
           this.window?.showInactive();
