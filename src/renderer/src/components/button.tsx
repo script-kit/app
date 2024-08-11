@@ -2,7 +2,7 @@ import { PROMPT } from '@johnlindquist/kit/core/enum';
 import type { Script } from '@johnlindquist/kit/types/core';
 import log from 'electron-log';
 import parse from 'html-react-parser';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import React, { useCallback, useEffect, useState, type DragEvent, useMemo, useRef } from 'react';
 const { ipcRenderer } = window.electron;
 
@@ -12,10 +12,6 @@ import {
   buttonDescriptionFontSizeAtom,
   buttonNameFontSizeAtom,
   flaggedChoiceValueAtom,
-  flagsAtom,
-  focusedChoiceAtom,
-  gridReadyAtom,
-  hasRightShortcutAtom,
   indexAtom,
   inputAtom,
   isMouseDownAtom,
@@ -44,25 +40,21 @@ function calculateScale(height: number = PROMPT.ITEM.HEIGHT.SM): string {
 function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceButtonProps) {
   const scoredChoice = choices[buttonIndex];
   const choice = scoredChoice?.item;
-  const focusedChoice = useAtomValue(focusedChoiceAtom);
   const [index, setIndex] = useAtom(indexAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
 
   const [isMouseDown] = useAtom(isMouseDownAtom);
-  const [flags] = useAtom(flagsAtom);
   const [flaggedValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
   const [modifiers] = useAtom(_modifiers);
   const [modifierDescription, setModifierDescription] = useState('');
   const [buttonNameFontSize] = useAtom(buttonNameFontSizeAtom);
   const [buttonDescriptionFontSize] = useAtom(buttonDescriptionFontSizeAtom);
   const input = useAtomValue(inputAtom);
-  const [submitValue, setSubmitValue] = useAtom(submitValueAtom);
-  const hasRightShortcut = useAtomValue(hasRightShortcutAtom);
+  const [, setSubmitValue] = useAtom(submitValueAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [, toggleSelectedChoice] = useAtom(toggleSelectedChoiceAtom);
   const [selectedChoices] = useAtom(selectedChoicesAtom);
   const [shouldHighlightDescription] = useAtom(shouldHighlightDescriptionAtom);
-  const gridReady = useAtomValue(gridReadyAtom);
 
   // Get the text after the last file separator
   const base = (input || '').split(/[\\/]/).pop() || '';
@@ -77,8 +69,6 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
       if (flaggedValue) {
         setFlagValue('');
       } else {
-        // log.info(`Setting flag value:`, choice);
-        // TODO: On mac, a script has a ".value". On windows, it doesn't. WHY?
         setFlagValue(choice?.value ? choice?.value : choice);
       }
     },
@@ -98,8 +88,27 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
         setSubmitValue(choice?.value);
       }
     },
-    [promptData, toggleSelectedChoice, choice, setSubmitValue],
+    [choice, promptData, toggleSelectedChoice, setSubmitValue],
   );
+
+  const onDragStart = useCallback(
+    (event: DragEvent) => {
+      if (choice?.drag) {
+        const drag = choice?.drag;
+        if (typeof drag === 'string') {
+          event.preventDefault();
+          ipcRenderer.send(AppChannel.DRAG_FILE_PATH, {
+            filePath: drag,
+            icon: '',
+          });
+        } else {
+          event.dataTransfer?.setData(drag?.format || 'text/plain', drag?.data || 'please set drag.data');
+        }
+      }
+    },
+    [choice],
+  );
+
   const onMouseEnter = useCallback(() => {
     if (mouseEnabled) {
       setIndex(buttonIndex);
@@ -111,30 +120,6 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
   useEffect(() => {
     setImageFail(false);
   }, [choice]);
-
-  const onDragStart = useCallback(
-    (event: DragEvent) => {
-      if (choice?.drag) {
-        const drag = choice?.drag;
-        if (typeof drag === 'string') {
-          event.preventDefault();
-
-          ipcRenderer.send(AppChannel.DRAG_FILE_PATH, {
-            filePath: drag,
-            icon: '',
-          });
-        } else {
-          // const domString = `text/plain:script.js:${URL.createObjectURL(
-          //   new Blob([dragContents as string], {
-          //     type: 'text/plain;charset=utf-8',
-          //   })
-          // )}`;
-          event.dataTransfer?.setData(drag?.format || 'text/plain', drag?.data || 'please set drag.data');
-        }
-      }
-    },
-    [choice],
-  );
 
   const memoizedChoiceName = useMemo(() => {
     return choice?.name?.replace(/{\s*input\s*}/g, input).replace(/{\s*base\s*}/g, base) || '';
@@ -167,7 +152,7 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
 
   const isRecent = choice?.group === 'Recent';
 
-  const scale = calculateScale(choice.height || promptData?.itemHeight);
+  const scale = useMemo(() => calculateScale(choice.height || promptData?.itemHeight), [choice.height, promptData?.itemHeight]);
 
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -326,56 +311,8 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
             )}
             {imageFail && (
               <div style={{ aspectRatio: '1/1' }} className="flex h-8 flex-row items-center justify-center">
-                {/* <NoImageIcon
-                  className={`
-        h-1/2
-        fill-current
-        text-text-base opacity-50
-        transition
-        ease-in
-
-        `}
-                  viewBox="0 0 32 32"
-                /> */}
               </div>
             )}
-
-            {/* {index === buttonIndex &&
-              !hasRightShortcut &&
-              !choice?.ignoreFlags &&
-              (Boolean(choice?.actions) ||
-                Boolean(Object.keys(flags).length)) && (
-                <div onClick={onRightClick}>
-                  <div
-                    className={`
-                leading-1 ml-2 flex
-                    h-6
-                    w-6
-                    ${scale}
-
-                    items-center
-
-                    justify-center
-                    rounded
-                    bg-text-base
-                    bg-opacity-10
-                    fill-current
-
- text-xs
-        font-bold text-primary/90
-        transition
-        ease-in
-        hover:bg-opacity-20 hover:text-primary/90
-        `}
-                  >
-                    {flaggedValue ? (
-                      <IconSwapper text="←" />
-                    ) : (
-                      <IconSwapper text="→" />
-                    )}
-                  </div>
-                </div>
-              )} */}
           </div>
         </div>
       )}
