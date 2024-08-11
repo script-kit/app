@@ -1450,10 +1450,10 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     SET_FILTER_INPUT: (data) => {
       sendToPrompt(Channel.SET_FILTER_INPUT, data.value);
     },
-    NOTIFY: (data) => {
-      const notification = new Notification(data.value);
+    NOTIFY: onChildChannel(({ child }, { channel, value }) => {
+      const notification = new Notification(value);
       notification.show();
-    },
+    }),
     SET_TRAY: onChildChannel(async (_, { value }) => {
       log.info(JSON.stringify(value));
       const { label, scripts } = value;
