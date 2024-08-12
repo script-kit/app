@@ -2018,11 +2018,15 @@ export class KitPrompt {
       kitState.tabChanged = false;
     }
 
-    if (!this.isVisible() && promptData?.show) {
+
+    const visible = this.isVisible();
+    log.green(`${this.id}: visible ${visible ? 'true' : 'false'} 👀`)
+    if (!visible && promptData?.show) {
       this.showAfterNextResize = true;
       // log.info(`👋 Show Prompt from setPromptData for ${this.scriptPath}`);
       // this.showPrompt();
-    } else if (this.isVisible() && !promptData?.show) {
+      makePanel(this.window);
+    } else if (visible && !promptData?.show) {
       this.actualHide();
     }
 

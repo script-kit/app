@@ -706,7 +706,6 @@ ${showTabs ? 'border-t border-ui-border' : ''}
 
                     <PanelChild
                       id="panel-right"
-                      className="draggable"
                       ref={panelChildRef}
                       // style={panelRightStyle}
                       order={2}

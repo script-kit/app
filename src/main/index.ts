@@ -817,6 +817,7 @@ const checkKit = async () => {
       log.error(error);
     }
     await clearPromptCache();
+  }
 
   // await handleSpawnReturns(`docs-pull`, pullDocsResult);
 

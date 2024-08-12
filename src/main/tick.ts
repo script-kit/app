@@ -456,7 +456,7 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = '') => {
       if (kitConfig.deleteSnippet) {
         // get postfix from snippetMap
         if (snippetMap.has(snippetKey)) {
-          postfix = snippetMap.get(snippetKey)?.postfix;
+          postfix = Boolean(snippetMap.get(snippetKey)?.postfix);
 
           const stringToDelete = postfix ? snippet : snippetKey;
           log.silly({ stringToDelete, postfix });
@@ -538,6 +538,7 @@ const getSnippet = (
 export const addTextSnippet = async (filePath: string) => {
   for (const [key, value] of snippetMap.entries()) {
     if (value.filePath === filePath) {
+      log.info(`Removing snippet: ${key} because it's already been added`);
       snippetMap.delete(key);
     }
   }
@@ -545,13 +546,20 @@ export const addTextSnippet = async (filePath: string) => {
   const contents = await readFile(filePath, 'utf8');
   const { metadata } = await getSnippet(contents);
 
-  if (metadata?.snippet) {
-    log.info(`Set snippet: ${metadata.snippet}`);
+  log.info({contents, metadata})
 
-    // If snippet starts with an '*' then it's a postfix
-    snippetMap.set(metadata?.snippet, {
+  let expand  = metadata?.snippet || metadata?.expand;
+  if (expand) {
+    log.info(`Set snippet: ${expand}`);
+
+    let postfix = false;
+    if(expand.startsWith('*')) {
+      postfix = true;
+      expand = expand.slice(1);
+    }
+    snippetMap.set(expand, {
       filePath,
-      postfix: false,
+      postfix,
       txt: true,
     });
   }
