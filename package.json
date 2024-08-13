@@ -93,7 +93,7 @@
     "framer-motion": "^11.3.24",
     "html-react-parser": "^5.1.12",
     "jest": "^29.7.0",
-    "jotai": "^2.9.2",
+    "jotai": "^2.9.3",
     "lodash-es": "^4.17.21",
     "memoize-one": "^6.0.0",
     "million": "^3.1.11",
@@ -163,7 +163,7 @@
     "typescript": "^5.5.4",
     "untildify": "5.0.0",
     "valtio": "^1.13.2",
-    "xstate": "^5.17.1"
+    "xstate": "^5.17.2"
   },
   "optionalDependencies": {
     "@jitsi/robotjs": "^0.6.13",

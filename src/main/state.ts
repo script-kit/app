@@ -145,6 +145,7 @@ export const getSchedule = () => {
 export const workers = {
   createBin: null as Worker | null,
   cacheScripts: null as Worker | null,
+  kit: null as Worker | null,
 };
 
 export const debounceSetScriptTimestamp = debounce((stamp: Stamp & { reason?: string }) => {

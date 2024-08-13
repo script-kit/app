@@ -1,6 +1,8 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
 import os from 'node:os';
+import untildify from 'untildify';
+
 import { pathToFileURL } from 'node:url';
 import { BrowserWindow, type IpcMainEvent, globalShortcut, ipcMain, nativeTheme, powerMonitor } from 'electron';
 import { debounce } from 'lodash-es';
@@ -16,6 +18,7 @@ import {
   KIT_APP_PROMPT,
   execPath,
   kitPath,
+  kenvPath,
   processPlatformSpecificTheme,
   resolveToScriptPath,
 } from '@johnlindquist/kit/core/utils';
@@ -376,8 +379,10 @@ const processesChanged = debounce(() => {
   const pinfos = processes.getAllProcessInfo().filter((p) => p.scriptPath);
 
   for (const pinfo of processes) {
-    pinfo.prompt.sendToPrompt(AppChannel.PROCESSES, pinfos);
-    log.info(`🏃‍♂️💨 Active process: ${pinfo.pid} - ${pinfo.scriptPath || 'Idle'}`);
+    if(pinfo?.prompt){
+      pinfo.prompt.sendToPrompt(AppChannel.PROCESSES, pinfos);
+      log.info(`🏃‍♂️💨 Active process: ${pinfo.pid} - ${pinfo.scriptPath || 'Idle'}`);
+    }
   }
 }, 10);
 
@@ -1120,11 +1125,37 @@ export const spawnShebang = async ({
   shebang: string;
   filePath: string;
 }) => {
-  const [command, ...args] = shebang.split(' ');
-  const child = spawn(command, [...args, filePath]);
+  let [command, ...args] = shebang.split(' ');
+  args.push(filePath)
+  let shell = true
+  let cwd = kenvPath()
+  if(filePath.includes('#')){
+    log.info(`Shebang is a scriptlet. Parse!`)
+    const scriptlet = kitState.scriptlets.get(filePath)
+    if(scriptlet){
+       [command, ...args] = scriptlet.scriptlet.split(' ')
+       if (scriptlet?.shell === false || scriptlet?.shell === 'false') {
+        shell = false
+       }
+       if(typeof scriptlet?.shell === 'string'){
+        shell = scriptlet.shell
+       }
+
+       if(scriptlet?.cwd){
+        cwd = untildify(scriptlet.cwd)
+       }
+    }
+
+
+  }
+  const child = spawn(command, args, {
+    shell,
+    cwd,
+    windowsHide: true,
+  });
+  log.info(`🚀 Spawned process ${child.pid} for ${filePath} with command ${command} and args ${args}`);
   processes.addExistingProcess(child, filePath);
 
-  log.info(`🚀 Spawned process ${child.pid} for ${filePath} with command ${command}`);
 
   child.unref();
 
@@ -1138,7 +1169,7 @@ export const spawnShebang = async ({
         return;
       }
       const result = d.toString();
-      scriptinfo(`\n${stripAnsi(result)}`);
+      scriptLog.info(`\n${stripAnsi(result)}`);
     };
 
     child.stdout?.on('data', routeToScriptLog);
@@ -1149,7 +1180,7 @@ export const spawnShebang = async ({
 
     // Log out when the process exits
     child.on('exit', (code) => {
-      scriptinfo(`\nProcess exited with code ${code}`);
+      scriptLog.info(`\nProcess exited with code ${code}`);
       processes.removeByPid(child.pid);
     });
   }

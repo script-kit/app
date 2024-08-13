@@ -72,6 +72,7 @@ import {
   parseTheme,
   processes,
   setTheme,
+  spawnShebang,
 } from './process';
 import { prompts } from './prompts';
 import { getSourceFromRectangle } from './screen';

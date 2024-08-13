@@ -44,6 +44,7 @@ const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
 
         if (shebang) {
           // split shebang into command and args
+          log.info(`Running shebang: ${shebang} for ${filePath}`);
           spawnShebang({ shebang, filePath });
 
           return;
@@ -139,10 +140,12 @@ export const shortcutScriptChanged = async ({
   shortcut,
   shebang,
   kenv,
+  worker
 }: {
   filePath: string;
   shortcut?: string;
   shebang?: string;
+  worker?: boolean;
   kenv: string;
 }) => {
   log.info(`shortcutScriptChanged: ${filePath} ${shortcut} ${shebang} ${kenv}`);

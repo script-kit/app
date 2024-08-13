@@ -867,10 +867,9 @@ export const setupWatchers = async () => {
         return;
       }
       const scriptlets = await parseScriptletsFromPath(filePath);
-      for (const scriptlet of scriptlets) {
-        // log.info(`👀 -->>> ${eventName} ${scriptlet.filePath}`);
-        await onScriptsChanged(eventName, scriptlet);
-      }
+
+      await Promise.all(scriptlets.map(scriptlet => onScriptsChanged(eventName, scriptlet)));
+
       return;
     }
 
