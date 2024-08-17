@@ -789,7 +789,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     }),
 
     SHOW_APP: onChildChannel(({ child }, { channel }) => {
-      prompt?.showPrompt();
+      prompt?.refocusPrompt();
     }),
 
     HIDE_APP: onChildChannelOverride(async ({ scriptPath, child }, { channel, value }) => {
@@ -1455,7 +1455,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       const notification = new Notification(value);
       notification.show();
     }),
-    SET_TRAY: onChildChannel(async (_, { value }) => {
+    SET_TRAY: onChildChannel((_, { value }) => {
       log.info(JSON.stringify(value));
       const { label, scripts } = value;
       if (label) {
@@ -2172,7 +2172,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     }),
     TERM_EXIT: onChildChannel(({ child, promptId }, { channel, value }) => {
       log.info('TERM EXIT FROM SCRIPT', value);
-      sendToPrompt(channel, promptId || '');
+      // sendToPrompt(channel, promptId || '');
     }),
     GET_DEVICES: onChildChannelOverride(({ child }, { channel, value }) => {
       sendToPrompt(channel, value);

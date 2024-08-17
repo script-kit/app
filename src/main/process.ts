@@ -379,7 +379,7 @@ const processesChanged = debounce(() => {
   const pinfos = processes.getAllProcessInfo().filter((p) => p.scriptPath);
 
   for (const pinfo of processes) {
-    if(pinfo?.prompt){
+    if (pinfo?.prompt) {
       pinfo.prompt.sendToPrompt(AppChannel.PROCESSES, pinfos);
       log.info(`🏃‍♂️💨 Active process: ${pinfo.pid} - ${pinfo.scriptPath || 'Idle'}`);
     }
@@ -1126,27 +1126,25 @@ export const spawnShebang = async ({
   filePath: string;
 }) => {
   let [command, ...args] = shebang.split(' ');
-  args.push(filePath)
-  let shell = true
-  let cwd = kenvPath()
-  if(filePath.includes('#')){
-    log.info(`Shebang is a scriptlet. Parse!`)
-    const scriptlet = kitState.scriptlets.get(filePath)
-    if(scriptlet){
-       [command, ...args] = scriptlet.scriptlet.split(' ')
-       if (scriptlet?.shell === false || scriptlet?.shell === 'false') {
-        shell = false
-       }
-       if(typeof scriptlet?.shell === 'string'){
-        shell = scriptlet.shell
-       }
+  args.push(filePath);
+  let shell = true;
+  let cwd = kenvPath();
+  if (filePath.includes('#')) {
+    log.info(`Shebang is a scriptlet. Parse!`);
+    const scriptlet = kitState.scriptlets.get(filePath);
+    if (scriptlet) {
+      [command, ...args] = scriptlet.scriptlet.split(' ');
+      if (scriptlet?.shell === false || scriptlet?.shell === 'false') {
+        shell = false;
+      }
+      if (typeof scriptlet?.shell === 'string') {
+        shell = scriptlet.shell;
+      }
 
-       if(scriptlet?.cwd){
-        cwd = untildify(scriptlet.cwd)
-       }
+      if (scriptlet?.cwd) {
+        cwd = untildify(scriptlet.cwd);
+      }
     }
-
-
   }
   const child = spawn(command, args, {
     shell,
@@ -1155,7 +1153,6 @@ export const spawnShebang = async ({
   });
   log.info(`🚀 Spawned process ${child.pid} for ${filePath} with command ${command} and args ${args}`);
   processes.addExistingProcess(child, filePath);
-
 
   child.unref();
 

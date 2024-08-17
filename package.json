@@ -39,12 +39,7 @@
   "bugs": {
     "url": "https://github.com/johnlindquist/kitapp/issues"
   },
-  "keywords": [
-    "electron",
-    "react",
-    "typescript",
-    "ts"
-  ],
+  "keywords": ["electron", "react", "typescript", "ts"],
   "homepage": "https://github.com/johnlindquist/kitapp#readme",
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
@@ -179,11 +174,7 @@
   },
   "browserslist": [],
   "renovate": {
-    "extends": [
-      "bliss"
-    ],
-    "baseBranches": [
-      "next"
-    ]
+    "extends": ["bliss"],
+    "baseBranches": ["next"]
   }
 }

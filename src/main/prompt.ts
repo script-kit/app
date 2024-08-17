@@ -1226,6 +1226,7 @@ export class KitPrompt {
   };
 
   hide = () => {
+    this.hasBeenHidden = true;
     log.info('Hiding prompt window...');
     if (this.window.isDestroyed()) {
       log.warn('Prompt window is destroyed. Not hiding.');
@@ -1892,13 +1893,21 @@ export class KitPrompt {
     }
   };
 
+  refocusPrompt = () => {
+    if (this.hasBeenHidden) {
+      log.info(`👍 ${this.pid}: ${this.ui} ready. Focusing prompt.`);
+      makePanel(this.window);
+      this.focusPrompt();
+      this.hasBeenHidden = false;
+    }
+  };
+
   setPromptData = async (promptData: PromptData) => {
     log.info(`🔥 Setting prompt data: ${promptData.scriptPath}`);
     this.promptData = promptData;
 
-    ipcMain.once(promptData.ui, () => {
-      log.info(`👍 ${this.pid}: ${promptData.ui} ready. Focusing prompt.`);
-      this.focusPrompt();
+    this.window.webContents.ipc.on(Channel.SET_PROMPT_DATA, () => {
+      this.refocusPrompt();
     });
 
     if (promptData.ui === UI.term) {
@@ -2018,14 +2027,10 @@ export class KitPrompt {
       kitState.tabChanged = false;
     }
 
-
     const visible = this.isVisible();
-    log.green(`${this.id}: visible ${visible ? 'true' : 'false'} 👀`)
+    log.green(`${this.id}: visible ${visible ? 'true' : 'false'} 👀`);
     if (!visible && promptData?.show) {
       this.showAfterNextResize = true;
-      // log.info(`👋 Show Prompt from setPromptData for ${this.scriptPath}`);
-      // this.showPrompt();
-      makePanel(this.window);
     } else if (visible && !promptData?.show) {
       this.actualHide();
     }
@@ -2067,6 +2072,7 @@ export class KitPrompt {
     }
   };
 
+  hasBeenHidden = false;
   actualHide = () => {
     if (!this?.window) {
       return;
@@ -2198,11 +2204,9 @@ export class KitPrompt {
   };
 
   focusPrompt = () => {
-    log.info('👁️  this.focusPrompt');
     if (this.window && !this.window.isDestroyed() && !this.window?.isFocused()) {
       try {
         if (kitState.isMac) {
-          makeKeyWindow(this.window);
           this.window?.showInactive();
           makeKeyWindow(this.window);
         } else {
@@ -2364,10 +2368,16 @@ export class KitPrompt {
     return 'allowed';
   };
 
+  closed = false;
   close = async () => {
+    if (this.closed) {
+      return;
+    }
+    this.closed = true;
     if (!this.window || this.window.isDestroyed()) {
       return;
     }
+
     log.info(`${this.pid} ${this.window.id} 👋 Close prompt`);
     try {
       // this.sendToPrompt(AppChannel.CLOSE_PROMPT);
@@ -2392,8 +2402,6 @@ export class KitPrompt {
 
         // this.window.close();
         // closeWindow(this.window);
-        // this.window.emit('close');
-        // this.window.emit('closed');
         log.info('After willClosePanel');
       }
 
@@ -2605,7 +2613,7 @@ export class KitPrompt {
   };
 }
 
-export const makeSplashWindow = async (window?: BrowserWindow) => {
+export const makeSplashWindow = (window?: BrowserWindow) => {
   if (!kitState.isMac) {
     return;
   }

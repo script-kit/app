@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, type IpcMainEvent } from 'electron';
 /* eslint-disable no-nested-ternary */
 import log from 'electron-log';
 import { debounce } from 'lodash-es';
@@ -289,7 +289,7 @@ export const createPty = (prompt: KitPrompt) => {
       }
     };
 
-    const termExit = (config: TermConfig) => {
+    const termExit = (_: IpcMainEvent, config: TermConfig) => {
       if (config.pid !== prompt?.pid) {
         return;
       }

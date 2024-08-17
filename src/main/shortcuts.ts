@@ -140,12 +140,10 @@ export const shortcutScriptChanged = async ({
   shortcut,
   shebang,
   kenv,
-  worker
 }: {
   filePath: string;
   shortcut?: string;
   shebang?: string;
-  worker?: boolean;
   kenv: string;
 }) => {
   log.info(`shortcutScriptChanged: ${filePath} ${shortcut} ${shebang} ${kenv}`);

@@ -1054,8 +1054,9 @@ export const cacheMainMenu = ({
         queueLog(`Scriptlet ${script.filePath}`);
         kitState.scriptlets.set(script.filePath, script as Scriptlet);
       }
+
       if (isBinnableScript(script)) {
-        queueLog(`Script ${script.filePath}`);
+        queueLog(`Binnable ${script.filePath}`);
         kitState.scripts.set(script.filePath, script);
       }
     }
