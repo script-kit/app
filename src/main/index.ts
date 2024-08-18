@@ -55,7 +55,7 @@ import { KitEvent, emitter } from '../shared/events';
 import { syncClipboardStore } from './clipboard';
 import { actualHideDock, clearStateTimers } from './dock';
 import { displayError } from './error';
-import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
+import { APP_NAME, KENV_PROTOCOL, KIT_PROTOCOL, tildify } from './helpers';
 import {
   cacheMainScripts,
   cleanKit,
@@ -97,6 +97,7 @@ import { getStoredVersion, getVersion, storeVersion } from './version';
 import { prepQuitWindow } from './window/utils';
 import { loadKenvEnvironment } from './env-utils';
 import { Channel } from '@johnlindquist/kit/core/enum';
+import { Trigger } from '../shared/enums';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -186,6 +187,7 @@ if ((envData as any).KIT_DISABLE_GPU || envData.KIT_GPU === 'false') {
 
 app.setName(APP_NAME);
 app.setAsDefaultProtocolClient(KIT_PROTOCOL);
+app.setAsDefaultProtocolClient(KENV_PROTOCOL);
 
 if (app?.dock) {
   app?.dock?.setIcon(getAssetPath('icon.png'));
@@ -267,21 +269,43 @@ const KIT = kitPath();
 //   require('electron-debug')({ showDevTools: false });
 // }
 
-const newFromProtocol = async (u: string) => {
+const protocolHandler = async (u: string) => {
   const url = new URL(u);
-  log.info({ url });
-  if (url.protocol === 'kit:') {
-    const pathname = url.pathname.replace('//', '');
+  const pathname = url.pathname.replace('//', '');
+
+  log.info({ url, pathname });
+
+  if (url.protocol === KENV_PROTOCOL + ':') {
+    const filePath = u.replace(KENV_PROTOCOL + ':', '');
+    const maybeFile = kenvPath(filePath).replace(/\?.*$/, '');
+    const strippedHash = maybeFile.replace(/#.*/, '');
+    log.info({ pathname, maybeFile });
+    if (existsSync(strippedHash)) {
+      const args = url.searchParams.getAll('args');
+      await runPromptProcess(maybeFile, args, {
+        force: true,
+        trigger: Trigger.Protocol,
+        sponsorCheck: false,
+      });
+    }
+    return;
+  }
+
+  if (url.protocol === KIT_PROTOCOL + ':') {
+    log.info({ url });
     if (pathname === 'new') {
       await cliFromParams('new-from-protocol', url.searchParams);
+      return;
     }
     if (pathname === 'snippet' || url.host === 'snippet') {
       await cliFromParams('snippet', url.searchParams);
+      return;
     }
 
     if (pathname === 'kenv') {
       const repo = url.searchParams.get('repo');
       await runPromptProcess(kitPath('cli', 'kenv-clone.js'), [repo || '']);
+      return;
     }
   }
 };
@@ -292,7 +316,7 @@ const prepareProtocols = async () => {
     if (e) {
       e.preventDefault();
     }
-    await newFromProtocol(u);
+    await protocolHandler(u);
   });
 
   protocol.registerFileProtocol(KIT_PROTOCOL, (request, callback) => {

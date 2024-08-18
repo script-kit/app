@@ -19,6 +19,7 @@ import { convertKey } from './state';
 
 export const APP_NAME = 'Kit';
 export const KIT_PROTOCOL = 'kit';
+export const KENV_PROTOCOL = 'kenv';
 
 export const structuredClone = (obj: any) => {
   return v8.deserialize(v8.serialize(obj));
