@@ -79,7 +79,7 @@
     "date-fns": "^3.6.0",
     "detect-port": "^1.6.1",
     "dompurify": "^3.1.6",
-    "electron": "^30.3.0",
+    "electron": "^32.0.1",
     "electron-builder": "25.0.0-alpha.6",
     "electron-vite": "^2.3.0",
     "emoji-picker-react": "^4.11.1",
@@ -170,7 +170,7 @@
     "uiohook-napi": "^1.5.4"
   },
   "engines": {
-    "node": "20.15.1"
+    "node": "20.16.0"
   },
   "browserslist": [],
   "renovate": {
