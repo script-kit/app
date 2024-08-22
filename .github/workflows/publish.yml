@@ -98,15 +98,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.16.0
-
-      - name: Set up Node.js environment variables
-        run: |
-          echo "PATH=$(npm bin):$PATH" >> $GITHUB_ENV
-          echo "NODE_VERSION=$(node -v)" >> $GITHUB_ENV
-          echo "NPM_VERSION=$(npm -v)" >> $GITHUB_ENV
+          cache: 'npm'
 
       - name: Print outputs from previous steps
         run: |
+          node --version
+          npm --version
+          echo $PATH
           echo "kit_tag: ${{ needs.tag.outputs.kit_tag }}"
           echo "release_id: ${{ needs.semantic.outputs.release_id }}"
           echo "semantic_version: ${{ needs.semantic.outputs.semantic_version }}"
