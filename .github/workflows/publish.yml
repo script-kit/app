@@ -214,13 +214,14 @@ jobs:
           ELECTRON_BUILD_ARCH: arm64
           ELECTRON_BUILD_PLATFORM: win32
 
-      - name: Install GCC 10
+      - name: Install GCC 10 and native-keymap dependencies
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libxtst-dev
           sudo apt-get install -y python2.7 make gcc libpng++-dev
           sudo apt-get install -y g++-10
+          sudo apt-get install -y libx11-dev libxkbfile-dev
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
           sudo update-alternatives --set g++ /usr/bin/g++-10
           echo "CXX=g++-10" >> $GITHUB_ENV
