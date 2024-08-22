@@ -98,13 +98,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.16.0
-          cache: 'npm'
 
       - name: Print outputs from previous steps
         run: |
-          node --version
-          npm --version
-          echo $PATH
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "PATH: $PATH"
           echo "kit_tag: ${{ needs.tag.outputs.kit_tag }}"
           echo "release_id: ${{ needs.semantic.outputs.release_id }}"
           echo "semantic_version: ${{ needs.semantic.outputs.semantic_version }}"
