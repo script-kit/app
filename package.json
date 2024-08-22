@@ -24,7 +24,8 @@
     "electron-rebuild": "electron-builder install-app-deps",
     "rimraf-kit-setup": "rimraf ~/.kit-setup ~/.kenv-setup ~/.knode-setup",
     "kit-setup": "KIT=~/.kit-setup KENV=~/.kenv-setup KNODE=~/.knode-setup electron-vite dev",
-    "build:mac": "electron-vite build && electron-builder --mac --config"
+    "build:mac": "electron-vite build && electron-builder --mac --config",
+    "postinstall": "patch-package"
   },
   "repository": {
     "type": "git",
