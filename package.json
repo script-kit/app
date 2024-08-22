@@ -39,7 +39,12 @@
   "bugs": {
     "url": "https://github.com/johnlindquist/kitapp/issues"
   },
-  "keywords": ["electron", "react", "typescript", "ts"],
+  "keywords": [
+    "electron",
+    "react",
+    "typescript",
+    "ts"
+  ],
   "homepage": "https://github.com/johnlindquist/kitapp#readme",
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
@@ -80,7 +85,7 @@
     "detect-port": "^1.6.1",
     "dompurify": "^3.1.6",
     "electron": "^32.0.1",
-    "electron-builder": "25.0.0-alpha.6",
+    "electron-builder": "^25.0.5",
     "electron-vite": "^2.3.0",
     "emoji-picker-react": "^4.11.1",
     "eslint": "^9.9.0",
@@ -174,7 +179,11 @@
   },
   "browserslist": [],
   "renovate": {
-    "extends": ["bliss"],
-    "baseBranches": ["next"]
+    "extends": [
+      "bliss"
+    ],
+    "baseBranches": [
+      "next"
+    ]
   }
 }
