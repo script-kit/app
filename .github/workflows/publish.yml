@@ -52,6 +52,10 @@ jobs:
           cat package.json
           echo "semantic_version=${{ steps.semantic.outputs.new_release_version }}" >> $GITHUB_OUTPUT
 
+      - name: Echo kit-action version
+        run: |
+          echo "Using johnlindquist/kit-action${{ needs.tag.outputs.kit_tag }}}"
+
       - name: Create Release main
         if: needs.tag.outputs.kit_tag == 'main'
         id: create_release_main
