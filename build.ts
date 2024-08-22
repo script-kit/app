@@ -205,7 +205,7 @@ try {
         stdio: 'inherit',
       });
     }
-    execSync(`${process.env?.NPM_PATH || 'npm'} uninstall ${uninstallDeps.join(' ')}`, {
+    execSync(`npm uninstall ${uninstallDeps.join(' ')}`, {
       stdio: 'inherit',
     });
   }

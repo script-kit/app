@@ -99,6 +99,12 @@ jobs:
         with:
           node-version: 20.16.0
 
+      - name: Set up Node.js environment variables
+        run: |
+          echo "PATH=$(npm bin):$PATH" >> $GITHUB_ENV
+          echo "NODE_VERSION=$(node -v)" >> $GITHUB_ENV
+          echo "NPM_VERSION=$(npm -v)" >> $GITHUB_ENV
+
       - name: Print outputs from previous steps
         run: |
           echo "kit_tag: ${{ needs.tag.outputs.kit_tag }}"
@@ -244,6 +250,8 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
+            node --version
+            npm --version
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
             npm run vite-prebuild
@@ -268,6 +276,8 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
+            node --version
+            npm --version
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npx kit remove-tick
             cat ./package.json
