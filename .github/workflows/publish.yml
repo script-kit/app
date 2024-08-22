@@ -186,11 +186,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ELECTRON_BUILD_ARCH: x64
           ELECTRON_BUILD_PLATFORM: win32
-        uses: nick-invision/retry@v3
-        with:
-          max_attempts: 3
-          timeout_minutes: 30
-          command: |
+        run: |
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
             npm run vite-prebuild
@@ -198,11 +194,7 @@ jobs:
 
       - name: Publish windows arm64
         if: matrix.os == 'windows-latest' && matrix.arch == 'arm64'
-        uses: nick-invision/retry@v3
-        with:
-          max_attempts: 3
-          timeout_minutes: 30
-          command: |
+        run: |
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npx kit remove-tick
             npm run vite-prebuild
@@ -242,11 +234,7 @@ jobs:
           ELECTRON_BUILD_ARCH: x64
           ELECTRON_BUILD_PLATFORM: linux
 
-        uses: nick-invision/retry@v3
-        with:
-          max_attempts: 3
-          timeout_minutes: 30
-          command: |
+        run: |
             node --version
             npm --version
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
@@ -268,11 +256,7 @@ jobs:
           ELECTRON_BUILD_PLATFORM: linux
           NPM_PATH: ${{ runner.tool_cache }}/npm/${{ steps.setup-node.outputs.npm_version }}/bin/npm
 
-        uses: nick-invision/retry@v3
-        with:
-          max_attempts: 3
-          timeout_minutes: 30
-          command: |
+        run: |
             node --version
             npm --version
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
@@ -297,11 +281,7 @@ jobs:
           ELECTRON_BUILD_ARCH: x64
           ELECTRON_BUILD_PLATFORM: darwin
 
-        uses: nick-invision/retry@v3
-        with:
-          max_attempts: 3
-          timeout_minutes: 30
-          command: |
+        run: |
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
             npm run vite-prebuild
@@ -321,11 +301,7 @@ jobs:
           ELECTRON_BUILD_ARCH: arm64
           ELECTRON_BUILD_PLATFORM: darwin
 
-        uses: nick-invision/retry@v3
-        with:
-          max_attempts: 3
-          timeout_minutes: 30
-          command: |
+        run: |
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
             npm run vite-prebuild
