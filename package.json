@@ -128,7 +128,6 @@
   "dependencies": {
     "@johnlindquist/clipboard": "^0.1.38",
     "@johnlindquist/kit": "^2.23.11",
-    "@johnlindquist/native-keymap": "^3.3.7",
     "@rollup/plugin-commonjs": "^26.0.1",
     "axios": "^1.7.4",
     "builtin-modules": "^4.0.0",
@@ -172,6 +171,7 @@
     "@johnlindquist/mac-frontmost": "^1.0.7",
     "@johnlindquist/mac-panel-window": "^1.4.0",
     "@johnlindquist/node-window-manager": "^1.0.24",
+    "native-keymap": "^3.3.5",
     "node-mac-permissions": "^2.4.0",
     "uiohook-napi": "^1.5.4"
   },

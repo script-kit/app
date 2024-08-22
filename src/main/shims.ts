@@ -19,16 +19,16 @@ const nwm = '@johnlindquist/node-window-manager' as const;
 const mcl = '@johnlindquist/mac-clipboard-listener' as const;
 const mf = '@johnlindquist/mac-frontmost' as const;
 const mpw = '@johnlindquist/mac-panel-window' as const;
-
+const nk = 'native-keymap' as const;
 // Object.keys(packageJson.optionalDependencies)
-const optionalDependencies = [robot, uiohook, nmp, nwm, mcl, mf, mpw] as const;
+const optionalDependencies = [robot, uiohook, nmp, nwm, mcl, mf, mpw, nk] as const;
 type OptionalDependency = (typeof optionalDependencies)[number];
 
 const supportMap: Partial<Record<Target, OptionalDependency[]>> = {
-  'win32-arm64': [robot, uiohook, nwm],
-  'win32-x64': [robot, uiohook, nwm],
-  'darwin-arm64': [robot, uiohook, nmp, nwm, mcl, mf, mpw],
-  'darwin-x64': [robot, uiohook, nmp, nwm, mcl, mf, mpw],
+  'win32-arm64': [robot, uiohook, nwm, nk],
+  'win32-x64': [robot, uiohook, nwm, nk],
+  'darwin-arm64': [robot, uiohook, nmp, nwm, mcl, mf, mpw, nk],
+  'darwin-x64': [robot, uiohook, nmp, nwm, mcl, mf, mpw, nk],
   'linux-arm64': [],
   'linux-x64': [robot, uiohook],
 } as const;
@@ -54,6 +54,8 @@ interface Shims {
   [mcl]: typeof import('@johnlindquist/mac-clipboard-listener');
   //@ts-ignore This import might not work, depending on the platform
   [mpw]: typeof import('@johnlindquist/mac-panel-window');
+  //@ts-ignore This import might not work, depending on the platform
+  [nk]: typeof import('native-keymap');
 }
 
 const createShim = <T extends keyof Shims>(packageName: T, depth = 0): Shims[T] =>
@@ -83,6 +85,7 @@ const shims: Shims = {
   [mf]: createShim('@johnlindquist/mac-frontmost'),
   [mpw]: createShim('@johnlindquist/mac-panel-window'),
   [mcl]: createShim('@johnlindquist/mac-clipboard-listener'),
+  [nk]: createShim('native-keymap'),
 };
 
 export const include = () => {
