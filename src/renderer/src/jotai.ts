@@ -2467,8 +2467,6 @@ export const _audioAtom = atom<AudioOptions | null>(null);
 export const audioAtom = atom(
   (g) => g(_audioAtom),
   (g, s, a: AudioOptions | null) => {
-    log.info('Audio options', { a });
-
     let audio: null | HTMLAudioElement = document.querySelector('#audio') as HTMLAudioElement;
 
     // create audio element
@@ -2614,7 +2612,11 @@ export const kitStateAtom = atom(
     //   a,
     // });
     if (a?.escapePressed) {
-      s(audioAtom, null);
+      const audio = g(audioAtom);
+      if (audio) {
+        log.info(`${window?.pid}: Escape pressed. Nulling audio`);
+        s(audioAtom, null);
+      }
     }
     s(_kitStateAtom, {
       ...g(_kitStateAtom),

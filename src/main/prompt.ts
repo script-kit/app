@@ -765,7 +765,6 @@ export class KitPrompt {
 
     this.window.webContents?.once('did-finish-load', () => {
       kitState.hiddenByUser = false;
-      kitState.promptHidden = true;
 
       log.silly('event: did-finish-load');
       this.sendToPrompt(Channel.APP_CONFIG, {
@@ -960,17 +959,14 @@ export class KitPrompt {
     });
 
     const onBlur = () => {
-      // log.info(`🙈 Prompt window blurred`, {
-      //   isPromptReady: this.ready,
-      //   isActivated: kitState.isActivated,
-      // });
+      log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred`);
 
       if (kitState.isMac) {
         makeWindow(this.window);
       }
 
       if (this.justFocused && this.isVisible()) {
-        log.info('🙈 Prompt window was just focused. Ignore blur');
+        log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window was just focused. Ignore blur`);
 
         // this.focusPrompt();
         return;
@@ -1046,14 +1042,14 @@ export class KitPrompt {
     });
 
     this.window.webContents?.on('focus', () => {
-      log.info('WebContents Focus');
+      log.info(`${this.pid}:${this.scriptName}: 👓 WebContents Focus`);
     });
 
     this.window.on('focus', () => {
-      log.info('👓 Focus bounds:', this.window.getBounds());
+      log.info(`${this.pid}:${this.scriptName}: 👓 Focus bounds:`, this.window.getBounds());
 
       if (!kitState.isLinux) {
-        log.verbose('Registering emoji shortcut');
+        log.verbose(`${this.pid}:${this.scriptName}: 👓 Registering emoji shortcut`);
         // Grab cmd+ctrl+space shortcut to use electron's emoji picker
         kitState.emojiActive = true;
         // globalShortcut.register(getEmojiShortcut(), showEmoji);
@@ -1069,8 +1065,7 @@ export class KitPrompt {
     this.window.on('blur', onBlur);
 
     this.window.on('hide', () => {
-      log.info('🫣 Prompt window hidden');
-      kitState.promptHidden = true;
+      log.info(`${this.pid}:${this.scriptName}: 🫣 Prompt window hidden`);
 
       if (!kitState.isLinux) {
         // globalShortcut.unregister(getEmojiShortcut());
@@ -1078,9 +1073,8 @@ export class KitPrompt {
       }
     });
 
-    this.window.on('show', async () => {
-      log.info(`${this.pid} 😳 Prompt window shown`);
-      kitState.promptHidden = false;
+    this.window.on('show', () => {
+      log.info(`${this.pid}:${this.scriptName}: 😳 Prompt window shown`);
     });
 
     this.window.webContents?.on('did-fail-load', (errorCode, errorDescription, validatedURL, isMainFrame) => {
@@ -1159,9 +1153,14 @@ export class KitPrompt {
     this.window.on('moved', onMoved);
   }
 
+  appearance: 'light' | 'dark' | 'auto' = 'auto';
   setAppearance = (appearance: 'light' | 'dark' | 'auto') => {
-    log.info(`👀 Setting appearance to ${appearance}`);
+    if (this.appearance === appearance) {
+      return;
+    }
+    log.info(`${this.pid}:${this.scriptName}: 👀 Setting appearance to ${appearance}`);
     setAppearance(this.window, appearance);
+    this.appearance = appearance;
   };
 
   forcePromptToCenter = () => {
@@ -2027,10 +2026,6 @@ export class KitPrompt {
       // eslint-disable-next-line promise/param-names
       await new Promise((r) => setTimeout(r, timeout));
       kitState.hasSnippet = false;
-    }
-
-    if (kitState.promptHidden) {
-      kitState.tabChanged = false;
     }
 
     const visible = this.isVisible();

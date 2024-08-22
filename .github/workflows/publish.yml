@@ -92,7 +92,6 @@ jobs:
       matrix:
         os: [macos-13, windows-latest, ubuntu-latest]
         arch: [x64, arm64]
-        node: [20.16.0]
 
     steps:
       - name: Print outputs from previous steps
@@ -170,19 +169,7 @@ jobs:
       - name: Install Node, NPM and Yarn
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
-
-      # - name: Ubuntu Electron Issue
-      #   if: matrix.os == 'ubuntu-latest'
-      #   run: echo "There is an issue with electron >=26 with something in the app causing a crash. It might be with the powerMonitor, but it's still not clear. This will have to be resolved before we can upgrade electron and move to ESM-only."
-      #   env:
-      #     KIT_TAG: ${{ needs.tag.outputs.kit_tag }}
-      # # - name: npm i --force @johnlindquist/kit
-      # #   if: matrix.os == 'ubuntu-latest'
-      # #   run: |
-      # #     # npm i --force
-      # #     npm i --force electron@25.9.3
-      # #     npm i --force "@johnlindquist/kit@${{ env.KIT_TAG }}"
+          node-version: 20.16.0
 
       - name: Publish windows x64
         if: matrix.os == 'windows-latest' && matrix.arch == 'x64'
@@ -250,8 +237,6 @@ jobs:
             sudo apt-get install -y libxtst-dev
             sudo apt-get install -y python2.7 make gcc libpng++-dev
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            # npx kit patch-node-pty
-            # npm i --force @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
             npm run vite-prebuild
             npx kit ./build.ts linux x64 always
@@ -274,10 +259,11 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
+            sudo apt-get update
+            sudo apt-get install -y g++-10  # Install GCC 10 which supports C++20
+            export CXX=g++-10
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npx kit remove-tick
-            # npx kit patch-node-pty
-            # npm i --force @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
             npm run vite-prebuild
             npx kit ./build.ts linux arm64 always

@@ -326,7 +326,6 @@ const initState = {
   escapePressed: false,
   shortcutPressed: '',
   supportsNut: isMac || (isWin && arch === 'x64') || (isLinux && arch === 'x64'),
-  promptHidden: true,
   // DISABLING: Using the "accept" prompt as confirmation that people trust
   // trustedKenvs: [] as string[],
   suspendWatchers: false,
@@ -334,7 +333,6 @@ const initState = {
   trustedKenvs: [] as string[],
   trustedKenvsKey: getTrustedKenvsKey(),
   tabIndex: 0,
-  tabChanged: false,
   user_id: '',
   app_version: '',
   platform: `${os.platform()}-${arch}`,
