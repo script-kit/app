@@ -238,6 +238,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ELECTRON_BUILD_ARCH: x64
           ELECTRON_BUILD_PLATFORM: linux
+          NPM_PATH: ${{ runner.tool_cache }}/npm/${{ steps.setup-node.outputs.npm_version }}/bin/npm
+          PATH: ${{ runner.tool_cache }}/node/${{ steps.setup-node.outputs.node_version }}/bin:${{ runner.tool_cache }}/npm/${{ steps.setup-node.outputs.npm_version }}/bin:${{ env.PATH }}
+
 
         uses: nick-invision/retry@v3
         with:
@@ -261,6 +264,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ELECTRON_BUILD_ARCH: arm64
           ELECTRON_BUILD_PLATFORM: linux
+          NPM_PATH: ${{ runner.tool_cache }}/npm/${{ steps.setup-node.outputs.npm_version }}/bin/npm
+          PATH: ${{ runner.tool_cache }}/node/${{ steps.setup-node.outputs.node_version }}/bin:${{ runner.tool_cache }}/npm/${{ steps.setup-node.outputs.npm_version }}/bin:${{ env.PATH }}
 
         uses: nick-invision/retry@v3
         with:
@@ -271,6 +276,8 @@ jobs:
             npx kit remove-tick
             cat ./package.json
             npm run vite-prebuild
+            which npm
+            npm --version
             npx kit ./build.ts linux arm64 always
 
       - name: Publish mac x64

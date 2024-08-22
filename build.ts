@@ -191,7 +191,13 @@ try {
   const uninstallDeps = external();
   console.log(`Removing external dependencies: ${uninstallDeps.join(', ')} before @electron/rebuild kicks in`);
   if (uninstallDeps.length > 0) {
-    execSync(`npm uninstall ${uninstallDeps.join(' ')}`);
+    if (platform === 'linux') {
+      execSync(`which npm`);
+      execSync(`npm version`);
+      execSync(`node version`);
+      execSync(`echo $NPM_PATH`);
+    }
+    execSync(`${process.env?.NPM_PATH || 'npm'} uninstall ${uninstallDeps.join(' ')}`);
   }
   const result = await build({
     config,
