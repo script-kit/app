@@ -10,7 +10,6 @@ import {
   actionsInputFocusAtom,
   actionsInputFontSizeAtom,
   actionsInputHeightAtom,
-  actionsPlaceholderAtom,
   cachedAtom,
   channelAtom,
   flagsAtom,
@@ -22,6 +21,7 @@ import {
   submittedAtom,
   typingAtom,
   uiAtom,
+  scoredFlagsAtom,
 } from '../jotai';
 
 const remapModifiers = (m: string) => {
@@ -162,11 +162,12 @@ export default function ActionsInput() {
   const focusedChoice = useAtomValue(focusedChoiceAtom);
   const ui = useAtomValue(uiAtom);
   const actionsConfig = useAtomValue(actionsConfigAtom);
+  const [choices] = useAtom(scoredFlagsAtom);
 
   return (
     <div
       key="input"
-      className={'flex flex-col max-w-screen border-b border-ui-border px-0.5'}
+      className={`flex flex-col max-w-screen ${choices?.length > 0 ? 'border-b border-ui-border' : ''} px-0.5`}
       style={{
         height: inputHeight,
         minHeight: inputHeight,

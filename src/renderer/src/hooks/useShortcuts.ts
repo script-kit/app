@@ -171,7 +171,7 @@ export default () => {
           if (flagShortcuts.includes(ps.key)) {
             log.warn('Prompt shortcut is a duplicated of a flag shortcut. Ignoring flag shortcut', { ps });
           } else {
-            keys += `${ps.key},`;
+            keys += `${ps.key.replace('+,', '+comma')},`;
           }
         }
       }
@@ -227,8 +227,8 @@ export default () => {
   useHotkeys(
     'right,left',
     (event) => {
-      if(gridReady){
-        return
+      if (gridReady) {
+        return;
       }
       log.info('Arrow key pressed', { event, inputFocus, hasRightShortcut, selectionStart, input });
       if (!inputFocus) {

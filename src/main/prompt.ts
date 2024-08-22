@@ -683,7 +683,6 @@ export class KitPrompt {
 
     log.info(`🎬 Init appearance: ${kitState.appearance}`);
     setAppearance(this.window, kitState.appearance);
-    makePanel(this.window);
 
     // TODO: Windows prompt behavior
     // if (kitState.isWindows) {
@@ -885,6 +884,14 @@ export class KitPrompt {
         event.preventDefault();
       }
       if (isEscape) {
+        if (!this.scriptPath) {
+          log.error(`${this.pid}: ${this.scriptName}: Escape pressed, but no script path. Killing process`);
+          processes.removeByPid(this.pid);
+          emitter.emit(KitEvent.KillProcess, this.pid);
+          event.preventDefault();
+          this.hide();
+          return;
+        }
         const currentTime = Date.now();
         if (currentTime - lastEscapePressTime <= 300) {
           escapePressCount += 1;
@@ -1896,7 +1903,6 @@ export class KitPrompt {
   refocusPrompt = () => {
     if (this.hasBeenHidden) {
       log.info(`👍 ${this.pid}: ${this.ui} ready. Focusing prompt.`);
-      makePanel(this.window);
       this.focusPrompt();
       this.hasBeenHidden = false;
     }
@@ -2207,6 +2213,7 @@ export class KitPrompt {
     if (this.window && !this.window.isDestroyed() && !this.window?.isFocused()) {
       try {
         if (kitState.isMac) {
+          makePanel(this.window);
           this.window?.showInactive();
           makeKeyWindow(this.window);
         } else {

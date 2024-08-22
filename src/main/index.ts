@@ -28,7 +28,7 @@ import path from 'node:path';
 
 import semver from 'semver';
 import { existsSync, readFileSync } from 'node:fs';
-import { copyFile, readdir } from 'node:fs/promises';
+import { readdir, symlink } from 'node:fs/promises';
 
 import {
   KIT_FIRST_PATH,
@@ -69,7 +69,6 @@ import {
   forkOptions,
   installLoaderTools,
   installKenvDeps,
-  installNoDomInKenv,
   matchPackageJsonEngines,
   ohNo,
   optionalSetupScript,
@@ -565,6 +564,22 @@ const kenvExists = async () => {
   return doesKenvExist;
 };
 
+const npmExists = async () => {
+  const npmPath = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const doesNpmExist = existsSync(kenvPath(npmPath));
+  await setupLog(`npm${doesNpmExist ? '' : ' not'} found at ${npmPath}`);
+
+  return doesNpmExist;
+};
+
+const pnpmExists = async () => {
+  const pnpmPath = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+  const doesPnpmExist = existsSync(kenvPath(pnpmPath));
+  await setupLog(`pnpm${doesPnpmExist ? '' : ' not'} found at ${pnpmPath}`);
+
+  return doesPnpmExist;
+};
+
 const kenvConfigured = async () => {
   const isKenvConfigured = existsSync(kenvPath('.env'));
   await setupLog(`kenv is${isKenvConfigured ? '' : ' not'} configured at ${kenvPath()}`);
@@ -887,6 +902,21 @@ const checkKit = async () => {
 
   await ensureEnv();
   await setupLog('Update .kenv');
+
+  // const hasNpm = await npmExists();
+  // if (!hasNpm) {
+  //   await setupLog('npm not found');
+  //   await symlink(knodePath('bin', 'npm'), kenvPath('npm'));
+  //   await symlink(knodePath('bin', 'npx'), kenvPath('npx'));
+  //   if (process.platform === 'win32') {
+  //     await symlink(knodePath('bin', 'npm.cmd'), kenvPath('npm.cmd'));
+  //     await symlink(knodePath('bin', 'npx.cmd'), kenvPath('npx.cmd'));
+  //     await symlink(knodePath('bin', 'node.exe'), kenvPath('node.exe'));
+  //   } else {
+  //     await symlink(knodePath('bin', 'node'), kenvPath('node'));
+  //   }
+  // }
+  // const hasPnpm = await pnpmExists();
 
   // patch now creates an kenvPath(".npmrc") file
   // TODO: Fix

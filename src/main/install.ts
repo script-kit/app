@@ -231,6 +231,8 @@ export const installPackage = async (installCommand: string, cwd: string) => {
     : knodePath('lib', 'node_modules', 'npm', 'bin', 'npm-cli.js');
   const command = `${npmCliPath} ${installCommand}`;
 
+  // Install pnpm
+
   log.info(`${cwd}: 👷 ${nodePath} ${command}`);
 
   return new Promise<string>((resolve, reject) => {
@@ -953,7 +955,6 @@ const getBinWorker = () => {
   return workers.createBin;
 };
 
-
 export const syncBins = async () => {
   setTimeout(async () => {
     log.info('🔗 Syncing bins...');
@@ -961,13 +962,15 @@ export const syncBins = async () => {
       const binDirPath = kenvPath('bin');
       const binFiles = await readdir(binDirPath);
       const worker = getBinWorker();
-      await Promise.all(binFiles.map(async (bin) => {
-        const script = Array.from(kitState.scripts.values()).find((s) => s.command === bin);
-        if (!script) {
-          log.info(`🔗 Deleting bin ${bin}`);
-          await unlink(path.resolve(binDirPath, bin));
-        }
-      }));
+      await Promise.all(
+        binFiles.map(async (bin) => {
+          const script = Array.from(kitState.scripts.values()).find((s) => s.command === bin);
+          if (!script) {
+            log.info(`🔗 Deleting bin ${bin}`);
+            await unlink(path.resolve(binDirPath, bin));
+          }
+        }),
+      );
 
       for (const script of kitState.scripts.values()) {
         if (binFiles.includes(script.command) && !(script as Scriptlet).scriptlet) {
