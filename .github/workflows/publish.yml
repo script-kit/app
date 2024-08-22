@@ -94,6 +94,11 @@ jobs:
         arch: [x64, arm64]
 
     steps:
+      - name: Install Node, NPM and Yarn
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.16.0
+
       - name: Print outputs from previous steps
         run: |
           echo "kit_tag: ${{ needs.tag.outputs.kit_tag }}"
@@ -165,11 +170,6 @@ jobs:
           script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ matrix.arch }} ${{ needs.semantic.outputs.release_id }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install Node, NPM and Yarn
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.16.0
 
       - name: Publish windows x64
         if: matrix.os == 'windows-latest' && matrix.arch == 'x64'
