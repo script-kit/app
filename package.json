@@ -128,6 +128,7 @@
   "dependencies": {
     "@johnlindquist/clipboard": "^0.1.38",
     "@johnlindquist/kit": "^2.23.11",
+    "@johnlindquist/native-keymap": "^3.3.7",
     "@rollup/plugin-commonjs": "^26.0.1",
     "axios": "^1.7.4",
     "builtin-modules": "^4.0.0",
@@ -149,7 +150,6 @@
     "madge": "^8.0.0",
     "minimist": "^1.2.8",
     "nanoid": "5.0.7",
-    "native-keymap": "3.3.5",
     "node-abi": "^3.67.0",
     "node-downloader-helper": "^2.1.9",
     "node-pty": "^1.1.0-beta21",

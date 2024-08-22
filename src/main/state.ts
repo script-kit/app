@@ -11,7 +11,7 @@ import path from 'node:path';
 import electron, { type Display } from 'electron';
 import electronLog, { type FileTransport, type LevelOption, type LogLevel } from 'electron-log';
 import { debounce } from 'lodash-es';
-import * as nativeKeymap from 'native-keymap';
+import * as nativeKeymap from '@johnlindquist/native-keymap';
 import { subscribeKey } from 'valtio/utils';
 const { app, nativeTheme } = electron;
 
