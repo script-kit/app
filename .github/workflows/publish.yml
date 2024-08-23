@@ -101,7 +101,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, script-kit-windows-latest-arm64, ubuntu-latest, script-kit-ubuntu-latest-arm64]
+        os: [windows-latest,script-kit-windows-latest-arm64,ubuntu-latest,script-kit-ubuntu-latest-arm64]
 
     steps:
       - name: Install Node, NPM and Yarn
