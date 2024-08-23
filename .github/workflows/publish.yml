@@ -99,7 +99,6 @@ jobs:
   publish-windows-and-linux:
     needs: [tag, semantic]
     runs-on:
-      - self-hosted
       - ${{ matrix.os }}
     strategy:
       matrix:
