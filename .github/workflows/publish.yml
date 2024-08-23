@@ -11,6 +11,13 @@ on:
       - main
       - next
 
+permissions:
+  contents: write
+  packages: write
+  actions: write
+  issues: write
+  pull-requests: write
+
 jobs:
   tag:
     outputs:
