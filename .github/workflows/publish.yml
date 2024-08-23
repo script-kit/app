@@ -122,6 +122,10 @@ jobs:
           echo "release_id: ${{ needs.semantic.outputs.release_id }}"
           echo "semantic_version: ${{ needs.semantic.outputs.semantic_version }}"
           echo "arch: ${{ steps.set_arch.outputs.arch }}"
+      - name: Echo actual system architecture
+        shell: bash
+        run: |
+          echo "Actual system architecture: $(uname -m)"
 
       - name: Checkout git repo
         uses: actions/checkout@v4
@@ -142,17 +146,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Nix - Write the current branch to a releaseChannel env var
-        if: ${{ matrix.os != 'windows-latest' }}
+      - name: Write the current branch to a releaseChannel env var
         shell: bash
         run: |
           echo "RELEASE_CHANNEL=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
 
-      - name: Windows - Write the current branch to a releaseChannel env var
-        if: ${{ matrix.os == 'windows-latest' }}
-        shell: bash
-        run: |
-          echo "RELEASE_CHANNEL=$(git rev-parse --abbrev-ref HEAD)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Set up Python
         uses: actions/setup-python@v5
