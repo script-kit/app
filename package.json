@@ -171,7 +171,6 @@
     "@johnlindquist/mac-frontmost": "^1.0.7",
     "@johnlindquist/mac-panel-window": "^1.4.0",
     "@johnlindquist/node-window-manager": "^1.0.24",
-    "native-keymap": "^3.3.5",
     "node-mac-permissions": "^2.4.0",
     "uiohook-napi": "^1.5.4"
   },

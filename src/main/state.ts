@@ -666,10 +666,11 @@ export const convertKey = (sourceKey: string) => {
 
 let prevKeyMap = {};
 export const initKeymap = async () => {
+  return; // TODO: implement using navigator.keyboard.getKeyboardLayout()
   keymapLog.info('🔑 Initializing keymap...');
   if (!kitState.keymap) {
     try {
-      const nativeKeymap = shims['native-keymap'];
+      const nativeKeymap = null; // get from getKeyboardLayout()
       let keymap = nativeKeymap.getKeyMap();
       // keymapLog.verbose('🔑 Detected Keymap:', { keymap });
       writeJson(kitPath('db', 'keymap.json'), keymap);
