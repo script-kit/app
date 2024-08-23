@@ -96,12 +96,12 @@ jobs:
             exit 1
           fi
 
-  publish:
+  publish-windows-and-linux:
     needs: [tag, semantic]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, macos-latest-arm64, windows-latest, windows-latest-arm64, ubuntu-latest, ubuntu-latest-arm64]
+        os: [windows-latest, windows-latest-arm64, ubuntu-latest, ubuntu-latest-arm64]
 
     steps:
       - name: Install Node, NPM and Yarn
@@ -294,8 +294,112 @@ jobs:
             npm --version
             npx kit ./build.ts linux arm64 always
 
+  publish-mac:
+    needs: [tag, semantic]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest]
+        arch: [x64, arm64]
+
+    steps:
+      - name: Install Node, NPM and Yarn
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.16.0
+
+      - name: Set architecture variable
+        id: set_arch
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == *"-arm64" ]]; then
+            echo "arch=arm64" >> $GITHUB_OUTPUT
+          else
+            echo "arch=x64" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Print outputs from previous steps
+        shell: bash
+        run: |
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "PATH: $PATH"
+          echo "kit_tag: ${{ needs.tag.outputs.kit_tag }}"
+          echo "release_id: ${{ needs.semantic.outputs.release_id }}"
+          echo "semantic_version: ${{ needs.semantic.outputs.semantic_version }}"
+          echo "arch: ${{ steps.set_arch.outputs.arch }}"
+      - name: Echo actual system architecture
+        shell: bash
+        run: |
+          echo "Actual system architecture: $(uname -m)"
+          echo "Actual OS information: $(uname -a)"
+          echo "Actual CPU information: $(uname -p)"
+
+      - name: Checkout git repo
+        uses: actions/checkout@v4
+
+      - name: Write the Semantic Version to package.json version property for main
+        if: needs.tag.outputs.kit_tag == 'main'
+        uses: johnlindquist/kit-action@main
+        with:
+          script: update-package-version ${{ needs.semantic.outputs.semantic_version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Write the Semantic Version to package.json version property for next
+        if: needs.tag.outputs.kit_tag == 'next'
+        uses: johnlindquist/kit-action@next
+        with:
+          script: update-package-version ${{ needs.semantic.outputs.semantic_version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Write the current branch to a releaseChannel env var
+        shell: bash
+        run: |
+          echo "RELEASE_CHANNEL=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
+
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download kenv main
+        if: needs.tag.outputs.kit_tag == 'main'
+        uses: johnlindquist/kit-action@main
+        with:
+          script: download-kenv ${{ env.RELEASE_CHANNEL }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download kenv next
+        if: needs.tag.outputs.kit_tag == 'next'
+        uses: johnlindquist/kit-action@next
+        with:
+          script: download-kenv ${{ env.RELEASE_CHANNEL }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Assets main
+        if: needs.tag.outputs.kit_tag == 'main'
+        uses: johnlindquist/kit-action@main
+        with:
+          script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }} ${{ needs.semantic.outputs.release_id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Assets next
+        if: needs.tag.outputs.kit_tag == 'next'
+        uses: johnlindquist/kit-action@next
+        with:
+          script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }} ${{ needs.semantic.outputs.release_id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
       - name: Publish mac x64
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-latest' && matrix.arch == 'x64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -312,10 +416,10 @@ jobs:
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
             npm run vite-prebuild
-            npx kit ./build.ts mac x64 always
+            npx kit ./build.ts mac ${{ matrix.arch }} always
 
       - name: Publish mac arm64
-        if: matrix.os == 'macos-latest-arm64'
+        if: matrix.os == 'macos-latest' && matrix.arch == 'arm64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -332,13 +436,13 @@ jobs:
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
             npm run vite-prebuild
-            npx kit ./build.ts mac arm64 always
+            npx kit ./build.ts mac ${{ matrix.arch }} always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml with main
         if: startsWith(matrix.os, 'macos-') && needs.tag.outputs.kit_tag == 'main'
         uses: johnlindquist/kit-action@main
         with:
-          script: merge-mac-latest-yml script-kit kitapp ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }}
+          script: merge-mac-latest-yml script-kit kitapp ${{ matrix.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -346,6 +450,6 @@ jobs:
         if: startsWith(matrix.os, 'macos-') && needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
-          script: merge-mac-latest-yml script-kit kitapp ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }}
+          script: merge-mac-latest-yml script-kit kitapp ${{ matrix.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
