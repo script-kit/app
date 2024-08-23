@@ -95,13 +95,21 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, macos-latest-arm64, windows-latest, windows-latest-arm64, ubuntu-latest, ubuntu-latest-arm64]
-        arch: [x64, arm64]
 
     steps:
       - name: Install Node, NPM and Yarn
         uses: actions/setup-node@v4
         with:
           node-version: 20.16.0
+
+      - name: Set architecture variable
+        id: set_arch
+        run: |
+          if [[ "${{ matrix.os }}" == *"-arm64" ]]; then
+            echo "arch=arm64" >> $GITHUB_OUTPUT
+          else
+            echo "arch=x64" >> $GITHUB_OUTPUT
+          fi
 
       - name: Print outputs from previous steps
         run: |
@@ -111,6 +119,7 @@ jobs:
           echo "kit_tag: ${{ needs.tag.outputs.kit_tag }}"
           echo "release_id: ${{ needs.semantic.outputs.release_id }}"
           echo "semantic_version: ${{ needs.semantic.outputs.semantic_version }}"
+          echo "arch: ${{ steps.set_arch.outputs.arch }}"
 
       - name: Checkout git repo
         uses: actions/checkout@v4
@@ -166,7 +175,7 @@ jobs:
         if: needs.tag.outputs.kit_tag == 'main'
         uses: johnlindquist/kit-action@main
         with:
-          script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ matrix.arch }} ${{ needs.semantic.outputs.release_id }}
+          script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }} ${{ needs.semantic.outputs.release_id }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -174,12 +183,12 @@ jobs:
         if: needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
-          script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ matrix.arch }} ${{ needs.semantic.outputs.release_id }}
+          script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }} ${{ needs.semantic.outputs.release_id }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish windows x64
-        if: matrix.os == 'windows-latest' && matrix.arch == 'x64'
+        if: matrix.os == 'windows-latest'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -197,7 +206,7 @@ jobs:
             npx kit ./build.ts win x64 always
 
       - name: Publish windows arm64
-        if: matrix.os == 'windows-latest-arm64' && matrix.arch == 'arm64'
+        if: matrix.os == 'windows-latest-arm64'
         run: |
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npx kit remove-tick
@@ -227,7 +236,7 @@ jobs:
           echo "CXX=g++-10" >> $GITHUB_ENV
 
       - name: Publish linux x64
-        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'x64'
+        if: matrix.os == 'ubuntu-latest'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -248,7 +257,7 @@ jobs:
             npx kit ./build.ts linux x64 always
 
       - name: Publish linux arm64
-        if: matrix.os == 'ubuntu-latest-arm64' && matrix.arch == 'arm64'
+        if: matrix.os == 'ubuntu-latest-arm64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -273,7 +282,7 @@ jobs:
             npx kit ./build.ts linux arm64 always
 
       - name: Publish mac x64
-        if: matrix.os == 'macos-latest' && matrix.arch == 'x64'
+        if: matrix.os == 'macos-latest'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -293,7 +302,7 @@ jobs:
             npx kit ./build.ts mac x64 always
 
       - name: Publish mac arm64
-        if: matrix.os == 'macos-latest-arm64' && matrix.arch == 'arm64'
+        if: matrix.os == 'macos-latest-arm64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -313,17 +322,17 @@ jobs:
             npx kit ./build.ts mac arm64 always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml with main
-        if: matrix.os == 'macos-latest' || matrix.os == 'macos-latest-arm64' && needs.tag.outputs.kit_tag == 'main'
+        if: startsWith(matrix.os, 'macos-') && needs.tag.outputs.kit_tag == 'main'
         uses: johnlindquist/kit-action@main
         with:
-          script: merge-mac-latest-yml johnlindquist kitapp ${{ matrix.arch }}
+          script: merge-mac-latest-yml johnlindquist kitapp ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml with next
-        if: matrix.os == 'macos-latest' || matrix.os == 'macos-latest-arm64' && needs.tag.outputs.kit_tag == 'next'
+        if: startsWith(matrix.os, 'macos-') && needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
-          script: merge-mac-latest-yml johnlindquist kitapp ${{ matrix.arch }}
+          script: merge-mac-latest-yml johnlindquist kitapp ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
