@@ -126,6 +126,7 @@ jobs:
         shell: bash
         run: |
           echo "Actual system architecture: $(uname -m)"
+          echo "Actual OS information: $(uname -a)"
 
       - name: Checkout git repo
         uses: actions/checkout@v4
