@@ -98,7 +98,9 @@ jobs:
 
   publish-windows-and-linux:
     needs: [tag, semantic]
-    runs-on: ${{ matrix.os }}
+    runs-on:
+      - self-hosted
+      - ${{ matrix.os }}
     strategy:
       matrix:
         os: ["windows-latest", "script-kit-windows-latest-arm64", "ubuntu-latest", "script-kit-ubuntu-latest-arm64"]
