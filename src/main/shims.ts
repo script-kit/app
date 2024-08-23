@@ -25,10 +25,10 @@ const optionalDependencies = [robot, uiohook, nmp, nwm, mcl, mf, mpw, nk] as con
 type OptionalDependency = (typeof optionalDependencies)[number];
 
 const supportMap: Partial<Record<Target, OptionalDependency[]>> = {
-  'win32-arm64': [robot, uiohook, nwm, nk],
-  'win32-x64': [robot, uiohook, nwm, nk],
-  'darwin-arm64': [robot, uiohook, nmp, nwm, mcl, mf, mpw, nk],
-  'darwin-x64': [robot, uiohook, nmp, nwm, mcl, mf, mpw, nk],
+  'win32-arm64': [robot, uiohook, nwm],
+  'win32-x64': [robot, uiohook, nwm],
+  'darwin-arm64': [robot, uiohook, nmp, nwm, mcl, mf, mpw],
+  'darwin-x64': [robot, uiohook, nmp, nwm, mcl, mf, mpw],
   'linux-arm64': [],
   'linux-x64': [robot, uiohook],
 } as const;
