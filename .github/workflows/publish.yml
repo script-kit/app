@@ -19,6 +19,12 @@ permissions:
   pull-requests: write
 
 jobs:
+  test-runner:
+    runs-on: script-kit-windows-latest-arm64
+
+    steps:
+    - name: Echo Hello World
+      run: echo "Hello, World!"
   tag:
     outputs:
       kit_tag: ${{ steps.set_kit_tag.outputs.kit_tag }}
