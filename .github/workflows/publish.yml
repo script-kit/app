@@ -331,7 +331,7 @@ jobs:
         if: startsWith(matrix.os, 'macos-') && needs.tag.outputs.kit_tag == 'main'
         uses: johnlindquist/kit-action@main
         with:
-          script: merge-mac-latest-yml johnlindquist kitapp ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }}
+          script: merge-mac-latest-yml script-kit kitapp ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -339,6 +339,6 @@ jobs:
         if: startsWith(matrix.os, 'macos-') && needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
-          script: merge-mac-latest-yml johnlindquist kitapp ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }}
+          script: merge-mac-latest-yml script-kit kitapp ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

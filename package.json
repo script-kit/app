@@ -29,7 +29,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/johnlindquist/kitapp.git"
+    "url": "git+https://github.com/script-kit/kitapp.git"
   },
   "author": {
     "name": "John Lindquist",
@@ -38,15 +38,10 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/johnlindquist/kitapp/issues"
+    "url": "https://github.com/script-kit/kitapp/issues"
   },
-  "keywords": [
-    "electron",
-    "react",
-    "typescript",
-    "ts"
-  ],
-  "homepage": "https://github.com/johnlindquist/kitapp#readme",
+  "keywords": ["electron", "react", "typescript", "ts"],
+  "homepage": "https://github.com/script-kit/kitapp#readme",
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@electron-toolkit/tsconfig": "^1.0.1",
@@ -179,11 +174,7 @@
   },
   "browserslist": [],
   "renovate": {
-    "extends": [
-      "bliss"
-    ],
-    "baseBranches": [
-      "next"
-    ]
+    "extends": ["bliss"],
+    "baseBranches": ["next"]
   }
 }
