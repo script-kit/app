@@ -1155,7 +1155,7 @@ export class KitPrompt {
 
   appearance: 'light' | 'dark' | 'auto' = 'auto';
   setAppearance = (appearance: 'light' | 'dark' | 'auto') => {
-    if (this.appearance === appearance) {
+    if (this.appearance === appearance || this.window.isDestroyed()) {
       return;
     }
     log.info(`${this.pid}:${this.scriptName}: 👀 Setting appearance to ${appearance}`);

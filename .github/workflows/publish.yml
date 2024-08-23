@@ -94,7 +94,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-13, windows-latest, ubuntu-latest]
+        os: [macos-latest, macos-latest-arm64, windows-latest, windows-latest-arm64, ubuntu-latest, ubuntu-latest-arm64]
         arch: [x64, arm64]
 
     steps:
@@ -197,7 +197,7 @@ jobs:
             npx kit ./build.ts win x64 always
 
       - name: Publish windows arm64
-        if: matrix.os == 'windows-latest' && matrix.arch == 'arm64'
+        if: matrix.os == 'windows-latest-arm64' && matrix.arch == 'arm64'
         run: |
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npx kit remove-tick
@@ -248,7 +248,7 @@ jobs:
             npx kit ./build.ts linux x64 always
 
       - name: Publish linux arm64
-        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
+        if: matrix.os == 'ubuntu-latest-arm64' && matrix.arch == 'arm64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -273,7 +273,7 @@ jobs:
             npx kit ./build.ts linux arm64 always
 
       - name: Publish mac x64
-        if: matrix.os == 'macos-13' && matrix.arch == 'x64'
+        if: matrix.os == 'macos-latest' && matrix.arch == 'x64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -293,7 +293,7 @@ jobs:
             npx kit ./build.ts mac x64 always
 
       - name: Publish mac arm64
-        if: matrix.os == 'macos-13' && matrix.arch == 'arm64'
+        if: matrix.os == 'macos-latest-arm64' && matrix.arch == 'arm64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -313,7 +313,7 @@ jobs:
             npx kit ./build.ts mac arm64 always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml with main
-        if: matrix.os == 'macos-13' && needs.tag.outputs.kit_tag == 'main'
+        if: matrix.os == 'macos-latest' || matrix.os == 'macos-latest-arm64' && needs.tag.outputs.kit_tag == 'main'
         uses: johnlindquist/kit-action@main
         with:
           script: merge-mac-latest-yml johnlindquist kitapp ${{ matrix.arch }}
@@ -321,7 +321,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml with next
-        if: matrix.os == 'macos-13' && needs.tag.outputs.kit_tag == 'next'
+        if: matrix.os == 'macos-latest' || matrix.os == 'macos-latest-arm64' && needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
           script: merge-mac-latest-yml johnlindquist kitapp ${{ matrix.arch }}
