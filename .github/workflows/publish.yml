@@ -101,7 +101,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, windows-latest-arm64, ubuntu-latest, ubuntu-latest-arm64]
+        os: [windows-latest, script-kit-windows-latest-arm64, ubuntu-latest, script-kit-ubuntu-latest-arm64]
 
     steps:
       - name: Install Node, NPM and Yarn
@@ -439,7 +439,7 @@ jobs:
             npx kit ./build.ts mac ${{ matrix.arch }} always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml with main
-        if: startsWith(matrix.os, 'macos-') && needs.tag.outputs.kit_tag == 'main'
+        if: needs.tag.outputs.kit_tag == 'main'
         uses: johnlindquist/kit-action@main
         with:
           script: merge-mac-latest-yml script-kit kitapp ${{ matrix.arch }}
@@ -447,7 +447,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml with next
-        if: startsWith(matrix.os, 'macos-') && needs.tag.outputs.kit_tag == 'next'
+        if: needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
           script: merge-mac-latest-yml script-kit kitapp ${{ matrix.arch }}
