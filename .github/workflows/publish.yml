@@ -98,13 +98,10 @@ jobs:
 
   publish-windows-and-linux:
     needs: [tag, semantic]
-    runs-on: ${{ matrix.os }}
+    runs-on: script-kit-windows-latest-arm64
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
-        include:
-          - os: script-kit-windows-latest-arm64
-          - os: script-kit-ubuntu-latest-arm64
+        os: [script-kit-windows-latest-arm64]
 
     steps:
       - name: Install Node, NPM and Yarn
