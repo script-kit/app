@@ -278,6 +278,9 @@ jobs:
           ELECTRON_BUILD_PLATFORM: linux
 
         run: |
+            sudo apt-get install ruby ruby-dev rubygems build-essential
+            sudo gem install --no-document fpm
+            export USE_SYSTEM_FPM=true
             node --version
             npm --version
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
