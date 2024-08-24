@@ -21,7 +21,7 @@ permissions:
 jobs:
   tag:
     outputs:
-      kit_tag: ${{ steps.set_kit_tag.outputs.kit_tag }}
+      kit_tag: ${{ steps.kit_tag.outputs.kit_tag }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout git repo
@@ -33,7 +33,7 @@ jobs:
           node-version: 20.16.0
 
       - name: Set kit_tag
-        id: set_kit_tag
+        id: kit_tag
         uses: johnlindquist/kit-action@next
         with:
           script: set-kit-tag
@@ -42,7 +42,7 @@ jobs:
 
       - name: Echo kit_tag
         run: |
-          echo "${{ steps.set_kit_tag.outputs.kit_tag }}"
+          echo "${{ steps.kit_tag.outputs.kit_tag }}"
 
   semantic:
     outputs:
@@ -58,7 +58,7 @@ jobs:
       - name: Echo kit_tag
         run: |
           echo "env:${{ env.kit_tag }}"
-          echo "needs:${{ needs.tag.outputs.kit_tag }}"
+          echo "${{ needs.tag.outputs.kit_tag }}"
 
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v4
