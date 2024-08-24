@@ -22,13 +22,13 @@ const arch = await arg('Enter the architecture');
 const release_id = await arg("Enter the release's id");
 const tag_name = `v${version}`;
 
-if (platform.startsWith('mac')) {
+if (platform.includes('mac')) {
   platform = 'darwin';
 }
-if (platform.startsWith('win')) {
+if (platform.includes('win')) {
   platform = 'win32';
 }
-if (platform.startsWith('ubuntu')) {
+if (platform.includes('ubuntu')) {
   platform = 'linux';
 }
 
