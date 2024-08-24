@@ -109,16 +109,6 @@ jobs:
         with:
           node-version: 20.16.0
 
-      - name: Set architecture variable
-        id: set_arch
-        shell: bash
-        run: |
-          if [[ "${{ matrix.os }}" == *"-arm64" ]]; then
-            echo "arch=arm64" >> $GITHUB_OUTPUT
-          else
-            echo "arch=x64" >> $GITHUB_OUTPUT
-          fi
-
       - name: Print outputs from previous steps
         shell: bash
         run: |
@@ -129,6 +119,7 @@ jobs:
           echo "release_id: ${{ needs.semantic.outputs.release_id }}"
           echo "semantic_version: ${{ needs.semantic.outputs.semantic_version }}"
           echo "arch: ${{ steps.set_arch.outputs.arch }}"
+
       - name: Echo actual system architecture
         shell: bash
         run: |
