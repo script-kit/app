@@ -20,19 +20,25 @@ permissions:
 
 jobs:
   tag:
+    outputs:
+      kit_tag: ${{ steps.set_kit_tag.outputs.KIT_TAG }}
     runs-on: ubuntu-latest
     steps:
-      - name: Set kit_tag to next or main
-        run: |
-          echo "Determining the kit_tag based on the branch name..."
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "Branch is 'main'. Setting kit_tag to 'latest'."
-            echo "KIT_TAG=latest" >> $GITHUB_ENV
-          else
-            echo "Branch is not 'main'. Assuming it's 'next'. Setting kit_tag to 'next'."
-            echo "KIT_TAG=next" >> $GITHUB_ENV
-          fi
-          echo "KIT_TAG has been set successfully."
+      - name: Checkout git repo
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.16.0
+
+      - name: Set kit_tag
+        id: set_kit_tag
+        uses: johnlindquist/kit-action@main
+        with:
+          script: set-kit-tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   semantic:
     outputs:
@@ -58,10 +64,10 @@ jobs:
 
       - name: Echo kit-action version
         run: |
-          echo "Using johnlindquist/kit-action${{ env.KIT_TAG }}}"
+          echo "Using johnlindquist/kit-action${{ needs.tag.outputs.kit_tag }}}"
 
       - name: Create Release main
-        if: env.KIT_TAG == 'main'
+        if: needs.tag.outputs.kit_tag == 'main'
         id: create_release_main
         uses: johnlindquist/kit-action@main
         with:
@@ -70,7 +76,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release next
-        if: env.KIT_TAG == 'next'
+        if: needs.tag.outputs.kit_tag == 'next'
         id: create_release_next
         uses: johnlindquist/kit-action@next
         with:
@@ -111,7 +117,7 @@ jobs:
       #     echo "Node version: $(node --version)"
       #     echo "NPM version: $(npm --version)"
       #     echo "PATH: $PATH"
-      #     echo "kit_tag: ${{ env.KIT_TAG }}"
+      #     echo "kit_tag: ${{ needs.tag.outputs.kit_tag }}"
       #     echo "release_id: ${{ needs.semantic.outputs.release_id }}"
       #     echo "semantic_version: ${{ needs.semantic.outputs.semantic_version }}"
       #     echo "arch: ${{ steps.set_arch.outputs.arch }}"
@@ -126,7 +132,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Write the Semantic Version to package.json version property for main
-        if: env.KIT_TAG == 'main'
+        if: needs.tag.outputs.kit_tag == 'main'
         uses: johnlindquist/kit-action@main
         with:
           script: update-package-version ${{ needs.semantic.outputs.semantic_version }}
@@ -134,7 +140,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Write the Semantic Version to package.json version property for next
-        if: env.KIT_TAG == 'next'
+        if: needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
           script: update-package-version ${{ needs.semantic.outputs.semantic_version }}
@@ -158,7 +164,7 @@ jobs:
           python-version: '3.11'
 
       - name: Download kenv main
-        if: env.KIT_TAG == 'main'
+        if: needs.tag.outputs.kit_tag == 'main'
         uses: johnlindquist/kit-action@main
         with:
           script: download-kenv ${{ env.RELEASE_CHANNEL }}
@@ -166,7 +172,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download kenv next
-        if: env.KIT_TAG == 'next'
+        if: needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
           script: download-kenv ${{ env.RELEASE_CHANNEL }}
@@ -174,7 +180,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Assets main
-        if: env.KIT_TAG == 'main'
+        if: needs.tag.outputs.kit_tag == 'main'
         uses: johnlindquist/kit-action@main
         with:
           script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }} ${{ needs.semantic.outputs.release_id }}
@@ -182,7 +188,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Assets next
-        if: env.KIT_TAG == 'next'
+        if: needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
           script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }} ${{ needs.semantic.outputs.release_id }}
@@ -202,7 +208,7 @@ jobs:
           ELECTRON_BUILD_ARCH: x64
           ELECTRON_BUILD_PLATFORM: win32
         run: |
-            npm i --force @johnlindquist/kit@${{ env.KIT_TAG }}
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
             npm run vite-prebuild
             npx kit ./build.ts win x64 always
@@ -210,7 +216,7 @@ jobs:
       - name: Publish windows arm64
         if: matrix.os == 'windows-latest-arm64'
         run: |
-            npm i --force @johnlindquist/kit@${{ env.KIT_TAG }}
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npx kit remove-tick
             npm run vite-prebuild
             npx kit ./build.ts win arm64 always
@@ -253,7 +259,7 @@ jobs:
         run: |
             node --version
             npm --version
-            npm i --force @johnlindquist/kit@${{ env.KIT_TAG }}
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
             npm run vite-prebuild
             npx kit ./build.ts linux x64 always
@@ -275,7 +281,7 @@ jobs:
         run: |
             node --version
             npm --version
-            npm i --force @johnlindquist/kit@${{ env.KIT_TAG }}
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npx kit remove-tick
             cat ./package.json
             npm run vite-prebuild
@@ -312,7 +318,7 @@ jobs:
       #     echo "Node version: $(node --version)"
       #     echo "NPM version: $(npm --version)"
       #     echo "PATH: $PATH"
-      #     echo "kit_tag: ${{ env.KIT_TAG }}"
+      #     echo "kit_tag: ${{ needs.tag.outputs.kit_tag }}"
       #     echo "release_id: ${{ needs.semantic.outputs.release_id }}"
       #     echo "semantic_version: ${{ needs.semantic.outputs.semantic_version }}"
       #     echo "arch: ${{ steps.set_arch.outputs.arch }}"
@@ -328,7 +334,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Write the Semantic Version to package.json version property for main
-        if: env.KIT_TAG == 'main'
+        if: needs.tag.outputs.kit_tag == 'main'
         uses: johnlindquist/kit-action@main
         with:
           script: update-package-version ${{ needs.semantic.outputs.semantic_version }}
@@ -336,7 +342,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Write the Semantic Version to package.json version property for next
-        if: env.KIT_TAG == 'next'
+        if: needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
           script: update-package-version ${{ needs.semantic.outputs.semantic_version }}
@@ -354,7 +360,7 @@ jobs:
           python-version: '3.11'
 
       - name: Download kenv main
-        if: env.KIT_TAG == 'main'
+        if: needs.tag.outputs.kit_tag == 'main'
         uses: johnlindquist/kit-action@main
         with:
           script: download-kenv ${{ env.RELEASE_CHANNEL }}
@@ -362,7 +368,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download kenv next
-        if: env.KIT_TAG == 'next'
+        if: needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
           script: download-kenv ${{ env.RELEASE_CHANNEL }}
@@ -370,7 +376,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Assets main
-        if: env.KIT_TAG == 'main'
+        if: needs.tag.outputs.kit_tag == 'main'
         uses: johnlindquist/kit-action@main
         with:
           script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }} ${{ needs.semantic.outputs.release_id }}
@@ -378,7 +384,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Assets next
-        if: env.KIT_TAG == 'next'
+        if: needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
           script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }} ${{ needs.semantic.outputs.release_id }}
@@ -401,7 +407,7 @@ jobs:
           ELECTRON_BUILD_PLATFORM: darwin
 
         run: |
-            npm i --force @johnlindquist/kit@${{ env.KIT_TAG }}
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
             npm run vite-prebuild
             npx kit ./build.ts mac ${{ matrix.arch }} always
@@ -421,13 +427,13 @@ jobs:
           ELECTRON_BUILD_PLATFORM: darwin
 
         run: |
-            npm i --force @johnlindquist/kit@${{ env.KIT_TAG }}
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
             npm run vite-prebuild
             npx kit ./build.ts mac ${{ matrix.arch }} always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml with main
-        if: env.KIT_TAG == 'main'
+        if: needs.tag.outputs.kit_tag == 'main'
         uses: johnlindquist/kit-action@main
         with:
           script: merge-mac-latest-yml script-kit kitapp ${{ matrix.arch }}
@@ -435,7 +441,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml with next
-        if: env.KIT_TAG == 'next'
+        if: needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
           script: merge-mac-latest-yml script-kit kitapp ${{ matrix.arch }}
