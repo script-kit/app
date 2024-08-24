@@ -45,14 +45,7 @@ jobs:
           echo "RUNNER_TEMP: ${{ runner.temp }}"
           echo "RUNNER_TOOL_CACHE: ${{ runner.tool_cache }}"
 
-      - name: Checkout git repo
-        uses: actions/checkout@v4
-
-      - name: Install Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.16.0
-
+      # kit-action will automatically actions/checkout and actions/setup-node
       - name: Set kit_tag
         id: set_kit_tag
         uses: johnlindquist/kit-action@next
@@ -84,10 +77,6 @@ jobs:
       - name: Debug - Echo kit_tag from previous job
         run: |
           echo "kit_tag from needs.tag.outputs: ${{ needs.tag.outputs.kit_tag }}"
-
-      - name: Debug - List all environment variables
-        run: |
-          env | sort
 
       - name: Debug - List all job outputs
         run: |
@@ -225,7 +214,7 @@ jobs:
             npx kit ./build.ts win x64 always
 
       - name: Publish windows arm64
-        if: matrix.os == 'windows-latest-arm64'
+        if: matrix.os == 'windows-2022'
         run: |
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npx kit remove-tick
@@ -276,7 +265,7 @@ jobs:
             npx kit ./build.ts linux x64 always
 
       - name: Publish linux arm64
-        if: matrix.os == 'ubuntu-latest-arm64'
+        if: matrix.os == 'script-kit-ubuntu-latest-arm64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -287,7 +276,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ELECTRON_BUILD_ARCH: arm64
           ELECTRON_BUILD_PLATFORM: linux
-          NPM_PATH: ${{ runner.tool_cache }}/npm/${{ steps.setup-node.outputs.npm_version }}/bin/npm
 
         run: |
             node --version
