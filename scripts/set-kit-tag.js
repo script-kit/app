@@ -9,5 +9,6 @@ if (branchName.trim() === 'main') {
 }
 
 core.setOutput('kit_tag', kitTag);
+core.exportVariable('kit_tag', kitTag);
 
 console.log(`kit_tag set to: ${kitTag}`);
