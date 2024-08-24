@@ -19,12 +19,6 @@ permissions:
   pull-requests: write
 
 jobs:
-  test-runner:
-    runs-on: script-kit-windows-latest-arm64
-
-    steps:
-    - name: Echo Hello World
-      run: echo "Hello, World!"
   tag:
     outputs:
       kit_tag: ${{ steps.set_kit_tag.outputs.kit_tag }}
@@ -104,10 +98,10 @@ jobs:
 
   publish-windows-and-linux:
     needs: [tag, semantic]
-    runs-on: script-kit-windows-latest-arm64
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [script-kit-windows-latest-arm64]
+        os: [script-kit-windows-latest-arm64, script-kit-ubuntu-latest-arm64, windows-latest, ubuntu-latest]
 
     steps:
       - name: Install Node, NPM and Yarn
