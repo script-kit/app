@@ -342,16 +342,10 @@ jobs:
             npm run vite-prebuild
             npx kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
 
-      - name: Merge latest-mac.yml and latest-mac-arm64.yml with main
-        if: needs.tag.outputs.kit_tag == 'main'
-        uses: johnlindquist/kit-action@next
-        with:
-          script: merge-mac-latest-yml script-kit kitapp ${{ steps.determine_arch.outputs.arch }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Merge latest-mac.yml and latest-mac-arm64.yml with next
-        if: needs.tag.outputs.kit_tag == 'next'
+      - name: Merge latest-mac.yml and latest-mac-arm64.yml
+        if: contains(matrix.os, 'macos')
+        # I used to have two of these, one for @next and one for @main since I don't think you can use a variable in "uses".
+        # Just something to keep an eye on in case kit-action changes.
         uses: johnlindquist/kit-action@next
         with:
           script: merge-mac-latest-yml script-kit kitapp ${{ steps.determine_arch.outputs.arch }}
