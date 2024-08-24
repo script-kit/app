@@ -65,7 +65,7 @@ jobs:
 
       - name: Echo kit-action version
         run: |
-          echo "Using johnlindquist/kit-action${{ needs.tag.outputs.kit_tag }}}"
+          echo "Using johnlindquist/kit-action${{ needs.tag.outputs.kit_tag }}"
 
       - name: Create Release
         id: create_release
