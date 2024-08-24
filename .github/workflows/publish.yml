@@ -34,7 +34,7 @@ jobs:
 
       - name: Set kit_tag
         id: set_kit_tag
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@next
         with:
           script: set-kit-tag
         env:
@@ -43,8 +43,7 @@ jobs:
   semantic:
     outputs:
       release_id: ${{ steps.set_release_id.outputs.release_id }}
-      semantic_version: ${{ steps.semantic_version.outputs.semantic_version }}
-      kit_tag: ${{ steps.set_kit_tag.outputs.kit_tag }}
+      semantic_version: ${{ steps.semantic.outputs.new_release_version }}
 
     needs: tag
     runs-on: ubuntu-latest
@@ -52,25 +51,25 @@ jobs:
       - name: Checkout git repo
         uses: actions/checkout@v4
 
+      - name: Echo kit_tag
+        run: |
+          echo "${{ needs.tag.outputs.kit_tag }}"
+
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v4
         id: semantic # Need an `id` for output variables
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Verify that Semantic Release updated package.json
-        id: semantic_version
-        run: |
-          cat package.json
-          echo "semantic_version=${{ steps.semantic.outputs.new_release_version }}" >> $GITHUB_OUTPUT
-
       - name: Echo kit-action version
         run: |
-          echo "Using johnlindquist/kit-action${{ steps.set_kit_tag.outputs.kit_tag }}"
+          echo "Using johnlindquist/kit-action@${{ needs.tag.outputs.kit_tag }}"
+          echo "Release ID: ${{ steps.semantic.outputs.release_id }}"
+          echo "Semantic Version: ${{ steps.semantic.outputs.new_release_version }}"
 
       - name: Create Release
         id: create_release
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@next
         with:
           script: create-release ${{ steps.semantic.outputs.new_release_version }}
         env:
@@ -78,7 +77,7 @@ jobs:
 
       - name: Set release_id output
         id: set_release_id
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@next
         with:
           script: set-release-id ${{ steps.create_release.outputs.result }}
         env:
@@ -118,7 +117,7 @@ jobs:
 
       - name: Write the Semantic Version to package.json version property for main
         if: needs.tag.outputs.kit_tag == 'main'
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@next
         with:
           script: update-package-version ${{ needs.semantic.outputs.semantic_version }}
         env:
@@ -150,7 +149,7 @@ jobs:
 
       - name: Download kenv main
         if: needs.tag.outputs.kit_tag == 'main'
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@next
         with:
           script: download-kenv ${{ env.RELEASE_CHANNEL }}
         env:
@@ -166,7 +165,7 @@ jobs:
 
       - name: Create Assets main
         if: needs.tag.outputs.kit_tag == 'main'
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@next
         with:
           script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }} ${{ needs.semantic.outputs.release_id }}
         env:
@@ -320,7 +319,7 @@ jobs:
 
       - name: Write the Semantic Version to package.json version property for main
         if: needs.tag.outputs.kit_tag == 'main'
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@next
         with:
           script: update-package-version ${{ needs.semantic.outputs.semantic_version }}
         env:
@@ -346,7 +345,7 @@ jobs:
 
       - name: Download kenv main
         if: needs.tag.outputs.kit_tag == 'main'
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@next
         with:
           script: download-kenv ${{ env.RELEASE_CHANNEL }}
         env:
@@ -362,7 +361,7 @@ jobs:
 
       - name: Create Assets main
         if: needs.tag.outputs.kit_tag == 'main'
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@next
         with:
           script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ endsWith(matrix.os, 'arm64') && 'arm64' || 'x64' }} ${{ needs.semantic.outputs.release_id }}
         env:
@@ -419,7 +418,7 @@ jobs:
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml with main
         if: needs.tag.outputs.kit_tag == 'main'
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@next
         with:
           script: merge-mac-latest-yml script-kit kitapp ${{ matrix.arch }}
         env:
