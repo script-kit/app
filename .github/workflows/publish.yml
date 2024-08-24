@@ -67,19 +67,9 @@ jobs:
         run: |
           echo "Using johnlindquist/kit-action${{ needs.tag.outputs.kit_tag }}}"
 
-      - name: Create Release main
-        if: needs.tag.outputs.kit_tag == 'main'
-        id: create_release_main
+      - name: Create Release
+        id: create_release
         uses: johnlindquist/kit-action@main
-        with:
-          script: create-release ${{ steps.semantic.outputs.new_release_version }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Release next
-        if: needs.tag.outputs.kit_tag == 'next'
-        id: create_release_next
-        uses: johnlindquist/kit-action@next
         with:
           script: create-release ${{ steps.semantic.outputs.new_release_version }}
         env:
@@ -89,7 +79,7 @@ jobs:
         id: set_release_id
         uses: johnlindquist/kit-action@main
         with:
-          script: set-release-id  ${{ steps.create_release_main.outputs.result }} ${{ steps.create_release_next.outputs.result }}
+          script: set-release-id ${{ steps.create_release_main.outputs.result || steps.create_release_next.outputs.result }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
