@@ -1,7 +1,7 @@
 /* eslint-disable */
 import '@johnlindquist/kit';
 
-const { stdout: branchName } = await $exec('git rev-parse --abbrev-ref HEAD');
+const { stdout: branchName } = await exec('git rev-parse --abbrev-ref HEAD');
 
 let kitTag = 'next';
 if (branchName.trim() === 'main') {
