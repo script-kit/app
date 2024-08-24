@@ -109,21 +109,21 @@ jobs:
         with:
           node-version: 20.16.0
 
-      - name: Print outputs from previous steps
-        run: |
-          echo "Node version: $(node --version)"
-          echo "NPM version: $(npm --version)"
-          echo "PATH: $PATH"
-          echo "kit_tag: ${{ needs.tag.outputs.kit_tag }}"
-          echo "release_id: ${{ needs.semantic.outputs.release_id }}"
-          echo "semantic_version: ${{ needs.semantic.outputs.semantic_version }}"
-          echo "arch: ${{ steps.set_arch.outputs.arch }}"
+      # - name: Print outputs from previous steps
+      #   run: |
+      #     echo "Node version: $(node --version)"
+      #     echo "NPM version: $(npm --version)"
+      #     echo "PATH: $PATH"
+      #     echo "kit_tag: ${{ needs.tag.outputs.kit_tag }}"
+      #     echo "release_id: ${{ needs.semantic.outputs.release_id }}"
+      #     echo "semantic_version: ${{ needs.semantic.outputs.semantic_version }}"
+      #     echo "arch: ${{ steps.set_arch.outputs.arch }}"
 
-      - name: Echo actual system architecture
-        run: |
-          echo "Actual system architecture: $(uname -m)"
-          echo "Actual OS information: $(uname -a)"
-          echo "Actual CPU information: $(uname -p)"
+      # - name: Echo actual system architecture
+      #   run: |
+      #     echo "Actual system architecture: $(uname -m)"
+      #     echo "Actual OS information: $(uname -a)"
+      #     echo "Actual CPU information: $(uname -p)"
 
       - name: Checkout git repo
         uses: actions/checkout@v4
