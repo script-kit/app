@@ -8,7 +8,11 @@ if (branchName.trim() === 'main') {
   kitTag = 'latest';
 }
 
-core.setOutput('kit_tag', kitTag);
-core.exportVariable('kit_tag', kitTag);
+try {
+  core.setOutput('kit_tag', kitTag);
+  core.exportVariable('kit_tag', kitTag);
 
-console.log(`kit_tag set to: ${kitTag}`);
+  console.log(`kit_tag set to: ${kitTag}`);
+} catch (error) {
+  console.error(error);
+}

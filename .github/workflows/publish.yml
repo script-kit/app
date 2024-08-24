@@ -21,9 +21,30 @@ permissions:
 jobs:
   tag:
     outputs:
-      kit_tag: ${{ steps.kit_tag.outputs.kit_tag }}
+      kit_tag: ${{ steps.set_kit_tag.outputs.kit_tag }}
     runs-on: ubuntu-latest
     steps:
+      - name: Echo all available variables
+        run: |
+          echo "All available variables:"
+          echo "-------------------------"
+          echo "GITHUB_SHA: ${{ github.sha }}"
+          echo "GITHUB_REF: ${{ github.ref }}"
+          echo "GITHUB_WORKFLOW: ${{ github.workflow }}"
+          echo "GITHUB_ACTION: ${{ github.action }}"
+          echo "GITHUB_ACTOR: ${{ github.actor }}"
+          echo "GITHUB_REPOSITORY: ${{ github.repository }}"
+          echo "GITHUB_EVENT_NAME: ${{ github.event_name }}"
+          echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
+          echo "GITHUB_HEAD_REF: ${{ github.head_ref }}"
+          echo "GITHUB_BASE_REF: ${{ github.base_ref }}"
+          echo "GITHUB_SERVER_URL: ${{ github.server_url }}"
+          echo "GITHUB_API_URL: ${{ github.api_url }}"
+          echo "GITHUB_GRAPHQL_URL: ${{ github.graphql_url }}"
+          echo "RUNNER_OS: ${{ runner.os }}"
+          echo "RUNNER_TEMP: ${{ runner.temp }}"
+          echo "RUNNER_TOOL_CACHE: ${{ runner.tool_cache }}"
+
       - name: Checkout git repo
         uses: actions/checkout@v4
 
@@ -33,7 +54,7 @@ jobs:
           node-version: 20.16.0
 
       - name: Set kit_tag
-        id: kit_tag
+        id: set_kit_tag
         uses: johnlindquist/kit-action@next
         with:
           script: set-kit-tag
@@ -42,7 +63,7 @@ jobs:
 
       - name: Echo kit_tag
         run: |
-          echo "${{ steps.kit_tag.outputs.kit_tag }}"
+          echo "${{ steps.set_kit_tag.outputs.kit_tag }}"
 
   semantic:
     outputs:
