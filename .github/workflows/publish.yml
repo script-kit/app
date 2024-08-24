@@ -21,7 +21,7 @@ permissions:
 jobs:
   tag:
     outputs:
-      kit_tag: ${{ steps.set_kit_tag.outputs.KIT_TAG }}
+      kit_tag: ${{ steps.set_kit_tag.outputs.kit_tag }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout git repo
@@ -44,6 +44,7 @@ jobs:
     outputs:
       release_id: ${{ steps.set_release_id.outputs.release_id }}
       semantic_version: ${{ steps.semantic_version.outputs.semantic_version }}
+
     needs: tag
     runs-on: ubuntu-latest
     steps:
@@ -84,20 +85,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set release_id output from create_release_main or create_release_next
+      - name: Set release_id output
         id: set_release_id
-        run: |
-          echo "Determining release_id based on the workflow step outputs..."
-          if [ -n "${{ steps.create_release_main.outputs.result }}" ]; then
-            echo "Found release_id from 'create_release_main': ${{ steps.create_release_main.outputs.result }}."
-            echo "release_id=${{ steps.create_release_main.outputs.result }}" >> $GITHUB_OUTPUT
-          elif [ -n "${{ steps.create_release_next.outputs.result }}" ]; then
-            echo "Found release_id from 'create_release_next': ${{ steps.create_release_next.outputs.result }}."
-            echo "release_id=${{ steps.create_release_next.outputs.result }}" >> $GITHUB_OUTPUT
-          else
-            echo "Failed to determine release_id from the workflow step outputs."
-            exit 1
-          fi
+        uses: johnlindquist/kit-action@main
+        with:
+          script: set-release-id  ${{ steps.create_release_main.outputs.result }} ${{ steps.create_release_next.outputs.result }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-windows-and-linux:
     needs: [tag, semantic]
