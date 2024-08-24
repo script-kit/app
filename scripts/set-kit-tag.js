@@ -10,4 +10,4 @@ if (branchName.trim() === 'main') {
 
 core.setOutput('kit_tag', kitTag);
 
-console.log(`Kit tag set to: ${kitTag}`);
+console.log(`kit_tag set to: ${kitTag}`);

@@ -64,7 +64,8 @@ jobs:
       - name: Echo kit-action version
         run: |
           echo "Using johnlindquist/kit-action@${{ needs.tag.outputs.kit_tag }}"
-          echo "Release ID: ${{ steps.semantic.outputs.release_id }}"
+          echo "Release Channel: ${{ steps.semantic.outputs.new_release_channel }}"
+          echo "Previous Release Channel: ${{ steps.semantic.outputs.last_release_version }}"
           echo "Semantic Version: ${{ steps.semantic.outputs.new_release_version }}"
 
       - name: Create Release
