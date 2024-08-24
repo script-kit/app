@@ -15,8 +15,7 @@ console.log(`Determined kit_tag: ${kitTag}`);
 
 try {
   console.log('Setting output and exporting variable');
-  core.setOutput('kit_tag', kitTag);
-  core.exportVariable('kit_tag', kitTag);
+  core.setOutput('result', kitTag);
 
   console.log(`kit_tag set to: ${kitTag}`);
   console.log('Current environment variables:');

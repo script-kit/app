@@ -21,7 +21,7 @@ permissions:
 jobs:
   tag:
     outputs:
-      kit_tag: ${{ steps.set_kit_tag.outputs.kit_tag }}
+      kit_tag: ${{ steps.set_kit_tag.outputs.result }}
     runs-on: ubuntu-latest
     steps:
       - name: Echo all available variables
@@ -63,12 +63,7 @@ jobs:
 
       - name: Debug - Echo kit_tag
         run: |
-          echo "kit_tag from step output: ${{ steps.set_kit_tag.outputs.kit_tag }}"
-          echo "kit_tag from env: ${{ env.kit_tag }}"
-
-      - name: Debug - List all environment variables
-        run: |
-          env | sort
+          echo "kit_tag from step output: ${{ steps.set_kit_tag.outputs.result }}"
 
       - name: Debug - List all step outputs
         run: |
@@ -77,7 +72,7 @@ jobs:
 
   semantic:
     outputs:
-      release_id: ${{ steps.set_release_id.outputs.release_id }}
+      release_id: ${{ steps.create_release.outputs.result }}
       semantic_version: ${{ steps.semantic.outputs.new_release_version }}
 
     needs: tag
@@ -89,7 +84,6 @@ jobs:
       - name: Debug - Echo kit_tag from previous job
         run: |
           echo "kit_tag from needs.tag.outputs: ${{ needs.tag.outputs.kit_tag }}"
-          echo "kit_tag from env: ${{ env.kit_tag }}"
 
       - name: Debug - List all environment variables
         run: |
@@ -121,14 +115,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set release_id output
-        id: set_release_id
-        uses: johnlindquist/kit-action@next
-        with:
-          script: set-release-id ${{ steps.create_release.outputs.result }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   publish-windows-and-linux:
     needs: [tag, semantic]
     runs-on: ${{ matrix.os }}
@@ -140,7 +126,6 @@ jobs:
       - name: Debug - Echo kit_tag from previous jobs
         run: |
           echo "kit_tag from needs.tag.outputs: ${{ needs.tag.outputs.kit_tag }}"
-          echo "kit_tag from env: ${{ env.kit_tag }}"
 
       - name: Debug - List all job outputs
         run: |
