@@ -120,7 +120,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [script-kit-windows-latest-arm64, script-kit-ubuntu-latest-arm64, windows-latest, ubuntu-latest]
+        # windows-latest-arm64 doesn't currently support bash, so the @johnlindquist/kit-action@next fails when trying to use bash to determine the kit_tag
+        # os: [script-kit-windows-latest-arm64, script-kit-ubuntu-latest-arm64, windows-latest, ubuntu-latest]
+        os: [windows-2022, script-kit-ubuntu-latest-arm64, windows-latest, ubuntu-latest]
 
     steps:
       - name: Debug - Echo kit_tag from previous jobs
@@ -162,7 +164,7 @@ jobs:
           echo "RELEASE_CHANNEL=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
 
       - name: Windows - Write the current branch to a releaseChannel env var
-        if: ${{ matrix.os == 'windows-latest' || matrix.os == 'script-kit-windows-latest-arm64' }}
+        if: ${{ matrix.os == 'windows-latest' || matrix.os == 'windows-2022' }}
         run: |
           echo "RELEASE_CHANNEL=$(git rev-parse --abbrev-ref HEAD)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
