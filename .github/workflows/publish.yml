@@ -44,6 +44,7 @@ jobs:
     outputs:
       release_id: ${{ steps.set_release_id.outputs.release_id }}
       semantic_version: ${{ steps.semantic_version.outputs.semantic_version }}
+      kit_tag: ${{ steps.set_kit_tag.outputs.kit_tag }}
 
     needs: tag
     runs-on: ubuntu-latest
@@ -65,7 +66,7 @@ jobs:
 
       - name: Echo kit-action version
         run: |
-          echo "Using johnlindquist/kit-action${{ needs.tag.outputs.kit_tag }}"
+          echo "Using johnlindquist/kit-action${{ steps.set_kit_tag.outputs.kit_tag }}"
 
       - name: Create Release
         id: create_release
@@ -79,7 +80,7 @@ jobs:
         id: set_release_id
         uses: johnlindquist/kit-action@main
         with:
-          script: set-release-id ${{ steps.create_release_main.outputs.result || steps.create_release_next.outputs.result }}
+          script: set-release-id ${{ steps.create_release.outputs.result }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
