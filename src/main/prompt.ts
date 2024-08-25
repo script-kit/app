@@ -1913,10 +1913,20 @@ export class KitPrompt {
     log.info(`🔥 Setting prompt data: ${promptData.scriptPath}`);
     this.promptData = promptData;
 
-    this.window.webContents.ipc.on(Channel.SET_PROMPT_DATA, () => {
-      log.info(`${this.pid}: Received SET_PROMPT_DATA from renderer`);
-      this.refocusPrompt();
-    });
+    const setPromptDataHandler = debounce(
+      () => {
+        log.info(`${this.pid}: Received SET_PROMPT_DATA from renderer`);
+        this.refocusPrompt();
+      },
+      100,
+      {
+        leading: true,
+        trailing: false,
+      },
+    );
+
+    this.window.webContents.ipc.removeHandler(Channel.SET_PROMPT_DATA);
+    this.window.webContents.ipc.once(Channel.SET_PROMPT_DATA, setPromptDataHandler);
 
     if (promptData.ui === UI.term) {
       const termConfig = {

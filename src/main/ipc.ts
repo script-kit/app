@@ -496,6 +496,7 @@ ${data.error}
         if (channel === Channel.ACTIONS_INPUT) {
           const actionsInput = message.state.actionsInput as string;
           invokeFlagSearch(prompt, actionsInput);
+          return;
         }
 
         if (channel === Channel.ON_MENU_TOGGLE) {

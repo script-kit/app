@@ -610,7 +610,7 @@ export const downloadNode = async () => {
   const nodePlatform = isWin ? 'win' : process.platform;
   const nodeArch = isWin ? 'x64' : process.arch;
   const node = `node-${nodeVersion}-${nodePlatform}-${nodeArch}.${extension}`;
-  const file = process.platform === 'linux' ? app.getPath('temp') : osTmpPath(node);
+  const file = process.platform === 'linux' ? app.getPath('appData') : osTmpPath(node);
   const url = `https://nodejs.org/dist/${nodeVersion}/${node}`;
 
   const downloadingMessage = `Downloading node from ${url}`;

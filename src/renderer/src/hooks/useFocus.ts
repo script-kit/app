@@ -10,6 +10,9 @@ import {
   scriptAtom,
   submittedAtom,
 } from '../jotai';
+import { createLogger } from '../../../shared/log-utils';
+
+const log = createLogger('useFocus');
 
 export default (ref: RefObject<HTMLElement>) => {
   const [flagValue] = useAtom(flaggedChoiceValueAtom);
@@ -23,7 +26,7 @@ export default (ref: RefObject<HTMLElement>) => {
 
   useEffect(() => {
     if (ref?.current) {
-      // console.log(`Focusing`, ref?.current);
+      log.info('🏆 Focusing', ref?.current?.tagName);
       ref?.current.focus();
     }
   }, [flagValue, submitted, open, inputFocus, processing, script, isHidden, promptData, ref, ref?.current]);
