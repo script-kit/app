@@ -25,7 +25,9 @@ const tag_name = `v${version}`;
 if (platform.includes('mac')) {
   platform = 'darwin';
 }
-if (platform.includes('win')) {
+
+// lol at "darwin" including "win"
+if (platform.includes('windows')) {
   platform = 'win32';
 }
 if (platform.includes('ubuntu')) {
