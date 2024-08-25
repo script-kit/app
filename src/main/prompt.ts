@@ -66,11 +66,12 @@ import { createLogger } from '../shared/log-utils';
 
 const log = createLogger('prompt.ts');
 
-contextMenu({
-  showInspectElement: process.env.NODE_ENV === 'development',
-  showSearchWithGoogle: false,
-  showLookUpSelection: false,
-});
+// TODO: Hack context menu to avoid "object destroyed" errors
+// contextMenu({
+//   showInspectElement: process.env.NODE_ENV === 'development',
+//   showSearchWithGoogle: false,
+//   showLookUpSelection: false,
+// });
 
 const getDefaultWidth = () => {
   return PROMPT.WIDTH.BASE;
@@ -800,6 +801,7 @@ export class KitPrompt {
           this.initMainPreview();
           this.initMainShortcuts();
           this.initMainFlags();
+          this.initTheme();
 
           log.info(`${pid}: 🚀 Prompt init`);
           this.initPrompt();
@@ -1354,7 +1356,7 @@ export class KitPrompt {
   };
 
   blurPrompt = () => {
-    log.info('blurPrompt');
+    log.info(`${this.pid}: blurPrompt`);
     if (this.window.isDestroyed()) {
       return;
     }
@@ -1912,6 +1914,7 @@ export class KitPrompt {
     this.promptData = promptData;
 
     this.window.webContents.ipc.on(Channel.SET_PROMPT_DATA, () => {
+      log.info(`${this.pid}: Received SET_PROMPT_DATA from renderer`);
       this.refocusPrompt();
     });
 
@@ -2206,6 +2209,7 @@ export class KitPrompt {
 
   focusPrompt = () => {
     if (this.window && !this.window.isDestroyed() && !this.window?.isFocused()) {
+      log.info(`${this.pid}: focusPrompt`);
       try {
         if (kitState.isMac) {
           makePanel(this.window);
@@ -2472,6 +2476,11 @@ export class KitPrompt {
   initMainFlags = () => {
     this.sendToPrompt(AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS, kitCache.scriptFlags);
     // this.sendToPrompt(Channel.SET_FLAGS, kitCache.flags);
+  };
+
+  initTheme = () => {
+    log.info(`${this.pid}: initTheme: ${kitState.themeName}`);
+    this.sendToPrompt(Channel.SET_THEME, kitState.theme);
   };
 
   initPrompt = () => {

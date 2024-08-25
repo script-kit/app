@@ -92,6 +92,7 @@ export const setTheme = (value: string, reason = '') => {
   const platformSpecificTheme = processPlatformSpecificTheme(value);
   log.info(`🎨 Setting theme because ${reason}`, platformSpecificTheme);
   kitState.theme = platformSpecificTheme;
+  kitState.themeName = platformSpecificTheme.match(/--name:\s*"([^"]+)"/)?.[1] || '';
 
   const appearance = getAppearance(parseTheme(platformSpecificTheme));
   kitState.appearance = appearance;

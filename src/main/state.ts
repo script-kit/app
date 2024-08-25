@@ -314,6 +314,7 @@ const initState = {
   user: {} as UserDb,
   isSponsor: false,
   theme,
+  themeName: '',
   tempTheme: '',
   appearance: 'auto' as 'auto' | 'light' | 'dark',
   keymap: null as any,

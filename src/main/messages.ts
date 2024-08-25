@@ -785,10 +785,12 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     }),
 
     BLUR_APP: onChildChannel(({ child }, { channel }) => {
+      log.info(`${prompt?.pid}: blurApp`);
       prompt?.blurPrompt();
     }),
 
     SHOW_APP: onChildChannel(({ child }, { channel }) => {
+      log.info(`${prompt?.pid}: showApp`);
       prompt?.refocusPrompt();
     }),
 

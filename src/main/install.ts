@@ -1,4 +1,4 @@
-import { clipboard, nativeTheme, shell } from 'electron';
+import { app, clipboard, nativeTheme, shell } from 'electron';
 import { HttpsProxyAgent } from 'hpagent';
 
 import {
@@ -111,6 +111,7 @@ export const showSplash = async () => {
     const value = nativeTheme.shouldUseDarkColors ? scriptKitTheme : scriptKitLightTheme;
     const platformSpecificTheme = processPlatformSpecificTheme(value);
     kitState.theme = platformSpecificTheme;
+    kitState.themeName = platformSpecificTheme.match(/--name:\s*"([^"]+)"/)?.[1] || '';
 
     splashPrompt?.sendToPrompt(Channel.SET_THEME, platformSpecificTheme);
 
@@ -609,7 +610,7 @@ export const downloadNode = async () => {
   const nodePlatform = isWin ? 'win' : process.platform;
   const nodeArch = isWin ? 'x64' : process.arch;
   const node = `node-${nodeVersion}-${nodePlatform}-${nodeArch}.${extension}`;
-  const file = osTmpPath(node);
+  const file = process.platform === 'linux' ? app.getPath('temp') : osTmpPath(node);
   const url = `https://nodejs.org/dist/${nodeVersion}/${node}`;
 
   const downloadingMessage = `Downloading node from ${url}`;
