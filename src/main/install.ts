@@ -545,13 +545,13 @@ export const downloadKit = async () => {
 
   // Download Kit SDK based on the current platform and architecture
   // Examples:
-  // Mac arm64: https://github.com/johnlindquist/kitapp/releases/download/v1.40.70/Kit-SDK-macOS-1.40.70-arm64.tar.gz
-  // Linux x64: https://github.com/johnlindquist/kitapp/releases/download/v1.40.70/Kit-SDK-Linux-1.40.70-x64.tar.gz
-  // Windows x64: https://github.com/johnlindquist/kitapp/releases/download/v1.40.70/Kit-SDK-macOS-1.40.70-x64.tar.gz
+  // Mac arm64: https://github.com/script-kit/app/releases/download/v1.40.70/Kit-SDK-macOS-1.40.70-arm64.tar.gz
+  // Linux x64: https://github.com/script-kit/app/releases/download/v1.40.70/Kit-SDK-Linux-1.40.70-x64.tar.gz
+  // Windows x64: https://github.com/script-kit/app/releases/download/v1.40.70/Kit-SDK-macOS-1.40.70-x64.tar.gz
 
   const kitSDK = `Kit-SDK-${uppercaseOSName}-${version}-${process.arch}.${extension}`;
   const file = osTmpPath(kitSDK);
-  let url = `https://github.com/johnlindquist/kitapp/releases/download/v${version}/${kitSDK}`;
+  let url = `https://github.com/script-kit/app/releases/download/v${version}/${kitSDK}`;
   if (process.env?.KIT_SDK_URL) {
     url = process.env.KIT_SDK_URL;
   }
