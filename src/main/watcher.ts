@@ -1,24 +1,20 @@
 import { debounce } from 'lodash-es';
+import { isEqual, omit } from 'lodash-es';
 
 import { existsSync } from 'node:fs';
 import { lstat, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { getScripts, getUserJson } from '@johnlindquist/kit/core/db';
 import { Channel, Env } from '@johnlindquist/kit/core/enum';
-import type { Script } from '@johnlindquist/kit/types';
+import type { Script, Scriptlet } from '@johnlindquist/kit/types';
 import { globby } from 'globby';
 import madge, { type MadgeModuleDependencyGraph } from 'madge';
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 
-import {
-  getKenvFromPath,
-  kenvPath,
-  kitPath,
-  parseScript,
-  parseScriptletsFromPath,
-  resolveToScriptPath,
-} from '@johnlindquist/kit/core/utils';
+import { getKenvFromPath, kenvPath, kitPath, parseScript, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
+
+import { parseScriptletsFromPath } from '@johnlindquist/kit/core/scriptlets';
 
 import chokidar, { type FSWatcher } from 'chokidar';
 import { shortcutScriptChanged, unlinkShortcuts } from './shortcuts';
@@ -51,6 +47,7 @@ import { clearInterval, setInterval } from 'node:timers';
 import { kenvChokidarPath, slash } from './path-utils';
 import { actualHideDock, showDock } from './dock';
 import { reloadApps } from './apps';
+import { compareObjects } from '../shared/utils';
 
 const log = createLogger('watcher.ts');
 
@@ -853,7 +850,12 @@ export const setupWatchers = async () => {
     }
 
     if (dir.endsWith('scriptlets')) {
-      // onScriptsChanged(eventName, filePath);
+      const exists = await pathExists(filePath);
+      if (!exists) {
+        log.info(`Scriptlet file ${filePath} has been deleted.`);
+        return;
+      }
+      const beforeScriptlets = structuredClone(kitState.scriptlets);
       log.info('🎬 Starting cacheMainScripts...');
       try {
         await cacheMainScripts();
@@ -862,14 +864,23 @@ export const setupWatchers = async () => {
       }
       log.info('...cacheMainScripts done 🎬');
 
-      const exists = await pathExists(filePath);
-      if (!exists) {
-        log.info(`Scriptlet file ${filePath} has been deleted.`);
-        return;
-      }
-      const scriptlets = await parseScriptletsFromPath(filePath);
+      const afterScriptlets = kitState.scriptlets;
 
-      await Promise.all(scriptlets.map((scriptlet) => onScriptsChanged(eventName, scriptlet)));
+      const changedScriptlets: Scriptlet[] = [];
+      for (const [filePath, scriptlet] of afterScriptlets.entries()) {
+        if (beforeScriptlets.has(filePath)) {
+          const beforeScriptlet = beforeScriptlets.get(filePath);
+          if (!isEqual(omit(beforeScriptlet, 'id'), omit(scriptlet, 'id'))) {
+            log.info(`👛 Scriptlet ${filePath} has changed.`);
+            changedScriptlets.push(scriptlet);
+          }
+        } else {
+          log.info(`➕ Scriptlet ${filePath} has been added.`);
+          changedScriptlets.push(scriptlet);
+        }
+      }
+
+      await Promise.all(changedScriptlets.map((scriptlet) => onScriptsChanged(eventName, scriptlet)));
 
       return;
     }

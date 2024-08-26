@@ -589,11 +589,11 @@ export const downloadNode = async () => {
   const isWin = process.platform === 'win32';
   const extension = isWin ? 'zip' : 'tar.gz';
 
-  // download node v18.18.2 based on the current platform and architecture
+  // download node v20.16.0 based on the current platform and architecture
   // Examples:
-  // Mac arm64: https://nodejs.org/dist/v18.18.2/node-v18.18.2-darwin-arm64.tar.gz
-  // Linux x64: https://nodejs.org/dist/v18.18.2/node-v18.18.2-linux-x64.tar.gz
-  // Windows x64: https://nodejs.org/dist/v18.18.2/node-v18.18.2-win-x64.zip
+  // Mac arm64: https://nodejs.org/dist/v20.16.0/node-v20.16.0-darwin-arm64.tar.gz
+  // Linux x64: https://nodejs.org/dist/v20.16.0/node-v20.16.0-linux-x64.tar.gz
+  // Windows x64: https://nodejs.org/dist/v20.16.0/node-v20.16.0-win-x64.zip
 
   // Node dist url uses "win", not "win32"
   const nodeVersion = `v${process.versions.node}`;
@@ -830,9 +830,6 @@ const getBinWorker = () => {
         const infos = logQueue.filter((l) => l.type === 'info').map((l) => l.message);
         const errors = logQueue.filter((l) => l.type === 'error').map((l) => l.message);
 
-        if (infos.length > 0) {
-          log.info('🔗 Bin worker summary:', infos.join(', '));
-        }
         if (errors.length > 0) {
           log.error('🔗 Bin worker errors:', errors.join(', '));
         }
