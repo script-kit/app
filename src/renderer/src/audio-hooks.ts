@@ -106,8 +106,7 @@ export function useAudioRecorder() {
 
       log.info('>>>>>>>>>>>>>>>>>>>>>>>>>>> micConfig', micConfig);
 
-      const tmpFileName =
-        micConfig?.filePath || path.join(os.tmpdir(), `recording_${Math.random().toString(36).substring(7)}.webm`);
+      const tmpFileName = micConfig?.filePath;
 
       const arrayBuffer = await audioBlob.arrayBuffer();
 

@@ -21,7 +21,7 @@ import {
   screen,
   shell,
 } from 'electron';
-import contextMenu from 'electron-context-menu';
+// import contextMenu from 'electron-context-menu';
 import type { Display } from 'electron/main';
 import { debounce } from 'lodash-es';
 
@@ -1899,7 +1899,7 @@ export class KitPrompt {
   };
 
   refocusPrompt = () => {
-    if (this.hasBeenHidden) {
+    if (this.hasBeenHidden || (this.window?.isVisible() && !this?.window?.isFocused())) {
       log.info(`👍 ${this.pid}: ${this.ui} ready. Focusing prompt.`);
       this.focusPrompt();
       this.hasBeenHidden = false;

@@ -25,7 +25,7 @@ type OptionalDependency = (typeof optionalDependencies)[number];
 
 const supportMap: Partial<Record<Target, OptionalDependency[]>> = {
   // Consider restoring uiohook once the github actions runner supports bash
-  'win32-arm64': [robot, uiohook, nwm],
+  'win32-arm64': [robot, nwm],
   'win32-x64': [robot, uiohook, nwm],
   'darwin-arm64': [robot, uiohook, nmp, nwm, mcl, mf, mpw],
   'darwin-x64': [robot, uiohook, nmp, nwm, mcl, mf, mpw],

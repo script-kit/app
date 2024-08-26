@@ -309,10 +309,11 @@ export default () => {
     [Channel.SET_INVALIDATE_CHOICE_INPUTS]: setInvalidateChoiceInputs,
     [Channel.START_MIC]: (config: any) => {
       setAudioDot(true);
-      setMicConfig({
+      const finalConfig = {
         ...micConfig,
         ...config,
-      });
+      };
+      setMicConfig(finalConfig);
     },
     [Channel.HIDE_APP]: () => {
       setHidden(true);

@@ -641,7 +641,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       log.info(`Captured page for widget ${widgetId}`);
 
       if (image) {
-        const imagePath = path.join(os.tmpdir(), `kit-widget-capture-${randomUUID()}.png`);
+        const imagePath = path.join(app.getPath('appData'), `kit-widget-capture-${randomUUID()}.png`);
         log.info(`Captured page for widget ${widgetId} to ${imagePath}`);
         await writeFile(imagePath, image.toPNG());
 
@@ -697,7 +697,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
             const displaySource = await getSourceFromRectangle(id.toString(), bounds);
             if (displaySource) {
               const image = displaySource.thumbnail.toPNG();
-              const thumbnailPath = path.join(os.tmpdir(), `display-thumbnail-${id}-${randomUUID()}.png`);
+              const thumbnailPath = path.join(app.getPath('appData'), `display-thumbnail-${id}-${randomUUID()}.png`);
               await writeFile(thumbnailPath, image);
               return { ...display, thumbnailPath };
             }
@@ -1515,7 +1515,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     CLIPBOARD_READ_IMAGE: onChildChannelOverride(async ({ child }, { channel, value }) => {
       const image = clipboard.readImage();
       // write image to a tmp file path with a uuid name
-      const tmpPath = path.join(os.tmpdir(), `kit-${randomUUID()}.png`);
+      const tmpPath = path.join(app.getPath('appData'), `kit-${randomUUID()}.png`);
       await writeFile(tmpPath, image.toPNG());
 
       childSend({
@@ -2201,6 +2201,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       sendToPrompt(channel, value);
     }),
     START_MIC: onChildChannel(({ child }, { channel, value }) => {
+      if (!value.filePath) {
+        value.filePath = path.join(app.getPath('appData'), `recording_${Math.random().toString(36).substring(7)}.webm`);
+      }
       sendToPrompt(channel, value);
     }),
     STOP_MIC: onChildChannelOverride(({ child }, { channel, value }) => {
@@ -2305,7 +2308,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         const image = mouseSource.thumbnail.toPNG();
         log.info('📸 Creating screenshot...');
         // await writeFile(kenvPath('screenshot.png'), image);
-        const tmpPath = path.join(os.tmpdir(), `${new Date().toISOString().split('T')[0]}_screenshot.png`);
+        const tmpPath = path.join(app.getPath('appData'), `${new Date().toISOString().split('T')[0]}_screenshot.png`);
         log.info(`Writing screenshot to ${tmpPath}`);
         await writeFile(tmpPath, image);
         log.info(`Sending screenshot to ${channel}`);

@@ -446,7 +446,7 @@ export const downloadKenv = async () => {
     sendSplashBody(`${kenvPath()} already exists. Skipping download.`);
     return '';
   }
-  const osTmpPath = createPathResolver(os.tmpdir());
+  const osTmpPath = createPathResolver(app.getPath('appData'));
 
   const fileName = 'kenv.zip';
   const file = osTmpPath(fileName);
@@ -536,7 +536,7 @@ export const extractKitTar = async (file: string) => {
 };
 
 export const downloadKit = async () => {
-  const osTmpPath = createPathResolver(os.tmpdir());
+  const osTmpPath = createPathResolver(app.getPath('appData'));
 
   const version = process.env.KIT_APP_VERSION;
   const extension = 'tar.gz';
@@ -587,7 +587,7 @@ export const downloadNode = async () => {
     });
   }
 
-  const osTmpPath = createPathResolver(os.tmpdir());
+  const osTmpPath = createPathResolver(app.getPath('appData'));
 
   const isWin = process.platform === 'win32';
   const extension = isWin ? 'zip' : 'tar.gz';
