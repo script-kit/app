@@ -1,15 +1,7 @@
 import { app, clipboard, nativeTheme, shell } from 'electron';
 import { HttpsProxyAgent } from 'hpagent';
 
-import {
-  type ExecOptions,
-  type ForkOptions,
-  type SpawnOptions,
-  type SpawnSyncReturns,
-  exec,
-  fork,
-  spawn,
-} from 'node:child_process';
+import { type ExecOptions, type SpawnOptions, type SpawnSyncReturns, exec, spawn } from 'node:child_process';
 import os, { homedir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -32,7 +24,7 @@ import {
   processPlatformSpecificTheme,
 } from '@johnlindquist/kit/core/utils';
 import type { FlagsObject, Script, Scriptlet, Shortcut } from '@johnlindquist/kit/types';
-import { CACHED_GROUPED_SCRIPTS_WORKER, CREATE_BIN_WORKER, KIT_WORKER } from '@johnlindquist/kit/workers';
+import { CACHED_GROUPED_SCRIPTS_WORKER, CREATE_BIN_WORKER } from '@johnlindquist/kit/workers';
 
 import { KitPrompt, destroyPromptWindow, makeSplashWindow } from './prompt';
 
@@ -52,6 +44,7 @@ import { ensureDir, writeFile, readJson, writeJson, pathExists, readdir } from '
 
 import electronLog from 'electron-log';
 import { createLogger } from '../shared/log-utils';
+import { forkOptions } from './fork.options';
 const log = createLogger('install.ts');
 
 let isOhNo = false;
@@ -688,21 +681,6 @@ export const setupLog = async (message: string) => {
   }
 };
 
-export const forkOptions: ForkOptions = {
-  cwd: homedir(),
-  windowsHide: true,
-  env: {
-    KIT: kitPath(),
-    KENV: kenvPath(),
-    KNODE: knodePath(),
-    PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
-    USER: process?.env?.USER,
-    USERNAME: process?.env?.USERNAME,
-    HOME: process?.env?.HOME,
-  },
-  stdio: 'pipe',
-};
-
 export const optionalSpawnSetup = (...args: string[]) => {
   if (process.env.MAIN_SKIP_SETUP) {
     log.info(`⏭️ Skipping setup script: ${args.join(' ')}`);
@@ -765,75 +743,6 @@ export const optionalSpawnSetup = (...args: string[]) => {
         clearTimeout(id);
       }
       log.error(`⚠️ Errored on setup script: ${args.join(' ')}`, error.message);
-      resolve('error');
-      // reject(error);
-      // throw new Error(error.message);
-    });
-  });
-};
-
-export const optionalSetupScript = (scriptPath: string, argsParam?: string[], callback?: (object: any) => void) => {
-  if (process.env.MAIN_SKIP_SETUP) {
-    log.info(`⏭️ Skipping setup script: ${scriptPath}`);
-    return Promise.resolve('done');
-  }
-
-  const args = argsParam || [];
-  return new Promise((resolve, reject) => {
-    log.info(`Running optional setup script: ${scriptPath} with ${args}`);
-    const child = fork(kitPath('run', 'terminal.js'), [scriptPath, ...args], forkOptions);
-
-    const id = setTimeout(() => {
-      if (child && !child.killed) {
-        child.kill();
-        resolve('timeout');
-        log.info(`⚠️ Setup script timed out: ${scriptPath}`);
-      }
-    }, 5000);
-
-    if (child?.stdout) {
-      child.stdout.on('data', (data) => {
-        if (kitState.ready) {
-          return;
-        }
-        setupLog(data.toString());
-      });
-    }
-
-    if (child?.stderr) {
-      if (kitState.ready) {
-        return;
-      }
-      child.stderr.on('data', (data) => {
-        setupLog(data.toString());
-      });
-    }
-
-    child.on('message', (data) => {
-      if (callback) {
-        log.info(`📞 ${scriptPath}: callback firing...`);
-        callback(data);
-      }
-    });
-
-    child.on('exit', (code) => {
-      if (code === 0) {
-        if (id) {
-          clearTimeout(id);
-        }
-        log.info(`✅ Setup script completed: ${scriptPath}`);
-        resolve('done');
-      } else {
-        log.info(`⚠️ Setup script exited with code ${code}: ${scriptPath}`);
-        resolve('error');
-      }
-    });
-
-    child.on('error', (error: Error) => {
-      if (id) {
-        clearTimeout(id);
-      }
-      log.error(`⚠️ Errored on setup script: ${scriptPath.join(' ')}`, error.message);
       resolve('error');
       // reject(error);
       // throw new Error(error.message);

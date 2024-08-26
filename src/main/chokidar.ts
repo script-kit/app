@@ -4,11 +4,13 @@ import chokidar from 'chokidar';
 import { kitState } from './state';
 import { createLogger } from '../shared/log-utils';
 import { kitChokidarPath, kenvChokidarPath, pathChokidarResolve, slash } from './path-utils';
+import os from 'node:os';
 
 const log = createLogger('chokidar.ts');
 
 export type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
-type WatcherCallback = (eventName: WatchEvent, filePath: string) => Promise<void>;
+export type WatchSource = 'app' | 'kenv';
+type WatcherCallback = (eventName: WatchEvent, filePath: string, source?: WatchSource) => Promise<void>;
 export const startWatching = (callback: WatcherCallback) => {
   log.info(`🔍 Watching ${userDbPath}`);
   const userDbPathWatcher = chokidar.watch(slash(userDbPath));
@@ -99,9 +101,38 @@ export const startWatching = (callback: WatcherCallback) => {
 
   pingWatcher.on('all', callback);
 
+  // Add this function to get app directories based on the OS
+  function getAppDirectories(): string[] {
+    if (process.platform === 'darwin') {
+      return ['/Applications', path.join(os.homedir(), 'Applications')];
+    }
+
+    if (process.platform === 'win32') {
+      return [
+        'C:\\Program Files',
+        'C:\\Program Files (x86)',
+        path.join(os.homedir(), 'AppData', 'Local'),
+        path.join(os.homedir(), 'AppData', 'Roaming'),
+      ].map(slash);
+    }
+    return []; // For other platforms, return an empty array
+  }
+
+  // Replace the existing appWatcher code with this:
+  const appDirectories = getAppDirectories();
+  const appWatcher = chokidar.watch(appDirectories, {
+    ignoreInitial: true,
+    depth: 0, // Only watch the top-level of these directories
+  });
+
+  appWatcher.on('all', (event, path) => {
+    log.info(`App change detected: ${event} ${path}`);
+    callback(event as WatchEvent, path, 'app');
+  });
+
   kitState.ignoreInitial = true;
 
-  return [kenvScriptsWatcher, kenvsWatcher, userDbPathWatcher, kenvRootWatcher, runWatcher, pingWatcher];
+  return [kenvScriptsWatcher, kenvsWatcher, userDbPathWatcher, kenvRootWatcher, runWatcher, pingWatcher, appWatcher];
 
   // TODO: Do I need to watch scripts.json?
   // const scriptsJsonWatcher = chokidar.watch(kitPath('db', 'scripts.json'), {

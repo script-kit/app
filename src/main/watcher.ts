@@ -50,6 +50,7 @@ import { compareArrays } from '../shared/utils';
 import { clearInterval, setInterval } from 'node:timers';
 import { kenvChokidarPath, slash } from './path-utils';
 import { actualHideDock, showDock } from './dock';
+import { reloadApps } from './apps';
 
 const log = createLogger('watcher.ts');
 
@@ -727,7 +728,7 @@ export const setupWatchers = async () => {
     }
   }, 60000); // 60000 milliseconds = 1 minute
 
-  watchers = startWatching(async (eventName: WatchEvent, filePath: string) => {
+  watchers = startWatching(async (eventName: WatchEvent, filePath: string, source) => {
     // if (!filePath.match(/\.(ts|js|json|txt|env)$/)) return;
     const { base, dir, name } = path.parse(filePath);
 
@@ -868,7 +869,7 @@ export const setupWatchers = async () => {
       }
       const scriptlets = await parseScriptletsFromPath(filePath);
 
-      await Promise.all(scriptlets.map(scriptlet => onScriptsChanged(eventName, scriptlet)));
+      await Promise.all(scriptlets.map((scriptlet) => onScriptsChanged(eventName, scriptlet)));
 
       return;
     }
@@ -892,6 +893,12 @@ export const setupWatchers = async () => {
         };
       }
       onScriptsChanged(eventName, script);
+      return;
+    }
+
+    if (source === 'app') {
+      log.info(`🔄 ${eventName} ${filePath} from app`);
+      reloadApps();
       return;
     }
 

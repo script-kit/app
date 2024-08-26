@@ -66,13 +66,10 @@ import {
   extractKenv,
   extractKitTar,
   extractNode,
-  forkOptions,
   installLoaderTools,
   installKenvDeps,
   matchPackageJsonEngines,
   ohNo,
-  optionalSetupScript,
-  optionalSpawnSetup,
   sendSplashBody,
   setupDone,
   setupLog,
@@ -97,6 +94,9 @@ import { prepQuitWindow } from './window/utils';
 import { loadKenvEnvironment } from './env-utils';
 import { Channel } from '@johnlindquist/kit/core/enum';
 import { Trigger } from '../shared/enums';
+import { reloadApps } from './apps';
+import { optionalSetupScript } from './spawn';
+import { forkOptions } from './fork.options';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -951,9 +951,7 @@ const checkKit = async () => {
     log.info('storeVersion');
     await storeVersion(getVersion());
 
-    if (kitState.isMac) {
-      optionalSpawnSetup(kitPath('main', 'app-launcher.js'), '--prep', '--trust');
-    }
+    reloadApps();
 
     kitState.starting = false;
     kitState.updateInstalling = false;

@@ -225,7 +225,7 @@ jobs:
             npx kit ./build.ts win x64 always
 
       - name: Publish windows arm64
-        if: matrix.os == 'windows-2022'
+        if: matrix.os == 'macos-latest'
         run: |
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npx kit remove-tick

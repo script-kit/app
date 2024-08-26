@@ -1366,9 +1366,6 @@ export class KitPrompt {
   };
 
   initMainBounds = () => {
-    if (kitState.isWindows) {
-      this.window?.setFocusable(true);
-    }
     const bounds = getCurrentScreenPromptCache(getMainScriptPath());
     if (!bounds.height || bounds.height < PROMPT.HEIGHT.BASE) {
       bounds.height = PROMPT.HEIGHT.BASE;
@@ -2012,9 +2009,6 @@ export class KitPrompt {
 
     if (this.firstPrompt && !isMainScript) {
       log.info(`${this.pid} Before initBounds`);
-      if (kitState.isWindows) {
-        this.window?.setFocusable(true);
-      }
       this.initBounds();
       log.info(`${this.pid} After initBounds`);
       // TODO: STRONGLY consider waiting for SET_PROMPT_DATA to complete and the UI to change before focusing the prompt
@@ -2226,7 +2220,6 @@ export class KitPrompt {
           this.window?.showInactive();
           makeKeyWindow(this.window);
         } else {
-          this?.window?.setFocusable(true);
           this.window?.showInactive();
           this.window?.focus();
         }
