@@ -1,4 +1,4 @@
-import { app, clipboard, nativeTheme, shell } from 'electron';
+import { clipboard, nativeTheme, shell } from 'electron';
 import { HttpsProxyAgent } from 'hpagent';
 
 import { type ExecOptions, type SpawnOptions, type SpawnSyncReturns, exec, spawn } from 'node:child_process';
@@ -6,15 +6,14 @@ import os, { homedir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import dotenv from 'dotenv';
-import download from 'download';
 import { debounce } from 'lodash-es';
 import StreamZip from 'node-stream-zip';
 import * as tar from 'tar';
 import { lstat, readFile, rm, unlink } from 'node:fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
+import download from './download';
 import {
   KIT_FIRST_PATH,
-  createPathResolver,
   getMainScriptPath,
   isDir,
   isFile,
@@ -45,6 +44,8 @@ import { ensureDir, writeFile, readJson, writeJson, pathExists, readdir } from '
 import electronLog from 'electron-log';
 import { createLogger } from '../shared/log-utils';
 import { forkOptions } from './fork.options';
+import { osTmpPath } from './tmp';
+import { DownloadOptions } from 'download';
 const log = createLogger('install.ts');
 
 let isOhNo = false;
@@ -407,7 +408,7 @@ export const installKenvDeps = async () => {
 };
 
 const getOptions = () => {
-  const options: any = {
+  const options: DownloadOptions = {
     insecure: true,
     rejectUnauthorized: false,
     followRedirect: true,
@@ -446,7 +447,6 @@ export const downloadKenv = async () => {
     sendSplashBody(`${kenvPath()} already exists. Skipping download.`);
     return '';
   }
-  const osTmpPath = createPathResolver(app.getPath('appData'));
 
   const fileName = 'kenv.zip';
   const file = osTmpPath(fileName);
@@ -475,7 +475,8 @@ export const downloadKenv = async () => {
 
   sendSplashBody(`Downloading Kit Environment from ${url}....`);
   try {
-    const buffer = await download(url, undefined, getOptions());
+    const buffer = await download(url, getOptions());
+    log.info(`Downloaded ${buffer.length} bytes`);
 
     sendSplashBody(`Writing Kit Environment to ${file}`);
     await writeFile(file, buffer);
@@ -536,8 +537,6 @@ export const extractKitTar = async (file: string) => {
 };
 
 export const downloadKit = async () => {
-  const osTmpPath = createPathResolver(app.getPath('appData'));
-
   const version = process.env.KIT_APP_VERSION;
   const extension = 'tar.gz';
 
@@ -560,7 +559,7 @@ export const downloadKit = async () => {
   sendSplashBody(`Downloading Kit SDK from ${url}`);
 
   try {
-    const buffer = await download(url, undefined, getOptions());
+    const buffer = await download(url, getOptions());
 
     sendSplashBody(`Writing Kit SDK to ${file}`);
     await writeFile(file, buffer);
@@ -587,8 +586,6 @@ export const downloadNode = async () => {
     });
   }
 
-  const osTmpPath = createPathResolver(app.getPath('appData'));
-
   const isWin = process.platform === 'win32';
   const extension = isWin ? 'zip' : 'tar.gz';
 
@@ -603,7 +600,7 @@ export const downloadNode = async () => {
   const nodePlatform = isWin ? 'win' : process.platform;
   const nodeArch = isWin ? 'x64' : process.arch;
   const node = `node-${nodeVersion}-${nodePlatform}-${nodeArch}.${extension}`;
-  const file = process.platform === 'linux' ? app.getPath('appData') : osTmpPath(node);
+  const file = osTmpPath(node);
   const url = `https://nodejs.org/dist/${nodeVersion}/${node}`;
 
   const downloadingMessage = `Downloading node from ${url}`;
@@ -611,7 +608,7 @@ export const downloadNode = async () => {
   sendSplashBody(downloadingMessage);
 
   try {
-    const buffer = await download(url, undefined, getOptions());
+    const buffer = await download(url, getOptions());
 
     const writingNodeMessage = `Writing node to ${file}`;
     log.info(writingNodeMessage);
