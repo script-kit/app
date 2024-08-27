@@ -106,7 +106,7 @@ function Aside() {
               </span>
             </button>
           </div>
-        }
+        )}
       </div>
       <nav className="pb-4">
         {links.map(({ label, href }) => {
