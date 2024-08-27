@@ -2010,15 +2010,6 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     }),
 
     SET_SELECTED_TEXT: onChildChannelOverride(async ({ child }, { channel, value }) => {
-      if (!kitState.supportsNut) {
-        log.warn(
-          'SET_SELECTED_TEXT: Nut not yay supported! on Windows arm64 or Linux arm64. Hoping to find a solution soon!',
-        );
-        return;
-      }
-
-      // REMOVE-NUT
-
       const text = value?.text;
       const hide = value?.hide;
 
@@ -2035,8 +2026,6 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         childSend({ channel, value });
         log.info(`SET SELECTED TEXT DONE with ${channel}`, text);
       }, 10);
-
-      // END-REMOVE-NUT
     }),
 
     SHOW_EMOJI_PANEL: onChildChannel(async ({ child }, { channel, value }) => {

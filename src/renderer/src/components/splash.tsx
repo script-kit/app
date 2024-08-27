@@ -97,10 +97,16 @@ function Aside() {
                 <kbd className="rounded-md bg-primary bg-opacity-25 p-1">{appConfig?.isMac ? 'CMD' : 'CTRL'}</kbd>
                 <kbd>+</kbd>
                 <kbd className="rounded-md bg-primary bg-opacity-25 p-1">;</kbd>
+                {appConfig?.isMac ? (
+                  <p className="text-xs font-mono">
+                    <hr className="my-1" />
+                    Or invoke <kbd>~/.kit/kar</kbd>
+                  </p>
+                ) : null}
               </span>
             </button>
           </div>
-        )}
+        }
       </div>
       <nav className="pb-4">
         {links.map(({ label, href }) => {

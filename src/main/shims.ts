@@ -29,7 +29,7 @@ const supportMap: Partial<Record<Target, OptionalDependency[]>> = {
   'win32-x64': [robot, uiohook, nwm],
   'darwin-arm64': [robot, uiohook, nmp, nwm, mcl, mf, mpw],
   'darwin-x64': [robot, uiohook, nmp, nwm, mcl, mf, mpw],
-  'linux-arm64': [],
+  'linux-arm64': [robot],
   'linux-x64': [robot, uiohook],
 } as const;
 
