@@ -677,4 +677,13 @@ ${child?.pid} 📝 Submitting...
     log.info('🚀 Applying update');
     kitState.applyUpdate = true;
   });
+
+  ipcMain.on('SET_KEYBOARD_LAYOUT', (event, layoutMap: Record<string, string> | null) => {
+    kitState.keymap = layoutMap;
+    if (layoutMap) {
+      log.info('Non-QWERTY keyboard layout set:', layoutMap);
+    } else {
+      log.info('QWERTY or default keyboard layout detected, no custom mapping needed.');
+    }
+  });
 };

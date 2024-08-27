@@ -317,7 +317,7 @@ const initState = {
   themeName: '',
   tempTheme: '',
   appearance: 'auto' as 'auto' | 'light' | 'dark',
-  keymap: null as any,
+  keymap: null as Record<string, string> | null,
   keyboardConfig: {
     autoDelayMs: 0,
   } as any,
@@ -636,94 +636,25 @@ const keymapLog = electronLog.create({ logId: 'keymapLog' });
 
 keymapLog.transports.console.level = (process.env.VITE_LOG_LEVEL || 'info') as LevelOption;
 
-export const convertKey = (sourceKey: string) => {
-  if (kitState.kenvEnv?.KIT_CONVERT_KEY === 'false') {
+export const convertKey = (sourceKey: string): string => {
+  if (kitState.kenvEnv?.KIT_CONVERT_KEY === 'false' || !kitState.keymap) {
     keymapLog.info(`🔑 Skipping key conversion: ${sourceKey}`);
     return sourceKey;
   }
-  if (kitState.keymap) {
-    const result = Object.entries(kitState.keymap).find(
-      ([, { value }]: [string, any]) => value.toLowerCase() === sourceKey.toLowerCase(),
-    ) || [''];
 
-    const targetKey = result[0];
-
-    if (targetKey) {
-      const target = defaultKeyMap?.[targetKey]?.toUpperCase() || '';
-      try {
-        if (targetKey.at(-1) !== target.at(-1)) {
-          keymapLog.silly(`🔑 Converted key: ${targetKey} -> ${target}`);
-        }
-      } catch (error) {
-        keymapLog.silly(`🔑 Converted key error: ${targetKey} -> ${target}`);
-      }
-
-      return target || sourceKey;
+  // Find the entry where the value matches the sourceKey
+  const entry = Object.entries(kitState.keymap).find(([, value]) => value.toLowerCase() === sourceKey.toLowerCase());
+  if (entry) {
+    const [code] = entry;
+    const target = defaultKeyMap[code]?.toUpperCase() || '';
+    if (target) {
+      keymapLog.silly(`🔑 Converted key: ${code} -> ${target}`);
+      return target;
     }
   }
 
+  keymapLog.silly(`🔑 No conversion for key: ${sourceKey}`);
   return sourceKey;
-};
-
-let prevKeyMap = {};
-export const initKeymap = async () => {
-  return; // TODO: implement using navigator.keyboard.getKeyboardLayout()
-  keymapLog.info('🔑 Initializing keymap...');
-  if (!kitState.keymap) {
-    try {
-      const nativeKeymap = null; // get from getKeyboardLayout()
-      let keymap = nativeKeymap.getKeyMap();
-      // keymapLog.verbose('🔑 Detected Keymap:', { keymap });
-      writeJson(kitPath('db', 'keymap.json'), keymap);
-      let value = keymap?.KeyA?.value;
-
-      const alpha = /[A-Za-z]/;
-
-      keymapLog.verbose('🔑 Keymap', { a: value });
-
-      if (value?.match(alpha)) {
-        kitState.keymap = keymap;
-      } else {
-        keymapLog.verbose(`Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`);
-      }
-
-      nativeKeymap.onDidChangeKeyboardLayout(
-        debounce(() => {
-          keymap = nativeKeymap.getKeyMap();
-          keymapLog.verbose('🔑 Keymap changed:', { keymap });
-          value = keymap?.KeyA.value;
-
-          if (value?.match(alpha)) {
-            // Check if keymap changed
-            if (JSON.stringify(keymap) !== JSON.stringify(prevKeyMap)) {
-              kitState.keymap = keymap;
-              prevKeyMap = keymap;
-            } else {
-              log.verbose('Keymap not changed');
-            }
-          } else {
-            keymapLog.verbose(`Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`);
-          }
-        }, 500),
-      );
-
-      if (kitState.keymap) {
-        keymapLog.verbose(
-          `🔑 Keymap: ${JSON.stringify(
-            Object.entries(kitState.keymap).map(([k, v]: any) => {
-              if (v?.value) {
-                return `${k} -> ${v.value}`;
-              }
-              return `${k} -> null`;
-            }),
-          )}`,
-        );
-      }
-    } catch (e) {
-      keymapLog.error('🔑 Keymap error... 🤔');
-      keymapLog.error(e);
-    }
-  }
 };
 
 export const getEmojiShortcut = () => {

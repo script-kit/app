@@ -14,6 +14,7 @@ import { processes, spawnShebang } from './process';
 import { prompts } from './prompts';
 import { convertKey, kitState, subs } from './state';
 import { createLogger } from '../shared/log-utils';
+import { runMainScript } from './main-script';
 
 const log = createLogger('shortcuts.ts');
 
@@ -292,11 +293,7 @@ export const updateMainShortcut = (shortcut?: string) => {
       }
     }
 
-    await runPromptProcess(getMainScriptPath(), [], {
-      force: true,
-      trigger: Trigger.Menu,
-      sponsorCheck: true,
-    });
+    await runMainScript();
   };
 
   const ret = globalShortcut.register(finalShortcut, mainShortcutAction);

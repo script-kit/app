@@ -519,6 +519,65 @@ export default function App() {
   //   [promptData?.previewWidthPercent],
   // );
 
+  useEffect(() => {
+    const getKeyboardLayout = async () => {
+      if ('keyboard' in navigator && 'getLayoutMap' in navigator.keyboard) {
+        try {
+          const layout = await navigator.keyboard.getLayoutMap();
+          const layoutMap: Record<string, string> = {};
+          let detectedLayout = 'Unknown';
+
+          for (const [code, key] of layout.entries()) {
+            layoutMap[code] = key;
+          }
+
+          // Check for QWERTY
+          if (layoutMap.KeyQ === 'q' && layoutMap.KeyW === 'w' && layoutMap.KeyE === 'e') {
+            detectedLayout = 'QWERTY';
+          }
+          // Check for AZERTY
+          else if (layoutMap.KeyA === 'q' && layoutMap.KeyZ === 'w' && layoutMap.KeyE === 'e') {
+            detectedLayout = 'AZERTY';
+          }
+          // Check for QWERTZ
+          else if (layoutMap.KeyQ === 'q' && layoutMap.KeyW === 'w' && layoutMap.KeyY === 'z') {
+            detectedLayout = 'QWERTZ';
+          }
+          // Check for Dvorak
+          else if (layoutMap.KeyQ === "'" && layoutMap.KeyW === ',' && layoutMap.KeyE === '.') {
+            detectedLayout = 'Dvorak';
+          }
+          // Check for Colemak
+          else if (layoutMap.KeyQ === 'q' && layoutMap.KeyW === 'w' && layoutMap.KeyF === 'e') {
+            detectedLayout = 'Colemak';
+          }
+
+          log.info(`Detected keyboard layout: ${detectedLayout}`);
+
+          // Send null if it's a QWERTY layout, otherwise send the layout map
+          ipcRenderer.send('SET_KEYBOARD_LAYOUT', detectedLayout === 'QWERTY' ? null : layoutMap);
+        } catch (error) {
+          log.warn('Error getting keyboard layout:', error);
+          ipcRenderer.send('SET_KEYBOARD_LAYOUT', null);
+        }
+      } else {
+        log.warn('Keyboard API not supported');
+        ipcRenderer.send('SET_KEYBOARD_LAYOUT', null);
+      }
+    };
+
+    getKeyboardLayout();
+
+    const handleFocus = () => {
+      getKeyboardLayout();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   return (
     <ErrorBoundary>
       {

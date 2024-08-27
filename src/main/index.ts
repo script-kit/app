@@ -86,7 +86,7 @@ import { startSettings as setupSettings } from './settings';
 import shims, { loadSupportedOptionalLibraries } from './shims';
 import { registerKillLatestShortcut, updateMainShortcut } from './shortcuts';
 import { startSK } from './sk';
-import { cacheKitScripts, getThemes, initKeymap, kitState, kitStore, subs } from './state';
+import { cacheKitScripts, getThemes, kitState, kitStore, subs } from './state';
 import { TrackEvent, trackEvent } from './track';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { getStoredVersion, getVersion, storeVersion } from './version';
@@ -459,10 +459,13 @@ const ready = async () => {
   log.info('ready');
   assignDisplays();
   try {
+    const isWindows = os.platform() === 'win32';
+    if (!isWindows) {
+      startSK();
+    }
+
     const isMac = os.platform() === 'darwin';
     if (isMac) {
-      startSK();
-
       log.info('isMac');
       let authorized = shims['node-mac-permissions'].getAuthStatus('accessibility') === 'authorized';
       log.info('authorized', authorized);
@@ -485,7 +488,6 @@ const ready = async () => {
     await ensureKitDirs();
     await ensureKenvDirs();
     createLogs();
-    await initKeymap();
     await prepareProtocols();
     await setupLog('Protocols Prepared');
     await setupSettings();
