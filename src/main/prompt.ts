@@ -12,6 +12,7 @@ import type { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { differenceInHours } from 'date-fns';
 import {
   BrowserWindow,
+  Input,
   type Point,
   type Rectangle,
   TouchBar,
@@ -764,6 +765,23 @@ export class KitPrompt {
       this.window?.webContents?.setZoomLevel(ZOOM_LEVEL);
     });
 
+    const beforeInputHandler = (event, input: Input) => {
+      if (input.type === 'keyDown' && input.key) {
+        log.purple(`${this.pid}: ${this.scriptName}: before-input-event`, { input });
+        this.window.webContents.removeListener('before-input-event', beforeInputHandler);
+        const isEscape = input.key === 'Escape';
+        if (isEscape) {
+          log.error(`${this.pid}: ${this.scriptName}: Escape was the first interaction. Closing process and prompt.`);
+          processes.removeByPid(this.pid);
+          emitter.emit(KitEvent.KillProcess, this.pid);
+          event.preventDefault();
+          this.hide();
+          return;
+        }
+      }
+    };
+    this.window.webContents?.on('before-input-event', beforeInputHandler);
+
     this.window.webContents?.once('did-finish-load', () => {
       kitState.hiddenByUser = false;
 
@@ -883,6 +901,7 @@ export class KitPrompt {
         processes.removeByPid(this.pid);
         emitter.emit(KitEvent.KillProcess, this.pid);
         event.preventDefault();
+        return;
       }
       if (isEscape) {
         if (!this.scriptPath) {
