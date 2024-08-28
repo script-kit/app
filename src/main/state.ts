@@ -7,12 +7,10 @@ import type { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
 import type { ChildProcess } from 'node:child_process';
 import os from 'node:os';
-import path from 'node:path';
-import electron, { type Display } from 'electron';
-import electronLog, { type FileTransport, type LevelOption, type LogLevel } from 'electron-log';
+import { type Display, nativeTheme } from 'electron';
+import type { LogLevel } from 'electron-log';
 import { debounce } from 'lodash-es';
 import { subscribeKey } from 'valtio/utils';
-const { app, nativeTheme } = electron;
 
 import { readdir } from 'node:fs/promises';
 import type { Stamp, UserDb } from '@johnlindquist/kit/core/db';
@@ -42,10 +40,10 @@ import { Trigger } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
 import internetAvailable from '../shared/internet-available';
 import shims from './shims';
-import { writeJson, pathExists } from './cjs-exports';
 
 import { createLogger } from '../shared/log-utils';
 const log = createLogger('state.ts');
+const keymapLog = createLogger('keymapLog');
 
 const schema: Schema<{
   KENV: string;
@@ -630,12 +628,6 @@ const defaultKeyMap: {
   Backquote: '`',
 };
 
-const keymapLogPath = path.resolve(app.getPath('logs'), 'keymap.log');
-const keymapLog = electronLog.create({ logId: 'keymapLog' });
-(keymapLog.transports.file as FileTransport).resolvePathFn = () => keymapLogPath;
-
-keymapLog.transports.console.level = (process.env.VITE_LOG_LEVEL || 'info') as LevelOption;
-
 export const convertKey = (sourceKey: string): string => {
   if (kitState.kenvEnv?.KIT_CONVERT_KEY === 'false' || !kitState.keymap) {
     keymapLog.info(`🔑 Skipping key conversion: ${sourceKey}`);
@@ -648,12 +640,12 @@ export const convertKey = (sourceKey: string): string => {
     const [code] = entry;
     const target = defaultKeyMap[code]?.toUpperCase() || '';
     if (target) {
-      keymapLog.silly(`🔑 Converted key: ${code} -> ${target}`);
+      keymapLog.info(`🔑 Converted key: ${code} -> ${target}`);
       return target;
     }
   }
 
-  keymapLog.silly(`🔑 No conversion for key: ${sourceKey}`);
+  keymapLog.info(`🔑 No conversion for key: ${sourceKey}`);
   return sourceKey;
 };
 

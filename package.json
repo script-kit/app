@@ -92,7 +92,7 @@
     "eslint": "^9.9.1",
     "eslint-config-erb": "4.1.0",
     "framer-motion": "^11.3.30",
-    "html-react-parser": "^5.1.12",
+    "html-react-parser": "^5.1.13",
     "jest": "^29.7.0",
     "jotai": "^2.9.3",
     "lodash-es": "^4.17.21",
