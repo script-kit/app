@@ -1,7 +1,6 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
 import os from 'node:os';
-import untildify from 'untildify';
 
 import { pathToFileURL } from 'node:url';
 import { BrowserWindow, type IpcMainEvent, globalShortcut, ipcMain, nativeTheme, powerMonitor } from 'electron';
@@ -1120,39 +1119,29 @@ export const destroyAllProcesses = () => {
 };
 
 export const spawnShebang = async ({
-  shebang,
+  command,
+  args,
+  shell,
+  cwd,
   filePath,
 }: {
-  shebang: string;
+  command: string;
+  args: string[];
+  shell: boolean;
+  cwd: string;
   filePath: string;
 }) => {
-  let [command, ...args] = shebang.split(' ');
-  args.push(filePath);
-  let shell = true;
-  let cwd = kenvPath();
-  if (filePath.includes('#')) {
-    log.info(`Shebang is a scriptlet. Parse!`);
-    const scriptlet = kitState.scriptlets.get(filePath);
-    if (scriptlet) {
-      [command, ...args] = scriptlet.scriptlet.split(' ');
-      if (scriptlet?.shell === false || scriptlet?.shell === 'false') {
-        shell = false;
-      }
-      if (typeof scriptlet?.shell === 'string') {
-        shell = scriptlet.shell;
-      }
 
-      if (scriptlet?.cwd) {
-        cwd = untildify(scriptlet.cwd);
-      }
-    }
-  }
   const child = spawn(command, args, {
     shell,
     cwd,
     windowsHide: true,
   });
-  log.info(`🚀 Spawned process ${child.pid} for ${filePath} with command ${command} and args ${args}`);
+  log.info(`🚀 Spawned process ${child.pid} for ${filePath}` ,{
+    shell,
+    command,
+    args
+  });
   processes.addExistingProcess(child, filePath);
 
   child.unref();

@@ -537,9 +537,10 @@ ${data.error}
 
         if (channel === Channel.VALUE_SUBMITTED) {
           log.info(
-            `---
+            `
+-------------
 ${child?.pid} 📝 Submitting...
----`,
+-------------`.trim(),
           );
 
           if (!message?.state?.value && message?.state?.script) {
