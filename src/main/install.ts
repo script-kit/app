@@ -88,6 +88,7 @@ export const showSplash = async () => {
   splashPrompt.bindToProcess(99999);
 
   emitter.once(KitEvent.CloseSplash, () => {
+    log.info('Closing splash screen');
     try {
       kitState.isSplashShowing = false;
       makeSplashWindow(splashPrompt?.window);
@@ -101,6 +102,7 @@ export const showSplash = async () => {
   });
 
   splashPrompt.readyEmitter.once('ready', async () => {
+    log.info('Splash screen ready');
     const { scriptKitTheme, scriptKitLightTheme } = getThemes();
     const value = nativeTheme.shouldUseDarkColors ? scriptKitTheme : scriptKitLightTheme;
     const platformSpecificTheme = processPlatformSpecificTheme(value);
@@ -109,6 +111,11 @@ export const showSplash = async () => {
 
     splashPrompt?.sendToPrompt(Channel.SET_THEME, platformSpecificTheme);
 
+    splashPrompt?.window?.webContents?.ipc?.addListener(Channel.SET_PROMPT_DATA, (event, data) => {
+      log.info('Showing splash screen');
+      splashPrompt?.window.show();
+    });
+
     splashPrompt?.setPromptData({
       show: true,
       ui: UI.splash,
@@ -116,14 +123,6 @@ export const showSplash = async () => {
       width: PROMPT.WIDTH.BASE,
       height: PROMPT.HEIGHT.BASE,
     } as any);
-
-    await new Promise((resolve, reject) => {
-      setTimeout(() => {
-        resolve(true);
-      }, 200);
-    });
-
-    splashPrompt?.window.show();
   });
 
   sendSplashHeader('Installing Kit SDK and Kit Environment...');
@@ -162,8 +161,14 @@ export const sendSplashProgress = (progress: number) => {
 };
 
 export const setupDone = () => {
+  if(splashPrompt?.window){
+    splashPrompt?.window.setAlwaysOnTop(true);
+    splashPrompt?.window?.focus();
+    splashPrompt?.window?.webContents?.focus();
+  }
   sendSplashProgress(100);
   sendSplashHeader('Kit SDK Install verified ✅');
+
 };
 
 export const handleLogMessage = (message: string, result: SpawnSyncReturns<any>, required = true) => {
@@ -693,7 +698,7 @@ export const optionalSpawnSetup = (...args: string[]) => {
         resolve('timeout');
         log.info(`⚠️ Setup script timed out: ${args.join(' ')}`);
       }
-    }, 5000);
+    }, 25000);
 
     if (child?.stdout) {
       child.stdout.on('data', (data) => {
@@ -733,6 +738,16 @@ export const optionalSpawnSetup = (...args: string[]) => {
         log.info(`⚠️ Setup script exited with code ${code}: ${args.join(' ')}`);
         resolve('error');
       }
+    });
+
+    child.on('close', (code) => {
+      log.info(`⚠️ Setup script closed with code ${code}: ${args.join(' ')}`);
+      resolve('done');
+    });
+
+    child.on('disconnect', () => {
+      log.info(`⚠️ Setup script disconnected: ${args.join(' ')}`);
+      resolve('done');
     });
 
     child.on('error', (error: Error) => {

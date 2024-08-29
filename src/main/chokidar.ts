@@ -125,9 +125,11 @@ export const startWatching = (callback: WatcherCallback) => {
     depth: 0, // Only watch the top-level of these directories
   });
 
-  appWatcher.on('all', (event, path) => {
-    log.info(`App change detected: ${event} ${path}`);
-    callback(event as WatchEvent, path, 'app');
+  appWatcher.on('all', (event, filePath) => {
+    log.info(`App change detected: ${event} ${filePath}`);
+    if (!path.basename(filePath).startsWith('.')) {
+      callback(event as WatchEvent, filePath, 'app');
+    }
   });
 
   kitState.ignoreInitial = true;

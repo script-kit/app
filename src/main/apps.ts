@@ -6,19 +6,19 @@ import { debounce } from 'lodash-es';
 
 const log = createLogger('apps.ts');
 
-export function reloadApps() {
+export const reloadApps = debounce(async () => {
   if (kitState.isLinux) {
+    log.info('Reloading apps on Linux is not supported');
     return;
   }
-  return debounce(async () => {
-    try {
-      log.info('Attempting to reload apps...');
-      const result = await optionalSpawnSetup(kitPath('main', 'app-launcher.js'), '--prep', '--trust');
-      log.info('Reloaded apps', result);
-      return result;
-    } catch (error) {
-      log.error('Failed to reload apps', error);
-      return 'error';
-    }
-  }, 500);
-}
+
+  try {
+    log.info('Attempting to reload apps...');
+    const result = await optionalSpawnSetup(kitPath('main', 'app-launcher.js'), '--prep', '--trust', '--refresh');
+    log.info('Reloaded apps', result);
+    return result;
+  } catch (error) {
+    log.error('Failed to reload apps', error);
+    return 'error';
+  }
+}, 500);

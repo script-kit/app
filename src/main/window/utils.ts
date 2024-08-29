@@ -39,24 +39,16 @@ export const prepQuitWindow = async () => {
     return;
   }
   log.info('👋 Prep quit window');
-  const options = getPromptOptions();
-  const window = new BrowserWindow(options);
 
   await new Promise((resolve) => {
     setTimeout(() => {
       log.info('👋 Prep quit window timeout');
-      if (!window?.isDestroyed()) {
-        shims['@johnlindquist/mac-panel-window'].makeKeyWindow(window);
-      }
 
       for (const prompt of prompts) {
         if (prompt?.window?.isDestroyed()) {
           continue;
         }
         shims['@johnlindquist/mac-panel-window'].makeWindow(prompt.window);
-      }
-      if (!window?.isDestroyed()) {
-        window?.close();
       }
       log.info('👋 Prep quit window done');
       resolve(null);
