@@ -2231,6 +2231,7 @@ export class KitPrompt {
   };
 
   focusPrompt = () => {
+    this.window?.setFocusable(true);
     if (this.window && !this.window.isDestroyed() && !this.window?.isFocused()) {
       log.info(`${this.pid}: focusPrompt`);
       try {
@@ -2238,7 +2239,6 @@ export class KitPrompt {
           makePanel(this.window);
           this.window?.showInactive();
           makeKeyWindow(this.window);
-          this.window?.showInactive();
         } else {
           this.window?.showInactive();
           this.window?.focus();

@@ -309,6 +309,10 @@ ${data.error}
 
   ipcMain.on(AppChannel.END_PROCESS, (event, { pid }) => {
     const processInfo = processes.getByPid(pid);
+    log.info('AppChannel.END_PROCESS', {
+      pid,
+      processInfoType: typeof processInfo,
+    });
     if (processInfo) {
       processes.removeByPid(pid);
     }

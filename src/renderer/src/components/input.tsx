@@ -184,9 +184,6 @@ mx-1
 
 function QuickInputs() {
   const focusedChoice = useAtomValue(focusedChoiceAtom);
-  const [fontSize] = useAtom(inputFontSizeAtom);
-  const [submitted] = useAtom(submittedAtom);
-  const [promptData] = useAtom(promptDataAtom);
   const setChoiceInputs = useSetAtom(choiceInputsAtom);
 
   useEffect(() => {
@@ -283,6 +280,7 @@ function MainInput() {
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
+      // log.info(`${window.pid}: onKeyDown: ${event}`, event);
       // if command is pressed
       if (gridReady) {
         if (

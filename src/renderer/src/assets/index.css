@@ -512,6 +512,9 @@ code.hljs {
   @apply min-h-4;
   white-space: break-spaces;
 }
+.sponsor-button{
+  @apply shadow-xl shadow-primary/25 text-bg-base font-bold px-3 py-3.5 no-underline rounded bg-primary bg-opacity-100 hover:opacity-80
+}
 
 .hljs-copy-wrapper {
   position: relative;
@@ -521,9 +524,12 @@ code.hljs {
 .hljs-copy-button:focus {
   transform: translateX(0);
 }
+.hljs-tool-topper{
+  @apply -mb-4 font-mono font-bold text-sm pl-2 opacity-60;
+}
 .hljs-copy-button {
   @apply text-text-base text-opacity-25 dark:text-white dark:text-opacity-25;
-  @apply right-1 top-5 mt-0.5 h-5 w-5;
+  @apply right-1 top-1 mt-0.5 h-5 w-5;
   position: absolute;
 }
 
