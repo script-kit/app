@@ -1137,7 +1137,7 @@ export const spawnShebang = async ({
     windowsHide: true,
     env: createEnv(),
   });
-  log.info(`🚀 Spawned process ${child.pid} for ${filePath}`, {
+  log.info(`🚀 Spawned process ${child.pid} for ${filePath}:`, {
     shell,
     command,
     args,
