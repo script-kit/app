@@ -13,7 +13,7 @@ import {
   shortcutsAtom,
   uiAtom,
 } from '../jotai';
-import { hotkeysOptions } from './shared';
+
 import { createLogger } from '../../../shared/log-utils';
 
 const log = createLogger('useEscape.ts');
@@ -38,7 +38,6 @@ export default () => {
         promptData: promptData?.scriptPath,
         flagValue,
       });
-      event.preventDefault();
       if (shortcuts?.find((s) => s.key === 'escape') && !flagValue) {
         log.info(`Ignoring escape because of shortcut ${shortcuts?.find((s) => s.key === 'escape')}`);
         return;
@@ -64,15 +63,14 @@ export default () => {
 
       log.info(`No action for escape ${script?.filePath}...`);
     },
-    hotkeysOptions,
-    [
-      flagValue,
-      isReady,
-      ui,
-      runMainScript,
-      shortcuts,
-      promptData,
-      script,
-    ],
+    {
+      enabled: true,
+      enableOnFormTags: ['input', 'textarea', 'select'],
+      keydown: true,
+      ignoreModifiers: true,
+      preventDefault: true,
+      scopes: 'global',
+    },
+    [flagValue, isReady, ui, runMainScript, shortcuts, promptData, script],
   );
 };

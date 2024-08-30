@@ -1131,16 +1131,15 @@ export const spawnShebang = async ({
   cwd: string;
   filePath: string;
 }) => {
-
-  const child = spawn(command, args, {
+  const child = spawn(command.trim(), args, {
     shell,
     cwd,
     windowsHide: true,
   });
-  log.info(`🚀 Spawned process ${child.pid} for ${filePath}` ,{
+  log.info(`🚀 Spawned process ${child.pid} for ${filePath}`, {
     shell,
     command,
-    args
+    args,
   });
   processes.addExistingProcess(child, filePath);
 

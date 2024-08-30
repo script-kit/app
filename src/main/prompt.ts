@@ -2175,7 +2175,7 @@ export class KitPrompt {
     }
   };
 
-  saveCurrentPromptBounds = async () => {
+  saveCurrentPromptBounds = () => {
     if (!this?.window || this.window?.isDestroyed()) {
       log.info(`${this.pid} Prompt window is destroyed. Not saving bounds for ${this.scriptPath}`);
       return;
@@ -2239,6 +2239,7 @@ export class KitPrompt {
           makePanel(this.window);
           this.window?.showInactive();
           makeKeyWindow(this.window);
+          this.window?.showInactive();
         } else {
           this.window?.showInactive();
           this.window?.focus();
