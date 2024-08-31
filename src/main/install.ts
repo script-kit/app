@@ -46,6 +46,8 @@ import { createLogger } from '../shared/log-utils';
 import { forkOptions } from './fork.options';
 import { osTmpPath } from './tmp';
 import { DownloadOptions } from 'download';
+import { getAssetPath } from '../shared/assets';
+import { getVersion } from './version';
 const log = createLogger('install.ts');
 
 let isOhNo = false;
@@ -103,6 +105,20 @@ export const showSplash = async () => {
 
   splashPrompt.readyEmitter.once('ready', async () => {
     log.info('Splash screen ready');
+    splashPrompt?.sendToPrompt(Channel.APP_CONFIG, {
+      delimiter: path.delimiter,
+      sep: path.sep,
+      os: os.platform(),
+      isMac: os.platform().startsWith('darwin'),
+      isLinux: os.platform().startsWith('linux'),
+      isWin: os.platform().startsWith('win'),
+      assetPath: getAssetPath(),
+      version: getVersion(),
+      isDark: kitState.isDark,
+      searchDebounce: Boolean(kitState.kenvEnv?.KIT_SEARCH_DEBOUNCE === 'false'),
+      termFont: kitState.kenvEnv?.KIT_TERM_FONT || 'monospace',
+      url: kitState.url,
+    });
     const { scriptKitTheme, scriptKitLightTheme } = getThemes();
     const value = nativeTheme.shouldUseDarkColors ? scriptKitTheme : scriptKitLightTheme;
     const platformSpecificTheme = processPlatformSpecificTheme(value);
@@ -161,14 +177,13 @@ export const sendSplashProgress = (progress: number) => {
 };
 
 export const setupDone = () => {
-  if(splashPrompt?.window){
+  if (splashPrompt?.window) {
     splashPrompt?.window.setAlwaysOnTop(true);
     splashPrompt?.window?.focus();
     splashPrompt?.window?.webContents?.focus();
   }
   sendSplashProgress(100);
   sendSplashHeader('Kit SDK Install verified ✅');
-
 };
 
 export const handleLogMessage = (message: string, result: SpawnSyncReturns<any>, required = true) => {

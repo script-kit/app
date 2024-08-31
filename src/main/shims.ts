@@ -19,18 +19,19 @@ const nwm = '@johnlindquist/node-window-manager' as const;
 const mcl = '@johnlindquist/mac-clipboard-listener' as const;
 const mf = '@johnlindquist/mac-frontmost' as const;
 const mpw = '@johnlindquist/mac-panel-window' as const;
+const pnpm = 'pnpm' as const;
 // Object.keys(packageJson.optionalDependencies)
-const optionalDependencies = [robot, uiohook, nmp, nwm, mcl, mf, mpw] as const;
+const optionalDependencies = [robot, uiohook, nmp, nwm, mcl, mf, mpw, pnpm] as const;
 type OptionalDependency = (typeof optionalDependencies)[number];
 
 const supportMap: Partial<Record<Target, OptionalDependency[]>> = {
   // Consider restoring uiohook once the github actions runner supports bash
-  'win32-arm64': [robot, nwm],
-  'win32-x64': [robot, uiohook, nwm],
-  'darwin-arm64': [robot, uiohook, nmp, nwm, mcl, mf, mpw],
-  'darwin-x64': [robot, uiohook, nmp, nwm, mcl, mf, mpw],
-  'linux-arm64': [robot],
-  'linux-x64': [robot, uiohook],
+  'win32-arm64': [robot, nwm, pnpm],
+  'win32-x64': [robot, uiohook, nwm, pnpm],
+  'darwin-arm64': [robot, uiohook, nmp, nwm, mcl, mf, mpw, pnpm],
+  'darwin-x64': [robot, uiohook, nmp, nwm, mcl, mf, mpw, pnpm],
+  'linux-arm64': [robot, pnpm],
+  'linux-x64': [robot, uiohook, pnpm],
 } as const;
 
 export const supportsDependency = (dep: OptionalDependency) => {

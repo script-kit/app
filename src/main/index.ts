@@ -763,6 +763,9 @@ const checkKit = async () => {
     await showSplash();
   }
 
+  await setupLog('Ensure pnpm is configured...');
+  await setupScript(kitPath('setup', 'setup-pnpm.js'));
+
   const storedVersion = await getStoredVersion();
   log.info(`Stored version: ${storedVersion}`);
 
