@@ -104,6 +104,7 @@ const files = dirFiles
 console.log({ files });
 
 const config: Configuration = {
+  npmRebuild: false,
   appId: 'app.scriptkit', // Updated appId from package.json
   artifactName: '${productName}-macOS-${version}-${arch}.${ext}',
   productName: 'Kit', // Updated productName from package.json
@@ -195,6 +196,7 @@ try {
       stdio: 'inherit',
     });
   }
+  await exec(`pnpm electron-rebuild --arch ${arch}`);
   const result = await build({
     config,
     publish,
