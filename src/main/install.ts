@@ -102,8 +102,6 @@ export const showSplash = async () => {
     }
   });
 
-  pnpm(['install']);
-
   splashPrompt.readyEmitter.once('ready', async () => {
     log.info('Splash screen ready');
     splashPrompt?.sendToPrompt(Channel.APP_CONFIG, {
@@ -239,15 +237,10 @@ export const installPackage = async (installCommand: string, cwd: string) => {
     shell: true, // Use shell on all platforms for consistency
   };
 
-  const command = `pnpm ${installCommand}`;
-
-  // Install pnpm
-
-  log.info(`${cwd}: 👷 pnpm ${command}`);
-
   return new Promise<string>((resolve, reject) => {
     const pnpmPath = kitPath('node_modules', '.bin', 'pnpm');
-    const child = spawn(pnpmPath, [command], options);
+    log.info(`${cwd}: 👷 ${pnpmPath} ${installCommand}`);
+    const child = spawn(pnpmPath, [installCommand], options);
 
     // Display a loading message with a spinner
     let dots = 1;
