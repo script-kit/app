@@ -196,7 +196,6 @@ try {
       stdio: 'inherit',
     });
   }
-  await exec(`pnpm electron-rebuild --arch ${arch}`);
   const result = await build({
     config,
     publish,
