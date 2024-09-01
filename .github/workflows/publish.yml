@@ -138,6 +138,9 @@ jobs:
           echo "All job outputs:"
           echo "${{ toJson(needs) }}"
 
+      - name: Checkout git repo
+        uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
         name: Install pnpm
         with:
@@ -148,9 +151,6 @@ jobs:
         with:
           node-version: 20.16.0
           cache: 'pnpm'
-
-      - name: Checkout git repo
-        uses: actions/checkout@v4
 
       - name: Write the Semantic Version to package.json version property for main
         if: needs.tag.outputs.kit_tag == 'main'
