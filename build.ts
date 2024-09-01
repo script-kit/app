@@ -197,17 +197,17 @@ try {
     });
   }
 
-  const { stdout: rebuildInstallInfo, stderr: rebuildInstallError } = await exec(`pnpm i -D @electron/rebuild`, {
-    stdio: 'inherit',
-  });
+  // const { stdout: rebuildInstallInfo, stderr: rebuildInstallError } = await exec(`pnpm i -D @electron/rebuild`, {
+  //   stdio: 'inherit',
+  // });
 
-  console.log({ rebuildInstallInfo, rebuildInstallError });
+  // console.log({ rebuildInstallInfo, rebuildInstallError });
 
-  const { stdout: rebuildInfo, stderr: rebuildError } = await exec(`pnpm electron-rebuild --arch ${arch}`, {
-    stdio: 'inherit',
-  });
+  // const { stdout: rebuildInfo, stderr: rebuildError } = await exec(`pnpm electron-rebuild --arch ${arch}`, {
+  //   stdio: 'inherit',
+  // });
 
-  console.log({ rebuildInfo, rebuildError });
+  // console.log({ rebuildInfo, rebuildError });
   const result = await build({
     config,
     publish,
