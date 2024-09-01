@@ -232,8 +232,6 @@ jobs:
             pnpm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
             pnpm run vite-prebuild
-            pnpm i -D @electron/rebuild
-            pnpm electron-rebuild --arch x64
             npx kit ./build.ts win x64 always
 
       - name: Publish windows arm64
@@ -242,8 +240,6 @@ jobs:
             pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npx kit remove-tick
             pnpm run vite-prebuild
-            pnpm i -D @electron/rebuild
-            pnpm electron-rebuild --arch arm64
             npx kit ./build.ts win arm64 always
         env:
           # These values are used for auto updates signing
@@ -287,8 +283,6 @@ jobs:
             pnpm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
             pnpm run vite-prebuild
-            pnpm i -D @electron/rebuild
-            pnpm electron-rebuild --arch x64
             npx kit ./build.ts linux x64 always
 
       - name: Publish linux arm64
@@ -316,8 +310,6 @@ jobs:
             pnpm run vite-prebuild
             which pnpm
             pnpm --version
-            pnpm i -D @electron/rebuild
-            pnpm electron-rebuild --arch arm64
             npx kit ./build.ts linux arm64 always
 
       - name: Publish mac x64
@@ -338,8 +330,6 @@ jobs:
             pnpm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             pnpm i
             pnpm run vite-prebuild
-            pnpm i -D @electron/rebuild
-            pnpm electron-rebuild --arch ${{ steps.determine_arch.outputs.arch }}
             npx kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
 
       - name: Publish mac arm64
@@ -360,8 +350,6 @@ jobs:
             pnpm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             pnpm i
             pnpm run vite-prebuild
-            pnpm i -D @electron/rebuild
-            pnpm electron-rebuild --arch ${{ steps.determine_arch.outputs.arch }}
             npx kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml

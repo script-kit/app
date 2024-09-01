@@ -192,10 +192,22 @@ try {
   const uninstallDeps = external();
   console.log(`Removing external dependencies: ${uninstallDeps.join(', ')} before @electron/rebuild kicks in`);
   if (uninstallDeps.length > 0) {
-    execSync(`pnpm uninstall ${uninstallDeps.join(' ')}`, {
+    await exec(`pnpm uninstall ${uninstallDeps.join(' ')}`, {
       stdio: 'inherit',
     });
   }
+
+  const { stdout: rebuildInstallInfo, stderr: rebuildInstallError } = await exec(`pnpm i -D @electron/rebuild`, {
+    stdio: 'inherit',
+  });
+
+  console.log({ rebuildInstallInfo, rebuildInstallError });
+
+  const { stdout: rebuildInfo, stderr: rebuildError } = await exec(`pnpm electron-rebuild --arch ${arch}`, {
+    stdio: 'inherit',
+  });
+
+  console.log({ rebuildInfo, rebuildError });
   const result = await build({
     config,
     publish,
