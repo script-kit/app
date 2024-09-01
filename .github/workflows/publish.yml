@@ -232,15 +232,15 @@ jobs:
             pnpm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
             pnpm run vite-prebuild
-            pnpm kit ./build.ts win x64 always
+            npx kit ./build.ts win x64 always
 
       - name: Publish windows arm64
         if: matrix.os == 'windows-2022'
         run: |
             pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            pnpm kit remove-tick
+            npx kit remove-tick
             pnpm run vite-prebuild
-            pnpm kit ./build.ts win arm64 always
+            npx kit ./build.ts win arm64 always
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -283,7 +283,7 @@ jobs:
             pnpm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
             pnpm run vite-prebuild
-            pnpm kit ./build.ts linux x64 always
+            npx kit ./build.ts linux x64 always
 
       - name: Publish linux arm64
         if: matrix.os == 'script-kit-ubuntu-latest-arm64'
@@ -305,12 +305,12 @@ jobs:
             node --version
             pnpm --version
             pnpm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            pnpm kit remove-tick
+            npx kit remove-tick
             cat ./package.json
             pnpm run vite-prebuild
             which pnpm
             pnpm --version
-            pnpm kit ./build.ts linux arm64 always
+            npx kit ./build.ts linux arm64 always
 
       - name: Publish mac x64
         if: matrix.os == 'macos-latest'
@@ -330,7 +330,7 @@ jobs:
             pnpm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             pnpm i
             pnpm run vite-prebuild
-            pnpm kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
+            npx kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
 
       - name: Publish mac arm64
         if: matrix.os == 'macos-14'
@@ -350,7 +350,7 @@ jobs:
             pnpm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             pnpm i
             pnpm run vite-prebuild
-            pnpm kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
+            npx kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml
         if: contains(matrix.os, 'macos')
