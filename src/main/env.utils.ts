@@ -11,7 +11,7 @@ export const createEnv = () => {
   return {
     ...process.env,
     NODE_NO_WARNINGS: '1',
-    EXEC_PATH: kitState.execPath,
+    NODE_PATH: kitState.NODE_PATH,
     KIT_CONTEXT: 'app',
     KENV: kenvPath(),
     KIT: kitPath(),

@@ -351,7 +351,7 @@ const initState = {
   attemptingPreload: false,
   hasCss: false,
   waitingForPing: false,
-  execPath: '',
+  NODE_PATH: '',
 };
 
 const initConfig: Config = {

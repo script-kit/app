@@ -6,11 +6,11 @@ import { kitState } from './state';
 const forkOptions: ForkOptions = {
   cwd: homedir(),
   windowsHide: true,
-  execPath: kitState.execPath,
+  execPath: kitState.NODE_PATH,
   env: {
     KIT: kitPath(),
     KENV: kenvPath(),
-    EXEC_PATH: kitState.execPath,
+    NODE_PATH: kitState.NODE_PATH,
     PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
     USER: process?.env?.USER,
     USERNAME: process?.env?.USERNAME,
@@ -24,7 +24,7 @@ export const createForkOptions = () => {
     ...forkOptions,
     env: {
       ...forkOptions.env,
-      EXEC_PATH: kitState.execPath,
+      NODE_PATH: kitState.NODE_PATH,
     },
   };
 

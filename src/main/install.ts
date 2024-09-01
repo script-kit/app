@@ -616,12 +616,12 @@ export const optionalSpawnSetup = (...args: string[]) => {
   }
   return new Promise((resolve, reject) => {
     log.info(`Running optional setup script: ${args.join(' ')}`);
-    if (!kitState.execPath) {
+    if (!kitState.NODE_PATH) {
       log.error('No exec path found, skipping setup script');
       resolve('done');
       return;
     }
-    const child = spawn(kitState.execPath, [kitPath('run', 'terminal.js'), ...args], createForkOptions());
+    const child = spawn(kitState.NODE_PATH, [kitPath('run', 'terminal.js'), ...args], createForkOptions());
 
     const id = setTimeout(() => {
       if (child && !child.killed) {
@@ -831,7 +831,7 @@ export const syncBins = async () => {
         worker.postMessage({
           command: script.command,
           filePath: script.filePath,
-          execPath: kitState.execPath,
+          execPath: kitState.NODE_PATH,
         });
       }
     } catch (error) {

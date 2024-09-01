@@ -632,9 +632,9 @@ const verifyInstall = async () => {
   });
 
   log.info('Before trim', execPath);
-  kitState.execPath = execPath.trim();
-  process.env.EXEC_PATH = kitState.execPath;
-  log.info('After trim', kitState.execPath);
+  kitState.NODE_PATH = execPath.trim();
+  process.env.NODE_PATH = kitState.NODE_PATH;
+  log.info('After trim', kitState.NODE_PATH);
 
   if (checkKit && checkKenv && execPath && checkNodeModules && isKenvConfigured) {
     await setupLog('Install verified');
@@ -912,7 +912,7 @@ const checkKit = async () => {
     log.info('verifyInstall');
     await verifyInstall();
 
-    await setupLog(`👋 Creating bins using ${kitState.execPath}`);
+    await setupLog(`👋 Creating bins using ${kitState.NODE_PATH}`);
     optionalSetupScript(kitPath('cli', 'create-all-bins-no-trash.js'));
 
     log.info('storeVersion');

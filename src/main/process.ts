@@ -260,7 +260,7 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
     silent: true,
     stdio: kitState?.kenvEnv?.KIT_STDIO || 'pipe',
     // TODO: Testing execPath on Windows????
-    execPath: kitState.execPath,
+    execPath: kitState.NODE_PATH,
     cwd: kitState?.kenvEnv?.KIT_CWD || os.homedir(),
     execArgv: ['--loader', loaderFileUrl],
     windowsHide: kitState?.kenvEnv?.KIT_WINDOWS_HIDE === 'true',
