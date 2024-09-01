@@ -22,7 +22,6 @@ import {
   isFile,
   kenvPath,
   kitPath,
-  knodePath,
   resolveToScriptPath,
 } from '@johnlindquist/kit/core/utils';
 import type { KitStatus, Status } from '@johnlindquist/kit/types/kitapp';
@@ -402,17 +401,6 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
           body: `Quit, remove ${kitPath()}, then open Kit again.`,
         }).show();
 
-        log.error(error);
-      }
-
-      try {
-        await rm(knodePath(), { recursive: true, force: true });
-      } catch (error) {
-        log.error(`Failed to remove ${knodePath()}. Repair won't work.`);
-        new Notification({
-          title: `Failed to remove Kit's node executable`,
-          body: `Quit, remove ${knodePath()}, then open Kit again.`,
-        }).show();
         log.error(error);
       }
 

@@ -15,9 +15,7 @@ import type { GenericSendData } from '@johnlindquist/kit/types/kitapp';
 import {
   KIT_APP,
   KIT_APP_PROMPT,
-  execPath,
   kitPath,
-  kenvPath,
   processPlatformSpecificTheme,
   resolveToScriptPath,
 } from '@johnlindquist/kit/core/utils';
@@ -262,7 +260,7 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
     silent: true,
     stdio: kitState?.kenvEnv?.KIT_STDIO || 'pipe',
     // TODO: Testing execPath on Windows????
-    execPath,
+    execPath: kitState.execPath,
     cwd: kitState?.kenvEnv?.KIT_CWD || os.homedir(),
     execArgv: ['--loader', loaderFileUrl],
     windowsHide: kitState?.kenvEnv?.KIT_WINDOWS_HIDE === 'true',

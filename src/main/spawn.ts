@@ -1,5 +1,5 @@
 import { createLogger } from '../shared/log-utils';
-import { forkOptions } from './fork.options';
+import { createForkOptions } from './fork.options';
 import { kitState } from './state';
 import { kitPath } from '@johnlindquist/kit/core/utils';
 const log = createLogger('spawn.ts');
@@ -17,7 +17,7 @@ export const optionalSetupScript = async (
   const args = argsParam || [];
   return new Promise((resolve, reject) => {
     log.info(`Running optional setup script: ${scriptPath} with ${args}`);
-    const child = fork(kitPath('run', 'terminal.js'), [scriptPath, ...args], forkOptions);
+    const child = fork(kitPath('run', 'terminal.js'), [scriptPath, ...args], createForkOptions());
 
     const id = setTimeout(() => {
       if (child && !child.killed) {

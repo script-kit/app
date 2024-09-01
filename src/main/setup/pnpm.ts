@@ -1,9 +1,8 @@
 import { writeFile } from 'node:fs/promises';
 import { ensureSymlink } from '../cjs-exports';
-import { kenvPath } from '@johnlindquist/kit/core/utils';
+import { kitPath } from '@johnlindquist/kit/core/utils';
 import { promisify } from 'node:util';
 import { exec } from 'node:child_process';
-import {} from 'pnpm';
 
 const execP = promisify(exec);
 const isWindows = process.platform === 'win32';
@@ -16,12 +15,11 @@ export async function setupPnpm() {
 
   try {
     console.log('Installing pnpm locally...');
-    const kenvDir = kenvPath();
-    await execP(`pnpm install pnpm --prefix "${kenvDir}"`);
+    await execP(`pnpm install pnpm --prefix "${kitPath()}"`);
 
     // Create symlink
-    const pnpmPath = kenvPath('node_modules', '.bin', 'pnpm');
-    const symlinkPath = kenvPath(isWindows ? 'pnpm.cmd' : 'pnpm');
+    const pnpmPath = kitPath('node_modules', '.bin', 'pnpm');
+    const symlinkPath = kitPath(isWindows ? 'pnpm.cmd' : 'pnpm');
 
     console.log('Creating symlink...');
     if (isWindows) {

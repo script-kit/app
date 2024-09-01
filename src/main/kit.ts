@@ -10,7 +10,6 @@ import type { ProcessInfo } from '@johnlindquist/kit';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import {
   KIT_FIRST_PATH,
-  execPath,
   getLogFromScriptPath,
   getMainScriptPath,
   kenvPath,
@@ -31,6 +30,7 @@ import { getKitScript, kitCache, kitState, kitStore, sponsorCheck } from './stat
 import { TrackEvent, trackEvent } from './track';
 
 import { createLogger } from '../shared/log-utils';
+import { createForkOptions } from './fork.options';
 
 const log = createLogger('kit.ts');
 
@@ -311,24 +311,13 @@ export const runPromptProcess = async (
 };
 
 const KIT = kitPath();
-const forkOptions: ForkOptions = {
-  cwd: homedir(),
-  execPath,
-  detached: true,
-  windowsHide: true,
-  env: {
-    KIT,
-    KENV: kenvPath(),
-    PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
-  },
-};
 
 export const runScript = (...args: string[]) => {
   log.info('Run', ...args);
 
   return new Promise((resolve, reject) => {
     try {
-      const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
+      const child = fork(kitPath('run', 'terminal.js'), args, createForkOptions());
 
       child.on('message', (data) => {
         const dataString = data.toString();

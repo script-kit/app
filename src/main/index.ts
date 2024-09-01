@@ -22,22 +22,20 @@ import electronUpdater from 'electron-updater';
 
 const { autoUpdater } = electronUpdater;
 
-import { type SpawnSyncOptions, execFileSync, fork } from 'node:child_process';
+import { type SpawnSyncOptions, exec, fork } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 
 import semver from 'semver';
 import { existsSync, readFileSync } from 'node:fs';
-import { readdir, symlink } from 'node:fs/promises';
+import { readdir } from 'node:fs/promises';
 
 import {
   KIT_FIRST_PATH,
-  execPath,
   getKenvs,
   getMainScriptPath,
   kenvPath,
   kitPath,
-  knodePath,
   tmpClipboardDir,
   tmpDownloadsDir,
 } from '@johnlindquist/kit/core/utils';
@@ -45,7 +43,7 @@ import {
 import { getPrefsDb } from '@johnlindquist/kit/core/db';
 import { debounce, throttle } from 'lodash-es';
 import { subscribeKey } from 'valtio/utils';
-import { getAssetPath, getPlatformExtension, getReleaseChannel } from '../shared/assets';
+import { getAssetPath, getReleaseChannel } from '../shared/assets';
 import { clearPromptCache, clearPromptTimers, logPromptState } from './prompt';
 import { startClipboardAndKeyboardWatchers } from './tick';
 import { checkTray, setupTray } from './tray';
@@ -55,17 +53,15 @@ import { KitEvent, emitter } from '../shared/events';
 import { syncClipboardStore } from './clipboard';
 import { actualHideDock, clearStateTimers } from './dock';
 import { displayError } from './error';
-import { APP_NAME, KENV_PROTOCOL, KIT_PROTOCOL, tildify } from './helpers';
+import { APP_NAME, KENV_PROTOCOL, KIT_PROTOCOL } from './helpers';
 import {
   cacheMainScripts,
   cleanKit,
   createLogs,
   downloadKenv,
   downloadKit,
-  downloadNode,
   extractKenv,
   extractKitTar,
-  extractNode,
   installLoaderTools,
   installKenvDeps,
   matchPackageJsonEngines,
@@ -96,7 +92,8 @@ import { Channel } from '@johnlindquist/kit/core/enum';
 import { Trigger } from '../shared/enums';
 import { reloadApps } from './apps';
 import { optionalSetupScript } from './spawn';
-import { forkOptions } from './fork.options';
+import { createForkOptions } from './fork.options';
+import { promisify } from 'node:util';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -243,7 +240,6 @@ Release channel: ${releaseChannel}
 Arch: ${arch}
 Platform: ${platform}
 Node version: ${nodeVersion}
-Node path: ${execPath}
 Electron version: ${process.versions.electron}
 Electron Node version: ${process.versions.node}
 Electron Chromium version: ${process.versions.chrome}
@@ -589,13 +585,6 @@ const kenvConfigured = async () => {
   return isKenvConfigured;
 };
 
-const nodeExists = async () => {
-  const doesNodeExist = existsSync(execPath);
-  await setupLog(`node${doesNodeExist ? '' : ' not'} found at ${execPath}`);
-
-  return doesNodeExist;
-};
-
 const nodeModulesExists = async () => {
   const doesNodeModulesExist = existsSync(kitPath('node_modules'));
   await setupLog(`node_modules${doesNodeModulesExist ? '' : ' not'} found at ${kitPath()}`);
@@ -613,14 +602,13 @@ const verifyInstall = async () => {
     return;
   }
 
-  const checkNode = await nodeExists();
-  await setupLog(checkNode ? 'node found' : 'node missing');
-
   await setupLog('Verifying ~/.kit exists:');
   const checkKit = await kitExists();
   await setupLog('Verifying ~/.kenv exists:');
   const checkKenv = await kenvExists();
   await matchPackageJsonEngines();
+
+  await setupScript(kitPath('setup', 'setup-pnpm.js'));
 
   const checkNodeModules = await nodeModulesExists();
   await setupLog(checkNodeModules ? 'node_modules found' : 'node_modules missing');
@@ -628,7 +616,27 @@ const verifyInstall = async () => {
   const isKenvConfigured = await kenvConfigured();
   await setupLog(isKenvConfigured ? 'kenv .env found' : 'kenv .env missinag');
 
-  if (checkKit && checkKenv && checkNode && checkNodeModules && isKenvConfigured) {
+  const execP = promisify(exec);
+  const { stdout: execPath } = await execP(`pnpm node -e "console.log(process.execPath)"`, {
+    cwd: kenvPath(),
+  });
+
+  await setupLog(execPath ? 'node found' : 'node missing');
+
+  log.info({
+    checkKit,
+    checkKenv,
+    checkNode: execPath,
+    checkNodeModules,
+    isKenvConfigured,
+  });
+
+  log.info('Before trim', execPath);
+  kitState.execPath = execPath.trim();
+  process.env.EXEC_PATH = kitState.execPath;
+  log.info('After trim', kitState.execPath);
+
+  if (checkKit && checkKenv && execPath && checkNodeModules && isKenvConfigured) {
     await setupLog('Install verified');
     return true;
   }
@@ -657,7 +665,7 @@ const setupScript = (...args: string[]) => {
   }
   return new Promise((resolve, reject) => {
     log.info(`🔨 Running Setup Script ${args.join(' ')}`);
-    const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
+    const child = fork(kitPath('run', 'terminal.js'), args, createForkOptions());
 
     if (child.stdout) {
       child.stdout.on('data', (data) => {
@@ -764,7 +772,6 @@ const checkKit = async () => {
   }
 
   await setupLog('Ensure pnpm is configured...');
-  await setupScript(kitPath('setup', 'setup-pnpm.js'));
 
   const storedVersion = await getStoredVersion();
   log.info(`Stored version: ${storedVersion}`);
@@ -781,32 +788,6 @@ const checkKit = async () => {
     }
     kitState.installing = true;
     log.info('🔥 Starting Kit First Install');
-  }
-
-  let nodeVersionMatch = true;
-
-  if ((await nodeExists()) && !process.env.MAIN_SKIP_SETUP) {
-    log.info('👍 Node Exists');
-    // Compare nodeVersion to execPath
-    const execPathVersion = execFileSync(execPath, ['--version']);
-    log.info(`existingNode ${nodeVersion}, execPath: ${execPathVersion}`);
-    nodeVersionMatch = execPathVersion.toString().trim() === nodeVersion.trim();
-  }
-
-  if (!((await nodeExists()) && nodeVersionMatch)) {
-    await setupLog(`Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`);
-
-    let nodeFilePath = '';
-    const bundledNodePath = process.env.KIT_BUNDLED_NODE_PATH || getAssetPath(`node.${getPlatformExtension()}`);
-
-    if (existsSync(bundledNodePath)) {
-      nodeFilePath = bundledNodePath;
-    } else {
-      nodeFilePath = await downloadNode();
-    }
-
-    log.info(`nodePath: ${nodeFilePath}`);
-    await extractNode(nodeFilePath);
   }
 
   const requiresInstall = (await isNewVersion()) || !(await kitExists());
@@ -908,28 +889,6 @@ const checkKit = async () => {
   await ensureEnv();
   await setupLog('Update .kenv');
 
-  // const hasNpm = await npmExists();
-  // if (!hasNpm) {
-  //   await setupLog('npm not found');
-  //   await symlink(knodePath('bin', 'npm'), kenvPath('npm'));
-  //   await symlink(knodePath('bin', 'npx'), kenvPath('npx'));
-  //   if (process.platform === 'win32') {
-  //     await symlink(knodePath('bin', 'npm.cmd'), kenvPath('npm.cmd'));
-  //     await symlink(knodePath('bin', 'npx.cmd'), kenvPath('npx.cmd'));
-  //     await symlink(knodePath('bin', 'node.exe'), kenvPath('node.exe'));
-  //   } else {
-  //     await symlink(knodePath('bin', 'node'), kenvPath('node'));
-  //   }
-  // }
-  // const hasPnpm = await pnpmExists();
-
-  // patch now creates an kenvPath(".npmrc") file
-  // TODO: Fix
-  // await setupScript(kitPath('setup', 'patch.js'));
-
-  await setupLog('Creating bins');
-  optionalSetupScript(kitPath('cli', 'create-all-bins-no-trash.js'));
-
   if (!process.env.MAIN_SKIP_SETUP) {
     await Promise.all([installLoaderTools(), installKenvDeps()]);
   }
@@ -952,6 +911,9 @@ const checkKit = async () => {
   try {
     log.info('verifyInstall');
     await verifyInstall();
+
+    await setupLog(`👋 Creating bins using ${kitState.execPath}`);
+    optionalSetupScript(kitPath('cli', 'create-all-bins-no-trash.js'));
 
     log.info('storeVersion');
     await storeVersion(getVersion());

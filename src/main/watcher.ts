@@ -47,7 +47,6 @@ import { clearInterval, setInterval } from 'node:timers';
 import { kenvChokidarPath, slash } from './path-utils';
 import { actualHideDock, showDock } from './dock';
 import { reloadApps } from './apps';
-import { compareObjects } from '../shared/utils';
 
 const log = createLogger('watcher.ts');
 

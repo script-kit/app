@@ -19,7 +19,6 @@ import {
   isFile,
   kenvPath,
   kitPath,
-  knodePath,
   processPlatformSpecificTheme,
 } from '@johnlindquist/kit/core/utils';
 import type { FlagsObject, Script, Scriptlet, Shortcut } from '@johnlindquist/kit/types';
@@ -43,9 +42,9 @@ import { ensureDir, writeFile, readJson, writeJson, pathExists, readdir } from '
 
 import electronLog from 'electron-log';
 import { createLogger } from '../shared/log-utils';
-import { forkOptions } from './fork.options';
+import { createForkOptions } from './fork.options';
 import { osTmpPath } from './tmp';
-import { DownloadOptions } from 'download';
+import type { DownloadOptions } from 'download';
 import { getAssetPath } from '../shared/assets';
 import { getVersion } from './version';
 const log = createLogger('install.ts');
@@ -102,6 +101,8 @@ export const showSplash = async () => {
       log.error(error);
     }
   });
+
+  pnpm(['install']);
 
   splashPrompt.readyEmitter.once('ready', async () => {
     log.info('Splash screen ready');
@@ -238,20 +239,15 @@ export const installPackage = async (installCommand: string, cwd: string) => {
     shell: true, // Use shell on all platforms for consistency
   };
 
-  const isWin = os.platform().startsWith('win');
-  // .knode\bin\node .knode\bin\node_modules\npm\bin\npm-cli.js
-  const nodePath = isWin ? knodePath('bin', 'node.exe') : knodePath('bin', 'node');
-  const npmCliPath = isWin
-    ? knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js')
-    : knodePath('lib', 'node_modules', 'npm', 'bin', 'npm-cli.js');
-  const command = `${npmCliPath} ${installCommand}`;
+  const command = `pnpm ${installCommand}`;
 
   // Install pnpm
 
-  log.info(`${cwd}: 👷 ${nodePath} ${command}`);
+  log.info(`${cwd}: 👷 pnpm ${command}`);
 
   return new Promise<string>((resolve, reject) => {
-    const child = spawn(nodePath, [command], options);
+    const pnpmPath = kitPath('node_modules', '.bin', 'pnpm');
+    const child = spawn(pnpmPath, [command], options);
 
     // Display a loading message with a spinner
     let dots = 1;
@@ -395,13 +391,13 @@ export const installLoaderTools = async () => {
     log.info(`Using esbuild version: ${esbuildVersion}`);
     log.info(`Using tsx version: ${tsxVersion}`);
 
-    const npmResult = await installDependencies(
+    const pnpmResult = await installDependencies(
       ['esbuild', 'tsx'],
-      `i -D esbuild@${esbuildVersion} tsx@${tsxVersion} --save-exact --prefer-dedupe --loglevel=verbose`,
+      `i -D esbuild@${esbuildVersion} tsx@${tsxVersion}`,
       kitPath(),
     );
     loaderToolsInstalled = true;
-    return npmResult;
+    return pnpmResult;
   }
 
   return null;
@@ -416,7 +412,7 @@ export const installKenvDeps = async () => {
 
   const result = await installDependencies(
     ['@johnlindquist/kit', '@typescript/lib-dom'],
-    `i -D ${kitPath()} @typescript/lib-dom@npm:@johnlindquist/no-dom --prefer-dedupe --loglevel=verbose`,
+    `i -D ${kitPath()} @typescript/lib-dom@npm:@johnlindquist/no-dom`,
     kenvPath(),
   );
   if (result) {
@@ -597,91 +593,6 @@ export const downloadKit = async () => {
   }
 };
 
-export const downloadNode = async () => {
-  // cleanup any existing knode directory
-  if (await isDir(knodePath())) {
-    await rm(knodePath(), {
-      recursive: true,
-      force: true,
-    });
-  }
-
-  const isWin = process.platform === 'win32';
-  const extension = isWin ? 'zip' : 'tar.gz';
-
-  // download node v20.16.0 based on the current platform and architecture
-  // Examples:
-  // Mac arm64: https://nodejs.org/dist/v20.16.0/node-v20.16.0-darwin-arm64.tar.gz
-  // Linux x64: https://nodejs.org/dist/v20.16.0/node-v20.16.0-linux-x64.tar.gz
-  // Windows x64: https://nodejs.org/dist/v20.16.0/node-v20.16.0-win-x64.zip
-
-  // Node dist url uses "win", not "win32"
-  const nodeVersion = `v${process.versions.node}`;
-  const nodePlatform = isWin ? 'win' : process.platform;
-  const nodeArch = isWin ? 'x64' : process.arch;
-  const node = `node-${nodeVersion}-${nodePlatform}-${nodeArch}.${extension}`;
-  const file = osTmpPath(node);
-  const url = `https://nodejs.org/dist/${nodeVersion}/${node}`;
-
-  const downloadingMessage = `Downloading node from ${url}`;
-  log.info(downloadingMessage);
-  sendSplashBody(downloadingMessage);
-
-  try {
-    const buffer = await download(url, getOptions());
-
-    const writingNodeMessage = `Writing node to ${file}`;
-    log.info(writingNodeMessage);
-    sendSplashBody(writingNodeMessage);
-    await writeFile(file, buffer);
-
-    sendSplashBody(`Ensuring ${knodePath()} exists`);
-    await ensureDir(knodePath());
-    sendSplashBody(`Extracting node to ${knodePath()}`);
-
-    return file;
-  } catch (error) {
-    log.error(error);
-    ohNo(error as Error);
-
-    return '';
-  }
-};
-
-export const extractNode = async (file: string) => {
-  log.info(`extractNode ${file}`);
-  if (file.endsWith('.zip')) {
-    try {
-      // eslint-disable-next-line
-      const zip = new StreamZip.async({ file });
-
-      sendSplashBody(`Unzipping ${file} to ${knodePath()}`);
-      // node-18.18.2-win-x64
-      const fileName = path.parse(file).name;
-      log.info(`Extacting ${fileName} to ${knodePath('bin')}`);
-      // node-18.18.2-win-x64
-      await zip.extract(fileName, knodePath('bin'));
-      await zip.close();
-    } catch (error) {
-      log.error({ error });
-      ohNo(error);
-    }
-  } else {
-    sendSplashBody(`Untarring ${file} to ${knodePath()}`);
-    try {
-      await ensureDir(knodePath());
-      await tar.x({
-        file,
-        C: knodePath(),
-        strip: 1,
-      });
-    } catch (error) {
-      log.error({ error });
-      ohNo(error);
-    }
-  }
-};
-
 export const createLogs = () => {
   electronLog.transports.file.resolvePathFn = () => kitPath('logs', 'kit.log');
 };
@@ -705,7 +616,12 @@ export const optionalSpawnSetup = (...args: string[]) => {
   }
   return new Promise((resolve, reject) => {
     log.info(`Running optional setup script: ${args.join(' ')}`);
-    const child = spawn(knodePath('bin', 'node'), [kitPath('run', 'terminal.js'), ...args], forkOptions);
+    if (!kitState.execPath) {
+      log.error('No exec path found, skipping setup script');
+      resolve('done');
+      return;
+    }
+    const child = spawn(kitState.execPath, [kitPath('run', 'terminal.js'), ...args], createForkOptions());
 
     const id = setTimeout(() => {
       if (child && !child.killed) {
@@ -915,6 +831,7 @@ export const syncBins = async () => {
         worker.postMessage({
           command: script.command,
           filePath: script.filePath,
+          execPath: kitState.execPath,
         });
       }
     } catch (error) {
@@ -1125,24 +1042,21 @@ export const matchPackageJsonEngines = async () => {
     const { stdout } = await execP(command, options);
     return stdout.trim();
   };
-  const isWin = os.platform().startsWith('win');
-  const npmPath = isWin ? knodePath('bin', 'npm.cmd') : knodePath('bin', 'npm');
-  const nodePath = isWin ? knodePath('bin', 'node.exe') : knodePath('bin', 'node');
 
   const pkgJson = await readJson(kenvPath('package.json')).catch(() => ({
     engines: undefined,
   }));
   try {
-    const npmVersion = await getCommandOutput(`${npmPath} --version`);
-    const nodeVersion = await getCommandOutput(`${nodePath} --version`);
+    const pnpmVersion = await getCommandOutput('pnpm --version');
+    const nodeVersion = await getCommandOutput('pnpm node --version');
     log.info({
-      npmVersion,
+      npmVersion: pnpmVersion,
       nodeVersion,
     });
 
     pkgJson.engines = {
       node: nodeVersion.replace('v', ''),
-      npm: npmVersion,
+      npm: pnpmVersion,
     };
   } catch (error) {
     pkgJson.engines = undefined;
