@@ -1,6 +1,6 @@
 import https from 'node:https';
 import http from 'node:http';
-import { URL } from 'url';
+import { URL } from 'node:url';
 import log from 'electron-log';
 
 interface DownloadOptions {
