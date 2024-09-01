@@ -232,6 +232,7 @@ jobs:
             pnpm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
             pnpm run vite-prebuild
+            pnpm i -D @electron/rebuild
             pnpm electron-rebuild --arch x64
             npx kit ./build.ts win x64 always
 
@@ -241,6 +242,7 @@ jobs:
             pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npx kit remove-tick
             pnpm run vite-prebuild
+            pnpm i -D @electron/rebuild
             pnpm electron-rebuild --arch arm64
             npx kit ./build.ts win arm64 always
         env:
@@ -285,6 +287,7 @@ jobs:
             pnpm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
             pnpm run vite-prebuild
+            pnpm i -D @electron/rebuild
             pnpm electron-rebuild --arch x64
             npx kit ./build.ts linux x64 always
 
@@ -313,6 +316,7 @@ jobs:
             pnpm run vite-prebuild
             which pnpm
             pnpm --version
+            pnpm i -D @electron/rebuild
             pnpm electron-rebuild --arch arm64
             npx kit ./build.ts linux arm64 always
 
@@ -334,6 +338,7 @@ jobs:
             pnpm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             pnpm i
             pnpm run vite-prebuild
+            pnpm i -D @electron/rebuild
             pnpm electron-rebuild --arch ${{ steps.determine_arch.outputs.arch }}
             npx kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
 
@@ -355,6 +360,7 @@ jobs:
             pnpm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             pnpm i
             pnpm run vite-prebuild
+            pnpm i -D @electron/rebuild
             pnpm electron-rebuild --arch ${{ steps.determine_arch.outputs.arch }}
             npx kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
 
