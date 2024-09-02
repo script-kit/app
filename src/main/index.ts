@@ -562,22 +562,6 @@ const kenvExists = async () => {
   return doesKenvExist;
 };
 
-const npmExists = async () => {
-  const npmPath = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  const doesNpmExist = existsSync(kenvPath(npmPath));
-  await setupLog(`npm${doesNpmExist ? '' : ' not'} found at ${npmPath}`);
-
-  return doesNpmExist;
-};
-
-const pnpmExists = async () => {
-  const pnpmPath = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
-  const doesPnpmExist = existsSync(kenvPath(pnpmPath));
-  await setupLog(`pnpm${doesPnpmExist ? '' : ' not'} found at ${pnpmPath}`);
-
-  return doesPnpmExist;
-};
-
 const kenvConfigured = async () => {
   const isKenvConfigured = existsSync(kenvPath('.env'));
   await setupLog(`kenv is${isKenvConfigured ? '' : ' not'} configured at ${kenvPath()}`);
@@ -617,7 +601,9 @@ const verifyInstall = async () => {
   await setupLog(isKenvConfigured ? 'kenv .env found' : 'kenv .env missinag');
 
   const execP = promisify(exec);
-  const { stdout: execPath } = await execP(`pnpm node -e "console.log(process.execPath)"`, {
+  const pnpmPath = kitPath('node_modules', '.bin', 'pnpm');
+
+  const { stdout: execPath } = await execP(`${pnpmPath} node -e "console.log(process.execPath)"`, {
     cwd: kenvPath(),
   });
 

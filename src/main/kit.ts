@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { app } from 'electron';
+import { app, shell } from 'electron';
 
 import minimist from 'minimist';
 import { pathExistsSync, readJson } from './cjs-exports';
@@ -31,6 +31,7 @@ import { TrackEvent, trackEvent } from './track';
 
 import { createLogger } from '../shared/log-utils';
 import { createForkOptions } from './fork.options';
+import { mainLogPath } from './logs';
 
 const log = createLogger('kit.ts');
 
@@ -93,6 +94,10 @@ emitter.on(
   ) => {
     if (!kitState.ready) {
       log.warn('Kit not ready. Ignoring prompt process:', scriptOrScriptAndData);
+      if (typeof scriptOrScriptAndData === 'string' && path.basename(scriptOrScriptAndData) === 'info.js') {
+        shell.openExternal(mainLogPath);
+        process.exit(0);
+      }
       return;
     }
     const { scriptPath, args, options } =

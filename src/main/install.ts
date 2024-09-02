@@ -1038,18 +1038,20 @@ export const matchPackageJsonEngines = async () => {
 
   const pkgJson = await readJson(kenvPath('package.json')).catch(() => ({
     engines: undefined,
+    type: undefined,
   }));
   try {
-    const pnpmVersion = await getCommandOutput('pnpm --version');
-    const nodeVersion = await getCommandOutput('pnpm node --version');
+    const pnpmPath = kitPath('node_modules', '.bin', 'pnpm');
+    const pnpmVersion = await getCommandOutput(`${pnpmPath} --version`);
+    const nodeVersion = await getCommandOutput(`${pnpmPath} node --version`);
     log.info({
       npmVersion: pnpmVersion,
       nodeVersion,
     });
 
+    pkgJson.type = 'module';
     pkgJson.engines = {
       node: nodeVersion.replace('v', ''),
-      npm: pnpmVersion,
     };
   } catch (error) {
     pkgJson.engines = undefined;
