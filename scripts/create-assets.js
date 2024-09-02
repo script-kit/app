@@ -71,33 +71,33 @@ console.log({
 });
 
 // Clear out arch-specific node_modules
-try {
-  const command = 'npm un esbuild';
-  console.log(`Running ${command} in ${kitPathCopy()}`);
+// try {
+//   const command = 'npm un esbuild';
+//   console.log(`Running ${command} in ${kitPathCopy()}`);
 
-  await exec(command, {
-    cwd: newKitPath(),
-  });
-} catch (e) {
-  console.log(e);
-  process.exit(1);
-}
+//   await exec(command, {
+//     cwd: newKitPath(),
+//   });
+// } catch (e) {
+//   console.log(e);
+//   process.exit(1);
+// }
 
-try {
-  const command = `npm i --target_arch=${arch} --target_platform=${platform} --production --prefer-dedupe`;
-  console.log(`Running ${command} in ${kitPathCopy()}`);
+// try {
+//   const command = `npm i --target_arch=${arch} --target_platform=${platform} --production --prefer-dedupe`;
+//   console.log(`Running ${command} in ${kitPathCopy()}`);
 
-  await exec(command, {
-    cwd: newKitPath(),
-    env: {
-      npm_config_arch: arch,
-      npm_config_platform: platform,
-    },
-  });
-} catch (e) {
-  console.log(e);
-  process.exit(1);
-}
+//   await exec(command, {
+//     cwd: newKitPath(),
+//     env: {
+//       npm_config_arch: arch,
+//       npm_config_platform: platform,
+//     },
+//   });
+// } catch (e) {
+//   console.log(e);
+//   process.exit(1);
+// }
 
 // try {
 //   let esbuildCommand = `npm i @esbuild/${platform}-${arch}`;
@@ -110,10 +110,10 @@ try {
 //   process.exit(1);
 // }
 
-const kitModules = await readdir(newKitPath('node_modules'));
-console.log({
-  kitModules: kitModules.filter((item) => item.includes('esbuild')),
-});
+// const kitModules = await readdir(newKitPath('node_modules'));
+// console.log({
+//   kitModules: kitModules.filter((item) => item.includes('esbuild')),
+// });
 
 console.log(`⭐️ Starting Kit release for ${tag_name}`);
 
