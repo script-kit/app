@@ -1,10 +1,8 @@
 import { writeFile } from 'node:fs/promises';
 import { ensureSymlink } from '../cjs-exports';
 import { kitPath } from '@johnlindquist/kit/core/utils';
-import { promisify } from 'node:util';
-import { exec } from 'node:child_process';
+import { execP } from '../install';
 
-const execP = promisify(exec);
 const isWindows = process.platform === 'win32';
 
 export async function setupPnpm() {
@@ -15,9 +13,6 @@ export async function setupPnpm() {
 
   try {
     console.log('Installing pnpm locally...');
-    await execP(`pnpm install pnpm --prefix "${kitPath()}"`);
-
-    // Create symlink
     const pnpmPath = kitPath('node_modules', '.bin', 'pnpm');
     const symlinkPath = kitPath(isWindows ? 'pnpm.cmd' : 'pnpm');
 
@@ -36,8 +31,6 @@ export async function setupPnpm() {
       console.error('Failed to update pnpm configuration:', configError);
       console.log('You may need to run this command manually after setup.');
     }
-
-    console.log('You may use the pnpm env command to install Node.js.');
   } catch (error) {
     console.error('An error occurred during setup:', error);
     process.exit(1);

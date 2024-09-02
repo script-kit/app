@@ -94,6 +94,7 @@ emitter.on(
       if (typeof scriptOrScriptAndData === 'object' && 'scriptPath' in scriptOrScriptAndData) {
         const { scriptPath, args, options } = scriptOrScriptAndData;
         if (path.basename(scriptPath) === 'info.js') {
+          log.info('Opening main log:', mainLogPath);
           shell.openExternal(mainLogPath);
           app.quit();
           process.exit(0);

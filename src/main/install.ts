@@ -597,7 +597,8 @@ export const installKitDeps = async () => {
   process.env.PATH = updatedPath;
 
   log.info(`Added Node.js directory to PATH: ${nodeDir}`);
-  await pnpm(['install'], {
+  // @ts-ignore
+  await pnpm.default(['install'], {
     cwd: kitPath(),
     env: {
       ...process.env,
@@ -769,6 +770,90 @@ export const setupLog = async (message: string) => {
       }, 500),
     );
   }
+};
+
+export const requiredSpawnSetup = (
+  command: string,
+  args: string[],
+  outputMatch: (data: string) => boolean,
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    log.info(`Running required setup script: ${command} ${args.join(' ')}`);
+    const child = spawn(command, args, {
+      ...createForkOptions(),
+      cwd: kitPath(),
+    });
+    let output = 'not match...';
+
+    const id = setTimeout(() => {
+      if (child && !child.killed) {
+        child.kill();
+        resolve('timeout');
+        log.info(`⚠️ Setup script timed out: ${args.join(' ')}`);
+      }
+    }, 25000);
+
+    if (child?.stdout) {
+      child.stdout.on('data', (data) => {
+        log.info(`🤖 data`);
+
+        const dataString = data.toString();
+        if (outputMatch(dataString)) {
+          output = dataString;
+        }
+        log.info(`🤖`);
+        log.info(dataString);
+      });
+    }
+
+    if (child?.stderr) {
+      child.stderr.on('data', (data) => {
+        log.warn(data.toString());
+      });
+    }
+
+    child.on('message', (data) => {
+      const dataString = typeof data === 'string' ? data : data.toString();
+      log.info(`🤖 message`);
+
+      if (!dataString.includes('[object')) {
+        log.info(args[0], dataString);
+        sendSplashBody(dataString.slice(0, 200));
+      }
+    });
+
+    child.on('exit', (code) => {
+      if (code === 0) {
+        if (id) {
+          clearTimeout(id);
+        }
+        log.info(`✅ Setup script completed: ${args.join(' ')}`);
+        resolve(output);
+      } else {
+        log.info(`⚠️ Setup script exited with code ${code}: ${args.join(' ')}`);
+        reject('error');
+      }
+    });
+
+    child.on('close', (code) => {
+      log.info(`⚠️ Setup script closed with code ${code}: ${args.join(' ')}`);
+      resolve(output);
+    });
+
+    child.on('disconnect', () => {
+      log.info(`⚠️ Setup script disconnected: ${args.join(' ')}`);
+      resolve(output);
+    });
+
+    child.on('error', (error: Error) => {
+      if (id) {
+        clearTimeout(id);
+      }
+      // log.error(`⚠️ Errored on setup script: ${args.join(' ')}`, error.message);
+      // reject(error);
+      // throw new Error(error.message);
+    });
+  });
 };
 
 export const optionalSpawnSetup = (...args: string[]) => {
@@ -1185,23 +1270,67 @@ export const cacheMainScripts = (
   });
 };
 
-export const matchPackageJsonEngines = async () => {
+export const execP = async (command: string) => {
   const KIT = kitPath();
   const KENV = kenvPath();
 
-  const options: ExecOptions = {
+  const options: SpawnOptions = {
     cwd: kenvPath(), // Set the current working directory based on the provided parameter
     env: {
       KIT,
       KENV,
       PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
     },
+    stdio: 'pipe',
   };
-  const execP = promisify(exec);
+  const execP = (command: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const child = spawn(command, [], {
+        ...options,
+        shell: true,
+      });
 
+      let output = '';
+      if (child.stdout) {
+        log.info('stdout exists');
+        child.stdout.on('data', (data) => {
+          const dataString = data.toString();
+          log.info(`stdout data: ${dataString}`);
+          output += dataString;
+        });
+      }
+
+      if (child.stderr) {
+        log.info('stderr exists');
+        child.stderr.on('data', (data) => {
+          log.error(`stderr: ${data}`);
+        });
+      }
+
+      child.on('close', (code) => {
+        if (code === 0) {
+          const lines = output.trim().split('\n');
+          const lastLine = lines[lines.length - 1].trim();
+          log.info(`Last line: ${lastLine}`);
+          resolve(lastLine);
+        } else {
+          reject(new Error(`Command exited with code ${code}`));
+        }
+      });
+
+      child.on('error', (error) => {
+        reject(error);
+      });
+    });
+  };
+
+  return execP(command);
+};
+
+export const matchPackageJsonEngines = async () => {
   const getCommandOutput = async (command: string) => {
     // How do I pass the options to execP?
-    const { stdout } = await execP(command, options);
+    const stdout = await execP(command);
     return stdout.trim();
   };
 

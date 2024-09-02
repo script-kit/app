@@ -71,6 +71,8 @@ import {
   setupLog,
   showSplash,
   installKitDeps,
+  requiredSpawnSetup,
+  execP,
 } from './install';
 import { startIpc } from './ipc';
 import { cliFromParams, runPromptProcess } from './kit';
@@ -95,6 +97,7 @@ import { reloadApps } from './apps';
 import { optionalSetupScript } from './spawn';
 import { createForkOptions } from './fork.options';
 import { promisify } from 'node:util';
+import { setupPnpm } from './setup/pnpm';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -594,7 +597,7 @@ const verifyInstall = async () => {
   const checkKenv = await kenvExists();
   await matchPackageJsonEngines();
 
-  await setupScript(kitPath('setup', 'setup-pnpm.js'));
+  await setupPnpm();
 
   const checkNodeModules = await nodeModulesExists();
   await setupLog(checkNodeModules ? 'node_modules found' : 'node_modules missing');
@@ -602,30 +605,31 @@ const verifyInstall = async () => {
   const isKenvConfigured = await kenvConfigured();
   await setupLog(isKenvConfigured ? 'kenv .env found' : 'kenv .env missinag');
 
-  const execP = promisify(exec);
   const pnpmPath = kitPath('node_modules', '.bin', 'pnpm');
 
   log.info(`🚶 Using ${pnpmPath} to find node...`);
 
-  const { stdout: execPath } = await execP(`${pnpmPath} node -e "console.log(process.execPath)"`, {
-    cwd: kenvPath(),
+  const nodePath = await execP(`"${pnpmPath}" node -e "console.log(process.execPath)"`);
+
+  log.info({
+    nodePath,
   });
 
-  await setupLog(execPath ? 'node found' : 'node missing');
+  await setupLog(nodePath ? 'node found' : 'node missing');
 
   log.info({
     checkKit,
     checkKenv,
-    checkNode: execPath,
+    checkNode: nodePath,
     checkNodeModules,
     isKenvConfigured,
   });
 
-  kitState.NODE_PATH = execPath.trim();
+  kitState.NODE_PATH = nodePath;
   log.info(`🚶 Assigned NODE_PATH: ${kitState.NODE_PATH}`);
   process.env.NODE_PATH = kitState.NODE_PATH;
 
-  if (checkKit && checkKenv && execPath && checkNodeModules && isKenvConfigured) {
+  if (checkKit && checkKenv && nodePath && checkNodeModules && isKenvConfigured) {
     await setupLog('Install verified');
     return true;
   }
@@ -759,8 +763,6 @@ const checkKit = async () => {
   if (process.env.KIT_SPLASH) {
     await showSplash();
   }
-
-  await setupLog('Ensure pnpm is configured...');
 
   const storedVersion = await getStoredVersion();
   log.info(`Stored version: ${storedVersion}`);
