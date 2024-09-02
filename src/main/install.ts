@@ -570,7 +570,12 @@ const execAsync = promisify(exec);
 // };
 
 export const installKitDeps = async () => {
-  await pnpm(['install'], {
+  log.info({
+    typeofpnpm: typeof pnpm,
+    typeofpnpmdefault: typeof pnpm.default,
+    keys: Object.keys(pnpm),
+  });
+  await pnpm.default(['install'], {
     cwd: kitPath(),
   });
 };

@@ -10,11 +10,7 @@ export const getVersionFromText = () => {
 };
 
 export const getVersion = () => {
-  if (process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line global-require
-    return getVersionFromText();
-  }
-  return app.getVersion();
+  return process.env?.KIT_APP_VERSION?.trim() || app.getVersion();
 };
 
 export const storeVersion = async (version: string) => {

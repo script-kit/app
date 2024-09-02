@@ -248,7 +248,8 @@ Electron execPath: ${process.execPath}
 `);
 
 process.env.NODE_VERSION = nodeVersion;
-process.env.KIT_APP_VERSION = getVersion();
+
+log.info(`😎 KIT_APP_VERSION ${getVersion()}`);
 
 const KIT = kitPath();
 
@@ -604,6 +605,8 @@ const verifyInstall = async () => {
   const execP = promisify(exec);
   const pnpmPath = kitPath('node_modules', '.bin', 'pnpm');
 
+  log.info(`🚶 Using ${pnpmPath} to find node...`);
+
   const { stdout: execPath } = await execP(`${pnpmPath} node -e "console.log(process.execPath)"`, {
     cwd: kenvPath(),
   });
@@ -618,10 +621,9 @@ const verifyInstall = async () => {
     isKenvConfigured,
   });
 
-  log.info('Before trim', execPath);
   kitState.NODE_PATH = execPath.trim();
+  log.info(`🚶 Assigned NODE_PATH: ${kitState.NODE_PATH}`);
   process.env.NODE_PATH = kitState.NODE_PATH;
-  log.info('After trim', kitState.NODE_PATH);
 
   if (checkKit && checkKenv && execPath && checkNodeModules && isKenvConfigured) {
     await setupLog('Install verified');
