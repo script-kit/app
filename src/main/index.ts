@@ -70,7 +70,6 @@ import {
   setupDone,
   setupLog,
   showSplash,
-  installPnpm,
   installKitDeps,
 } from './install';
 import { startIpc } from './ipc';
@@ -764,8 +763,6 @@ const checkKit = async () => {
   const storedVersion = await getStoredVersion();
   log.info(`Stored version: ${storedVersion}`);
 
-  await installPnpm();
-
   if (!(await kitExists()) || storedVersion === '0.0.0') {
     if (!process.env.KIT_SPLASH) {
       log.info(`🌑 shouldUseDarkColors: ${nativeTheme.shouldUseDarkColors ? 'true' : 'false'}`);
@@ -825,7 +822,7 @@ const checkKit = async () => {
 
     await setupLog('.kit installed');
 
-    await installLoaderTools();
+    // await installLoaderTools();
 
     try {
       await setupScript(kitPath('setup', 'chmod-helpers.js'));

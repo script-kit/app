@@ -5,10 +5,8 @@ import { kitStore } from './state';
 
 // eslint-disable-next-line import/prefer-default-export
 export const getVersionFromText = () => {
-  return '1.0.0';
-  // TODO: FIX
-  // const versionPath = getAssetPath('version.txt');
-  // return fs.readFileSync(versionPath, 'utf8').trim();
+  const versionPath = getAssetPath('version.txt');
+  return fs.readFileSync(versionPath, 'utf8').trim();
 };
 
 export const getVersion = () => {

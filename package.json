@@ -126,6 +126,7 @@
   "dependencies": {
     "@johnlindquist/clipboard": "^0.1.38",
     "@johnlindquist/kit": "^2.23.11",
+    "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^26.0.1",
     "axios": "^1.7.5",
     "builtin-modules": "^4.0.0",
