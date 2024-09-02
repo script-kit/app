@@ -721,7 +721,7 @@ export const extractKitTar = async (file: string) => {
 };
 
 export const downloadKit = async () => {
-  const version = process.env.KIT_APP_VERSION;
+  const version = getVersion();
   const extension = 'tar.gz';
 
   /* eslint-disable no-nested-ternary */
