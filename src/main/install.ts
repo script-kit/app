@@ -531,6 +531,15 @@ export const cleanKit = async () => {
 const execAsync = promisify(exec);
 
 export const installPnpm = async () => {
+  // Check if pnpm is already installed
+  try {
+    await execAsync('pnpm --version');
+    log.info('pnpm is already installed. Skipping installation.');
+    return;
+  } catch (error) {
+    // pnpm is not installed, proceed with installation
+  }
+
   const platform = os.platform();
   let command: string;
 
@@ -555,6 +564,35 @@ export const installPnpm = async () => {
     sendSplashBody('pnpm installed successfully');
   } catch (error) {
     log.error('Failed to install pnpm:', error);
+    throw error;
+  }
+};
+
+export const installKitDeps = async () => {
+  const isWindows = process.platform === 'win32';
+  let pnpmPath = path.resolve(os.homedir(), 'Library', 'pnpm', 'pnpm');
+  if (isWindows) {
+    pnpmPath = path.resolve(os.homedir(), 'AppData', 'Local', 'pnpm', 'pnpm.cmd');
+  }
+
+  const execP = promisify(exec);
+
+  // Check if the pnpmPath exists
+  const pnpmExists = await pathExists(pnpmPath);
+
+  if (!pnpmExists) {
+    log.warn(`pnpm not found at ${pnpmPath}. Attempting to use global pnpm.`);
+    // Try to use globally installed pnpm
+    pnpmPath = isWindows ? 'pnpm.cmd' : 'pnpm';
+  }
+
+  try {
+    await execP(`${pnpmPath} install`, {
+      cwd: kitPath(),
+    });
+    log.info('Kit dependencies installed successfully');
+  } catch (error) {
+    log.error('Failed to install Kit dependencies:', error);
     throw error;
   }
 };
@@ -1066,8 +1104,8 @@ export const matchPackageJsonEngines = async () => {
   }));
   try {
     const pnpmPath = kitPath('node_modules', '.bin', 'pnpm');
-    const pnpmVersion = await getCommandOutput(`pnpm --version`);
-    const nodeVersion = await getCommandOutput(`pnpm node --version`);
+    const pnpmVersion = await getCommandOutput(`${pnpmPath} --version`);
+    const nodeVersion = await getCommandOutput(`${pnpmPath} node --version`);
     log.info({
       npmVersion: pnpmVersion,
       nodeVersion,

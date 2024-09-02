@@ -71,6 +71,7 @@ import {
   setupLog,
   showSplash,
   installPnpm,
+  installKitDeps,
 } from './install';
 import { startIpc } from './ipc';
 import { cliFromParams, runPromptProcess } from './kit';
@@ -578,8 +579,6 @@ const nodeModulesExists = async () => {
 };
 
 const verifyInstall = async () => {
-  await installPnpm();
-
   log.info('-----------------------------------------------');
   log.info(process.env);
   log.info('-----------------------------------------------');
@@ -606,7 +605,7 @@ const verifyInstall = async () => {
   const execP = promisify(exec);
   const pnpmPath = kitPath('node_modules', '.bin', 'pnpm');
 
-  const { stdout: execPath } = await execP(`pnpm node -e "console.log(process.execPath)"`, {
+  const { stdout: execPath } = await execP(`${pnpmPath} node -e "console.log(process.execPath)"`, {
     cwd: kenvPath(),
   });
 
@@ -765,6 +764,8 @@ const checkKit = async () => {
   const storedVersion = await getStoredVersion();
   log.info(`Stored version: ${storedVersion}`);
 
+  await installPnpm();
+
   if (!(await kitExists()) || storedVersion === '0.0.0') {
     if (!process.env.KIT_SPLASH) {
       log.info(`🌑 shouldUseDarkColors: ${nativeTheme.shouldUseDarkColors ? 'true' : 'false'}`);
@@ -820,6 +821,7 @@ const checkKit = async () => {
     }
 
     await extractKitTar(kitTarPath);
+    await installKitDeps();
 
     await setupLog('.kit installed');
 
