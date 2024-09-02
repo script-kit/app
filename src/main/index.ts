@@ -71,8 +71,8 @@ import {
   setupLog,
   showSplash,
   installKitDeps,
-  requiredSpawnSetup,
   execP,
+  installPnpm,
 } from './install';
 import { startIpc } from './ipc';
 import { cliFromParams, runPromptProcess } from './kit';
@@ -96,8 +96,6 @@ import { Trigger } from '../shared/enums';
 import { reloadApps } from './apps';
 import { optionalSetupScript } from './spawn';
 import { createForkOptions } from './fork.options';
-import { promisify } from 'node:util';
-import { setupPnpm } from './setup/pnpm';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -597,7 +595,7 @@ const verifyInstall = async () => {
   const checkKenv = await kenvExists();
   await matchPackageJsonEngines();
 
-  await setupPnpm();
+  // await setupPnpm();
 
   const checkNodeModules = await nodeModulesExists();
   await setupLog(checkNodeModules ? 'node_modules found' : 'node_modules missing');
@@ -605,7 +603,7 @@ const verifyInstall = async () => {
   const isKenvConfigured = await kenvConfigured();
   await setupLog(isKenvConfigured ? 'kenv .env found' : 'kenv .env missinag');
 
-  const pnpmPath = kitPath('node_modules', '.bin', 'pnpm');
+  const pnpmPath = kitPath('pnpm');
 
   log.info(`🚶 Using ${pnpmPath} to find node...`);
 
@@ -713,7 +711,6 @@ const checkKit = async () => {
 
   log.info(`🧐 Checking ${KIT}`);
 
-  // prompts.init();
   await setupTray(true, 'busy');
   await setupLog('Tray created');
 
@@ -822,6 +819,7 @@ const checkKit = async () => {
     }
 
     await extractKitTar(kitTarPath);
+    await installPnpm();
     await installKitDeps();
 
     await setupLog('.kit installed');

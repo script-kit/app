@@ -1,16 +1,14 @@
 import { clipboard, nativeTheme, shell } from 'electron';
 import { HttpsProxyAgent } from 'hpagent';
-import { default as pnpm } from '@pnpm/exec';
 
-import { type ExecOptions, type SpawnOptions, type SpawnSyncReturns, exec, spawn, fork } from 'node:child_process';
+import { type SpawnOptions, type SpawnSyncReturns, spawn } from 'node:child_process';
 import os, { homedir } from 'node:os';
 import path from 'node:path';
-import { promisify } from 'node:util';
 import dotenv from 'dotenv';
 import { debounce } from 'lodash-es';
 import StreamZip from 'node-stream-zip';
 import * as tar from 'tar';
-import { lstat, readFile, rm, unlink, symlink } from 'node:fs/promises';
+import { lstat, readFile, rm, unlink } from 'node:fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import download from './download';
 import {
@@ -239,7 +237,7 @@ export const installPackage = async (installCommand: string, cwd: string) => {
   };
 
   return new Promise<string>((resolve, reject) => {
-    const pnpmPath = kitPath('node_modules', '.bin', 'pnpm');
+    const pnpmPath = kitPath('pnpm');
     log.info(`${cwd}: 👷 pnpm ${installCommand}`);
     const child = spawn(pnpmPath, [installCommand], options);
 
@@ -529,186 +527,57 @@ export const cleanKit = async () => {
   // }
 };
 
-const execAsync = promisify(exec);
-
-// export const installPnpm = async () => {
-//   // Check if pnpm is already installed
-//   try {
-//     await execAsync('pnpm --version');
-//     log.info('pnpm is already installed. Skipping installation.');
-//     return;
-//   } catch (error) {
-//     // pnpm is not installed, proceed with installation
-//   }
-
-//   const platform = os.platform();
-//   let command: string;
-
-//   if (platform === 'win32') {
-//     // Windows
-//     command =
-//       'powershell -Command "Invoke-WebRequest https://get.pnpm.io/install.ps1 -UseBasicParsing | Invoke-Expression"';
-//   } else if (platform === 'darwin' || platform === 'linux') {
-//     // macOS or Linux
-//     command = 'curl -fsSL https://get.pnpm.io/install.sh | sh -';
-//   } else {
-//     throw new Error(`Unsupported platform: ${platform}`);
-//   }
-
-//   try {
-//     sendSplashBody('Installing pnpm...');
-//     const { stdout, stderr } = await execAsync(command);
-//     log.info('pnpm installation output:', stdout);
-//     if (stderr) {
-//       log.warn('pnpm installation stderr:', stderr);
-//     }
-//     sendSplashBody('pnpm installed successfully');
-//   } catch (error) {
-//     log.error('Failed to install pnpm:', error);
-//     throw error;
-//   }
-// };
-
-export const installKitDeps = async () => {
-  log.info({
-    typeofpnpm: typeof pnpm,
-    keys: Object.keys(pnpm),
-  });
-  // Create a node alias using process.execPath
-  const nodePath = process.execPath;
-  const nodeDir = path.dirname(nodePath);
-
-  log.info({
-    nodePath,
-    nodeDir,
-  });
-
-  // Check if execPath ends with "node"
-  if (!(path.basename(nodePath) === 'node' || path.basename(nodePath) === 'node.exe')) {
-    // Create a symlink named "node" pointing to execPath
-    const nodeSymlinkPath = path.join(nodeDir, process.platform === 'win32' ? 'node.exe' : 'node');
-    try {
-      await symlink(nodePath, nodeSymlinkPath, 'file');
-      log.info(`Created node symlink: ${nodeSymlinkPath} -> ${nodePath}`);
-    } catch (error) {
-      log.warn(`Failed to create node symlink: ${(error as Error).message}`);
-    }
+export const installPnpm = async () => {
+  log.info('Starting pnpm installation...');
+  if (process.platform === 'win32') {
+    // Windows
+    log.info('Installing pnpm on Windows...');
+    const spawnCommand = 'powershell';
+    const spawnArgs = [
+      '-Command',
+      `
+      $installScript = (Invoke-WebRequest https://get.pnpm.io/install.ps1 -UseBasicParsing).Content;
+      $modifiedScript = $installScript -replace '.*Start-Process.*', '';
+      Invoke-Expression $modifiedScript
+      `,
+    ];
+    log.info(`Running command: ${spawnCommand} ${spawnArgs.join(' ')}`);
+    // Behaves like "spawn()"
+    await requiredSpawnSetup(spawnCommand, spawnArgs, {
+      env: {
+        ...process.env,
+        PNPM_HOME: kitPath(),
+      },
+    });
+  } else {
+    // macOS or Linux
+    log.info('Installing pnpm on POSIX system...');
+    const spawnCommand = 'sh';
+    const spawnArgs = [
+      '-c',
+      `
+      curl -fsSL https://get.pnpm.io/install.sh | grep -v "pnpm setup" > install_pnpm.sh &&
+      bash install_pnpm.sh &&
+      rm install_pnpm.sh
+    `,
+    ];
+    log.info(`Running command: ${spawnCommand} ${spawnArgs.join(' ')}`);
+    await requiredSpawnSetup(spawnCommand, spawnArgs, {
+      env: {
+        ...process.env,
+        PNPM_HOME: kitPath(),
+      },
+      shell: false,
+    });
   }
-
-  // Add the node directory to the PATH
-  const updatedPath = `${process.env.PATH}${path.delimiter}${nodeDir}`;
-
-  // Set the updated PATH in the environment
-  process.env.PATH = updatedPath;
-
-  log.info(`Added Node.js directory to PATH: ${nodeDir}`);
-  // @ts-ignore
-  await pnpm.default(['install'], {
-    cwd: kitPath(),
-    env: {
-      ...process.env,
-      PATH: updatedPath,
-    },
-  });
+  log.info('pnpm installation completed.');
 };
 
-// export const installKitDeps = async () => {
-//   const isWindows = process.platform === 'win32';
-//   let pnpmPath = path.resolve(os.homedir(), 'Library', 'pnpm', 'pnpm');
-//   if (isWindows) {
-//     pnpmPath = path.resolve(os.homedir(), 'AppData', 'Local', 'pnpm', 'pnpm.cmd');
-//   }
-
-//   // Check if the pnpmPath exists
-//   const pnpmExists = await pathExists(pnpmPath);
-
-//   if (pnpmExists) {
-//     log.info(`pnpm found at ${pnpmPath}. Using local pnpm.`);
-//   } else {
-//     log.warn(`pnpm not found at ${pnpmPath}. Attempting to use global pnpm.`);
-//     // Try to use globally installed pnpm
-//     pnpmPath = isWindows ? 'pnpm.cmd' : 'pnpm';
-//   }
-
-//   try {
-//     const PATH = KIT_FIRST_PATH + path.delimiter + process?.env?.PATH;
-//     // Set up the options for the spawn command
-//     const KIT = kitPath();
-//     const KENV = kenvPath();
-//     const options: SpawnOptions = {
-//       cwd: KIT,
-//       env: {
-//         KIT,
-//         KENV,
-//         PATH,
-//       },
-//       stdio: 'pipe',
-//       shell: true, // Use shell on all platforms for consistency
-//     };
-
-//     log.info(`Installing Kit dependencies with pnpm at ${pnpmPath}`);
-
-//     return new Promise<void>((resolve, reject) => {
-//       const pnpmInstall = fork(pnpmPath, ['install'], options);
-
-//       // Display a loading message with a spinner
-//       let dots = 1;
-//       const installMessage = 'Installing Kit Dependencies';
-//       const id = setInterval(() => {
-//         if (dots >= 3) {
-//           dots = 0;
-//         }
-//         dots += 1;
-//         sendSplashBody(installMessage.padEnd(installMessage.length + dots, '.'));
-//       }, 250);
-
-//       // Function to clear the interval id
-//       const clearId = () => {
-//         try {
-//           if (id) {
-//             clearInterval(id);
-//           }
-//         } catch (error) {
-//           log.info('Failed to clear id');
-//         }
-//       };
-
-//       // Handling the different events for the child process
-//       if (pnpmInstall.stdout) {
-//         pnpmInstall.stdout.on('data', (data) => {
-//           log.info(`pnpm stdout: ${data}`);
-//         });
-//       }
-
-//       if (pnpmInstall.stderr) {
-//         pnpmInstall.stderr.on('data', (data) => {
-//           log.warn(`pnpm stderr: ${data}`);
-//           sendSplashBody(data.toString());
-//         });
-//       }
-
-//       pnpmInstall.on('close', (code) => {
-//         clearId();
-//         if (code === 0) {
-//           log.info('Kit dependencies installed successfully');
-//           resolve();
-//         } else {
-//           log.error(`pnpm install process exited with code ${code}`);
-//           reject(new Error(`pnpm install process exited with code ${code}`));
-//         }
-//       });
-
-//       pnpmInstall.on('error', (error) => {
-//         log.error('Failed to install Kit dependencies:', error);
-//         clearId();
-//         reject(error);
-//       });
-//     });
-//   } catch (error) {
-//     log.error('Failed to install Kit dependencies:', error);
-//     throw error;
-//   }
-// };
+export const installKitDeps = async () => {
+  await requiredSpawnSetup(kitPath('pnpm'), ['i'], {
+    cwd: kitPath(),
+  });
+};
 
 export const extractKitTar = async (file: string) => {
   sendSplashBody(`Extracting Kit SDK from ${file} to ${kitPath()}...`);
@@ -777,16 +646,12 @@ export const setupLog = async (message: string) => {
   }
 };
 
-export const requiredSpawnSetup = (
-  command: string,
-  args: string[],
-  outputMatch: (data: string) => boolean,
-): Promise<string> => {
+export const requiredSpawnSetup = (command: string, args: string[], options: SpawnOptions): Promise<string> => {
   return new Promise((resolve, reject) => {
     log.info(`Running required setup script: ${command} ${args.join(' ')}`);
     const child = spawn(command, args, {
       ...createForkOptions(),
-      cwd: kitPath(),
+      ...options,
     });
     let output = 'not match...';
 
@@ -800,14 +665,10 @@ export const requiredSpawnSetup = (
 
     if (child?.stdout) {
       child.stdout.on('data', (data) => {
-        log.info(`🤖 data`);
-
         const dataString = data.toString();
-        if (outputMatch(dataString)) {
-          output = dataString;
-        }
-        log.info(`🤖`);
+        output += dataString;
         log.info(dataString);
+        sendSplashBody(dataString.slice(0, 200));
       });
     }
 
@@ -819,7 +680,6 @@ export const requiredSpawnSetup = (
 
     child.on('message', (data) => {
       const dataString = typeof data === 'string' ? data : data.toString();
-      log.info(`🤖 message`);
 
       if (!dataString.includes('[object')) {
         log.info(args[0], dataString);
@@ -1301,6 +1161,7 @@ export const execP = async (command: string) => {
         child.stdout.on('data', (data) => {
           const dataString = data.toString();
           log.info(`stdout data: ${dataString}`);
+          sendSplashBody(dataString.slice(0, 200));
           output += dataString;
         });
       }
@@ -1344,7 +1205,7 @@ export const matchPackageJsonEngines = async () => {
     type: undefined,
   }));
   try {
-    const pnpmPath = kitPath('node_modules', '.bin', 'pnpm');
+    const pnpmPath = kitPath('pnpm');
     const pnpmVersion = await getCommandOutput(`${pnpmPath} --version`);
     const nodeVersion = await getCommandOutput(`${pnpmPath} node --version`);
     log.info({
