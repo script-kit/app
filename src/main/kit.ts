@@ -3,16 +3,13 @@ import { app, shell } from 'electron';
 
 import minimist from 'minimist';
 import { pathExistsSync, readJson } from './cjs-exports';
-import { type ForkOptions, fork } from 'node:child_process';
-import { homedir } from 'node:os';
+import { fork } from 'node:child_process';
 
 import type { ProcessInfo } from '@johnlindquist/kit';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import {
-  KIT_FIRST_PATH,
   getLogFromScriptPath,
   getMainScriptPath,
-  kenvPath,
   kitPath,
   parseScript,
   scriptsDbPath,
@@ -94,9 +91,13 @@ emitter.on(
   ) => {
     if (!kitState.ready) {
       log.warn('Kit not ready. Ignoring prompt process:', scriptOrScriptAndData);
-      if (typeof scriptOrScriptAndData === 'string' && path.basename(scriptOrScriptAndData) === 'info.js') {
-        shell.openExternal(mainLogPath);
-        process.exit(0);
+      if (typeof scriptOrScriptAndData === 'object' && 'scriptPath' in scriptOrScriptAndData) {
+        const { scriptPath, args, options } = scriptOrScriptAndData;
+        if (path.basename(scriptPath) === 'info.js') {
+          shell.openExternal(mainLogPath);
+          app.quit();
+          process.exit(0);
+        }
       }
       return;
     }

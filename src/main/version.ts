@@ -10,7 +10,11 @@ export const getVersionFromText = () => {
 };
 
 export const getVersion = () => {
-  return process.env?.KIT_APP_VERSION?.trim() || app.getVersion();
+  const kitAppVersion = process.env?.KIT_APP_VERSION;
+  if (kitAppVersion === 'undefined' || kitAppVersion === undefined) {
+    return app.getVersion();
+  }
+  return kitAppVersion.trim() || app.getVersion();
 };
 
 export const storeVersion = async (version: string) => {

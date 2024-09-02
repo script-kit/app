@@ -1,6 +1,6 @@
 import { clipboard, nativeTheme, shell } from 'electron';
 import { HttpsProxyAgent } from 'hpagent';
-import pnpm from '@pnpm/exec';
+import { default as pnpm } from '@pnpm/exec';
 
 import { type ExecOptions, type SpawnOptions, type SpawnSyncReturns, exec, spawn, fork } from 'node:child_process';
 import os, { homedir } from 'node:os';
@@ -10,7 +10,7 @@ import dotenv from 'dotenv';
 import { debounce } from 'lodash-es';
 import StreamZip from 'node-stream-zip';
 import * as tar from 'tar';
-import { lstat, readFile, rm, unlink } from 'node:fs/promises';
+import { lstat, readFile, rm, unlink, symlink } from 'node:fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import download from './download';
 import {
@@ -572,11 +572,37 @@ const execAsync = promisify(exec);
 export const installKitDeps = async () => {
   log.info({
     typeofpnpm: typeof pnpm,
-    typeofpnpmdefault: typeof pnpm.default,
     keys: Object.keys(pnpm),
   });
-  await pnpm.default(['install'], {
+  // Create a node alias using process.execPath
+  const nodePath = process.execPath;
+  const nodeDir = path.dirname(nodePath);
+
+  // Check if execPath ends with "node"
+  if (!(path.basename(nodePath) === 'node' || path.basename(nodePath) === 'node.exe')) {
+    // Create a symlink named "node" pointing to execPath
+    const nodeSymlinkPath = path.join(nodeDir, process.platform === 'win32' ? 'node.exe' : 'node');
+    try {
+      await symlink(nodePath, nodeSymlinkPath, 'file');
+      log.info(`Created node symlink: ${nodeSymlinkPath} -> ${nodePath}`);
+    } catch (error) {
+      log.warn(`Failed to create node symlink: ${(error as Error).message}`);
+    }
+  }
+
+  // Add the node directory to the PATH
+  const updatedPath = `${process.env.PATH}${path.delimiter}${nodeDir}`;
+
+  // Set the updated PATH in the environment
+  process.env.PATH = updatedPath;
+
+  log.info(`Added Node.js directory to PATH: ${nodeDir}`);
+  await pnpm(['install'], {
     cwd: kitPath(),
+    env: {
+      ...process.env,
+      PATH: updatedPath,
+    },
   });
 };
 

@@ -23,7 +23,7 @@
     "vite-build": "DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
     "rimraf-kit-setup": "rimraf ~/.kit-setup ~/.kenv-setup ~/.knode-setup",
     "kit-setup": "KIT=~/.kit-setup KENV=~/.kenv-setup KNODE=~/.knode-setup electron-vite dev",
-    "build-and-install:mac": "electron-vite build && npx kit ./build.ts mac arm64 never && rm -rf /Applications/Kit.app && mv release/mac-arm64/Kit.app /Applications/ && echo 'Kit.app installed'"
+    "build-and-install:mac": "electron-vite build && npx kit ./build.ts mac arm64 never && rm -rf /Applications/Kit.app && mv release/mac-arm64/Kit.app /Applications/ && echo 'Kit.app installed' && open /Applications/Kit.app"
   },
   "repository": {
     "type": "git",
@@ -38,12 +38,7 @@
   "bugs": {
     "url": "https://github.com/script-kit/kitapp/issues"
   },
-  "keywords": [
-    "electron",
-    "react",
-    "typescript",
-    "ts"
-  ],
+  "keywords": ["electron", "react", "typescript", "ts"],
   "homepage": "https://github.com/script-kit/kitapp#readme",
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
@@ -181,11 +176,7 @@
   },
   "browserslist": [],
   "renovate": {
-    "extends": [
-      "bliss"
-    ],
-    "baseBranches": [
-      "next"
-    ]
+    "extends": ["bliss"],
+    "baseBranches": ["next"]
   }
 }
