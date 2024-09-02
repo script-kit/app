@@ -578,6 +578,11 @@ export const installKitDeps = async () => {
   const nodePath = process.execPath;
   const nodeDir = path.dirname(nodePath);
 
+  log.info({
+    nodePath,
+    nodeDir,
+  });
+
   // Check if execPath ends with "node"
   if (!(path.basename(nodePath) === 'node' || path.basename(nodePath) === 'node.exe')) {
     // Create a symlink named "node" pointing to execPath
