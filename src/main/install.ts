@@ -239,7 +239,7 @@ export const installPackage = async (installCommand: string, cwd: string) => {
 
   return new Promise<string>((resolve, reject) => {
     const pnpmPath = kitPath('node_modules', '.bin', 'pnpm');
-    log.info(`${cwd}: 👷 ${pnpmPath} ${installCommand}`);
+    log.info(`${cwd}: 👷 pnpm ${installCommand}`);
     const child = spawn(pnpmPath, [installCommand], options);
 
     // Display a loading message with a spinner
@@ -359,13 +359,7 @@ const verifyInstallation = async (dependencyName: string, cwd: string) => {
   }
 };
 
-let loaderToolsInstalled = false;
 export const installLoaderTools = async () => {
-  if (loaderToolsInstalled) {
-    log.info('Loader tools already installed, skipping...');
-    return;
-  }
-
   async function readPackageJson() {
     const packageJsonPath = kitPath('package.json');
     try {
@@ -389,7 +383,6 @@ export const installLoaderTools = async () => {
       `i -D esbuild@${esbuildVersion} tsx@${tsxVersion}`,
       kitPath(),
     );
-    loaderToolsInstalled = true;
     return pnpmResult;
   }
 
@@ -533,6 +526,37 @@ export const cleanKit = async () => {
   //     log.info(`🧹 Cleaning file ${filePath}`);
   //   }
   // }
+};
+
+const execAsync = promisify(exec);
+
+export const installPnpm = async () => {
+  const platform = os.platform();
+  let command: string;
+
+  if (platform === 'win32') {
+    // Windows
+    command =
+      'powershell -Command "Invoke-WebRequest https://get.pnpm.io/install.ps1 -UseBasicParsing | Invoke-Expression"';
+  } else if (platform === 'darwin' || platform === 'linux') {
+    // macOS or Linux
+    command = 'curl -fsSL https://get.pnpm.io/install.sh | sh -';
+  } else {
+    throw new Error(`Unsupported platform: ${platform}`);
+  }
+
+  try {
+    sendSplashBody('Installing pnpm...');
+    const { stdout, stderr } = await execAsync(command);
+    log.info('pnpm installation output:', stdout);
+    if (stderr) {
+      log.warn('pnpm installation stderr:', stderr);
+    }
+    sendSplashBody('pnpm installed successfully');
+  } catch (error) {
+    log.error('Failed to install pnpm:', error);
+    throw error;
+  }
 };
 
 export const extractKitTar = async (file: string) => {
@@ -1042,8 +1066,8 @@ export const matchPackageJsonEngines = async () => {
   }));
   try {
     const pnpmPath = kitPath('node_modules', '.bin', 'pnpm');
-    const pnpmVersion = await getCommandOutput(`${pnpmPath} --version`);
-    const nodeVersion = await getCommandOutput(`${pnpmPath} node --version`);
+    const pnpmVersion = await getCommandOutput(`pnpm --version`);
+    const nodeVersion = await getCommandOutput(`pnpm node --version`);
     log.info({
       npmVersion: pnpmVersion,
       nodeVersion,
