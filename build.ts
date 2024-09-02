@@ -104,7 +104,6 @@ const files = dirFiles
 console.log({ files });
 
 const config: Configuration = {
-  npmRebuild: false,
   appId: 'app.scriptkit', // Updated appId from package.json
   artifactName: '${productName}-macOS-${version}-${arch}.${ext}',
   productName: 'Kit', // Updated productName from package.json
@@ -192,22 +191,24 @@ try {
   const uninstallDeps = external();
   console.log(`Removing external dependencies: ${uninstallDeps.join(', ')} before @electron/rebuild kicks in`);
   if (uninstallDeps.length > 0) {
-    await exec(`pnpm uninstall ${uninstallDeps.join(' ')}`, {
+    if (platform === 'linux') {
+      execSync(`which npm`, {
+        stdio: 'inherit',
+      });
+      execSync(`npm --version`, {
+        stdio: 'inherit',
+      });
+      execSync(`node --version`, {
+        stdio: 'inherit',
+      });
+      execSync(`echo $NPM_PATH`, {
+        stdio: 'inherit',
+      });
+    }
+    execSync(`npm uninstall ${uninstallDeps.join(' ')}`, {
       stdio: 'inherit',
     });
   }
-
-  // const { stdout: rebuildInstallInfo, stderr: rebuildInstallError } = await exec(`pnpm i -D @electron/rebuild`, {
-  //   stdio: 'inherit',
-  // });
-
-  // console.log({ rebuildInstallInfo, rebuildInstallError });
-
-  // const { stdout: rebuildInfo, stderr: rebuildError } = await exec(`pnpm electron-rebuild --arch ${arch}`, {
-  //   stdio: 'inherit',
-  // });
-
-  // console.log({ rebuildInfo, rebuildError });
   const result = await build({
     config,
     publish,
