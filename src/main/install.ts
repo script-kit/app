@@ -1133,7 +1133,7 @@ export const cacheMainScripts = (
   });
 };
 
-export const execP = async (command: string) => {
+export const execP = async (command: string, spawnOptions: SpawnOptions = {}) => {
   const KIT = kitPath();
   const KENV = kenvPath();
 
@@ -1145,6 +1145,7 @@ export const execP = async (command: string) => {
       PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
     },
     stdio: 'pipe',
+    ...spawnOptions,
   };
   const execP = (command: string): Promise<string> => {
     return new Promise((resolve, reject) => {

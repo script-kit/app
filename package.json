@@ -23,7 +23,7 @@
     "vite-build": "DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
     "rimraf-kit-setup": "rimraf ~/.kit-setup ~/.kenv-setup ~/.knode-setup",
     "kit-setup": "KIT=~/.kit-setup KENV=~/.kenv-setup KNODE=~/.knode-setup electron-vite dev",
-    "build-and-install:mac": "electron-vite build && npx kit ./build.ts mac arm64 never && rm -rf /Applications/Kit.app && mv release/mac-arm64/Kit.app /Applications/ && echo 'Kit.app installed' && open /Applications/Kit.app"
+    "build-and-install:mac": "electron-vite build && npx kit ./build.ts mac arm64 never && rm -rf /Applications/Kit.app && mv release/mac-arm64/Kit.app /Applications/ && echo 'Kit.app installed. Remember to set KIT_APP_VERSION to the SDK release version then: open /Applications/Kit.app'"
   },
   "repository": {
     "type": "git",

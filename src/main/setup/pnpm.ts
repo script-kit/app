@@ -28,7 +28,9 @@ export async function setupPnpm() {
 
     log.info('Configuring pnpm to use local Node.js version...');
     try {
-      await execP(`pnpm config set use-node-version ${process.versions.node} --location project`);
+      await execP(`pnpm config set use-node-version ${process.versions.node} --location project`, {
+        cwd: kenvPath(),
+      });
       log.info('pnpm configuration updated successfully.');
     } catch (configError) {
       log.error('Failed to update pnpm configuration:', configError);

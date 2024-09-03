@@ -607,7 +607,9 @@ const verifyInstall = async () => {
 
   log.info(`🚶 Using ${pnpmPath} to find node...`);
 
-  const nodePath = await execP(`"${pnpmPath}" node -e "console.log(process.execPath)"`);
+  const nodePath = await execP(`"${pnpmPath}" node -e "console.log(process.execPath)"`, {
+    cwd: kitPath(),
+  });
 
   log.info({
     nodePath,
@@ -819,7 +821,16 @@ const checkKit = async () => {
     }
 
     await extractKitTar(kitTarPath);
+    await setupLog('Installing pnpm...');
     await installPnpm();
+
+    const pnpmPath = kitPath('pnpm');
+
+    const nodeVersion = await execP(`"${pnpmPath}" node --version`, {
+      cwd: kitPath(),
+    });
+    log.info(`Node version: ${nodeVersion}`);
+    await setupLog('Installing kit deps...');
     await installKitDeps();
 
     await setupLog('.kit installed');
