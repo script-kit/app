@@ -13,6 +13,7 @@ import os from 'node:os';
 import { default as pnpm } from '@pnpm/exec';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import fetch from 'node-fetch';
 
 const execFileAsync = promisify(execFile);
 
@@ -62,28 +63,39 @@ export async function setupPnpm(): Promise<void> {
   let tempFile: string | undefined;
   try {
     log.info('Starting pnpm setup...');
+
+    // Detect the current platform (win, macos, linux, or linuxstatic)
     const platform = await detectPlatform();
+
+    // Detect the CPU architecture (x64 or arm64)
     const arch = detectArch();
+
+    // Get the pnpm version to install (from env variable or fetch latest)
     const version = process.env.PNPM_VERSION || (await getLatestVersion());
 
     log.info(`Platform: ${platform}, Architecture: ${arch}, Version: ${version}`);
 
+    // Construct the URL for downloading pnpm binary
     const archiveUrl = `https://github.com/pnpm/pnpm/releases/download/v${version}/pnpm-${platform}-${arch}`;
     const fileName = platform === 'win' ? 'pnpm.exe' : 'pnpm';
 
     log.info(`Downloading pnpm from: ${archiveUrl}`);
+    // Fetch the pnpm binary
     const response = await fetch(archiveUrl);
     if (!response.ok) {
       throw new Error(`Failed to download pnpm: ${response.statusText}`);
     }
 
+    // Create a temporary directory to store the downloaded pnpm binary
     const tempDir = await mkdtemp(join(tmpdir(), 'pnpm-'));
     tempFile = join(tempDir, fileName);
 
     log.info(`Saving pnpm to temporary file: ${tempFile}`);
+    // Save the downloaded binary to the temporary file
     const fileStream = createWriteStream(tempFile);
     await pipeline(response.body, fileStream);
 
+    // Set execute permissions for non-Windows platforms
     if (platform !== 'win') {
       log.info('Setting execute permissions...');
       await chmod(tempFile, '755');
@@ -91,6 +103,7 @@ export async function setupPnpm(): Promise<void> {
 
     log.info('Running pnpm setup...');
     try {
+      // Execute pnpm setup command
       const { stdout, stderr } = await execFileAsync(tempFile, ['setup', '--force'], {
         env: {
           ...process.env,
@@ -101,7 +114,7 @@ export async function setupPnpm(): Promise<void> {
       log.info('pnpm setup stdout:', stdout);
       if (stderr) log.warn('pnpm setup stderr:', stderr);
 
-      // Parse stdout correctly
+      // Parse stdout to find potential pnpm installation paths
       const stdoutStr = stdout.toString();
       const potentialPaths = stdoutStr
         .split('\n')
@@ -112,10 +125,10 @@ export async function setupPnpm(): Promise<void> {
           return parts[parts.length - 1];
         });
 
-      // Verify paths and use the first valid one
+      // Find the first valid pnpm path
       let pnpmPath = potentialPaths.find((p) => existsSync(p));
 
-      // Fallback to default path if no valid path found
+      // If no valid path found, use a default path
       if (pnpmPath) {
         log.info(`Found valid pnpm path: ${pnpmPath}`);
       } else {
@@ -123,7 +136,7 @@ export async function setupPnpm(): Promise<void> {
         log.warn(`No valid pnpm path found in stdout. Using default: ${pnpmPath}`);
       }
 
-      // Create a cross-platform symlink
+      // Create a symlink to the pnpm executable in the kit directory
       if (process.platform === 'win32') {
         // On Windows, use mklink command
         await execFileAsync('cmd', ['/c', 'mklink', kitPath('pnpm'), pnpmPath], { shell: true });
@@ -132,7 +145,7 @@ export async function setupPnpm(): Promise<void> {
         await symlink(pnpmPath, kitPath('pnpm'));
       }
 
-      // Test if the symlink worked by running pnpm --version
+      // Verify the pnpm installation by checking its version
       try {
         const { stdout: versionOutput } = await execFileAsync(kitPath('pnpm'), ['--version'], { shell: true });
         log.info(`pnpm version check successful: ${versionOutput.trim()}`);
@@ -143,11 +156,13 @@ export async function setupPnpm(): Promise<void> {
 
       log.info(`pnpm installed at: ${pnpmPath}`);
 
+      // Clean up temporary files
       log.info('Cleaning up temporary files...');
       await rm(tempDir, { recursive: true, force: true });
 
       log.info('pnpm setup completed successfully');
     } catch (setupError) {
+      // If setup fails, try to run pnpm directly to get more information
       log.error('Error during pnpm setup command:', setupError);
       log.info('Attempting to run pnpm directly...');
       try {
@@ -166,6 +181,7 @@ export async function setupPnpm(): Promise<void> {
       throw setupError;
     }
   } catch (error) {
+    // Log detailed error information
     log.error('Error during pnpm setup:', error);
     log.info('Current working directory:', process.cwd());
     if (tempFile) {
