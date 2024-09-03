@@ -556,9 +556,7 @@ export const installPnpm = async () => {
     const spawnArgs = [
       '-c',
       `
-      curl -fsSL https://get.pnpm.io/install.sh | grep -v "pnpm setup" > install_pnpm.sh &&
-      bash install_pnpm.sh &&
-      rm install_pnpm.sh
+      curl -fsSL https://get.pnpm.io/install.sh | sh -
     `,
     ];
     log.info(`Running command: ${spawnCommand} ${spawnArgs.join(' ')}`);
@@ -1205,9 +1203,8 @@ export const matchPackageJsonEngines = async () => {
     type: undefined,
   }));
   try {
-    const pnpmPath = kitPath('pnpm');
-    const pnpmVersion = await getCommandOutput(`${pnpmPath} --version`);
-    const nodeVersion = await getCommandOutput(`${pnpmPath} node --version`);
+    const pnpmVersion = await getCommandOutput(`pnpm --version`);
+    const nodeVersion = await getCommandOutput(`pnpm node --version`);
     log.info({
       npmVersion: pnpmVersion,
       nodeVersion,

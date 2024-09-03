@@ -17,6 +17,7 @@ const forkOptions: ForkOptions = {
     HOME: process?.env?.HOME,
   },
   stdio: 'pipe',
+  shell: true,
 };
 
 export const createForkOptions = () => {

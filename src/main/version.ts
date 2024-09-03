@@ -12,6 +12,9 @@ export const getVersionFromText = () => {
 export const getVersion = () => {
   const kitAppVersion = process.env?.KIT_APP_VERSION;
   if (kitAppVersion === 'undefined' || kitAppVersion === undefined) {
+    if (process.env.NODE_ENV === 'development') {
+      return getVersionFromText();
+    }
     return app.getVersion();
   }
   return kitAppVersion.trim() || app.getVersion();
