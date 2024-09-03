@@ -563,23 +563,21 @@ export const installPnpm = async () => {
   } else {
     // macOS or Linux
     log.info('Installing pnpm on POSIX system...');
-    const command = 'sh';
-    const args = ['-c', 'curl -fsSL https://get.pnpm.io/install.sh | sh -'];
-
-    try {
-      const { stdout, stderr } = await execFileAsync(command, args, {
-        env: {
-          ...process.env,
-          PNPM_HOME: kitPath(),
-        },
-      });
-
-      log.info('PNPM installation output:', stdout);
-      if (stderr) log.warn('PNPM installation stderr:', stderr);
-    } catch (error) {
-      log.error('Failed to install PNPM:', error);
-      throw error;
-    }
+    const spawnCommand = 'sh';
+    const spawnArgs = [
+      '-c',
+      `
+      curl -fsSL https://get.pnpm.io/install.sh | sh -
+    `,
+    ];
+    log.info(`Running command: ${spawnCommand} ${spawnArgs.join(' ')}`);
+    await requiredSpawnSetup(spawnCommand, spawnArgs, {
+      env: {
+        ...process.env,
+        PNPM_HOME: kitPath(),
+      },
+      shell: false,
+    });
   }
   log.info('pnpm installation completed.');
 };
