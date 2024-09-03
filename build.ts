@@ -192,10 +192,10 @@ try {
   console.log(`Removing external dependencies: ${uninstallDeps.join(', ')} before @electron/rebuild kicks in`);
   if (uninstallDeps.length > 0) {
     if (platform === 'linux') {
-      execSync(`which npm`, {
+      execSync(`which pnpm`, {
         stdio: 'inherit',
       });
-      execSync(`npm --version`, {
+      execSync(`pnpm --version`, {
         stdio: 'inherit',
       });
       execSync(`node --version`, {
@@ -205,7 +205,7 @@ try {
         stdio: 'inherit',
       });
     }
-    execSync(`npm uninstall ${uninstallDeps.join(' ')}`, {
+    execSync(`pnpm uninstall ${uninstallDeps.join(' ')}`, {
       stdio: 'inherit',
     });
   }
