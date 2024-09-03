@@ -13,6 +13,7 @@ import os from 'node:os';
 import { default as pnpm } from '@pnpm/exec';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+
 const execFileAsync = promisify(execFile);
 
 async function detectPlatform(): Promise<string> {
@@ -58,6 +59,7 @@ async function getLatestVersion(): Promise<string> {
 }
 
 export async function setupPnpm(): Promise<void> {
+  let tempFile: string | undefined;
   try {
     log.info('Starting pnpm setup...');
     const platform = await detectPlatform();
@@ -76,7 +78,7 @@ export async function setupPnpm(): Promise<void> {
     }
 
     const tempDir = await mkdtemp(join(tmpdir(), 'pnpm-'));
-    const tempFile = join(tempDir, fileName);
+    tempFile = join(tempDir, fileName);
 
     log.info(`Saving pnpm to temporary file: ${tempFile}`);
     const fileStream = createWriteStream(tempFile);
@@ -88,64 +90,88 @@ export async function setupPnpm(): Promise<void> {
     }
 
     log.info('Running pnpm setup...');
-    const { stdout, stderr } = await execFileAsync(tempFile, ['setup', '--force'], {
-      env: {
-        ...process.env,
-        SHELL: process.env.SHELL || '/bin/bash',
-      },
-      shell: true,
-    });
-    log.info('pnpm setup stdout:', stdout);
-    if (stderr) log.warn('pnpm setup stderr:', stderr);
-
-    // TODO: Brittle solution. Need to pick apart the pnpm interals to find their code for the actual path.
-    // Search for potential pnpm paths
-    const potentialPaths = stdout
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line.endsWith('pnpm') || line.endsWith('pnpm.exe') || line.endsWith('pnpm.cmd'))
-      .map((line) => {
-        const parts = line.split(' ');
-        return parts[parts.length - 1];
-      });
-
-    // Verify paths and use the first valid one
-    let pnpmPath = potentialPaths.find((p) => existsSync(p));
-
-    // Fallback to default path if no valid path found
-    if (pnpmPath) {
-      log.info(`Found valid pnpm path: ${pnpmPath}`);
-    } else {
-      pnpmPath = path.resolve(os.homedir(), 'Library', 'pnpm', 'pnpm');
-      log.warn(`No valid pnpm path found in stdout. Using default: ${pnpmPath}`);
-    }
-
-    // Create a cross-platform symlink
-    if (process.platform === 'win32') {
-      // On Windows, use mklink command
-      await execFileAsync('cmd', ['/c', 'mklink', kitPath('pnpm'), pnpmPath], { shell: true });
-    } else {
-      // On Unix-like systems, use symlink
-      await symlink(pnpmPath, kitPath('pnpm'));
-    }
-
-    // Test if the symlink worked by running pnpm --version
     try {
-      const { stdout: versionOutput } = await execFileAsync(kitPath('pnpm'), ['--version'], { shell: true });
-      log.info(`pnpm version check successful: ${versionOutput.trim()}`);
-    } catch (error) {
-      log.error('Error checking pnpm version:', error);
-      throw new Error('Failed to verify pnpm installation');
+      const { stdout, stderr } = await execFileAsync(tempFile, ['setup', '--force'], {
+        env: {
+          ...process.env,
+          SHELL: process.env.SHELL || '/bin/bash',
+        },
+        shell: true,
+      });
+      log.info('pnpm setup stdout:', stdout);
+      if (stderr) log.warn('pnpm setup stderr:', stderr);
+
+      // Parse stdout correctly
+      const stdoutStr = stdout.toString();
+      const potentialPaths = stdoutStr
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.endsWith('pnpm') || line.endsWith('pnpm.exe') || line.endsWith('pnpm.cmd'))
+        .map((line) => {
+          const parts = line.split(' ');
+          return parts[parts.length - 1];
+        });
+
+      // Verify paths and use the first valid one
+      let pnpmPath = potentialPaths.find((p) => existsSync(p));
+
+      // Fallback to default path if no valid path found
+      if (pnpmPath) {
+        log.info(`Found valid pnpm path: ${pnpmPath}`);
+      } else {
+        pnpmPath = path.resolve(os.homedir(), 'Library', 'pnpm', 'pnpm');
+        log.warn(`No valid pnpm path found in stdout. Using default: ${pnpmPath}`);
+      }
+
+      // Create a cross-platform symlink
+      if (process.platform === 'win32') {
+        // On Windows, use mklink command
+        await execFileAsync('cmd', ['/c', 'mklink', kitPath('pnpm'), pnpmPath], { shell: true });
+      } else {
+        // On Unix-like systems, use symlink
+        await symlink(pnpmPath, kitPath('pnpm'));
+      }
+
+      // Test if the symlink worked by running pnpm --version
+      try {
+        const { stdout: versionOutput } = await execFileAsync(kitPath('pnpm'), ['--version'], { shell: true });
+        log.info(`pnpm version check successful: ${versionOutput.trim()}`);
+      } catch (error) {
+        log.error('Error checking pnpm version:', error);
+        throw new Error('Failed to verify pnpm installation');
+      }
+
+      log.info(`pnpm installed at: ${pnpmPath}`);
+
+      log.info('Cleaning up temporary files...');
+      await rm(tempDir, { recursive: true, force: true });
+
+      log.info('pnpm setup completed successfully');
+    } catch (setupError) {
+      log.error('Error during pnpm setup command:', setupError);
+      log.info('Attempting to run pnpm directly...');
+      try {
+        const { stdout, stderr } = await execFileAsync(tempFile, ['--version'], {
+          env: {
+            ...process.env,
+            SHELL: process.env.SHELL || '/bin/bash',
+          },
+          shell: true,
+        });
+        log.info('pnpm version:', stdout.trim());
+        if (stderr) log.warn('pnpm version stderr:', stderr);
+      } catch (versionError) {
+        log.error('Error running pnpm directly:', versionError);
+      }
+      throw setupError;
     }
-
-    log.info(`pnpm installed at: ${pnpmPath}`);
-
-    log.info('Cleaning up temporary files...');
-    await rm(tempDir, { recursive: true, force: true });
-
-    log.info('pnpm setup completed successfully');
   } catch (error) {
     log.error('Error during pnpm setup:', error);
+    log.info('Current working directory:', process.cwd());
+    if (tempFile) {
+      log.info('Temp file path:', tempFile);
+    }
+    log.info('Environment variables:', JSON.stringify(process.env, null, 2));
     throw error;
   }
 }
