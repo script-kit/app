@@ -823,6 +823,18 @@ const checkKit = async () => {
 
     const pnpmPath = kitPath('pnpm');
 
+    log.info(`🚶 Setting pnpm node version to ${process.versions.node}...`);
+    await spawnP(pnpmPath, ['config', 'set', 'use-node-version', process.versions.node], {
+      cwd: kitPath(),
+    });
+
+    // Would need to remove all other node versions for this to work?
+    // pnpm env add --global process.versions.node
+    // log.info(`🚶 Using ${pnpmPath} to add node version to pnpm env...`);
+    // await spawnP(pnpmPath, ['env', 'add', '--global', process.versions.node], {
+    //   cwd: kitPath(),
+    // });
+
     log.info(`🚶 Using ${pnpmPath} to find node version...`);
     const nodeVersion = await spawnP(pnpmPath, ['node', '--version'], {
       cwd: kitPath(),

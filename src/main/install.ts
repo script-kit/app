@@ -1133,7 +1133,12 @@ export const cacheMainScripts = (
   });
 };
 
-export const spawnP = async (command: string, args: string[] = [], spawnOptions: SpawnOptions = {}) => {
+// pnpm might trigger a node download, so we need to wait until the final line prints out the version
+export const spawnP = async (
+  command: string,
+  args: string[] = [],
+  spawnOptions: SpawnOptions = {},
+): Promise<string> => {
   const KIT = kitPath();
   const KENV = kenvPath();
 
@@ -1202,12 +1207,7 @@ export const matchPackageJsonEngines = async () => {
     type: undefined,
   }));
   try {
-    const pnpmVersion = await getCommandOutput(`pnpm`, [`--version`]);
-    const nodeVersion = await getCommandOutput(`pnpm`, [`node`, `--version`]);
-    log.info({
-      npmVersion: pnpmVersion,
-      nodeVersion,
-    });
+    const nodeVersion = process.versions.node;
 
     pkgJson.type = 'module';
     pkgJson.engines = {
