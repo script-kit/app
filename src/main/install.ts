@@ -39,6 +39,9 @@ import { INSTALL_ERROR, show } from './show';
 import { getThemes, kitCache, kitState, preloadChoicesMap, workers } from './state';
 import { ensureDir, writeFile, readJson, writeJson, pathExists, readdir } from './cjs-exports';
 
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
 import electronLog from 'electron-log';
 import { createLogger } from '../shared/log-utils';
 import { createForkOptions } from './fork.options';
@@ -527,45 +530,56 @@ export const cleanKit = async () => {
   // }
 };
 
+const execFileAsync = promisify(execFile);
+
 export const installPnpm = async () => {
   log.info('Starting pnpm installation...');
   if (process.platform === 'win32') {
     // Windows
     log.info('Installing pnpm on Windows...');
-    const spawnCommand = 'powershell';
-    const spawnArgs = [
+    const command = 'powershell.exe';
+    const args = [
+      '-NoProfile',
+      '-ExecutionPolicy',
+      'Bypass',
       '-Command',
-      `
-      $installScript = (Invoke-WebRequest https://get.pnpm.io/install.ps1 -UseBasicParsing).Content;
-      Invoke-Expression $installScript
-      `,
+      'iwr https://get.pnpm.io/install.ps1 -useb | iex',
     ];
-    log.info(`Running command: ${spawnCommand} ${spawnArgs.join(' ')}`);
-    // Behaves like "spawn()"
-    await requiredSpawnSetup(spawnCommand, spawnArgs, {
-      env: {
-        ...process.env,
-        PNPM_HOME: kitPath(),
-      },
-    });
+
+    try {
+      const { stdout, stderr } = await execFileAsync(command, args, {
+        env: {
+          ...process.env,
+          PNPM_HOME: kitPath(),
+        },
+      });
+
+      log.info('PNPM installation output:', stdout);
+      if (stderr) log.warn('PNPM installation stderr:', stderr);
+    } catch (error) {
+      log.error('Failed to install PNPM:', error);
+      throw error;
+    }
   } else {
     // macOS or Linux
     log.info('Installing pnpm on POSIX system...');
-    const spawnCommand = 'sh';
-    const spawnArgs = [
-      '-c',
-      `
-      curl -fsSL https://get.pnpm.io/install.sh | sh -
-    `,
-    ];
-    log.info(`Running command: ${spawnCommand} ${spawnArgs.join(' ')}`);
-    await requiredSpawnSetup(spawnCommand, spawnArgs, {
-      env: {
-        ...process.env,
-        PNPM_HOME: kitPath(),
-      },
-      shell: false,
-    });
+    const command = 'sh';
+    const args = ['-c', 'curl -fsSL https://get.pnpm.io/install.sh | sh -'];
+
+    try {
+      const { stdout, stderr } = await execFileAsync(command, args, {
+        env: {
+          ...process.env,
+          PNPM_HOME: kitPath(),
+        },
+      });
+
+      log.info('PNPM installation output:', stdout);
+      if (stderr) log.warn('PNPM installation stderr:', stderr);
+    } catch (error) {
+      log.error('Failed to install PNPM:', error);
+      throw error;
+    }
   }
   log.info('pnpm installation completed.');
 };
