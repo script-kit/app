@@ -1,3 +1,4 @@
+import { app } from 'electron';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { arch, platform } from 'node:os';

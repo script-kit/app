@@ -138,20 +138,13 @@ jobs:
           echo "All job outputs:"
           echo "${{ toJson(needs) }}"
 
-      - name: Checkout git repo
-        uses: actions/checkout@v4
-
-
-      - uses: pnpm/action-setup@v4
-        name: Install pnpm
-        with:
-          version: 9.9.0
-
-      - name: Install Node.js
+      - name: Install Node, NPM and Yarn
         uses: actions/setup-node@v4
         with:
           node-version: 20.16.0
-          cache: 'pnpm'
+
+      - name: Checkout git repo
+        uses: actions/checkout@v4
 
       - name: Write the Semantic Version to package.json version property for main
         if: needs.tag.outputs.kit_tag == 'main'
@@ -230,18 +223,18 @@ jobs:
           ELECTRON_BUILD_ARCH: x64
           ELECTRON_BUILD_PLATFORM: win32
         run: |
-            pnpm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
-            pnpm run vite-prebuild
-            pnpm kit ./build.ts win x64 always
+            npm run vite-prebuild
+            npx kit ./build.ts win x64 always
 
       - name: Publish windows arm64
         if: matrix.os == 'windows-2022'
         run: |
-            pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            pnpm kit remove-tick
-            pnpm run vite-prebuild
-            pnpm kit ./build.ts win arm64 always
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
+            npx kit remove-tick
+            npm run vite-prebuild
+            npx kit ./build.ts win arm64 always
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -280,11 +273,11 @@ jobs:
 
         run: |
             node --version
-            pnpm --version
-            pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
+            npm --version
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
-            pnpm run vite-prebuild
-            pnpm kit ./build.ts linux x64 always
+            npm run vite-prebuild
+            npx kit ./build.ts linux x64 always
 
       - name: Publish linux arm64
         if: matrix.os == 'script-kit-ubuntu-latest-arm64'
@@ -304,12 +297,14 @@ jobs:
             sudo gem install --no-document fpm
             export USE_SYSTEM_FPM=true
             node --version
-            pnpm --version
-            pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            pnpm kit remove-tick
+            npm --version
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
+            npx kit remove-tick
             cat ./package.json
-            pnpm run vite-prebuild
-            pnpm kit ./build.ts linux arm64 always
+            npm run vite-prebuild
+            which npm
+            npm --version
+            npx kit ./build.ts linux arm64 always
 
       - name: Publish mac x64
         if: matrix.os == 'macos-latest'
@@ -326,10 +321,10 @@ jobs:
           ELECTRON_BUILD_PLATFORM: darwin
 
         run: |
-            pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            pnpm i --force
-            pnpm run vite-prebuild
-            pnpm kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
+            npm i --force
+            npm run vite-prebuild
+            npx kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
 
       - name: Publish mac arm64
         if: matrix.os == 'macos-14'
@@ -346,10 +341,10 @@ jobs:
           ELECTRON_BUILD_PLATFORM: darwin
 
         run: |
-            pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            pnpm i --force
-            pnpm run vite-prebuild
-            pnpm kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
+            npm i --force
+            npm run vite-prebuild
+            npx kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml
         if: contains(matrix.os, 'macos')
