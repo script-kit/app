@@ -239,7 +239,7 @@ jobs:
         if: matrix.os == 'windows-2022'
         run: |
             pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            pnpm remove-tick
+            pnpm kit remove-tick
             pnpm run vite-prebuild
             pnpm kit ./build.ts win arm64 always
         env:
@@ -306,7 +306,7 @@ jobs:
             node --version
             pnpm --version
             pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            pnpm remove-tick
+            pnpm kit remove-tick
             cat ./package.json
             pnpm run vite-prebuild
             pnpm kit ./build.ts linux arm64 always
