@@ -1133,7 +1133,7 @@ export const cacheMainScripts = (
   });
 };
 
-export const execP = async (command: string, spawnOptions: SpawnOptions = {}) => {
+export const spawnP = async (command: string, args: string[] = [], spawnOptions: SpawnOptions = {}) => {
   const KIT = kitPath();
   const KENV = kenvPath();
 
@@ -1145,57 +1145,55 @@ export const execP = async (command: string, spawnOptions: SpawnOptions = {}) =>
       PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
     },
     stdio: 'pipe',
+    shell: true,
     ...spawnOptions,
   };
-  const execP = (command: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const child = spawn(command, [], {
-        ...options,
-        shell: true,
-      });
 
-      let output = '';
-      if (child.stdout) {
-        log.info('stdout exists');
-        child.stdout.on('data', (data) => {
-          const dataString = data.toString();
-          log.info(`stdout data: ${dataString}`);
-          sendSplashBody(dataString.slice(0, 200));
-          output += dataString;
-        });
-      }
-
-      if (child.stderr) {
-        log.info('stderr exists');
-        child.stderr.on('data', (data) => {
-          log.error(`stderr: ${data}`);
-        });
-      }
-
-      child.on('close', (code) => {
-        if (code === 0) {
-          const lines = output.trim().split('\n');
-          const lastLine = lines[lines.length - 1].trim();
-          log.info(`Last line: ${lastLine}`);
-          resolve(lastLine);
-        } else {
-          reject(new Error(`Command exited with code ${code}`));
-        }
-      });
-
-      child.on('error', (error) => {
-        reject(error);
-      });
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      ...options,
+      shell: true,
     });
-  };
 
-  return execP(command);
+    let output = '';
+    if (child.stdout) {
+      log.info('stdout exists');
+      child.stdout.on('data', (data) => {
+        const dataString = data.toString();
+        log.info(`stdout data: ${dataString}`);
+        sendSplashBody(dataString.slice(0, 200));
+        output += dataString;
+      });
+    }
+
+    if (child.stderr) {
+      log.info('stderr exists');
+      child.stderr.on('data', (data) => {
+        log.error(`stderr: ${data}`);
+      });
+    }
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        const lines = output.trim().split('\n');
+        const lastLine = lines[lines.length - 1].trim();
+        log.info(`Last line: ${lastLine}`);
+        resolve(lastLine);
+      } else {
+        reject(new Error(`Command exited with code ${code}`));
+      }
+    });
+
+    child.on('error', (error) => {
+      reject(error);
+    });
+  });
 };
 
 export const matchPackageJsonEngines = async () => {
-  const getCommandOutput = async (command: string) => {
+  const getCommandOutput = async (command: string, args: string[] = []) => {
     // How do I pass the options to execP?
-    const stdout = await execP(command);
+    const stdout = await spawnP(command, args);
     return stdout.trim();
   };
 
@@ -1204,8 +1202,8 @@ export const matchPackageJsonEngines = async () => {
     type: undefined,
   }));
   try {
-    const pnpmVersion = await getCommandOutput(`pnpm --version`);
-    const nodeVersion = await getCommandOutput(`pnpm node --version`);
+    const pnpmVersion = await getCommandOutput(`pnpm`, [`--version`]);
+    const nodeVersion = await getCommandOutput(`pnpm`, [`node`, `--version`]);
     log.info({
       npmVersion: pnpmVersion,
       nodeVersion,

@@ -71,7 +71,7 @@ import {
   setupLog,
   showSplash,
   installKitDeps,
-  execP,
+  spawnP,
   installPnpm,
 } from './install';
 import { startIpc } from './ipc';
@@ -605,15 +605,12 @@ const verifyInstall = async () => {
 
   const pnpmPath = kitPath('pnpm');
 
-  log.info(`🚶 Using ${pnpmPath} to find node...`);
-
-  const nodePath = await execP(`"${pnpmPath}" node -e "console.log(process.execPath)"`, {
+  log.info(`🚶 Using ${pnpmPath} to find node.... Before...`);
+  const nodePath = await spawnP(pnpmPath, ['node', '-e', '"console.log(process.execPath)"'], {
     cwd: kitPath(),
   });
 
-  log.info({
-    nodePath,
-  });
+  log.info(`🚶 Using ${pnpmPath} to find node. Found ${nodePath}... After...`);
 
   await setupLog(nodePath ? 'node found' : 'node missing');
 
@@ -826,7 +823,8 @@ const checkKit = async () => {
 
     const pnpmPath = kitPath('pnpm');
 
-    const nodeVersion = await execP(`"${pnpmPath}" node --version`, {
+    log.info(`🚶 Using ${pnpmPath} to find node version...`);
+    const nodeVersion = await spawnP(pnpmPath, ['node', '--version'], {
       cwd: kitPath(),
     });
     log.info(`Node version: ${nodeVersion}`);
