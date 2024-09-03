@@ -49,6 +49,7 @@ import { osTmpPath } from './tmp';
 import type { DownloadOptions } from 'download';
 import { getAssetPath } from '../shared/assets';
 import { getVersion } from './version';
+import { findPnpmBin, pnpmHome, symlinkPnpm } from './setup/pnpm';
 const log = createLogger('install.ts');
 
 let isOhNo = false;
@@ -547,12 +548,16 @@ export const installPnpm = async () => {
     ];
 
     try {
-      const { stdout, stderr } = await execFileAsync(command, args, {
-        env: {
-          ...process.env,
-          PNPM_HOME: kitPath(),
-        },
-      });
+      const { stdout, stderr } = await execFileAsync(
+        command,
+        args,
+        // {
+        // env: {
+        //   ...process.env,
+        //   PNPM_HOME: kitPath(),
+        // },
+        // }
+      );
 
       log.info('PNPM installation output:', stdout);
       if (stderr) log.warn('PNPM installation stderr:', stderr);
@@ -572,14 +577,18 @@ export const installPnpm = async () => {
     ];
     log.info(`Running command: ${spawnCommand} ${spawnArgs.join(' ')}`);
     await requiredSpawnSetup(spawnCommand, spawnArgs, {
-      env: {
-        ...process.env,
-        PNPM_HOME: kitPath(),
-      },
+      // TODO: the pnpm "setup" uses PNPM_HOME and will update the .zshrc. This may conflict with a user's global pnpm install.
+      // Probably need to avoid for now...
+      // env: {
+      //   ...process.env,
+      // PNPM_HOME: kitPath(),
+      // },
       shell: false,
     });
   }
   log.info('pnpm installation completed.');
+
+  await symlinkPnpm(await findPnpmBin());
 };
 
 export const installKitDeps = async () => {

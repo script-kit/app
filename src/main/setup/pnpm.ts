@@ -10,10 +10,9 @@ import { createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { kitPath } from '@johnlindquist/kit/core/utils';
 import os from 'node:os';
-import { default as pnpm } from '@pnpm/exec';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import fetch from 'node-fetch';
+import { createPathResolver } from '@johnlindquist/kit/core/utils';
 
 const execFileAsync = promisify(execFile);
 
@@ -136,23 +135,8 @@ export async function setupPnpm(): Promise<void> {
         log.warn(`No valid pnpm path found in stdout. Using default: ${pnpmPath}`);
       }
 
-      // Create a symlink to the pnpm executable in the kit directory
-      if (process.platform === 'win32') {
-        // On Windows, use mklink command
-        await execFileAsync('cmd', ['/c', 'mklink', kitPath('pnpm'), pnpmPath], { shell: true });
-      } else {
-        // On Unix-like systems, use symlink
-        await symlink(pnpmPath, kitPath('pnpm'));
-      }
-
-      // Verify the pnpm installation by checking its version
-      try {
-        const { stdout: versionOutput } = await execFileAsync(kitPath('pnpm'), ['--version'], { shell: true });
-        log.info(`pnpm version check successful: ${versionOutput.trim()}`);
-      } catch (error) {
-        log.error('Error checking pnpm version:', error);
-        throw new Error('Failed to verify pnpm installation');
-      }
+      // Call the new symlinkPnpm function
+      await symlinkPnpm(pnpmPath);
 
       log.info(`pnpm installed at: ${pnpmPath}`);
 
@@ -189,5 +173,120 @@ export async function setupPnpm(): Promise<void> {
     }
     log.info('Environment variables:', JSON.stringify(process.env, null, 2));
     throw error;
+  }
+}
+
+export async function symlinkPnpm(pnpmPath: string): Promise<void> {
+  log.info('Creating symlink for pnpm...');
+  try {
+    // Create a symlink to the pnpm executable in the kit directory
+    if (process.platform === 'win32') {
+      // On Windows, use mklink command
+      await execFileAsync('cmd', ['/c', 'mklink', kitPath('pnpm'), pnpmPath], { shell: true });
+    } else {
+      // On Unix-like systems, use symlink
+      await symlink(pnpmPath, kitPath('pnpm'));
+    }
+
+    // Verify the pnpm installation by checking its version
+    const { stdout: versionOutput } = await execFileAsync(kitPath('pnpm'), ['--version'], { shell: true });
+    log.info(`pnpm version check successful: ${versionOutput.trim()}`);
+  } catch (error) {
+    log.error('Error during pnpm symlinking:', error);
+    throw new Error('Failed to create symlink or verify pnpm installation');
+  }
+}
+
+export const pnpmHome = (...paths: string[]) => {
+  const defaultPaths = {
+    win32: join(os.homedir(), 'AppData', 'Local', 'pnpm'),
+    darwin: join(os.homedir(), 'Library', 'pnpm'),
+    linux: join(os.homedir(), '.local', 'share', 'pnpm'),
+  };
+
+  const platform = process.platform as keyof typeof defaultPaths;
+  const defaultPath = defaultPaths[platform] || defaultPaths.linux;
+
+  return createPathResolver(defaultPath)(...paths);
+};
+
+export const findPnpmBin = async (): Promise<string> => {
+  log.info('Starting search for pnpm binary');
+
+  // Step 1: Check default paths
+  log.info('Checking default pnpm paths');
+  const defaultPath = pnpmHome('pnpm');
+  if (existsSync(defaultPath)) {
+    log.info(`Found pnpm at default path: ${defaultPath}`);
+    return defaultPath;
+  }
+  log.info('pnpm not found in default path');
+
+  // Step 1.5: Check PNPM_HOME environment variable
+  log.info('Checking PNPM_HOME environment variable');
+  const pnpmHome = process.env.PNPM_HOME;
+  if (pnpmHome) {
+    const pnpmPath = join(pnpmHome, 'pnpm');
+    if (existsSync(pnpmPath)) {
+      log.info(`Found pnpm in PNPM_HOME: ${pnpmPath}`);
+      return pnpmPath;
+    }
+    log.info(`PNPM_HOME is set, but pnpm not found at ${pnpmPath}`);
+  } else {
+    log.info('PNPM_HOME environment variable is not set');
+  }
+
+  // Step 2: Check common alternative locations
+  log.info('Checking common alternative locations');
+  const commonLocations = [
+    join(os.homedir(), '.pnpm'),
+    join(os.homedir(), '.npm', 'pnpm'),
+    '/usr/local/bin/pnpm',
+    'C:\\Program Files\\pnpm\\pnpm.exe',
+  ];
+
+  for (const location of commonLocations) {
+    if (existsSync(location)) {
+      log.info(`Found pnpm at common location: ${location}`);
+      return location;
+    }
+  }
+  log.info('pnpm not found in common locations');
+
+  // Step 3: Check PATH using which/where command
+  log.info('Attempting to find pnpm in PATH');
+  try {
+    const { stdout } = await execFileAsync(process.platform === 'win32' ? 'where' : 'which', ['pnpm']);
+    const pathResult = stdout.trim();
+    if (pathResult) {
+      log.info(`Found pnpm in PATH: ${pathResult}`);
+      return pathResult;
+    }
+  } catch (error) {
+    log.warn('Error while searching for pnpm in PATH:', error);
+  }
+
+  // Step 4: Check for pnpm installed via npm
+  log.info('Checking for pnpm installed via npm');
+  const npmGlobalPrefix = await getNpmGlobalPrefix();
+  const npmGlobalPnpm = join(npmGlobalPrefix, 'bin', 'pnpm');
+  if (existsSync(npmGlobalPnpm)) {
+    log.info(`Found pnpm installed via npm: ${npmGlobalPnpm}`);
+    return npmGlobalPnpm;
+  }
+  log.info('pnpm not found in npm global installation');
+
+  // If all steps fail, throw an error
+  log.error('pnpm binary not found after exhaustive search');
+  throw new Error('pnpm binary not found');
+};
+
+async function getNpmGlobalPrefix(): Promise<string> {
+  try {
+    const { stdout } = await execFileAsync('npm', ['config', 'get', 'prefix']);
+    return stdout.trim();
+  } catch (error) {
+    log.warn('Error getting npm global prefix:', error);
+    return process.platform === 'win32' ? 'C:\\Program Files\\nodejs' : '/usr/local';
   }
 }

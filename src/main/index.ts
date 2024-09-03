@@ -96,7 +96,6 @@ import { Trigger } from '../shared/enums';
 import { reloadApps } from './apps';
 import { optionalSetupScript } from './spawn';
 import { createForkOptions } from './fork.options';
-import { setupPnpm } from './setup/pnpm';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
