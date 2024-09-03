@@ -138,13 +138,19 @@ jobs:
           echo "All job outputs:"
           echo "${{ toJson(needs) }}"
 
-      - name: Install Node, NPM and Yarn
+      - name: Checkout git repo
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 9.9.0
+
+      - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20.16.0
-
-      - name: Checkout git repo
-        uses: actions/checkout@v4
+          cache: 'pnpm'
 
       - name: Write the Semantic Version to package.json version property for main
         if: needs.tag.outputs.kit_tag == 'main'
