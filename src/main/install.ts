@@ -537,8 +537,7 @@ export const installPnpm = async () => {
       '-Command',
       `
       $installScript = (Invoke-WebRequest https://get.pnpm.io/install.ps1 -UseBasicParsing).Content;
-      $modifiedScript = $installScript -replace '.*Start-Process.*', '';
-      Invoke-Expression $modifiedScript
+      Invoke-Expression $installScript
       `,
     ];
     log.info(`Running command: ${spawnCommand} ${spawnArgs.join(' ')}`);

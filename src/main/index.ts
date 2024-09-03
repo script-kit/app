@@ -581,7 +581,8 @@ const nodeModulesExists = async () => {
 };
 
 const initPnpm = async () => {
-  await setupPnpm();
+  await installPnpm();
+  // await setupPnpm();
 
   const pnpmPath = kitPath('pnpm');
 
