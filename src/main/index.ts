@@ -96,6 +96,7 @@ import { Trigger } from '../shared/enums';
 import { reloadApps } from './apps';
 import { optionalSetupScript } from './spawn';
 import { createForkOptions } from './fork.options';
+import { setupPnpm } from './setup/pnpm';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -579,6 +580,30 @@ const nodeModulesExists = async () => {
   return doesNodeModulesExist;
 };
 
+const initPnpm = async () => {
+  await setupPnpm();
+
+  const pnpmPath = kitPath('pnpm');
+
+  log.info(`🚶 Setting pnpm node version to ${process.versions.node}...`);
+  await spawnP(pnpmPath, ['config', 'set', 'use-node-version', process.versions.node], {
+    cwd: kitPath(),
+  });
+
+  // Would need to remove all other node versions for this to work?
+  // pnpm env add --global process.versions.node
+  // log.info(`🚶 Using ${pnpmPath} to add node version to pnpm env...`);
+  // await spawnP(pnpmPath, ['env', 'add', '--global', process.versions.node], {
+  //   cwd: kitPath(),
+  // });
+
+  log.info(`🚶 Using ${pnpmPath} to find node version...`);
+  const nodeVersion = await spawnP(pnpmPath, ['node', '--version'], {
+    cwd: kitPath(),
+  });
+  log.info(`Node version: ${nodeVersion}`);
+};
+
 const verifyInstall = async () => {
   log.info('-----------------------------------------------');
   log.info(process.env);
@@ -597,18 +622,38 @@ const verifyInstall = async () => {
 
   // await setupPnpm();
 
-  const checkNodeModules = await nodeModulesExists();
-  await setupLog(checkNodeModules ? 'node_modules found' : 'node_modules missing');
+  // const checkNodeModules = await nodeModulesExists();
+  // await setupLog(checkNodeModules ? 'node_modules found' : 'node_modules missing');
 
   const isKenvConfigured = await kenvConfigured();
   await setupLog(isKenvConfigured ? 'kenv .env found' : 'kenv .env missinag');
 
   const pnpmPath = kitPath('pnpm');
 
-  log.info(`🚶 Using ${pnpmPath} to find node.... Before...`);
-  const nodePath = await spawnP(pnpmPath, ['node', '-e', '"console.log(process.execPath)"'], {
-    cwd: kitPath(),
-  });
+  let nodePath = '';
+  const findNodePath = async () => {
+    log.info(`🚶 Using ${pnpmPath} to find node...`);
+    return await spawnP(pnpmPath, ['node', '-e', '"console.log(process.execPath)"'], {
+      cwd: kitPath(),
+    });
+  };
+
+  const maxRetries = 2;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      nodePath = await findNodePath();
+      break;
+    } catch (error) {
+      log.error(`Attempt ${attempt} failed:`, error);
+      if (attempt < maxRetries) {
+        log.info('Retrying after initializing pnpm...');
+        await initPnpm();
+      } else {
+        log.error('Max retries reached. Unable to find node path.');
+        throw error;
+      }
+    }
+  }
 
   log.info(`🚶 Using ${pnpmPath} to find node. Found ${nodePath}... After...`);
 
@@ -618,7 +663,6 @@ const verifyInstall = async () => {
     checkKit,
     checkKenv,
     checkNode: nodePath,
-    checkNodeModules,
     isKenvConfigured,
   });
 
@@ -626,7 +670,7 @@ const verifyInstall = async () => {
   log.info(`🚶 Assigned NODE_PATH: ${kitState.NODE_PATH}`);
   process.env.NODE_PATH = kitState.NODE_PATH;
 
-  if (checkKit && checkKenv && nodePath && checkNodeModules && isKenvConfigured) {
+  if (checkKit && checkKenv && nodePath && isKenvConfigured) {
     await setupLog('Install verified');
     return true;
   }
@@ -819,27 +863,7 @@ const checkKit = async () => {
 
     await extractKitTar(kitTarPath);
     await setupLog('Installing pnpm...');
-    await installPnpm();
-
-    const pnpmPath = kitPath('pnpm');
-
-    log.info(`🚶 Setting pnpm node version to ${process.versions.node}...`);
-    await spawnP(pnpmPath, ['config', 'set', 'use-node-version', process.versions.node], {
-      cwd: kitPath(),
-    });
-
-    // Would need to remove all other node versions for this to work?
-    // pnpm env add --global process.versions.node
-    // log.info(`🚶 Using ${pnpmPath} to add node version to pnpm env...`);
-    // await spawnP(pnpmPath, ['env', 'add', '--global', process.versions.node], {
-    //   cwd: kitPath(),
-    // });
-
-    log.info(`🚶 Using ${pnpmPath} to find node version...`);
-    const nodeVersion = await spawnP(pnpmPath, ['node', '--version'], {
-      cwd: kitPath(),
-    });
-    log.info(`Node version: ${nodeVersion}`);
+    await initPnpm();
     await setupLog('Installing kit deps...');
     await installKitDeps();
 
