@@ -49,7 +49,7 @@ import { osTmpPath } from './tmp';
 import type { DownloadOptions } from 'download';
 import { getAssetPath } from '../shared/assets';
 import { getVersion } from './version';
-import { findPnpmBin, pnpmHome, symlinkPnpm } from './setup/pnpm';
+import { findPnpmBin, symlinkPnpm } from './setup/pnpm';
 const log = createLogger('install.ts');
 
 let isOhNo = false;

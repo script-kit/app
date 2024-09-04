@@ -209,10 +209,9 @@ export const pnpmHome = (...paths: string[]) => {
 
   return createPathResolver(defaultPath)(...paths);
 };
+log.info('Starting search for pnpm binary');
 
 export const findPnpmBin = async (): Promise<string> => {
-  log.info('Starting search for pnpm binary');
-
   // Step 1: Check default paths
   log.info('Checking default pnpm paths');
   const defaultPath = pnpmHome('pnpm');
@@ -224,9 +223,9 @@ export const findPnpmBin = async (): Promise<string> => {
 
   // Step 1.5: Check PNPM_HOME environment variable
   log.info('Checking PNPM_HOME environment variable');
-  const pnpmHome = process.env.PNPM_HOME;
-  if (pnpmHome) {
-    const pnpmPath = join(pnpmHome, 'pnpm');
+  const PNPM_HOME = typeof process.env?.PNPM_HOME === 'string' ? process.env.PNPM_HOME : undefined;
+  if (PNPM_HOME) {
+    const pnpmPath = join(PNPM_HOME, 'pnpm');
     if (existsSync(pnpmPath)) {
       log.info(`Found pnpm in PNPM_HOME: ${pnpmPath}`);
       return pnpmPath;
