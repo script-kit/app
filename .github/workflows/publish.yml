@@ -251,7 +251,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libxtst-dev
-          sudo apt-get install -y python2.7 make gcc libpng++-dev
+          sudo apt-get install -y make gcc libpng++-dev
           sudo apt-get install -y g++-10
           sudo apt-get install -y libx11-dev libxkbfile-dev
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
