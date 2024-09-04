@@ -247,7 +247,7 @@ jobs:
           ELECTRON_BUILD_PLATFORM: win32
 
       - name: Install GCC 10 and native-keymap dependencies
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'script-kit-ubuntu-latest-arm64'
         run: |
           sudo apt-get update
           sudo apt-get install -y libxtst-dev
