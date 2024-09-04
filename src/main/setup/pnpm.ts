@@ -3,7 +3,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { arch, platform } from 'node:os';
 import { join } from 'node:path';
-import { chmod, mkdtemp, rm, symlink } from 'node:fs/promises';
+import { chmod, mkdtemp, rm, symlink, unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import log from 'electron-log';
 import { createWriteStream } from 'node:fs';
@@ -178,18 +178,18 @@ export async function setupPnpm(): Promise<void> {
 
 export async function symlinkPnpm(pnpmPath: string): Promise<void> {
   log.info('Creating symlink for pnpm...');
+  // if the symlink already exists, remove it
+  const pnpmBinBase = path.basename(pnpmPath);
   try {
-    // Create a symlink to the pnpm executable in the kit directory
-    if (process.platform === 'win32') {
-      // On Windows, use mklink command
-      await execFileAsync('cmd', ['/c', 'mklink', kitPath('pnpm'), pnpmPath], { shell: true });
-    } else {
-      // On Unix-like systems, use symlink
-      await symlink(pnpmPath, kitPath('pnpm'));
-    }
+    await unlink(kitPath(pnpmBinBase));
+  } catch (error) {
+    log.warn('Error unlinking pnpm:', error);
+  }
+  try {
+    await symlink(pnpmPath, kitPath(pnpmBinBase));
 
     // Verify the pnpm installation by checking its version
-    const { stdout: versionOutput } = await execFileAsync(kitPath('pnpm'), ['--version'], { shell: true });
+    const { stdout: versionOutput } = await execFileAsync(kitPath(pnpmBinBase), ['--version'], { shell: true });
     log.info(`pnpm version check successful: ${versionOutput.trim()}`);
   } catch (error) {
     log.error('Error during pnpm symlinking:', error);
