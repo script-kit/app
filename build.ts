@@ -188,27 +188,27 @@ switch (platform) {
 
 console.log('Building with config');
 try {
-  // const uninstallDeps = external();
-  // console.log(`Removing external dependencies: ${uninstallDeps.join(', ')} before @electron/rebuild kicks in`);
-  // if (uninstallDeps.length > 0) {
-  //   if (platform === 'linux') {
-  //     execSync(`which pnpm`, {
-  //       stdio: 'inherit',
-  //     });
-  //     execSync(`pnpm --version`, {
-  //       stdio: 'inherit',
-  //     });
-  //     execSync(`node --version`, {
-  //       stdio: 'inherit',
-  //     });
-  //     execSync(`echo $NPM_PATH`, {
-  //       stdio: 'inherit',
-  //     });
-  //   }
-  //   execSync(`pnpm uninstall ${uninstallDeps.join(' ')}`, {
-  //     stdio: 'inherit',
-  //   });
-  // }
+  const uninstallDeps = external();
+  console.log(`Removing external dependencies: ${uninstallDeps.join(', ')} before @electron/rebuild kicks in`);
+  if (uninstallDeps.length > 0) {
+    if (platform === 'linux') {
+      execSync(`which npm`, {
+        stdio: 'inherit',
+      });
+      execSync(`npm --version`, {
+        stdio: 'inherit',
+      });
+      execSync(`node --version`, {
+        stdio: 'inherit',
+      });
+      execSync(`echo $NPM_PATH`, {
+        stdio: 'inherit',
+      });
+    }
+    execSync(`npm uninstall ${uninstallDeps.join(' ')}`, {
+      stdio: 'inherit',
+    });
+  }
   const result = await build({
     config,
     publish,
