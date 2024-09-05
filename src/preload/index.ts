@@ -56,19 +56,6 @@ window.on = (channel: string, callback: (data: any) => void) => {
     ipcRenderer.removeListener(channel, handler);
   };
 };
-
-// @ts-ignore (define in dts)
-window.document.addEventListener('DOMContentLoaded', () => {
-  // console.log('Document ready event fired');
-  // @ts-ignore (define in dts)
-  ipcRenderer.send(Channel.WIDGET_GET);
-});
-
-// @ts-ignore (define in dts)
-ipcRenderer.on(Channel.WIDGET_INIT, (_, data) => {
-  // console.log(Channel.WIDGET_INIT, data);
-  options = data;
-});
 // @ts-ignore (define in dts)
 
 // @ts-ignore (define in dts)

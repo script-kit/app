@@ -319,6 +319,7 @@ export const showWidget = async (
   html: string,
   options: WidgetOptions = {},
 ): Promise<BrowserWindow> => {
+  log.info(`Show widget: ${widgetId}`);
   options.body = options.body || html || '';
   const position = options?.center
     ? getCenterOnCurrentScreen(options as BrowserWindowConstructorOptions)
@@ -375,11 +376,14 @@ export const showWidget = async (
   }
 
   return new Promise((resolve, reject) => {
-    log.info('Waiting for WIDGET_GET');
+    log.info(`Waiting for ${Channel.WIDGET_GET} from widgetWindow`, {
+      widgetWindow: widgetWindow?.id || 'unknown',
+      widgetId,
+    });
     widgetWindow.webContents.ipc.once(Channel.WIDGET_GET, () => {
-      log.info('Received WIDGET_GET', { widgetWindow: widgetWindow?.id || 'unknown' });
+      log.info(`Received ${Channel.WIDGET_GET} from widgetWindow`);
       if (widgetWindow) {
-        log.info('Sending WIDGET_INIT from widgetWindow');
+        log.info(`Sending ${Channel.WIDGET_INIT} from widgetWindow`);
         widgetWindow.webContents.send(
           Channel.WIDGET_INIT,
           {

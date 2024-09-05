@@ -799,6 +799,7 @@ export const handleWidgetEvents = () => {
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
     if (!w) {
+      log.warn(`No widget found for ${widgetId}`);
       return;
     }
     const { wid, moved, pid } = w;
@@ -809,15 +810,17 @@ export const handleWidgetEvents = () => {
       return;
     }
     if (!pInfo.child) {
+      log.error(`No child process found for widget ${widgetId}`);
       return;
     }
 
     if (moved) {
+      log.warn(`👋 ${widgetId} moved`);
       w.moved = false;
       return;
     }
 
-    log.info(`👋 ${widgetId} Initialized`);
+    log.info(`👋 ${widgetId} Initialized`, data);
 
     childSend(pInfo.child, {
       ...data,

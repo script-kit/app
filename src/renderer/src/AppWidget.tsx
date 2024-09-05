@@ -78,23 +78,26 @@ export default function AppWidget() {
 
   useEffect(() => {
     const handleWidgetInit = (event, options: WidgetOptions) => {
-      console.log({ options });
+      log.info(`handleWidgetInit`, { options, event });
       setOptions(options);
     };
 
+    log.info(`Mounted: Adding listener for ${Channel.WIDGET_INIT}`);
     ipcRenderer.on(Channel.WIDGET_INIT, handleWidgetInit);
 
     // Add other event listeners here
 
+    log.info(`Sending ${Channel.WIDGET_GET} to main process`);
     ipcRenderer.send(Channel.WIDGET_GET);
     return () => {
+      log.info(`Unmounting: Removing listener for ${Channel.WIDGET_INIT}`);
       ipcRenderer.off(Channel.WIDGET_INIT, handleWidgetInit);
       // Remove other event listeners here
     };
   }, []);
 
   useEffect(() => {
-    console.log(`Mounting widget with options: ${JSON.stringify(options)}`);
+    log.info(`Mounting widget with options: ${JSON.stringify(options)}`);
     const resize = () => {
       if (!document.body.firstElementChild) {
         return;
@@ -141,7 +144,7 @@ export default function AppWidget() {
         ...options,
       };
 
-      console.log('handleClick', JSON.stringify(message));
+      log.info('handleClick', JSON.stringify(message));
       ipcRenderer.send(Channel.WIDGET_CLICK, message);
     };
 
@@ -155,7 +158,7 @@ export default function AppWidget() {
         targetId: targetId,
         ...options,
       };
-      console.log('handleMouseDown', JSON.stringify(message));
+      log.info('handleMouseDown', JSON.stringify(message));
       ipcRenderer.send(Channel.WIDGET_MOUSE_DOWN, message);
     };
 
@@ -168,18 +171,18 @@ export default function AppWidget() {
     };
 
     const handleDragEnter = (event) => {
-      console.log('dragenter');
+      log.info('dragenter');
       __widgetContainer.classList.add('drag-shadow');
       event.preventDefault();
     };
 
     const handleDragEnd = (event) => {
-      console.log('dragend');
+      log.info('dragend');
       __widgetContainer.classList.remove('drag-shadow');
     };
 
     const handleDragLeave = (event) => {
-      console.log('dragleave');
+      log.info('dragleave');
       __widgetContainer.classList.remove('drag-shadow');
     };
 
