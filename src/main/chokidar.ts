@@ -109,8 +109,8 @@ export const startWatching = (callback: WatcherCallback) => {
 
     if (process.platform === 'win32') {
       return [
-        'C:\\Program Files',
-        'C:\\Program Files (x86)',
+        path.join('C:', 'Program Files'),
+        path.join('C:', 'Program Files (x86)'),
         path.join(os.homedir(), 'AppData', 'Local'),
         path.join(os.homedir(), 'AppData', 'Roaming'),
       ].map(slash);

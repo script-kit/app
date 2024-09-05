@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { chmod, mkdtemp, rm, symlink, unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import log from 'electron-log';
-import { createWriteStream } from 'node:fs';
+import { createWriteStream, statSync } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { kitPath } from '@johnlindquist/kit/core/utils';
 import os from 'node:os';
@@ -253,15 +253,14 @@ export const findPnpmBin = async (): Promise<string> => {
   // Step 2: Check common alternative locations
   log.info('Checking common alternative locations');
   const commonLocations = [
-    join(os.homedir(), '.pnpm'),
-    join(os.homedir(), '.npm', 'pnpm'),
-    '/usr/local/bin/pnpm',
-    'C:\\Program Files\\pnpm\\pnpm.cmd',
-    'C:\\Program Files\\Volta\\pnpm.cmd',
+    path.join(os.homedir(), '.pnpm', 'pnpm'),
+    path.join('/', 'usr', 'local', 'bin', 'pnpm'),
+    path.join('C:', 'Program Files', 'pnpm', 'pnpm.cmd'),
+    path.join('C:', 'Program Files', 'Volta', 'pnpm.cmd'),
   ];
 
   for (const location of commonLocations) {
-    if (existsSync(location)) {
+    if (existsSync(location) && statSync(location).isFile()) {
       log.info(`Found pnpm at common location: ${location}`);
       return location;
     }
