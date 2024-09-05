@@ -96,6 +96,7 @@ import { Trigger } from '../shared/enums';
 import { reloadApps } from './apps';
 import { optionalSetupScript } from './spawn';
 import { createForkOptions } from './fork.options';
+import { findPnpmBin } from './setup/pnpm';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -580,11 +581,15 @@ const nodeModulesExists = async () => {
 };
 
 const initPnpm = async () => {
-  await installPnpm();
-  // await setupPnpm();
+  kitState.pnpmPath = await findPnpmBin();
 
+  if (!kitState.pnpmPath) {
+    await installPnpm();
+  }
+
+  kitState.pnpmPath = await findPnpmBin();
   log.info(`🚶 Setting pnpm node version to ${process.versions.node}...`);
-  await spawnP('pnpm', ['config', 'set', 'use-node-version', process.versions.node], {
+  await spawnP(kitState.pnpmPath, ['config', 'set', 'use-node-version', process.versions.node], {
     cwd: kitPath(),
     shell: true,
   });
@@ -597,7 +602,7 @@ const initPnpm = async () => {
   // });
 
   log.info(`🚶 Using pnpm to find node version...`);
-  const nodeVersion = await spawnP('pnpm', ['node', '--version'], {
+  const nodeVersion = await spawnP(kitState.pnpmPath, ['node', '--version'], {
     cwd: kitPath(),
   });
   log.info(`Node version: ${nodeVersion}`);
@@ -630,7 +635,7 @@ const verifyInstall = async () => {
   let nodePath = '';
   const findNodePath = async () => {
     log.info('🚶 Using pnpm to find node...');
-    return await spawnP('pnpm', ['node', '-e', '"console.log(process.execPath)"'], {
+    return await spawnP(kitState.pnpmPath, ['node', '-e', '"console.log(process.execPath)"'], {
       cwd: kitPath(),
     });
   };
@@ -859,27 +864,14 @@ const checkKit = async () => {
     }
 
     await extractKitTar(kitTarPath);
-    await setupLog('Installing pnpm...');
-    await initPnpm();
-    await setupLog('Installing kit deps...');
-    await installKitDeps();
-
-    await setupLog('.kit installed');
-
-    // await installLoaderTools();
-
-    try {
-      await setupScript(kitPath('setup', 'chmod-helpers.js'));
-    } catch (error) {
-      log.error(error);
-    }
     await clearPromptCache();
   }
 
   // await handleSpawnReturns(`docs-pull`, pullDocsResult);
 
   log.info('kenvExists');
-  if (await kenvExists()) {
+  const isKenvInstalled = await kenvExists();
+  if (isKenvInstalled) {
     // eslint-disable-next-line promise/catch-or-return
     // optionalSetupScript(kitPath('setup', 'build-ts-scripts.js')).then(
     //   (result) => {
@@ -913,9 +905,26 @@ const checkKit = async () => {
 
     await kenvExists();
     await ensureKenvDirs();
+  }
 
+  await setupLog('Installing pnpm...');
+  await initPnpm();
+  await setupLog('Installing kit deps...');
+  await installKitDeps();
+
+  await setupLog('.kit installed');
+
+  if (!isKenvInstalled) {
     optionalSetupScript(kitPath('setup', 'clone-examples.js'));
     optionalSetupScript(kitPath('setup', 'clone-sponsors.js'));
+  }
+
+  // await installLoaderTools();
+
+  try {
+    await setupScript(kitPath('setup', 'chmod-helpers.js'));
+  } catch (error) {
+    log.error(error);
   }
 
   await ensureEnv();

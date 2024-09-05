@@ -13,6 +13,7 @@ import os from 'node:os';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { createPathResolver } from '@johnlindquist/kit/core/utils';
+import { kitState } from '../state';
 
 const execFileAsync = promisify(execFile);
 
@@ -215,6 +216,17 @@ export const pnpmHome = (...paths: string[]) => {
 log.info('Starting search for pnpm binary');
 
 export const findPnpmBin = async (): Promise<string> => {
+  if (kitState.pnpmPath) {
+    log.info(`pnpm already set: ${kitState.pnpmPath}`);
+    return kitState.pnpmPath;
+  }
+  if (kitState?.kenvEnv?.KIT_PNPM) {
+    log.info(`Checking KIT_PNPM: ${kitState.kenvEnv.KIT_PNPM}`);
+    if (existsSync(kitState.kenvEnv.KIT_PNPM)) {
+      log.info(`Found pnpm at KIT_PNPM: ${kitState.kenvEnv.KIT_PNPM}`);
+      return kitState.kenvEnv.KIT_PNPM;
+    }
+  }
   // Step 1: Check default paths
   log.info('Checking default pnpm paths');
   const defaultPath = pnpmHome('pnpm');
@@ -285,8 +297,16 @@ export const findPnpmBin = async (): Promise<string> => {
   log.info('pnpm not found in npm global installation');
 
   // If all steps fail, throw an error
-  log.error('pnpm binary not found after exhaustive search');
-  throw new Error('pnpm binary not found');
+  log.warn(`
+pnpm binary not found after exhaustive search
+
+- Please open ~/.kenv/.env
+- Add KIT_PNPM=/path/to/pnpm
+- Restart Kit
+
+`);
+
+  return '';
 };
 
 async function getNpmGlobalPrefix(): Promise<string> {

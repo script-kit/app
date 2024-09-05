@@ -241,7 +241,7 @@ export const installPackage = async (installCommand: string, cwd: string) => {
 
   return new Promise<string>((resolve, reject) => {
     log.info(`${cwd}: 👷 pnpm ${installCommand}`);
-    const child = spawn('pnpm', [installCommand], options);
+    const child = spawn(kitState.pnpmPath, [installCommand], options);
 
     // Display a loading message with a spinner
     let dots = 1;
@@ -532,6 +532,11 @@ export const cleanKit = async () => {
 const execFileAsync = promisify(execFile);
 
 export const installPnpm = async () => {
+  if (kitState.pnpmPath) {
+    log.info('pnpm already installed, skipping...');
+    return;
+  }
+
   log.info('Starting pnpm installation...');
   if (process.platform === 'win32') {
     // Windows
@@ -590,7 +595,7 @@ export const installPnpm = async () => {
 };
 
 export const installKitDeps = async () => {
-  await requiredSpawnSetup(kitPath('pnpm'), ['i'], {
+  await requiredSpawnSetup(kitState.pnpmPath, ['i'], {
     cwd: kitPath(),
   });
 };
