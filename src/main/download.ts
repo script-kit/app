@@ -3,7 +3,7 @@ import http from 'node:http';
 import { URL } from 'node:url';
 import log from 'electron-log';
 
-interface DownloadOptions {
+export interface DownloadOptions {
   /** Whether to reject unauthorized SSL certificates. Defaults to true. */
   rejectUnauthorized?: boolean;
   /** Maximum number of redirects to follow. Defaults to 5. */

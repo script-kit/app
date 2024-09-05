@@ -10,7 +10,7 @@ import StreamZip from 'node-stream-zip';
 import * as tar from 'tar';
 import { lstat, readFile, rm, unlink } from 'node:fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
-import download from './download';
+import download, { type DownloadOptions } from './download';
 import {
   KIT_FIRST_PATH,
   getMainScriptPath,
@@ -46,10 +46,9 @@ import electronLog from 'electron-log';
 import { createLogger } from '../shared/log-utils';
 import { createForkOptions } from './fork.options';
 import { osTmpPath } from './tmp';
-import type { DownloadOptions } from 'download';
 import { getAssetPath } from '../shared/assets';
 import { getVersion } from './version';
-import { findPnpmBin, symlinkPnpm } from './setup/pnpm';
+
 const log = createLogger('install.ts');
 
 let isOhNo = false;
@@ -587,7 +586,7 @@ export const installPnpm = async () => {
   }
   log.info('pnpm installation completed.');
 
-  await symlinkPnpm(await findPnpmBin());
+  // await symlinkPnpm(await findPnpmBin());
 };
 
 export const installKitDeps = async () => {
