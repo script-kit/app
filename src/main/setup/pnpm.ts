@@ -177,6 +177,9 @@ export async function setupPnpm(): Promise<void> {
 }
 
 export async function symlinkPnpm(pnpmPath: string): Promise<void> {
+  log.info(`Symlinking pnpm to .kit/pnpm is currently disabled. Relying on PATH pnpm`);
+
+  return;
   log.info('Creating symlink for pnpm...');
   // if the symlink already exists, remove it
   const pnpmBinBase = path.basename(pnpmPath);
@@ -241,7 +244,8 @@ export const findPnpmBin = async (): Promise<string> => {
     join(os.homedir(), '.pnpm'),
     join(os.homedir(), '.npm', 'pnpm'),
     '/usr/local/bin/pnpm',
-    'C:\\Program Files\\pnpm\\pnpm.exe',
+    'C:\\Program Files\\pnpm\\pnpm.cmd',
+    'C:\\Program Files\\Volta\\pnpm.cmd',
   ];
 
   for (const location of commonLocations) {
@@ -256,7 +260,12 @@ export const findPnpmBin = async (): Promise<string> => {
   log.info('Attempting to find pnpm in PATH');
   try {
     const { stdout } = await execFileAsync(process.platform === 'win32' ? 'where' : 'which', ['pnpm']);
-    const pathResult = stdout.trim();
+    let pathResult = stdout.split('\n')[0].trim();
+    if (pathResult.endsWith('.exe')) {
+      const parsedPath = path.parse(pathResult);
+      parsedPath.ext = '.cmd';
+      pathResult = path.format(parsedPath);
+    }
     if (pathResult) {
       log.info(`Found pnpm in PATH: ${pathResult}`);
       return pathResult;
@@ -283,7 +292,7 @@ export const findPnpmBin = async (): Promise<string> => {
 async function getNpmGlobalPrefix(): Promise<string> {
   try {
     const { stdout } = await execFileAsync('npm', ['config', 'get', 'prefix']);
-    return stdout.trim();
+    return stdout.split('\n')[0].trim();
   } catch (error) {
     log.warn('Error getting npm global prefix:', error);
     return process.platform === 'win32' ? 'C:\\Program Files\\nodejs' : '/usr/local';

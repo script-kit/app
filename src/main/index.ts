@@ -583,11 +583,10 @@ const initPnpm = async () => {
   await installPnpm();
   // await setupPnpm();
 
-  const pnpmPath = kitPath('pnpm');
-
   log.info(`🚶 Setting pnpm node version to ${process.versions.node}...`);
-  await spawnP(pnpmPath, ['config', 'set', 'use-node-version', process.versions.node], {
+  await spawnP('pnpm', ['config', 'set', 'use-node-version', process.versions.node], {
     cwd: kitPath(),
+    shell: true,
   });
 
   // Would need to remove all other node versions for this to work?
@@ -597,8 +596,8 @@ const initPnpm = async () => {
   //   cwd: kitPath(),
   // });
 
-  log.info(`🚶 Using ${pnpmPath} to find node version...`);
-  const nodeVersion = await spawnP(pnpmPath, ['node', '--version'], {
+  log.info(`🚶 Using pnpm to find node version...`);
+  const nodeVersion = await spawnP('pnpm', ['node', '--version'], {
     cwd: kitPath(),
   });
   log.info(`Node version: ${nodeVersion}`);
@@ -628,12 +627,10 @@ const verifyInstall = async () => {
   const isKenvConfigured = await kenvConfigured();
   await setupLog(isKenvConfigured ? 'kenv .env found' : 'kenv .env missinag');
 
-  const pnpmPath = kitPath('pnpm');
-
   let nodePath = '';
   const findNodePath = async () => {
-    log.info(`🚶 Using ${pnpmPath} to find node...`);
-    return await spawnP(pnpmPath, ['node', '-e', '"console.log(process.execPath)"'], {
+    log.info('🚶 Using pnpm to find node...');
+    return await spawnP('pnpm', ['node', '-e', '"console.log(process.execPath)"'], {
       cwd: kitPath(),
     });
   };
@@ -655,7 +652,7 @@ const verifyInstall = async () => {
     }
   }
 
-  log.info(`🚶 Using ${pnpmPath} to find node. Found ${nodePath}... After...`);
+  log.info(`🚶 Using pnpm to find node. Found ${nodePath}... After...`);
 
   await setupLog(nodePath ? 'node found' : 'node missing');
 

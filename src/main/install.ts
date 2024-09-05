@@ -241,9 +241,8 @@ export const installPackage = async (installCommand: string, cwd: string) => {
   };
 
   return new Promise<string>((resolve, reject) => {
-    const pnpmPath = kitPath('pnpm');
     log.info(`${cwd}: 👷 pnpm ${installCommand}`);
-    const child = spawn(pnpmPath, [installCommand], options);
+    const child = spawn('pnpm', [installCommand], options);
 
     // Display a loading message with a spinner
     let dots = 1;
