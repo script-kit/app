@@ -931,7 +931,7 @@ const checkKit = async () => {
   await setupLog('Update .kenv');
 
   if (!process.env.MAIN_SKIP_SETUP) {
-    await Promise.all([installLoaderTools(), installKenvDeps()]);
+    await installKenvDeps();
   }
 
   if (
