@@ -593,7 +593,7 @@ export const installPnpm = async () => {
 
 export const installKitDeps = async () => {
   const pnpmPath = await getPnpmPath();
-  await requiredSpawnSetup(pnpmPath, ['i'], {
+  await requiredSpawnSetup(pnpmPath, ['i', '--prod'], {
     cwd: kitPath(),
   });
 };

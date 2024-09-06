@@ -14,6 +14,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { createPathResolver } from '@johnlindquist/kit/core/utils';
 import { kitState } from '../state';
+import { invoke } from '../invoke-pty';
 
 const execFileAsync = promisify(execFile);
 
@@ -223,6 +224,16 @@ export const findPnpmBin = async (): Promise<string> => {
       return kitState.kenvEnv.KIT_PNPM;
     }
   }
+
+  const isWindows = process.platform === 'win32';
+  const command = isWindows ? 'where' : 'which';
+  const result = await invoke(`${command} pnpm`);
+  log.info(`Result of invoke: ${result}`);
+  if (result && existsSync(result)) {
+    log.info(`Found pnpm with node-pty: ${result}`);
+    return result;
+  }
+
   // Step 1: Check default paths
   log.info('Checking default pnpm paths');
   const defaultPath = pnpmHome('pnpm');
@@ -268,7 +279,7 @@ export const findPnpmBin = async (): Promise<string> => {
   // Step 3: Check PATH using which/where command
   log.info('Attempting to find pnpm in PATH');
   try {
-    const { stdout } = await execFileAsync(process.platform === 'win32' ? 'where' : 'which', ['pnpm']);
+    const { stdout } = await execFileAsync(isWindows ? 'where' : 'which', ['pnpm']);
     let pathResult = stdout.split('\n')[0].trim();
     if (pathResult.endsWith('.exe')) {
       const parsedPath = path.parse(pathResult);
