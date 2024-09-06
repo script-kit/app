@@ -48,6 +48,7 @@ import { createForkOptions } from './fork.options';
 import { osTmpPath } from './tmp';
 import { getAssetPath } from '../shared/assets';
 import { getVersion } from './version';
+import { getPnpmPath } from './setup/pnpm';
 
 const log = createLogger('install.ts');
 
@@ -239,9 +240,10 @@ export const installPackage = async (installCommand: string, cwd: string) => {
     shell: true, // Use shell on all platforms for consistency
   };
 
+  const pnpmPath = await getPnpmPath();
   return new Promise<string>((resolve, reject) => {
     log.info(`${cwd}: 👷 pnpm ${installCommand}`);
-    const child = spawn(kitState.pnpmPath, [installCommand], options);
+    const child = spawn(pnpmPath, [installCommand], options);
 
     // Display a loading message with a spinner
     let dots = 1;
@@ -532,11 +534,6 @@ export const cleanKit = async () => {
 const execFileAsync = promisify(execFile);
 
 export const installPnpm = async () => {
-  if (kitState.pnpmPath) {
-    log.info('pnpm already installed, skipping...');
-    return;
-  }
-
   log.info('Starting pnpm installation...');
   if (process.platform === 'win32') {
     // Windows
@@ -595,7 +592,8 @@ export const installPnpm = async () => {
 };
 
 export const installKitDeps = async () => {
-  await requiredSpawnSetup(kitState.pnpmPath, ['i'], {
+  const pnpmPath = await getPnpmPath();
+  await requiredSpawnSetup(pnpmPath, ['i'], {
     cwd: kitPath(),
   });
 };
@@ -1178,7 +1176,12 @@ export const spawnP = async (
   };
 
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
+    const quotedCommand = command.includes(' ') ? `"${command}"` : command;
+
+    // Quote any args that contain spaces
+    const quotedArgs = args.map((arg) => (arg.includes(' ') ? `"${arg}"` : arg));
+
+    const child = spawn(quotedCommand, quotedArgs, {
       ...options,
       shell: true,
     });

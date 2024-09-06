@@ -216,10 +216,6 @@ export const pnpmHome = (...paths: string[]) => {
 log.info('Starting search for pnpm binary');
 
 export const findPnpmBin = async (): Promise<string> => {
-  if (kitState.pnpmPath) {
-    log.info(`pnpm already set: ${kitState.pnpmPath}`);
-    return kitState.pnpmPath;
-  }
   if (kitState?.kenvEnv?.KIT_PNPM) {
     log.info(`Checking KIT_PNPM: ${kitState.kenvEnv.KIT_PNPM}`);
     if (existsSync(kitState.kenvEnv.KIT_PNPM)) {
@@ -307,6 +303,20 @@ pnpm binary not found after exhaustive search
 
   return '';
 };
+
+let _pnpmPath: string | undefined;
+export async function getPnpmPath(): Promise<string> {
+  if (_pnpmPath) {
+    return _pnpmPath;
+  }
+  _pnpmPath = await findPnpmBin();
+  if (_pnpmPath.includes(' ')) {
+    _pnpmPath = `"${_pnpmPath}"`;
+    return _pnpmPath;
+  }
+
+  return _pnpmPath;
+}
 
 async function getNpmGlobalPrefix(): Promise<string> {
   try {

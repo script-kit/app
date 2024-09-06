@@ -352,7 +352,6 @@ const initState = {
   hasCss: false,
   waitingForPing: false,
   NODE_PATH: '',
-  pnpmPath: '',
 };
 
 const initConfig: Config = {

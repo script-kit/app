@@ -96,7 +96,7 @@ import { Trigger } from '../shared/enums';
 import { reloadApps } from './apps';
 import { optionalSetupScript } from './spawn';
 import { createForkOptions } from './fork.options';
-import { findPnpmBin } from './setup/pnpm';
+import { getPnpmPath } from './setup/pnpm';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -581,15 +581,15 @@ const nodeModulesExists = async () => {
 };
 
 const initPnpm = async () => {
-  kitState.pnpmPath = await findPnpmBin();
+  let pnpmPath = await getPnpmPath();
 
-  if (!kitState.pnpmPath) {
+  if (!pnpmPath) {
     await installPnpm();
   }
 
-  kitState.pnpmPath = await findPnpmBin();
+  pnpmPath = await getPnpmPath();
   log.info(`🚶 Setting pnpm node version to ${process.versions.node}...`);
-  await spawnP(kitState.pnpmPath, ['config', 'set', 'use-node-version', process.versions.node], {
+  await spawnP(pnpmPath, ['config', 'set', 'use-node-version', process.versions.node], {
     cwd: kitPath(),
     shell: true,
   });
@@ -601,8 +601,7 @@ const initPnpm = async () => {
   //   cwd: kitPath(),
   // });
 
-  log.info(`🚶 Using pnpm to find node version...`);
-  const nodeVersion = await spawnP(kitState.pnpmPath, ['node', '--version'], {
+  const nodeVersion = await spawnP(pnpmPath, ['node', '--version'], {
     cwd: kitPath(),
   });
   log.info(`Node version: ${nodeVersion}`);
@@ -635,7 +634,8 @@ const verifyInstall = async () => {
   let nodePath = '';
   const findNodePath = async () => {
     log.info('🚶 Using pnpm to find node...');
-    return await spawnP(kitState.pnpmPath, ['node', '-e', '"console.log(process.execPath)"'], {
+    const pnpmPath = await getPnpmPath();
+    return await spawnP(pnpmPath, ['node', '-e', '"console.log(process.execPath)"'], {
       cwd: kitPath(),
     });
   };
