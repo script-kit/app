@@ -1176,12 +1176,9 @@ export const spawnP = async (
   };
 
   return new Promise((resolve, reject) => {
-    const quotedCommand = command.includes(' ') ? `"${command}"` : command;
-
-    // Quote any args that contain spaces
     const quotedArgs = args.map((arg) => (arg.includes(' ') ? `"${arg}"` : arg));
 
-    const child = spawn(quotedCommand, quotedArgs, {
+    const child = spawn(command, quotedArgs, {
       ...options,
       shell: true,
     });
@@ -1211,7 +1208,7 @@ export const spawnP = async (
         log.info(`Last line: ${lastLine}`);
         resolve(lastLine);
       } else {
-        reject(new Error(`Command exited with code ${code}`));
+        reject(new Error(`${command} ${quotedArgs.join(' ')} exited with code ${code}`));
       }
     });
 

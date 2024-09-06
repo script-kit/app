@@ -588,7 +588,7 @@ const initPnpm = async () => {
   }
 
   pnpmPath = await getPnpmPath();
-  log.info(`🚶 Setting pnpm node version to ${process.versions.node}...`);
+  log.info(`🚶 Setting pnpm node version to ${process.versions.node} with ${pnpmPath}`);
   await spawnP(pnpmPath, ['config', 'set', 'use-node-version', process.versions.node], {
     cwd: kitPath(),
     shell: true,
