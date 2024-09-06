@@ -253,6 +253,8 @@ export const findPnpmBin = async (): Promise<string> => {
     path.join('/', 'usr', 'local', 'bin', 'pnpm'),
     path.join('C:', 'Program Files', 'pnpm', 'pnpm.cmd'),
     path.join('C:', 'Program Files', 'Volta', 'pnpm.cmd'),
+    path.join('C:', 'Program Files (x86)', 'pnpm', 'pnpm.cmd'),
+    path.join(os.homedir(), 'AppData', 'Local', 'pnpm', 'pnpm.cmd'),
   ];
 
   for (const location of commonLocations) {
@@ -310,10 +312,18 @@ export async function getPnpmPath(): Promise<string> {
     return _pnpmPath;
   }
   _pnpmPath = await findPnpmBin();
+  log.info(`Found pnpm at: ${_pnpmPath}`);
+
+  // Remove any surrounding quotes
+  _pnpmPath = _pnpmPath.replace(/^"|"$/g, '');
+  log.info(`pnpm path after removing quotes: ${_pnpmPath}`);
+
+  // If the path contains spaces, wrap it in quotes
   if (_pnpmPath.includes(' ')) {
     _pnpmPath = `"${_pnpmPath}"`;
-    return _pnpmPath;
   }
+
+  log.info(`pnpm path after wrapping in quotes: ${_pnpmPath}`);
 
   return _pnpmPath;
 }
