@@ -7,7 +7,7 @@ async function testInvokePty() {
     console.log('Result:', result);
 
     if (result) {
-      console.log('Test passed: "which pnpm" returned a result.');
+      console.log('Test passed: "which pnpm" returned a result:', result);
     } else {
       console.log('Test failed: "which pnpm" did not return a result.');
     }

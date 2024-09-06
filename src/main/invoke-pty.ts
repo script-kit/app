@@ -36,7 +36,6 @@ function getCommandSeparator(shell: string): string {
   const shellName = path.basename(shell).toLowerCase();
 
   switch (shellName) {
-    case 'cmd.exe':
     case 'powershell.exe':
     case 'pwsh.exe':
       return '&';
@@ -50,6 +49,22 @@ function getCommandSeparator(shell: string): string {
   }
 }
 
+export function getShellArgs(): string[] {
+  if (process.platform === 'win32') {
+    return ['/c'];
+  }
+
+  if (process.platform === 'darwin') {
+    return ['-l', '-c'];
+  }
+
+  return ['-c'];
+}
+
+export function getReturnCharacter(): string {
+  return process.platform === 'win32' ? '\r\n' : '\n';
+}
+
 export async function invoke(command: string): Promise<string> {
   console.log(`Invoking command: ${command}`);
 
@@ -58,35 +73,51 @@ export async function invoke(command: string): Promise<string> {
     const separator = getCommandSeparator(shell);
 
     // Use a login shell to ensure all initialization scripts are run
-    const shellArgs = process.platform === 'darwin' ? ['-l', '-c'] : ['-c'];
-    const fullCommand = `${command} ${separator} exit`;
+    const shellArgs = getShellArgs();
+    const returnCharacter = getReturnCharacter();
+    const fullCommand = `${command} ${separator} exit${returnCharacter}`;
 
     console.log(`Shell: ${shell}`);
     console.log(`Shell args: ${shellArgs.join(' ')}`);
     console.log(`Full command: ${fullCommand}`);
 
+    const env: Record<string, string> = {
+      ...process.env,
+      TERM: 'xterm-color',
+      FORCE_COLOR: '1',
+      DISABLE_AUTO_UPDATE: 'true', // Disable auto-update for zsh
+    };
+
+    if (env?.PNPM_HOME && env?.PATH) {
+      console.log(`PNPM_HOME: ${env.PNPM_HOME}`);
+      env.PATH = `${env.PNPM_HOME}${path.delimiter}${env.PATH}`;
+    }
+
     console.log('Spawning PTY process...');
+
     const ptyProcess = pty.spawn(shell, [...shellArgs, fullCommand], {
       name: 'xterm-color',
       cols: 80,
       rows: 30,
       cwd: os.homedir(),
-      env: {
-        ...process.env,
-        TERM: 'xterm-color',
-        FORCE_COLOR: '1',
-      },
+      env,
     });
+
     console.log(`PTY process spawned with PID: ${ptyProcess.pid}`);
 
     let output = '';
 
     ptyProcess.onData((data) => {
-      output += data;
-      console.log('Received data from PTY process:', data);
+      output += data.toString();
+      console.log({ output });
     });
 
-    let exitTimeout: NodeJS.Timeout;
+    // Set a timeout in case the command doesn't complete
+    const exitTimeout = setTimeout(() => {
+      console.log('Command timed out, killing PTY process...');
+      ptyProcess.kill();
+      reject(new Error('Command timed out'));
+    }, 2000);
 
     ptyProcess.onExit(({ exitCode, signal }) => {
       console.log(`PTY process exited with code ${exitCode} and signal ${signal}`);
@@ -95,13 +126,7 @@ export async function invoke(command: string): Promise<string> {
       const cleanedOutput = output.trim();
       console.log('Cleaned output:', cleanedOutput);
       resolve(cleanedOutput);
-    });
-
-    // Set a timeout in case the command doesn't complete
-    exitTimeout = setTimeout(() => {
-      console.log('Command timed out, killing PTY process...');
       ptyProcess.kill();
-      reject(new Error('Command timed out'));
-    }, 5000);
+    });
   });
 }

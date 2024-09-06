@@ -227,11 +227,20 @@ export const findPnpmBin = async (): Promise<string> => {
 
   const isWindows = process.platform === 'win32';
   const command = isWindows ? 'where' : 'which';
-  const result = await invoke(`${command} pnpm`);
-  log.info(`Result of invoke: ${result}`);
-  if (result && existsSync(result)) {
-    log.info(`Found pnpm with node-pty: ${result}`);
-    return result;
+  const invokeResult = await invoke(`${command} pnpm`);
+  const binName = isWindows ? 'pnpm.cmd' : 'pnpm';
+  log.info(`Result of invoke: ${invokeResult}`);
+  if (invokeResult) {
+    const pnpmPath = invokeResult
+      .split('\n')
+      .map((l) => l.trim())
+      .find((l) => path.basename(l) === binName);
+    if (pnpmPath) {
+      log.info(`Found pnpm with node-pty: ${pnpmPath}`);
+      return pnpmPath;
+    }
+    log.info(`Found pnpm with node-pty: ${invokeResult}`);
+    return invokeResult;
   }
 
   // Step 1: Check default paths
