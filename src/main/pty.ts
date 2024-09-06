@@ -1,131 +1,395 @@
+import { ipcMain, type IpcMainEvent } from 'electron';
+/* eslint-disable no-nested-ternary */
+import log from 'electron-log';
+import { debounce } from 'lodash-es';
 import * as pty from 'node-pty';
-import * as os from 'node:os';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
+import { AppChannel } from '../shared/enums';
+import { KitEvent, emitter } from '../shared/events';
+import type { TermConfig } from '../shared/types';
+import { displayError } from './error';
 
-function getDefaultShell(): string {
-  console.log(`Operating System: ${process.platform}`);
+import type { KitPrompt } from './prompt';
+import {
+  USE_BINARY,
+  getDefaultArgs,
+  getDefaultOptions,
+  getDefaultShell,
+  getPtyOptions,
+  getShellConfig,
+} from './pty-utils';
 
-  if (process.platform === 'win32') {
-    const shell = process.env.COMSPEC || 'cmd.exe';
-    console.log(`Windows shell: ${shell}`);
-    return shell;
+class PtyPool {
+  killPty(pid: number) {
+    const p = this.ptys.find((p) => p.pid === pid);
+    if (p) {
+      log.info(`🐲 Killing pty ${pid}`);
+      try {
+        p.kill();
+      } catch (error) {
+        log.error(error);
+      }
+      this.ptys = this.ptys.filter((p) => p.pid !== pid);
+    }
+  }
+  async destroyPool() {
+    this.killIdlePty();
+    this.disposer = null;
+    this.idlePty = null;
+    this.bufferedData = [];
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        this.ptys.forEach((p) => {
+          log.info(`🐲 Killing stray pty ${p.pid}`);
+          try {
+            p.kill();
+          } catch (error) {
+            log.error(error);
+          }
+        });
+        resolve(null);
+      }, 100);
+    });
   }
 
-  console.log('SHELL environment variable:', process.env.SHELL);
-  const shellFromEnv = process.env.SHELL;
-  if (shellFromEnv && fs.existsSync(shellFromEnv)) {
-    console.log(`Using shell from environment: ${shellFromEnv}`);
-    return shellFromEnv;
+  ptys: pty.IPty[] = [];
+
+  private idlePty: pty.IPty | null = null;
+  private bufferedData: any[] = [];
+
+  private bufferData(d: any) {
+    this.bufferedData.push(d);
   }
 
-  // Fallback options
-  const commonShells = ['/bin/zsh', '/bin/bash', '/bin/sh'];
-  for (const shell of commonShells) {
-    if (fs.existsSync(shell)) {
-      console.log(`Found fallback shell: ${shell}`);
-      return shell;
+  private createPty(shell: string, args: string[], options: any): pty.IPty {
+    log.info(`🐲 Creating pty with shell: ${shell}, args: ${args}`);
+    options.windowsHide = true;
+    const p = pty.spawn(shell, args, options);
+    this.ptys.push(p);
+    return p;
+  }
+
+  public killIdlePty() {
+    if (this.idlePty) {
+      this.bufferedData = [];
+      log.info(`🐲 Killing idle pty ${this.idlePty?.pid}`);
+      this.idlePty.kill();
+      this.ptys = this.ptys.filter((p) => p !== this.idlePty);
+      this.idlePty = null;
+    }
+    if (this?.disposer?.dispose) {
+      log.info(`🐲 Disposing idle pty ${this.idlePty?.pid}`);
+      this.disposer.dispose();
     }
   }
 
-  console.error('No suitable shell found');
-  throw new Error('Unable to determine default shell');
-}
+  public getIdlePty(shell: string, args: string[], options: any, config: TermConfig): pty.IPty {
+    const defaultOptions = getDefaultOptions();
+    const sameShell = shell === getDefaultShell();
 
-function getCommandSeparator(shell: string): string {
-  const shellName = path.basename(shell).toLowerCase();
+    const sameArgs = JSON.stringify(args) === JSON.stringify(getDefaultArgs(true));
 
-  switch (shellName) {
-    case 'powershell.exe':
-    case 'pwsh.exe':
-      return '&';
-    case 'fish':
-      return '; and';
-    case 'csh':
-    case 'tcsh':
-      return ';';
-    default: // bash, zsh, sh, and most others
-      return '&&';
+    const allDefaults = this.idlePty && sameShell && sameArgs;
+
+    if (allDefaults) {
+      const defaultPty = this.idlePty as pty.IPty;
+
+      (defaultPty as any).bufferedData = this.bufferedData;
+      if (options.cwd && options.cwd !== defaultOptions.cwd) {
+        const command = process.platform === 'win32' ? `cd /d "${options.cwd}"\r` : `cd "${options.cwd}"\r`;
+        defaultPty.write(command);
+      }
+
+      if (options.command && options.command !== defaultOptions.command) {
+        config.command = '';
+        defaultPty.write(options.command + '\r');
+      }
+
+      // if (options.env) {
+      //   const exportCommands: string[] = [];
+      //   for (const key in options.env) {
+      //     if (Object.prototype.hasOwnProperty.call(options.env, key)) {
+      //       const value = options.env[key];
+      //       exportCommands.push(`export ${key}=${value}`);
+      //     }
+      //   }
+      //   if (exportCommands.length > 0) {
+      //     defaultPty.write(exportCommands.join(';') + '\r');
+      //   }
+      // }
+
+      this?.disposer?.dispose();
+      this.bufferedData = [];
+      this.idlePty = null;
+      setImmediate(() => {
+        this.prepareNextIdlePty(); // Prepare the next idle pty asynchronously.
+      });
+
+      return defaultPty;
+    }
+    return this.createPty(shell, args, options);
   }
-}
 
-export function getShellArgs(): string[] {
-  if (process.platform === 'win32') {
-    return ['-Command'];
-  }
-  return process.platform === 'darwin' ? ['-l', '-c'] : ['-c'];
-}
+  onDataHandler = (data: any) => {
+    this.bufferData(data); // Buffer the data from the idle pty
+  };
 
-export function getReturnCharacter(): string {
-  return process.platform === 'win32' ? '\r\n' : '\n';
-}
+  disposer: any;
 
-export async function invoke(command: string): Promise<string> {
-  console.log(`Invoking command: ${command}`);
-
-  return new Promise((resolve, reject) => {
+  prepareNextIdlePty() {
+    if (this.idlePty) {
+      return;
+    }
+    log.info('🐲 >_ Preparing next idle pty');
     const shell = getDefaultShell();
-    const separator = getCommandSeparator(shell);
+    const args = getDefaultArgs(true);
+    const options = getPtyOptions({});
+    this.idlePty = this.createPty(shell, args, options);
+    this.idlePty.onExit(({ exitCode, signal }) => {
+      log.info('🐲 Idle pty exited', { exitCode, signal });
+    });
+    this.disposer = this.idlePty.onData(this.onDataHandler);
+  }
+}
 
-    // Use a login shell to ensure all initialization scripts are run
-    const shellArgs = getShellArgs();
-    const returnCharacter = getReturnCharacter();
-    const fullCommand = `${command} ${separator} exit${returnCharacter}`;
+const ptyPool = new PtyPool();
+export const createIdlePty = () => {
+  ptyPool.killIdlePty();
+  ptyPool.prepareNextIdlePty();
+};
 
-    console.log(`Shell: ${shell}`);
-    console.log(`Shell args: ${shellArgs.join(' ')}`);
-    console.log(`Full command: ${fullCommand}`);
+export const createPty = (prompt: KitPrompt) => {
+  let t: pty.IPty | null = null;
 
-    const env: Record<string, string> = {
-      ...process.env,
-      TERM: 'xterm-color',
-      FORCE_COLOR: '1',
-      DISABLE_AUTO_UPDATE: 'true', // Disable auto-update for zsh
+  type TermSize = {
+    cols: number;
+    rows: number;
+  };
+
+  const resizeHandler = (_event: any, { cols, rows }: TermSize) => {
+    if (t) {
+      t?.resize(cols, rows);
+    }
+  };
+
+  const inputHandler = (
+    _event: any,
+    data: {
+      data: string;
+      pid: number;
+    },
+  ) => {
+    if (data?.pid !== prompt?.pid) {
+      return;
+    }
+    try {
+      t.write(data?.data);
+    } catch (error) {
+      log.error('Error writing to pty', error);
+    }
+  };
+
+  const teardown = (pid?: number) => {
+    log.info(`🐲 >_ Shell teardown. pid: ${pid ? `pid: ${pid}` : ''}`);
+    ipcMain.off(AppChannel.TERM_RESIZE, resizeHandler);
+    ipcMain.off(AppChannel.TERM_INPUT, inputHandler);
+    try {
+      if (t) {
+        t?.kill();
+        t = null;
+      }
+      if (pid) {
+        ptyPool.killPty(pid);
+      }
+    } catch (error) {
+      log.error(`Error killing pty ${pid} (probably already dead)`);
+    }
+  };
+
+  const write = (text: string) => {
+    if (USE_BINARY) {
+      t?.write(`${text}\n`);
+    } else {
+      // Todo: on Windows this was also submitted the first prompt argument on
+      t?.write(`${text}\r`);
+    }
+  };
+
+  const handleTermReady = async (event, config: TermConfig) => {
+    log.info({
+      termConfig: {
+        command: config?.command || '<no command>',
+        args: config?.args || '<no args>',
+        cwd: config?.cwd || '<no cwd>',
+        shell: config?.shell || '<no shell>',
+      },
+    });
+    if (!prompt) {
+      return;
+    }
+    if (config.pid !== prompt?.pid) {
+      return;
+    }
+
+    function bufferString(timeout: number) {
+      let s = '';
+      let sender: any = null;
+      return (data: any) => {
+        s += data;
+        if (!sender) {
+          sender = setTimeout(() => {
+            prompt?.sendToPrompt(AppChannel.TERM_OUTPUT as any, s);
+            s = '';
+            sender = null;
+          }, timeout);
+        }
+      };
+    }
+    // binary message buffering
+    function bufferUtf8(timeout: number) {
+      let buffer: any[] = [];
+      let sender: any = null;
+      let length = 0;
+      return (data: any) => {
+        const d = typeof data === 'string' ? Buffer.from(data, 'utf8') : data;
+
+        buffer.push(d);
+
+        length += d.length;
+        if (!sender) {
+          sender = setTimeout(() => {
+            const b = Buffer.concat(buffer, length);
+
+            // const s = b.toString('utf8');a
+
+            // if (s.endsWith('\x07')) {
+            //   kitState.terminalOutput = stripAnsi(s);
+            // }
+
+            prompt?.sendToPrompt(AppChannel.TERM_OUTPUT as any, b);
+            buffer = [];
+            sender = null;
+            length = 0;
+          }, timeout);
+        }
+      };
+    }
+
+    const termWrite = (text: string) => {
+      write(text);
     };
 
-    if (env?.PNPM_HOME && env?.PATH) {
-      console.log(`PNPM_HOME: ${env.PNPM_HOME}`);
-      env.PATH = `${env.PNPM_HOME}${path.delimiter}${env.PATH}`;
+    const termKill = (pid: number) => {
+      log.verbose('TERM_KILL', {
+        pid,
+        configPid: prompt?.pid,
+      });
+      if (pid === prompt?.pid) {
+        ipcMain.off(AppChannel.TERM_EXIT, termExit);
+        teardown(t?.pid);
+      }
+    };
+
+    const termExit = (_: IpcMainEvent, config: TermConfig) => {
+      if (config.pid !== prompt?.pid) {
+        return;
+      }
+      emitter.off(KitEvent.TERM_KILL, termKill);
+      emitter.off(KitEvent.TermWrite, termWrite);
+      log.verbose('TERM_EXIT');
+      teardown(t?.pid);
+    };
+
+    ipcMain.once(AppChannel.TERM_EXIT, termExit);
+
+    log.info('🐲 >_ Handling TERM_KILL');
+    emitter.once(KitEvent.TERM_KILL, termKill);
+
+    ipcMain.on(AppChannel.TERM_RESIZE, resizeHandler);
+    ipcMain.on(AppChannel.TERM_INPUT, inputHandler);
+
+    const defaultShell = getDefaultShell();
+    const { shell, args } = getShellConfig(config, defaultShell);
+    const ptyOptions = getPtyOptions(config);
+
+    log.info(
+      `🐲 >_ Starting term with config: ${JSON.stringify({
+        shell: config.shell,
+        command: config.command,
+        args: config.args,
+        cwd: config.cwd,
+      })}`,
+    );
+
+    try {
+      t = ptyPool.getIdlePty(shell, args, ptyOptions, config);
+      if ((t as any).bufferedData) {
+        (t as any).bufferedData.forEach((d: any) => {
+          prompt?.sendToPrompt(AppChannel.TERM_OUTPUT, d);
+        });
+      }
+    } catch (error) {
+      displayError(error as any);
+
+      teardown(t?.pid);
+
+      return;
     }
 
-    console.log('Spawning PTY process...');
+    prompt?.sendToPrompt(AppChannel.PTY_READY, {});
 
-    const ptyProcess = pty.spawn(shell, [...shellArgs], {
-      name: 'xterm-color',
-      cols: 80,
-      rows: 30,
-      cwd: os.homedir(),
-      env,
+    emitter.on(KitEvent.TermWrite, termWrite);
+
+    const sendData = USE_BINARY ? bufferUtf8(5) : bufferString(5);
+
+    const invokeCommandWhenSettled = debounce(() => {
+      log.silly(`Invoking command: ${config.command}`);
+      if (config.command && t) {
+        write(config.command);
+      }
+
+      config.command = '';
+    }, 200);
+
+    t.onData((data: any) => {
+      try {
+        sendData(data);
+      } catch (ex) {
+        log.error('Error sending data to pty', ex);
+      }
+
+      if (config.command) {
+        invokeCommandWhenSettled();
+      }
     });
 
-    console.log(`PTY process spawned with PID: ${ptyProcess.pid}`);
+    t.onExit(
+      debounce(
+        () => {
+          log.info('🐲 Term process exited');
+          try {
+            if (typeof config?.closeOnExit === 'boolean' && !config.closeOnExit) {
+              log.info('Process closed, but not closing pty because closeOnExit is false');
+            } else {
+              teardown(t?.pid);
 
-    ptyProcess.write(fullCommand);
-    ptyProcess.write(returnCharacter);
+              log.info('🐲 >_ Emit term process exited', config.pid);
+              emitter.emit(KitEvent.TermExited, config.pid);
+            }
+            // t = null;
+          } catch (error) {
+            log.error('Error closing pty', error);
+          }
+        },
+        500,
+        { leading: true },
+      ),
+    );
+  };
 
-    let output = '';
+  ipcMain.once(AppChannel.TERM_READY, handleTermReady);
+};
 
-    ptyProcess.onData((data) => {
-      output += data;
-      console.log('Received data from PTY process:', data);
-    });
-
-    let exitTimeout: NodeJS.Timeout;
-
-    ptyProcess.onExit(({ exitCode, signal }) => {
-      console.log(`PTY process exited with code ${exitCode} and signal ${signal}`);
-      clearTimeout(exitTimeout);
-      // Trim any leading/trailing whitespace
-      const cleanedOutput = output.trim();
-      console.log('Cleaned output:', cleanedOutput);
-      resolve(cleanedOutput);
-    });
-
-    // Set a timeout in case the command doesn't complete
-    exitTimeout = setTimeout(() => {
-      console.log('Command timed out, killing PTY process...');
-      ptyProcess.kill();
-      reject(new Error('Command timed out'));
-    }, 5000);
-  });
-}
+export const destroyPtyPool = async () => {
+  log.info('🐲 >_ Destroying pty pool');
+  await ptyPool.destroyPool();
+};
