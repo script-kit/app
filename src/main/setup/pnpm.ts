@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { chmod, mkdtemp, rm, symlink, unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import log from 'electron-log';
-import { createWriteStream, statSync } from 'node:fs';
+import { accessSync, constants, createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { kitPath } from '@johnlindquist/kit/core/utils';
 import os from 'node:os';
@@ -216,6 +216,22 @@ export const pnpmHome = (...paths: string[]) => {
 };
 log.info('Starting search for pnpm binary');
 
+export const existsAndIsExecutable = (filePath: string): boolean => {
+  const resolvedPath = path.resolve(filePath);
+  if (existsSync(resolvedPath)) {
+    // if is executable, return the path
+    try {
+      accessSync(resolvedPath, constants.X_OK);
+      log.info(`Found executable pnpm: ${resolvedPath}`);
+      return true;
+    } catch (error) {
+      // File is not executable
+      return false;
+    }
+  }
+  return false;
+};
+
 export const findPnpmBin = async (): Promise<string> => {
   if (kitState?.kenvEnv?.KIT_PNPM) {
     log.info(`Checking KIT_PNPM: ${kitState.kenvEnv.KIT_PNPM}`);
@@ -231,16 +247,20 @@ export const findPnpmBin = async (): Promise<string> => {
   const binName = isWindows ? 'pnpm.cmd' : 'pnpm';
   log.info(`Result of invoke: ${invokeResult}`);
   if (invokeResult) {
-    const pnpmPath = invokeResult
+    let pnpmPath = invokeResult
       .split('\n')
       .map((l) => l.trim())
       .find((l) => path.basename(l) === binName);
-    if (pnpmPath) {
-      log.info(`Found pnpm with node-pty: ${pnpmPath}`);
+
+    if (isWindows) {
+      // Extract the path starting from the drive letter
+      pnpmPath = pnpmPath?.match(/[A-Z]:\\.+/)?.[0] || pnpmPath;
+    }
+
+    if (existsAndIsExecutable(pnpmPath)) {
+      log.info(`Found executable pnpm with node-pty: ${pnpmPath}`);
       return pnpmPath;
     }
-    log.info(`Found pnpm with node-pty: ${invokeResult}`);
-    return invokeResult;
   }
 
   // Step 1: Check default paths
@@ -248,7 +268,10 @@ export const findPnpmBin = async (): Promise<string> => {
   const defaultPath = pnpmHome('pnpm');
   if (existsSync(defaultPath)) {
     log.info(`Found pnpm at default path: ${defaultPath}`);
-    return defaultPath;
+    if (existsAndIsExecutable(defaultPath)) {
+      log.info(`Found executable pnpm with node-pty: ${defaultPath}`);
+      return defaultPath;
+    }
   }
   log.info('pnpm not found in default path');
 
@@ -257,8 +280,8 @@ export const findPnpmBin = async (): Promise<string> => {
   const PNPM_HOME = typeof process.env?.PNPM_HOME === 'string' ? process.env.PNPM_HOME : undefined;
   if (PNPM_HOME) {
     const pnpmPath = join(PNPM_HOME, 'pnpm');
-    if (existsSync(pnpmPath)) {
-      log.info(`Found pnpm in PNPM_HOME: ${pnpmPath}`);
+    if (existsAndIsExecutable(pnpmPath)) {
+      log.info(`Found executable pnpm with node-pty: ${pnpmPath}`);
       return pnpmPath;
     }
     log.info(`PNPM_HOME is set, but pnpm not found at ${pnpmPath}`);
@@ -278,8 +301,8 @@ export const findPnpmBin = async (): Promise<string> => {
   ];
 
   for (const location of commonLocations) {
-    if (existsSync(location) && statSync(location).isFile()) {
-      log.info(`Found pnpm at common location: ${location}`);
+    if (existsAndIsExecutable(location)) {
+      log.info(`Found executable pnpm with node-pty: ${location}`);
       return location;
     }
   }
@@ -307,8 +330,8 @@ export const findPnpmBin = async (): Promise<string> => {
   log.info('Checking for pnpm installed via npm');
   const npmGlobalPrefix = await getNpmGlobalPrefix();
   const npmGlobalPnpm = join(npmGlobalPrefix, 'bin', 'pnpm');
-  if (existsSync(npmGlobalPnpm)) {
-    log.info(`Found pnpm installed via npm: ${npmGlobalPnpm}`);
+  if (existsAndIsExecutable(npmGlobalPnpm)) {
+    log.info(`Found executable pnpm with node-pty: ${npmGlobalPnpm}`);
     return npmGlobalPnpm;
   }
   log.info('pnpm not found in npm global installation');
