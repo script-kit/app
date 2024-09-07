@@ -254,6 +254,7 @@ export const findPnpmBin = async (): Promise<string> => {
     let pnpmPath = invokeResult
       .split('\n')
       .map((l) => l.trim())
+      .filter(Boolean)
       .find((l) => path.basename(l) === binName);
 
     if (isWindows) {
@@ -347,7 +348,7 @@ pnpm binary not found after exhaustive search
 
 `);
 
-  return '';
+  throw new Error('pnpm binary not found');
 };
 
 let _pnpmPath: string | undefined;

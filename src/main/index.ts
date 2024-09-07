@@ -581,7 +581,13 @@ const nodeModulesExists = async () => {
 };
 
 const initPnpm = async () => {
-  let pnpmPath = await getPnpmPath();
+  let pnpmPath = '';
+
+  try {
+    pnpmPath = await getPnpmPath();
+  } catch (error) {
+    log.warn(error);
+  }
 
   if (!pnpmPath) {
     await installPnpm();
