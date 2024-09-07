@@ -216,7 +216,11 @@ export const pnpmHome = (...paths: string[]) => {
 };
 log.info('Starting search for pnpm binary');
 
-export const existsAndIsExecutable = (filePath: string): boolean => {
+export const existsAndIsExecutable = (filePath: string | undefined): boolean => {
+  if (!filePath) {
+    return false;
+  }
+
   const resolvedPath = path.resolve(filePath);
   if (existsSync(resolvedPath)) {
     // if is executable, return the path
@@ -266,12 +270,9 @@ export const findPnpmBin = async (): Promise<string> => {
   // Step 1: Check default paths
   log.info('Checking default pnpm paths');
   const defaultPath = pnpmHome('pnpm');
-  if (existsSync(defaultPath)) {
-    log.info(`Found pnpm at default path: ${defaultPath}`);
-    if (existsAndIsExecutable(defaultPath)) {
-      log.info(`Found executable pnpm with node-pty: ${defaultPath}`);
-      return defaultPath;
-    }
+  if (existsAndIsExecutable(defaultPath)) {
+    log.info(`Found executable pnpm with node-pty: ${defaultPath}`);
+    return defaultPath;
   }
   log.info('pnpm not found in default path');
 
