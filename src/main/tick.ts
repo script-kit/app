@@ -136,7 +136,7 @@ const ioEvent = (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
         kitState.snippet += SPACE;
         kitState.typedText = `${kitState.typedText} `;
       }
-    } else if (e?.keycode === uiohookKeyCode.Quote || key.length > 1 || key === '') {
+    } else if (e?.keycode === uiohookKeyCode.Quote || key?.length > 1 || key === '') {
       kitState.snippet = '';
       kitState.typedText = `${kitState.typedText}${key}`;
     } else {
@@ -546,14 +546,14 @@ export const addTextSnippet = async (filePath: string) => {
   const contents = await readFile(filePath, 'utf8');
   const { metadata } = await getSnippet(contents);
 
-  log.info({contents, metadata})
+  log.info({ contents, metadata });
 
-  let expand  = metadata?.snippet || metadata?.expand;
+  let expand = metadata?.snippet || metadata?.expand;
   if (expand) {
     log.info(`Set snippet: ${expand}`);
 
     let postfix = false;
-    if(expand.startsWith('*')) {
+    if (expand.startsWith('*')) {
       postfix = true;
       expand = expand.slice(1);
     }

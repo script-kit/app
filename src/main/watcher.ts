@@ -14,8 +14,6 @@ import { subscribeKey } from 'valtio/utils';
 
 import { getKenvFromPath, kenvPath, kitPath, parseScript, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
 
-import { parseScriptletsFromPath } from '@johnlindquist/kit/core/scriptlets';
-
 import chokidar, { type FSWatcher } from 'chokidar';
 import { shortcutScriptChanged, unlinkShortcuts } from './shortcuts';
 

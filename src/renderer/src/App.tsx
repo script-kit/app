@@ -551,6 +551,23 @@ export default function App() {
           else if (layoutMap.KeyQ === 'q' && layoutMap.KeyW === 'w' && layoutMap.KeyF === 'e') {
             detectedLayout = 'Colemak';
           }
+          // Check for non-standard characters in A-Z keys
+          let isNonStandardLayout = false;
+          const keys = Object.entries(layoutMap);
+
+          if (!isNonStandardLayout) {
+            for (const key of Object.values(layoutMap)) {
+              if (/[^\u0000-\u007F]/.test(key)) {
+                log.info(`🌐 Non-standard character detected: ${key}`);
+                isNonStandardLayout = true;
+                break;
+              }
+            }
+          }
+
+          if (isNonStandardLayout) {
+            detectedLayout = 'Non-US';
+          }
 
           log.info(`Detected keyboard layout: ${detectedLayout}`);
 

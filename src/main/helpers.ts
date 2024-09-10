@@ -15,7 +15,7 @@ import type { Choice } from '@johnlindquist/kit/types/core';
 import { Trigger } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
 import type { ScoredChoice } from '../shared/types';
-import { convertKey } from './state';
+import { convertKey, kitState } from './state';
 
 export const APP_NAME = 'Kit';
 export const KIT_PROTOCOL = 'kit';
@@ -99,7 +99,7 @@ const validateAccelerator = (shortcut: string) => {
   const parts = shortcut.split('+');
   let keyFound = false;
   return parts.every((val, index) => {
-    const isKey = keyCodes.test(val);
+    const isKey = keyCodes.test(val) || Object.values(kitState?.keymap || {}).find((key) => key === val);
     const isModifier = modifiers.test(val);
     if (isKey) {
       // Key must be unique
@@ -118,7 +118,7 @@ const validateAccelerator = (shortcut: string) => {
 
 const modifiers = /^(Command|Cmd|Control|Ctrl|CommandOrControl|CmdOrCtrl|Alt|Option|AltGr|Shift|Super)$/;
 const keyCodes =
-  /^([0-9A-Z)!@#$%^&*(:+<_>?~{|}";=,\-./`[\\\]']|F1*[1-9]|F10|F2[0-4]|Plus|Space|Tab|Backspace|Delete|Insert|Return|Enter|Up|Down|Left|Right|Home|End|PageUp|PageDown|Escape|Esc|VolumeUp|VolumeDown|VolumeMute|MediaNextTrack|MediaPreviousTrack|MediaStop|MediaPlayPause|PrintScreen)$/;
+  /^([0-9A-Z)!@#$%^&*(:+<_>?~{|}";=,\-./`[\\\]'À-ÿ]|F1*[1-9]|F10|F2[0-4]|Plus|Space|Tab|Backspace|Delete|Insert|Return|Enter|Up|Down|Left|Right|Home|End|PageUp|PageDown|Escape|Esc|VolumeUp|VolumeDown|VolumeMute|MediaNextTrack|MediaPreviousTrack|MediaStop|MediaPlayPause|PrintScreen)$/;
 
 const infoScript = kitPath('cli', 'info.js');
 
@@ -171,16 +171,18 @@ export const convertShortcut = (shortcut: string, filePath: string): string => {
   }
 
   if (sourceKey?.length > 1) {
-    if (!validateAccelerator(normalizedShortcut)) {
-      log.info(`Invalid shortcut: ${normalizedShortcut}`);
-      shortcutInfo(normalizedShortcut, filePath);
-      return '';
-    }
+    // if (!validateAccelerator(normalizedShortcut)) {
+    //   log.info(`Invalid shortcut: ${normalizedShortcut}`);
+    //   shortcutInfo(normalizedShortcut, filePath);
+    //   return '';
+    // }
 
     return normalizedShortcut;
   }
 
   const convertedKey = convertKey(sourceKey).toUpperCase();
+  log.info(`Converted key from: ${sourceKey} -> ${convertedKey}`);
+  // Ingnoring converted key???
   const finalShortcut = `${mods.reverse().join('+')}+${convertedKey}`;
 
   if (!validateAccelerator(finalShortcut)) {

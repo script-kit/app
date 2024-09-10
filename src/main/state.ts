@@ -4,7 +4,7 @@
 import Store, { type Schema } from 'electron-store';
 
 import type { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
-import { proxy } from 'valtio/vanilla';
+import { proxy, snapshot } from 'valtio/vanilla';
 import type { ChildProcess } from 'node:child_process';
 import os from 'node:os';
 import { type Display, nativeTheme } from 'electron';
@@ -315,7 +315,7 @@ const initState = {
   themeName: '',
   tempTheme: '',
   appearance: 'auto' as 'auto' | 'light' | 'dark',
-  keymap: null as Record<string, string> | null,
+  keymap: {} as Record<string, string>,
   keyboardConfig: {
     autoDelayMs: 0,
   } as any,
@@ -630,18 +630,27 @@ const defaultKeyMap: {
 };
 
 export const convertKey = (sourceKey: string): string => {
-  if (kitState.kenvEnv?.KIT_CONVERT_KEY === 'false' || !kitState.keymap) {
+  const hasKeymap = Object.keys(kitState.keymap).length > 0;
+  log.info(`🔑 Has keymap:`, { hasKeymap });
+  if (kitState.kenvEnv?.KIT_CONVERT_KEY === 'false' || !hasKeymap) {
     keymapLog.info(`🔑 Skipping key conversion: ${sourceKey}`);
     return sourceKey;
   }
 
   // Find the entry where the value matches the sourceKey
-  const entry = Object.entries(kitState.keymap).find(([, value]) => value.toLowerCase() === sourceKey.toLowerCase());
+  let entry;
+  for (const [code, value] of Object.entries(kitState.keymap)) {
+    if (value.toLowerCase() === sourceKey.toLowerCase()) {
+      entry = [code, value];
+      break;
+    }
+  }
   if (entry) {
+    log.info(`🔑 Found entry: ${entry}`);
     const [code] = entry;
     const target = defaultKeyMap[code]?.toUpperCase() || '';
     if (target) {
-      keymapLog.info(`🔑 Converted key: ${code} -> ${target}`);
+      log.info(`🔑 Converted key: ${code} -> ${target}`);
       return target;
     }
   }

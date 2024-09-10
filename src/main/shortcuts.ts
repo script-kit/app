@@ -235,14 +235,14 @@ export const shortcutScriptChanged = async ({
 
 export const updateMainShortcut = (shortcut?: string) => {
   const checkShortcut = shortcut ? shortcut : kitState.isMac ? 'cmd ;' : 'ctrl ;';
-  log.info(`updateMainShortcut with ${checkShortcut}`);
+  log.green(`updateMainShortcut with ${checkShortcut}`);
 
   const finalShortcut = convertShortcut(checkShortcut, getMainScriptPath());
   if (!finalShortcut) {
     return;
   }
 
-  log.info(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
+  log.green(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
 
   const old = shortcutMap.get(getMainScriptPath());
 
@@ -305,7 +305,7 @@ export const updateMainShortcut = (shortcut?: string) => {
 
   if (ret && globalShortcut.isRegistered(finalShortcut)) {
     kitState.mainShortcut = finalShortcut;
-    log.info(`Registered ${finalShortcut} to ${getMainScriptPath(process.env.KIT_MAIN_SCRIPT)}`);
+    log.green(`Registered ${finalShortcut} to ${getMainScriptPath(process.env.KIT_MAIN_SCRIPT)}`);
     shortcutMap.set(getMainScriptPath(), {
       shortcut: finalShortcut,
       shebang: '',
@@ -316,19 +316,17 @@ export const updateMainShortcut = (shortcut?: string) => {
 const pauseShortcuts = () => {
   log.info('PAUSING GLOBAL SHORTCUTS');
   globalShortcut.unregisterAll();
+  shortcutMap.clear();
 };
 
 const resumeShortcuts = () => {
   log.info('RESUMING GLOBAL SHORTCUTS');
-  shortcutMap.forEach(({ shortcut }, filePath) => {
-    const convertedShortcut = convertShortcut(shortcut, filePath);
-    log.info({
-      filePath,
-      shortcut,
-      convertedShortcut,
-    });
-    registerShortcut(convertedShortcut, filePath);
-  });
+  updateMainShortcut(kitState.kenvEnv?.KIT_MAIN_SHORTCUT || kitState.mainShortcut || '');
+  for (const [filePath, script] of kitState.scripts) {
+    if (script.shortcut) {
+      shortcutScriptChanged(script);
+    }
+  }
 };
 
 let paused = false;
@@ -357,7 +355,7 @@ const subKeymap = subscribeKey(
   kitState,
   'keymap',
   debounce(async (keymap) => {
-    log.info('Handling keymap change...');
+    log.info('Handling keymap change...', Object.values(keymap));
     if (prevKeymap) {
       pauseShortcuts();
       await new Promise((resolve) => setTimeout(resolve, 200));

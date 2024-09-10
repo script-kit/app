@@ -93,7 +93,10 @@ export const toKey = (keycode: number, shift = false) => {
     if (shift) {
       return ShiftMap[key as KeyCodes] || key;
     }
-    return key.toLowerCase();
+    if (key) {
+      return key.toLowerCase();
+    }
+    return '';
   } catch (error) {
     log.error(error);
     return '';

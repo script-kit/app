@@ -34,10 +34,14 @@ import { prompts } from './prompts';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
 import { kitCache, kitState } from './state';
 import { createLogger } from '../shared/log-utils';
+import { updateMainShortcut } from './shortcuts';
 const log = createLogger('ipc.ts');
 
 let actionsOpenTimeout: NodeJS.Timeout;
 let prevTransformedInput = '';
+let currentKeymap = '';
+let newKeymap = '';
+
 const checkShortcodesAndKeywords = (prompt: KitPrompt, rawInput: string): boolean => {
   //   log.info(`
 
@@ -684,11 +688,18 @@ ${child?.pid} 📝 Submitting...
   });
 
   ipcMain.on('SET_KEYBOARD_LAYOUT', (event, layoutMap: Record<string, string> | null) => {
-    kitState.keymap = layoutMap;
-    if (layoutMap) {
-      log.info('Non-QWERTY keyboard layout set:', layoutMap);
-    } else {
-      log.info('QWERTY or default keyboard layout detected, no custom mapping needed.');
+    newKeymap = JSON.stringify(layoutMap);
+    if (newKeymap !== currentKeymap) {
+      kitState.keymap = layoutMap;
+      currentKeymap = newKeymap;
+
+      log.info(`🌐 Keyboard layout:`, kitState.keymap);
+
+      if (layoutMap) {
+        log.info('Non-QWERTY keyboard layout set:', layoutMap);
+      } else {
+        log.info('QWERTY or default keyboard layout detected, no custom mapping needed.');
+      }
     }
   });
 };

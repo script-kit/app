@@ -92,6 +92,9 @@ emitter.on(
     if (!kitState.ready) {
       log.warn('Kit not ready. Ignoring prompt process:', scriptOrScriptAndData);
       if (typeof scriptOrScriptAndData === 'object' && 'scriptPath' in scriptOrScriptAndData) {
+        if (scriptOrScriptAndData.args[2].includes('Shortcut')) {
+          return;
+        }
         const { scriptPath, args, options } = scriptOrScriptAndData;
         if (path.basename(scriptPath) === 'info.js') {
           log.info('Opening main log:', mainLogPath);

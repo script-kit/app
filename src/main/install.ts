@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 import { debounce } from 'lodash-es';
 import StreamZip from 'node-stream-zip';
 
-import tar from 'tar';
+import * as tar from 'tar';
 import { lstat, readFile, rm, unlink } from 'node:fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import download, { type DownloadOptions } from './download';
