@@ -2,12 +2,13 @@ import { clipboard, nativeTheme, shell } from 'electron';
 import { HttpsProxyAgent } from 'hpagent';
 
 import { type SpawnOptions, type SpawnSyncReturns, spawn } from 'node:child_process';
-import os, { homedir } from 'node:os';
+import os from 'node:os';
 import path from 'node:path';
 import dotenv from 'dotenv';
 import { debounce } from 'lodash-es';
 import StreamZip from 'node-stream-zip';
-import * as tar from 'tar';
+
+import tar from 'tar';
 import { lstat, readFile, rm, unlink } from 'node:fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import download, { type DownloadOptions } from './download';
@@ -20,7 +21,7 @@ import {
   kitPath,
   processPlatformSpecificTheme,
 } from '@johnlindquist/kit/core/utils';
-import type { FlagsObject, Script, Scriptlet, Shortcut } from '@johnlindquist/kit/types';
+import type { Choice, FlagsObject, Script, Scriptlet, Shortcut } from '@johnlindquist/kit/types';
 import { CACHED_GROUPED_SCRIPTS_WORKER, CREATE_BIN_WORKER } from '@johnlindquist/kit/workers';
 
 import { KitPrompt, destroyPromptWindow, makeSplashWindow } from './prompt';
@@ -107,20 +108,6 @@ export const showSplash = async () => {
 
   splashPrompt.readyEmitter.once('ready', async () => {
     log.info('Splash screen ready');
-    splashPrompt?.sendToPrompt(Channel.APP_CONFIG, {
-      delimiter: path.delimiter,
-      sep: path.sep,
-      os: os.platform(),
-      isMac: os.platform().startsWith('darwin'),
-      isLinux: os.platform().startsWith('linux'),
-      isWin: os.platform().startsWith('win'),
-      assetPath: getAssetPath(),
-      version: getVersion(),
-      isDark: kitState.isDark,
-      searchDebounce: Boolean(kitState.kenvEnv?.KIT_SEARCH_DEBOUNCE === 'false'),
-      termFont: kitState.kenvEnv?.KIT_TERM_FONT || 'monospace',
-      url: kitState.url,
-    });
     const { scriptKitTheme, scriptKitLightTheme } = getThemes();
     const value = nativeTheme.shouldUseDarkColors ? scriptKitTheme : scriptKitLightTheme;
     const platformSpecificTheme = processPlatformSpecificTheme(value);
@@ -141,6 +128,24 @@ export const showSplash = async () => {
       width: PROMPT.WIDTH.BASE,
       height: PROMPT.HEIGHT.BASE,
     } as any);
+
+    const platform = os.platform();
+    const appConfig = {
+      delimiter: path.delimiter,
+      sep: path.sep,
+      os: platform,
+      isMac: platform === 'darwin',
+      isLinux: platform === 'linux',
+      isWin: platform === 'win32',
+      assetPath: getAssetPath(),
+      version: getVersion(),
+      isDark: kitState.isDark,
+      searchDebounce: Boolean(kitState.kenvEnv?.KIT_SEARCH_DEBOUNCE === 'false'),
+      termFont: kitState.kenvEnv?.KIT_TERM_FONT || 'monospace',
+      url: kitState.url,
+    };
+    log.info('Sending app config to splash screen', appConfig);
+    splashPrompt?.sendToPrompt(Channel.APP_CONFIG, appConfig);
   });
 
   sendSplashHeader('Installing Kit SDK and Kit Environment...');
@@ -414,14 +419,13 @@ export const installKenvDeps = async () => {
 
 const getOptions = () => {
   const options: DownloadOptions = {
-    insecure: true,
     rejectUnauthorized: false,
     followRedirect: true,
   };
   const proxy = process.env.HTTPS_PROXY || process.env.https_proxy || process.env.HTTP_PROXY || process.env.http_proxy;
   if (proxy) {
     log.info(`Using proxy ${proxy}`);
-    options.agent = new HttpsProxyAgent({
+    (options as any).agent = new HttpsProxyAgent({
       keepAlive: true,
       keepAliveMsecs: 1000,
       maxSockets: 256,
@@ -458,7 +462,7 @@ export const downloadKenv = async () => {
   let url = `https://github.com/johnlindquist/kenv/releases/latest/download/${fileName}`;
 
   // Check if ~/.kitrc exists, if so, read it and use the KENV_ZIP_URL
-  const kitrcPath = path.resolve(homedir(), '.kitrc');
+  const kitrcPath = path.resolve(os.homedir(), '.kitrc');
   let stat;
   try {
     stat = await lstat(kitrcPath);
@@ -848,30 +852,26 @@ const cacheTriggers = (choices: Choice[]) => {
       kitCache.triggers.set(trigger, choice);
     }
 
-    const postfix =
-      typeof choice?.pass === 'string' && choice?.pass !== 'true' && choice?.pass !== 'false' ? choice.pass : '';
-
-    if (postfix) {
-      // log.info(`🔚 Found postfix ${choice.pass}`);
-      kitCache.postfixes.set(choice?.pass.trim(), choice);
+    if (typeof choice?.pass === 'string') {
+      kitCache.postfixes.set(choice.pass.trim(), choice);
     }
   }
 };
 
 const scoreAndCacheMainChoices = (scripts: Script[]) => {
   // TODO: Reimplement score and cache?
-  const results = scripts
-    .filter((c) => {
-      if (c?.miss || c?.pass || c?.hideWithoutInput || c?.exclude) {
-        return false;
-      }
-      return true;
-    })
-    .map(createScoredChoice);
+  const filteredScripts = scripts.filter((c) => {
+    if (c?.miss || c?.pass || c?.hideWithoutInput || c?.exclude) {
+      return false;
+    }
+    return true;
+  });
+
+  const results = filteredScripts.map(createScoredChoice);
 
   kitCache.scripts = scripts;
   kitCache.choices = results;
-  cacheTriggers(results);
+  cacheTriggers(filteredScripts);
 
   for (const prompt of prompts) {
     log.info(`${prompt.pid}: initMainChoices`);
@@ -943,15 +943,16 @@ export const syncBins = async () => {
       const binDirPath = kenvPath('bin');
       const binFiles = await readdir(binDirPath);
       const worker = getBinWorker();
-      await Promise.all(
-        binFiles.map(async (bin) => {
-          const script = Array.from(kitState.scripts.values()).find((s) => s.command === bin);
-          if (!script) {
-            log.info(`🔗 Deleting bin ${bin}`);
-            await unlink(path.resolve(binDirPath, bin));
-          }
-        }),
-      );
+      const deletePromises: Promise<void>[] = [];
+      for (const bin of binFiles) {
+        const script = Array.from(kitState.scripts.values()).find((s) => s.command === bin);
+        if (!script) {
+          log.info(`🔗 Deleting bin ${bin}`);
+          deletePromises.push(unlink(path.resolve(binDirPath, bin)));
+        }
+      }
+
+      await Promise.all(deletePromises);
 
       for (const script of kitState.scripts.values()) {
         if (binFiles.includes(script.command) && !(script as Scriptlet).scriptlet) {
@@ -970,6 +971,10 @@ export const syncBins = async () => {
     }
   }, 750);
 };
+
+export function isBinnableScript(script: Script) {
+  return script?.group !== 'Kit' && script?.kenv !== '.kit' && !script?.skip && script?.command && script.filePath;
+}
 
 export const cacheMainMenu = ({
   scripts,
@@ -1014,9 +1019,6 @@ export const cacheMainMenu = ({
 
     kitState.scriptlets.clear();
     kitState.scripts.clear();
-
-    const isBinnableScript = (s: Script) =>
-      s?.group !== 'Kit' && s?.kenv !== '.kit' && !s?.skip && s?.command && s.filePath;
 
     const logQueue: string[] = [];
     let logTimeout;

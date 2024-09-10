@@ -2335,7 +2335,7 @@ export class KitPrompt {
 
   scriptSet = false;
 
-  setScript = async (script: Script, pid: number, force = false): Promise<'denied' | 'allowed'> => {
+  setScript = (script: Script, pid: number, force = false): 'denied' | 'allowed' => {
     const { preview, scriptlet, inputs, tag, ...serializableScript } = script as Scriptlet;
     this.scriptSet = true;
     log.info(`${this.pid}: ${pid} setScript`, serializableScript, {
@@ -2373,19 +2373,6 @@ export class KitPrompt {
 
     this.script = serializableScript;
 
-    // if (promptScript?.id === script?.id) return;
-    // log.info(script);
-
-    if (serializableScript.filePath === getMainScriptPath()) {
-      serializableScript.tabs = serializableScript?.tabs?.filter((tab: string) => !tab.match(/join|live/i));
-
-      const sinceLast = differenceInHours(Date.now(), kitState.previousDownload);
-      log.info(`Hours since sync: ${sinceLast}`);
-      if (sinceLast > 6) {
-        kitState.previousDownload = new Date();
-      }
-    }
-
     // log.info(`${this.pid}: sendToPrompt: ${Channel.SET_SCRIPT}`, serializableScript);
     this.sendToPrompt(Channel.SET_SCRIPT, serializableScript);
 
@@ -2399,7 +2386,7 @@ export class KitPrompt {
   };
 
   closed = false;
-  close = async () => {
+  close = () => {
     if (this.closed) {
       return;
     }
@@ -2462,6 +2449,12 @@ export class KitPrompt {
       // this.window = null;
     } catch (error) {
       log.error(error);
+    }
+
+    const sinceLast = differenceInHours(Date.now(), kitState.previousDownload);
+    log.info(`Hours since sync: ${sinceLast}`);
+    if (sinceLast > 6) {
+      kitState.previousDownload = new Date();
     }
 
     return;

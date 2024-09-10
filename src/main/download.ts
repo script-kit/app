@@ -8,6 +8,8 @@ export interface DownloadOptions {
   rejectUnauthorized?: boolean;
   /** Maximum number of redirects to follow. Defaults to 5. */
   maxRedirects?: number;
+  /** Whether to follow redirects. Defaults to true. */
+  followRedirect?: boolean;
 }
 
 /**
