@@ -15,6 +15,7 @@ import { prompts } from './prompts';
 import { convertKey, kitState, subs } from './state';
 import { createLogger } from '../shared/log-utils';
 import { runMainScript } from './main-script';
+import { createUiohookToName } from './io';
 
 const log = createLogger('shortcuts.ts');
 
@@ -361,6 +362,8 @@ const subKeymap = subscribeKey(
       await new Promise((resolve) => setTimeout(resolve, 200));
       resumeShortcuts();
     }
+
+    createUiohookToName();
 
     prevKeymap = keymap;
   }, 200),

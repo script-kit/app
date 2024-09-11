@@ -59,10 +59,13 @@ export const ShiftMap = {
 type KeyCodes = keyof typeof ShiftMap;
 
 let UiohookToName: Record<number, string>;
-function createUiohookToName() {
+export function createUiohookToName() {
   const { UiohookKey } = shims['uiohook-napi'];
 
-  UiohookToName = Object.fromEntries(Object.entries(UiohookKey).map(([k, v]) => [v, k]));
+  UiohookToName = {};
+  for (const [k, v] of Object.entries(UiohookKey)) {
+    UiohookToName[v] = k;
+  }
 
   UiohookToName[UiohookKey.Comma] = ',';
   UiohookToName[UiohookKey.Period] = '.';
@@ -72,6 +75,8 @@ function createUiohookToName() {
   UiohookToName[UiohookKey.Equal] = '=';
   UiohookToName[UiohookKey.Minus] = '-';
   UiohookToName[UiohookKey.Quote] = "'";
+
+  log.info('UiohookToName', UiohookToName);
 }
 
 export const toKey = (keycode: number, shift = false) => {
@@ -80,13 +85,13 @@ export const toKey = (keycode: number, shift = false) => {
   }
   try {
     let key: string = UiohookToName[keycode] || '';
+
+    // Apply keymap modifications
     if (kitState.keymap) {
       const char = chars[keycode];
-      if (char) {
-        const keymapChar = kitState.keymap?.[char];
-        if (keymapChar) {
-          key = keymapChar?.value;
-        }
+      if (char && kitState.keymap[char]) {
+        log.info(`Found keymap for ${char}: ${kitState.keymap[char]}`);
+        key = kitState.keymap[char];
       }
     }
 

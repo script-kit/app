@@ -507,7 +507,16 @@ export const cleanKit = async () => {
       force: true,
     });
   } catch (error) {
-    log.error(error);
+    log.error(
+      `Error cleaning the Kit SDK at: ${kitPath()}
+
+You will manually need to delete the KIT SDK directory and open Kit again:
+
+${kitPath()}
+    `,
+      error,
+    );
+    throw new Error(`Error cleaning ${kitPath()}`);
   }
 
   // const pathToClean = kitPath();
