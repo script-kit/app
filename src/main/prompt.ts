@@ -12,7 +12,7 @@ import type { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { differenceInHours } from 'date-fns';
 import {
   BrowserWindow,
-  Input,
+  type Input,
   type Point,
   type Rectangle,
   TouchBar,
@@ -22,7 +22,7 @@ import {
   screen,
   shell,
 } from 'electron';
-// import contextMenu from 'electron-context-menu';
+import contextMenu from 'electron-context-menu';
 import type { Display } from 'electron/main';
 import { debounce } from 'lodash-es';
 
@@ -68,11 +68,11 @@ import { createLogger } from '../shared/log-utils';
 const log = createLogger('prompt.ts');
 
 // TODO: Hack context menu to avoid "object destroyed" errors
-// contextMenu({
-//   showInspectElement: process.env.NODE_ENV === 'development',
-//   showSearchWithGoogle: false,
-//   showLookUpSelection: false,
-// });
+contextMenu({
+  showInspectElement: process.env.NODE_ENV === 'development',
+  showSearchWithGoogle: false,
+  showLookUpSelection: false,
+});
 
 const getDefaultWidth = () => {
   return PROMPT.WIDTH.BASE;
@@ -2010,6 +2010,10 @@ export class KitPrompt {
       this.setPromptAlwaysOnTop(promptData.alwaysOnTop, true);
     }
 
+    if (typeof promptData?.skipTaskbar === 'boolean') {
+      this.setSkipTaskbar(promptData.skipTaskbar);
+    }
+
     this.allowResize = promptData?.resize;
     kitState.shortcutsPaused = promptData.ui === UI.hotkey;
 
@@ -2254,6 +2258,13 @@ export class KitPrompt {
     log.info(`${this.pid}: forceFocus`);
     this.window?.show();
     this.window?.focus();
+  };
+
+  setSkipTaskbar = (skipTaskBar: boolean) => {
+    if (this.window?.isDestroyed()) {
+      return;
+    }
+    this.window?.setSkipTaskbar(skipTaskBar);
   };
 
   setPromptAlwaysOnTop = (onTop: boolean, manual = false) => {

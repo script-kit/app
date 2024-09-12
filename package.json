@@ -22,7 +22,7 @@
     "vite-build": "DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
     "rimraf-kit-setup": "rimraf ~/.kit-setup ~/.kenv-setup ~/.knode-setup",
     "kit-setup": "KIT=~/.kit-setup KENV=~/.kenv-setup KNODE=~/.knode-setup electron-vite dev",
-    "build-and-install:mac": "electron-vite build && npx kit ./build.ts mac arm64 never && rm -rf /Applications/Kit.app && mv release/mac-arm64/Kit.app /Applications/ && echo 'Kit.app installed. Remember to set KIT_APP_VERSION to the SDK release version then: open /Applications/Kit.app'",
+    "build-and-install:mac": "electron-vite build && npx kit ./build.ts mac arm64 never && rm -rf /Applications/Kit.app && mv release/mac-arm64/Kit.app /Applications/ && echo 'Kit.app installed. Remember to set KIT_APP_VERSION to the tagged app release version (e.g. 2.28.9) then: open /Applications/Kit.app'",
     "test:main": "vitest --config vitest.main.config.ts",
     "test:renderer": "vitest --config vitest.renderer.config.ts"
   },
@@ -139,6 +139,7 @@
     "dns-socket": "^4.2.2",
     "dotenv": "^16.4.5",
     "download": "^8.0.0",
+    "electron-context-menu": "^4.0.4",
     "electron-log": "^5.2.0",
     "electron-store": "^10.0.0",
     "electron-unhandled": "^5.0.0",
@@ -180,7 +181,7 @@
     "uiohook-napi": "^1.5.4"
   },
   "engines": {
-    "node": "20.16.0"
+    "node": "20.17.0"
   },
   "browserslist": [],
   "renovate": {

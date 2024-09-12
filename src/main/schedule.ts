@@ -55,16 +55,24 @@ export const sleepSchedule = () => {
   scheduleMap.clear();
 };
 
+let downloadsRunning = false;
 export const scheduleDownloads = async () => {
-  log.info('schedule downloads');
+  if (downloadsRunning) {
+    log.info('Downloads already running... Skipping downloads.js');
+    return;
+  }
+
   const isOnline = await online();
   if (!isOnline) {
+    log.info('Not online... Skipping downloads.js');
     return;
   }
 
   try {
     log.info(`Running downloads script: ${kitPath('setup', 'downloads.js')}`);
-    runScript(kitPath('setup', 'downloads.js'), process.env.NODE_ENV === 'development' ? '--dev' : '');
+    downloadsRunning = true;
+    await runScript(kitPath('setup', 'downloads.js'), process.env.NODE_ENV === 'development' ? '--dev' : '');
+    downloadsRunning = false;
   } catch (error) {
     log.error(error);
   }

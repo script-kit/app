@@ -90,7 +90,7 @@ export const toKey = (keycode: number, shift = false) => {
     if (kitState.keymap) {
       const char = chars[keycode];
       if (char && kitState.keymap[char]) {
-        log.info(`Found keymap for ${char}: ${kitState.keymap[char]}`);
+        // log.info(`Found keymap for ${char}: ${kitState.keymap[char]}`);
         key = kitState.keymap[char];
       }
     }

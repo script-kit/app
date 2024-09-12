@@ -83,7 +83,7 @@ import { createIdlePty, destroyPtyPool } from './pty';
 import { scheduleDownloads, sleepSchedule } from './schedule';
 import { startSettings as setupSettings } from './settings';
 import shims, { loadSupportedOptionalLibraries } from './shims';
-import { registerKillLatestShortcut, updateMainShortcut } from './shortcuts';
+import { handleKeymapChange, registerKillLatestShortcut, updateMainShortcut } from './shortcuts';
 import { startSK } from './sk';
 import { cacheKitScripts, getThemes, kitState, kitStore, subs } from './state';
 import { TrackEvent, trackEvent } from './track';
@@ -976,6 +976,10 @@ const checkKit = async () => {
     registerKillLatestShortcut();
 
     await ready();
+
+    if (kitState.keymap) {
+      handleKeymapChange();
+    }
 
     kitState.ready = true;
     kitState.user_id = `${Date.now()}`;

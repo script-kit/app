@@ -352,21 +352,19 @@ subs.push(subShortcutsPaused);
 // sub to keymap
 let prevKeymap: any = null;
 
-const subKeymap = subscribeKey(
-  kitState,
-  'keymap',
-  debounce(async (keymap) => {
-    log.info('Handling keymap change...', Object.values(keymap));
-    if (prevKeymap) {
-      pauseShortcuts();
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      resumeShortcuts();
-    }
+export const handleKeymapChange = async () => {
+  log.info('Handling keymap change...', kitState.keymap);
+  if (prevKeymap) {
+    pauseShortcuts();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    resumeShortcuts();
+  }
 
-    createUiohookToName();
+  createUiohookToName();
 
-    prevKeymap = keymap;
-  }, 200),
-);
+  prevKeymap = kitState.keymap;
+};
+
+const subKeymap = subscribeKey(kitState, 'keymap', debounce(handleKeymapChange, 200));
 
 subs.push(subKeymap);
