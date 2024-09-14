@@ -127,7 +127,7 @@ const config: Configuration = {
   },
   asar: true,
   asarUnpack,
-  afterSign,
+  afterSign: platform === 'mac' ? afterSign : undefined,
   files,
 
   nsis: {
