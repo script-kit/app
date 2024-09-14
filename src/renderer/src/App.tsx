@@ -69,6 +69,14 @@ import {
   zoomAtom,
 } from './jotai';
 
+declare global {
+  interface Navigator {
+    keyboard: {
+      getLayoutMap(): Promise<Map<string, string>>;
+    };
+  }
+}
+
 import { loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { AppChannel } from '../../shared/enums';
@@ -114,6 +122,7 @@ self.MonacoEnvironment = {
 loader.config({ monaco });
 
 import { createLogger } from '../../shared/log-utils';
+import { KNOWN_KEYBOARD_LAYOUTS, QWERTY, detectKeyboardLayout } from '../../shared/keyboard/layout';
 const log = createLogger('App.tsx');
 
 class ErrorBoundary extends React.Component {
@@ -525,51 +534,16 @@ export default function App() {
         try {
           const layout = await navigator.keyboard.getLayoutMap();
           const layoutMap: Record<string, string> = {};
-          let detectedLayout = 'Unknown';
 
           for (const [code, key] of layout.entries()) {
             layoutMap[code] = key;
           }
 
-          // Check for QWERTY
-          if (layoutMap.KeyQ === 'q' && layoutMap.KeyW === 'w' && layoutMap.KeyE === 'e') {
-            detectedLayout = 'QWERTY';
-          }
-          // Check for AZERTY
-          else if (layoutMap.KeyA === 'q' && layoutMap.KeyZ === 'w' && layoutMap.KeyE === 'e') {
-            detectedLayout = 'AZERTY';
-          }
-          // Check for QWERTZ
-          else if (layoutMap.KeyQ === 'q' && layoutMap.KeyW === 'w' && layoutMap.KeyY === 'z') {
-            detectedLayout = 'QWERTZ';
-          }
-          // Check for Dvorak
-          else if (layoutMap.KeyQ === "'" && layoutMap.KeyW === ',' && layoutMap.KeyE === '.') {
-            detectedLayout = 'Dvorak';
-          }
-          // Check for Colemak
-          else if (layoutMap.KeyQ === 'q' && layoutMap.KeyW === 'w' && layoutMap.KeyF === 'e') {
-            detectedLayout = 'Colemak';
-          }
-          // Check for non-standard characters in A-Z keys
-          let isNonStandardLayout = false;
-
-          for (const key of Object.values(layoutMap)) {
-            if (/[^\u0000-\u007F]/.test(key)) {
-              log.info(`🌐 Non-standard character detected: ${key}`);
-              isNonStandardLayout = true;
-              break;
-            }
-          }
-
-          if (isNonStandardLayout) {
-            detectedLayout = 'Non-US';
-          }
+          const detectedLayout = detectKeyboardLayout(layoutMap);
 
           log.info(`Detected keyboard layout: ${detectedLayout}`);
 
-          // Send null if it's a QWERTY layout, otherwise send the layout map
-          ipcRenderer.send('SET_KEYBOARD_LAYOUT', detectedLayout === 'QWERTY' ? null : layoutMap);
+          ipcRenderer.send('SET_KEYBOARD_LAYOUT', detectedLayout === 'QWERTY' ? {} : layoutMap);
         } catch (error) {
           log.warn('Error getting keyboard layout:', error);
           ipcRenderer.send('SET_KEYBOARD_LAYOUT', null);
