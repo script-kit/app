@@ -124,7 +124,7 @@ const config: Configuration = {
     shortcutName: 'Kit',
   },
   mac: {
-    notarize: false,
+    notarize: true,
     icon: 'assets/icons/mac/icon.icns',
     category: 'public.app-category.productivity', // Keep as is or update based on package.json if needed
     hardenedRuntime: true,
