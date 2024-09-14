@@ -213,7 +213,6 @@ jobs:
       - name: Publish windows x64
         if: matrix.os == 'windows-latest'
         env:
-          # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
@@ -310,6 +309,8 @@ jobs:
         if: matrix.os == 'macos-latest'
         env:
           # These values are used for auto updates signing
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
@@ -330,6 +331,8 @@ jobs:
         if: matrix.os == 'macos-14'
         env:
           # These values are used for auto updates signing
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
