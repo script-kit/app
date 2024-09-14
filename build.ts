@@ -91,6 +91,30 @@ const afterSign = function notarizeMacos(context: AfterPackContext) {
     stdio: 'inherit',
   });
 
+  // Staple the notarization ticket to the app
+  console.log(`Stapling notarization ticket to ${appOutDir}/${productFilename}.app`);
+  try {
+    execSync(`xcrun stapler staple "${appOutDir}/${productFilename}.app"`, {
+      stdio: 'inherit',
+    });
+    console.log('Stapling completed successfully');
+  } catch (error) {
+    console.error('Error during stapling:', error);
+    process.exit(1);
+  }
+
+  // Validate the stapling
+  console.log(`Validating stapling for ${appOutDir}/${productFilename}.app`);
+  try {
+    execSync(`xcrun stapler validate "${appOutDir}/${productFilename}.app"`, {
+      stdio: 'inherit',
+    });
+    console.log('Stapling validation successful');
+  } catch (error) {
+    console.error('Error during stapling validation:', error);
+    process.exit(1);
+  }
+
   console.log('Codesign result', result);
 };
 
