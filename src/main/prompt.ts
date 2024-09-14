@@ -2505,9 +2505,9 @@ export class KitPrompt {
 
     if ((isW && (kitState.isMac ? input.meta : input.control)) || this.shouldClosePromptOnInitialEscape(isEscape)) {
       if (isW) {
-        log.info(`Closing prompt window with ${kitState.isMac ? '⌘' : '⌃'}+w`);
+        log.purple(`Closing prompt window with ${kitState.isMac ? '⌘' : '⌃'}+w`);
       } else if (isEscape) {
-        log.info('Closing prompt window with escape');
+        log.purple('Closing prompt window with escape');
         this.hideInstant();
       }
 
