@@ -83,6 +83,16 @@ export const getPromptOptions = () => {
     backgroundMaterial = kitState.kenvEnv.KIT_BACKGROUND_MATERIAL;
   }
 
+  let roundedCorners = true;
+  if (kitState?.kenvEnv?.KIT_ROUNDED_CORNERS === 'false') {
+    roundedCorners = false;
+  }
+
+  let thickFrame = true;
+  if (kitState?.kenvEnv?.KIT_THICK_FRAME === 'false') {
+    thickFrame = false;
+  }
+
   // Log all of the conditional options:
   log.info('Prompt Options:', {
     gpu: kitState.gpuEnabled,
@@ -127,6 +137,8 @@ export const getPromptOptions = () => {
     y,
     backgroundColor,
     backgroundMaterial,
+    thickFrame,
+    roundedCorners,
     focusable: false,
     // NOTE: AVOID type 'panel' on MacOS. This breaks the "mac-panel-window" behavior because it attempts to restore it to the "previous" window type.
   } as BrowserWindowConstructorOptions;
