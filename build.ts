@@ -39,47 +39,59 @@ console.log(`🛠️ Building for ${platform} ${arch} ${publish} using ${electro
 
 console.log(`Will only build: ${onlyModules}`);
 
-const afterSign = async function notarizeMacos(context: AfterPackContext) {
-  console.log('Attempting notarization', context);
-  const { electronPlatformName, appOutDir } = context;
-  if (electronPlatformName !== 'darwin') {
-    return;
-  }
+const afterSign = function notarizeMacos(context: AfterPackContext) {
+  // console.log('Attempting notarization', context);
+  // const { electronPlatformName, appOutDir } = context;
+  // if (electronPlatformName !== 'darwin') {
+  //   return;
+  // }
 
-  if (!process.env.CI) {
-    console.warn('Skipping notarizing step. Packaging is not running in CI');
-    return;
-  }
+  // if (!process.env.CI) {
+  //   console.warn('Skipping notarizing step. Packaging is not running in CI');
+  //   return;
+  // }
 
-  if (!('APPLE_ID' in process.env && 'APPLE_ID_PASS' in process.env)) {
-    console.warn('Skipping notarizing step. APPLE_ID and APPLE_ID_PASS env variables must be set');
-    return;
-  }
+  // if (!('APPLE_ID' in process.env && 'APPLE_ID_PASS' in process.env)) {
+  //   console.warn('Skipping notarizing step. APPLE_ID and APPLE_ID_PASS env variables must be set');
+  //   return;
+  // }
 
-  const appName = context.packager.appInfo.productFilename;
+  // const appName = context.packager.appInfo.productFilename;
 
-  console.log('Notarizing', appName);
-  console.log('Found envs:', {
-    APPLE_ID: typeof process.env?.APPLE_ID,
-    APPLE_ID_PASS: typeof process.env?.APPLE_ID_PASS,
-    CSC_LINK: typeof process.env?.CSC_LINK,
-    CSC_KEY_PASSWORD: typeof process.env?.CSC_KEY_PASSWORD,
-    APPLE_APP_SPECIFIC_PASSWORD: typeof process.env?.APPLE_APP_SPECIFIC_PASSWORD,
+  // console.log('Notarizing', appName);
+  // console.log('Found envs:', {
+  //   APPLE_ID: typeof process.env?.APPLE_ID,
+  //   APPLE_ID_PASS: typeof process.env?.APPLE_ID_PASS,
+  //   CSC_LINK: typeof process.env?.CSC_LINK,
+  //   CSC_KEY_PASSWORD: typeof process.env?.CSC_KEY_PASSWORD,
+  //   APPLE_APP_SPECIFIC_PASSWORD: typeof process.env?.APPLE_APP_SPECIFIC_PASSWORD,
+  // });
+
+  // try {
+  //   const notarizationResult = await notarize({
+  //     tool: 'notarytool',
+  //     appPath: `${appOutDir}/${appName}.app`,
+  //     appleId: process.env?.APPLE_ID as string,
+  //     appleIdPassword: process.env?.APPLE_ID_PASS as string,
+  //     teamId: '9822B7V7MD',
+  //   });
+  //   console.log('Notarization result', notarizationResult);
+  // } catch (e) {
+  //   console.error('Notarization failed', e);
+  //   process.exit(1);
+  // }
+
+  // Verify the app is signed
+
+  const { appOutDir } = context; // This is the path to the unpacked app
+  const { productFilename } = context.packager.appInfo; // This is the name of the app
+
+  console.log(`Verifying ${appOutDir}/${productFilename}.app`);
+  const result = execSync(`codesign --verify --deep --strict --verbose=2 ${appOutDir}/${productFilename}.app`, {
+    stdio: 'inherit',
   });
 
-  try {
-    const notarizationResult = await notarize({
-      tool: 'notarytool',
-      appPath: `${appOutDir}/${appName}.app`,
-      appleId: process.env?.APPLE_ID as string,
-      appleIdPassword: process.env?.APPLE_ID_PASS as string,
-      teamId: '9822B7V7MD',
-    });
-    console.log('Notarization result', notarizationResult);
-  } catch (e) {
-    console.error('Notarization failed', e);
-    process.exit(1);
-  }
+  console.log('Codesign result', result);
 };
 
 const asarUnpack = ['assets/**/*'];
@@ -94,6 +106,7 @@ const dirFiles = (await fsExtra.readdir('.', { withFileTypes: true })).filter(
       dir.name.startsWith('package.json')
     ),
 );
+4;
 // If directory, exclude with !directory**/*
 // If file, exclude with !file
 const files = dirFiles
@@ -114,7 +127,7 @@ const config: Configuration = {
   },
   asar: true,
   asarUnpack,
-  // afterSign,
+  afterSign,
   files,
 
   nsis: {
