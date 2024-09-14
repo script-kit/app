@@ -114,7 +114,7 @@ const config: Configuration = {
   },
   asar: true,
   asarUnpack,
-  afterSign,
+  // afterSign,
   files,
 
   nsis: {
@@ -129,7 +129,7 @@ const config: Configuration = {
     category: 'public.app-category.productivity', // Keep as is or update based on package.json if needed
     hardenedRuntime: true,
     entitlements: 'assets/entitlements.mac.plist',
-    gatekeeperAssess: false,
+    gatekeeperAssess: true,
     extendInfo: {
       CFBundleDocumentTypes: [
         {
