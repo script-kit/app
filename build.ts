@@ -126,7 +126,6 @@ const config: Configuration = {
   mac: {
     notarize: {
       teamId: '9822B7V7MD',
-      appBundleId: 'app.scriptkit',
     },
     icon: 'assets/icons/mac/icon.icns',
     category: 'public.app-category.productivity', // Keep as is or update based on package.json if needed
