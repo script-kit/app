@@ -183,7 +183,7 @@ try {
     console.log('Failed to read package.json:', err);
     return null;
   });
-  if (packageJson? .version) {
+  if (packageJson?.version) {
     console.log(`Detected package.json version: ${packageJson.version}`);
     const npmUrl = `https://registry.npmjs.org/@johnlindquist/kit/-/kit-${packageJson.version}.tgz`;
     console.log(`Proposed NPM download URL: ${npmUrl}`);
