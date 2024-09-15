@@ -381,12 +381,7 @@ export const installMacDeps = async () => {
 
   const packageJson = await readPackageJson();
   if (packageJson) {
-    const esbuildVersion = packageJson.devDependencies?.esbuild || '0.21.4';
-    const tsxVersion = packageJson.devDependencies?.tsx || '4.15.7';
-    log.info(`Using esbuild version: ${esbuildVersion}`);
-    log.info(`Using tsx version: ${tsxVersion}`);
-
-    const pnpmResult = await installDependencies(['mac-windows'], `i -D mac-windows@1.0.0`, kitPath());
+    const pnpmResult = await installDependencies(['mac-windows'], 'i mac-windows@1.0.0', kitPath());
     return pnpmResult;
   }
 
@@ -662,15 +657,31 @@ export const downloadKit = async () => {
 
   const kitSDK = `Kit-SDK-${uppercaseOSName}-${version}-${process.arch}.${extension}`;
   const file = osTmpPath(kitSDK);
-  let url = `https://github.com/script-kit/app/releases/download/v${version}/${kitSDK}`;
+  let fallbackUrl = `https://github.com/script-kit/app/releases/download/v${version}/${kitSDK}`;
   if (process.env?.KIT_SDK_URL) {
-    url = process.env.KIT_SDK_URL;
+    fallbackUrl = process.env.KIT_SDK_URL;
   }
 
-  sendSplashBody(`Downloading Kit SDK from ${url}`);
+  let url;
+  try {
+    const sdkVersion = await readFile(getAssetPath('sdk-version.txt'), 'utf8');
+    url = `https://registry.npmjs.org/@johnlindquist/kit/-/kit-${sdkVersion}.tgz`;
+  } catch (e) {
+    log.warn('No SDK version file found, using fallback URL');
+  }
+
+  sendSplashBody(`Downloading Kit SDK from ${fallbackUrl}`);
 
   try {
-    const buffer = await download(url, getOptions());
+    let buffer;
+    try {
+      log.green(`Attempting to download SDK from NPM: ${url}`);
+      buffer = await download(url, getOptions());
+    } catch (e) {
+      log.red(`Failed to download SDK from NPM`, e);
+      log.green(`Downloading SDK from GitHub Releases: ${fallbackUrl}`);
+      buffer = await download(fallbackUrl, getOptions());
+    }
 
     sendSplashBody(`Writing Kit SDK to ${file}`);
     await writeFile(file, buffer);
@@ -1056,7 +1067,7 @@ export const cacheMainMenu = ({
     kitState.scripts.clear();
 
     const logQueue: string[] = [];
-    let logTimeout;
+    let logTimeout: NodeJS.Timeout;
 
     const flushLogQueue = () => {
       if (logQueue.length > 0) {

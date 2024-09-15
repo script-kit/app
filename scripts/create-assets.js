@@ -175,6 +175,28 @@ const kitTarFilePath = path.resolve(process.env.PWD, 'assets', 'kit.tar.gz');
 console.log({ kitUrlFilePath, url });
 
 await writeFile(kitUrlFilePath, url);
+
+// Add console log to read package.json version
+try {
+  const packageJsonPath = path.resolve(process.env.PWD, 'package.json');
+  const packageJson = await readJson(packageJsonPath).catch((err) => {
+    console.log('Failed to read package.json:', err);
+    return null;
+  });
+  if (packageJson && packageJson.version) {
+    console.log(`Detected package.json version: ${packageJson.version}`);
+    const npmUrl = `https://registry.npmjs.org/@johnlindquist/kit/-/kit-${packageJson.version}.tgz`;
+    console.log(`Proposed NPM download URL: ${npmUrl}`);
+    const kitVersion = packageJson.version;
+    const kitVersionFilePath = path.resolve(process.env.PWD, 'assets', 'sdk-version.txt');
+    await writeFile(kitVersionFilePath, kitVersion);
+  } else {
+    console.log('package.json version not found. Using existing GitHub Releases URL.');
+  }
+} catch (e) {
+  console.warn(e);
+}
+
 // TODO: determine if I want to bundle
 // Benefits: Faster install
 // Downsides: Larger download, more complicated CI (x64, arm64, etc in different steps)
