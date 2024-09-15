@@ -178,7 +178,7 @@ await writeFile(kitUrlFilePath, url);
 
 // Add console log to read package.json version
 try {
-  const packageJsonPath = kitPathCopy('package.json');
+  const packageJsonPath = kitPath('package.json');
   const packageJson = await readJson(packageJsonPath).catch((err) => {
     console.log('Failed to read package.json:', err);
     return null;
