@@ -367,6 +367,32 @@ const verifyInstallation = async (dependencyName: string, cwd: string) => {
   }
 };
 
+export const installMacDeps = async () => {
+  async function readPackageJson() {
+    const packageJsonPath = kitPath('package.json');
+    try {
+      const data = await readFile(packageJsonPath, 'utf8');
+      return JSON.parse(data);
+    } catch (error) {
+      log.error(`Error reading package.json: ${error}`);
+      return null;
+    }
+  }
+
+  const packageJson = await readPackageJson();
+  if (packageJson) {
+    const esbuildVersion = packageJson.devDependencies?.esbuild || '0.21.4';
+    const tsxVersion = packageJson.devDependencies?.tsx || '4.15.7';
+    log.info(`Using esbuild version: ${esbuildVersion}`);
+    log.info(`Using tsx version: ${tsxVersion}`);
+
+    const pnpmResult = await installDependencies(['mac-windows'], `i -D mac-windows@1.0.0`, kitPath());
+    return pnpmResult;
+  }
+
+  return null;
+};
+
 export const installLoaderTools = async () => {
   async function readPackageJson() {
     const packageJsonPath = kitPath('package.json');

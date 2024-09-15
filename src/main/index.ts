@@ -62,7 +62,6 @@ import {
   downloadKit,
   extractKenv,
   extractKitTar,
-  installLoaderTools,
   installKenvDeps,
   matchPackageJsonEngines,
   ohNo,
@@ -73,6 +72,7 @@ import {
   installKitDeps,
   spawnP,
   installPnpm,
+  installMacDeps,
 } from './install';
 import { startIpc } from './ipc';
 import { cliFromParams, runPromptProcess } from './kit';
@@ -926,6 +926,9 @@ const checkKit = async () => {
   }
 
   // await installLoaderTools();
+  if (process.platform === 'darwin') {
+    await installMacDeps();
+  }
 
   try {
     await setupScript(kitPath('setup', 'chmod-helpers.js'));
