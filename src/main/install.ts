@@ -49,7 +49,7 @@ import { createForkOptions } from './fork.options';
 import { osTmpPath } from './tmp';
 import { getAssetPath } from '../shared/assets';
 import { getVersion } from './version';
-import { getPnpmPath } from './setup/pnpm';
+import { findPnpmBin, getPnpmPath, symlinkPnpm } from './setup/pnpm';
 
 const log = createLogger('install.ts');
 
@@ -622,7 +622,7 @@ export const installPnpm = async () => {
   }
   log.info('pnpm installation completed.');
 
-  // await symlinkPnpm(await findPnpmBin());
+  await symlinkPnpm(await findPnpmBin());
 };
 
 export const installKitDeps = async () => {

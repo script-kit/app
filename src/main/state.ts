@@ -352,6 +352,7 @@ const initState = {
   hasCss: false,
   waitingForPing: false,
   NODE_PATH: '',
+  serverRunning: false, // {{ added }}
 };
 
 const initConfig: Config = {

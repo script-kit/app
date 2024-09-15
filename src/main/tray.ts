@@ -39,6 +39,8 @@ import { processes } from './process';
 import { prompts } from './prompts';
 import { forceQuit, kitState, subs } from './state';
 import { getVersion } from './version';
+import { getServerPort } from './serverTrayUtils';
+import { startServer, stopServer, restartServer } from './server';
 
 let tray: Tray | null = null;
 
@@ -311,7 +313,7 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
 
   toolsSubmenu.push({
     label: 'Force Reload',
-    click: async () => {
+    click: () => {
       ipcMain.emit(AppChannel.RELOAD);
     },
   });
@@ -322,7 +324,7 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
     },
     {
       label: 'Open kit.log',
-      click: async () => {
+      click: () => {
         shell.openPath(kitPath('logs', 'kit.log'));
       },
     },
@@ -423,6 +425,33 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
   });
 
   return toolsSubmenu;
+};
+
+const buildServerSubmenu = (): MenuItemConstructorOptions[] => {
+  if (kitState.serverRunning) {
+    return [
+      {
+        label: 'Stop Server',
+        click: () => {
+          stopServer();
+        },
+      },
+      {
+        label: 'Restart Server',
+        click: () => {
+          restartServer();
+        },
+      },
+    ];
+  }
+  return [
+    {
+      label: 'Start Server',
+      click: () => {
+        startServer();
+      },
+    },
+  ];
 };
 
 export const openMenu = debounce(
@@ -567,6 +596,22 @@ export const openMenu = debounce(
           click: runScript(kitPath('cli', 'change-main-shortcut.js')),
         },
         ...(await buildRunningScriptsSubmenu()),
+        {
+          label: 'Server Controls',
+          submenu: buildServerSubmenu(),
+        },
+        // {{ Conditionally display server running status }}
+        ...(kitState.serverRunning
+          ? [
+              {
+                label: `Server running on port ${getServerPort()}`,
+                enabled: false,
+              },
+              {
+                type: 'separator',
+              },
+            ]
+          : []),
         {
           label: 'Quit',
           click: () => {
@@ -784,6 +829,11 @@ const subReady = subscribeKey(kitState, 'ready', () => {
       steal: true,
     });
   }
+});
+
+subscribeKey(kitState, 'serverRunning', () => {
+  // Rebuild tray menu or update relevant parts
+  setupTray(); // Assuming setupTray rebuilds the tray menu
 });
 
 subs.push(subReady);
