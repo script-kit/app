@@ -178,15 +178,24 @@ await writeFile(kitUrlFilePath, url);
 
 // Add console log to read package.json version
 try {
-  const packageJsonPath = path.resolve(process.env.PWD, 'package.json');
+  const packageJsonPath = kitPathCopy('package.json');
   const packageJson = await readJson(packageJsonPath).catch((err) => {
     console.log('Failed to read package.json:', err);
     return null;
   });
-  if (packageJson && packageJson.version) {
+  if (packageJson? .version) {
     console.log(`Detected package.json version: ${packageJson.version}`);
     const npmUrl = `https://registry.npmjs.org/@johnlindquist/kit/-/kit-${packageJson.version}.tgz`;
     console.log(`Proposed NPM download URL: ${npmUrl}`);
+
+    // ping url to see if it exists
+    const response = await fetch(npmUrl);
+    if (response.status === 200) {
+      console.log(`NPM URL exists: ${npmUrl}`);
+    } else {
+      console.log(`NPM URL does not exist: ${npmUrl}`);
+    }
+
     const kitVersion = packageJson.version;
     const kitVersionFilePath = path.resolve(process.env.PWD, 'assets', 'sdk-version.txt');
     await writeFile(kitVersionFilePath, kitVersion);
