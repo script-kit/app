@@ -72,7 +72,7 @@ const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
     const success = globalShortcut.register(shortcut, shortcutAction);
 
     if (success) {
-      // log.info(`Registered: ${shortcut} to ${filePath}`);
+      log.info(`Registered: ${shortcut} to ${filePath}`);
     } else {
       log.info(`Failed to register: ${shortcut} to ${filePath}`);
       shortcutInfo(shortcut, filePath, registerFail);
@@ -231,6 +231,8 @@ export const shortcutScriptChanged = async ({
       shortcut: convertedShortcut,
       shebang: shebang || '',
     });
+  } else {
+    log.error(`Failed to register ${convertedShortcut} to ${filePath}`);
   }
 };
 
@@ -357,6 +359,7 @@ export const handleKeymapChange = async () => {
   if (prevKeymap) {
     pauseShortcuts();
     await new Promise((resolve) => setTimeout(resolve, 200));
+
     resumeShortcuts();
   }
 
@@ -365,6 +368,7 @@ export const handleKeymapChange = async () => {
   prevKeymap = kitState.keymap;
 };
 
-const subKeymap = subscribeKey(kitState, 'keymap', debounce(handleKeymapChange, 200));
+const debouncedHandleKeymapChange = debounce(handleKeymapChange, 200);
+const subKeymap = subscribeKey(kitState, 'keymap', debouncedHandleKeymapChange);
 
 subs.push(subKeymap);

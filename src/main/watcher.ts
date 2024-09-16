@@ -51,12 +51,12 @@ const log = createLogger('watcher.ts');
 const debounceCacheMainScripts = debounce(cacheMainScripts, 250);
 
 const unlink = (filePath: string) => {
-  unlinkShortcuts(filePath);
   cancelSchedule(filePath);
   unlinkEvents(filePath);
   removeWatch(filePath);
   removeBackground(filePath);
   removeSnippet(filePath);
+  unlinkShortcuts(filePath);
 
   const binPath = path.resolve(
     path.dirname(path.dirname(filePath)),
@@ -304,7 +304,13 @@ function watchTheme() {
 
 let firstBatch = true;
 let firstBatchTimeout: NodeJS.Timeout;
-export const onScriptsChanged = async (event: WatchEvent, script: Script, rebuilt = false) => {
+export const reevaluateAllScripts = async () => {
+  for (const script of kitState.scripts.values()) {
+    await onScriptChanged('change', script, true);
+  }
+};
+
+export const onScriptChanged = async (event: WatchEvent, script: Script, rebuilt = false) => {
   if (firstBatch) {
     if (firstBatchTimeout) {
       clearTimeout(firstBatchTimeout);
@@ -354,12 +360,12 @@ export const onScriptsChanged = async (event: WatchEvent, script: Script, rebuil
     }
 
     log.info('Shortcut script changed', script.filePath);
-    shortcutScriptChanged(script);
     scheduleScriptChanged(script);
     systemScriptChanged(script);
     watchScriptChanged(script);
     backgroundScriptChanged(script);
     addSnippet(script);
+    await shortcutScriptChanged(script);
 
     sendToAllActiveChildren({
       channel: Channel.SCRIPT_ADDED,
@@ -473,7 +479,7 @@ const refreshScripts = debounce(
     log.info('🌈 Refreshing Scripts...');
     const scripts = await getScripts();
     for (const script of scripts) {
-      onScriptsChanged('change', script, true);
+      onScriptChanged('change', script, true);
     }
   },
   500,
@@ -877,7 +883,9 @@ export const setupWatchers = async () => {
         }
       }
 
-      await Promise.all(changedScriptlets.map((scriptlet) => onScriptsChanged(eventName, scriptlet)));
+      for await (const scriptlet of changedScriptlets) {
+        await onScriptChanged(eventName, scriptlet);
+      }
 
       return;
     }
@@ -900,7 +908,7 @@ export const setupWatchers = async () => {
           name: path.basename(filePath),
         };
       }
-      onScriptsChanged(eventName, script);
+      await onScriptChanged(eventName, script);
       return;
     }
 

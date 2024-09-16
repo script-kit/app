@@ -837,7 +837,10 @@ const checkKit = async () => {
     if (await kitExists()) {
       kitState.updateInstalling = true;
       await setupLog('Cleaning previous .kit');
+      const cleanKitStart = performance.now();
       await cleanKit();
+      const cleanKitEnd = performance.now();
+      log.info(`🧹 Cleaned previous .kit in ${cleanKitEnd - cleanKitStart}ms`);
       trackEvent(TrackEvent.ApplyUpdate, {
         previousVersion: storedVersion,
         newVersion: getVersion(),

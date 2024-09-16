@@ -9,7 +9,7 @@ import { debounce } from 'lodash-es';
 import StreamZip from 'node-stream-zip';
 
 import * as tar from 'tar';
-import { lstat, readFile, rm, unlink } from 'node:fs/promises';
+import { lstat, readFile, rm, unlink, rename } from 'node:fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import download, { type DownloadOptions } from './download';
 import {
@@ -50,6 +50,8 @@ import { osTmpPath } from './tmp';
 import { getAssetPath } from '../shared/assets';
 import { getVersion } from './version';
 import { findPnpmBin, getPnpmPath, symlinkPnpm } from './setup/pnpm';
+import { shortcutMap } from './shortcuts';
+import { onScriptChanged } from './watcher';
 
 const log = createLogger('install.ts');
 
@@ -521,48 +523,24 @@ export const downloadKenv = async () => {
 
 export const cleanKit = async () => {
   log.info(`🧹 Cleaning ${kitPath()}`);
-  // Remove the entire kit directory
+
+  const timestamp = Date.now();
+  const { name, dir } = path.parse(kitPath());
+  const tempPath = path.resolve(dir, `${name}_delete_${timestamp}`);
+
   try {
-    await rm(kitPath(), {
-      recursive: true,
-      force: true,
-    });
+    // Rename the directory
+    await rename(kitPath(), tempPath);
+    log.info(`Renamed Kit path to ${tempPath}`);
+
+    // Delete the renamed directory asynchronously
+    rm(tempPath, { recursive: true, force: true })
+      .then(() => log.info(`Successfully deleted ${tempPath}`))
+      .catch((error) => log.error(`Error deleting ${tempPath}`, error));
   } catch (error) {
-    log.error(
-      `Error cleaning the Kit SDK at: ${kitPath()}
-
-You will manually need to delete the KIT SDK directory and open Kit again:
-
-${kitPath()}
-    `,
-      error,
-    );
+    log.error(`Error cleaning the Kit SDK at: ${kitPath()}`, error);
     throw new Error(`Error cleaning ${kitPath()}`);
   }
-
-  // const pathToClean = kitPath();
-
-  // const keep = (file: string) =>
-  //   file === 'db' || file === 'node_modules' || file === 'assets';
-
-  // // eslint-disable-next-line no-restricted-syntax
-  // for await (const file of await readdir(pathToClean)) {
-  //   if (keep(file)) {
-  //     log.info(`👍 Keeping ${file}`);
-  //     // eslint-disable-next-line no-continue
-  //     continue;
-  //   }
-
-  //   const filePath = path.resolve(pathToClean, file);
-  //   const stat = await lstat(filePath);
-  //   if (stat.isDirectory()) {
-  //     await rm(filePath, { recursive: true, force: true });
-  //     log.info(`🧹 Cleaning dir ${filePath}`);
-  //   } else {
-  //     await rm(filePath);
-  //     log.info(`🧹 Cleaning file ${filePath}`);
-  //   }
-  // }
 };
 
 const execFileAsync = promisify(execFile);
@@ -1102,6 +1080,17 @@ export const cacheMainMenu = ({
     flushLogQueue();
 
     syncBins();
+
+    log.info(`Shortcut check: ${shortcutMap.size} shortcuts cached`);
+    if (shortcutMap.size === 0) {
+      log.info(`Found no shortcuts, checking scripts`);
+      // Check if any scripts have shortcuts
+      for (const script of kitState.scripts.values()) {
+        if (script.shortcut) {
+          log.info(`Found script with shortcut: ${script.filePath}, adding to cache`);
+        }
+      }
+    }
   }
 };
 
