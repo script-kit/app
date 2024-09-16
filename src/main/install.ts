@@ -52,6 +52,7 @@ import { getVersion } from './version';
 import { findPnpmBin, getPnpmPath, symlinkPnpm } from './setup/pnpm';
 import { shortcutMap } from './shortcuts';
 import { onScriptChanged } from './watcher';
+import { showInfo } from './info';
 
 const log = createLogger('install.ts');
 
@@ -505,7 +506,7 @@ export const downloadKenv = async () => {
     }
   }
 
-  sendSplashBody(`Downloading Kit Environment from ${url}....`);
+  sendSplashBody(`Downloading Kit Environment (.kenv) from ${url}....`);
   try {
     const buffer = await download(url, getOptions());
     log.info(`Downloaded ${buffer.length} bytes`);
@@ -640,12 +641,20 @@ export const downloadKit = async () => {
     fallbackUrl = process.env.KIT_SDK_URL;
   }
 
-  let url;
+  let url:string;
   try {
-    const sdkVersion = await readFile(getAssetPath('sdk-version.txt'), 'utf8');
+    let sdkVersion = '';
+    try {
+      sdkVersion = await readFile(getAssetPath('sdk-version.txt'), 'utf8');
+    } catch (e) {
+      const response = await fetch("https://registry.npmjs.org/@johnlindquist/kit");
+      const data = await response.json() as { distTags: { next: string } };
+      sdkVersion = data["dist-tags"][process.env?.KIT_SDK_TAG || "next"];
+    }
     url = `https://registry.npmjs.org/@johnlindquist/kit/-/kit-${sdkVersion}.tgz`;
   } catch (e) {
     log.warn('No SDK version file found, using fallback URL');
+    url = fallbackUrl;
   }
 
   sendSplashBody(`Downloading Kit SDK from ${fallbackUrl}`);
@@ -653,8 +662,8 @@ export const downloadKit = async () => {
   try {
     let buffer;
     try {
-      log.green(`Attempting to download SDK from NPM: ${url}`);
-      buffer = await download(url, getOptions());
+        log.green(`Attempting to download SDK from NPM: ${url}`);
+        buffer = await download(url, getOptions());
     } catch (e) {
       log.red(`Failed to download SDK from NPM`, e);
       log.green(`Downloading SDK from GitHub Releases: ${fallbackUrl}`);
@@ -1136,7 +1145,13 @@ export const cacheMainScripts = (
           log.green('Worker message:', message.channel);
           if (message.channel === Channel.CACHE_MAIN_SCRIPTS) {
             log.info('Caching main scripts...');
-            cacheMainMenu(message);
+            if(message?.error){
+              log.error('Error caching main scripts', message.error);
+              showInfo(message.error?.message || "Check logs...", 'Error...', message.error?.stack || "Check logs");
+            }else{
+
+              cacheMainMenu(message);
+            }
             // Resolve all promises in the queue
             while (resolveQueue.length > 0) {
               const res = resolveQueue.shift();
