@@ -5,6 +5,7 @@ export const {
   ensureDir,
   ensureSymlink,
   writeFile,
+  readFile,
   readJson,
   writeJson,
   pathExists,

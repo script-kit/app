@@ -694,12 +694,6 @@ ${child?.pid} 📝 Submitting...
       currentKeymap = newKeymap;
 
       log.info(`🌐 Keyboard layout:`, kitState.keymap);
-
-      if (layoutMap) {
-        log.info('Non-QWERTY keyboard layout set:', layoutMap);
-      } else {
-        log.info('QWERTY or default keyboard layout detected, no custom mapping needed.');
-      }
     }
   });
 };

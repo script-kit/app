@@ -2,7 +2,7 @@ import path from 'node:path';
 import { app, shell } from 'electron';
 
 import minimist from 'minimist';
-import { pathExistsSync, readJson } from './cjs-exports';
+import { pathExistsSync, readJson, readFile } from './cjs-exports';
 import { fork } from 'node:child_process';
 
 import type { ProcessInfo } from '@johnlindquist/kit';
@@ -164,8 +164,15 @@ const findScript = async (scriptPath: string) => {
     return await getKitScript(scriptPath);
   }
 
-  const script = kitState.scripts.get(scriptPath);
+  let script = kitState.scripts.get(scriptPath);
   log.info('find script found');
+  if (script) {
+    return script;
+  }
+
+  log.error('find script not found', scriptPath);
+  script = await parseScript(scriptPath);
+  kitState.scripts.set(scriptPath, script);
   return script;
 };
 

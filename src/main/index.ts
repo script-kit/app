@@ -844,7 +844,7 @@ const checkKit = async () => {
       });
     }
 
-    await setupLog(`.kit doesn't exist or isn't on a contributor branch`);
+    // await setupLog(`.kit doesn't exist or isn't on a contributor branch`);
 
     const kitTar = getAssetPath('kit.tar.gz');
 

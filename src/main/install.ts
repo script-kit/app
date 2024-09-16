@@ -1063,6 +1063,7 @@ export const cacheMainMenu = ({
     sendToAllPrompts(AppChannel.SET_CACHED_MAIN_PREVIEW, kitCache.preview);
     sendToAllPrompts(AppChannel.INIT_PROMPT, {});
 
+    log.info('🧹 Clearing scriptlets and scripts...');
     kitState.scriptlets.clear();
     kitState.scripts.clear();
 
@@ -1094,6 +1095,9 @@ export const cacheMainMenu = ({
       }
     }
 
+    log.info(`✅ ${kitState.scripts.size} scripts cached`);
+    log.info(`✅ ${kitState.scriptlets.size} scriptlets cached`);
+
     // Ensure any remaining logs are flushed
     flushLogQueue();
 
@@ -1101,9 +1105,11 @@ export const cacheMainMenu = ({
   }
 };
 
+// Define a queue to hold resolve and reject functions
 let postMessage: (message: any) => void;
-let currentResolve: (value: any) => void;
-let currentReject: (reason?: any) => void;
+const resolveQueue: Array<(value: boolean) => void> = [];
+const rejectQueue: Array<(reason?: any) => void> = [];
+
 export const cacheMainScripts = (
   {
     channel,
@@ -1116,14 +1122,11 @@ export const cacheMainScripts = (
     value: null,
   },
 ) => {
-  log.info('🏆 Caching main scripts...', {
-    channel,
-    value,
-  });
+  log.info('🏆 Caching main scripts...', { channel, value });
+
   return new Promise<boolean>((resolve, reject) => {
-    currentResolve = resolve;
-    currentReject = reject;
-    // Wrap the function body in a new Promise
+    resolveQueue.push(resolve);
+    rejectQueue.push(reject);
 
     let stamp: Stamp | null = null;
     if (channel === Channel.CACHE_MAIN_SCRIPTS) {
@@ -1145,7 +1148,11 @@ export const cacheMainScripts = (
           if (message.channel === Channel.CACHE_MAIN_SCRIPTS) {
             log.info('Caching main scripts...');
             cacheMainMenu(message);
-            currentResolve(message);
+            // Resolve all promises in the queue
+            while (resolveQueue.length > 0) {
+              const res = resolveQueue.shift();
+              res?.(true); // Assuming 'true' signifies success
+            }
           }
         };
 
@@ -1162,13 +1169,21 @@ export const cacheMainScripts = (
               error: error,
             });
           }
-          currentReject(error); // Reject the promise on error
+          // Reject all promises in the queue
+          while (rejectQueue.length > 0) {
+            const rej = rejectQueue.shift();
+            rej?.(error);
+          }
         };
 
         const messageErrorHandler = (error) => {
           log.info('Received message error for stamp', stamp);
           log.error('MessageError: Failed to cache main scripts', error);
-          currentReject(error); // Reject the promise on message error
+          // Reject all promises in the queue
+          while (rejectQueue.length > 0) {
+            const rej = rejectQueue.shift();
+            rej?.(error);
+          }
         };
 
         workers.cacheScripts.on('messageerror', messageErrorHandler);
@@ -1180,7 +1195,7 @@ export const cacheMainScripts = (
         log.info(`Ignore stamping .kit script: ${stamp.filePath}`);
       } else {
         log.info(`Stamping ${stamp?.filePath || 'cache only'} 💟`);
-        if (!postMessage && workers.cacheScripts) {
+        if (!postMessage) {
           postMessage = debounce(
             (message) => {
               workers?.cacheScripts?.postMessage(message);
@@ -1193,11 +1208,15 @@ export const cacheMainScripts = (
         }
 
         log.info('Sending stamp to worker', stamp);
-        postMessage({ channel, value });
+        workers.cacheScripts.postMessage({ channel, value });
       }
     } catch (error) {
       log.warn('Failed to cache main scripts at startup', error);
-      currentReject(error); // Reject the promise on catch
+      // Reject all promises in the queue
+      while (rejectQueue.length > 0) {
+        const rej = rejectQueue.shift();
+        rej?.(error);
+      }
     }
   });
 };
