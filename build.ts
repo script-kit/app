@@ -46,10 +46,10 @@ const afterSign = function notarizeMacos(context: AfterPackContext) {
   //   return;
   // }
 
-  // if (!process.env.CI) {
-  //   console.warn('Skipping notarizing step. Packaging is not running in CI');
-  //   return;
-  // }
+  if (!process.env.CI) {
+    console.warn('Skipping notarizing step. Packaging is not running in CI');
+    return;
+  }
 
   // if (!('APPLE_ID' in process.env && 'APPLE_ID_PASS' in process.env)) {
   //   console.warn('Skipping notarizing step. APPLE_ID and APPLE_ID_PASS env variables must be set');

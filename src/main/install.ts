@@ -1,6 +1,6 @@
 import { clipboard, nativeTheme, shell } from 'electron';
 import { HttpsProxyAgent } from 'hpagent';
-
+import * as rimraf from 'rimraf';
 import { type SpawnOptions, type SpawnSyncReturns, spawn } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
@@ -384,8 +384,8 @@ export const installMacDeps = async () => {
 
   const packageJson = await readPackageJson();
   if (packageJson) {
-    const pnpmResult = await installDependencies(['mac-windows'], 'i mac-windows@1.0.0', kitPath());
-    return pnpmResult;
+    // const pnpmResult = await installDependencies(['mac-windows'], 'i mac-windows@1.0.0', kitPath());
+    // return pnpmResult;
   }
 
   return null;
@@ -507,6 +507,7 @@ export const downloadKenv = async () => {
   }
 
   sendSplashBody(`Downloading Kit Environment (.kenv) from ${url}....`);
+  const beforeDownload = performance.now();
   try {
     const buffer = await download(url, getOptions());
     log.info(`Downloaded ${buffer.length} bytes`);
@@ -514,30 +515,24 @@ export const downloadKenv = async () => {
     sendSplashBody(`Writing Kit Environment to ${file}`);
     await writeFile(file, buffer);
 
+    const afterDownload = performance.now();
+    log.info(`Downloaded .kenv in ${afterDownload - beforeDownload}ms`);
     return file;
   } catch (error) {
     log.error(error);
     ohNo(error as Error);
     return '';
   }
+
 };
 
 export const cleanKit = async () => {
   log.info(`🧹 Cleaning ${kitPath()}`);
 
-  const timestamp = Date.now();
-  const { name, dir } = path.parse(kitPath());
-  const tempPath = path.resolve(dir, `${name}_delete_${timestamp}`);
-
   try {
-    // Rename the directory
-    await rename(kitPath(), tempPath);
-    log.info(`Renamed Kit path to ${tempPath}`);
-
-    // Delete the renamed directory asynchronously
-    rm(tempPath, { recursive: true, force: true })
-      .then(() => log.info(`Successfully deleted ${tempPath}`))
-      .catch((error) => log.error(`Error deleting ${tempPath}`, error));
+    log.info(`Cleaning Kit SDK at ${kitPath()}`);
+    await rimraf.moveRemove(kitPath());
+    log.info(`Successfully cleaned Kit SDK at ${kitPath()}`);
   } catch (error) {
     log.error(`Error cleaning the Kit SDK at: ${kitPath()}`, error);
     throw new Error(`Error cleaning ${kitPath()}`);
@@ -659,6 +654,7 @@ export const downloadKit = async () => {
 
   sendSplashBody(`Downloading Kit SDK from ${fallbackUrl}`);
 
+  const beforeDownload = performance.now();
   try {
     let buffer;
     try {
@@ -669,7 +665,8 @@ export const downloadKit = async () => {
       log.green(`Downloading SDK from GitHub Releases: ${fallbackUrl}`);
       buffer = await download(fallbackUrl, getOptions());
     }
-
+    const afterDownload = performance.now();
+    log.info(`Downloaded Kit in ${afterDownload - beforeDownload}ms`);
     sendSplashBody(`Writing Kit SDK to ${file}`);
     await writeFile(file, buffer);
 

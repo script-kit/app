@@ -2215,42 +2215,19 @@ export class KitPrompt {
 
     log.info(`${this.pid} ${this.window.id} 👋 Close prompt`);
     try {
-      // this.sendToPrompt(AppChannel.CLOSE_PROMPT);
-      // makeWindow(this.window);
-      // willClosePanel(this.window);
-
-      // this.window.setVisibleOnAllWorkspaces(false);
-      // A hack for electron-log
-      this.window.webContents.send = () => {};
-      // this.window.webContents.removeAllListeners();
-      // this.window.removeAllListeners();
-      // // this.window.webContents.executeJavaScript(`process.exit()`);
-      // this.window.webContents.closeDevTools();
-      // this.window.webContents.close();
-      // this.window.close();
-      // makeWindow(this.window);
-
-      if (this?.window && kitState.isMac) {
-        log.info('Before willClosePanel');
-        // makeKeyWindow(prompts.idle)
-        // this.setPromptAlwaysOnTop(false);
-
-        // this.window.close();
-        // closeWindow(this.window);
-        log.info('After willClosePanel');
+      if (kitState.isMac) {
+        log.info('Before makeWindow(this.window)');
+        makeWindow(this.window); // Correctly revert the window class
+        log.info('After makeWindow(this.window)');
       }
 
       this.sendToPrompt = () => {};
 
-      // this.window?.close();
-
-      // This is crashing the app, is there anything else I can do?
-      // this.window?.destroy();
       try {
         if (kitState.isMac) {
-          log.info('Before makeWindow(this.window)');
-          makeWindow(this.window);
-          log.info('After makeWindow(this.window)');
+          log.info('Before makeWindow(this.window) for window destruction');
+          makeWindow(this.window); // Revert to NSWindow before destruction
+          log.info('After makeWindow(this.window) for window destruction');
         }
 
         this.window.setClosable(true);
@@ -2261,10 +2238,12 @@ export class KitPrompt {
       }
 
       setImmediate(() => {
+        if (kitState.isMac) {
+          makeWindow(this.window); // Ensure class is reverted
+        }
         this.window.destroy();
       });
 
-      // this.window = null;
     } catch (error) {
       log.error(error);
     }

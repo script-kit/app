@@ -132,8 +132,8 @@ process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 /* eslint-enable */
 
 crashReporter.start({
-  productName: 'YourAppName',
-  companyName: 'YourCompany',
+  productName: 'Kit',
+  companyName: 'John Lindquist',
   submitURL: '', // Leave this empty to not send reports to a server
   uploadToServer: false, // Ensure this is false to prevent uploading
   extra: {

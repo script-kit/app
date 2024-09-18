@@ -1,6 +1,5 @@
 import { BrowserWindow } from 'electron';
 import { kitState } from '../state';
-import { getPromptOptions } from '../prompt.options';
 import shims from '../shims';
 import { prompts } from '../prompts';
 import { createLogger } from '../../shared/log-utils';
