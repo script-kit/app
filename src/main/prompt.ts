@@ -923,6 +923,7 @@ export class KitPrompt {
     });
 
     this.window.on('close', () => {
+      processes.removeByPid(this.pid);
       log.info('📌 close');
     });
 
@@ -1065,8 +1066,25 @@ export class KitPrompt {
     this.window.reload();
   };
 
-  getBounds = () => this.window.getBounds();
-  hasFocus = () => this.window.isFocused();
+  getBounds = () => {
+    if (this?.window && !this.window.isDestroyed()) {
+      return this.window.getBounds();
+    }
+    log.error(`${this.pid}:${this.scriptName}: 🫣 Prompt window is destroyed. Not getting bounds.`);
+    return {
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+    };
+  };
+  hasFocus = () => {
+    if (this?.window && !this.window.isDestroyed()) {
+      return this.window.isFocused();
+    }
+    log.error(`${this.pid}:${this.scriptName}: 🫣 Prompt window is destroyed. Not getting focus.`);
+    return false;
+  };
 
   clearCache = () => {
     log.info('--> 📦 CLEARING CACHE, Not main!');
@@ -2048,7 +2066,7 @@ export class KitPrompt {
       try {
         if (kitState.isMac) {
           makePanel(this.window);
-          this.window?.showInactive();
+          this.window?.show();
           makeKeyWindow(this.window);
           // this.window?.show();
         } else {
@@ -2216,6 +2234,7 @@ export class KitPrompt {
     log.info(`${this.pid} ${this.window.id} 👋 Close prompt`);
     try {
       if (kitState.isMac) {
+        this.hideInstant();
         log.info('Before makeWindow(this.window)');
         makeWindow(this.window); // Correctly revert the window class
         log.info('After makeWindow(this.window)');

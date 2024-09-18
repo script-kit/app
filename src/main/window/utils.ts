@@ -13,6 +13,7 @@ export const makeWindow = (window: BrowserWindow) => {
 };
 
 export const makeKeyWindow = (window: BrowserWindow) => {
+  return
   if (kitState.isMac) {
     log.info(`${window.id}: 📌 Making key window`);
     shims['@johnlindquist/mac-panel-window'].makeKeyWindow(window);
@@ -20,6 +21,7 @@ export const makeKeyWindow = (window: BrowserWindow) => {
 };
 
 export const makePanel = (window: BrowserWindow) => {
+  return
   if (kitState.isMac) {
     log.info(`${window.id}: 📌 Making panel`);
     shims['@johnlindquist/mac-panel-window'].makePanel(window);
