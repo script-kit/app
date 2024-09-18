@@ -2050,7 +2050,7 @@ export class KitPrompt {
           makePanel(this.window);
           this.window?.showInactive();
           makeKeyWindow(this.window);
-          this.window?.showInactive();
+          // this.window?.show();
         } else {
           this.window?.showInactive();
           this.window?.focus();

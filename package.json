@@ -175,7 +175,7 @@
     "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/mac-clipboard-listener": "^1.0.3",
     "@johnlindquist/mac-frontmost": "^1.0.7",
-    "@johnlindquist/mac-panel-window": "^1.4.0",
+    "@johnlindquist/mac-panel-window": "^1.4.1",
     "@johnlindquist/node-window-manager": "^1.0.24",
     "node-mac-permissions": "^2.4.0",
     "uiohook-napi": "^1.5.4"

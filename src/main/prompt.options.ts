@@ -141,6 +141,7 @@ export const getPromptOptions = () => {
     roundedCorners,
     focusable: false,
     // NOTE: AVOID type 'panel' on MacOS. This breaks the "mac-panel-window" behavior because it attempts to restore it to the "previous" window type.
+    // type: 'panel',
   } as BrowserWindowConstructorOptions;
 
   if (kitState.isMac) {
