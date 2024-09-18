@@ -181,7 +181,7 @@
     "uiohook-napi": "^1.5.4"
   },
   "engines": {
-    "node": "20.16.0"
+    "node": "20.17.0"
   },
   "browserslist": [],
   "renovate": {

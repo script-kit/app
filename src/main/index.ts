@@ -27,8 +27,9 @@ import os from 'node:os';
 import path from 'node:path';
 
 import semver from 'semver';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
+import { EOL } from 'os';
 
 import {
   KIT_FIRST_PATH,
@@ -611,6 +612,32 @@ const initPnpm = async () => {
     cwd: kitPath(),
   });
   log.info(`Node version: ${nodeVersion}`);
+
+  const npmRcPath = kenvPath('.npmrc');
+  log.info(`npmRcPath: ${npmRcPath}`);
+
+  try {
+    if (existsSync(npmRcPath)) {
+      let content = readFileSync(npmRcPath, 'utf8');
+    const lines = content.split(EOL);
+    const nodeVersionLine = `use-node-version=${process.versions.node}`;
+    const existingLineIndex = lines.findIndex(line => line.startsWith('use-node-version='));
+
+    if (existingLineIndex !== -1) {
+      lines[existingLineIndex] = nodeVersionLine;
+    } else {
+      lines.push(nodeVersionLine);
+    }
+
+    content = lines.join(EOL);
+    writeFileSync(npmRcPath, content, 'utf8');
+    log.info(`Updated ${npmRcPath} with node version ${process.versions.node}`);
+  } else {
+    log.info(`${npmRcPath} does not exist. Skipping node version update.`);
+    }
+  } catch (error) {
+    log.error(error);
+  }
 };
 
 const verifyInstall = async () => {
