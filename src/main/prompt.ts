@@ -61,7 +61,7 @@ import {
 } from './state';
 import { TrackEvent, trackEvent } from './track';
 import { getVersion } from './version';
-import { makeKeyWindow, makePanel, makeWindow, setAppearance } from './window/utils';
+import { makeKeyWindow, makePanel, makeWindow, prepForClose, setAppearance } from './window/utils';
 
 import { createLogger } from '../shared/log-utils';
 
@@ -2027,7 +2027,7 @@ export class KitPrompt {
   prepPromptForQuit = async () => {
     this.actualHide();
     await new Promise((resolve) => {
-      makeWindow(this.window);
+      prepForClose(this.window);
       setTimeout(() => {
         if (!this.window || this.window?.isDestroyed()) {
           resolve(null);
@@ -2066,9 +2066,9 @@ export class KitPrompt {
       try {
         if (kitState.isMac) {
           makePanel(this.window);
-          this.window?.show();
+          this.window?.showInactive();
           makeKeyWindow(this.window);
-          // this.window?.show();
+          this.window?.showInactive();
         } else {
           this.window?.showInactive();
           this.window?.focus();
@@ -2235,21 +2235,15 @@ export class KitPrompt {
     try {
       if (kitState.isMac) {
         this.hideInstant();
-        log.info('Before makeWindow(this.window)');
-        makeWindow(this.window); // Correctly revert the window class
-        log.info('After makeWindow(this.window)');
       }
 
       this.sendToPrompt = () => {};
 
       try {
-        if (kitState.isMac) {
-          log.info('Before makeWindow(this.window) for window destruction');
-          makeWindow(this.window); // Revert to NSWindow before destruction
-          log.info('After makeWindow(this.window) for window destruction');
+        if(!kitState.isMac){
+// This was causing nasty crashes on mac
+          this.window.setClosable(true);
         }
-
-        this.window.setClosable(true);
         this.window.close();
         log.info(`${this?.pid}: window ${this?.window?.id}: closed`);
       } catch (error) {
@@ -2258,9 +2252,13 @@ export class KitPrompt {
 
       setImmediate(() => {
         if (kitState.isMac) {
-          makeWindow(this.window); // Ensure class is reverted
+          prepForClose(this.window); // Ensure class is reverted
         }
-        this.window.destroy();
+        try {
+          this.window.destroy();
+        } catch (error) {
+          log.error(error);
+        }
       });
 
     } catch (error) {

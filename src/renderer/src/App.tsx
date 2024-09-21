@@ -38,6 +38,7 @@ import {
   inputWhileSubmittedAtom,
   isMainScriptAtom,
   isMouseDownAtom,
+  isWindowAtom,
   kitStateAtom,
   loadingAtom,
   logVisibleAtom,
@@ -235,6 +236,7 @@ export default function App() {
 
   const micId = useAtomValue(micIdAtom);
   const [micMediaRecorder, setMicMediaRecorder] = useAtom(micMediaRecorderAtom);
+  const isWindow = useAtomValue(isWindowAtom);
 
   // TODO: Can I have access to the mic "instantly"? I don't like the delay, but this makes it looks like it's always recording
   // useEffect(() => {

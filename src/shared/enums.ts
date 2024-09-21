@@ -73,6 +73,7 @@ export enum AppChannel {
   GET_KIT_CONFIG = 'GET_KIT_CONFIG',
   FORCE_RENDER = 'FORCE_RENDER',
   INPUT_READY = 'INPUT_READY',
+  MAKE_WINDOW = 'MAKE_WINDOW',
 }
 
 export enum WindowChannel {

@@ -444,7 +444,7 @@ const systemEvents = () => {
 
   powerMonitor.addListener('lock-screen', () => {
     kitState.screenLocked = true;
-
+lt
     // TODO: Hide main prompts when sleep?
     // if (!isVisible()) {
     // maybeHide(HideReason.LockScreen);
@@ -457,7 +457,11 @@ const systemEvents = () => {
 };
 
 const ready = async () => {
-  log.info('ready');
+  setInterval(() => {
+    for (const window of BrowserWindow.getAllWindows()) {
+      log.info({ id: window?.id, destroyed: window?.isDestroyed() });
+    }
+  }, 1000);
   assignDisplays();
   try {
     const isWindows = os.platform() === 'win32';

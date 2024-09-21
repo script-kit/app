@@ -1327,7 +1327,7 @@ const resize = debounce(
       placeholderOnly,
       topHeight,
       ui,
-      mainHeight: mh,
+      mainHeight: mh + (g(isWindowAtom) ? 24 : 0),
       footerHeight,
       mode: promptData?.mode || Mode.FILTER,
       hasPanel,
@@ -3541,3 +3541,18 @@ export const termOutputAtom = atom(
 );
 
 export const gridReadyAtom = atom(false);
+
+const _isWindowAtom = atom(false);
+export const isWindowAtom = atom(
+  (g) => g(_isWindowAtom),
+  (g, s, a: boolean) => {
+    if (a) {
+      const body = document.body;
+      body.style.paddingTop = '24px';
+      resize(g, s, 'window');
+    } else {
+      document.body.style.paddingTop = '';
+    }
+    s(_isWindowAtom, a);
+  },
+);

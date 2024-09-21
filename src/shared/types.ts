@@ -48,6 +48,7 @@ export interface ResizeData {
   justOpened: boolean;
   totalChoices: number;
   isMainScript: boolean;
+  isWindow: boolean;
 }
 
 export interface Survey {

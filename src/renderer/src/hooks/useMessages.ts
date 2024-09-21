@@ -98,6 +98,7 @@ import {
   zoomAtom,
   invalidateChoiceInputsAtom,
   termOutputAtom,
+  isWindowAtom,
 } from '../jotai';
 
 import { createLogger } from '../../../shared/log-utils';
@@ -217,7 +218,7 @@ export default () => {
   const setWebcamId = useSetAtom(webcamIdAtom);
   const setAudioDot = useSetAtom(audioDotAtom);
   const setTermOutput = useSetAtom(termOutputAtom);
-
+  const setIsWindow = useSetAtom(isWindowAtom);
   const clearCache = useSetAtom(clearCacheAtom);
   const [init, setInit] = useState(false);
 
@@ -621,6 +622,15 @@ export default () => {
     log.info(`Sending messages ready for ${pid} with ${window.pid}`);
     ipcRenderer.send(AppChannel.MESSAGES_READY, window.pid);
 
+    const handleMakeWindow = (_, data) => {
+      log.info('Received make window message');
+      setIsWindow(true);
+    };
+
+    if (ipcRenderer.listenerCount(AppChannel.MAKE_WINDOW) === 0) {
+      ipcRenderer.on(AppChannel.MAKE_WINDOW, handleMakeWindow);
+    }
+
     return () => {
       console.log(`🔑 Removing message listeners for ${pid}`);
 
@@ -649,6 +659,7 @@ export default () => {
       ipcRenderer.off(AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS, handleSetCachedMainFlags);
       ipcRenderer.off(AppChannel.CLEAR_CACHE, handleClearCache);
       ipcRenderer.off(AppChannel.FORCE_RENDER, handleForceRender);
+      ipcRenderer.off(AppChannel.MAKE_WINDOW, handleMakeWindow);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pid]);
