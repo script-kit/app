@@ -28,7 +28,7 @@ import path from 'node:path';
 
 import semver from 'semver';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { readdir } from 'node:fs/promises';
+import { readdir, lstat } from 'node:fs/promises';
 import { EOL } from 'os';
 
 import {
@@ -98,6 +98,9 @@ import { reloadApps } from './apps';
 import { optionalSetupScript } from './spawn';
 import { createForkOptions } from './fork.options';
 import { getPnpmPath } from './setup/pnpm';
+import { WindowMonitor } from './debug/window-monitor';
+import { rimraf } from 'rimraf';
+import { pathExists } from './cjs-exports';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -444,7 +447,7 @@ const systemEvents = () => {
 
   powerMonitor.addListener('lock-screen', () => {
     kitState.screenLocked = true;
-lt
+
     // TODO: Hide main prompts when sleep?
     // if (!isVisible()) {
     // maybeHide(HideReason.LockScreen);
@@ -457,11 +460,7 @@ lt
 };
 
 const ready = async () => {
-  setInterval(() => {
-    for (const window of BrowserWindow.getAllWindows()) {
-      log.info({ id: window?.id, destroyed: window?.isDestroyed() });
-    }
-  }, 1000);
+  new WindowMonitor();
   assignDisplays();
   try {
     const isWindows = os.platform() === 'win32';
@@ -492,7 +491,29 @@ const ready = async () => {
 
     await ensureKitDirs();
     await ensureKenvDirs();
-    createLogs();
+    // createLogs();
+    const kitLogsPath = kitPath('logs');
+    const appLogsPath = app.getPath('logs');
+
+    const isSymlink = async (path: string) => {
+      try {
+        const stats = await lstat(path);
+        return stats.isSymbolicLink();
+      } catch (error) {
+        return false;
+      }
+    };
+
+    try {
+      if (!(await isSymlink(kitLogsPath)) && (await pathExists(kitLogsPath))) {
+        await rimraf(kitLogsPath);
+      }
+
+      await symlink(appLogsPath, kitLogsPath);
+    } catch (error) {
+      log.error(error);
+    }
+
     await prepareProtocols();
     await setupLog('Protocols Prepared');
     await setupSettings();
@@ -623,21 +644,21 @@ const initPnpm = async () => {
   try {
     if (existsSync(npmRcPath)) {
       let content = readFileSync(npmRcPath, 'utf8');
-    const lines = content.split(EOL);
-    const nodeVersionLine = `use-node-version=${process.versions.node}`;
-    const existingLineIndex = lines.findIndex(line => line.startsWith('use-node-version='));
+      const lines = content.split(EOL);
+      const nodeVersionLine = `use-node-version=${process.versions.node}`;
+      const existingLineIndex = lines.findIndex((line) => line.startsWith('use-node-version='));
 
-    if (existingLineIndex !== -1) {
-      lines[existingLineIndex] = nodeVersionLine;
+      if (existingLineIndex !== -1) {
+        lines[existingLineIndex] = nodeVersionLine;
+      } else {
+        lines.push(nodeVersionLine);
+      }
+
+      content = lines.join(EOL);
+      writeFileSync(npmRcPath, content, 'utf8');
+      log.info(`Updated ${npmRcPath} with node version ${process.versions.node}`);
     } else {
-      lines.push(nodeVersionLine);
-    }
-
-    content = lines.join(EOL);
-    writeFileSync(npmRcPath, content, 'utf8');
-    log.info(`Updated ${npmRcPath} with node version ${process.versions.node}`);
-  } else {
-    log.info(`${npmRcPath} does not exist. Skipping node version update.`);
+      log.info(`${npmRcPath} does not exist. Skipping node version update.`);
     }
   } catch (error) {
     log.error(error);

@@ -1,11 +1,12 @@
 import { clipboard, nativeTheme, shell } from 'electron';
+import crypto from 'node:crypto';
 import { HttpsProxyAgent } from 'hpagent';
 import * as rimraf from 'rimraf';
 import { type SpawnOptions, type SpawnSyncReturns, spawn } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import dotenv from 'dotenv';
-import { debounce } from 'lodash-es';
+import { debounce, isEqual } from 'lodash-es';
 import StreamZip from 'node-stream-zip';
 
 import * as tar from 'tar';
@@ -33,7 +34,7 @@ import { AppChannel } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
 import { sendToAllPrompts } from './channel';
 import { createScoredChoice, isInDirectory } from './helpers';
-import { mainLogPath } from './logs';
+import { mainLogPath, scriptLog } from './logs';
 import { showError } from './main.dev.templates';
 import { prompts } from './prompts';
 import { INSTALL_ERROR, show } from './show';
@@ -51,8 +52,8 @@ import { getAssetPath } from '../shared/assets';
 import { getVersion } from './version';
 import { findPnpmBin, getPnpmPath, symlinkPnpm } from './setup/pnpm';
 import { shortcutMap } from './shortcuts';
-import { onScriptChanged } from './watcher';
 import { showInfo } from './info';
+import { compareCollections, logDifferences } from './compare';
 
 const log = createLogger('install.ts');
 
@@ -523,7 +524,6 @@ export const downloadKenv = async () => {
     ohNo(error as Error);
     return '';
   }
-
 };
 
 export const cleanKit = async () => {
@@ -636,15 +636,15 @@ export const downloadKit = async () => {
     fallbackUrl = process.env.KIT_SDK_URL;
   }
 
-  let url:string;
+  let url: string;
   try {
     let sdkVersion = '';
     try {
       sdkVersion = await readFile(getAssetPath('sdk-version.txt'), 'utf8');
     } catch (e) {
-      const response = await fetch("https://registry.npmjs.org/@johnlindquist/kit");
-      const data = await response.json() as { distTags: { next: string } };
-      sdkVersion = data["dist-tags"][process.env?.KIT_SDK_TAG || "next"];
+      const response = await fetch('https://registry.npmjs.org/@johnlindquist/kit');
+      const data = (await response.json()) as { distTags: { next: string } };
+      sdkVersion = data['dist-tags'][process.env?.KIT_SDK_TAG || 'next'];
     }
     url = `https://registry.npmjs.org/@johnlindquist/kit/-/kit-${sdkVersion}.tgz`;
   } catch (e) {
@@ -658,8 +658,8 @@ export const downloadKit = async () => {
   try {
     let buffer;
     try {
-        log.green(`Attempting to download SDK from NPM: ${url}`);
-        buffer = await download(url, getOptions());
+      log.green(`Attempting to download SDK from NPM: ${url}`);
+      buffer = await download(url, getOptions());
     } catch (e) {
       log.red(`Failed to download SDK from NPM`, e);
       log.green(`Downloading SDK from GitHub Releases: ${fallbackUrl}`);
@@ -1048,6 +1048,8 @@ export const cacheMainMenu = ({
     sendToAllPrompts(AppChannel.INIT_PROMPT, {});
 
     log.info('🧹 Clearing scriptlets and scripts...');
+    const previousScriptlets = Array.from(kitState.scriptlets.entries());
+    const previousScripts = Array.from(kitState.scripts.entries());
     kitState.scriptlets.clear();
     kitState.scripts.clear();
 
@@ -1079,8 +1081,26 @@ export const cacheMainMenu = ({
       }
     }
 
-    log.info(`✅ ${kitState.scripts.size} scripts cached`);
-    log.info(`✅ ${kitState.scriptlets.size} scriptlets cached`);
+    const newScriptlets = new Map(Array.from(kitState.scriptlets.entries()));
+    const newScripts = new Map(Array.from(kitState.scripts.entries()));
+
+    // ... [Other code]
+
+    // Create maps for quick lookup of previous scriptlets and scripts by filePath
+    const previousScriptletsMap = new Map(previousScriptlets);
+    const previousScriptsMap = new Map(previousScripts);
+
+    // Compare scriptlets
+    const scriptletsDifferences = compareCollections(previousScriptletsMap, newScriptlets, ['id']);
+
+    // Log scriptlets differences
+    logDifferences(scriptLog, 'scriptlets', scriptletsDifferences);
+
+    // Compare scripts
+    const scriptsDifferences = compareCollections(previousScriptsMap, newScripts, ['id']);
+
+    // Log scripts differences
+    logDifferences(scriptLog, 'scripts', scriptsDifferences);
 
     // Ensure any remaining logs are flushed
     flushLogQueue();
@@ -1102,8 +1122,7 @@ export const cacheMainMenu = ({
 
 // Define a queue to hold resolve and reject functions
 let postMessage: (message: any) => void;
-const resolveQueue: Array<(value: boolean) => void> = [];
-const rejectQueue: Array<(reason?: any) => void> = [];
+const pendingRequests: Map<string, { resolve: (value: any) => void; reject: (reason?: any) => void }> = new Map();
 
 export const cacheMainScripts = (
   {
@@ -1117,12 +1136,10 @@ export const cacheMainScripts = (
     value: null,
   },
 ) => {
-  log.info('🏆 Caching main scripts...', { channel, value });
-
   return new Promise<boolean>((resolve, reject) => {
-    resolveQueue.push(resolve);
-    rejectQueue.push(reject);
-
+    const uuid = crypto.randomUUID();
+    pendingRequests.set(uuid, { resolve, reject });
+    log.info(`🏆 ${uuid} Caching main scripts...`);
     let stamp: Stamp | null = null;
     if (channel === Channel.CACHE_MAIN_SCRIPTS) {
       stamp = value;
@@ -1142,17 +1159,20 @@ export const cacheMainScripts = (
           log.green('Worker message:', message.channel);
           if (message.channel === Channel.CACHE_MAIN_SCRIPTS) {
             log.info('Caching main scripts...');
-            if(message?.error){
+            if (message?.error) {
               log.error('Error caching main scripts', message.error);
-              showInfo(message.error?.message || "Check logs...", 'Error...', message.error?.stack || "Check logs");
-            }else{
-
+              showInfo(message.error?.message || 'Check logs...', 'Error...', message.error?.stack || 'Check logs');
+            } else {
               cacheMainMenu(message);
             }
-            // Resolve all promises in the queue
-            while (resolveQueue.length > 0) {
-              const res = resolveQueue.shift();
-              res?.(true); // Assuming 'true' signifies success
+
+            const pendingRequest = pendingRequests.get(uuid);
+            if (pendingRequest) {
+              pendingRequest.resolve(true);
+              log.info(`🏆 ${uuid}: Resolved....`);
+              pendingRequests.delete(uuid);
+            } else {
+              log.warn(`🏆 ${uuid}: No pending request to resolve`);
             }
           }
         };
@@ -1171,19 +1191,31 @@ export const cacheMainScripts = (
             });
           }
           // Reject all promises in the queue
-          while (rejectQueue.length > 0) {
-            const rej = rejectQueue.shift();
-            rej?.(error);
+
+          const pendingRequest = pendingRequests.get(uuid);
+          if (pendingRequest) {
+            pendingRequest.reject(error);
+            log.info(`🏆 ${uuid}: Rejected....`);
+            pendingRequests.delete(uuid);
+          } else {
+            log.warn(`🏆 ${uuid}: No pending request to reject`);
           }
+          pendingRequest.reject(error);
+          log.info(`🏆 ${uuid}: Rejected....`);
+          pendingRequests.delete(uuid);
         };
 
         const messageErrorHandler = (error) => {
           log.info('Received message error for stamp', stamp);
           log.error('MessageError: Failed to cache main scripts', error);
           // Reject all promises in the queue
-          while (rejectQueue.length > 0) {
-            const rej = rejectQueue.shift();
-            rej?.(error);
+          const pendingRequest = pendingRequests.get(uuid);
+          if (pendingRequest) {
+            pendingRequest.reject(error);
+            log.info(`🏆 ${uuid}: Rejected....`);
+            pendingRequests.delete(uuid);
+          } else {
+            log.warn(`🏆 ${uuid}: No pending request to reject`);
           }
         };
 
@@ -1199,7 +1231,9 @@ export const cacheMainScripts = (
         if (!postMessage) {
           postMessage = debounce(
             (message) => {
-              workers?.cacheScripts?.postMessage(message);
+              const body = message ? { ...message, id: uuid } : { id: uuid };
+              log.info(`🏆 ${uuid}: Posting message to worker`);
+              workers?.cacheScripts?.postMessage(body);
             },
             250,
             {
@@ -1209,14 +1243,18 @@ export const cacheMainScripts = (
         }
 
         log.info('Sending stamp to worker', stamp);
-        workers.cacheScripts.postMessage({ channel, value });
+        postMessage({ channel, value, id: uuid });
       }
     } catch (error) {
       log.warn('Failed to cache main scripts at startup', error);
       // Reject all promises in the queue
-      while (rejectQueue.length > 0) {
-        const rej = rejectQueue.shift();
-        rej?.(error);
+      const pendingRequest = pendingRequests.get(uuid);
+      if (pendingRequest) {
+        pendingRequest.reject(error);
+        log.info(`🏆 ${uuid}: Rejected....`);
+        pendingRequests.delete(uuid);
+      } else {
+        log.warn(`🏆 ${uuid}: No pending request to reject`);
       }
     }
   });

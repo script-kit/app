@@ -2524,5 +2524,5 @@ export const makeSplashWindow = (window?: BrowserWindow) => {
     return;
   }
 
-  shims['@johnlindquist/mac-panel-window'].makeWindow(window);
+  // shims['@johnlindquist/mac-panel-window'].makeWindow(window);
 };

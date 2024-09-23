@@ -168,7 +168,7 @@ const buildUpdateSubmenu = (): MenuItemConstructorOptions[] => {
   }
 
   if (kitState.scriptErrorPath) {
-    let logPath = kitPath('logs', 'kit.log');
+    let logPath = kitPath('logs', 'main.log');
     if (kitState.scriptErrorPath) {
       logPath = getLogFromScriptPath(kitState.scriptErrorPath);
     }
@@ -323,16 +323,16 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
       type: 'separator',
     },
     {
-      label: 'Open kit.log',
+      label: 'Open main.log',
       click: () => {
-        shell.openPath(kitPath('logs', 'kit.log'));
+        shell.openPath(kitPath('logs', 'main.log'));
       },
     },
   );
 
   if (kitState.isMac) {
     toolsSubmenu.push({
-      label: 'Watch kit.log in Terminal',
+      label: 'Watch main.log in Terminal',
       click: runScript(kitPath('help', 'tail-log.js')),
     });
   }
@@ -353,13 +353,6 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
 
   toolsSubmenu.push({
     type: 'separator',
-  });
-
-  toolsSubmenu.push({
-    label: 'Open main.log',
-    click: () => {
-      shell.openPath(mainLogPath);
-    },
   });
 
   toolsSubmenu.push({

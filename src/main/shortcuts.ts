@@ -16,6 +16,7 @@ import { convertKey, kitState, subs } from './state';
 import { createLogger } from '../shared/log-utils';
 import { runMainScript } from './main-script';
 import { createUiohookToName } from './io';
+import { LoggedMap } from './compare';
 
 const log = createLogger('shortcuts.ts');
 
@@ -120,7 +121,10 @@ export const registerKillLatestShortcut = () => {
 
 // return success;
 
-export const shortcutMap = new Map<
+/**
+ * A Map that holds shortcuts with automatic diff logging on add/delete operations.
+ */
+export const shortcutMap = new LoggedMap<
   string,
   {
     shortcut: string;

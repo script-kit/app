@@ -2225,7 +2225,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     REMOVE_TIMESTAMP: onChildChannel(({ child }, { channel, value }) => {
       cacheMainScripts({
         channel: Channel.REMOVE_TIMESTAMP,
-        value,
+        value: {
+          filePath: value,
+        },
       });
     }),
     TOGGLE_WATCHER: onChildChannel(({ child }, { channel, value }) => {

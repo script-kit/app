@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import * as path from 'node:path';
-import { getLogFromScriptPath, kenvPath } from '@johnlindquist/kit/core/utils';
+import { getLogFromScriptPath, kenvPath, kitPath } from '@johnlindquist/kit/core/utils';
 import { app } from 'electron';
 /* eslint-disable import/no-cycle */
 /* eslint-disable no-underscore-dangle */
@@ -49,6 +49,23 @@ log.info('⭐️ Other notable Kit logs:', {
   updateLogPath,
   keymapLogPath: updateLogPath.replace('update', 'keymap'),
 });
+
+export const scriptsLogPath = path.resolve(app.getPath('logs'), 'scripts.log');
+
+export const scriptLog = log.create({
+  logId: 'scriptLog',
+});
+(scriptLog.transports.file as FileTransport).resolvePathFn = () => scriptsLogPath;
+
+log.info('📜 Scripts log path:', scriptsLogPath);
+
+export const windowLogPath = path.resolve(app.getPath('logs'), 'window.log');
+export const windowLog = log.create({
+  logId: 'windowLog',
+});
+(windowLog.transports.file as FileTransport).resolvePathFn = () => windowLogPath;
+
+log.info('🪟 Window log path:', windowLogPath);
 
 log.info(`
 
