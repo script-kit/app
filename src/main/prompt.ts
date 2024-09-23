@@ -2068,7 +2068,6 @@ export class KitPrompt {
           makePanel(this.window);
           this.window?.showInactive();
           makeKeyWindow(this.window);
-          this.window?.showInactive();
         } else {
           this.window?.showInactive();
           this.window?.focus();
@@ -2240,8 +2239,8 @@ export class KitPrompt {
       this.sendToPrompt = () => {};
 
       try {
-        if(!kitState.isMac){
-// This was causing nasty crashes on mac
+        if (!kitState.isMac) {
+          // This was causing nasty crashes on mac
           this.window.setClosable(true);
         }
         this.window.close();
@@ -2260,7 +2259,6 @@ export class KitPrompt {
           log.error(error);
         }
       });
-
     } catch (error) {
       log.error(error);
     }
@@ -2433,7 +2431,7 @@ export class KitPrompt {
     },
   );
 
-  hideInstant = () => {
+  hideInstant = (type: 'close' | 'hide' = 'hide') => {
     if (kitState.isWindows) {
       // REMOVE-NODE-WINDOW-MANAGER
       shims['@johnlindquist/node-window-manager'].windowManager.hideInstantly(this.window?.getNativeWindowHandle());
@@ -2499,7 +2497,8 @@ export class KitPrompt {
       this.handleEscapePress();
     }
 
-    if ((isW && (kitState.isMac ? input.meta : input.control)) || this.shouldClosePromptOnInitialEscape(isEscape)) {
+    const shouldCloseOnInitialEscape = this.shouldClosePromptOnInitialEscape(isEscape);
+    if ((isW && (kitState.isMac ? input.meta : input.control)) || shouldCloseOnInitialEscape) {
       if (isW) {
         log.purple(`Closing prompt window with ${kitState.isMac ? '⌘' : '⌃'}+w`);
       } else if (isEscape) {
@@ -2507,9 +2506,10 @@ export class KitPrompt {
         this.hideInstant();
       }
 
-      processes.removeByPid(this.pid);
-      emitter.emit(KitEvent.KillProcess, this.pid);
-      event.preventDefault();
+      // I don't think these are needed anymore, but leaving them in for now
+      // processes.removeByPid(this.pid);
+      // emitter.emit(KitEvent.KillProcess, this.pid);
+      // event.preventDefault();
       return;
     }
   };

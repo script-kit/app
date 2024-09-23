@@ -44,7 +44,3 @@ export class WindowMonitor {
     }, this.pollingInterval);
   }
 }
-
-const ready = async () => {
-  new WindowMonitor();
-};

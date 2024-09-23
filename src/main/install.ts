@@ -1058,7 +1058,8 @@ export const cacheMainMenu = ({
 
     const flushLogQueue = () => {
       if (logQueue.length > 0) {
-        log.info(`📦 Added ${logQueue.length} items:`, logQueue);
+        scriptLog.info(`📦 Added ${logQueue.length} items:`);
+        log.info(logQueue);
         logQueue.length = 0;
       }
     };
@@ -1156,11 +1157,15 @@ export const cacheMainScripts = (
         });
 
         const messageHandler = (message) => {
-          log.green('Worker message:', message.channel);
+          scriptLog.log('Worker message:', message.channel);
+          if (message.channel === 'LOG_TO_PARENT') {
+            scriptLog.info(message.value);
+            return;
+          }
           if (message.channel === Channel.CACHE_MAIN_SCRIPTS) {
-            log.info('Caching main scripts...');
+            scriptLog.info('Caching main scripts...');
             if (message?.error) {
-              log.error('Error caching main scripts', message.error);
+              scriptLog.error('Error caching main scripts', message.error);
               showInfo(message.error?.message || 'Check logs...', 'Error...', message.error?.stack || 'Check logs');
             } else {
               cacheMainMenu(message);
@@ -1169,10 +1174,11 @@ export const cacheMainScripts = (
             const pendingRequest = pendingRequests.get(uuid);
             if (pendingRequest) {
               pendingRequest.resolve(true);
-              log.info(`🏆 ${uuid}: Resolved....`);
+              scriptLog.info(`🏆 ${uuid}: Resolved....`);
               pendingRequests.delete(uuid);
             } else {
-              log.warn(`🏆 ${uuid}: No pending request to resolve`);
+              scriptLog.warn(`🏆 ${uuid}: No pending request to resolve`);
+              scriptLog.info(`pendingRequests.keys()`, pendingRequests.keys());
             }
           }
         };
@@ -1180,13 +1186,13 @@ export const cacheMainScripts = (
         const errorHandler = (error) => {
           log.info('Received error for stamp', stamp);
           if (error instanceof Error) {
-            log.error('Failed to cache main scripts', {
+            scriptLog.error('Failed to cache main scripts', {
               message: error.message,
               stack: error.stack,
               name: error.name,
             });
           } else {
-            log.error('Failed to cache main scripts', {
+            scriptLog.error('Failed to cache main scripts', {
               error: error,
             });
           }
@@ -1195,19 +1201,19 @@ export const cacheMainScripts = (
           const pendingRequest = pendingRequests.get(uuid);
           if (pendingRequest) {
             pendingRequest.reject(error);
-            log.info(`🏆 ${uuid}: Rejected....`);
+            scriptLog.info(`🏆 ${uuid}: Rejected....`);
             pendingRequests.delete(uuid);
           } else {
-            log.warn(`🏆 ${uuid}: No pending request to reject`);
+            scriptLog.warn(`🏆 ${uuid}: No pending request to reject`);
           }
           pendingRequest.reject(error);
-          log.info(`🏆 ${uuid}: Rejected....`);
+          scriptLog.info(`🏆 ${uuid}: Rejected....`);
           pendingRequests.delete(uuid);
         };
 
         const messageErrorHandler = (error) => {
           log.info('Received message error for stamp', stamp);
-          log.error('MessageError: Failed to cache main scripts', error);
+          scriptLog.error('MessageError: Failed to cache main scripts', error);
           // Reject all promises in the queue
           const pendingRequest = pendingRequests.get(uuid);
           if (pendingRequest) {

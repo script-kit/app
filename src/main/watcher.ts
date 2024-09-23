@@ -46,6 +46,7 @@ import { kenvChokidarPath, slash } from './path-utils';
 import { actualHideDock, showDock } from './dock';
 import { reloadApps } from './apps';
 
+import { scriptLog } from './logs';
 const log = createLogger('watcher.ts');
 
 const debounceCacheMainScripts = debounce(cacheMainScripts, 250);
@@ -305,19 +306,21 @@ function watchTheme() {
 let firstBatch = true;
 let firstBatchTimeout: NodeJS.Timeout;
 export const reevaluateAllScripts = async () => {
+  scriptLog.info('🚨 reevaluateAllScripts');
   for (const script of kitState.scripts.values()) {
     await onScriptChanged('change', script, true);
   }
 };
 
 export const onScriptChanged = async (event: WatchEvent, script: Script, rebuilt = false) => {
+  scriptLog.info('🚨 onScriptChanged', event, script.filePath);
   if (firstBatch) {
     if (firstBatchTimeout) {
       clearTimeout(firstBatchTimeout);
     }
     firstBatchTimeout = setTimeout(() => {
       firstBatch = false;
-      log.info('Finished parsing scripts ✅');
+      scriptLog.info('Finished parsing scripts ✅');
     }, 1000);
   }
 
@@ -485,6 +488,45 @@ const refreshScripts = debounce(
   500,
   { leading: true },
 );
+
+const handleScriptletsChanged = debounce(async (eventName: WatchEvent, filePath: string) => {
+  scriptLog.info('🚨 dir.endsWith(scriptlets)', eventName, filePath);
+  const exists = await pathExists(filePath);
+  if (!exists) {
+    scriptLog.info(`Scriptlet file ${filePath} has been deleted.`);
+    return;
+  }
+  const beforeScriptlets = structuredClone(kitState.scriptlets);
+  scriptLog.info('🎬 Starting cacheMainScripts...');
+  try {
+    await cacheMainScripts();
+  } catch (error) {
+    log.error(error);
+  }
+  scriptLog.info('...cacheMainScripts done 🎬');
+
+  const afterScriptlets = kitState.scriptlets;
+
+  const changedScriptlets: Scriptlet[] = [];
+  for (const [filePath, scriptlet] of afterScriptlets.entries()) {
+    if (beforeScriptlets.has(filePath)) {
+      const beforeScriptlet = beforeScriptlets.get(filePath);
+      if (!isEqual(omit(beforeScriptlet, 'id'), omit(scriptlet, 'id'))) {
+        scriptLog.info(`👛 Scriptlet ${filePath} has changed.`);
+        changedScriptlets.push(scriptlet);
+      }
+    } else {
+      scriptLog.info(`➕ Scriptlet ${filePath} has been added.`);
+      changedScriptlets.push(scriptlet);
+    }
+  }
+
+  for await (const scriptlet of changedScriptlets) {
+    await onScriptChanged(eventName, scriptlet);
+  }
+
+  return;
+}, 50);
 
 export const parseEnvFile = debounce(async () => {
   const envData = loadKenvEnvironment();
@@ -853,40 +895,7 @@ export const setupWatchers = async () => {
     }
 
     if (dir.endsWith('scriptlets')) {
-      const exists = await pathExists(filePath);
-      if (!exists) {
-        log.info(`Scriptlet file ${filePath} has been deleted.`);
-        return;
-      }
-      const beforeScriptlets = structuredClone(kitState.scriptlets);
-      log.info('🎬 Starting cacheMainScripts...');
-      try {
-        await cacheMainScripts();
-      } catch (error) {
-        log.error(error);
-      }
-      log.info('...cacheMainScripts done 🎬');
-
-      const afterScriptlets = kitState.scriptlets;
-
-      const changedScriptlets: Scriptlet[] = [];
-      for (const [filePath, scriptlet] of afterScriptlets.entries()) {
-        if (beforeScriptlets.has(filePath)) {
-          const beforeScriptlet = beforeScriptlets.get(filePath);
-          if (!isEqual(omit(beforeScriptlet, 'id'), omit(scriptlet, 'id'))) {
-            log.info(`👛 Scriptlet ${filePath} has changed.`);
-            changedScriptlets.push(scriptlet);
-          }
-        } else {
-          log.info(`➕ Scriptlet ${filePath} has been added.`);
-          changedScriptlets.push(scriptlet);
-        }
-      }
-
-      for await (const scriptlet of changedScriptlets) {
-        await onScriptChanged(eventName, scriptlet);
-      }
-
+      handleScriptletsChanged(eventName, filePath);
       return;
     }
 

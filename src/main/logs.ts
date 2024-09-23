@@ -18,59 +18,10 @@ if (isDev) {
   app.setAppLogsPath(app.getPath('logs').replace('Electron', 'Kit'));
 }
 
-export const consoleLog = log.create({
-  logId: 'consoleLog',
-});
-
-(consoleLog.transports.file as FileTransport)!.resolvePathFn = () => kenvPath('logs', 'console.log');
-
-export const debugLog = log.create({
-  logId: 'debugLog',
-});
-
-(debugLog.transports.file as FileTransport)!.resolvePathFn = () => kenvPath('logs', 'debug.log');
-
-(debugLog.transports.console as any).level = 'silent';
-
-export const updateLogPath = path.resolve(app.getPath('logs'), 'update.log');
-export const updateLog = log.create({
-  logId: 'updateLog',
-});
-(updateLog.transports.file as FileTransport).resolvePathFn = () => updateLogPath;
-
-export const mainLogPath = path.resolve(app.getPath('logs'), 'main.log');
-export const mainLog = log.create({
-  logId: 'mainLog',
-});
-(mainLog.transports.file as FileTransport).resolvePathFn = () => mainLogPath;
-
-log.info('⭐️ Other notable Kit logs:', {
-  mainLogPath,
-  updateLogPath,
-  keymapLogPath: updateLogPath.replace('update', 'keymap'),
-});
-
-export const scriptsLogPath = path.resolve(app.getPath('logs'), 'scripts.log');
-
-export const scriptLog = log.create({
-  logId: 'scriptLog',
-});
-(scriptLog.transports.file as FileTransport).resolvePathFn = () => scriptsLogPath;
-
-log.info('📜 Scripts log path:', scriptsLogPath);
-
-export const windowLogPath = path.resolve(app.getPath('logs'), 'window.log');
-export const windowLog = log.create({
-  logId: 'windowLog',
-});
-(windowLog.transports.file as FileTransport).resolvePathFn = () => windowLogPath;
-
-log.info('🪟 Window log path:', windowLogPath);
-
 log.info(`
 
 
-🟢🟢 🟢  !!!SCRIPT KIT TIME!!! 🟢 🟢 🟢 `);
+���🟢 🟢  !!!SCRIPT KIT TIME!!! 🟢 🟢 🟢 `);
 
 log.info('Skipping Setup?', {
   MAIN_SKIP_SETUP: process.env.MAIN_SKIP_SETUP,
@@ -175,3 +126,23 @@ const subLogLevel = subscribeKey(kitState, 'logLevel', (level) => {
 });
 
 subs.push(subLogLevel);
+
+function createLogInstance(logId: string, level?: LevelOption) {
+  const logPath = path.resolve(app.getPath('logs'), `${logId}.log`);
+  const logInstance = log.create({ logId });
+  (logInstance.transports.file as FileTransport).resolvePathFn = () => logPath;
+  log.info(`${logId} log path:`, logPath);
+
+  if (level) {
+    (logInstance.transports.console as any).level = level;
+  }
+  return { logInstance, logPath };
+}
+
+export const { logInstance: updateLog, logPath: updateLogPath } = createLogInstance('update');
+export const { logInstance: mainLog, logPath: mainLogPath } = createLogInstance('main');
+export const { logInstance: scriptLog, logPath: scriptLogPath } = createLogInstance('scripts');
+export const { logInstance: windowLog, logPath: windowLogPath } = createLogInstance('window');
+export const { logInstance: kitLog, logPath: kitLogPath } = createLogInstance('kit');
+export const { logInstance: debugLog, logPath: debugLogPath } = createLogInstance('debug');
+export const { logInstance: consoleLog, logPath: consoleLogPath } = createLogInstance('console');
