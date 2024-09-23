@@ -146,3 +146,4 @@ export const { logInstance: windowLog, logPath: windowLogPath } = createLogInsta
 export const { logInstance: kitLog, logPath: kitLogPath } = createLogInstance('kit');
 export const { logInstance: debugLog, logPath: debugLogPath } = createLogInstance('debug');
 export const { logInstance: consoleLog, logPath: consoleLogPath } = createLogInstance('console');
+export const { logInstance: workerLog, logPath: workerLogPath } = createLogInstance('worker');

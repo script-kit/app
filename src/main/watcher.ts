@@ -881,6 +881,7 @@ export const setupWatchers = async () => {
     if (dir.endsWith('snippets')) {
       try {
         await cacheMainScripts();
+        log.info('🏆 Cached main scripts for before snippet change...');
       } catch (error) {
         log.error(error);
       }

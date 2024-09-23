@@ -34,7 +34,7 @@ import { AppChannel } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
 import { sendToAllPrompts } from './channel';
 import { createScoredChoice, isInDirectory } from './helpers';
-import { mainLogPath, scriptLog } from './logs';
+import { mainLogPath, scriptLog, workerLog } from './logs';
 import { showError } from './main.dev.templates';
 import { prompts } from './prompts';
 import { INSTALL_ERROR, show } from './show';
@@ -1121,11 +1121,16 @@ export const cacheMainMenu = ({
   }
 };
 
-// Define a queue to hold resolve and reject functions
-let postMessage: (message: any) => void;
-const pendingRequests: Map<string, { resolve: (value: any) => void; reject: (reason?: any) => void }> = new Map();
-
-export const cacheMainScripts = (
+// Initialize static properties for cacheMainScripts
+interface CacheMainScripts {
+  (params?: { channel: Channel; value: any }): Promise<boolean>;
+  pendingResolvers?: Array<{
+    resolve: (value: boolean) => void;
+    reject: (reason?: any) => void;
+  }>;
+  postMessage?: (message: any) => void;
+}
+export const cacheMainScripts: CacheMainScripts = (
   {
     channel,
     value,
@@ -1136,132 +1141,138 @@ export const cacheMainScripts = (
     channel: Channel.CACHE_MAIN_SCRIPTS,
     value: null,
   },
-) => {
+): Promise<boolean> => {
   return new Promise<boolean>((resolve, reject) => {
+    // Initialize a shared array to hold all pending resolvers and rejectors
+    if (!cacheMainScripts.pendingResolvers) {
+      cacheMainScripts.pendingResolvers = [];
+    }
+
+    // Add the current resolve and reject to the pending list
+    cacheMainScripts.pendingResolvers.push({ resolve, reject });
+
     const uuid = crypto.randomUUID();
-    pendingRequests.set(uuid, { resolve, reject });
     log.info(`🏆 ${uuid} Caching main scripts...`);
     let stamp: Stamp | null = null;
+
     if (channel === Channel.CACHE_MAIN_SCRIPTS) {
       stamp = value;
     }
+
+    // Helper functions to handle collective resolve and reject
+    const handleResolve = () => {
+      for (const { resolve } of cacheMainScripts.pendingResolvers!) {
+        log.info(`Resolving ${uuid}`);
+        resolve(true);
+      }
+      cacheMainScripts.pendingResolvers = [];
+    };
+
+    const handleReject = (error: any) => {
+      for (const { reject } of cacheMainScripts.pendingResolvers!) {
+        log.info(`Rejecting ${uuid}`);
+        reject(error);
+      }
+      cacheMainScripts.pendingResolvers = [];
+    };
+
+    // Event Handlers
+    const messageHandler = (message: any) => {
+      try {
+        scriptLog.log('Worker message:', message.channel);
+        if (message.channel === 'LOG_TO_PARENT') {
+          workerLog.info(message.value);
+          return;
+        }
+        if (message.channel === Channel.CACHE_MAIN_SCRIPTS) {
+          scriptLog.info('Caching main scripts...');
+          if (message?.error) {
+            scriptLog.error('Error caching main scripts', message.error);
+            showInfo(
+              message.error?.message || 'Check logs...',
+              'Error...',
+              message.error?.stack || 'Check logs'
+            );
+            handleReject(message.error);
+          } else {
+            cacheMainMenu(message);
+            handleResolve();
+          }
+        }
+      } catch (err) {
+        log.error(`🏆 ${uuid}: Exception in messageHandler - ${err}`);
+        handleReject(err);
+      }
+    };
+
+    const errorHandler = (error: any) => {
+      try {
+        log.info('Received error for stamp', stamp);
+        scriptLog.error('Error: Failed to cache main scripts', error);
+        handleReject(error);
+      } catch (err) {
+        log.error(`🏆 ${uuid}: Exception in errorHandler - ${err}`);
+        handleReject(err);
+      }
+    };
+
+    const messageErrorHandler = (error: any) => {
+      try {
+        log.info('Received message error for stamp', stamp);
+        scriptLog.error('MessageError: Failed to cache main scripts', error);
+        handleReject(error);
+      } catch (err) {
+        log.error(`🏆 ${uuid}: Exception in messageErrorHandler - ${err}`);
+        handleReject(err);
+      }
+    };
 
     try {
       if (!workers.cacheScripts) {
         log.info(`Creating worker: ${CACHED_GROUPED_SCRIPTS_WORKER}...`);
         workers.cacheScripts = new Worker(CACHED_GROUPED_SCRIPTS_WORKER);
         workers.cacheScripts.on('exit', (exitCode) => {
-          log.error('Worker exited', {
-            exitCode,
-          });
+          log.error('Worker exited', { exitCode });
+          handleReject(new Error(`Worker exited with code ${exitCode}`));
         });
 
-        const messageHandler = (message) => {
-          scriptLog.log('Worker message:', message.channel);
-          if (message.channel === 'LOG_TO_PARENT') {
-            scriptLog.info(message.value);
-            return;
-          }
-          if (message.channel === Channel.CACHE_MAIN_SCRIPTS) {
-            scriptLog.info('Caching main scripts...');
-            if (message?.error) {
-              scriptLog.error('Error caching main scripts', message.error);
-              showInfo(message.error?.message || 'Check logs...', 'Error...', message.error?.stack || 'Check logs');
-            } else {
-              cacheMainMenu(message);
-            }
-
-            const pendingRequest = pendingRequests.get(uuid);
-            if (pendingRequest) {
-              pendingRequest.resolve(true);
-              scriptLog.info(`🏆 ${uuid}: Resolved....`);
-              pendingRequests.delete(uuid);
-            } else {
-              scriptLog.warn(`🏆 ${uuid}: No pending request to resolve`);
-              scriptLog.info(`pendingRequests.keys()`, pendingRequests.keys());
-            }
-          }
-        };
-
-        const errorHandler = (error) => {
-          log.info('Received error for stamp', stamp);
-          if (error instanceof Error) {
-            scriptLog.error('Failed to cache main scripts', {
-              message: error.message,
-              stack: error.stack,
-              name: error.name,
-            });
-          } else {
-            scriptLog.error('Failed to cache main scripts', {
-              error: error,
-            });
-          }
-          // Reject all promises in the queue
-
-          const pendingRequest = pendingRequests.get(uuid);
-          if (pendingRequest) {
-            pendingRequest.reject(error);
-            scriptLog.info(`🏆 ${uuid}: Rejected....`);
-            pendingRequests.delete(uuid);
-          } else {
-            scriptLog.warn(`🏆 ${uuid}: No pending request to reject`);
-          }
-          pendingRequest.reject(error);
-          scriptLog.info(`🏆 ${uuid}: Rejected....`);
-          pendingRequests.delete(uuid);
-        };
-
-        const messageErrorHandler = (error) => {
-          log.info('Received message error for stamp', stamp);
-          scriptLog.error('MessageError: Failed to cache main scripts', error);
-          // Reject all promises in the queue
-          const pendingRequest = pendingRequests.get(uuid);
-          if (pendingRequest) {
-            pendingRequest.reject(error);
-            log.info(`🏆 ${uuid}: Rejected....`);
-            pendingRequests.delete(uuid);
-          } else {
-            log.warn(`🏆 ${uuid}: No pending request to reject`);
-          }
-        };
-
-        workers.cacheScripts.on('messageerror', messageErrorHandler);
-        workers.cacheScripts.on('error', errorHandler);
+        // Attach event handlers
         workers.cacheScripts.on('message', messageHandler);
+        workers.cacheScripts.on('error', errorHandler);
+        workers.cacheScripts.on('messageerror', messageErrorHandler);
       }
 
-      if (stamp?.filePath && isInDirectory(stamp?.filePath, kitPath())) {
+      if (stamp?.filePath && isInDirectory(stamp.filePath, kitPath())) {
         log.info(`Ignore stamping .kit script: ${stamp.filePath}`);
+        // Optionally resolve immediately if ignoring
+        handleResolve();
       } else {
         log.info(`Stamping ${stamp?.filePath || 'cache only'} 💟`);
-        if (!postMessage) {
-          postMessage = debounce(
+        if (!cacheMainScripts.postMessage) {
+          cacheMainScripts.postMessage = debounce(
             (message) => {
               const body = message ? { ...message, id: uuid } : { id: uuid };
               log.info(`🏆 ${uuid}: Posting message to worker`);
-              workers?.cacheScripts?.postMessage(body);
+              if (workers.cacheScripts) {
+                workers.cacheScripts.postMessage(body);
+              } else {
+                log.warn(`🏆 ${uuid}: Worker is not available to post messages.`);
+                handleReject(new Error('Worker not available'));
+              }
             },
             250,
             {
               leading: true,
-            },
+            }
           );
         }
 
         log.info('Sending stamp to worker', stamp);
-        postMessage({ channel, value, id: uuid });
+        cacheMainScripts.postMessage({ channel, value, id: uuid });
       }
     } catch (error) {
       log.warn('Failed to cache main scripts at startup', error);
-      // Reject all promises in the queue
-      const pendingRequest = pendingRequests.get(uuid);
-      if (pendingRequest) {
-        pendingRequest.reject(error);
-        log.info(`🏆 ${uuid}: Rejected....`);
-        pendingRequests.delete(uuid);
-      } else {
-        log.warn(`🏆 ${uuid}: No pending request to reject`);
-      }
+      handleReject(error);
     }
   });
 };
