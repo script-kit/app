@@ -2099,6 +2099,10 @@ export class KitPrompt {
   };
 
   setPromptAlwaysOnTop = (onTop: boolean, manual = false) => {
+    if(kitState.isMac){
+      log.info(`alwaysOnTop is disabled on mac`)
+      return
+    }
     if (kitState?.kenvEnv?.KIT_ALWAYS_ON_TOP === 'true') {
       return;
     }

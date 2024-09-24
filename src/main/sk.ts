@@ -10,26 +10,53 @@ const log = createLogger('sk');
  * Starts the socket server.
  */
 export const startSK = () => {
-  const server = net.createServer((stream) => {
-    stream.on('data', async (data) => {
-      const value = data.toString();
-      log.info('Kar value', value);
+  const socketPath = kitPath('kit.sock');
 
-      const json = value.match(/^{.*}$/gm)?.[0] ?? '{}';
-      const { script = '', args = [], cwd } = JSON.parse(json);
+  const startServer = () => {
+    const server = net.createServer((stream) => {
+      stream.on('data', async (data) => {
+        const value = data.toString();
+        log.info('Kar value', value);
 
-      try {
-        const result = await handleScript(script, args, cwd);
-        sendResponse(stream, result);
-      } catch (error) {
-        handleError(stream, error);
+        const json = value.match(/^{.*}$/gm)?.[0] ?? '{}';
+        const { script = '', args = [], cwd } = JSON.parse(json);
+
+        try {
+          const result = await handleScript(script, args, cwd);
+          sendResponse(stream, result);
+        } catch (error) {
+          handleError(stream, error);
+        }
+      });
+    });
+
+    server.listen(socketPath, () => {
+      log.info(`Socket server listening on ${socketPath}`);
+    });
+
+    server.on('error', (error: NodeJS.ErrnoException) => {
+      if (error.code === 'EADDRINUSE') {
+        log.warn(`Address ${socketPath} already in use. Attempting to recover...`);
+        fs.unlink(socketPath, (unlinkError) => {
+          if (unlinkError) {
+            log.error(`Failed to delete ${socketPath}:`, unlinkError);
+            return;
+          }
+          log.info(`Deleted ${socketPath}. Retrying to start the server...`);
+          startServer();
+        });
+      } else {
+        log.error('Server error:', error);
       }
     });
-  });
+  };
 
-  server.listen(kitPath('kit.sock'), () => {
-    log.info(`Socket server listening on ${kitPath('kit.sock')}`);
-  });
+  // Initial cleanup before starting the server
+  if (fs.existsSync(socketPath)) {
+    fs.unlinkSync(socketPath);
+  }
+
+  startServer();
 };
 
 /**
@@ -59,9 +86,4 @@ function handleError(stream: any, error: any) {
   log.warn(message);
   stream.write(message);
   stream.end();
-}
-
-const socketPath = kitPath('kit.sock');
-if (fs.existsSync(socketPath)) {
-  fs.unlinkSync(socketPath);
 }

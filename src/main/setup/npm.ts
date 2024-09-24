@@ -55,6 +55,8 @@ function updateConfigLines(configLines: string[], config: NpmConfig): string[] {
   const keysToUpdate = new Set(Object.keys(config));
   const updatedLines: string[] = [];
 
+  let registryAlreadySet = false;
+
   for (const line of configLines) {
     const trimmedLine = line.trim();
 
@@ -71,7 +73,12 @@ function updateConfigLines(configLines: string[], config: NpmConfig): string[] {
     const [currentKey, ...valueParts] = line.split("=");
     const key = currentKey.trim();
 
-    if (keysToUpdate.has(key)) {
+    if (key === "registry") {
+      // If registry is already set, keep the existing value
+      updatedLines.push(line);
+      registryAlreadySet = true;
+      keysToUpdate.delete("registry");
+    } else if (keysToUpdate.has(key)) {
       // Update existing key with new value
       updatedLines.push(`${key}=${config[key as NpmConfigKey]}`);
       keysToUpdate.delete(key);
@@ -80,9 +87,11 @@ function updateConfigLines(configLines: string[], config: NpmConfig): string[] {
     }
   }
 
-  // Add any remaining keys that were not found
+  // Add any remaining keys that were not found, except for registry if it was already set
   for (const key of keysToUpdate) {
-    updatedLines.push(`${key}=${config[key as NpmConfigKey]}`);
+    if (key !== "registry" || !registryAlreadySet) {
+      updatedLines.push(`${key}=${config[key as NpmConfigKey]}`);
+    }
   }
 
   return updatedLines;
