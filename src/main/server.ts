@@ -2,7 +2,7 @@ import http from 'node:http';
 import https from 'node:https';
 import fs from 'node:fs';
 import { URL } from 'node:url';
-
+import { Bonjour, Service } from 'bonjour-service';
 import { handleScript } from './handleScript';
 import { createLogger } from '../shared/log-utils';
 import { getServerPort } from './serverTrayUtils';
@@ -11,7 +11,7 @@ import { kenvPath } from '@johnlindquist/kit/core/utils';
 const log = createLogger('server');
 
 let serverInstance: http.Server | https.Server | null = null;
-
+let bonjour: Bonjour | null = null;
 /**
  * Starts the server (HTTP or HTTPS based on available certificates).
  */
@@ -49,6 +49,37 @@ export const startServer = () => {
     serverInstance = server;
     kitState.serverRunning = true; // Track server state
     log.info(`Server listening on port ${getServerPort()}`);
+
+    bonjour = new Bonjour();
+
+    const service = bonjour.publish({
+      name: 'Kit Server',
+      type: 'http',
+      port: getServerPort(),
+      host: kitState.kenvEnv.KIT_BONJOUR_HOST || 'kit.local',
+    });
+
+    service.on('up', () => {
+      log.info(`Bonjour service published: ${service.name} - ${service.type} - ${service.host} - ${service.port}`);
+    });
+
+    service.on('error', (error) => {
+      log.error(`Bonjour service error: ${error}`);
+    });
+
+    service.on('update', () => {
+      log.info(`Bonjour service updated: ${service.name} - ${service.type} - ${service.host} - ${service.port}`);
+    });
+
+    service.on('remove', () => {
+      log.info(`Bonjour service removed: ${service.name} - ${service.type} - ${service.host} - ${service.port}`);
+    });
+
+    service.on('stop', () => {
+      log.info(`Bonjour service stopped: ${service.name} - ${service.type} - ${service.host} - ${service.port}`);
+    });
+
+    log.info(`Bonjour service published: ${service.name} - ${service.type} - ${service.host} - ${service.port}`);
   });
 };
 
@@ -151,6 +182,11 @@ export const stopServer = () => {
       log.info('Server has been stopped');
       serverInstance = null;
       kitState.serverRunning = false; // Update server state
+      if(bonjour) {
+        bonjour.unpublishAll();
+        bonjour.destroy();
+        bonjour = null;
+      }
     });
   } else {
     log.warn('Server is not running');

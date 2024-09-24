@@ -131,6 +131,7 @@
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^26.0.2",
     "axios": "^1.7.7",
+    "bonjour-service": "^1.2.1",
     "builtin-modules": "^4.0.0",
     "chokidar": "^3.6.0",
     "command-exists": "^1.2.9",
