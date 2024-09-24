@@ -552,6 +552,14 @@ export const parseEnvFile = debounce(async () => {
   //   KIT_THEME_DARK: envData?.KIT_THEME_DARK,
   // });
 
+  if(envData?.KIT_API_KEY) {
+    log.info(`Detected KIT_API_KEY in .env. Setting kitState.kenvEnv.KIT_API_KEY`);
+    kitState.kenvEnv.KIT_API_KEY = envData?.KIT_API_KEY;
+  }else if(kitState.kenvEnv.KIT_API_KEY){
+    log.info(`Removing KIT_API_KEY from kitState.kenvEnv`);
+    delete kitState.kenvEnv.KIT_API_KEY;
+  }
+
   if (envData?.KIT_DOCK) {
     kitState.kenvEnv.KIT_DOCK = envData?.KIT_DOCK;
     if (envData?.KIT_DOCK === 'false') {

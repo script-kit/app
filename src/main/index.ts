@@ -100,6 +100,7 @@ import { WindowMonitor } from './debug/window-monitor';
 import { rimraf } from 'rimraf';
 import { pathExists } from './cjs-exports';
 import { setNpmrcConfig } from './setup/npm';
+import { startServer } from './server';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -1053,6 +1054,10 @@ const checkKit = async () => {
     // log.info(`envData`, envPath, envData);
     kitState.kenvEnv = { ...envData, ...envKitData };
     createIdlePty();
+
+    if(kitState.kenvEnv.KIT_AUTOSTART_SERVER === 'true') {
+      startServer();
+    }
 
     // focusPrompt();
     setTimeout(async () => {

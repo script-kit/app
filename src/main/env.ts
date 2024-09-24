@@ -3,8 +3,8 @@
 import log from 'electron-log';
 
 import { subscribeKey } from 'valtio/utils';
-import { type kenvEnv, kitState } from './state';
-
+import { kitState } from './state';
+import type { kenvEnv } from '@johnlindquist/kit/types/env';
 import { clearIdleProcesses, ensureIdleProcess, processes } from './process';
 import { createIdlePty } from './pty';
 import { checkOpenAtLogin } from './settings';

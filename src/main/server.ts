@@ -1,136 +1,165 @@
 import http from 'node:http';
+import https from 'node:https';
+import fs from 'node:fs';
 import { URL } from 'node:url';
 
-import { parseScript, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
-import { Trigger } from '../shared/enums';
-import { runPromptProcess } from './kit';
-import { spawnShebang } from './process';
+import { handleScript } from './handleScript';
 import { createLogger } from '../shared/log-utils';
-import { runMainScript } from './main-script';
 import { getServerPort } from './serverTrayUtils';
-import { kitState } from './state'; // Ensure kitState is imported
-
+import { kitState } from './state';
+import { kenvPath } from '@johnlindquist/kit/core/utils';
 const log = createLogger('server');
 
-let serverInstance: http.Server | null = null;
+let serverInstance: http.Server | https.Server | null = null;
 
+/**
+ * Starts the server (HTTP or HTTPS based on available certificates).
+ */
 export const startServer = () => {
   if (serverInstance) {
     log.warn('Server is already running');
     return;
   }
 
-  const server = http.createServer(async (req, res) => {
-    if (req.method === 'POST') {
-      let body = '';
-      req.on('data', (chunk) => {
-        body += chunk.toString();
-      });
-      req.on('end', async () => {
-        const apiKey = req.headers['authorization']?.split(' ')[1];
-        if (!validateApiKey(apiKey)) {
-          res.writeHead(401, { 'Content-Type': 'text/plain' });
-          res.end('Unauthorized');
-          return;
-        }
+  const keyPath = kenvPath("key.pem");
+  const certPath = kenvPath("cert.pem");
+  const useHttps = fs.existsSync(keyPath) && fs.existsSync(certPath);
 
-        try {
-          const { script, args, cwd } = JSON.parse(body);
-          const result = await handleScript(script, args, cwd);
-          res.writeHead(result.status, { 'Content-Type': 'text/plain' });
-          res.end(result.message);
-        } catch (error) {
-          handleError(res, error);
-        }
-      });
-    } else {
-      const parsedUrl = new URL(req.url || '', `http://${req.headers.host}`);
-      const scriptPathParts = parsedUrl.pathname.split('/').filter(Boolean);
-      const query = parsedUrl.searchParams;
+  let server;
 
-      const script = scriptPathParts.join('/');
-      const args = query.getAll('arg');
-      const cwd = query.get('cwd') || process.cwd();
+  if (useHttps) {
+    try {
+      const key = fs.readFileSync(keyPath, 'utf8');
+      const cert = fs.readFileSync(certPath, 'utf8');
+      const options = { key, cert };
 
-      log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
-
-      try {
-        const result = await handleScript(script, args, cwd);
-        res.writeHead(result.status, { 'Content-Type': 'text/plain' });
-        res.end(result.message);
-      } catch (error) {
-        handleError(res, error);
-      }
+      server = https.createServer(options, requestHandler);
+      log.info('Configured to use HTTPS');
+    } catch (error) {
+      log.error('Failed to read SSL certificates:', error);
+      log.info('Falling back to HTTP');
+      server = http.createServer(requestHandler);
     }
-  });
-
-  async function handleScript(script: string, args: string[], cwd: string) {
-    if (script === '') {
-      await runMainScript();
-      return { status: 200, message: 'Main script executed' };
-    }
-
-    const scriptPath = resolveToScriptPath(script, cwd);
-    if (!scriptPath) {
-      return { status: 404, message: '🕹 kit needs a script!' };
-    }
-
-    log.info(`🇦🇷 ${scriptPath} ${args}`);
-    const { shebang } = await parseScript(scriptPath);
-
-    if (shebang) {
-      // Updated spawnShebang parameters to match expected type
-      spawnShebang({
-        command: shebang, // Assuming 'shebang' contains the command
-        args: [], // Add any necessary arguments here
-        shell: true, // Enable shell if required
-        cwd, // Current working directory
-        filePath: scriptPath,
-      });
-    } else {
-      await runPromptProcess(
-        scriptPath,
-        args.map((s: string) => s.replaceAll('$newline$', '\n')),
-        { force: true, trigger: Trigger.Kar, sponsorCheck: false },
-      );
-    }
-
-    return { status: 200, message: `🚗💨 ~/.kit/kar ${script} ${args.join(' ')}` };
-  }
-
-  function handleError(res: http.ServerResponse, error: any) {
-    const message = `😱 ${error}`;
-    log.warn(message);
-    res.writeHead(500, { 'Content-Type': 'text/plain' });
-    res.end(message);
-  }
-
-  function validateApiKey(key: string | undefined): boolean {
-    const validKey = process.env.KIT_API_KEY;
-    return key === validKey;
+  } else {
+    server = http.createServer(requestHandler);
+    log.info('Configured to use HTTP');
   }
 
   server.listen(getServerPort(), () => {
     serverInstance = server;
-    kitState.serverRunning = true; // {{ added }}
+    kitState.serverRunning = true; // Track server state
     log.info(`Server listening on port ${getServerPort()}`);
   });
 };
 
-// Function to stop the server
+/**
+ * Handles incoming HTTP/HTTPS requests.
+ * @param req - The incoming request.
+ * @param res - The response object.
+ */
+const requestHandler: http.RequestListener = async (req, res) => {
+  let apiKey = '';
+  if (req.method === 'POST') {
+    let body = '';
+    for await (const chunk of req) { // Using "for of" loop
+      body += chunk.toString();
+    }
+
+    const authHeader = (req.headers['authorization'] || '')?.trim();
+    apiKey = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader.includes(' ') ? authHeader.split(' ')[1] : authHeader;
+
+    try {
+
+      const parsedBody = JSON.parse(body);
+      const script = parsedBody?.script || '';
+      const args = parsedBody?.args || [];
+      const cwd = parsedBody?.cwd || kenvPath();
+      log.info({ script, args, cwd });
+      const result = await handleScript(script, args, cwd, true, apiKey);
+      sendResponse(res, result);
+    } catch (error) {
+      handleError(res, error);
+    }
+  } else {
+    const parsedUrl = new URL(req.url || '', `http://${req.headers.host}`);
+    const scriptPathParts = parsedUrl.pathname.split('/').filter(Boolean);
+    const query = parsedUrl.searchParams;
+
+    const script = scriptPathParts.join('/');
+    const args = query.getAll('arg');
+    const cwd = query.get('cwd') || process.cwd();
+
+    log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
+
+    try {
+      const result = await handleScript(script, args, cwd, true, apiKey);
+      sendResponse(res, result);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+};
+
+/**
+ * Sends a standardized response to the client.
+ * @param res - The server response object.
+ * @param param1 - An object containing status and message.
+ */
+function sendResponse(
+  res: http.ServerResponse,
+  { status, message }: { status: number; message: string }
+) {
+  const statusText = getStatusText(status);
+  res.writeHead(status, { 'Content-Type': 'text/plain' });
+  res.end(message);
+}
+
+/**
+ * Handles errors by sending an appropriate response.
+ * @param res - The server response object.
+ * @param error - The error encountered.
+ */
+function handleError(res: http.ServerResponse, error: any) {
+  const message = `😱 ${error}`;
+  log.warn(message);
+  sendResponse(res, { status: 500, message });
+}
+
+/**
+ * Retrieves the standard status text based on the status code.
+ * @param status - The HTTP status code.
+ * @returns The corresponding status text.
+ */
+function getStatusText(status: number): string {
+  const statusTexts: { [key: number]: string } = {
+    200: 'OK',
+    201: 'Created',
+    400: 'Bad Request',
+    401: 'Unauthorized',
+    404: 'Not Found',
+    500: 'Internal Server Error',
+  };
+  return statusTexts[status] || 'Unknown Status';
+}
+
+/**
+ * Stops the server if it's running.
+ */
 export const stopServer = () => {
   if (serverInstance) {
     serverInstance.close(() => {
       log.info('Server has been stopped');
       serverInstance = null;
-      kitState.serverRunning = false; // {{ added }}
+      kitState.serverRunning = false; // Update server state
     });
   } else {
     log.warn('Server is not running');
   }
 };
 
-// Function to restart the server
+/**
+ * Restarts the server.
+ */
 export const restartServer = () => {
   stopServer();
   startServer();
