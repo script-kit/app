@@ -46,7 +46,7 @@ import { kenvChokidarPath, slash } from './path-utils';
 import { actualHideDock, showDock } from './dock';
 import { reloadApps } from './apps';
 
-import { scriptLog } from './logs';
+import { scriptLog, watcherLog } from './logs';
 const log = createLogger('watcher.ts');
 
 const debounceCacheMainScripts = debounce(cacheMainScripts, 250);
@@ -90,13 +90,13 @@ const logAllEvents = () => {
   });
 
   if (adds.length) {
-    log.verbose('adds', adds);
+    watcherLog.info('adds', adds);
   }
   if (changes.length) {
-    log.verbose('changes', changes);
+    watcherLog.info('changes', changes);
   }
   if (removes.length) {
-    log.verbose('removes', removes);
+    watcherLog.info('removes', removes);
   }
 
   adds.length = 0;
@@ -246,7 +246,7 @@ const madgeAllScripts = debounce(async () => {
     ...kenvs.filter((k) => k.isDirectory()).map((kenv) => slash(kenvPath('kenvs', kenv.name, 'scripts', '*'))),
   ]);
 
-  log.info(`🔍 ${allScriptPaths.length} scripts found`);
+  watcherLog.info(`🔍 ${allScriptPaths.length} scripts found`);
 
   const fileMadge = await madge(allScriptPaths, {
     baseDir: kenvChokidarPath(),
@@ -264,7 +264,7 @@ const madgeAllScripts = debounce(async () => {
   for (const [dir, files] of Object.entries(watched)) {
     for (const file of files) {
       const filePath = path.join(dir, file);
-      log.verbose(`Unwatching ${filePath}`);
+      watcherLog.verbose(`Unwatching ${filePath}`);
       depWatcher.unwatch(filePath);
     }
   }
@@ -273,12 +273,12 @@ const madgeAllScripts = debounce(async () => {
 
     for (const dep of deps) {
       const depKenvPath = kenvChokidarPath(dep);
-      log.verbose(`Watching ${depKenvPath}`);
+      watcherLog.verbose(`Watching ${depKenvPath}`);
       depWatcher.add(depKenvPath);
     }
 
     if (deps.length > 0) {
-      log.info(`${scriptKey} has ${deps.length} dependencies`, deps);
+      watcherLog.info(`${scriptKey} has ${deps.length} dependencies`, deps);
     }
   }
 }, 100);
@@ -288,16 +288,16 @@ function watchTheme() {
   const themePath: string =
     (kitState.isDark ? kitState.kenvEnv?.KIT_THEME_DARK : kitState.kenvEnv?.KIT_THEME_LIGHT) || '';
   if (themeWatcher) {
-    log.info(`🎨 Unwatching ${themePath}`);
+    watcherLog.info(`🎨 Unwatching ${themePath}`);
     themeWatcher.close();
   }
   if (pathExistsSync(themePath)) {
-    log.info(`🎨 Watching ${themePath}`);
+    watcherLog.info(`🎨 Watching ${themePath}`);
     themeWatcher = chokidar.watch(slash(themePath), {
       ignoreInitial: true,
     });
     themeWatcher.on('all', (eventName, filePath) => {
-      log.info(`🎨 ${filePath} changed`);
+      watcherLog.info(`🎨 ${filePath} changed`);
       updateTheme();
     });
   }

@@ -29,7 +29,6 @@ import path from 'node:path';
 import semver from 'semver';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { readdir, lstat } from 'node:fs/promises';
-import { EOL } from 'os';
 
 import {
   KIT_FIRST_PATH,
@@ -58,7 +57,6 @@ import { APP_NAME, KENV_PROTOCOL, KIT_PROTOCOL } from './helpers';
 import {
   cacheMainScripts,
   cleanKit,
-  createLogs,
   downloadKenv,
   downloadKit,
   extractKenv,
@@ -606,6 +604,20 @@ const nodeModulesExists = async () => {
   return doesNodeModulesExist;
 };
 
+export const useElectronNodeVersion = async (cwd: string) => {
+  const pnpmPath = await getPnpmPath();
+  log.info(`🚶 Setting pnpm node version to ${process.versions.node} with ${pnpmPath}`);
+  await spawnP(pnpmPath, ['config', 'set', 'use-node-version', process.versions.node], {
+    cwd,
+    shell: true,
+  });
+
+  const nodeVersion = await spawnP(pnpmPath, ['node', '--version'], {
+    cwd,
+  });
+  log.info(`Set node version in: ${nodeVersion} for ${cwd} .npmrc`);
+};
+
 const initPnpm = async () => {
   let pnpmPath = '';
 
@@ -617,51 +629,6 @@ const initPnpm = async () => {
 
   if (!pnpmPath) {
     await installPnpm();
-  }
-
-  pnpmPath = await getPnpmPath();
-  log.info(`🚶 Setting pnpm node version to ${process.versions.node} with ${pnpmPath}`);
-  await spawnP(pnpmPath, ['config', 'set', 'use-node-version', process.versions.node], {
-    cwd: kitPath(),
-    shell: true,
-  });
-
-  // Would need to remove all other node versions for this to work?
-  // pnpm env add --global process.versions.node
-  // log.info(`🚶 Using ${pnpmPath} to add node version to pnpm env...`);
-  // await spawnP(pnpmPath, ['env', 'add', '--global', process.versions.node], {
-  //   cwd: kitPath(),
-  // });
-
-  const nodeVersion = await spawnP(pnpmPath, ['node', '--version'], {
-    cwd: kitPath(),
-  });
-  log.info(`Node version: ${nodeVersion}`);
-
-  const npmRcPath = kenvPath('.npmrc');
-  log.info(`npmRcPath: ${npmRcPath}`);
-
-  try {
-    if (existsSync(npmRcPath)) {
-      let content = readFileSync(npmRcPath, 'utf8');
-      const lines = content.split(EOL);
-      const nodeVersionLine = `use-node-version=${process.versions.node}`;
-      const existingLineIndex = lines.findIndex((line) => line.startsWith('use-node-version='));
-
-      if (existingLineIndex !== -1) {
-        lines[existingLineIndex] = nodeVersionLine;
-      } else {
-        lines.push(nodeVersionLine);
-      }
-
-      content = lines.join(EOL);
-      writeFileSync(npmRcPath, content, 'utf8');
-      log.info(`Updated ${npmRcPath} with node version ${process.versions.node}`);
-    } else {
-      log.info(`${npmRcPath} does not exist. Skipping node version update.`);
-    }
-  } catch (error) {
-    log.error(error);
   }
 };
 
@@ -926,7 +893,18 @@ const checkKit = async () => {
 
     await extractKitTar(kitTarPath);
     await clearPromptCache();
+
+
+    await setupLog('Installing pnpm...');
+    await initPnpm();
+    await setupLog('Setting node version in .npmrc...');
+    await useElectronNodeVersion(kitPath());
+    await setupLog('Installing kit deps...');
+    await installKitDeps();
   }
+
+  await setupLog('.kit installed');
+
 
   // await handleSpawnReturns(`docs-pull`, pullDocsResult);
 
@@ -968,12 +946,7 @@ const checkKit = async () => {
     await ensureKenvDirs();
   }
 
-  await setupLog('Installing pnpm...');
-  await initPnpm();
-  await setupLog('Installing kit deps...');
-  await installKitDeps();
-
-  await setupLog('.kit installed');
+  await useElectronNodeVersion(kenvPath());
 
   if (!isKenvInstalled) {
     optionalSetupScript(kitPath('setup', 'clone-examples.js'));

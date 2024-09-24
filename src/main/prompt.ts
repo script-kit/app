@@ -642,6 +642,48 @@ export class KitPrompt {
     });
   };
 
+  onBlur = () => {
+    log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred`);
+
+    if (kitState.isMac) {
+      makeWindow(this.window);
+    }
+
+    if (this.justFocused && this.isVisible()) {
+      log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window was just focused. Ignore blur`);
+      return;
+    }
+
+    if (!kitState.isLinux) {
+      kitState.emojiActive = false;
+    }
+
+    if (!this.shown) {
+      return;
+    }
+
+    if (this.window.isDestroyed()) {
+      return;
+    }
+    if (kitState.isActivated) {
+      kitState.isActivated = false;
+      return;
+    }
+    if (this.window.webContents?.isDevToolsOpened()) {
+      return;
+    }
+
+    if (this.window.isVisible()) {
+      this.sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
+    }
+
+    if (os.platform().startsWith('win')) {
+      return;
+    }
+
+    kitState.blurredByKit = false;
+  };
+
   constructor() {
     ipcMain.on(AppChannel.GET_KIT_CONFIG, (event) => {
       event.returnValue = {
@@ -764,6 +806,14 @@ export class KitPrompt {
 
       const messagesReadyHandler = async (event, pid) => {
         log.info(`${this.pid}: 📬 Messages ready. `);
+        if(this.ui === UI.splash) {
+          this.window.on('blur', ()=> {
+            log.info(`${this.pid}: ${this.scriptName}: 🙈 Prompt window blurred`);
+          });
+        }else{
+          this.window.on('blur', this.onBlur);
+        }
+
         if (this.initMain) {
           this.initPromptData();
           this.initMainChoices();
@@ -860,48 +910,6 @@ export class KitPrompt {
       }
     });
 
-    const onBlur = () => {
-      log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred`);
-
-      if (kitState.isMac) {
-        makeWindow(this.window);
-      }
-
-      if (this.justFocused && this.isVisible()) {
-        log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window was just focused. Ignore blur`);
-        return;
-      }
-
-      if (!kitState.isLinux) {
-        kitState.emojiActive = false;
-      }
-
-      if (!this.shown) {
-        return;
-      }
-
-      if (this.window.isDestroyed()) {
-        return;
-      }
-      if (kitState.isActivated) {
-        kitState.isActivated = false;
-        return;
-      }
-      if (this.window.webContents?.isDevToolsOpened()) {
-        return;
-      }
-
-      if (this.window.isVisible()) {
-        this.sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
-      }
-
-      if (os.platform().startsWith('win')) {
-        return;
-      }
-
-      kitState.blurredByKit = false;
-    };
-
     this.window.on('always-on-top-changed', () => {
       log.info(`📌 always-on-top-changed: ${this.window.isAlwaysOnTop()}`);
     });
@@ -951,7 +959,6 @@ export class KitPrompt {
         }
       }, 100);
     });
-    this.window.on('blur', onBlur);
 
     this.window.on('hide', () => {
       log.info(`${this.pid}:${this.scriptName}: 🫣 Prompt window hidden`);
@@ -2519,10 +2526,10 @@ export const makeSplashWindow = (window?: BrowserWindow) => {
   if (!kitState.isMac) {
     return;
   }
-  log.info('👋 Make splash window');
+  log.info('👋 Prep for close');
   if (!window) {
     return;
   }
 
-  // shims['@johnlindquist/mac-panel-window'].makeWindow(window);
+  shims['@johnlindquist/mac-panel-window'].prepForClose(window);
 };

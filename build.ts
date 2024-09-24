@@ -10,7 +10,7 @@ import packageJson from './package.json';
 
 let platform: 'linux' | 'mac' | 'win';
 let arch: 'arm64' | 'x64';
-let publish: boolean | string;
+let publish: 'always' | 'never' | undefined;
 
 if (process.argv.length <= 2) {
   if (process.platform === 'darwin') {
@@ -24,11 +24,11 @@ if (process.argv.length <= 2) {
   }
 
   arch = process.arch as 'arm64' | 'x64';
-  publish = false;
+  publish = undefined;
 } else {
   platform = (await arg('platform')) as 'linux' | 'mac' | 'win';
   arch = (await arg('arch')) as 'arm64' | 'x64';
-  publish = await arg('publish');
+  publish = (await arg('publish')) as 'always' | 'never' | undefined;
 }
 
 const electronVersion = packageJson.devDependencies.electron.replace('^', '');

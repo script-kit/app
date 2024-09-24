@@ -13,12 +13,10 @@ import { convertShortcut, shortcutInfo } from './helpers';
 import { processes, spawnShebang } from './process';
 import { prompts } from './prompts';
 import { convertKey, kitState, subs } from './state';
-import { createLogger } from '../shared/log-utils';
 import { runMainScript } from './main-script';
 import { createUiohookToName } from './io';
 import { LoggedMap } from './compare';
-
-const log = createLogger('shortcuts.ts');
+import { keymapLog, shortcutsLog as log } from './logs';
 
 const registerFail = (shortcut: string, filePath: string) =>
   `# Shortcut Registration Failed
@@ -173,19 +171,19 @@ export const shortcutScriptChanged = async ({
   // Handle existing shortcuts
 
   const exists = [...shortcutMap.entries()].find(([, s]) => s?.shortcut === convertedShortcut);
-  log.purple({ sameScript, exists });
+  log.info({ sameScript, exists });
   if (exists && !sameScript) {
     const otherPath = exists[0];
     let script;
     if (otherPath.includes('#')) {
-      log.green(`Checking scriptlets in ${otherPath}`);
+      log.info(`Checking scriptlets in ${otherPath}`);
       const scripts = await parseScriptletsFromPath(otherPath);
       script = scripts.find((s) => s.filePath === otherPath);
     } else {
       script = await parseScript(otherPath);
     }
 
-    log.green(`Checking if ${convertedShortcut} is still registered to ${otherPath}`, script);
+    log.info(`Checking if ${convertedShortcut} is still registered to ${otherPath}`, script);
 
     const validateStillRegistered = convertShortcut(script?.shortcut, script?.filePath) === convertedShortcut;
 
@@ -195,7 +193,7 @@ export const shortcutScriptChanged = async ({
 
       return;
     }
-    log.purple(`Shortcut ${convertedShortcut} is no longer registered to ${otherPath}`);
+    log.info(`Shortcut ${convertedShortcut} is no longer registered to ${otherPath}`);
     try {
       globalShortcut.unregister(convertedShortcut);
       shortcutMap.delete(otherPath);
@@ -242,14 +240,14 @@ export const shortcutScriptChanged = async ({
 
 export const updateMainShortcut = (shortcut?: string) => {
   const checkShortcut = shortcut ? shortcut : kitState.isMac ? 'cmd ;' : 'ctrl ;';
-  log.green(`updateMainShortcut with ${checkShortcut}`);
+  log.info(`updateMainShortcut with ${checkShortcut}`);
 
   const finalShortcut = convertShortcut(checkShortcut, getMainScriptPath());
   if (!finalShortcut) {
     return;
   }
 
-  log.green(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
+  log.info(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
 
   const old = shortcutMap.get(getMainScriptPath());
 
@@ -312,7 +310,7 @@ export const updateMainShortcut = (shortcut?: string) => {
 
   if (ret && globalShortcut.isRegistered(finalShortcut)) {
     kitState.mainShortcut = finalShortcut;
-    log.green(`Registered ${finalShortcut} to ${getMainScriptPath(process.env.KIT_MAIN_SCRIPT)}`);
+    log.info(`Registered ${finalShortcut} to ${getMainScriptPath(process.env.KIT_MAIN_SCRIPT)}`);
     shortcutMap.set(getMainScriptPath(), {
       shortcut: finalShortcut,
       shebang: '',
@@ -359,7 +357,7 @@ subs.push(subShortcutsPaused);
 let prevKeymap: any = null;
 
 export const handleKeymapChange = async () => {
-  log.info('Handling keymap change...', kitState.keymap);
+  keymapLog.info('Handling keymap change...', kitState.keymap);
   if (prevKeymap) {
     pauseShortcuts();
     await new Promise((resolve) => setTimeout(resolve, 200));

@@ -147,3 +147,8 @@ export const { logInstance: kitLog, logPath: kitLogPath } = createLogInstance('k
 export const { logInstance: debugLog, logPath: debugLogPath } = createLogInstance('debug');
 export const { logInstance: consoleLog, logPath: consoleLogPath } = createLogInstance('console');
 export const { logInstance: workerLog, logPath: workerLogPath } = createLogInstance('worker');
+export const { logInstance: keymapLog, logPath: keymapLogPath } = createLogInstance('keymap');
+export const { logInstance: shortcutsLog, logPath: shortcutsLogPath } = createLogInstance('shortcuts');
+export const { logInstance: watcherLog, logPath: watcherLogPath } = createLogInstance('watcher');
+
+
