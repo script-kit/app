@@ -84,7 +84,7 @@
     "date-fns": "^3.6.0",
     "detect-port": "^1.6.1",
     "dompurify": "^3.1.6",
-    "electron": "^33.0.0-beta.1",
+    "electron": "^33.0.0-beta.3",
     "electron-builder": "^24.13.3",
     "electron-vite": "^2.3.0",
     "emoji-picker-react": "^4.12.0",

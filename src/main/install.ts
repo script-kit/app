@@ -603,6 +603,10 @@ export const installKitDeps = async () => {
   const pnpmPath = await getPnpmPath();
   await requiredSpawnSetup(pnpmPath, ['i', '--prod'], {
     cwd: kitPath(),
+    env: {
+      ...process.env,
+      CI: 'true',
+    },
   });
 };
 

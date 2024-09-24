@@ -99,6 +99,7 @@ import { getPnpmPath } from './setup/pnpm';
 import { WindowMonitor } from './debug/window-monitor';
 import { rimraf } from 'rimraf';
 import { pathExists } from './cjs-exports';
+import { setNpmrcConfig } from './setup/npm';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -106,6 +107,12 @@ log.info('Setting up process.env');
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 // process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+for (const envVar of ['KIT', 'KENV']) {
+  if (process.env?.[envVar]?.includes('app.asar')) {
+    log.info(`Deleting process.env.${envVar} because it points to app.asar`);
+    delete process.env[envVar];
+  }
+}
 
 /* eslint-disable */
 (() => {
@@ -249,6 +256,10 @@ Electron version: ${process.versions.electron}
 Electron Node version: ${process.versions.node}
 Electron Chromium version: ${process.versions.chrome}
 Electron execPath: ${process.execPath}
+process.env.KIT: ${process.env.KIT}
+process.env.KENV: ${process.env.KENV}
+Kit path: ${kitPath()}
+Kenv path: ${kenvPath()}
 `);
 
 process.env.NODE_VERSION = nodeVersion;
@@ -604,12 +615,16 @@ const nodeModulesExists = async () => {
   return doesNodeModulesExist;
 };
 
+
+
 export const useElectronNodeVersion = async (cwd: string) => {
   const pnpmPath = await getPnpmPath();
   log.info(`🚶 Setting pnpm node version to ${process.versions.node} with ${pnpmPath}`);
-  await spawnP(pnpmPath, ['config', 'set', 'use-node-version', process.versions.node], {
-    cwd,
-    shell: true,
+  await setNpmrcConfig(cwd, {
+    'use-node-version': `${process.versions.node}`,
+    registry: 'https://registry.npmjs.org/',
+    'save-exact': true,
+    'install-links': true,
   });
 
   const nodeVersion = await spawnP(pnpmPath, ['node', '--version'], {
