@@ -125,6 +125,7 @@ loader.config({ monaco });
 import { createLogger } from '../../shared/log-utils';
 import { KNOWN_KEYBOARD_LAYOUTS, QWERTY, detectKeyboardLayout } from '../../shared/keyboard/layout';
 const log = createLogger('App.tsx');
+const windowPadding = '24';
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
@@ -208,6 +209,7 @@ export default function App() {
   const tempTheme = useAtomValue(tempThemeAtom);
   const [submitted, setSubmitted] = useAtom(submittedAtom);
   const [inputWhileSubmitted, setInputWhileSubmitted] = useAtom(inputWhileSubmittedAtom);
+
 
   const submittedInputRef = useRef<HTMLInputElement>(null);
 
@@ -637,11 +639,7 @@ text-text-base
                 WebkitUserSelect: 'none',
               } as any
             }
-            className={`
-        flex h-full
-        w-full flex-col
-        relative
-        `}
+            className={`flex w-full flex-col relative ${isWindow ? `h-[calc(100%-24px)]` : 'h-full'}`}
             onMouseDown={onMouseDown}
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseLeave}

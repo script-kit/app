@@ -3547,6 +3547,7 @@ export const isWindowAtom = atom(
   (g) => g(_isWindowAtom),
   (g, s, a: boolean) => {
     if (a) {
+      // TODO: Extract to App.tsx with constant windowPadding. Was having issues resizing with this in place.
       const body = document.body;
       body.style.paddingTop = '24px';
       resize(g, s, 'window');

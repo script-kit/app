@@ -2164,7 +2164,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     }),
     TERM_EXIT: onChildChannel(({ child, promptId }, { channel, value }) => {
       log.info('TERM EXIT FROM SCRIPT', value);
-      // sendToPrompt(channel, promptId || '');
+      sendToPrompt(channel, promptId || '');
     }),
     GET_DEVICES: onChildChannelOverride(({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
