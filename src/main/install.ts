@@ -1012,26 +1012,22 @@ export function isBinnableScript(script: Script) {
 
 export const cacheMainMenu = ({
   scripts,
-  kenvScripts,
   preview,
   shortcuts,
   scriptFlags,
 }: {
   scripts: Script[];
-  kenvScripts?: Script[];
   preview?: string;
   shortcuts?: Shortcut[];
   scriptFlags?: FlagsObject;
 }) => {
   log.info('Received scripts', {
     scripts: scripts?.length,
-    kenvScripts: kenvScripts?.length,
     preview: preview?.length,
   });
   if (Array.isArray(scripts) && scripts.length > 0) {
     log.info('Caching scripts and preview...', {
       scripts: scripts?.length,
-      kenvScripts: kenvScripts?.length,
       preview: preview?.length,
     });
     preloadChoicesMap.set(getMainScriptPath(), scripts);
