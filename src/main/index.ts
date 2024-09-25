@@ -99,7 +99,7 @@ import { getPnpmPath } from './setup/pnpm';
 import { WindowMonitor } from './debug/window-monitor';
 import { rimraf } from 'rimraf';
 import { pathExists } from './cjs-exports';
-import { setNpmrcConfig } from './setup/npm';
+import { NpmConfig, setNpmrcConfig } from './setup/npm';
 import { startServer } from './server';
 
 // TODO: Read a settings file to get the KENV/KIT paths
@@ -268,6 +268,7 @@ process.env.NODE_VERSION = nodeVersion;
 log.info(`😎 KIT_APP_VERSION ${getVersion()}`);
 
 const KIT = kitPath();
+process.env.KIT = KIT;
 
 // TODO: Fix source-map-support and electron-debug???
 // if (process.env.NODE_ENV === 'production') {
@@ -618,15 +619,10 @@ const nodeModulesExists = async () => {
 
 
 
-export const useElectronNodeVersion = async (cwd: string) => {
+export const useElectronNodeVersion = async (cwd: string, config:NpmConfig) => {
   const pnpmPath = await getPnpmPath();
   log.info(`🚶 Setting pnpm node version to ${process.versions.node} with ${pnpmPath}`);
-  await setNpmrcConfig(cwd, {
-    'use-node-version': `${process.versions.node}`,
-    registry: 'https://registry.npmjs.org/',
-    'save-exact': true,
-    'install-links': true,
-  });
+  await setNpmrcConfig(cwd, config);
 
   const nodeVersion = await spawnP(pnpmPath, ['node', '--version'], {
     cwd,
@@ -672,48 +668,8 @@ const verifyInstall = async () => {
   const isKenvConfigured = await kenvConfigured();
   await setupLog(isKenvConfigured ? 'kenv .env found' : 'kenv .env missinag');
 
-  let nodePath = '';
-  const findNodePath = async () => {
-    log.info('🚶 Using pnpm to find node...');
-    const pnpmPath = await getPnpmPath();
-    return await spawnP(pnpmPath, ['node', '-e', '"console.log(process.execPath)"'], {
-      cwd: kitPath(),
-    });
-  };
 
-  const maxRetries = 2;
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      nodePath = await findNodePath();
-      break;
-    } catch (error) {
-      log.error(`Attempt ${attempt} failed:`, error);
-      if (attempt < maxRetries) {
-        log.info('Retrying after initializing pnpm...');
-        await initPnpm();
-      } else {
-        log.error('Max retries reached. Unable to find node path.');
-        throw error;
-      }
-    }
-  }
-
-  log.info(`🚶 Using pnpm to find node. Found ${nodePath}... After...`);
-
-  await setupLog(nodePath ? 'node found' : 'node missing');
-
-  log.info({
-    checkKit,
-    checkKenv,
-    checkNode: nodePath,
-    isKenvConfigured,
-  });
-
-  kitState.NODE_PATH = nodePath;
-  log.info(`🚶 Assigned NODE_PATH: ${kitState.NODE_PATH}`);
-  process.env.NODE_PATH = kitState.NODE_PATH;
-
-  if (checkKit && checkKenv && nodePath && isKenvConfigured) {
+  if (checkKit && checkKenv && kitState.NODE_PATH && isKenvConfigured) {
     await setupLog('Install verified');
     return true;
   }
@@ -864,6 +820,40 @@ const checkKit = async () => {
     log.info('🔥 Starting Kit First Install');
   }
 
+  let nodePath = '';
+  const findNodePath = async () => {
+    log.info('🚶 Using pnpm to find node...');
+    const pnpmPath = await getPnpmPath();
+    return await spawnP(pnpmPath, ['node', '-e', '"console.log(process.execPath)"'], {
+      cwd: kitPath(),
+    });
+  };
+
+  const maxRetries = 2;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      nodePath = await findNodePath();
+      break;
+    } catch (error) {
+      log.error(`Attempt ${attempt} failed:`, error);
+      if (attempt < maxRetries) {
+        log.info('Retrying after initializing pnpm...');
+        await initPnpm();
+      } else {
+        log.error('Max retries reached. Unable to find node path.');
+        throw error;
+      }
+    }
+  }
+
+  log.info(`🚶 Using pnpm to find node. Found ${nodePath}... After...`);
+
+  await setupLog(nodePath ? 'node found' : 'node missing');
+
+  kitState.NODE_PATH = nodePath;
+  log.info(`🚶 Assigned NODE_PATH: ${kitState.NODE_PATH}`);
+  process.env.NODE_PATH = kitState.NODE_PATH;
+
   const requiresInstall = (await isNewVersion()) || !(await kitExists());
   log.info(`Requires install: ${requiresInstall}`);
   if (await isContributor()) {
@@ -914,7 +904,12 @@ const checkKit = async () => {
     await setupLog('Installing pnpm...');
     await initPnpm();
     await setupLog('Setting node version in .npmrc...');
-    await useElectronNodeVersion(kitPath());
+    await useElectronNodeVersion(kitPath(), {
+      'use-node-version': `${process.versions.node}`,
+      registry: 'https://registry.npmjs.org/',
+      'save-exact': true,
+      'install-links': true,
+    });
     await setupLog('Installing kit deps...');
     await installKitDeps();
   }
@@ -962,7 +957,12 @@ const checkKit = async () => {
     await ensureKenvDirs();
   }
 
-  await useElectronNodeVersion(kenvPath());
+  await useElectronNodeVersion(kenvPath(), {
+    'use-node-version': `${process.versions.node}`,
+    registry: 'https://registry.npmjs.org/',
+    'save-exact': true,
+    'install-links': false,
+  });
 
   if (!isKenvInstalled) {
     optionalSetupScript(kitPath('setup', 'clone-examples.js'));

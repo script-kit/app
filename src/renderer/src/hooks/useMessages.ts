@@ -622,9 +622,9 @@ export default () => {
     log.info(`Sending messages ready for ${pid} with ${window.pid}`);
     ipcRenderer.send(AppChannel.MESSAGES_READY, window.pid);
 
-    const handleMakeWindow = (_, data) => {
+    const handleMakeWindow = (_, data:boolean) => {
       log.info('Received make window message');
-      setIsWindow(true);
+      setIsWindow(data);
     };
 
     if (ipcRenderer.listenerCount(AppChannel.MAKE_WINDOW) === 0) {

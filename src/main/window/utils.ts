@@ -18,7 +18,7 @@ export const makeWindow = (window: BrowserWindow) => {
     log.info(`${window.id}: 📌 Making window`);
     shims['@johnlindquist/mac-panel-window'].makeWindow(window);
     // add 20px padding to the top of the body
-    window.webContents.send(AppChannel.MAKE_WINDOW);
+    window.webContents.send(AppChannel.MAKE_WINDOW, true);
   }
 };
 
@@ -27,6 +27,7 @@ export const makeKeyWindow = (window: BrowserWindow) => {
   if (kitState.isMac) {
     log.info(`${window.id}: 📌 Making key window`);
     shims['@johnlindquist/mac-panel-window'].makeKeyWindow(window);
+    window.webContents.send(AppChannel.MAKE_WINDOW, false);
   }
 };
 

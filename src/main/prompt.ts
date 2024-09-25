@@ -2067,7 +2067,10 @@ export class KitPrompt {
   };
 
   focusPrompt = () => {
-    this.window?.setFocusable(true);
+    if(!this.window.focusable){
+      log.info(`${this.pid}: Setting focusable to true`);
+      this.window?.setFocusable(true);
+    }
     if (this.window && !this.window.isDestroyed() && !this.window?.isFocused()) {
       log.info(`${this.pid}: focusPrompt`);
       try {

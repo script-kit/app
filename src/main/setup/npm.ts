@@ -10,7 +10,7 @@ type NpmConfigKey =
   | "use-node-version"
   | "save-exact"
   | "install-links";
-type NpmConfig = {
+export type NpmConfig = {
   [key in NpmConfigKey]?: string | boolean;
 };
 
