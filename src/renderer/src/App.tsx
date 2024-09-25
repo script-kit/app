@@ -631,7 +631,6 @@ text-text-base
             }}
             onDragLeave={() => {
               channel(Channel.ON_DRAG_LEAVE);
-              // console.log(`drag leave`);
             }}
             ref={windowContainerRef}
             style={
