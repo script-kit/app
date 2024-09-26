@@ -352,6 +352,7 @@ const initState = {
   hasCss: false,
   waitingForPing: false,
   NODE_PATH: '',
+  PNPM_NODE_PATH: '',
   serverRunning: false, // {{ added }}
 };
 

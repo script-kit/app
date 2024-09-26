@@ -262,7 +262,7 @@ export const findPnpmBin = async (): Promise<string> => {
       pnpmPath = pnpmPath?.match(/[A-Z]:\\.+/)?.[0] || pnpmPath;
     }
 
-    if (existsAndIsExecutable(pnpmPath)) {
+    if (pnpmPath && existsAndIsExecutable(pnpmPath)) {
       log.info(`Found executable pnpm with node-pty: ${pnpmPath}`);
       return pnpmPath;
     }
@@ -369,6 +369,11 @@ export async function getPnpmPath(): Promise<string> {
   }
 
   log.info(`pnpm path after wrapping in quotes: ${_pnpmPath}`);
+  const PNPM_NODE_PATH = path.join(path.dirname(_pnpmPath), 'nodejs', process.versions.node, 'bin');
+  log.info(`pnpm bin path: ${PNPM_NODE_PATH}`);
+  kitState.PNPM_NODE_PATH = PNPM_NODE_PATH;
+  process.env.PATH = PNPM_NODE_PATH + path.delimiter + process.env.PATH;
+  log.info(`pnpm bin path added to PATH: ${process.env.PATH}`);
 
   return _pnpmPath;
 }
