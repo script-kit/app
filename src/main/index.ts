@@ -856,6 +856,8 @@ const checkKit = async () => {
     kitState.NODE_PATH = nodePath;
     log.info(`🚶 Assigned NODE_PATH: ${kitState.NODE_PATH}`);
     process.env.NODE_PATH = kitState.NODE_PATH;
+    process.env.PATH = path.dirname(kitState.NODE_PATH) + path.delimiter + process.env.PATH;
+    log.info(`🚶 Assigned PATH with prefixed NODE_PATH: ${process.env.PATH}`);
   }
   const requiresInstall = (await isNewVersion()) || !(await kitExists());
   log.info(`Requires install: ${requiresInstall}`);
