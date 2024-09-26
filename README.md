@@ -1,8 +1,19 @@
-# Script Kit App
+# Script Kit App v3
 
 The companion app to Script Kit
 
 [https://scriptkit.com](https://scriptkit.com)
+
+## Development
+
+```
+npm i
+npm run dev
+```
+
+### node-gyp Issues?
+
+You'll have to Google for your specific issues. On mac, it's usually update xcode command line tools.
 
 
 ## Installation
