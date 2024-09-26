@@ -832,22 +832,7 @@ const checkKit = async () => {
     });
   };
 
-  const maxRetries = 2;
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      nodePath = await findNodePath();
-      break;
-    } catch (error) {
-      log.error(`Attempt ${attempt} failed:`, error);
-      if (attempt < maxRetries) {
-        log.info('Retrying after initializing pnpm...');
-        await initPnpm();
-      } else {
-        log.error('Max retries reached. Unable to find node path.');
-        throw error;
-      }
-    }
-  }
+
   const attemptAssignNodePath = async ()=> {
     const maxRetries = 2;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
