@@ -90,6 +90,10 @@ export const startServer = () => {
  */
 const requestHandler: http.RequestListener = async (req, res) => {
   let apiKey = '';
+  const parsedUrl = new URL(req.url || '', `http://${req.headers.host}`);
+  const scriptPathParts = parsedUrl.pathname.split('/').filter(Boolean);
+  const script = scriptPathParts.join('/');
+
   if (req.method === 'POST') {
     let body = '';
     for await (const chunk of req) { // Using "for of" loop
@@ -102,21 +106,19 @@ const requestHandler: http.RequestListener = async (req, res) => {
     try {
 
       const parsedBody = JSON.parse(body);
-      const script = parsedBody?.script || '';
+      const bodyScript = parsedBody?.script || script;
       const args = parsedBody?.args || [];
       const cwd = parsedBody?.cwd || kenvPath();
-      log.info({ script, args, cwd });
-      const result = await handleScript(script, args, cwd, true, apiKey);
+      log.info({ script: bodyScript, args, cwd });
+      const result = await handleScript(bodyScript, args, cwd, true, apiKey);
       sendResponse(res, result);
     } catch (error) {
       handleError(res, error);
     }
   } else {
-    const parsedUrl = new URL(req.url || '', `http://${req.headers.host}`);
-    const scriptPathParts = parsedUrl.pathname.split('/').filter(Boolean);
     const query = parsedUrl.searchParams;
 
-    const script = scriptPathParts.join('/');
+
     const args = query.getAll('arg');
     const cwd = query.get('cwd') || process.cwd();
 
@@ -138,11 +140,10 @@ const requestHandler: http.RequestListener = async (req, res) => {
  */
 function sendResponse(
   res: http.ServerResponse,
-  { status, message }: { status: number; message: string }
+  { status, data, message }: { status: number; data?: any; message?: string }
 ) {
-  const statusText = getStatusText(status);
-  res.writeHead(status, { 'Content-Type': 'text/plain' });
-  res.end(message);
+  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ status, data, message }));
 }
 
 /**
@@ -154,23 +155,6 @@ function handleError(res: http.ServerResponse, error: any) {
   const message = `😱 ${error}`;
   log.warn(message);
   sendResponse(res, { status: 500, message });
-}
-
-/**
- * Retrieves the standard status text based on the status code.
- * @param status - The HTTP status code.
- * @returns The corresponding status text.
- */
-function getStatusText(status: number): string {
-  const statusTexts: { [key: number]: string } = {
-    200: 'OK',
-    201: 'Created',
-    400: 'Bad Request',
-    401: 'Unauthorized',
-    404: 'Not Found',
-    500: 'Internal Server Error',
-  };
-  return statusTexts[status] || 'Unknown Status';
 }
 
 /**

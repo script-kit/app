@@ -28,7 +28,7 @@
         "noUnusedVariables": "off",
         "noUnusedImports": "off",
         "noNodejsModules": "off",
-        "useExhaustiveDependencies": "off",
+        "useExhaustiveDependencies": "off"
       },
       "style": {
         "noDefaultExport": "off",
