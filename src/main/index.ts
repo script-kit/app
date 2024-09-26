@@ -109,8 +109,8 @@ log.info('Setting up process.env');
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 // process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 for (const envVar of ['KIT', 'KENV']) {
-  if (process.env?.[envVar]?.includes('app.asar')) {
-    log.info(`Deleting process.env.${envVar} because it points to app.asar`);
+  if (process.env?.[envVar]?.includes('app.asar') || process.env?.[envVar]?.includes('node_modules')) {
+    log.info(`Deleting process.env.${envVar} because it points to app.asar or node_modules`);
     delete process.env[envVar];
   }
 }
@@ -668,6 +668,8 @@ const verifyInstall = async () => {
   const isKenvConfigured = await kenvConfigured();
   await setupLog(isKenvConfigured ? 'kenv .env found' : 'kenv .env missinag');
 
+  log.info(`NODE_PATH: ${process.env.NODE_PATH}`, `kitState.NODE_PATH: ${kitState.NODE_PATH}`);
+
 
   if (checkKit && checkKenv && kitState.NODE_PATH && isKenvConfigured) {
     await setupLog('Install verified');
@@ -726,6 +728,7 @@ const setupScript = (...args: string[]) => {
     });
 
     child.on('error', (error: Error) => {
+      log.error(`Error in setupScript`, error);
       reject(error);
       ohNo(error);
     });
@@ -845,15 +848,30 @@ const checkKit = async () => {
       }
     }
   }
+  const attemptAssignNodePath = async ()=> {
+    const maxRetries = 2;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        nodePath = await findNodePath();
+        break;
+      } catch (error) {
+        log.error(`Attempt ${attempt} failed:`, error);
+        if (attempt < maxRetries) {
+          log.info('Retrying after initializing pnpm...');
+          await initPnpm();
+        } else {
+          log.error('Max retries reached. Unable to find node path.');
+          throw error;
+        }
+      }
+    }
 
-  log.info(`🚶 Using pnpm to find node. Found ${nodePath}... After...`);
+    await setupLog(nodePath ? 'node found' : 'node missing');
 
-  await setupLog(nodePath ? 'node found' : 'node missing');
-
-  kitState.NODE_PATH = nodePath;
-  log.info(`🚶 Assigned NODE_PATH: ${kitState.NODE_PATH}`);
-  process.env.NODE_PATH = kitState.NODE_PATH;
-
+    kitState.NODE_PATH = nodePath;
+    log.info(`🚶 Assigned NODE_PATH: ${kitState.NODE_PATH}`);
+    process.env.NODE_PATH = kitState.NODE_PATH;
+  }
   const requiresInstall = (await isNewVersion()) || !(await kitExists());
   log.info(`Requires install: ${requiresInstall}`);
   if (await isContributor()) {
@@ -910,6 +928,10 @@ const checkKit = async () => {
       'save-exact': true,
       'install-links': true,
     });
+
+    log.info(`🚶 Using pnpm to find node. Found ${nodePath}... After...`);
+    await attemptAssignNodePath()
+
     await setupLog('Installing kit deps...');
     await installKitDeps();
   }
@@ -981,6 +1003,7 @@ const checkKit = async () => {
   }
 
   await ensureEnv();
+  await attemptAssignNodePath()
   await setupLog('Update .kenv');
 
   if (!process.env.MAIN_SKIP_SETUP) {
@@ -1065,6 +1088,7 @@ const checkKit = async () => {
       await cacheMainScripts();
     }, 1000);
   } catch (error) {
+    log.error(`Error in verifyInstall`, error);
     ohNo(error as Error);
   }
 };
@@ -1076,7 +1100,13 @@ emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
   });
 });
 
-app.whenReady().then(loadSupportedOptionalLibraries).then(checkKit).catch(ohNo);
+app.whenReady()
+// .then(loadShellEnv)
+.then(loadSupportedOptionalLibraries)
+.then(checkKit).catch(error => {
+  log.error(`Error in app.whenReady`, error);
+  ohNo(error as Error);
+});
 
 app?.on('will-quit', (e) => {
   log.info('🚪 will-quit');

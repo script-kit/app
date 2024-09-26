@@ -6,7 +6,7 @@
 @import '@fontsource/jetbrains-mono/800.css';
 @import 'simplebar-react/dist/simplebar.min.css';
 @import '@vscode/codicons/dist/codicon.css';
-@import 'xterm/css/xterm.css';
+@import '@xterm/xterm/css/xterm.css';
 @import 'react-chat-elements/dist/main.css';
 @import 'react-toastify/dist/ReactToastify.css';
 /* import animate.css */

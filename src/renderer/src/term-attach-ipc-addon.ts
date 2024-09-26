@@ -1,7 +1,7 @@
 /* eslint-disable no-plusplus */
 
 const { ipcRenderer } = window.electron;
-import type { ITerminalAddon, Terminal } from 'xterm';
+import type { ITerminalAddon, Terminal } from '@xterm/xterm';
 import { AppChannel } from '../../shared/enums';
 import type { TermConfig } from '../../shared/types';
 import { createLogger } from '../../shared/log-utils';

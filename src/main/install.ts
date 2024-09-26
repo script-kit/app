@@ -520,7 +520,7 @@ export const downloadKenv = async () => {
     log.info(`Downloaded .kenv in ${afterDownload - beforeDownload}ms`);
     return file;
   } catch (error) {
-    log.error(error);
+    log.error();
     ohNo(error as Error);
     return '';
   }

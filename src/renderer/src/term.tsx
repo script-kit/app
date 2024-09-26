@@ -4,12 +4,12 @@ const { ipcRenderer, shell } = window.electron;
 import useResizeObserver from '@react-hook/resize-observer';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { throttle } from 'lodash-es';
-import { FitAddon } from 'xterm-addon-fit';
-import { LigaturesAddon } from 'xterm-addon-ligatures';
-import { SearchAddon } from 'xterm-addon-search';
-import { SerializeAddon } from 'xterm-addon-serialize';
-import { Unicode11Addon } from 'xterm-addon-unicode11';
-import { WebLinksAddon } from 'xterm-addon-web-links';
+import { FitAddon } from '@xterm/addon-fit';
+import { LigaturesAddon } from '@xterm/addon-ligatures';
+import { SearchAddon } from '@xterm/addon-search';
+import { SerializeAddon } from '@xterm/addon-serialize';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
+import { WebLinksAddon } from '@xterm/addon-web-links';
 import {
   appBoundsAtom,
   darkAtom,

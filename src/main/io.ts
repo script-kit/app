@@ -211,11 +211,11 @@ export const registerIO = async (handler: (event: any) => void) => {
     }
   });
 
-  if (kitState.kenvEnv?.KIT_UIHOOK?.trim() === 'true') {
+  if (kitState.kenvEnv?.KIT_UIOHOOK?.trim() === 'true') {
     kitStore.set('uIOhookEnabled', true);
   }
 
-  if (kitState.kenvEnv?.KIT_UIHOOK?.trim() === 'false') {
+  if (kitState.kenvEnv?.KIT_UIOHOOK?.trim() === 'false') {
     kitStore.set('uIOhookEnabled', false);
   }
 
