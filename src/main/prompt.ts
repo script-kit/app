@@ -2521,7 +2521,8 @@ export class KitPrompt {
       }
 
       // I don't think these are needed anymore, but leaving them in for now
-      // processes.removeByPid(this.pid);
+      log.info(`✋ Removing process because of escape ${this.pid}`);
+      processes.removeByPid(this.pid);
       // emitter.emit(KitEvent.KillProcess, this.pid);
       // event.preventDefault();
       return;
