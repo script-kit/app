@@ -52,7 +52,7 @@ jobs:
       # kit-action will automatically actions/checkout and actions/setup-node
       - name: Set kit_tag
         id: set_kit_tag
-        uses: johnlindquist/kit-action@next
+        uses: johnlindquist/kit-action@main
         with:
           script: set-kit-tag
         env:
@@ -147,7 +147,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Write the Semantic Version to package.json version property for main
-        if: needs.tag.outputs.kit_tag == 'main'
+        if: needs.tag.outputs.kit_tag == 'latest'
         uses: johnlindquist/kit-action@main
         with:
           script: update-package-version ${{ needs.semantic.outputs.semantic_version }}
@@ -179,7 +179,7 @@ jobs:
           python-version: '3.11'
 
       - name: Download kenv main
-        if: needs.tag.outputs.kit_tag == 'main'
+        if: needs.tag.outputs.kit_tag == 'latest'
         uses: johnlindquist/kit-action@main
         with:
           script: download-kenv ${{ env.RELEASE_CHANNEL }}
@@ -195,7 +195,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Assets main
-        if: needs.tag.outputs.kit_tag == 'main'
+        if: needs.tag.outputs.kit_tag == 'latest'
         uses: johnlindquist/kit-action@main
         with:
           script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ steps.determine_arch.outputs.arch }} ${{ needs.semantic.outputs.release_id }}
