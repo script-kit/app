@@ -139,7 +139,7 @@ export const getPromptOptions = () => {
     backgroundMaterial,
     thickFrame,
     roundedCorners,
-    focusable: false,
+    focusable: kitState.isLinux,
   } as BrowserWindowConstructorOptions;
 
   if (kitState.isMac) {

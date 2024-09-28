@@ -6,6 +6,7 @@ export const KNOWN_KEYBOARD_LAYOUTS = {
   DVORAK: 'DVORAK',
   COLEMAK: 'COLEMAK',
   QWERTZ: 'QWERTZ',
+  PORTUGUESE_PT: 'PORTUGUESE_PT',
 };
 
 export const QWERTY = {
@@ -74,6 +75,12 @@ export const detectKeyboardLayout = (layoutMap: Record<string, string>): keyof t
 
   if (layoutMap.KeyQ === 'q' && layoutMap.KeyW === 'w' && layoutMap.KeyF === 'e') {
     return 'COLEMAK';
+  }
+
+  // Check for Portuguese (Portugal) layout
+  if (layoutMap.KeyQ === 'q' && layoutMap.KeyW === 'w' && layoutMap.KeyE === 'e' &&
+      layoutMap.Semicolon === 'ç' && layoutMap.BracketLeft === '+' && layoutMap.Quote === 'º') {
+    return 'PORTUGUESE_PT';
   }
 
   for (const [code, key] of Object.entries(layoutMap)) {

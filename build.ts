@@ -143,7 +143,7 @@ console.log({ files });
 const config: Configuration = {
   appId: 'app.scriptkit', // Updated appId from package.json
   artifactName: '${productName}-macOS-${version}-${arch}.${ext}',
-  productName: 'Kit', // Updated productName from package.json
+  productName: 'Script Kit', // Updated productName from package.json
   // buildDependenciesFromSource: false,
   directories: {
     output: './release',
@@ -158,7 +158,7 @@ const config: Configuration = {
     oneClick: false,
     perMachine: false,
     allowToChangeInstallationDirectory: true,
-    shortcutName: 'Kit',
+    shortcutName: 'Script Kit',
   },
   mac: {
     notarize: {

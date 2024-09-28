@@ -210,7 +210,6 @@ export default function App() {
   const [submitted, setSubmitted] = useAtom(submittedAtom);
   const [inputWhileSubmitted, setInputWhileSubmitted] = useAtom(inputWhileSubmittedAtom);
 
-
   const submittedInputRef = useRef<HTMLInputElement>(null);
 
   const previewCheck = useAtomValue(previewCheckAtom);
@@ -547,14 +546,14 @@ export default function App() {
 
           log.info(`Detected keyboard layout: ${detectedLayout}`);
 
-          ipcRenderer.send('SET_KEYBOARD_LAYOUT', detectedLayout === 'QWERTY' ? {} : layoutMap);
+          ipcRenderer.send(AppChannel.SET_KEYBOARD_LAYOUT, detectedLayout === 'QWERTY' ? {} : layoutMap);
         } catch (error) {
           log.warn('Error getting keyboard layout:', error);
-          ipcRenderer.send('SET_KEYBOARD_LAYOUT', null);
+          ipcRenderer.send(AppChannel.SET_KEYBOARD_LAYOUT, null);
         }
       } else {
         log.warn('Keyboard API not supported');
-        ipcRenderer.send('SET_KEYBOARD_LAYOUT', null);
+        ipcRenderer.send(AppChannel.SET_KEYBOARD_LAYOUT, null);
       }
     };
 

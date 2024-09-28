@@ -74,6 +74,7 @@ export enum AppChannel {
   FORCE_RENDER = 'FORCE_RENDER',
   INPUT_READY = 'INPUT_READY',
   MAKE_WINDOW = 'MAKE_WINDOW',
+  SET_KEYBOARD_LAYOUT = 'SET_KEYBOARD_LAYOUT',
 }
 
 export enum WindowChannel {

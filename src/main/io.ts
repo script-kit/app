@@ -62,6 +62,10 @@ let UiohookToName: Record<number, string>;
 export function createUiohookToName() {
   const { UiohookKey } = shims['uiohook-napi'];
 
+  if(!UiohookKey){
+    return
+  }
+
   UiohookToName = {};
   for (const [k, v] of Object.entries(UiohookKey)) {
     UiohookToName[v] = k;

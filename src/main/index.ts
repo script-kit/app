@@ -506,6 +506,7 @@ const ready = async () => {
     // createLogs();
     const kitLogsPath = kitPath('logs');
     const appLogsPath = app.getPath('logs');
+    log.info(`appLogsPath: ${appLogsPath}`);
 
     const isSymlink = async (path: string) => {
       try {
@@ -833,6 +834,9 @@ const checkKit = async () => {
   let nodePath = '';
   const findNodePath = async () => {
     log.info('🚶 Using pnpm to find node...');
+    if(process.env.KIT_NODE_PATH) {
+      return process.env.KIT_NODE_PATH;
+    }
     const pnpmPath = await getPnpmPath();
     try{
       return await spawnP(pnpmPath, ['node', '-e', '"console.log(process.execPath)"'], {

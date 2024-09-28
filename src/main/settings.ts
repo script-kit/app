@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import log from 'electron-log';
 import { kitState } from './state';
+import { disableOldAutoLaunch } from './launch';
 
 export const checkOpenAtLogin = () => {
   try {
@@ -23,4 +24,5 @@ export const checkOpenAtLogin = () => {
 
 export const startSettings = async () => {
   checkOpenAtLogin();
+  await disableOldAutoLaunch();
 };
