@@ -10,6 +10,7 @@ import { snapshot } from 'valtio';
 import { kitState, kitStore } from './state';
 import { getVersion } from './version';
 import { execSync } from 'node:child_process';
+import log from 'electron-log';
 
 function loadShellEnv() {
   const shellEnv = {};
@@ -27,7 +28,7 @@ function loadShellEnv() {
       }
     });
   } catch (err) {
-    console.error('Error loading shell environment:', err);
+    log.error('Error loading shell environment:', err);
   }
 
   return shellEnv;
