@@ -65,7 +65,7 @@ export function getReturnCharacter(): string {
   return process.platform === 'win32' ? '\r\n' : '\n';
 }
 
-export async function invoke(command: string): Promise<string> {
+export async function invoke(command: string, cwd = os.homedir()): Promise<string> {
   console.log(`Invoking command: ${command}`);
 
   return new Promise((resolve, reject) => {
@@ -99,7 +99,7 @@ export async function invoke(command: string): Promise<string> {
       name: 'xterm-color',
       cols: 80,
       rows: 30,
-      cwd: os.homedir(),
+      cwd,
       env,
     });
 

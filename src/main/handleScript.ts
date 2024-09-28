@@ -22,7 +22,8 @@ export async function handleScript(
   cwd: string,
   checkAccess = false,
   apiKey = '',
-): Promise<{ status: number; data?: any; message?: string }> {
+  headers: Record<string, string> = {},
+): Promise<{ status: number; data?: any; message?: string; headers?: Record<string, string> }> {
   if (script === '') {
     await runMainScript();
     return { status: 200, data: 'Main script executed' };
@@ -51,8 +52,7 @@ export async function handleScript(
       if (apiKey !== envApiKey || !apiKey || !envApiKey) {
         return {
           status: 401,
-          data:
-            '🔒 Access denied. Please provide a valid KIT_API_KEY in ~/.kenv/.env and mark your script with // Access: key',
+          data: '🔒 Access denied. Please provide a valid KIT_API_KEY in ~/.kenv/.env and mark your script with // Access: key',
         };
       }
     }
@@ -68,32 +68,39 @@ export async function handleScript(
   const processInfo = await runPromptProcess(
     scriptPath,
     args.map((s: string) => s.replaceAll('$newline$', '\n')),
-    { force: true, trigger: Trigger.Kar, sponsorCheck: false },
+    { force: true, trigger: Trigger.Kar, sponsorCheck: false, headers: headers || {} },
   );
 
   if (response) {
-    log.info(`🚗💨 Response metadata detected, listening for response...`);
+    log.info('🚗💨 Response metadata detected, listening for response...');
     return await new Promise((resolve, reject) => {
-      // timeout after 10 seconds
-
       const timeoutId = setTimeout(() => {
         reject({ status: 500, message: `🕒 Timed out after ${timeout}ms` });
       }, timeout || 10000);
+
       processInfo?.child?.addListener('message', (payload: any) => {
         if (payload.channel === Channel.RESPONSE) {
           log.info(`🚗💨 ${payload.channel} received response`);
-
-          processInfo?.child?.send({ channel: 'RESPONSE', value: payload.value });
           clearTimeout(timeoutId);
-          resolve({ status: 200, data: payload.value });
+
+          // Handle the response from the child process
+          const { body, statusCode, headers } = payload.value;
+
+          const message = {
+            status: statusCode,
+            data: body,
+            headers: headers,
+          };
+          processInfo.child.send({ channel: Channel.RESPONSE, value: message });
+          resolve(message);
         }
       });
+
       processInfo?.child?.addListener('error', (error: any) => {
         log.error(`🚗💨 ${error.message}`);
         clearTimeout(timeoutId);
         reject({ status: 500, message: error.message });
       });
-
     });
   }
 

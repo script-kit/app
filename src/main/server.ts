@@ -1,28 +1,109 @@
-import http from 'node:http';
+import express from 'express';
 import https from 'node:https';
 import fs from 'node:fs';
-import { URL } from 'node:url';
-import { Bonjour, Service } from 'bonjour-service';
+import { Bonjour } from 'bonjour-service';
 import { handleScript } from './handleScript';
 import { createLogger } from '../shared/log-utils';
 import { getServerPort } from './serverTrayUtils';
 import { kitState } from './state';
 import { kenvPath } from '@johnlindquist/kit/core/utils';
+import { splitEnvVarIntoArray } from '@johnlindquist/kit/api/kit';
+import cors from 'cors';
+
 const log = createLogger('server');
 
-let serverInstance: http.Server | https.Server | null = null;
+let serverInstance: https.Server | null = null;
 let bonjour: Bonjour | null = null;
-/**
- * Starts the server (HTTP or HTTPS based on available certificates).
- */
+let app: express.Application | null = null;
+
+// Server start function
 export const startServer = () => {
   if (serverInstance) {
     log.warn('Server is already running');
     return;
   }
 
-  const keyPath = kenvPath("key.pem");
-  const certPath = kenvPath("cert.pem");
+  // Initialize Express app
+  app = express();
+
+  // Middleware
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
+  // CORS middleware
+  app.use((req, res, next) => {
+    const headersOrigin = req.headers?.origin as string | '';
+    const allowedOrigins = splitEnvVarIntoArray(kitState.kenvEnv?.KIT_ALLOWED_ORIGINS, ['*']).push(headersOrigin);
+
+    cors({
+      origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes('*')) {
+          return callback(null, true);
+        }
+
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        } else {
+          return callback(new Error('Not allowed by CORS'));
+        }
+      },
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      credentials: true,
+    })(req, res, next);
+  });
+
+  // Route handler
+  app.all('*', async (req, res, next) => {
+    const scriptPathParts = req.path.split('/').filter(Boolean);
+    const script = scriptPathParts.join('/');
+    let apiKey = '';
+
+    if (req.method === 'POST') {
+      const authHeader = (req.headers['authorization'] || '').toString().trim();
+      apiKey = authHeader.startsWith('Bearer ')
+        ? authHeader.slice(7)
+        : authHeader.includes(' ')
+          ? authHeader.split(' ')[1]
+          : authHeader;
+
+      const bodyScript = req.body?.script || script;
+      const args = req.body?.args || [];
+      const cwd = req.body?.cwd || kenvPath();
+      log.info({ script: bodyScript, args, cwd });
+
+      try {
+        const result = await handleScript(bodyScript, args, cwd, true, apiKey, req.headers);
+        res.json(result);
+      } catch (error) {
+        next(error);
+      }
+    } else {
+      const args = req.query.arg as string[];
+      const cwd = (req.query.cwd as string) || process.cwd();
+
+      log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
+
+      try {
+        const result = await handleScript(script, args, cwd, true, apiKey);
+        res.json(result);
+      } catch (error) {
+        next(error);
+      }
+    }
+  });
+
+  // Error handling middleware
+  app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const message = `😱 ${err}`;
+    log.warn(message);
+    res.status(500).json({ status: 500, message });
+  });
+
+  const keyPath = kenvPath('key.pem');
+  const certPath = kenvPath('cert.pem');
   const useHttps = fs.existsSync(keyPath) && fs.existsSync(certPath);
 
   let server;
@@ -33,21 +114,21 @@ export const startServer = () => {
       const cert = fs.readFileSync(certPath, 'utf8');
       const options = { key, cert };
 
-      server = https.createServer(options, requestHandler);
+      server = https.createServer(options, app);
       log.info('Configured to use HTTPS');
     } catch (error) {
       log.error('Failed to read SSL certificates:', error);
       log.info('Falling back to HTTP');
-      server = http.createServer(requestHandler);
+      server = app;
     }
   } else {
-    server = http.createServer(requestHandler);
+    server = app;
     log.info('Configured to use HTTP');
   }
 
   server.listen(getServerPort(), () => {
     serverInstance = server;
-    kitState.serverRunning = true; // Track server state
+    kitState.serverRunning = true;
     log.info(`Server listening on port ${getServerPort()}`);
 
     bonjour = new Bonjour();
@@ -83,90 +164,15 @@ export const startServer = () => {
   });
 };
 
-/**
- * Handles incoming HTTP/HTTPS requests.
- * @param req - The incoming request.
- * @param res - The response object.
- */
-const requestHandler: http.RequestListener = async (req, res) => {
-  let apiKey = '';
-  const parsedUrl = new URL(req.url || '', `http://${req.headers.host}`);
-  const scriptPathParts = parsedUrl.pathname.split('/').filter(Boolean);
-  const script = scriptPathParts.join('/');
-
-  if (req.method === 'POST') {
-    let body = '';
-    for await (const chunk of req) { // Using "for of" loop
-      body += chunk.toString();
-    }
-
-    const authHeader = (req.headers['authorization'] || '')?.trim();
-    apiKey = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader.includes(' ') ? authHeader.split(' ')[1] : authHeader;
-
-    try {
-
-      const parsedBody = JSON.parse(body);
-      const bodyScript = parsedBody?.script || script;
-      const args = parsedBody?.args || [];
-      const cwd = parsedBody?.cwd || kenvPath();
-      log.info({ script: bodyScript, args, cwd });
-      const result = await handleScript(bodyScript, args, cwd, true, apiKey);
-      sendResponse(res, result);
-    } catch (error) {
-      handleError(res, error);
-    }
-  } else {
-    const query = parsedUrl.searchParams;
-
-
-    const args = query.getAll('arg');
-    const cwd = query.get('cwd') || process.cwd();
-
-    log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
-
-    try {
-      const result = await handleScript(script, args, cwd, true, apiKey);
-      sendResponse(res, result);
-    } catch (error) {
-      handleError(res, error);
-    }
-  }
-};
-
-/**
- * Sends a standardized response to the client.
- * @param res - The server response object.
- * @param param1 - An object containing status and message.
- */
-function sendResponse(
-  res: http.ServerResponse,
-  { status, data, message }: { status: number; data?: any; message?: string }
-) {
-  res.writeHead(status, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ status, data, message }));
-}
-
-/**
- * Handles errors by sending an appropriate response.
- * @param res - The server response object.
- * @param error - The error encountered.
- */
-function handleError(res: http.ServerResponse, error: any) {
-  const message = `😱 ${error}`;
-  log.warn(message);
-  sendResponse(res, { status: 500, message });
-}
-
-/**
- * Stops the server if it's running.
- */
+// Server stop function
 export const stopServer = () => {
   if (serverInstance) {
     serverInstance.close(() => {
       log.info('Server has been stopped');
       serverInstance = null;
-      kitState.serverRunning = false; // Update server state
-      if(bonjour) {
+      app = null;
+      kitState.serverRunning = false;
+      if (bonjour) {
         bonjour.unpublishAll();
         bonjour.destroy();
         bonjour = null;
@@ -177,9 +183,7 @@ export const stopServer = () => {
   }
 };
 
-/**
- * Restarts the server.
- */
+// Server restart function
 export const restartServer = () => {
   stopServer();
   startServer();

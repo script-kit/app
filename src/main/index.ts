@@ -101,6 +101,7 @@ import { rimraf } from 'rimraf';
 import { pathExists } from './cjs-exports';
 import { NpmConfig, setNpmrcConfig } from './setup/npm';
 import { startServer } from './server';
+import { invoke } from './invoke-pty';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -624,10 +625,16 @@ export const useElectronNodeVersion = async (cwd: string, config:NpmConfig) => {
   log.info(`🚶 Setting pnpm node version to ${process.versions.node} with ${pnpmPath}`);
   await setNpmrcConfig(cwd, config);
 
-  const nodeVersion = await spawnP(pnpmPath, ['node', '--version'], {
-    cwd,
-  });
-  log.info(`Set node version in: ${nodeVersion} for ${cwd} .npmrc`);
+  try{
+    const nodeVersion = await spawnP(pnpmPath, ['node', '--version'], {
+      cwd,
+    });
+    log.info(`Set node version in: ${nodeVersion} for ${cwd} .npmrc`);
+  } catch (error) {
+    log.error(error);
+    await invoke(`${pnpmPath} node --version`, cwd);
+  }
+
 };
 
 const initPnpm = async () => {
@@ -827,9 +834,14 @@ const checkKit = async () => {
   const findNodePath = async () => {
     log.info('🚶 Using pnpm to find node...');
     const pnpmPath = await getPnpmPath();
-    return await spawnP(pnpmPath, ['node', '-e', '"console.log(process.execPath)"'], {
-      cwd: kitPath(),
-    });
+    try{
+      return await spawnP(pnpmPath, ['node', '-e', '"console.log(process.execPath)"'], {
+        cwd: kitPath(),
+      });
+    } catch (error) {
+      log.error(error);
+      return await invoke(`"${pnpmPath}" node -e "console.log(process.execPath)"`, kitPath());
+    }
   };
 
 

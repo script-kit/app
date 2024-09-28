@@ -1,19 +1,34 @@
 import { invoke } from '../src/main/invoke-pty';
+import { describe, it } from "node:test"
+import assert from "node:assert"
+import path from "node:path"
+import os from "node:os"
 
-async function testInvokePty() {
-  try {
-    console.log('Testing invoke-pty with "which pnpm" command...');
-    const result = await invoke('which pnpm');
-    console.log('Result:', result);
+// describe('invoke-pty', () => {
+//   it('should return the result of the command', async () => {
+//     const result = await invoke('which pnpm');
+//     console.log({ result });
+//     assert(result);
+//   });
+// });
 
-    if (result) {
-      console.log('Test passed: "which pnpm" returned a result:', result);
-    } else {
-      console.log('Test failed: "which pnpm" did not return a result.');
-    }
-  } catch (error) {
-    console.error('Test failed with error:', error);
-  }
-}
+const kitPath = ()=> path.join(os.homedir(), '.kit');
 
-testInvokePty();
+describe('invoke-pty with cwd', () => {
+  it('should return the result of the command', async () => {
+    const result = await invoke('pnpm node --version', kitPath());
+    console.log({ result });
+    assert(result);
+  });
+});
+
+
+describe('invoke-pty with quotes in command', () => {
+  it('should return the result of the command', async () => {
+    const pnpmPath = '/Users/johnlindquist/Library/pnpm/pnpm'
+    const result = await invoke(`"${pnpmPath}" node -e "console.log(process.execPath)"`, kitPath());
+    console.log({ result });
+    assert(result);
+  });
+});
+

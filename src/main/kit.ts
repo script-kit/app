@@ -184,12 +184,14 @@ export const runPromptProcess = async (
     force: boolean;
     trigger: Trigger;
     main?: boolean;
+    headers?: Record<string, string>;
     sponsorCheck: boolean;
   } = {
     force: false,
     trigger: Trigger.App,
     main: false,
     sponsorCheck: false,
+    headers: {},
   },
 ): Promise<ProcessInfo | null> => {
   log.info('runPromptProcess', { promptScriptPath, args, options });
@@ -321,6 +323,7 @@ export const runPromptProcess = async (
       trigger: options?.trigger,
       choices: scriptlet ? [scriptlet] : [],
       name: script?.name,
+      headers: options?.headers,
       scriptlet,
     },
   });
