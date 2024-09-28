@@ -86,8 +86,8 @@ const afterSign = function notarizeMacos(context: AfterPackContext) {
   const { appOutDir } = context; // This is the path to the unpacked app
   const { productFilename } = context.packager.appInfo; // This is the name of the app
 
-  console.log(`Verifying ${appOutDir}/${productFilename}.app`);
-  const result = execSync(`codesign --verify --deep --strict --verbose=2 ${appOutDir}/${productFilename}.app`, {
+  console.log(`Verifying "${appOutDir}/${productFilename}.app"`);
+  const result = execSync(`codesign --verify --deep --strict --verbose=2 "${appOutDir}/${productFilename}.app"`, {
     stdio: 'inherit',
   });
 
@@ -104,7 +104,7 @@ const afterSign = function notarizeMacos(context: AfterPackContext) {
   }
 
   // Validate the stapling
-  console.log(`Validating stapling for ${appOutDir}/${productFilename}.app`);
+  console.log(`Validating stapling for "${appOutDir}/${productFilename}.app"`);
   try {
     execSync(`xcrun stapler validate "${appOutDir}/${productFilename}.app"`, {
       stdio: 'inherit',
