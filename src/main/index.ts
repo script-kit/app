@@ -633,6 +633,7 @@ export const useElectronNodeVersion = async (cwd: string, config:NpmConfig) => {
     log.info(`Set node version in: ${nodeVersion} for ${cwd} .npmrc`);
   } catch (error) {
     log.error(error);
+    log.info('🍂 Falling back to internal terminal...');
     await invoke(`${pnpmPath} node --version`, cwd);
   }
 
@@ -844,6 +845,7 @@ const checkKit = async () => {
       });
     } catch (error) {
       log.error(error);
+      log.info('🍂 Falling back to internal terminal...');
       return await invoke(`"${pnpmPath}" node -e "console.log(process.execPath)"`, kitPath());
     }
   };

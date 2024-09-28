@@ -1,4 +1,4 @@
-import { clipboard, nativeTheme, shell } from 'electron';
+import { clipboard, nativeTheme, shell, app } from 'electron';
 import crypto from 'node:crypto';
 import { HttpsProxyAgent } from 'hpagent';
 import * as rimraf from 'rimraf';
@@ -531,8 +531,13 @@ export const cleanKit = async () => {
 
   try {
     log.info(`Cleaning Kit SDK at ${kitPath()}`);
-    await rimraf.moveRemove(kitPath());
-    log.info(`Successfully cleaned Kit SDK at ${kitPath()}`);
+
+    const tempKitPath = kitPath() + `-old-${Date.now()}`;
+    log.info(`🚛 Moving old ${kitPath()} to ${tempKitPath}`);
+    await rename(kitPath(), tempKitPath);
+    log.info(`Cleaning up old Kit SDK at ${tempKitPath} in the background...`);
+    rimraf.rimraf(tempKitPath);
+    log.info(`Continuing with new Kit SDK at ${kitPath()}`);
   } catch (error) {
     log.error(`Error cleaning the Kit SDK at: ${kitPath()}`, error);
     throw new Error(`Error cleaning ${kitPath()}`);
@@ -1321,6 +1326,7 @@ export const spawnP = async (
       log.info('stderr exists');
       child.stderr.on('data', (data) => {
         log.error(`stderr: ${data}`);
+        reject(new Error(`stderr: ${data}`));
       });
     }
 

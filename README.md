@@ -11,6 +11,12 @@ npm i
 npm run dev
 ```
 
+### Reloading
+
+If you make a change in the `main` dir/process, you'll need to stop and run `npm run dev` again.
+If you make a change in the `renderer`, it should attempt to hot reload. If that fails, `cmd+w` to close the window, and open a new one.
+
+
 ### node-gyp Issues?
 
 You'll have to Google for your specific issues. On mac, it's usually update xcode command line tools.
