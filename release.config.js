@@ -1,11 +1,11 @@
 module.exports = {
-  branches: ['main'],
+  branches: ['main', 'next'],
   plugins: [
     [
       '@semantic-release/npm',
       {
         npmPublish: false,
-        pkgRoot: 'src',
+        pkgRoot: '.',
       },
     ],
   ],

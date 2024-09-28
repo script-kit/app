@@ -2,14 +2,14 @@
 
 import '@johnlindquist/kit';
 
-console.log(`Removing NODE-WINDOW-MANAGER ⛳️`);
+console.log('Removing NODE-WINDOW-MANAGER ⛳️');
 
-let srcFilePath = path.resolve(process.env.PWD, 'src', '*').replace(/\\/g, '/');
+const srcFilePath = path.resolve(process.env.PWD, 'src', '**', '*').replace(/\\/g, '/');
 console.log({
   mainFilePath: srcFilePath,
 });
 
-let result = await replace({
+const result = await replace({
   files: [srcFilePath],
   from: /REMOVE-NODE-WINDOW-MANAGER.*?END-REMOVE-NODE-WINDOW-MANAGER/gs,
   to: 'REMOVED BY KIT',
@@ -21,4 +21,4 @@ for (const entry of result) {
   }
 }
 
-console.log(`Kit is fun! ❤️`);
+console.log('Kit is fun! ❤️');

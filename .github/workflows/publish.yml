@@ -3,22 +3,89 @@ name: Publish
 on:
   push:
     branches:
-      - alpha
-      - beta
       - main
+      - next
 
   workflow_dispatch:
     branches:
-      - alpha
-      - beta
       - main
+      - next
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  packages: write
+  actions: write
+  issues: write
+  pull-requests: write
 
 jobs:
+  tag:
+    outputs:
+      kit_tag: ${{ steps.set_kit_tag.outputs.result }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo all available variables
+        run: |
+          echo "All available variables:"
+          echo "-------------------------"
+          echo "GITHUB_SHA: ${{ github.sha }}"
+          echo "GITHUB_REF: ${{ github.ref }}"
+          echo "GITHUB_WORKFLOW: ${{ github.workflow }}"
+          echo "GITHUB_ACTION: ${{ github.action }}"
+          echo "GITHUB_ACTOR: ${{ github.actor }}"
+          echo "GITHUB_REPOSITORY: ${{ github.repository }}"
+          echo "GITHUB_EVENT_NAME: ${{ github.event_name }}"
+          echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
+          echo "GITHUB_HEAD_REF: ${{ github.head_ref }}"
+          echo "GITHUB_BASE_REF: ${{ github.base_ref }}"
+          echo "GITHUB_SERVER_URL: ${{ github.server_url }}"
+          echo "GITHUB_API_URL: ${{ github.api_url }}"
+          echo "GITHUB_GRAPHQL_URL: ${{ github.graphql_url }}"
+          echo "RUNNER_OS: ${{ runner.os }}"
+          echo "RUNNER_TEMP: ${{ runner.temp }}"
+          echo "RUNNER_TOOL_CACHE: ${{ runner.tool_cache }}"
+
+      # kit-action will automatically actions/checkout and actions/setup-node
+      - name: Set kit_tag
+        id: set_kit_tag
+        uses: johnlindquist/kit-action@next
+        with:
+          script: set-kit-tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Debug - Echo kit_tag
+        run: |
+          echo "kit_tag from step output: ${{ steps.set_kit_tag.outputs.result }}"
+
+      - name: Debug - List all step outputs
+        run: |
+          echo "All step outputs:"
+          echo "${{ toJson(steps) }}"
+
   semantic:
+    outputs:
+      release_id: ${{ steps.create_release.outputs.result }}
+      semantic_version: ${{ steps.semantic.outputs.new_release_version }}
+
+    needs: tag
     runs-on: ubuntu-latest
     steps:
       - name: Checkout git repo
         uses: actions/checkout@v4
+
+      - name: Debug - Echo kit_tag from previous job
+        run: |
+          echo "kit_tag from needs.tag.outputs: ${{ needs.tag.outputs.kit_tag }}"
+
+      - name: Debug - List all job outputs
+        run: |
+          echo "All job outputs:"
+          echo "${{ toJson(needs) }}"
 
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v4
@@ -26,187 +93,147 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Verify that Semantic Release updated src/package.json
+      - name: Echo kit-action version
         run: |
-          cat src/package.json
-          echo ${{ steps.semantic.outputs.new_release_version }} > semantic-version.txt
-          echo "SEMANTIC_VERSION=$(cat semantic-version.txt)" >> $GITHUB_ENV
+          echo "Using johnlindquist/kit-action@${{ needs.tag.outputs.kit_tag }}"
+          echo "Release Channel: ${{ steps.semantic.outputs.new_release_channel }}"
+          echo "Previous Release Channel: ${{ steps.semantic.outputs.last_release_version }}"
+          echo "Semantic Version: ${{ steps.semantic.outputs.new_release_version }}"
 
       - name: Create Release
         id: create_release
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@next
         with:
-          script: create-release ${{ env.SEMANTIC_VERSION }}
+          script: create-release ${{ steps.semantic.outputs.new_release_version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Write the Release id to release-id.txt
-        run: |
-          echo ${{ steps.create_release.outputs.result }} > release-id.txt
-
-      - name: Upload Semantic Version Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: semantic-version
-          path: semantic-version.txt
-
-      - name: Upload Release id Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: release-id
-          path: release-id.txt
-
   publish:
-    needs: semantic
+    needs: [tag, semantic]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-13, windows-latest, ubuntu-latest]
-        arch: [x64, arm64]
-        node: [18.18.2]
+        # windows-latest-arm64 doesn't currently support bash, so the @johnlindquist/kit-action@next fails when trying to use bash to determine the kit_tag
+        # os: [script-kit-windows-latest-arm64, script-kit-ubuntu-latest-arm64, windows-latest, ubuntu-latest]
+        os: [windows-2022, script-kit-ubuntu-latest-arm64, windows-latest, ubuntu-latest, macos-latest, macos-14]
 
     steps:
+      - name: Debug - Echo kit_tag from previous jobs
+        run: |
+          echo "kit_tag from needs.tag.outputs: ${{ needs.tag.outputs.kit_tag }}"
+
+      # We're essentially treating the runners ending in "latest" as x64, and the others as arm64. Dumb fix, but it works for now.
+      - name: Determine arch from runner name
+        id: determine_arch
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" || "${{ matrix.os }}" == "ubuntu-latest" || "${{ matrix.os }}" == "macos-latest" ]]; then
+            echo "arch=x64" >> $GITHUB_OUTPUT
+          else
+            echo "arch=arm64" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Debug - List all job outputs
+        run: |
+          echo "All job outputs:"
+          echo "${{ toJson(needs) }}"
+
+      - name: Install Node, NPM and Yarn
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.17.0
+
       - name: Checkout git repo
         uses: actions/checkout@v4
 
-      - name: Download Semantic Version Artifact
-        uses: actions/download-artifact@v3
+      - name: Write the Semantic Version to package.json version property for main
+        if: needs.tag.outputs.kit_tag == 'main'
+        uses: johnlindquist/kit-action@next
         with:
-          name: semantic-version
+          script: update-package-version ${{ needs.semantic.outputs.semantic_version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download Release id Artifact
-        uses: actions/download-artifact@v3
+      - name: Write the Semantic Version to package.json version property for next
+        if: needs.tag.outputs.kit_tag == 'next'
+        uses: johnlindquist/kit-action@next
         with:
-          name: release-id
-
-      - name: Nix - Set Semantic Version
-        if: ${{ matrix.os != 'windows-latest' }}
-        run: |
-          echo "Semantic Version: $(cat semantic-version.txt)"
-          # Set the semantic version as an environment variable
-          echo "SEMANTIC_VERSION=$(cat semantic-version.txt)" >> $GITHUB_ENV
-
-          echo "Release id: $(cat release-id.txt)"
-          # Set the release id as an environment variable
-          echo "RELEASE_ID=$(cat release-id.txt)" >> $GITHUB_ENV
-
-      - name: Windows - Set Semantic Version
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          echo "Semantic Version: $(cat semantic-version.txt)"
-          # Set the semantic version as an environment variable
-          echo "SEMANTIC_VERSION=$(cat semantic-version.txt)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-          echo "Release id: $(cat release-id.txt)"
-          # Set the release id as an environment variable
-          echo "RELEASE_ID=$(cat release-id.txt)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-      - name: Write the Semantic Version to src/package.json version property
-        uses: johnlindquist/kit-action@main
-        with:
-          script: update-package-version ${{ env.SEMANTIC_VERSION }}
+          script: update-package-version ${{ needs.semantic.outputs.semantic_version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Nix - Write the current branch to a releaseChannel env var
-        if: ${{ matrix.os != 'windows-latest' }}
+        if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'script-kit-ubuntu-latest-arm64' }}
         run: |
           echo "RELEASE_CHANNEL=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
 
       - name: Windows - Write the current branch to a releaseChannel env var
-        if: ${{ matrix.os == 'windows-latest' }}
+        if: ${{ matrix.os == 'windows-latest' || matrix.os == 'windows-2022' }}
         run: |
           echo "RELEASE_CHANNEL=$(git rev-parse --abbrev-ref HEAD)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Download kenv
-        uses: johnlindquist/kit-action@main
+      - name: Download kenv main
+        if: needs.tag.outputs.kit_tag == 'main'
+        uses: johnlindquist/kit-action@next
         with:
           script: download-kenv ${{ env.RELEASE_CHANNEL }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Assets
-        uses: johnlindquist/kit-action@main
+      - name: Download kenv next
+        if: needs.tag.outputs.kit_tag == 'next'
+        uses: johnlindquist/kit-action@next
         with:
-          script: create-assets ${{ env.SEMANTIC_VERSION }} ${{ matrix.os }} ${{ matrix.arch }} ${{ env.RELEASE_ID }}
+          script: download-kenv ${{ env.RELEASE_CHANNEL }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Node, NPM and Yarn
-        uses: actions/setup-node@v4
+      - name: Create Assets main
+        if: needs.tag.outputs.kit_tag == 'main'
+        uses: johnlindquist/kit-action@next
         with:
-          node-version: ${{ matrix.node }}
+          script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ steps.determine_arch.outputs.arch }} ${{ needs.semantic.outputs.release_id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Ubuntu Electron Issue
-        if: matrix.os == 'ubuntu-latest'
-        run: echo "There is an issue with electron >=26 with something in the app causing a crash. It might be with the powerMonitor, but it's still not clear. This will have to be resolved before we can upgrade electron and move to ESM-only."
-
-      - name: yarn && yarn add @johnlindquist/kit
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          yarn
-          # There is an issue with electron >=26 with something in the app causing a crash
-          # I might be with the powerMonitor, but it's still not clear.
-          # This will have to be resolved before we can upgrade electron and move to ESM-only
-
-          yarn add electron@25.9.3
-          yarn add "@johnlindquist/kit"
-
-      - name: yarn && yarn add @johnlindquist/kit
-        if: matrix.os != 'ubuntu-latest'
-        run: |
-          yarn
-          yarn add "@johnlindquist/kit"
+      - name: Create Assets next
+        if: needs.tag.outputs.kit_tag == 'next'
+        uses: johnlindquist/kit-action@next
+        with:
+          script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ steps.determine_arch.outputs.arch }} ${{ needs.semantic.outputs.release_id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish windows x64
-        if: matrix.os == 'windows-latest' && matrix.arch == 'x64'
+        if: matrix.os == 'windows-latest'
         env:
-          # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: nick-invision/retry@v2
-        with:
-          max_attempts: 3
-          timeout_minutes: 30
-          command: |
-            npx kit remove-mac
-            cd ./src
-            yarn remove node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
-            Push-Location node_modules\uiohook-napi\prebuilds; Get-ChildItem | Where-Object { $_.Name -notmatch '^win' } | Remove-Item -Recurse -Force; Pop-Location
-            if (Test-Path node_modules\@nut-tree\libnut-darwin) { Remove-Item node_modules\@nut-tree\libnut-darwin -Recurse -Force }
-            if (Test-Path node_modules\@nut-tree\libnut-linux) { Remove-Item node_modules\@nut-tree\libnut-linux -Recurse -Force }
+          ELECTRON_BUILD_ARCH: x64
+          ELECTRON_BUILD_PLATFORM: win32
+        run: |
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
-            cd ..
-            echo "--- Done removing mac deps ---\n\n"
-            yarn build
-            yarn electron-builder --publish always --win --x64
+            npm run vite-prebuild
+            npx kit ./build.ts win x64 always
 
       - name: Publish windows arm64
-        if: matrix.os == 'windows-latest' && matrix.arch == 'arm64'
-        uses: nick-invision/retry@v2
-        with:
-          max_attempts: 3
-          timeout_minutes: 30
-          command: |
+        if: matrix.os == 'windows-2022'
+        run: |
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npx kit remove-tick
-            npx kit remove-mac
-            npx kit remove-nut
-            cd ./src
-            yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
-            cat ./package.json
-            cd ..
-            yarn build
-            echo "--- Done removing mac deps ---\n\n"
-            yarn electron-builder --publish always --win --arm64
+            npm run vite-prebuild
+            npx kit ./build.ts win arm64 always
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -215,9 +242,23 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ELECTRON_BUILD_ARCH: arm64
+          ELECTRON_BUILD_PLATFORM: win32
+
+      - name: Install GCC 10 and native-keymap dependencies
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'script-kit-ubuntu-latest-arm64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxtst-dev
+          sudo apt-get install -y make gcc libpng++-dev
+          sudo apt-get install -y g++-10
+          sudo apt-get install -y libx11-dev libxkbfile-dev
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
+          sudo update-alternatives --set g++ /usr/bin/g++-10
+          echo "CXX=g++-10" >> $GITHUB_ENV
 
       - name: Publish linux x64
-        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'x64'
+        if: matrix.os == 'ubuntu-latest'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -226,25 +267,19 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: nick-invision/retry@v2
-        with:
-          max_attempts: 3
-          timeout_minutes: 30
-          command: |
-            npx kit remove-mac
-            npx kit remove-node-window-manager
-            npx kit patch-node-pty
-            cd ./src
-            yarn remove node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager node-pty
-            yarn add @homebridge/node-pty-prebuilt-multiarch
+          ELECTRON_BUILD_ARCH: x64
+          ELECTRON_BUILD_PLATFORM: linux
+
+        run: |
+            node --version
+            npm --version
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
-            cd ..
-            echo "--- Done removing mac deps ---\n\n"
-            yarn build
-            yarn electron-builder --publish always --linux AppImage deb rpm --x64
+            npm run vite-prebuild
+            npx kit ./build.ts linux x64 always
 
       - name: Publish linux arm64
-        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
+        if: matrix.os == 'script-kit-ubuntu-latest-arm64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -253,30 +288,29 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: nick-invision/retry@v2
-        with:
-          max_attempts: 3
-          timeout_minutes: 30
-          command: |
-            npx kit remove-tick
-            npx kit remove-mac
-            npx kit remove-nut
-            npx kit remove-node-window-manager
-            npx kit patch-node-pty
-            cd ./src
-            yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager node-pty
-            yarn add @homebridge/node-pty-prebuilt-multiarch
-            cat ./package.json
-            cd ..
-            echo "--- Done removing mac deps ---\n\n"
-            yarn build
+          ELECTRON_BUILD_ARCH: arm64
+          ELECTRON_BUILD_PLATFORM: linux
 
-            yarn electron-builder --publish always --linux AppImage deb rpm --arm64
+        run: |
+            sudo apt-get install ruby ruby-dev rubygems build-essential
+            sudo gem install --no-document fpm
+            export USE_SYSTEM_FPM=true
+            node --version
+            npm --version
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
+            npx kit remove-tick
+            cat ./package.json
+            npm run vite-prebuild
+            which npm
+            npm --version
+            npx kit ./build.ts linux arm64 always
 
       - name: Publish mac x64
-        if: matrix.os == 'macos-13' && matrix.arch == 'x64'
+        if: matrix.os == 'macos-latest'
         env:
           # These values are used for auto updates signing
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
@@ -284,18 +318,21 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: nick-invision/retry@v2
-        with:
-          max_attempts: 3
-          timeout_minutes: 30
-          command: |
-            yarn build
-            yarn electron-builder --publish always --mac --x64
+          ELECTRON_BUILD_ARCH: x64
+          ELECTRON_BUILD_PLATFORM: darwin
+
+        run: |
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
+            npm i --force
+            npm run vite-prebuild
+            npx kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
 
       - name: Publish mac arm64
-        if: matrix.os == 'macos-13' && matrix.arch == 'arm64'
+        if: matrix.os == 'macos-14'
         env:
           # These values are used for auto updates signing
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
@@ -303,18 +340,21 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: nick-invision/retry@v2
-        with:
-          max_attempts: 3
-          timeout_minutes: 30
-          command: |
-            yarn build
-            yarn electron-builder --publish always --mac --arm64
+          ELECTRON_BUILD_ARCH: arm64
+          ELECTRON_BUILD_PLATFORM: darwin
+
+        run: |
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
+            npm i --force
+            npm run vite-prebuild
+            npx kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml
-        if: matrix.os == 'macos-13'
-        uses: johnlindquist/kit-action@main
+        if: contains(matrix.os, 'macos')
+        # I used to have two of these, one for @next and one for @main since I don't think you can use a variable in "uses".
+        # Just something to keep an eye on in case kit-action changes.
+        uses: johnlindquist/kit-action@next
         with:
-          script: merge-mac-latest-yml johnlindquist kitapp ${{ matrix.arch }}
+          script: merge-mac-latest-yml script-kit kitapp ${{ steps.determine_arch.outputs.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

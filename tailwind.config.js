@@ -3,30 +3,49 @@ const defaultTheme = require('tailwindcss/defaultTheme');
 const colors = require('tailwindcss/colors');
 const peers = require('tailwindcss/peers');
 
-delete colors.lightBlue;
-delete colors.coolGray;
-delete colors.blueGray;
-delete colors.trueGray;
-delete colors.warmGray;
+colors.lightBlue = undefined;
+colors.coolGray = undefined;
+colors.blueGray = undefined;
+colors.trueGray = undefined;
+colors.warmGray = undefined;
 
 const colorVar = (name, opacityName) => (v) => {
   const { opacityVariable, opacityValue } = v;
 
-  if (typeof opacityName === 'number') {
-    return `rgba(var(--color-${name}), ${opacityName})`;
+  // Get the color value
+  const color = `var(--color-${name})`;
+
+  // Determine the alpha value
+  let alpha;
+
+  // opacityName example: 'ui-bg-opacity'
+  if (typeof opacityName === 'string') {
+    alpha = `calc(var(--${opacityName}) * 100%)`;
+  }
+  // opacityValue example: var(--ui-bg-opacity)
+  else if (typeof opacityValue === 'string') {
+    if (opacityValue.startsWith('var')) {
+      alpha = `calc(${opacityValue} * 100%)`;
+    } else {
+      alpha = `${Math.round(Number.parseFloat(opacityValue) * 100)}%`;
+    }
+  } else if (typeof opacityValue === 'undefined') {
+    alpha = '100%';
+  } else if (typeof opacityName === 'number') {
+    if (opacityName < 1) {
+      alpha = Math.round(opacityName * 100);
+    } else {
+      alpha = opacityName;
+    }
+    alpha = `${alpha}%`;
+  } else if (typeof opacityName === 'undefined') {
+    alpha = '100%';
   }
 
-  if (opacityName !== undefined) {
-    return `rgba(var(--color-${name}), var(--${opacityName}))`;
-  }
-  if (opacityValue !== undefined) {
-    return `rgba(var(--color-${name}), ${opacityValue})`;
-  }
+  // Return the color with alpha
+  const colorWithAlpha = `color-mix(in srgb, var(--color-${name}) ${alpha}, transparent)`;
 
-  if (opacityVariable !== undefined) {
-    return `rgba(var(--color-${name}), var(${opacityVariable}, 1))`;
-  }
-  return `rgb(var(--color-${name}))`;
+  return colorWithAlpha;
 };
 
 const round = (num) =>
@@ -55,7 +74,7 @@ const safeListStartsWith = [
   'min',
   'max',
   'grid',
-  `w{0,2}-(\d\/\d|\d.\d|\d{1,3}|full|screen|auto)`,
+  'w{0,2}-(d/d|d.d|d{1,3}|full|screen|auto)',
   'leading',
   'prose',
   'focus',
@@ -71,12 +90,7 @@ const safeListStartsWith = [
 /* eslint-disable global-require */
 module.exports = {
   mode: process.env.NODE_ENV === 'development' ? 'jit' : '',
-  content: [
-    './src/**/*.html',
-    './src/**/*.tsx',
-    './src/*.ts',
-    './safelist.txt',
-  ],
+  content: ['./src/**/*.html', './src/**/*.tsx', './src/*.ts', './safelist.txt'],
   safelist: [
     {
       pattern: new RegExp(`^(${safeListStartsWith.join('|')})`),
@@ -104,7 +118,6 @@ module.exports = {
       secondary: colorVar('secondary'),
       'ui-bg': colorVar('secondary', 'ui-bg-opacity'),
       'ui-border': colorVar('secondary', 'ui-border-opacity'),
-      'ui-text': colorVar('secondary', 'ui-border-opacity'),
       contrast: colorVar('contrast'),
       gradient: {
         white: '#ffffffcc',
@@ -146,8 +159,7 @@ module.exports = {
             transform: 'scale(2)',
             opacity: 0,
 
-            filter:
-              'drop-shadow(0 0 5px var(--color-secondary)) brightness(0%)',
+            filter: 'drop-shadow(0 0 5px var(--color-secondary)) brightness(0%)',
           },
         },
       },
@@ -305,7 +317,7 @@ module.exports = {
             },
             'input[type="submit"]:hover': {
               cursor: 'pointer',
-              backgroundColor: `rgba(0, 0, 0, 33%)`,
+              backgroundColor: 'rgba(0, 0, 0, 33%)',
             },
             'ul > li > *:last-child': {
               marginBottom: '.25rem',

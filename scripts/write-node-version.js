@@ -12,4 +12,4 @@ console.log({ version, release });
 const nodeVersion = release.deps.node;
 
 // write node version to assets/node.txt
-require('fs').writeFileSync('./assets/node.txt', `v${nodeVersion}`);
+require('node:fs').writeFileSync('./assets/node.txt', `v${nodeVersion}`);
