@@ -148,7 +148,7 @@ jobs:
 
       - name: Write the Semantic Version to package.json version property for main
         if: needs.tag.outputs.kit_tag == 'main'
-        uses: johnlindquist/kit-action@next
+        uses: johnlindquist/kit-action@main
         with:
           script: update-package-version ${{ needs.semantic.outputs.semantic_version }}
         env:
@@ -180,7 +180,7 @@ jobs:
 
       - name: Download kenv main
         if: needs.tag.outputs.kit_tag == 'main'
-        uses: johnlindquist/kit-action@next
+        uses: johnlindquist/kit-action@main
         with:
           script: download-kenv ${{ env.RELEASE_CHANNEL }}
         env:
@@ -196,7 +196,7 @@ jobs:
 
       - name: Create Assets main
         if: needs.tag.outputs.kit_tag == 'main'
-        uses: johnlindquist/kit-action@next
+        uses: johnlindquist/kit-action@main
         with:
           script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ steps.determine_arch.outputs.arch }} ${{ needs.semantic.outputs.release_id }}
         env:
