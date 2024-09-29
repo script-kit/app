@@ -15,6 +15,7 @@ import path from 'node:path';
 import { createPathResolver } from '@johnlindquist/kit/core/utils';
 import { kitState } from '../state';
 import { invoke } from '../invoke-pty';
+import { shellEnv } from 'shell-env';
 
 const execFileAsync = promisify(execFile);
 
@@ -368,11 +369,13 @@ export async function getPnpmPath(): Promise<string> {
     _pnpmPath = `"${_pnpmPath}"`;
   }
 
+  const shEnv = await shellEnv();
+
   log.info(`pnpm path after wrapping in quotes: ${_pnpmPath}`);
   const PNPM_NODE_PATH = path.join(path.dirname(_pnpmPath), 'nodejs', process.versions.node, 'bin');
   log.info(`pnpm bin path: ${PNPM_NODE_PATH}`);
   kitState.PNPM_NODE_PATH = PNPM_NODE_PATH;
-  process.env.PATH = PNPM_NODE_PATH + path.delimiter + process.env.PATH;
+  process.env.PATH = PNPM_NODE_PATH + path.delimiter + process.env.PATH + path.delimiter + shEnv.PATH;
   log.info(`pnpm bin path added to PATH: ${process.env.PATH}`);
 
   return _pnpmPath;
