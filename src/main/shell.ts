@@ -10,7 +10,10 @@ export const loadShellEnv = async (): Promise<void> => {
     const newEnv = await shellEnv();
     log.info('----------------------------------------');
     log.info(`PATH BEFORE loading shellEnv: ${process.env.PATH}`);
-    process.env = { ...process.env, ...newEnv };
+    // If PATH doesn't exist on newEnv, skip it
+    if (newEnv?.PATH?.trim()) {
+      process.env = { ...process.env, ...newEnv };
+    }
     log.info(`PATH AFTER loading shellEnv: ${process.env.PATH}`);
     log.info('----------------------------------------');
   } catch (error) {
