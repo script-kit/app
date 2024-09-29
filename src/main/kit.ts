@@ -331,8 +331,6 @@ export const runPromptProcess = async (
   return promptInfo;
 };
 
-const KIT = kitPath();
-
 export const runScript = (...args: string[]) => {
   log.info('Run', ...args);
 

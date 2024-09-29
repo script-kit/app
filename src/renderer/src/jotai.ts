@@ -1692,7 +1692,7 @@ export const promptDataAtom = atom(
       const channel = g(channelAtom);
       channel(Channel.ON_INIT);
 
-      ipcRenderer.send(Channel.SET_PROMPT_DATA, { messageId: a?.messageId });
+      ipcRenderer.send(Channel.SET_PROMPT_DATA, { messageId: a?.messageId, ui: a?.ui });
       s(promptReadyAtom, true);
 
       s(promptActiveAtom, true);

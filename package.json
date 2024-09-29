@@ -172,6 +172,7 @@
     "rebuild": "^0.1.2",
     "rxjs": "^7.8.1",
     "semver": "^7.6.3",
+    "shell-env": "^4.0.1",
     "tail": "^2.2.6",
     "tar": "^7.4.3",
     "timeago.js": "^4.0.2",
@@ -184,7 +185,7 @@
     "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/mac-clipboard-listener": "^1.0.3",
     "@johnlindquist/mac-frontmost": "^1.0.7",
-    "@johnlindquist/mac-panel-window": "^1.6.1",
+    "@johnlindquist/mac-panel-window": "^1.6.2",
     "@johnlindquist/node-window-manager": "^1.0.24",
     "node-mac-permissions": "^2.4.0",
     "uiohook-napi": "^1.5.4"

@@ -1057,10 +1057,9 @@ export class KitPrompt {
   };
 
   forcePromptToCenter = () => {
-    this.window?.show();
     this.window?.setPosition(0, 0);
     this.window?.center();
-    this.window?.focus();
+    this.focusPrompt();
   };
 
   reload = () => {
@@ -1467,10 +1466,9 @@ export class KitPrompt {
   };
 
   resetWindow = () => {
-    this.window.show();
     this.window.setPosition(0, 0);
     this.window.center();
-    this.window.focus();
+    this.focusPrompt();
   };
 
   pingPrompt = async (channel: AppChannel, data?: any) => {
@@ -1590,6 +1588,7 @@ export class KitPrompt {
     }: ResizeData = resizeData;
 
     if (this.showAfterNextResize) {
+      log.info('🎤 Showing prompt after next resize...');
       this.showAfterNextResize = false;
       this.showPrompt();
     }
@@ -1750,7 +1749,21 @@ export class KitPrompt {
   };
 
   refocusPrompt = () => {
-    if (this.hasBeenHidden || (this.window?.isVisible() && !this?.window?.isFocused())) {
+    const visible = this.isVisible();
+    const promptsThatNeedResize = [UI.arg, UI.div];
+    const dontWaitForResize = !promptsThatNeedResize.includes(this.ui) || this.promptData?.grid;
+
+    log.info('👀 Attempting to refocus prompt', {
+      hasBeenHidden: this.hasBeenHidden,
+      isVisible: visible,
+      isFocused: this?.window?.isFocused(),
+      count: this.count,
+      ui: this.ui,
+      grid: this.promptData?.grid,
+    });
+
+    // "grid" is currently an "arg" prompt that doesn't need a resize... Need to make grid it's own UI type...
+    if (this.hasBeenHidden || (visible && !this?.window?.isFocused()) || (!visible && dontWaitForResize)) {
       log.info(`👍 ${this.pid}: ${this.ui} ready. Focusing prompt.`);
       this.focusPrompt();
       this.hasBeenHidden = false;
@@ -1762,8 +1775,8 @@ export class KitPrompt {
     this.promptData = promptData;
 
     const setPromptDataHandler = debounce(
-      () => {
-        log.info(`${this.pid}: Received SET_PROMPT_DATA from renderer`);
+      (x, {ui}: {ui: UI}) => {
+        log.info(`${this.pid}: Received SET_PROMPT_DATA from renderer. ${ui} Ready!`);
         this.refocusPrompt();
       },
       100,
@@ -2517,8 +2530,8 @@ export class KitPrompt {
         log.purple(`Closing prompt window with ${kitState.isMac ? '⌘' : '⌃'}+w`);
       } else if (isEscape) {
         log.purple('Closing prompt window with escape');
-        this.hideInstant();
       }
+      this.hideInstant();
 
       // I don't think these are needed anymore, but leaving them in for now
       log.info(`✋ Removing process because of escape ${this.pid}`);

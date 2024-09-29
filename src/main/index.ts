@@ -1,5 +1,4 @@
 import { BrowserWindow, app, crashReporter, nativeTheme, powerMonitor, protocol, screen } from 'electron';
-
 import './env';
 
 process.on('SIGINT', () => {
@@ -99,9 +98,10 @@ import { getPnpmPath } from './setup/pnpm';
 import { WindowMonitor } from './debug/window-monitor';
 import { rimraf } from 'rimraf';
 import { pathExists } from './cjs-exports';
-import { NpmConfig, setNpmrcConfig } from './setup/npm';
+import { type NpmConfig, setNpmrcConfig } from './setup/npm';
 import { startServer } from './server';
 import { invoke } from './invoke-pty';
+import { loadShellEnv } from './shell';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -1106,7 +1106,7 @@ emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
 });
 
 app.whenReady()
-// .then(loadShellEnv)
+.then(loadShellEnv)
 .then(loadSupportedOptionalLibraries)
 .then(checkKit).catch(error => {
   log.error(`Error in app.whenReady`, error);
@@ -1158,13 +1158,13 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     sleepSchedule();
     await destroyPtyPool();
 
-    subs.forEach((sub) => {
+    for (const sub of subs) {
       try {
         sub();
       } catch (error) {
         mainLog.error('😬 Error unsubscribing', { error });
       }
-    });
+    }
     subs.length = 0;
     clearPromptTimers();
     clearStateTimers();
