@@ -32,12 +32,14 @@ export const startServer = () => {
 
   // CORS middleware
   app.use((req, res, next) => {
-    const headersOrigin = req.headers?.origin as string | '';
-    const allowedOrigins = splitEnvVarIntoArray(kitState.kenvEnv?.KIT_ALLOWED_ORIGINS, ['*']).push(headersOrigin);
+    const headersOrigin = [req.headers?.origin as string | ''].filter(Boolean);
+    const allowedOrigins = splitEnvVarIntoArray(kitState.kenvEnv?.KIT_ALLOWED_ORIGINS, ['*']).concat(headersOrigin);
 
     cors({
       origin: function (origin, callback) {
-        if (!origin) return callback(null, true);
+        if (!origin) {
+          return callback(null, true);
+        }
 
         if (allowedOrigins.includes('*')) {
           return callback(null, true);
@@ -45,9 +47,9 @@ export const startServer = () => {
 
         if (allowedOrigins.includes(origin)) {
           return callback(null, true);
-        } else {
-          return callback(new Error('Not allowed by CORS'));
         }
+
+        return callback(new Error('Not allowed by CORS'));
       },
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
@@ -81,7 +83,7 @@ export const startServer = () => {
         next(error);
       }
     } else {
-      const args = req.query.arg as string[];
+      const args = (req.query.arg as string[]) || [];
       const cwd = (req.query.cwd as string) || process.cwd();
 
       log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
