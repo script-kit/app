@@ -64,7 +64,7 @@ export const startServer = () => {
     let apiKey = '';
 
     if (req.method === 'POST') {
-      const authHeader = (req.headers['authorization'] || '').toString().trim();
+      const authHeader = req.headers.authorization || '';
       apiKey = authHeader.startsWith('Bearer ')
         ? authHeader.slice(7)
         : authHeader.includes(' ')
@@ -74,11 +74,18 @@ export const startServer = () => {
       const bodyScript = req.body?.script || script;
       const args = req.body?.args || [];
       const cwd = req.body?.cwd || kenvPath();
+      const headers = req.headers as Record<string, string>;
       log.info({ script: bodyScript, args, cwd });
 
       try {
-        const result = await handleScript(bodyScript, args, cwd, true, apiKey, req.headers);
-        res.json(result);
+        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers);
+        if (typeof result.data === 'string') {
+          res.send(result.data);
+        } else if (typeof result.data === 'object') {
+          res.json(result.data);
+        } else {
+          res.send(result?.message || 'No response from script');
+        }
       } catch (error) {
         next(error);
       }
@@ -90,7 +97,11 @@ export const startServer = () => {
 
       try {
         const result = await handleScript(script, args, cwd, true, apiKey);
-        res.json(result);
+        if (typeof result.data === 'string') {
+          res.send(result.data);
+        } else {
+          res.json(result);
+        }
       } catch (error) {
         next(error);
       }
@@ -139,7 +150,7 @@ export const startServer = () => {
       name: 'Kit Server',
       type: 'http',
       port: getServerPort(),
-      host: kitState.kenvEnv.KIT_BONJOUR_HOST || 'kit.local',
+      host: kitState.kenvEnv.KIT_BONJOUR_HOST as string | undefined || 'kit.local',
     });
 
     service.on('up', () => {
