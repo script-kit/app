@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
@@ -15,7 +16,23 @@ const build: BuildOptions = {
   },
 };
 
-export default defineConfig({
+export default defineConfig(() => ({
+  test: {
+    onInit: () => console.log('Vitest configuration loaded'),
+    globals: true,
+    environment: 'node',
+    setupFiles: './jest.setup.ts',
+    include: ['src/main/**/*.test.ts'],
+    coverage: {
+      reporter: ['text', 'json', 'html'],
+    },
+    build,
+    plugins: [
+      externalizeDepsPlugin({
+        include: include(),
+      }),
+    ],
+  },
   main: {
     build,
     plugins: [
@@ -49,4 +66,6 @@ export default defineConfig({
       },
     },
   },
-});
+}))
+
+

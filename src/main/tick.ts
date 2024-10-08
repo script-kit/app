@@ -399,7 +399,7 @@ export const startClipboardMonitor = async () => {
             log.info('Ignoring clipboard value that matches KIT_CLIPBOARD_IGNORE_REGEX');
             return;
           }
-          itemName = value.trim().slice(0, 40);
+          itemName = value?.trim().slice(0, 40);
         } catch (error) {
           log.warn(error);
           return;
@@ -505,20 +505,33 @@ const snippetMap = new Map<
   }
 >();
 
-const getSnippet = (
+/**
+ * Parses the provided content to extract metadata and the corresponding snippet.
+ * Metadata is defined in comment lines at the beginning, followed by the actual snippet.
+ *
+ * @param contents - The raw content string containing metadata and snippet.
+ * @returns An object containing the extracted metadata and the snippet.
+ * @throws Will throw an error if the contents parameter is not a string.
+ */
+const parseSnippet = (
   contents: string,
 ): {
   metadata: Record<string, string>;
   snippet: string;
 } => {
+  if (typeof contents !== 'string') {
+    throw new TypeError('The contents parameter must be a string.');
+  }
+
   const lines = contents.split('\n');
   const metadata: Record<string, string> = {};
-  let contentStartIndex = lines.length;
+  let snippetStartIndex = lines.length;
 
-  // eslint-disable-next-line no-plusplus
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const match = line.match(/(?<=^(?:(?:\/\/)|#)\s{0,2})([\w-]+)(?::)(.*)/);
+  // Iterate through each line to extract metadata from comment lines
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
+    // Match lines that start with // or # followed by a key:value pair
+    const match = line.match(/^(?:\/\/|#)\s{0,2}([\w-]+):\s*(.*)/);
 
     if (match) {
       const [, key, value] = match;
@@ -526,12 +539,16 @@ const getSnippet = (
         metadata[key.trim().toLowerCase()] = value.trim();
       }
     } else {
-      contentStartIndex = i;
+      // The first non-metadata line indicates the start of the snippet
+      snippetStartIndex = index;
       break;
     }
   }
 
-  const snippet = lines.slice(contentStartIndex).join('\n');
+  // Extract the snippet starting from the first non-metadata line
+  const snippetLines = lines.slice(snippetStartIndex);
+  const snippet = snippetLines.join('\n');
+
   return { metadata, snippet };
 };
 
@@ -544,7 +561,7 @@ export const addTextSnippet = async (filePath: string) => {
   }
 
   const contents = await readFile(filePath, 'utf8');
-  const { metadata } = await getSnippet(contents);
+  const { metadata } = await parseSnippet(contents);
 
   log.info({ contents, metadata });
 

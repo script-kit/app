@@ -38,9 +38,17 @@ export default function Drop() {
   const onDrop = useCallback(
     (event) => {
       setDropReady(false);
-      const files = Array.from(event?.dataTransfer?.files);
-      if (files?.length > 0) {
-        submit(files);
+      const files = Array.from(event?.dataTransfer?.files) as File[];
+      const filesWithPaths: any[] = [];
+      for (const file of files) {
+        const filePath = (window as any).electron.webUtils.getPathForFile(file);
+        if (filePath) {
+          file.path = filePath;
+          filesWithPaths.push(file);
+        }
+      }
+      if (filesWithPaths?.length > 0) {
+        submit(filesWithPaths);
         return;
       }
 

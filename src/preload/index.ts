@@ -3,7 +3,7 @@ import fsPromises from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import url from 'node:url';
-import { ipcRenderer, webFrame } from 'electron';
+import { ipcRenderer, webFrame, webUtils } from 'electron';
 import { Channel } from '@johnlindquist/kit/core/enum';
 
 // Custom APIs for renderer
@@ -19,6 +19,7 @@ const api = {
 window.electron = {
   ipcRenderer,
   webFrame,
+  webUtils
 };
 
 function sanitizeForIPC(obj: any) {

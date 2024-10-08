@@ -578,7 +578,14 @@ export const indexAtom = atom(
 
     const gridReady = g(gridReadyAtom);
     if (list && requiresScroll === -1 && !gridReady) {
-      list?.scrollToItem(calcIndex);
+      if(calcIndex === 0){
+        list?.scrollToItem(calcIndex, 'start');
+      }else if(calcIndex === cs.length - 1){
+        list?.scrollToItem(calcIndex, 'end');
+      }else{
+        list?.scrollToItem(calcIndex);
+      }
+
     }
 
     if (list && cs[0]?.item?.skip && calcIndex === 1 && !gridReady) {

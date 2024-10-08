@@ -885,7 +885,7 @@ export class KitPrompt {
     }
 
     this.window.webContents?.on('devtools-opened', () => {
-      makeWindow(this.window);
+      // makeWindow(this.window);
     });
 
     this.window.webContents?.on('devtools-closed', () => {
@@ -906,6 +906,7 @@ export class KitPrompt {
         this.window.webContents?.openDevTools({
           activate: true,
           mode: 'detach',
+          title: 'Kit Dev Tools',
         });
       }
     });
