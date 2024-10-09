@@ -117,7 +117,7 @@ export default function ChoiceList({ width, height }: ListProps) {
     }
   }, [choices, promptData]);
 
-  const [scrollTimeout, setScrollTimeout] = useState<any>(null);
+  const [scrollTimeout, setScrollTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // const choicesHeight = choices.reduce((acc, choice) => {
   //   return acc + (choice?.item?.height || itemHeight);
@@ -271,6 +271,9 @@ there's a phantom mouse also conflicting with setting the index. So you have to 
             newIndex = Math.min(choices.length - 1, (currentRow + 1) * gridDimensions.columnCount + currentColumn);
           }
           break;
+        default:
+          log.info(`Unknown direction key in ChoiceList.tsx:`, event);
+          break;
       }
 
       if (newIndex !== index) {
@@ -282,6 +285,26 @@ there's a phantom mouse also conflicting with setting the index. So you have to 
   );
 
   const [renderedProps, setRenderedProps] = useState<GridOnItemsRenderedProps>();
+
+  const handleScroll = useCallback(() => {
+    if (index === 0 || index === 1) {
+      setIsScrolling(false);
+    } else {
+      setIsScrolling(true);
+    }
+
+    // Clear the previous timeout
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout);
+    }
+
+    // Set a new timeout
+    const newTimeout = setTimeout(() => {
+      setIsScrolling(false);
+    }, 250);
+
+    setScrollTimeout(newTimeout);
+  }, [index, scrollTimeout, setIsScrolling]);
 
   return (
     <div id="list" style={{ width }} className="list-component flex flex-col w-full overflow-y-hidden">
@@ -331,26 +354,7 @@ there's a phantom mouse also conflicting with setting the index. So you have to 
             const maybeHeight = choices?.[i]?.item?.height;
             return typeof maybeHeight === 'number' ? maybeHeight : itemHeight;
           }}
-          onScroll={(props) => {
-            if (index === 0 || index === 1) {
-              setIsScrolling(false);
-            } else {
-              setIsScrolling(true);
-            }
-
-            // TODO: Disable scrolling if onScroll hasn't trigger for 250ms
-            // clear the previous timeout
-            if (scrollTimeout) {
-              clearTimeout(scrollTimeout);
-            }
-
-            // set a new timeout
-            setScrollTimeout(
-              setTimeout(() => {
-                setIsScrolling(false);
-              }, 250),
-            );
-          }}
+          onScroll={handleScroll}
           itemKey={(i, data) => {
             const id = data?.choices?.[i]?.item?.id;
             return id || i;

@@ -435,6 +435,19 @@ export const flagsRequiresScrollAtom = atom(-1);
 export const requiresScrollAtom = atom(-1);
 
 export const directionAtom = atom<1 | -1>(1);
+const _scrollToItemAtom = atom(0);
+export const scrollToItemAtom = atom(
+  (g) => g(_scrollToItemAtom),
+  (g, s, a: { index: number; reason?: string, align?: 'start' | 'end' | 'center' }) => {
+    s(_scrollToItemAtom, a.index);
+    const list = g(listAtom);
+    if(a.index === 0){
+      list?.scrollToItem(a.index, 'start');
+    }else {
+      list?.scrollToItem(a.index);
+    }
+  },
+);
 
 export const scrollToIndexAtom = atom((g) => {
   return (i: number) => {
@@ -508,12 +521,11 @@ export const flagsIndexAtom = atom(
       s(flagsIndex, calcIndex);
     }
 
-    if (list && requiresScroll === -1) {
-      list?.scrollToItem(calcIndex);
-    }
 
     if (list && cs[0]?.item?.skip && calcIndex === 1) {
-      list?.scrollToItem(0);
+      s(scrollToItemAtom, {index: 0, reason: 'flagsIndexAtom - cs[0]?.item?.skip && calcIndex === 1'});
+    }else if (list && requiresScroll === -1) {
+      s(scrollToItemAtom, {index: calcIndex, reason: 'flagsIndexAtom - requiresScroll === -1'});
     }
 
     const focusedFlag = (choice as Choice)?.value;
@@ -577,19 +589,12 @@ export const indexAtom = atom(
     }
 
     const gridReady = g(gridReadyAtom);
-    if (list && requiresScroll === -1 && !gridReady) {
-      if(calcIndex === 0){
-        list?.scrollToItem(calcIndex, 'start');
-      }else if(calcIndex === cs.length - 1){
-        list?.scrollToItem(calcIndex, 'end');
-      }else{
-        list?.scrollToItem(calcIndex);
-      }
 
-    }
 
     if (list && cs[0]?.item?.skip && calcIndex === 1 && !gridReady) {
-      list?.scrollToItem(0);
+      s(scrollToItemAtom, {index: 0, reason: 'indexAtom - cs[0]?.item?.skip && calcIndex === 1'});
+    }else if (list && requiresScroll === -1 && !gridReady) {
+      s(scrollToItemAtom, {index: calcIndex, reason: 'indexAtom - requiresScroll === -1'});
     }
 
     // const clampedIndex = clamp(a, 0, cs.length - 1);
