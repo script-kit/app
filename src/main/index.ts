@@ -642,20 +642,6 @@ export const useElectronNodeVersion = async (cwd: string, config:NpmConfig) => {
 
 };
 
-const initPnpm = async () => {
-  let pnpmPath = '';
-
-  try {
-    pnpmPath = await getPnpmPath();
-  } catch (error) {
-    log.warn(error);
-  }
-
-  if (!pnpmPath) {
-    await installPnpm();
-  }
-};
-
 const verifyInstall = async () => {
   log.info('-----------------------------------------------');
   log.info(process.env);
@@ -868,7 +854,7 @@ const checkKit = async () => {
         log.error(`Attempt ${attempt} failed:`, error);
         if (attempt < maxRetries) {
           log.info('Retrying after initializing pnpm...');
-          await initPnpm();
+          await getPnpmPath();
         } else {
           log.error('Max retries reached. Unable to find node path.');
           throw error;
@@ -932,7 +918,7 @@ const checkKit = async () => {
 
 
     await setupLog('Installing pnpm...');
-    await initPnpm();
+    await getPnpmPath();
     await setupLog('Setting node version in .npmrc...');
     await useElectronNodeVersion(kitPath(), {
       'use-node-version': `${process.versions.node}`,

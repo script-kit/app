@@ -51,7 +51,7 @@ import { createForkOptions } from './fork.options';
 import { osTmpPath } from './tmp';
 import { getAssetPath } from '../shared/assets';
 import { getVersion } from './version';
-import { findPnpmBin, getPnpmPath, symlinkPnpm } from './setup/pnpm';
+import { getPnpmPath } from './setup/pnpm';
 import { shortcutMap } from './shortcuts';
 import { showInfo } from './info';
 import { compareCollections, logDifferences } from './compare';
@@ -601,8 +601,6 @@ export const installPnpm = async () => {
     });
   }
   log.info('pnpm installation completed.');
-
-  await symlinkPnpm(await findPnpmBin());
 };
 
 export const installKitDeps = async () => {
