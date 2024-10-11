@@ -87,7 +87,7 @@
     "date-fns": "^3.6.0",
     "detect-port": "^1.6.1",
     "dompurify": "^3.1.7",
-    "electron": "^33.0.0-beta.10",
+    "electron": "^33.0.0-beta.8",
     "electron-builder": "^24.13.3",
     "electron-mocks": "^1.4.2",
     "electron-vite": "^2.3.0",
@@ -126,7 +126,7 @@
   },
   "dependencies": {
     "@johnlindquist/clipboard": "^0.1.38",
-    "@johnlindquist/kit": "^3.1.6",
+    "@johnlindquist/kit": "^3.1.9",
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^28.0.0",
     "@types/express": "^5.0.0",
