@@ -1,4 +1,3 @@
-import { app } from 'electron';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { arch, platform } from 'node:os';
@@ -8,13 +7,14 @@ import { tmpdir } from 'node:os';
 import log from 'electron-log';
 import { accessSync, constants, createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
-import { kitPath } from '@johnlindquist/kit/core/utils';
+import { kitPath, kitPnpmPath } from '@johnlindquist/kit/core/utils';
 import os from 'node:os';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { createPathResolver } from '@johnlindquist/kit/core/utils';
 import { kitState } from '../state';
 import { invoke } from '../invoke-pty';
+import { installPnpm } from '../install';
 
 const execFileAsync = promisify(execFile);
 
@@ -237,6 +237,7 @@ export const existsAndIsExecutable = (filePath: string | undefined): boolean => 
 };
 
 export const findPnpmBin = async (): Promise<string> => {
+
   if (kitState?.kenvEnv?.KIT_PNPM) {
     log.info(`Checking KIT_PNPM: ${kitState.kenvEnv.KIT_PNPM}`);
     if (existsSync(kitState.kenvEnv.KIT_PNPM)) {
@@ -244,6 +245,16 @@ export const findPnpmBin = async (): Promise<string> => {
       return kitState.kenvEnv.KIT_PNPM;
     }
   }
+
+  const _kitPnpmPath = kitPnpmPath('pnpm');
+  if (existsSync(_kitPnpmPath)) {
+    log.info(`Found pnpm: ${_kitPnpmPath}`);
+    return _kitPnpmPath;
+  }
+
+  await installPnpm();
+
+  return _kitPnpmPath;
 
   const isWindows = process.platform === 'win32';
   const command = isWindows ? 'where' : 'which';
@@ -369,10 +380,10 @@ export async function getPnpmPath(): Promise<string> {
   }
 
   log.info(`pnpm path after wrapping in quotes: ${_pnpmPath}`);
-  const PNPM_NODE_PATH = path.join(path.dirname(_pnpmPath), 'nodejs', process.versions.node, 'bin');
-  log.info(`pnpm bin path: ${PNPM_NODE_PATH}`);
-  kitState.PNPM_NODE_PATH = PNPM_NODE_PATH;
-  process.env.PATH = PNPM_NODE_PATH + path.delimiter + process.env.PATH;
+  const PNPM_KIT_NODE_PATH = path.join(path.dirname(_pnpmPath), 'nodejs', process.versions.node, 'bin');
+  log.info(`pnpm bin path: ${PNPM_KIT_NODE_PATH}`);
+  kitState.PNPM_KIT_NODE_PATH = PNPM_KIT_NODE_PATH;
+  process.env.PATH = PNPM_KIT_NODE_PATH + path.delimiter + process.env.PATH;
   log.info(`pnpm bin path added to PATH: ${process.env.PATH}`);
 
   return _pnpmPath;

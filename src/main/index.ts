@@ -35,6 +35,7 @@ import {
   getMainScriptPath,
   kenvPath,
   kitPath,
+  kitPnpmPath,
   tmpClipboardDir,
   tmpDownloadsDir,
 } from '@johnlindquist/kit/core/utils';
@@ -260,8 +261,10 @@ Electron Chromium version: ${process.versions.chrome}
 Electron execPath: ${process.execPath}
 process.env.KIT: ${process.env.KIT}
 process.env.KENV: ${process.env.KENV}
+process.env.KIT_PNPM_HOME: ${process.env.KIT_PNPM_HOME}
 Kit path: ${kitPath()}
 Kenv path: ${kenvPath()}
+Pnpm home: ${kitPnpmPath()}
 `);
 
 process.env.NODE_VERSION = nodeVersion;
@@ -677,10 +680,10 @@ const verifyInstall = async () => {
   const isKenvConfigured = await kenvConfigured();
   await setupLog(isKenvConfigured ? 'kenv .env found' : 'kenv .env missinag');
 
-  log.info(`NODE_PATH: ${process.env.NODE_PATH}`, `kitState.NODE_PATH: ${kitState.NODE_PATH}`);
+  log.info(`KIT_NODE_PATH: ${process.env.KIT_NODE_PATH}`, `kitState.KIT_NODE_PATH: ${kitState.KIT_NODE_PATH}`);
 
 
-  if (checkKit && checkKenv && kitState.NODE_PATH && isKenvConfigured) {
+  if (checkKit && checkKenv && kitState.KIT_NODE_PATH && isKenvConfigured) {
     await setupLog('Install verified');
     return true;
   }
@@ -834,14 +837,18 @@ const checkKit = async () => {
 
   let nodePath = '';
   const findNodePath = async () => {
-    log.info('🚶 Using pnpm to find node...');
     if(process.env.KIT_NODE_PATH) {
       return process.env.KIT_NODE_PATH;
     }
     const pnpmPath = await getPnpmPath();
+    log.info(`🚶 Using ${pnpmPath} node -e to find node...`);
     try{
       return await spawnP(pnpmPath, ['node', '-e', '"console.log(process.execPath)"'], {
         cwd: kitPath(),
+        env: {
+          ...process.env,
+          PNPM_HOME: kitPnpmPath(),
+        },
       });
     } catch (error) {
       log.error(error);
@@ -871,11 +878,11 @@ const checkKit = async () => {
 
     await setupLog(nodePath ? 'node found' : 'node missing');
 
-    kitState.NODE_PATH = nodePath;
-    log.info(`🚶 Assigned NODE_PATH: ${kitState.NODE_PATH}`);
-    process.env.NODE_PATH = kitState.NODE_PATH;
-    process.env.PATH = path.dirname(kitState.NODE_PATH) + path.delimiter + process.env.PATH;
-    log.info(`🚶 Assigned PATH with prefixed NODE_PATH: ${process.env.PATH}`);
+    kitState.KIT_NODE_PATH = nodePath;
+    log.info(`🚶 Assigned KIT_NODE_PATH: ${kitState.KIT_NODE_PATH}`);
+    process.env.KIT_NODE_PATH = kitState.KIT_NODE_PATH;
+    process.env.PATH = path.dirname(kitState.KIT_NODE_PATH) + path.delimiter + process.env.PATH;
+    log.info(`🚶 Assigned PATH with prefixed KIT_NODE_PATH: ${process.env.PATH}`);
   }
   const requiresInstall = (await isNewVersion()) || !(await kitExists());
   log.info(`Requires install: ${requiresInstall}`);
@@ -1034,7 +1041,7 @@ const checkKit = async () => {
     log.info('verifyInstall');
     await verifyInstall();
 
-    await setupLog(`👋 Creating bins using ${kitState.NODE_PATH}`);
+    await setupLog(`👋 Creating bins using ${kitState.KIT_NODE_PATH}`);
     optionalSetupScript(kitPath('cli', 'create-all-bins-no-trash.js'));
 
     log.info('storeVersion');

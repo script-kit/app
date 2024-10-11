@@ -8,7 +8,7 @@ export const createForkOptions = () => {
   const forkOptions: ForkOptions = {
     cwd: homedir(),
     windowsHide: true,
-    execPath: kitState.NODE_PATH,
+    execPath: kitState.KIT_NODE_PATH,
     stdio: 'pipe',
     shell: true,
   };
@@ -17,7 +17,7 @@ export const createForkOptions = () => {
     env: {
       KIT: kitPath(),
       KENV: kenvPath(),
-      NODE_PATH: kitState.NODE_PATH,
+      KIT_NODE_PATH: kitState.KIT_NODE_PATH,
       PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
     },
   };

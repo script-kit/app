@@ -351,8 +351,8 @@ const initState = {
   attemptingPreload: false,
   hasCss: false,
   waitingForPing: false,
-  NODE_PATH: '',
-  PNPM_NODE_PATH: '',
+  KIT_NODE_PATH: '',
+  PNPM_KIT_NODE_PATH: '',
   serverRunning: false, // {{ added }}
 };
 

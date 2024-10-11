@@ -2,6 +2,7 @@ import * as pty from 'node-pty';
 import * as os from 'node:os';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { kitPnpmPath } from '@johnlindquist/kit/core/utils';
 
 function getDefaultShell(): string {
   console.log(`Operating System: ${process.platform}`);
@@ -83,6 +84,7 @@ export async function invoke(command: string, cwd = os.homedir()): Promise<strin
 
     const env: Record<string, string> = {
       ...process.env,
+      PNPM_HOME: kitPnpmPath(),
       TERM: 'xterm-color',
       FORCE_COLOR: '1',
       DISABLE_AUTO_UPDATE: 'true', // Disable auto-update for zsh

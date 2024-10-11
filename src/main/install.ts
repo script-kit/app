@@ -20,6 +20,7 @@ import {
   isFile,
   kenvPath,
   kitPath,
+  kitPnpmPath,
   processPlatformSpecificTheme,
 } from '@johnlindquist/kit/core/utils';
 import type { Choice, FlagsObject, Script, Scriptlet, Shortcut } from '@johnlindquist/kit/types';
@@ -54,6 +55,8 @@ import { findPnpmBin, getPnpmPath, symlinkPnpm } from './setup/pnpm';
 import { shortcutMap } from './shortcuts';
 import { showInfo } from './info';
 import { compareCollections, logDifferences } from './compare';
+
+import installPnpm from './install/pnpm.sh?raw';
 
 const log = createLogger('install.ts');
 
@@ -557,19 +560,19 @@ export const installPnpm = async () => {
       '-ExecutionPolicy',
       'Bypass',
       '-Command',
-      'iwr https://get.pnpm.io/install.ps1 -useb | iex',
+      'iwr https://raw.githubusercontent.com/johnlindquist/kit/refs/heads/main/scripts/pnpm.ps1 -useb | iex',
     ];
 
     try {
       const { stdout, stderr } = await execFileAsync(
         command,
         args,
-        // {
-        // env: {
-        //   ...process.env,
-        //   PNPM_HOME: kitPath(),
-        // },
-        // }
+        {
+          env: {
+            ...process.env,
+            KIT_PNPM_HOME: kitPnpmPath(),
+          },
+        },
       );
 
       log.info('PNPM installation output:', stdout);
@@ -585,17 +588,15 @@ export const installPnpm = async () => {
     const spawnArgs = [
       '-c',
       `
-      curl -fsSL https://get.pnpm.io/install.sh | sh -
+      curl -fsSL https://raw.githubusercontent.com/johnlindquist/kit/refs/heads/main/scripts/pnpm.sh | sh -
     `,
     ];
+
+
+
+    // const pnpmScript = await readFile(getAssetPath('pnpm.sh'), 'utf8');
     log.info(`Running command: ${spawnCommand} ${spawnArgs.join(' ')}`);
     await requiredSpawnSetup(spawnCommand, spawnArgs, {
-      // TODO: the pnpm "setup" uses PNPM_HOME and will update the .zshrc. This may conflict with a user's global pnpm install.
-      // Probably need to avoid for now...
-      // env: {
-      //   ...process.env,
-      // PNPM_HOME: kitPath(),
-      // },
       shell: false,
     });
   }
@@ -709,21 +710,18 @@ export const setupLog = async (message: string) => {
 };
 
 export const requiredSpawnSetup = (command: string, args: string[], options: SpawnOptions): Promise<string> => {
+  const KIT_PNPM_HOME = kitPnpmPath();
   return new Promise((resolve, reject) => {
     log.info(`Running required setup script: ${command} ${args.join(' ')}`);
     const child = spawn(command, args, {
       ...createForkOptions(),
       ...options,
+      env: {
+        ...process.env,
+        KIT_PNPM_HOME,
+      },
     });
     let output = 'not match...';
-
-    const id = setTimeout(() => {
-      if (child && !child.killed) {
-        child.kill();
-        resolve('timeout');
-        log.info(`⚠️ Setup script timed out: ${args.join(' ')}`);
-      }
-    }, 25000);
 
     if (child?.stdout) {
       child.stdout.on('data', (data) => {
@@ -751,9 +749,6 @@ export const requiredSpawnSetup = (command: string, args: string[], options: Spa
 
     child.on('exit', (code) => {
       if (code === 0) {
-        if (id) {
-          clearTimeout(id);
-        }
         log.info(`✅ Setup script completed: ${args.join(' ')}`);
         resolve(output);
       } else {
@@ -773,10 +768,7 @@ export const requiredSpawnSetup = (command: string, args: string[], options: Spa
     });
 
     child.on('error', (error: Error) => {
-      if (id) {
-        clearTimeout(id);
-      }
-      // log.error(`⚠️ Errored on setup script: ${args.join(' ')}`, error.message);
+      log.error(`⚠️ Errored on setup script: ${args.join(' ')}`, error.message);
       // reject(error);
       // throw new Error(error.message);
     });
@@ -790,12 +782,12 @@ export const optionalSpawnSetup = (...args: string[]) => {
   }
   return new Promise((resolve, reject) => {
     log.info(`Running optional setup script: ${args.join(' ')}`);
-    if (!kitState.NODE_PATH) {
+    if (!kitState.KIT_NODE_PATH) {
       log.error('No exec path found, skipping setup script');
       resolve('done');
       return;
     }
-    const child = spawn(kitState.NODE_PATH, [kitPath('run', 'terminal.js'), ...args], createForkOptions());
+    const child = spawn(kitState.KIT_NODE_PATH, [kitPath('run', 'terminal.js'), ...args], createForkOptions());
 
     const id = setTimeout(() => {
       if (child && !child.killed) {
@@ -1002,7 +994,7 @@ export const syncBins = async () => {
         worker.postMessage({
           command: script.command,
           filePath: script.filePath,
-          execPath: kitState.NODE_PATH,
+          execPath: kitState.KIT_NODE_PATH,
         });
       }
     } catch (error) {
