@@ -49,6 +49,7 @@ This got it working for me.
 #### pnpm
 
 This will install pnpm to ~/.kit/pnpm
+
 #### Vite Cache Issues
 
 When rebuilding the Kit SDK, also run:
