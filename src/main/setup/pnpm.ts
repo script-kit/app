@@ -246,15 +246,17 @@ export const findPnpmBin = async (): Promise<string> => {
     }
   }
 
-  const _kitPnpmPath = kitPnpmPath('pnpm');
-  if (existsSync(_kitPnpmPath)) {
-    log.info(`Found pnpm: ${_kitPnpmPath}`);
-    return _kitPnpmPath;
+  const _kitPnpmPathPosix = kitPnpmPath('pnpm');
+  const _kitPnpmPathWindows = kitPnpmPath('pnpm.exe');
+  const pnpmPath = process.platform === 'win32' ? _kitPnpmPathWindows : _kitPnpmPathPosix;
+  if (existsSync(pnpmPath)) {
+    log.info(`Found pnpm: ${pnpmPath}`);
+    return pnpmPath;
   }
 
   await installPnpm();
 
-  return _kitPnpmPath;
+  return pnpmPath;
 
   const isWindows = process.platform === 'win32';
   const command = isWindows ? 'where' : 'which';
