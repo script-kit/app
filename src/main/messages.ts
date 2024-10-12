@@ -175,7 +175,7 @@ export const formatScriptChoices = (data: Choice[]) => {
 };
 
 export const createMessageMap = (processInfo: ProcessAndPrompt) => {
-  const robot = shims['@jitsi/robotjs'];
+  const robot = shims['@meadowsjared/robotjs'];
   let exiting = false;
   const resetting = false;
 
@@ -1684,10 +1684,10 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       try {
         if (typeof rate === 'number') {
           log.info(`⌨️ Typing ${text} with delay ${rate}`);
-          shims['@jitsi/robotjs'].typeStringDelayed(text, rate);
+          shims['@meadowsjared/robotjs'].typeStringDelayed(text, rate);
         } else {
           log.info(`⌨️ Typing ${text} without delay`);
-          shims['@jitsi/robotjs'].typeString(text);
+          shims['@meadowsjared/robotjs'].typeString(text);
         }
       } catch (error) {
         log.error('KEYBOARD ERROR TYPE', error);
@@ -1743,10 +1743,10 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       try {
         if (typeof speed === 'number') {
           log.info(`⌨️ Typing ${text} with delay ${speed}`);
-          shims['@jitsi/robotjs'].typeStringDelayed(text, speed);
+          shims['@meadowsjared/robotjs'].typeStringDelayed(text, speed);
         } else {
           log.info(`⌨️ Typing ${text} without delay`);
-          shims['@jitsi/robotjs'].typeString(text);
+          shims['@meadowsjared/robotjs'].typeString(text);
         }
       } catch (error) {
         log.error('KEYBOARD ERROR TYPE', error);
@@ -1795,7 +1795,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         return;
       }
 
-      shims['@jitsi/robotjs'].keyTap(key as string, activeModifiers);
+      shims['@meadowsjared/robotjs'].keyTap(key as string, activeModifiers);
 
       childSend({ channel, value });
 
@@ -1812,7 +1812,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       const modifier = getModifier();
       log.info(`COPYING with ${modifier}+c`);
       const beforeText = clipboard.readText();
-      shims['@jitsi/robotjs'].keyTap('c', modifier);
+      shims['@meadowsjared/robotjs'].keyTap('c', modifier);
 
       let afterText = clipboard.readText();
       const maxTries = 5;
@@ -1838,7 +1838,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // REMOVE-NUT
       const modifier = getModifier();
       log.info(`PASTING with ${modifier}+v`);
-      shims['@jitsi/robotjs'].keyTap('v', modifier);
+      shims['@meadowsjared/robotjs'].keyTap('v', modifier);
 
       childSend({ channel, value });
       // END-REMOVE-NUT
@@ -1852,7 +1852,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       const modifier = getModifier();
       log.info(`CUTTING with ${modifier}+x`);
-      shims['@jitsi/robotjs'].keyTap('x', modifier);
+      shims['@meadowsjared/robotjs'].keyTap('x', modifier);
 
       childSend({ channel, value });
     }),
@@ -1864,7 +1864,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       }
 
       log.info('SELECTING ALL');
-      shims['@jitsi/robotjs'].keyTap('a', getModifier());
+      shims['@meadowsjared/robotjs'].keyTap('a', getModifier());
 
       childSend({ channel, value });
     }),
@@ -1877,7 +1877,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       // REMOVE-NUT
       log.info('UNDO');
-      shims['@jitsi/robotjs'].keyTap('z', getModifier());
+      shims['@meadowsjared/robotjs'].keyTap('z', getModifier());
 
       childSend({ channel, value });
       // END-REMOVE-NUT
@@ -1911,7 +1911,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         return;
       }
 
-      shims['@jitsi/robotjs'].keyToggle(key as string, 'up', activeModifiers);
+      shims['@meadowsjared/robotjs'].keyToggle(key as string, 'up', activeModifiers);
 
       childSend({ channel, value });
       // END-REMOVE-NUT
@@ -1919,27 +1919,27 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
     MOUSE_LEFT_CLICK: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
-      shims['@jitsi/robotjs'].mouseClick('left');
+      shims['@meadowsjared/robotjs'].mouseClick('left');
       // END-REMOVE-NUT
     }),
 
     MOUSE_RIGHT_CLICK: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
-      shims['@jitsi/robotjs'].mouseClick('right');
+      shims['@meadowsjared/robotjs'].mouseClick('right');
       // END-REMOVE-NUT
     }),
 
     MOUSE_MOVE: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
       for (const v of value) {
-        shims['@jitsi/robotjs'].moveMouseSmooth(v.x, v.y);
+        shims['@meadowsjared/robotjs'].moveMouseSmooth(v.x, v.y);
       }
       // END-REMOVE-NUT
     }),
 
     MOUSE_SET_POSITION: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
-      shims['@jitsi/robotjs'].moveMouse(value.x, value.y);
+      shims['@meadowsjared/robotjs'].moveMouse(value.x, value.y);
       // END-REMOVE-NUT
     }),
 

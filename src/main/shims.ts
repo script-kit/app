@@ -12,23 +12,22 @@ const platform = (process.env.ELECTRON_BUILD_PLATFORM || os.platform()) as NodeJ
 type Target = `${NodeJS.Platform}-${NodeJS.Architecture}`;
 const target: Target = `${platform}-${arch}`;
 
-const robot = '@jitsi/robotjs' as const;
+const robot = '@meadowsjared/robotjs' as const;
 const uiohook = 'uiohook-napi' as const;
 const nmp = 'node-mac-permissions' as const;
-const nwm = '@johnlindquist/node-window-manager' as const;
 const mcl = '@johnlindquist/mac-clipboard-listener' as const;
 const mf = '@johnlindquist/mac-frontmost' as const;
 const mpw = '@johnlindquist/mac-panel-window' as const;
 // Object.keys(packageJson.optionalDependencies)
-const optionalDependencies = [robot, uiohook, nmp, nwm, mcl, mf, mpw] as const;
+const optionalDependencies = [robot, uiohook, nmp, mcl, mf, mpw] as const;
 type OptionalDependency = (typeof optionalDependencies)[number];
 
 const supportMap: Partial<Record<Target, OptionalDependency[]>> = {
   // Consider restoring uiohook once the github actions runner supports bash
-  'win32-arm64': [robot, nwm],
-  'win32-x64': [robot, uiohook, nwm],
-  'darwin-arm64': [robot, uiohook, nmp, nwm, mcl, mf, mpw],
-  'darwin-x64': [robot, uiohook, nmp, nwm, mcl, mf, mpw],
+  'win32-arm64': [robot],
+  'win32-x64': [robot, uiohook],
+  'darwin-arm64': [robot, uiohook, nmp, mcl, mf, mpw],
+  'darwin-x64': [robot, uiohook, nmp, mcl, mf, mpw],
   'linux-arm64': [robot],
   'linux-x64': [robot, uiohook],
 } as const;
@@ -41,13 +40,11 @@ const exportDefaults: OptionalDependency[] = [nmp, robot];
 
 interface Shims {
   //@ts-ignore This import might not work, depending on the platform
-  [robot]: typeof import('@jitsi/robotjs');
+  [robot]: typeof import('@meadowsjared/robotjs');
   //@ts-ignore This import might not work, depending on the platform
   [uiohook]: typeof import('uiohook-napi');
   //@ts-ignore This import might not work, depending on the platform
   [nmp]: typeof import('node-mac-permissions');
-  //@ts-ignore This import might not work, depending on the platform
-  [nwm]: typeof import('@johnlindquist/node-window-manager');
   //@ts-ignore This import might not work, depending on the platform
   [mf]: typeof import('@johnlindquist/mac-frontmost');
   //@ts-ignore This import might not work, depending on the platform
@@ -77,10 +74,9 @@ const createShim = <T extends keyof Shims>(packageName: T, depth = 0): Shims[T] 
   ) as Shims[T];
 
 const shims: Shims = {
-  [robot]: createShim('@jitsi/robotjs'),
+  [robot]: createShim('@meadowsjared/robotjs'),
   [uiohook]: createShim('uiohook-napi'),
   [nmp]: createShim('node-mac-permissions'),
-  [nwm]: createShim('@johnlindquist/node-window-manager'),
   [mf]: createShim('@johnlindquist/mac-frontmost'),
   [mpw]: createShim('@johnlindquist/mac-panel-window'),
   [mcl]: createShim('@johnlindquist/mac-clipboard-listener'),

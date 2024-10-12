@@ -2462,9 +2462,9 @@ export class KitPrompt {
   hideInstant = (type: 'close' | 'hide' = 'hide') => {
     if (kitState.isWindows) {
       // REMOVE-NODE-WINDOW-MANAGER
-      shims['@johnlindquist/node-window-manager'].windowManager.hideInstantly(this.window?.getNativeWindowHandle());
-      this.window?.emit('blur');
-      this.window?.emit('hide');
+      // shims['@johnlindquist/node-window-manager'].windowManager.hideInstantly(this.window?.getNativeWindowHandle());
+      // this.window?.emit('blur');
+      // this.window?.emit('hide');
       // END-REMOVE-NODE-WINDOW-MANAGER
     }
 

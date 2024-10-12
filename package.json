@@ -88,7 +88,7 @@
     "detect-port": "^1.6.1",
     "dompurify": "^3.1.7",
     "electron": "^33.0.0-beta.9",
-    "electron-builder": "^25.1.8",
+    "electron-builder": "^24.13.3",
     "electron-mocks": "^1.4.2",
     "electron-vite": "^2.3.0",
     "emoji-picker-react": "^4.12.0",
@@ -127,6 +127,7 @@
   "dependencies": {
     "@johnlindquist/clipboard": "^0.1.38",
     "@johnlindquist/kit": "^3.1.12",
+    "@meadowsjared/robotjs": "^0.6.26",
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^28.0.0",
     "@types/express": "^5.0.0",
@@ -166,7 +167,7 @@
     "nanoid": "5.0.7",
     "node-abi": "^3.68.0",
     "node-downloader-helper": "^2.1.9",
-    "node-pty": "^1.1.0-beta21",
+    "node-pty": "^1.1.0-beta26",
     "node-schedule": "2.1.1",
     "node-stream-zip": "^1.15.0",
     "prop-types": "^15.8.1",
@@ -185,11 +186,9 @@
     "xstate": "^5.18.2"
   },
   "optionalDependencies": {
-    "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/mac-clipboard-listener": "^1.0.3",
     "@johnlindquist/mac-frontmost": "^1.0.7",
     "@johnlindquist/mac-panel-window": "^1.6.2",
-    "@johnlindquist/node-window-manager": "^1.0.24",
     "node-mac-permissions": "^2.4.0",
     "uiohook-napi": "^1.5.4"
   },

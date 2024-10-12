@@ -3,7 +3,6 @@ import { execSync } from 'node:child_process';
 import fsExtra from 'fs-extra';
 import { external, include } from './src/main/shims';
 
-import { notarize } from '@electron/notarize';
 import { Arch, Platform, build } from 'electron-builder';
 import type { AfterPackContext, Configuration, PackagerOptions } from 'electron-builder';
 import packageJson from './package.json';
@@ -145,6 +144,7 @@ const config: Configuration = {
   artifactName: '${productName}-macOS-${version}-${arch}.${ext}',
   productName: 'Script Kit', // Updated productName from package.json
   // buildDependenciesFromSource: false,
+  nodeGypRebuild: false,
   directories: {
     output: './release',
     buildResources: 'build',
@@ -248,6 +248,12 @@ try {
       stdio: 'inherit',
     });
   }
+
+  // const { stdout, stderr } = await exec(`npx electron-rebuild`);
+  // console.log({
+  //   stdout,
+  //   stderr,
+  // });
   const result = await build({
     config,
     publish,
