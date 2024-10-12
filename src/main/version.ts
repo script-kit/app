@@ -4,7 +4,6 @@ import { getAssetPath } from '../shared/assets';
 import { kitStore } from './state';
 import axios from 'axios';
 
-// eslint-disable-next-line import/prefer-default-export
 export const getVersionFromText = () => {
   const versionPath = getAssetPath('version.txt');
   return fs.readFileSync(versionPath, 'utf8').trim();
