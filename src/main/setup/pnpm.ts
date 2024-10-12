@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process';
+import { execFile, exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import { arch, platform } from 'node:os';
 import { join } from 'node:path';
@@ -17,6 +17,7 @@ import { invoke } from '../invoke-pty';
 import { installPnpm } from '../install';
 
 const execFileAsync = promisify(execFile);
+const execAsync = promisify(exec);
 
 async function detectPlatform(): Promise<string> {
   log.info('Detecting platform...');
@@ -258,16 +259,30 @@ export const findPnpmBin = async (): Promise<string> => {
   // attempt to find the pnpm store path
   const storePathCommand = 'pnpm store path';
   log.info(`Running command to check for existing pnpm store: ${storePathCommand}`);
-  const { stdout } = await exec(storePathCommand, {
-    shell: true,
-  });
-  const storePath = stdout?.trim() || '';
-  log.info(`pnpm store path: ${storePath}`);
-  if (storePath.endsWith('v3')) {
-    log.info(`Found pnpm store path, setting store-dir to ${storePath}`);
-    const command = `"${pnpmPath}" config set store-dir "${storePath}"`;
+  let stdout = '';
+  let stderr = '';
+  try {
+    const { stdout: _stdout, stderr: _stderr } = await execAsync(storePathCommand);
+    stdout = _stdout?.trim() || '';
+    stderr = _stderr?.trim() || '';
+  } catch (error) {
+    log.warn(`Error getting pnpm store path: ${stderr}`);
+  }
+  log.info(`pnpm store path: ${stdout}`);
+  if (stdout.endsWith('v3')) {
+    log.info(`Found pnpm store path, setting store-dir to ${stdout}`);
+    const command = `"${pnpmPath}" config set store-dir "${stdout}"`;
     log.info(`Running command: ${command}`);
-    await exec(command);
+    let storeStdout = '';
+    let storeStderr = '';
+    try {
+      const { stdout: _stdout, stderr: _stderr } = await execAsync(command);
+      storeStdout = _stdout?.trim() || '';
+      storeStderr = _stderr?.trim() || '';
+      log.info(`store-dir set output: ${storeStdout}`);
+    } catch (error) {
+      log.warn(`Error setting pnpm store-dir: ${storeStderr}`);
+    }
   }
 
   return pnpmPath;
