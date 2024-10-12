@@ -56,8 +56,6 @@ import { shortcutMap } from './shortcuts';
 import { showInfo } from './info';
 import { compareCollections, logDifferences } from './compare';
 
-import installPnpm from './install/pnpm.sh?raw';
-
 const log = createLogger('install.ts');
 
 let isOhNo = false;

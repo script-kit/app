@@ -255,6 +255,20 @@ export const findPnpmBin = async (): Promise<string> => {
   }
 
   await installPnpm();
+  // attempt to find the pnpm store path
+  const storePathCommand = 'pnpm store path';
+  log.info(`Running command to check for existing pnpm store: ${storePathCommand}`);
+  const { stdout } = await exec(storePathCommand, {
+    shell: true,
+  });
+  const storePath = stdout?.trim() || '';
+  log.info(`pnpm store path: ${storePath}`);
+  if (storePath.endsWith('v3')) {
+    log.info(`Found pnpm store path, setting store-dir to ${storePath}`);
+    const command = `"${pnpmPath}" config set store-dir "${storePath}"`;
+    log.info(`Running command: ${command}`);
+    await exec(command);
+  }
 
   return pnpmPath;
 
