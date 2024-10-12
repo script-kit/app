@@ -102,7 +102,7 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: johnlindquist/kit-action@next
+        uses: johnlindquist/kit-action@main
         with:
           script: create-release ${{ steps.semantic.outputs.new_release_version }}
         env:
@@ -113,7 +113,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # windows-latest-arm64 doesn't currently support bash, so the @johnlindquist/kit-action@next fails when trying to use bash to determine the kit_tag
         # os: [script-kit-windows-latest-arm64, script-kit-ubuntu-latest-arm64, windows-latest, ubuntu-latest]
         os: [windows-2022, script-kit-ubuntu-latest-arm64, windows-latest, ubuntu-latest, macos-latest, macos-14]
 
@@ -154,14 +153,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Write the Semantic Version to package.json version property for next
-        if: needs.tag.outputs.kit_tag == 'next'
-        uses: johnlindquist/kit-action@next
-        with:
-          script: update-package-version ${{ needs.semantic.outputs.semantic_version }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Nix - Write the current branch to a releaseChannel env var
         if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'script-kit-ubuntu-latest-arm64' }}
         run: |
@@ -186,25 +177,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download kenv next
-        if: needs.tag.outputs.kit_tag == 'next'
-        uses: johnlindquist/kit-action@next
-        with:
-          script: download-kenv ${{ env.RELEASE_CHANNEL }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Create Assets main
         if: needs.tag.outputs.kit_tag == 'latest'
         uses: johnlindquist/kit-action@main
-        with:
-          script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ steps.determine_arch.outputs.arch }} ${{ needs.semantic.outputs.release_id }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Assets next
-        if: needs.tag.outputs.kit_tag == 'next'
-        uses: johnlindquist/kit-action@next
         with:
           script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ steps.determine_arch.outputs.arch }} ${{ needs.semantic.outputs.release_id }}
         env:
@@ -351,9 +326,8 @@ jobs:
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml
         if: contains(matrix.os, 'macos')
-        # I used to have two of these, one for @next and one for @main since I don't think you can use a variable in "uses".
         # Just something to keep an eye on in case kit-action changes.
-        uses: johnlindquist/kit-action@next
+        uses: johnlindquist/kit-action@main
         with:
           script: merge-mac-latest-yml script-kit kitapp ${{ steps.determine_arch.outputs.arch }}
         env:
