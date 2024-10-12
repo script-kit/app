@@ -45,12 +45,7 @@ import { createLogger } from '../shared/log-utils';
 const log = createLogger('state.ts');
 const keymapLog = createLogger('keymapLog');
 
-const schema: Schema<{
-  KENV: string;
-  accessibilityAuthorized: boolean;
-  sponsor: boolean;
-  version: string;
-}> = {
+const schema = {
   KENV: {
     type: 'string',
     default: kenvPath(),
@@ -76,15 +71,23 @@ const schema: Schema<{
     default: true,
   },
 };
-export const kitStore = new Store({
+
+export const kitStore = new Store<typeof schema>({
   schema,
   watch: true,
-});
+}) as Store<typeof schema> &
+// Hacking the Store type due to some CJS thing I don't have the time to figure out
+{
+  get: <K extends keyof typeof schema>(key: K) => (typeof schema[K])['default'];
+  set: <K extends keyof typeof schema>(key: K, value: (typeof schema[K])['type']) => void;
+  path: string;
+};
+
+
 
 const storedKenv = process.env?.KENV || kitStore.get('KENV');
 log.info(`📀 Stored KENV: ${storedKenv}`);
 log.info(`Path to kitStore: ${kitStore.path}`);
-// process.exit();
 
 process.env.KENV = storedKenv;
 

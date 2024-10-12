@@ -70,7 +70,6 @@ import {
   showSplash,
   installKitDeps,
   spawnP,
-  installPnpm,
   installMacDeps,
 } from './install';
 import { startIpc } from './ipc';

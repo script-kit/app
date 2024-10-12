@@ -6,16 +6,15 @@ import axios from "axios"
 import * as os from "node:os"
 import * as path from "node:path"
 import * as fs from "node:fs/promises"
+import { createLogger } from "../../shared/log-utils"
+
+const log = createLogger('install-pnpm');
 
 const execAsync = promisify(exec)
 
 function abort(message: string): never {
-  console.error(message)
+  log.error(message)
   process.exit(1)
-}
-
-function ohai(message: string): void {
-  console.log(`\x1b[1;34m==>\x1b[1;39m ${message}\x1b[0m`)
 }
 
 function isGlibcCompatible(): boolean {
@@ -41,8 +40,6 @@ async function getVersionData(url: string): Promise<VersionData> {
   const response = await axios.get(url)
   return response.data
 }
-
-// ... (keep the existing utility functions like abort, ohai, download)
 
 function detectPlatform(): string {
   const platform = os.platform()
@@ -88,7 +85,7 @@ function detectArch(): string {
   return arch
 }
 
-async function downloadAndInstall(): Promise<void> {
+export async function downloadAndInstallPnpm(): Promise<void> {
   const platform = detectPlatform()
   const arch = detectArch()
 
@@ -125,7 +122,7 @@ async function downloadAndInstall(): Promise<void> {
   const tmpFile = path.join(tmpDir, pnpmName)
 
   try {
-    ohai(`Downloading pnpm binaries ${version}`)
+    log.info(`Downloading pnpm binaries ${version}`)
     const response = await axios.get(archiveUrl, {
       responseType: "arraybuffer",
     })
@@ -145,17 +142,45 @@ async function downloadAndInstall(): Promise<void> {
     if (
       path.resolve(newExecPath) !== path.resolve(tmpFile)
     ) {
-      console.log(
+      log.info(
         `Copying pnpm CLI from ${tmpFile} to ${newExecPath}`
       )
       await fs.mkdir(kitPnpmHome, { recursive: true })
       await fs.copyFile(tmpFile, newExecPath)
     }
 
-    ohai(`Successfully installed pnpm to ${newExecPath}`)
+    log.info(`Successfully installed pnpm to ${newExecPath}`)
   } finally {
     await fs.rm(tmpDir, { recursive: true, force: true })
   }
 }
 
-downloadAndInstall();
+export async function setPnpmStoreDir(pnpmPath: string): Promise<void> {
+  const storePathCommand = 'pnpm store path';
+  log.info(`Running command to check for existing pnpm store: ${storePathCommand}`);
+  let stdout = '';
+  let stderr = '';
+  try {
+    const { stdout: _stdout, stderr: _stderr } = await execAsync(storePathCommand);
+    stdout = _stdout?.trim() || '';
+    stderr = _stderr?.trim() || '';
+  } catch (error) {
+    log.warn(`Error getting pnpm store path: ${stderr}`);
+  }
+  log.info(`pnpm store path: ${stdout}`);
+  if (stdout.endsWith('v3')) {
+    log.info(`Found pnpm store path, setting store-dir to ${stdout}`);
+    const command = `"${pnpmPath}" config set store-dir "${stdout}"`;
+    log.info(`Running command: ${command}`);
+    let storeStdout = '';
+    let storeStderr = '';
+    try {
+      const { stdout: _stdout, stderr: _stderr } = await execAsync(command);
+      storeStdout = _stdout?.trim() || '';
+      storeStderr = _stderr?.trim() || '';
+      log.info(`store-dir set output: ${storeStdout}`);
+    } catch (error) {
+      log.warn(`Error setting pnpm store-dir: ${storeStderr}`);
+    }
+  }
+}

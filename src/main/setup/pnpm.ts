@@ -14,16 +14,16 @@ import path from 'node:path';
 import { createPathResolver } from '@johnlindquist/kit/core/utils';
 import { kitState } from '../state';
 import { invoke } from '../invoke-pty';
-import { installPnpm } from '../install';
+import { downloadAndInstallPnpm, setPnpmStoreDir } from '../install/install-pnpm';
+import { sendSplashBody } from '../install';
 
 const execFileAsync = promisify(execFile);
-const execAsync = promisify(exec);
 
 async function detectPlatform(): Promise<string> {
   log.info('Detecting platform...');
   const osType = platform();
-  if (osType === 'win32') return 'win';
-  if (osType === 'darwin') return 'macos';
+  if (osType === 'win32') { return 'win'; }
+  if (osType === 'darwin') { return 'macos'; }
   if (osType === 'linux') {
     // Check if it's glibc compatible
     try {
@@ -255,35 +255,11 @@ export const findPnpmBin = async (): Promise<string> => {
     return pnpmPath;
   }
 
-  await installPnpm();
+  sendSplashBody('Downloading pnpm...');
+  await downloadAndInstallPnpm();
+  sendSplashBody('Setting pnpm store directory...');
+  await setPnpmStoreDir(pnpmPath);
   // attempt to find the pnpm store path
-  const storePathCommand = 'pnpm store path';
-  log.info(`Running command to check for existing pnpm store: ${storePathCommand}`);
-  let stdout = '';
-  let stderr = '';
-  try {
-    const { stdout: _stdout, stderr: _stderr } = await execAsync(storePathCommand);
-    stdout = _stdout?.trim() || '';
-    stderr = _stderr?.trim() || '';
-  } catch (error) {
-    log.warn(`Error getting pnpm store path: ${stderr}`);
-  }
-  log.info(`pnpm store path: ${stdout}`);
-  if (stdout.endsWith('v3')) {
-    log.info(`Found pnpm store path, setting store-dir to ${stdout}`);
-    const command = `"${pnpmPath}" config set store-dir "${stdout}"`;
-    log.info(`Running command: ${command}`);
-    let storeStdout = '';
-    let storeStderr = '';
-    try {
-      const { stdout: _stdout, stderr: _stderr } = await execAsync(command);
-      storeStdout = _stdout?.trim() || '';
-      storeStderr = _stderr?.trim() || '';
-      log.info(`store-dir set output: ${storeStdout}`);
-    } catch (error) {
-      log.warn(`Error setting pnpm store-dir: ${storeStderr}`);
-    }
-  }
 
   return pnpmPath;
 

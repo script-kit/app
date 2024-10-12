@@ -50,11 +50,13 @@ import { createLogger } from '../shared/log-utils';
 import { createForkOptions } from './fork.options';
 import { osTmpPath } from './tmp';
 import { getAssetPath } from '../shared/assets';
-import { getVersion } from './version';
+import { getLatestAppTag, getURLFromVersion, getVersion, getVersionFromTag } from './version';
 import { getPnpmPath } from './setup/pnpm';
 import { shortcutMap } from './shortcuts';
 import { showInfo } from './info';
 import { compareCollections, logDifferences } from './compare';
+import { downloadAndInstallPnpm } from './install/install-pnpm';
+import axios from 'axios';
 
 const log = createLogger('install.ts');
 
@@ -545,61 +547,6 @@ export const cleanKit = async () => {
   }
 };
 
-const execFileAsync = promisify(execFile);
-
-export const installPnpm = async () => {
-  log.info('Starting pnpm installation...');
-  if (process.platform === 'win32') {
-    // Windows
-    log.info('Installing pnpm on Windows...');
-    const command = 'powershell.exe';
-    const args = [
-      '-NoProfile',
-      '-ExecutionPolicy',
-      'Bypass',
-      '-Command',
-      'iwr https://raw.githubusercontent.com/johnlindquist/kit/refs/heads/main/scripts/pnpm.ps1 -useb | iex',
-    ];
-
-    try {
-      const { stdout, stderr } = await execFileAsync(
-        command,
-        args,
-        {
-          env: {
-            ...process.env,
-            KIT_PNPM_HOME: kitPnpmPath(),
-          },
-        },
-      );
-
-      log.info('PNPM installation output:', stdout);
-      if (stderr) log.warn('PNPM installation stderr:', stderr);
-    } catch (error) {
-      log.error('Failed to install PNPM:', error);
-      throw error;
-    }
-  } else {
-    // macOS or Linux
-    log.info('Installing pnpm on POSIX system...');
-    const spawnCommand = 'sh';
-    const spawnArgs = [
-      '-c',
-      `
-      curl -fsSL https://raw.githubusercontent.com/johnlindquist/kit/refs/heads/main/scripts/pnpm.sh | sh -
-    `,
-    ];
-
-
-
-    // const pnpmScript = await readFile(getAssetPath('pnpm.sh'), 'utf8');
-    log.info(`Running command: ${spawnCommand} ${spawnArgs.join(' ')}`);
-    await requiredSpawnSetup(spawnCommand, spawnArgs, {
-      shell: false,
-    });
-  }
-  log.info('pnpm installation completed.');
-};
 
 export const installKitDeps = async () => {
   const pnpmPath = await getPnpmPath();
@@ -623,7 +570,19 @@ export const extractKitTar = async (file: string) => {
 };
 
 export const downloadKit = async () => {
-  const version = getVersion();
+  let appVersion = ''
+
+  if(process.env.NODE_ENV === 'development') {
+    appVersion = await getLatestAppTag();
+    log.info(`Using latest app tag: ${appVersion}`);
+  }else{
+    appVersion = getVersion();
+    log.info(`Using app version: ${appVersion}`);
+  }
+  if(appVersion?.startsWith('v')){
+    appVersion = appVersion.slice(1)
+  }
+
   const extension = 'tar.gz';
 
   /* eslint-disable no-nested-ternary */
@@ -635,24 +594,31 @@ export const downloadKit = async () => {
   // Linux x64: https://github.com/script-kit/app/releases/download/v1.40.70/Kit-SDK-Linux-1.40.70-x64.tar.gz
   // Windows x64: https://github.com/script-kit/app/releases/download/v1.40.70/Kit-SDK-macOS-1.40.70-x64.tar.gz
 
-  const kitSDK = `Kit-SDK-${uppercaseOSName}-${version}-${process.arch}.${extension}`;
+  const kitSDK = `Kit-SDK-${uppercaseOSName}-${appVersion}-${process.arch}.${extension}`;
   const file = osTmpPath(kitSDK);
-  let fallbackUrl = `https://github.com/script-kit/app/releases/download/v${version}/${kitSDK}`;
+
+  let fallbackUrl = `https://github.com/script-kit/app/releases/download/v${appVersion}/${kitSDK}`;
   if (process.env?.KIT_SDK_URL) {
     fallbackUrl = process.env.KIT_SDK_URL;
   }
 
+  log.info(`Fallback SDK URL: ${fallbackUrl}`);
+
+
   let url: string;
   try {
-    let sdkVersion = '';
+    let sdkVersion = '' as 'latest' | 'next' | string;
     try {
-      sdkVersion = await readFile(getAssetPath('sdk-version.txt'), 'utf8');
+      sdkVersion = (await readFile(getAssetPath('sdk-version.txt'), 'utf8'))?.trim();
     } catch (e) {
-      const response = await fetch('https://registry.npmjs.org/@johnlindquist/kit');
-      const data = (await response.json()) as { distTags: { next: string } };
-      sdkVersion = data['dist-tags'][process.env?.KIT_SDK_TAG || 'next'];
+      sdkVersion = await getVersionFromTag();
     }
-    url = `https://registry.npmjs.org/@johnlindquist/kit/-/kit-${sdkVersion}.tgz`;
+
+    if (sdkVersion === 'latest') {
+      sdkVersion = await getVersionFromTag();
+    }
+
+    url = getURLFromVersion(sdkVersion);
   } catch (e) {
     log.warn('No SDK version file found, using fallback URL');
     url = fallbackUrl;
@@ -667,7 +633,7 @@ export const downloadKit = async () => {
       log.green(`Attempting to download SDK from NPM: ${url}`);
       buffer = await download(url, getOptions());
     } catch (e) {
-      log.red(`Failed to download SDK from NPM`, e);
+      log.red('Failed to download SDK from NPM', e);
       log.green(`Downloading SDK from GitHub Releases: ${fallbackUrl}`);
       buffer = await download(fallbackUrl, getOptions());
     }
