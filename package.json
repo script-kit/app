@@ -89,7 +89,7 @@
     "date-fns": "^3.6.0",
     "detect-port": "^1.6.1",
     "dompurify": "^3.1.7",
-    "electron": "^33.0.0-beta.10",
+    "electron": "^33.0.0-beta.9",
     "electron-builder": "^25.1.8",
     "electron-mocks": "^1.4.2",
     "electron-vite": "^2.3.0",

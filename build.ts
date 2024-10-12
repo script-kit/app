@@ -144,7 +144,7 @@ const config: Configuration = {
   artifactName: '${productName}-macOS-${version}-${arch}.${ext}',
   productName: 'Script Kit', // Updated productName from package.json
   // buildDependenciesFromSource: false,
-  nodeGypRebuild: false,
+  nodeVersion: "20.18.0",
   directories: {
     output: './release',
     buildResources: 'build',
