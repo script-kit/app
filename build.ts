@@ -143,8 +143,7 @@ const config: Configuration = {
   appId: 'app.scriptkit', // Updated appId from package.json
   artifactName: '${productName}-macOS-${version}-${arch}.${ext}',
   productName: 'Script Kit', // Updated productName from package.json
-  // buildDependenciesFromSource: false,
-  nodeVersion: "20.18.0",
+
   directories: {
     output: './release',
     buildResources: 'build',
@@ -153,7 +152,6 @@ const config: Configuration = {
   asarUnpack,
   afterSign: platform === 'mac' ? afterSign : undefined,
   files,
-
   nsis: {
     oneClick: false,
     perMachine: false,

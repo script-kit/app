@@ -254,6 +254,7 @@ Release channel: ${releaseChannel}
 Arch: ${arch}
 Platform: ${platform}
 Node version: ${nodeVersion}
+Node ABI: ${process.versions.modules}
 Electron version: ${process.versions.electron}
 Electron Node version: ${process.versions.node}
 Electron Chromium version: ${process.versions.chrome}
