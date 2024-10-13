@@ -1099,7 +1099,7 @@ export class KitPrompt {
   };
 
   initShowPrompt = () => {
-    log.info('🎪 initShowPrompt:', this.id, this.scriptPath);
+    log.info(`${this.pid}:🎪 initShowPrompt: ${this.id} ${this.scriptPath}`);
     if (!kitState.isMac) {
       if (kitState?.kenvEnv?.KIT_PROMPT_RESTORE === 'true') {
         this.window?.restore();

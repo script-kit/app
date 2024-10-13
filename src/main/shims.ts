@@ -12,7 +12,7 @@ const platform = (process.env.ELECTRON_BUILD_PLATFORM || os.platform()) as NodeJ
 type Target = `${NodeJS.Platform}-${NodeJS.Architecture}`;
 const target: Target = `${platform}-${arch}`;
 
-const robot = '@meadowsjared/robotjs' as const;
+const robot = '@jitsi/robotjs' as const;
 const uiohook = 'uiohook-napi' as const;
 const nmp = 'node-mac-permissions' as const;
 const nwm = '@johnlindquist/node-window-manager' as const;
@@ -41,7 +41,7 @@ const exportDefaults: OptionalDependency[] = [nmp, robot];
 
 interface Shims {
   //@ts-ignore This import might not work, depending on the platform
-  [robot]: typeof import('@meadowsjared/robotjs');
+  [robot]: typeof import('@jitsi/robotjs');
   //@ts-ignore This import might not work, depending on the platform
   [uiohook]: typeof import('uiohook-napi');
   //@ts-ignore This import might not work, depending on the platform
@@ -77,7 +77,7 @@ const createShim = <T extends keyof Shims>(packageName: T, depth = 0): Shims[T] 
   ) as Shims[T];
 
 const shims: Shims = {
-  [robot]: createShim('@meadowsjared/robotjs'),
+  [robot]: createShim('@jitsi/robotjs'),
   [uiohook]: createShim('uiohook-napi'),
   [nmp]: createShim('node-mac-permissions'),
   [nwm]: createShim('@johnlindquist/node-window-manager'),

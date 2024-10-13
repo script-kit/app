@@ -25,9 +25,9 @@ export default (ref: RefObject<HTMLElement>) => {
   const [isHidden] = useAtom(isHiddenAtom);
 
   useEffect(() => {
-    if (ref?.current) {
-      log.info('🏆 Focusing', ref?.current?.tagName);
-      ref?.current.focus();
+    if (ref?.current && open && window?.pid && document.activeElement !== ref?.current) {
+      log.info(`${window?.pid}: 🏆 Focusing`, ref?.current?.tagName, document.activeElement?.tagName);
+      ref?.current?.focus();
     }
   }, [flagValue, submitted, open, inputFocus, processing, script, isHidden, promptData, ref, ref?.current]);
 

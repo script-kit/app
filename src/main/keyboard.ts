@@ -16,7 +16,7 @@ export const deleteText = async (stringToDelete = '') => {
   kitState.isTyping = true;
   for await (const k of stringToDelete.split('').reverse().join('')) {
     // await keyboard.type(Key.Backspace);
-    shims['@meadowsjared/robotjs'].keyTap('backspace');
+    shims['@jitsi/robotjs'].keyTap('backspace');
 
     log.silly(`Deleted ${k}`);
   }

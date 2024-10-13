@@ -126,10 +126,10 @@
     "vitest": "^2.1.2"
   },
   "dependencies": {
+    "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/clipboard": "^0.1.38",
     "@johnlindquist/kit": "^3.1.12",
     "@johnlindquist/node-window-manager": "^1.0.24",
-    "@meadowsjared/robotjs": "^0.6.26",
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^28.0.0",
     "@types/express": "^5.0.0",
