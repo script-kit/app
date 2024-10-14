@@ -1084,6 +1084,8 @@ const checkKit = async () => {
     setTimeout(async () => {
       log.info('Parsing scripts...');
       await cacheMainScripts();
+
+      optionalSetupScript(kitPath('cli', 'set-env-var.js'), ['KIT_NODE_PATH', kitState.KIT_NODE_PATH]);
     }, 1000);
   } catch (error) {
     log.error(`Error in verifyInstall`, error);
