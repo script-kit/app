@@ -2104,7 +2104,7 @@ const emptyFilePathBounds: FilePathBounds = {
 };
 export const filePathBoundsAtom = atom<FilePathBounds>(emptyFilePathBounds);
 
-const setAppearance = (s: Setter, theme: string) => {
+const setAppearance = debounce((s: Setter, theme: string) => {
   // Parse the theme string to extract CSS variables
   const themeObj: Record<string, string> = {};
   const lines = theme.split('}')[0].split('{')[1].trim().split(';');
@@ -2123,15 +2123,15 @@ const setAppearance = (s: Setter, theme: string) => {
 
   log.info(`Appearance set to: ${appearance}`);
   s(appearanceAtom, (appearance as Appearance) || 'dark');
-};
+}, 10);
 
 const _tempThemeAtom = atom('');
 export const tempThemeAtom = atom(
   (g) => g(_tempThemeAtom),
-  (_g, s, theme: string) => {
+  debounce((_g, s, theme: string) => {
     setAppearance(s, theme);
     s(_tempThemeAtom, theme);
-  },
+  }, 10),
 );
 
 export const modifiers = [

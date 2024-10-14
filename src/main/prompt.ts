@@ -1113,13 +1113,13 @@ export class KitPrompt {
     } else {
       const handler = (event, channel, message) => {
         if (channel === AppChannel.INPUT_READY) {
-          log.info(`Received ${AppChannel.INPUT_READY} from prompt`);
+          log.info(`${this.pid}: Received ${AppChannel.INPUT_READY} from prompt`);
           this.window.webContents.off('ipc-message', handler);
           this.focusPrompt();
         }
       };
       this.window.webContents.on('ipc-message', handler);
-      log.info(`Sending ${AppChannel.INPUT_READY} to prompt`);
+      log.info(`${this.pid}: Sending ${AppChannel.INPUT_READY} to prompt`);
       this.window.webContents.send(AppChannel.INPUT_READY);
     }
     this.sendToPrompt(Channel.SET_OPEN, true);

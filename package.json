@@ -87,7 +87,7 @@
     "date-fns": "^3.6.0",
     "detect-port": "^1.6.1",
     "dompurify": "^3.1.7",
-    "electron": "^33.0.0-beta.8",
+    "electron": "^33.0.0-beta.11",
     "electron-builder": "^25.1.8",
     "electron-mocks": "^1.4.2",
     "electron-vite": "^2.3.0",
@@ -129,7 +129,6 @@
     "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/clipboard": "^0.1.38",
     "@johnlindquist/kit": "^3.1.12",
-    "@johnlindquist/node-window-manager": "^1.0.24",
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^28.0.0",
     "@types/express": "^5.0.0",
@@ -190,11 +189,12 @@
     "@johnlindquist/mac-clipboard-listener": "^1.0.3",
     "@johnlindquist/mac-frontmost": "^1.0.7",
     "@johnlindquist/mac-panel-window": "^1.6.2",
+    "@johnlindquist/node-window-manager": "^1.0.24",
     "node-mac-permissions": "^2.4.0",
     "uiohook-napi": "^1.5.4"
   },
   "engines": {
-    "node": "20.17.0"
+    "node": "20.18.0"
   },
   "browserslist": [],
   "renovate": {
