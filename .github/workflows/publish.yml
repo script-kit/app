@@ -203,7 +203,6 @@ jobs:
           ELECTRON_BUILD_ARCH: x64
           ELECTRON_BUILD_PLATFORM: win32
         run: |
-            pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
             pnpm vite-prebuild
             pnpm exec kit ./build.ts win x64 always
@@ -211,7 +210,6 @@ jobs:
       - name: Publish windows arm64
         if: matrix.os == 'windows-2022'
         run: |
-            pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             pnpm exec kit remove-tick
             pnpm vite-prebuild
             pnpm exec kit ./build.ts win arm64 always
@@ -254,7 +252,6 @@ jobs:
         run: |
             node --version
             pnpm --version
-            pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
             pnpm vite-prebuild
             pnpm exec kit ./build.ts linux x64 always
@@ -278,7 +275,6 @@ jobs:
             export USE_SYSTEM_FPM=true
             node --version
             pnpm --version
-            pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             pnpm exec kit remove-tick
             cat ./package.json
             pnpm vite-prebuild
@@ -303,8 +299,7 @@ jobs:
           ELECTRON_BUILD_PLATFORM: darwin
 
         run: |
-            pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            pnpm i --force
+            pnpm i
             pnpm vite-prebuild
             pnpm exec kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
 
@@ -325,8 +320,7 @@ jobs:
           ELECTRON_BUILD_PLATFORM: darwin
 
         run: |
-            pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            pnpm i --force
+            pnpm i
             pnpm vite-prebuild
             pnpm exec kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
 

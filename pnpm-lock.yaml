@@ -15,7 +15,7 @@ importers:
         specifier: ^0.1.38
         version: 0.1.38
       '@johnlindquist/kit':
-        specifier: ^3.1.19
+        specifier: latest
         version: 3.1.19(@types/node@22.7.5)
       '@pnpm/exec':
         specifier: ^2.0.0
