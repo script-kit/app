@@ -43,6 +43,15 @@ MSVC v143 - VS 2022 C++ x64/x86 Spectre-mitigated libs (Latest)
 
 This got it working for me.
 
+### Linux
+
+#### arm64
+
+You will need to uninstall uiohook-napi to avoid errors:
+```bash
+npm un uiohook-napi
+```
+
 
 ### Kit SDK Notes
 

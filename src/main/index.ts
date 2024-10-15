@@ -40,6 +40,8 @@ import {
   tmpDownloadsDir,
 } from '@johnlindquist/kit/core/utils';
 
+import {setEnvVar} from "@johnlindquist/kit/api/kit"
+
 import { getPrefsDb } from '@johnlindquist/kit/core/db';
 import { debounce, throttle } from 'lodash-es';
 import { subscribeKey } from 'valtio/utils';
@@ -867,6 +869,7 @@ const checkKit = async () => {
     kitState.KIT_NODE_PATH = nodePath;
     log.info(`🚶 Assigned KIT_NODE_PATH: ${kitState.KIT_NODE_PATH}`);
     process.env.KIT_NODE_PATH = kitState.KIT_NODE_PATH;
+    setEnvVar('KIT_NODE_PATH', kitState.KIT_NODE_PATH);
     process.env.PATH = path.dirname(kitState.KIT_NODE_PATH) + path.delimiter + process.env.PATH;
     log.info(`🚶 Assigned PATH with prefixed KIT_NODE_PATH: ${process.env.PATH}`);
   }
@@ -1084,8 +1087,6 @@ const checkKit = async () => {
     setTimeout(async () => {
       log.info('Parsing scripts...');
       await cacheMainScripts();
-
-      optionalSetupScript(kitPath('cli', 'set-env-var.js'), ['KIT_NODE_PATH', kitState.KIT_NODE_PATH]);
     }, 1000);
   } catch (error) {
     log.error(`Error in verifyInstall`, error);

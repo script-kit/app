@@ -242,7 +242,7 @@ try {
         stdio: 'inherit',
       });
     }
-    execSync(`npm uninstall ${uninstallDeps.join(' ')}`, {
+    execSync(`pnpm uninstall ${uninstallDeps.join(' ')}`, {
       stdio: 'inherit',
     });
   }
