@@ -141,6 +141,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.18.0
+          cache: 'pnpm'
 
       - name: Checkout git repo
         uses: actions/checkout@v4
@@ -199,7 +200,7 @@ jobs:
         run: |
             pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
-            pnpm run vite-prebuild
+            pnpm vite-prebuild
             pnpm exec kit ./build.ts win x64 always
 
       - name: Publish windows arm64
@@ -207,7 +208,7 @@ jobs:
         run: |
             pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             pnpm exec kit remove-tick
-            pnpm run vite-prebuild
+            pnpm vite-prebuild
             pnpm exec kit ./build.ts win arm64 always
         env:
           # These values are used for auto updates signing
@@ -250,7 +251,7 @@ jobs:
             pnpm --version
             pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             cat ./package.json
-            pnpm run vite-prebuild
+            pnpm vite-prebuild
             pnpm exec kit ./build.ts linux x64 always
 
       - name: Publish linux arm64
@@ -275,7 +276,7 @@ jobs:
             pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             pnpm exec kit remove-tick
             cat ./package.json
-            pnpm run vite-prebuild
+            pnpm vite-prebuild
             which npm
             pnpm --version
             pnpm exec kit ./build.ts linux arm64 always
@@ -299,7 +300,7 @@ jobs:
         run: |
             pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             pnpm i --force
-            pnpm run vite-prebuild
+            pnpm vite-prebuild
             pnpm exec kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
 
       - name: Publish mac arm64
@@ -321,7 +322,7 @@ jobs:
         run: |
             pnpm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             pnpm i --force
-            pnpm run vite-prebuild
+            pnpm vite-prebuild
             pnpm exec kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml
