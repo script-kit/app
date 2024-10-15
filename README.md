@@ -6,9 +6,16 @@ The companion app to Script Kit
 
 ## Development
 
+Install pnpm:
+
+[https://pnpm.io/installation](https://pnpm.io/installation)
+
+
+Run the following:
+
 ```
-npm i
-npm run dev
+pnpm i
+pnpm dev
 ```
 
 ### Reloading
