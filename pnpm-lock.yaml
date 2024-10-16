@@ -16,13 +16,13 @@ importers:
         version: 0.1.38
       '@johnlindquist/kit':
         specifier: latest
-        version: 3.1.19(@types/node@22.7.5)
+        version: 3.1.21
       '@pnpm/exec':
         specifier: ^2.0.0
         version: 2.0.0
       '@rollup/plugin-commonjs':
-        specifier: ^28.0.0
-        version: 28.0.0(rollup@4.24.0)
+        specifier: ^28.0.1
+        version: 28.0.1(rollup@4.24.0)
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.0
@@ -177,8 +177,8 @@ importers:
         specifier: 5.0.0
         version: 5.0.0
       valtio:
-        specifier: ^2.0.0
-        version: 2.0.0(@types/react@18.3.11)(react@18.3.1)
+        specifier: ^2.1.0
+        version: 2.1.0(@types/react@18.3.11)(react@18.3.1)
       xstate:
         specifier: ^5.18.2
         version: 5.18.2
@@ -236,8 +236,8 @@ importers:
         specifier: ^10.4.0
         version: 10.4.0
       '@testing-library/jest-dom':
-        specifier: ^6.5.0
-        version: 6.5.0
+        specifier: ^6.6.0
+        version: 6.6.0
       '@testing-library/react':
         specifier: ^16.0.1
         version: 16.0.1(@testing-library/dom@10.4.0)(@types/react-dom@18.3.1)(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1169,8 +1169,8 @@ packages:
   '@johnlindquist/kit-internal@1.13.5':
     resolution: {integrity: sha512-+49s4Y8WLTG+bZyuJ+i4MFab9/6yDabesGrnEuum+K9deYEXbCGuCJGfFIwAoShNwaVxXeWvJQEwnRQbtvwZyQ==}
 
-  '@johnlindquist/kit@3.1.19':
-    resolution: {integrity: sha512-g02nrswfEI4tNjFZEXUTpHOHtizhfUYgHnAI5URZfuuxBTX8y8iYJWLaD5L6EjTb9CNXiWjKpeFroaKm18epDg==}
+  '@johnlindquist/kit@3.1.21':
+    resolution: {integrity: sha512-LTzbsRozXv8ZtqTx2XA9Je0zfNqR+F4LmRitebS3dvvXp1h+cPrkpNKTsSCo0f2tNf2uliRgRrqsV5sg10oQ0A==}
     engines: {node: '>=14.8.0'}
     hasBin: true
 
@@ -1363,8 +1363,8 @@ packages:
     peerDependencies:
       react: '>=18'
 
-  '@rollup/plugin-commonjs@28.0.0':
-    resolution: {integrity: sha512-BJcu+a+Mpq476DMXG+hevgPSl56bkUoi88dKT8t3RyUp8kGuOh+2bU8Gs7zXDlu+fyZggnJ+iOBGrb/O1SorYg==}
+  '@rollup/plugin-commonjs@28.0.1':
+    resolution: {integrity: sha512-+tNWdlWKbpB3WgBN7ijjYkq9X5uhjmcvyjEght4NmH5fAU++zfQzAJ6wumLS+dNcvwEZhKx2Z+skY8m7v0wGSA==}
     engines: {node: '>=16.0.0 || 14 >= 14.17'}
     peerDependencies:
       rollup: ^2.68.0||^3.0.0||^4.0.0
@@ -1521,8 +1521,8 @@ packages:
     resolution: {integrity: sha512-pemlzrSESWbdAloYml3bAJMEfNh1Z7EduzqPKprCH5S341frlpYnUEW0H72dLxa6IsYr+mPno20GiSm+h9dEdQ==}
     engines: {node: '>=18'}
 
-  '@testing-library/jest-dom@6.5.0':
-    resolution: {integrity: sha512-xGGHpBXYSHUUr6XsKBfs85TWlYKpTc37cSBBVrXcib2MkHLboWlkClhWF37JKlDb9KEq3dHs+f2xR7XJEWGBxA==}
+  '@testing-library/jest-dom@6.6.0':
+    resolution: {integrity: sha512-Y76dmd7C85xekWqylJqRmO6lr83cdVprTs0muSvkXr6M73auYK5OvZMc3tKe1F7wMFdzfeBCwVbkoGrRKWb+fg==}
     engines: {node: '>=14', npm: '>=6', yarn: '>=1'}
 
   '@testing-library/react@16.0.1':
@@ -2001,6 +2001,11 @@ packages:
 
   acorn@8.12.1:
     resolution: {integrity: sha512-tcpGyI9zbizT9JbV6oYE477V6mTlXvvi0T0G3SNIYE2apm/G5huBa1+K89VGeovbg+jycCrfhl3ADxErOuO6Jg==}
+    engines: {node: '>=0.4.0'}
+    hasBin: true
+
+  acorn@8.13.0:
+    resolution: {integrity: sha512-8zSiw54Oxrdym50NlZ9sUusyO1Z1ZchgRLWRaK6c86XJFClyCgFKetdowBg5bKxyp/u+CDBJG4Mpp0m3HLZl9w==}
     engines: {node: '>=0.4.0'}
     hasBin: true
 
@@ -3984,9 +3989,6 @@ packages:
     resolution: {integrity: sha512-zzlgaYnHMIEgHRrfC7x0Qp0Ylhw/sHpM6MHXeVBTYIsvGf5GpbnClB+Q6rAPdn+0gd2oZZIo6Tj3EaWrt4VhDQ==}
     engines: {node: '>8.0.0'}
 
-  get-tsconfig@4.8.1:
-    resolution: {integrity: sha512-k9PN+cFBmaLWtVz29SkUoqU5O0slLuHJXt/2P+tMVFT+phsSGXGkp9t3rQIqdz0e+06EHNGs3oM6ZX1s2zHxRg==}
-
   getpass@0.1.7:
     resolution: {integrity: sha512-0fzj9JxOLfJ+XGLhR8ze3unN0KZCgZwiSSDz168VERjK8Wl8kVSdcu2kspd4s4wtAa1y/qrVRiAA0WclVsu0ng==}
 
@@ -5692,6 +5694,10 @@ packages:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
 
+  picomatch@4.0.2:
+    resolution: {integrity: sha512-M7BAV6Rlcy5u+m6oPhAPFgJTzAioX/6B0DxyvDlo9l8+T3nLKbrczg2WLUyzd45L8RqfUMyGPzekbMvX2Ldkwg==}
+    engines: {node: '>=12'}
+
   pify@2.3.0:
     resolution: {integrity: sha512-udgsAY+fTnvv7kI7aaxbqwWNb0AHiB0qBO89PZKPkoTmGOgdbrHDKD+0B2X4uTfJ/FT1R09r9gTsjUjNJotuog==}
     engines: {node: '>=0.10.0'}
@@ -6123,9 +6129,6 @@ packages:
   resolve-from@5.0.0:
     resolution: {integrity: sha512-qYg9KP24dD5qka9J47d0aVky0N+b4fTU89LN9iDnjB5waksiC49rvMB0PrUJQGoTmH50XPiqOvAjDfaijGxYZw==}
     engines: {node: '>=8'}
-
-  resolve-pkg-maps@1.0.0:
-    resolution: {integrity: sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw==}
 
   resolve.exports@2.0.2:
     resolution: {integrity: sha512-X2UW6Nw3n/aMgDVy+0rSqgHlv39WZAlZrXCdnbyEiKm17DSqHX4MmQMaST3FbeWR5FTuRcUwYAziZajji0Y7mg==}
@@ -6874,11 +6877,6 @@ packages:
     peerDependencies:
       typescript: '>=2.8.0 || >= 3.2.0-dev || >= 3.3.0-dev || >= 3.4.0-dev || >= 3.5.0-dev || >= 3.6.0-dev || >= 3.6.0-beta || >= 3.7.0-dev || >= 3.7.0-beta'
 
-  tsx@4.19.1:
-    resolution: {integrity: sha512-0flMz1lh74BR4wOvBjuh9olbnwqCPc35OOlfyzHba0Dc+QNUeWX/Gq2YTbnwcWPO3BMd8fkzRVrHcsR+a7z7rA==}
-    engines: {node: '>=18.0.0'}
-    hasBin: true
-
   tty-browserify@0.0.1:
     resolution: {integrity: sha512-C3TaO7K81YvjCgQH9Q1S3R3P3BtN3RIM8n+OvX4il1K1zgE8ZhI0op7kClgkxtutIE8hQrcrHBXvIheqKUUCxw==}
 
@@ -7076,8 +7074,8 @@ packages:
     resolution: {integrity: sha512-kiGUalWN+rgBJ/1OHZsBtU4rXZOfj/7rKQxULKlIzwzQSvMJUUNgPwJEEh7gU6xEVxC0ahoOBvN2YI8GH6FNgA==}
     engines: {node: '>=10.12.0'}
 
-  valtio@2.0.0:
-    resolution: {integrity: sha512-SzUU5UUK/vBRfHWXihwkJE55YNj8zhOkzxPOexcz0xIIT6Oux5VLynCmzyME2bYuEWcktW2NTaaLbpUydEsHiw==}
+  valtio@2.1.0:
+    resolution: {integrity: sha512-UryxkWilm5huamW8vNAvj7KLodPgSN5EVWcetwzcy8pVyc27tQ+RqSRmJ0zx/Cq219O7yqaNl12GcCSujoLDUw==}
     engines: {node: '>=12.20.0'}
     peerDependencies:
       '@types/react': '>=18.0.0'
@@ -7114,37 +7112,6 @@ packages:
     resolution: {integrity: sha512-5QJKBDc+gNYVqL/skgFAP81Yuzo9R+EAf19d+EtsMF/i8kFUpNi3J/H01QD3Oo8zBQn+NzoCIFkpPLynoOzaJg==}
     peerDependencies:
       vite: '>=2.0.0'
-
-  vite@5.4.8:
-    resolution: {integrity: sha512-FqrItQ4DT1NC4zCUqMB4c4AZORMKIa0m8/URVCZ77OZ/QSNeJ54bU1vrFADbDsuwfIPcgknRkmqakQcgnL4GiQ==}
-    engines: {node: ^18.0.0 || >=20.0.0}
-    hasBin: true
-    peerDependencies:
-      '@types/node': ^18.0.0 || >=20.0.0
-      less: '*'
-      lightningcss: ^1.21.0
-      sass: '*'
-      sass-embedded: '*'
-      stylus: '*'
-      sugarss: '*'
-      terser: ^5.4.0
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
-      less:
-        optional: true
-      lightningcss:
-        optional: true
-      sass:
-        optional: true
-      sass-embedded:
-        optional: true
-      stylus:
-        optional: true
-      sugarss:
-        optional: true
-      terser:
-        optional: true
 
   vite@5.4.9:
     resolution: {integrity: sha512-20OVpJHh0PAM0oSOELa5GaZNWeDjcAvQjGXy2Uyr+Tp+/D2/Hdz6NLgpJLsarPTA2QJ6v8mX2P1ZfbsSKvdMkg==}
@@ -8130,7 +8097,7 @@ snapshots:
 
   '@johnlindquist/kit-internal@1.13.5': {}
 
-  '@johnlindquist/kit@3.1.19(@types/node@22.7.5)':
+  '@johnlindquist/kit@3.1.21':
     dependencies:
       '@johnlindquist/globals': 1.16.4
       '@johnlindquist/kit-internal': 1.13.5
@@ -8143,8 +8110,8 @@ snapshots:
       '@octokit/plugin-throttling': 9.3.2(@octokit/core@6.1.2)
       '@types/shelljs': 0.8.15
       '@typescript/lib-dom': '@johnlindquist/no-dom@1.0.2'
-      acorn: 8.12.1
-      acorn-typescript: 1.4.13(acorn@8.12.1)
+      acorn: 8.13.0
+      acorn-typescript: 1.4.13(acorn@8.13.0)
       advanced-calculator: 1.1.1
       body-parser: 1.20.3
       bottleneck: 2.19.5
@@ -8168,24 +8135,13 @@ snapshots:
       slugify: 1.6.6
       suggestion: 2.1.2
       tmp-promise: 3.0.3
-      tsx: 4.19.1
-      typescript: 5.6.3
       untildify: 5.0.0
-      vite: 5.4.8(@types/node@22.7.5)
       zx: 8.1.9
     optionalDependencies:
       file-icon: 5.1.1
       get-app-icon: 1.0.1
     transitivePeerDependencies:
-      - '@types/node'
-      - less
-      - lightningcss
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
       - supports-color
-      - terser
 
   '@johnlindquist/mac-clipboard-listener@1.0.3':
     dependencies:
@@ -8399,15 +8355,15 @@ snapshots:
       '@react-hook/passive-layout-effect': 1.2.1(react@18.3.1)
       react: 18.3.1
 
-  '@rollup/plugin-commonjs@28.0.0(rollup@4.24.0)':
+  '@rollup/plugin-commonjs@28.0.1(rollup@4.24.0)':
     dependencies:
       '@rollup/pluginutils': 5.1.2(rollup@4.24.0)
       commondir: 1.0.1
       estree-walker: 2.0.2
-      fdir: 6.4.0(picomatch@2.3.1)
+      fdir: 6.4.0(picomatch@4.0.2)
       is-reference: 1.2.1
       magic-string: 0.30.12
-      picomatch: 2.3.1
+      picomatch: 4.0.2
     optionalDependencies:
       rollup: 4.24.0
 
@@ -8535,7 +8491,7 @@ snapshots:
       lz-string: 1.5.0
       pretty-format: 27.5.1
 
-  '@testing-library/jest-dom@6.5.0':
+  '@testing-library/jest-dom@6.6.0':
     dependencies:
       '@adobe/css-tools': 4.4.0
       aria-query: 5.3.2
@@ -9117,9 +9073,9 @@ snapshots:
       acorn-walk: 7.2.0
       xtend: 4.0.2
 
-  acorn-typescript@1.4.13(acorn@8.12.1):
+  acorn-typescript@1.4.13(acorn@8.13.0):
     dependencies:
-      acorn: 8.12.1
+      acorn: 8.13.0
 
   acorn-walk@7.2.0: {}
 
@@ -9128,6 +9084,8 @@ snapshots:
   acorn@7.4.1: {}
 
   acorn@8.12.1: {}
+
+  acorn@8.13.0: {}
 
   address@1.2.2: {}
 
@@ -11398,9 +11356,9 @@ snapshots:
     dependencies:
       pend: 1.2.0
 
-  fdir@6.4.0(picomatch@2.3.1):
+  fdir@6.4.0(picomatch@4.0.2):
     optionalDependencies:
-      picomatch: 2.3.1
+      picomatch: 4.0.2
 
   file-entry-cache@8.0.0:
     dependencies:
@@ -11678,10 +11636,6 @@ snapshots:
       get-intrinsic: 1.2.4
 
   get-system-fonts@2.0.2: {}
-
-  get-tsconfig@4.8.1:
-    dependencies:
-      resolve-pkg-maps: 1.0.0
 
   getpass@0.1.7:
     dependencies:
@@ -13596,6 +13550,8 @@ snapshots:
 
   picomatch@2.3.1: {}
 
+  picomatch@4.0.2: {}
+
   pify@2.3.0: {}
 
   pify@3.0.0: {}
@@ -14064,8 +14020,6 @@ snapshots:
   resolve-from@4.0.0: {}
 
   resolve-from@5.0.0: {}
-
-  resolve-pkg-maps@1.0.0: {}
 
   resolve.exports@2.0.2: {}
 
@@ -14921,13 +14875,6 @@ snapshots:
       tslib: 1.14.1
       typescript: 5.6.3
 
-  tsx@4.19.1:
-    dependencies:
-      esbuild: 0.24.0
-      get-tsconfig: 4.8.1
-    optionalDependencies:
-      fsevents: 2.3.3
-
   tty-browserify@0.0.1: {}
 
   tunnel-agent@0.6.0:
@@ -15105,7 +15052,7 @@ snapshots:
       '@types/istanbul-lib-coverage': 2.0.6
       convert-source-map: 2.0.0
 
-  valtio@2.0.0(@types/react@18.3.11)(react@18.3.1):
+  valtio@2.1.0(@types/react@18.3.11)(react@18.3.1):
     dependencies:
       proxy-compare: 3.0.0
     optionalDependencies:
@@ -15159,15 +15106,6 @@ snapshots:
       vite: 5.4.9(@types/node@22.7.5)
     transitivePeerDependencies:
       - supports-color
-
-  vite@5.4.8(@types/node@22.7.5):
-    dependencies:
-      esbuild: 0.21.5
-      postcss: 8.4.47
-      rollup: 4.24.0
-    optionalDependencies:
-      '@types/node': 22.7.5
-      fsevents: 2.3.3
 
   vite@5.4.9(@types/node@22.7.5):
     dependencies:
