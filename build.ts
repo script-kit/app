@@ -230,14 +230,14 @@ try {
   console.log(`Removing external dependencies: ${uninstallDeps.join(', ')} before @electron/rebuild kicks in`);
   console.log(process.platform, process.arch, process.cwd());
   if (uninstallDeps.length > 0) {
-    for (const dep of uninstallDeps) {
 
-      const command = `pnpm remove -O "${dep}"`;
+
+      const command = `pnpm remove -O "${uninstallDeps.join(' ')}"`;
       console.log(`Running: ${command}`);
       execSync(command, {
         stdio: 'inherit',
       });
-    }
+
   }
 
   // const { stdout, stderr } = await exec(`npx electron-rebuild`);

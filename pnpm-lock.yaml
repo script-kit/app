@@ -47,6 +47,12 @@ importers:
       '@xterm/xterm':
         specifier: ^5.5.0
         version: 5.5.0
+      acorn:
+        specifier: ^8.13.0
+        version: 8.13.0
+      acorn-typescript:
+        specifier: ^1.4.13
+        version: 1.4.13(acorn@8.13.0)
       auto-launch:
         specifier: ^5.0.6
         version: 5.0.6
@@ -1996,11 +2002,6 @@ packages:
 
   acorn@7.4.1:
     resolution: {integrity: sha512-nQyp0o1/mNdbTO1PO6kHkwSrmgZ0MT/jCCpNiwbUjGoRN4dlBhqJtoQuCnEOKzgTVwg0ZWiCoQy6SxMebQVh8A==}
-    engines: {node: '>=0.4.0'}
-    hasBin: true
-
-  acorn@8.12.1:
-    resolution: {integrity: sha512-tcpGyI9zbizT9JbV6oYE477V6mTlXvvi0T0G3SNIYE2apm/G5huBa1+K89VGeovbg+jycCrfhl3ADxErOuO6Jg==}
     engines: {node: '>=0.4.0'}
     hasBin: true
 
@@ -9063,9 +9064,9 @@ snapshots:
       balanced-match: 0.2.1
       dot-parts: 1.0.1
 
-  acorn-jsx@5.3.2(acorn@8.12.1):
+  acorn-jsx@5.3.2(acorn@8.13.0):
     dependencies:
-      acorn: 8.12.1
+      acorn: 8.13.0
 
   acorn-node@1.8.2:
     dependencies:
@@ -9082,8 +9083,6 @@ snapshots:
   acorn@5.7.4: {}
 
   acorn@7.4.1: {}
-
-  acorn@8.12.1: {}
 
   acorn@8.13.0: {}
 
@@ -11164,8 +11163,8 @@ snapshots:
 
   espree@10.2.0:
     dependencies:
-      acorn: 8.12.1
-      acorn-jsx: 5.3.2(acorn@8.12.1)
+      acorn: 8.13.0
+      acorn-jsx: 5.3.2(acorn@8.13.0)
       eslint-visitor-keys: 4.1.0
 
   esprima-fb@3001.1.0-dev-harmony-fb: {}
@@ -14999,7 +14998,7 @@ snapshots:
 
   unplugin@1.14.1:
     dependencies:
-      acorn: 8.12.1
+      acorn: 8.13.0
       webpack-virtual-modules: 0.6.2
 
   untildify@3.0.3: {}
@@ -15093,7 +15092,7 @@ snapshots:
 
   vite-plugin-commonjs-externals@0.1.4(vite@5.4.9(@types/node@22.7.5)):
     dependencies:
-      acorn: 8.12.1
+      acorn: 8.13.0
       es-module-lexer: 1.5.4
       magic-string: 0.30.12
       vite: 5.4.9(@types/node@22.7.5)
