@@ -557,6 +557,14 @@ export const installKitDeps = async () => {
       CI: 'true',
     },
   });
+
+  await requiredSpawnSetup(pnpmPath, ['i', '-D', 'vite', 'typescript'], {
+    cwd: kitPath(),
+    env: {
+      ...process.env,
+      CI: 'true',
+    },
+  });
 };
 
 export const extractKitTar = async (file: string) => {

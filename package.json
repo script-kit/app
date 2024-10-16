@@ -103,7 +103,7 @@
     "lodash-es": "^4.17.21",
     "memoize-one": "^6.0.0",
     "million": "^3.1.11",
-    "node-abi": "^3.70.0",
+    "node-abi": "^3.71.0",
     "patch-package": "^8.0.0",
     "petite-vue": "^0.4.1",
     "prettier": "^3.3.3",
