@@ -85,6 +85,8 @@ function detectArch(): string {
   return arch
 }
 
+const PNPM_VERSION = '9.12.2';
+
 export async function downloadAndInstallPnpm(): Promise<void> {
   const platform = detectPlatform()
   const arch = detectArch()
@@ -96,7 +98,7 @@ export async function downloadAndInstallPnpm(): Promise<void> {
 
   let version: string
   const preferredVersion =
-    process.env.PNPM_VERSION || "latest"
+    process.env?.PNPM_VERSION || PNPM_VERSION
 
   if (versionData["dist-tags"][preferredVersion]) {
     version = versionData["dist-tags"][preferredVersion]

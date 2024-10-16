@@ -229,7 +229,10 @@ try {
   console.log(`Removing external dependencies: ${uninstallDeps.join(', ')} before @electron/rebuild kicks in`);
   if (uninstallDeps.length > 0) {
     for (const dep of uninstallDeps) {
-      execSync(`pnpm remove ${dep}`, {
+
+      const command = `pnpm remove ${dep}`;
+      console.log(`Running: ${command}`);
+      execSync(command, {
         stdio: 'inherit',
       });
     }
