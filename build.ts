@@ -225,17 +225,13 @@ switch (platform) {
 
 console.log('Building with config');
 try {
-  const pruneCommand = `pnpm store prune`;
-  console.log(`Running: ${pruneCommand}`);
-  execSync(pruneCommand, {
-    stdio: 'inherit',
-  });
+
   const uninstallDeps = external();
   console.log(`Removing external dependencies: ${uninstallDeps.join(', ')} before @electron/rebuild kicks in`);
   if (uninstallDeps.length > 0) {
     for (const dep of uninstallDeps) {
 
-      const command = `pnpm remove ${dep}`;
+      const command = `pnpm remove -O ${dep}`;
       console.log(`Running: ${command}`);
       execSync(command, {
         stdio: 'inherit',
