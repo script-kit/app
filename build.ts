@@ -225,24 +225,6 @@ switch (platform) {
 
 console.log('Building with config');
 try {
-  const uninstallDeps = external();
-  console.log(`Removing external dependencies: ${uninstallDeps.join(', ')} before @electron/rebuild kicks in`);
-  if (uninstallDeps.length > 0) {
-    for (const dep of uninstallDeps) {
-
-      const command = `pnpm remove ${dep} --ignore-scripts`;
-      console.log(`Running: ${command}`);
-      execSync(command, {
-        stdio: 'inherit',
-      });
-    }
-  }
-
-  // const { stdout, stderr } = await exec(`npx electron-rebuild`);
-  // console.log({
-  //   stdout,
-  //   stderr,
-  // });
   const result = await build({
     config,
     publish,
