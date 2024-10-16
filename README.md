@@ -4,7 +4,7 @@ The companion app to Script Kit
 
 [https://scriptkit.com](https://scriptkit.com)
 
-## Development
+## Getting Started
 
 Install pnpm:
 
@@ -29,7 +29,7 @@ If you make a change in the `renderer`, it should attempt to hot reload. If that
 You'll have to Google for your specific issues. On mac, it's usually update xcode command line tools.
 
 
-## Installation
+### System Specific Notes
 
 ### Mac - Homebrew Users
 
@@ -47,8 +47,6 @@ Putting this here in case anyone has trouble with node-gyp while setting up a de
 Desktop Development with C++ workload
 MSVC v143 - VS 2022 C++ x64/x86 build tools (Latest)
 MSVC v143 - VS 2022 C++ x64/x86 Spectre-mitigated libs (Latest)
-
-This got it working for me.
 
 ### Linux
 
