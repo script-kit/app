@@ -1,6 +1,4 @@
-import '@johnlindquist/kit';
 import { external } from './src/main/shims';
-import { readJSON, writeJSON } from 'fs-extra';
 
 console.log('Building with config');
 try {
