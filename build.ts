@@ -230,7 +230,7 @@ try {
   if (uninstallDeps.length > 0) {
     for (const dep of uninstallDeps) {
 
-      const command = `pnpm remove ${dep}`;
+      const command = `pnpm remove ${dep} --ignore-scripts`;
       console.log(`Running: ${command}`);
       execSync(command, {
         stdio: 'inherit',
