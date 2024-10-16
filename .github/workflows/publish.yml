@@ -191,14 +191,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Exclude platform specific externals
-        if: needs.tag.outputs.kit_tag == 'latest'
-        uses: johnlindquist/kit-action@main
-        with:
-          script: ./build-exclude-platform-externals.ts
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Publish windows x64
         if: matrix.os == 'windows-latest'
         env:
