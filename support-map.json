@@ -1,0 +1,27 @@
+{
+  "supportMap": {
+    "win32-arm64": ["@jitsi/robotjs", "@johnlindquist/node-window-manager"],
+    "win32-x64": ["@jitsi/robotjs", "uiohook-napi", "@johnlindquist/node-window-manager"],
+    "darwin-arm64": [
+      "@jitsi/robotjs",
+      "uiohook-napi",
+      "node-mac-permissions",
+      "@johnlindquist/node-window-manager",
+      "@johnlindquist/mac-clipboard-listener",
+      "@johnlindquist/mac-frontmost",
+      "@johnlindquist/mac-panel-window"
+    ],
+    "darwin-x64": [
+      "@jitsi/robotjs",
+      "uiohook-napi",
+      "node-mac-permissions",
+      "@johnlindquist/node-window-manager",
+      "@johnlindquist/mac-clipboard-listener",
+      "@johnlindquist/mac-frontmost",
+      "@johnlindquist/mac-panel-window"
+    ],
+    "linux-arm64": ["@jitsi/robotjs"],
+    "linux-x64": ["@jitsi/robotjs", "uiohook-napi"]
+  },
+  "exportDefaults": ["node-mac-permissions", "@jitsi/robotjs"]
+}
