@@ -232,7 +232,7 @@ try {
   if (uninstallDeps.length > 0) {
 
 
-      const command = `pnpm remove -O "${uninstallDeps.join(' ')}"`;
+      const command = `pnpm remove -O ${uninstallDeps.join(' ')}`;
       console.log(`Running: ${command}`);
       execSync(command, {
         stdio: 'inherit',
