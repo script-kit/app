@@ -159,9 +159,9 @@ const config: Configuration = {
     shortcutName: 'Script Kit',
   },
   mac: {
-    // notarize: {
-    //   teamId: '9822B7V7MD',
-    // },
+    notarize: {
+      teamId: '9822B7V7MD',
+    },
     icon: 'assets/icons/mac/icon.icns',
     category: 'public.app-category.productivity', // Keep as is or update based on package.json if needed
     hardenedRuntime: true,
