@@ -2,10 +2,11 @@ import '@johnlindquist/kit';
 import { execSync } from 'node:child_process';
 import fsExtra from 'fs-extra';
 import { external, include } from './src/main/shims';
-
+import { rimraf } from 'rimraf';
 import { Arch, Platform, build } from 'electron-builder';
 import type { AfterPackContext, Configuration, PackagerOptions } from 'electron-builder';
 import packageJson from './package.json';
+import path from 'path';
 
 let platform: 'linux' | 'mac' | 'win';
 let arch: 'arm64' | 'x64';
@@ -221,6 +222,9 @@ switch (platform) {
   case 'linux':
     targets = Platform.LINUX.createTarget(['AppImage', 'deb', 'rpm'], archFlag);
     break;
+
+  default:
+    throw new Error(`Unsupported platform: ${platform}`);
 }
 
 console.log('Building with config');
@@ -230,14 +234,14 @@ try {
   console.log(`Removing external dependencies: ${uninstallDeps.join(', ')} before @electron/rebuild kicks in`);
   console.log(process.platform, process.arch, process.cwd());
   if (uninstallDeps.length > 0) {
-
-
-      const command = `pnpm remove -O ${uninstallDeps.join(' ')}`;
-      console.log(`Running: ${command}`);
-      execSync(command, {
-        stdio: 'inherit',
-      });
-
+    for (const dep of uninstallDeps) {
+      const pkgPath = path.join(process.cwd(), 'node_modules', dep);
+      console.log(`Removing ${pkgPath}`);
+      await rimraf(pkgPath);
+      const pkg = await fsExtra.readJson('package.json');
+      delete pkg.optionalDependencies[dep];
+      await fsExtra.writeJson('package.json', pkg);
+    }
   }
 
   // const { stdout, stderr } = await exec(`npx electron-rebuild`);
