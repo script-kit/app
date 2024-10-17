@@ -732,10 +732,10 @@ export const parseEnvFile = debounce(async () => {
 }, 100);
 
 export const restartWatchers = debounce(
-  async () => {
+  async (reason: string) => {
     log.info(`
 
-    🔄 Restarting watchers ----------------------------------------------------------------------
+    🔄 Restarting watchers because: ${reason} ----------------------------------------------------------------------
 
 `);
     await teardownWatchers();
@@ -762,7 +762,7 @@ export const setupWatchers = async () => {
   pingInterval = setInterval(async () => {
     // log.green('🏓 Updating ping.txt');
     if (kitState.waitingForPing) {
-      await restartWatchers();
+      await restartWatchers('ping.txt');
       return;
     }
     const pingPath = kitPath('ping.txt');
@@ -779,6 +779,7 @@ export const setupWatchers = async () => {
   }, 60000); // 60000 milliseconds = 1 minute
 
   watchers = startWatching(async (eventName: WatchEvent, filePath: string, source) => {
+    log.info(`🔄 ${eventName} ${filePath} from ${source}`);
     // if (!filePath.match(/\.(ts|js|json|txt|env)$/)) return;
     const { base, dir, name } = path.parse(filePath);
 
@@ -794,9 +795,8 @@ export const setupWatchers = async () => {
       return;
     }
 
-    if (base === name && (name === 'scriptlets' || name === 'scripts' || name === 'snippets')) {
-      log.info(`${base} changed. Restarting all watchers`);
-      await restartWatchers();
+    if (kitState.ready && base === name && (name === 'scriptlets' || name === 'scripts' || name === 'snippets')) {
+      await restartWatchers(`${filePath}: ${eventName}`);
       return;
     }
 

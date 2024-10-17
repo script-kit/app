@@ -4,6 +4,7 @@ import chokidar from 'chokidar';
 import { kitState } from './state';
 import { createLogger } from '../shared/log-utils';
 import { kitChokidarPath, kenvChokidarPath, pathChokidarResolve, slash } from './path-utils';
+import { readdirSync } from 'node:fs';
 import os from 'node:os';
 
 const log = createLogger('chokidar.ts');
@@ -35,8 +36,10 @@ export const startWatching = (callback: WatcherCallback) => {
   );
 
   kenvScriptsWatcher.on('all', callback);
+
   const kenvsWatcher = chokidar.watch(kenvChokidarPath('kenvs'), {
     ignoreInitial: kitState.ignoreInitial,
+    followSymlinks: true,
     depth: 0,
     ignored: (filePath) => {
       const relativePath = filePath.slice(kenvChokidarPath('kenvs').length);
@@ -44,7 +47,12 @@ export const startWatching = (callback: WatcherCallback) => {
       return depth > 1;
     },
   });
-  kenvsWatcher.on('addDir', (filePath) => {
+
+  const kenvsWatcherCallback = (filePath) => {
+    const { name } = path.parse(filePath);
+    if (name === 'kenvs') {
+      return;
+    }
     log.info(`🕵️‍♀️ Detected new dir in "kenvs": ${filePath}`);
 
     const globs = [
@@ -58,7 +66,17 @@ export const startWatching = (callback: WatcherCallback) => {
       log.info(`Adding globs: ${globs}`);
       kenvScriptsWatcher.add(globs);
     }, 1000);
-  });
+  }
+  
+  kenvsWatcher.on('addDir', kenvsWatcherCallback);
+
+
+  const watchedKenvs = readdirSync(kenvChokidarPath('kenvs'));
+  for(const kenv of watchedKenvs) {
+    const kenvPath = pathChokidarResolve(kenvChokidarPath('kenvs', kenv));
+    log.info(`🕵️‍♀️ Watching ${kenvPath}`);
+    kenvsWatcherCallback(kenvPath);
+  }
 
   kenvsWatcher.on('unlinkDir', (filePath) => {
     log.info(`🕵️‍♂️ Detected removed dir in "kenvs": ${filePath}`);
