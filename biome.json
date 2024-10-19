@@ -54,7 +54,8 @@
         "noConsoleLog": "off",
         "noExplicitAny": "off",
         "noAssignInExpressions": "off",
-        "noImplicitAnyLet": "off"
+        "noImplicitAnyLet": "off",
+        "noReactSpecificProps": "off"
       },
       "security": {
         "noDangerouslySetInnerHtml": "off"

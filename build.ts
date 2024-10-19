@@ -6,7 +6,7 @@ import { rimraf } from 'rimraf';
 import { Arch, Platform, build } from 'electron-builder';
 import type { AfterPackContext, Configuration, PackagerOptions } from 'electron-builder';
 import packageJson from './package.json';
-import path from 'path';
+import path from 'node:path';
 
 let platform: 'linux' | 'mac' | 'win';
 let arch: 'arm64' | 'x64';
@@ -233,15 +233,19 @@ try {
   const uninstallDeps = external();
   console.log(`Removing external dependencies: ${uninstallDeps.join(', ')} before @electron/rebuild kicks in`);
   console.log(process.platform, process.arch, process.cwd());
+
+
   if (uninstallDeps.length > 0) {
+    const pkg = await fsExtra.readJson('package.json');
+    console.log(`Optional dependencies before: ${JSON.stringify(pkg.optionalDependencies, null, 2)}`);
     for (const dep of uninstallDeps) {
       const pkgPath = path.join(process.cwd(), 'node_modules', dep);
       console.log(`Removing ${pkgPath}`);
       await rimraf(pkgPath);
-      const pkg = await fsExtra.readJson('package.json');
       delete pkg.optionalDependencies[dep];
-      await fsExtra.writeJson('package.json', pkg);
     }
+    console.log(`Optional dependencies after: ${JSON.stringify(pkg.optionalDependencies, null, 2)}`);
+    await fsExtra.writeJson('package.json', pkg);
   }
 
   // const { stdout, stderr } = await exec(`npx electron-rebuild`);

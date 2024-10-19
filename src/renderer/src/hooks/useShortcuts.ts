@@ -159,7 +159,7 @@ export default () => {
 
   const onShortcuts = useMemo(() => {
     let onShortcuts = 'f19';
-    if (promptShortcuts.length) {
+    if (promptShortcuts.length > 0) {
       const moddedPromptShortcuts = promptShortcuts.map((ps) => ({
         ...ps,
         key: ps?.key?.replace('cmd', 'mod') || undefined,

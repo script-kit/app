@@ -1062,7 +1062,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       sendToPrompt(Channel.SET_FOOTER, value);
     }),
 
-    SET_PANEL: onChildChannel(async ({ child }, { channel, value, promptId }, samePrompt) => {
+    SET_PANEL: onChildChannel(({ child }, { channel, value, promptId }, samePrompt) => {
       if (samePrompt) {
         sendToPrompt(Channel.SET_PANEL, value);
       } else {
@@ -1073,7 +1073,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       }
     }),
 
-    SET_PREVIEW: onChildChannel(async ({ child }, { channel, value, promptId }, samePrompt) => {
+    SET_PREVIEW: onChildChannel(({ child }, { channel, value, promptId }, samePrompt) => {
       if (samePrompt) {
         sendToPrompt(Channel.SET_PREVIEW, value);
       } else {
@@ -1084,8 +1084,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       }
     }),
 
-    SET_SHORTCUTS: onChildChannel(async ({ child, prompt }, { channel, value, promptId }, samePrompt) => {
+    SET_SHORTCUTS: onChildChannel(({ child, prompt }, { channel, value, promptId }, samePrompt) => {
       if (samePrompt) {
+        log.info(`${prompt.pid}: 🔑 SET_SHORTCUTS`, {
+          value,
+        });
         sendToPrompt(channel, value);
       } else {
         log.warn(`${prompt.pid}: ⛔️ SET_SHORTCUTS: Prompt ID mismatch`, {
@@ -1113,14 +1116,14 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       //   });
     }),
 
-    CONSOLE_CLEAR: onChildChannel(async ({ child }, { channel }) => {
+    CONSOLE_CLEAR: onChildChannel(({ child }, { channel }) => {
       setLog(Channel.CONSOLE_CLEAR);
     }),
 
-    SET_TAB_INDEX: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_TAB_INDEX: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_TAB_INDEX, value);
     }),
-    DEV_TOOLS: onChildChannel(async ({ child }, { channel, value }) => {
+    DEV_TOOLS: onChildChannel(({ child }, { channel, value }) => {
       showDevTools(value);
     }),
     SHOW_LOG_WINDOW: onChildChannel(async ({ scriptPath, pid }, { channel, value }) => {

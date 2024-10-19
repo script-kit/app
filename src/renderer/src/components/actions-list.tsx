@@ -2,7 +2,7 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import memoize from 'memoize-one';
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/require-default-props */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { VariableSizeList as List } from 'react-window';
 import type { ChoiceButtonProps } from '../../../shared/types';
@@ -15,7 +15,7 @@ import {
   flagsListAtom,
   flagsRequiresScrollAtom,
   focusedElementAtom,
-  isScrollingAtom,
+  isFlagsScrollingAtom,
   scoredFlagsAtom,
 } from '../jotai';
 import ActionsInput from './actions-input';
@@ -40,7 +40,7 @@ function InnerList({ height }) {
 
   const [list, setList] = useAtom(flagsListAtom);
   const [requiresScroll, setRequiresScroll] = useAtom(flagsRequiresScrollAtom);
-  const [isScrolling, setIsScrolling] = useAtom(isScrollingAtom);
+  const [isScrolling, setIsScrolling] = useAtom(isFlagsScrollingAtom);
 
   const itemData = createItemData(choices);
 
@@ -88,6 +88,26 @@ function InnerList({ height }) {
 
   const [scrollTimeout, setScrollTimeout] = useState<any>(null);
 
+  const handleScroll = useCallback(() => {
+    if (index === 0 || index === 1) {
+      setIsScrolling(false);
+    } else {
+      setIsScrolling(true);
+    }
+
+    // Clear the previous timeout
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout);
+    }
+
+    // Set a new timeout
+    const newTimeout = setTimeout(() => {
+      setIsScrolling(false);
+    }, 250);
+
+    setScrollTimeout(newTimeout);
+  }, [index, scrollTimeout, setIsScrolling]);
+
   return (
     <List
       width={'100%'}
@@ -95,26 +115,7 @@ function InnerList({ height }) {
       ref={flagsRef}
       innerRef={innerRef}
       overscanCount={2}
-      onScroll={(props) => {
-        if (index === 0 || index === 1) {
-          setIsScrolling(false);
-        } else {
-          setIsScrolling(true);
-        }
-
-        // TODO: Disable scrolling if onScroll hasn't trigger for 250ms
-        // clear the previous timeout
-        if (scrollTimeout) {
-          clearTimeout(scrollTimeout);
-        }
-
-        // set a new timeout
-        setScrollTimeout(
-          setTimeout(() => {
-            setIsScrolling(false);
-          }, 250),
-        );
-      }}
+      onScroll={handleScroll}
       itemCount={choices?.length || 0}
       itemSize={(i) => {
         const maybeHeight = choices?.[i]?.item?.height;
@@ -161,11 +162,11 @@ export default function ActionsList() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      if (prevFocusedElement) {
+      if (prevFocusedElement instanceof HTMLElement) {
         prevFocusedElement.focus();
       }
     };
-  }, [prevFocusedElement]);
+  }, [prevFocusedElement, setFlagValue]);
 
   return (
     <div

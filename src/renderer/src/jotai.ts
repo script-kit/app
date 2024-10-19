@@ -522,10 +522,12 @@ export const flagsIndexAtom = atom(
     }
 
 
+    if (list && requiresScroll === -1) {
+      list?.scrollToItem(calcIndex);
+    }
+
     if (list && cs[0]?.item?.skip && calcIndex === 1) {
-      s(scrollToItemAtom, {index: 0, reason: 'flagsIndexAtom - cs[0]?.item?.skip && calcIndex === 1'});
-    }else if (list && requiresScroll === -1) {
-      s(scrollToItemAtom, {index: calcIndex, reason: 'flagsIndexAtom - requiresScroll === -1'});
+      list?.scrollToItem(0);
     }
 
     const focusedFlag = (choice as Choice)?.value;
@@ -3187,6 +3189,7 @@ export const promptBoundsAtom = atom(
 export const audioDotAtom = atom(false);
 
 export const isScrollingAtom = atom(false);
+export const isFlagsScrollingAtom = atom(false);
 
 const scoredFlags = atom([] as ScoredChoice[]);
 export const scoredFlagsAtom = atom(
