@@ -12,17 +12,23 @@ const optionalDependenciesToRemove = Object.keys(pkg.optionalDependencies).filte
   (dep) => !optionalDependenciesToKeep.includes(dep),
 );
 
-const pnpmUninstallCommand = optionalDependenciesToRemove.map((dep) => `pnpm remove ${dep}`).join(' && ');
+const command = `pnpm remove ${optionalDependenciesToRemove.join(' ')}`;
 
 console.log(
   `BEFORE`,
   JSON.stringify({
     pkg: pkg.optionalDependencies,
-    optionalDependenciesToSet: optionalDependenciesToKeep,
+    optionalDependenciesToKeep,
     optionalDependenciesToRemove,
   }),
 );
 
-console.log(`UNINSTALL COMMAND`, pnpmUninstallCommand);
+console.log(`UNINSTALL COMMAND`, command);
 
-await exec(pnpmUninstallCommand);
+if (optionalDependenciesToRemove.length > 0) {
+  const { stdout, stderr } = await exec(command);
+  console.log({
+    stdout,
+    stderr,
+  });
+}
