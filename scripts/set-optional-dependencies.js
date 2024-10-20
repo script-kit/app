@@ -7,14 +7,21 @@ console.log(
 const optionalDependencies = await readJson('optional-dependencies.json');
 const pkg = await readJson('package.json');
 
-console.log(`BEFORE`, {
-  optionalDependencies,
-  pkg,
-});
+const optionalDependenciesToKeep = optionalDependencies[process.platform][process.arch];
+const optionalDependenciesToRemove = Object.keys(pkg.optionalDependencies).filter(
+  (dep) => !optionalDependenciesToKeep.includes(dep),
+);
 
-const optionalDependenciesToSet = optionalDependencies[process.platform][process.arch];
+const pnpmUninstallCommand = optionalDependenciesToRemove.map((dep) => `pnpm remove ${dep}`).join(' && ');
 
-const pnpmUninstallCommand = optionalDependenciesToSet.map((dep) => `pnpm remove ${dep}`).join(' && ');
+console.log(
+  `BEFORE`,
+  JSON.stringify({
+    pkg: pkg.optionalDependencies,
+    optionalDependenciesToSet: optionalDependenciesToKeep,
+    optionalDependenciesToRemove,
+  }),
+);
 
 console.log(`UNINSTALL COMMAND`, pnpmUninstallCommand);
 
