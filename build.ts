@@ -144,14 +144,13 @@ const config: Configuration = {
   appId: 'app.scriptkit', // Updated appId from package.json
   artifactName: '${productName}-macOS-${version}-${arch}.${ext}',
   productName: 'Script Kit', // Updated productName from package.json
-
   directories: {
     output: './release',
     buildResources: 'build',
   },
   asar: true,
   asarUnpack,
-  afterSign: platform === 'mac' ? afterSign : undefined,
+  // afterSign: platform === 'mac' ? afterSign : undefined,
   files,
   nsis: {
     oneClick: false,
@@ -163,6 +162,7 @@ const config: Configuration = {
     // notarize: {
     //   teamId: '9822B7V7MD',
     // },
+    notarize: true,
     icon: 'assets/icons/mac/icon.icns',
     category: 'public.app-category.productivity', // Keep as is or update based on package.json if needed
     hardenedRuntime: true,
