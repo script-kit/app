@@ -238,14 +238,14 @@ try {
   if (uninstallDeps.length > 0) {
     const pkg = await fsExtra.readJson('package.json');
     console.log(`Optional dependencies before: ${JSON.stringify(pkg.optionalDependencies, null, 2)}`);
-    for (const dep of uninstallDeps) {
-      const pkgPath = path.join(process.cwd(), 'node_modules', dep);
-      console.log(`Removing ${pkgPath}`);
-      await rimraf(pkgPath);
-      delete pkg.optionalDependencies[dep];
-    }
-    console.log(`Optional dependencies after: ${JSON.stringify(pkg.optionalDependencies, null, 2)}`);
-    await fsExtra.writeJson('package.json', pkg);
+    // for (const dep of uninstallDeps) {
+    //   const pkgPath = path.join(process.cwd(), 'node_modules', dep);
+    //   console.log(`Removing ${pkgPath}`);
+    //   await rimraf(pkgPath);
+    //   delete pkg.optionalDependencies[dep];
+    // }
+    // console.log(`Optional dependencies after: ${JSON.stringify(pkg.optionalDependencies, null, 2)}`);
+    // await fsExtra.writeJson('package.json', pkg);
   }
 
   // const { stdout, stderr } = await exec(`npx electron-rebuild`);

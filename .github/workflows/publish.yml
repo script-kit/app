@@ -190,6 +190,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set Optional Dependencies Based on Platform and Architecture
+        if: needs.tag.outputs.kit_tag == 'latest'
+        uses: johnlindquist/kit-action@main
+        with:
+          script: set-optional-dependencies
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
       - name: Publish windows x64
         if: matrix.os == 'windows-latest'
         env:
