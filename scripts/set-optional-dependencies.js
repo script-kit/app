@@ -14,16 +14,8 @@ console.log(`BEFORE`, {
 
 const optionalDependenciesToSet = optionalDependencies[process.platform][process.arch];
 
-console.log(`SET`, {
-  optionalDependenciesToSet,
-});
+const pnpmUninstallCommand = optionalDependenciesToSet.map((dep) => `pnpm remove ${dep}`).join(' && ');
 
-pkg.optionalDependencies = optionalDependenciesToSet;
+console.log(`UNINSTALL COMMAND`, pnpmUninstallCommand);
 
-await writeJson('package.json', pkg);
-
-console.log(`AFTER`, {
-  pkg,
-});
-
-await rm('pnpm-lock.yaml');
+await exec(pnpmUninstallCommand);
