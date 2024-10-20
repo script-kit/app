@@ -25,3 +25,5 @@ await writeJson('package.json', pkg);
 console.log(`AFTER`, {
   pkg,
 });
+
+await rm('pnpm-lock.yaml');
