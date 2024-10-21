@@ -2,11 +2,9 @@ import '@johnlindquist/kit';
 import { execSync } from 'node:child_process';
 import fsExtra from 'fs-extra';
 import { external, include } from './src/main/shims';
-import { rimraf } from 'rimraf';
 import { Arch, Platform, build } from 'electron-builder';
 import type { AfterPackContext, Configuration, PackagerOptions } from 'electron-builder';
 import packageJson from './package.json';
-import path from 'node:path';
 
 let platform: 'linux' | 'mac' | 'win';
 let arch: 'arm64' | 'x64';
