@@ -50,7 +50,6 @@
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@electron-toolkit/tsconfig": "^1.0.1",
-    "@electron/notarize": "^2.5.0",
     "@fontsource/jetbrains-mono": "^5.1.1",
     "@heroicons/react": "^2.1.5",
     "@monaco-editor/react": "^4.6.0",
