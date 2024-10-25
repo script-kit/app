@@ -18,6 +18,7 @@ import {
   isScrollingAtom,
   mouseEnabledAtom,
   promptDataAtom,
+  runKenvTrustScriptAtom,
   selectedChoicesAtom,
   shouldHighlightDescriptionAtom,
   submitValueAtom,
@@ -37,6 +38,8 @@ function calculateScale(height: number = PROMPT.ITEM.HEIGHT.SM): string {
   return 'scale-90';
 }
 
+const baseRegex = /[\\/]/;
+
 function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceButtonProps) {
   const scoredChoice = choices[buttonIndex];
   const choice = scoredChoice?.item;
@@ -55,9 +58,9 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
   const [, toggleSelectedChoice] = useAtom(toggleSelectedChoiceAtom);
   const [selectedChoices] = useAtom(selectedChoicesAtom);
   const [shouldHighlightDescription] = useAtom(shouldHighlightDescriptionAtom);
-
+  const [runKenvTrustScript] = useAtom(runKenvTrustScriptAtom);
   // Get the text after the last file separator
-  const base = (input || '').split(/[\\/]/).pop() || '';
+  const base = (input || '').split(baseRegex).pop() || '';
 
   // const dataTransfer = useRef<any>('Data Transfer');
 
@@ -74,6 +77,27 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
     },
     [choice, setFlagValue, flaggedValue],
   );
+
+  const untrustedClick = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    log.info(`Untrusted choice: ${choice?.id}`);
+    runKenvTrustScript(choice?.kenv);
+  }, []);
+
+  const [untrustedIsHovered, setUntrustedIsHovered] = useState(false);
+
+  const untrustedMouseEnter = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setUntrustedIsHovered(true);
+  }, []);
+
+  const untrustedMouseLeave = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setUntrustedIsHovered(false);
+  }, []);
 
   const onClick = useCallback(
     (e) => {
@@ -152,7 +176,10 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
 
   const isRecent = choice?.group === 'Recent';
 
-  const scale = useMemo(() => calculateScale(choice.height || promptData?.itemHeight), [choice.height, promptData?.itemHeight]);
+  const scale = useMemo(
+    () => calculateScale(choice.height || promptData?.itemHeight),
+    [choice.height, promptData?.itemHeight],
+  );
 
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -276,12 +303,12 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
           <div className={`flex h-full flex-shrink-0 flex-row items-center ${isScrolling ? '-mr-2px' : '0'}`}>
             {(choice?.tag || choice?.icon || choice?.pass || isRecent) && (
               <div className="flex flex-row items-center">
-                {((choice?.pass || isRecent) && (choice as Script)?.kenv
+                {((choice?.kenv || choice?.pass || isRecent) && (choice as Script)?.kenv
                   ? (choice as Script).kenv
                   : choice.tag || choice.keyword || choice.trigger) && (
                   <div
                     className={`mx-1 font-mono text-xxs ${choice?.tagClassName} ${
-                      index === buttonIndex ? 'opacity-70' : 'opacity-40'
+                      untrustedIsHovered ? 'opacity-100' : index === buttonIndex ? 'opacity-70' : 'opacity-40'
                     }`}
                   >
                     {(choice?.pass || isRecent) && (choice as Script)?.kenv && (choice as Script).kenv !== '.kit'
@@ -293,6 +320,14 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
                             'bg-text-base bg-opacity-0 text-primary text-opacity-100',
                           )
                         : ''}
+
+                    <span
+                      onClick={untrustedClick}
+                      onMouseEnter={untrustedMouseEnter}
+                      onMouseLeave={untrustedMouseLeave}
+                    >
+                      {choice?.untrusted ? ' 🛑' : ''}
+                    </span>
                   </div>
                 )}
 
@@ -310,8 +345,7 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
               </div>
             )}
             {imageFail && (
-              <div style={{ aspectRatio: '1/1' }} className="flex h-8 flex-row items-center justify-center">
-              </div>
+              <div style={{ aspectRatio: '1/1' }} className="flex h-8 flex-row items-center justify-center" />
             )}
           </div>
         </div>

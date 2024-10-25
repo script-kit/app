@@ -2220,7 +2220,7 @@ export const splashBodyAtom = atom('');
 export const splashHeaderAtom = atom('');
 export const splashProgressAtom = atom(0);
 
-export const appConfigAtom = atom<AppConfig & { url: string }>({
+export const appConfigAtom = atom({
   isWin: false,
   isMac: false,
   os: '',
@@ -2229,7 +2229,7 @@ export const appConfigAtom = atom<AppConfig & { url: string }>({
   version: '',
   delimiter: '',
   url: '',
-});
+} as const);
 
 export const actionsButtonActionAtom = atom<Action>((g) => {
   const isMac = g(appConfigAtom).isMac;
@@ -2272,6 +2272,11 @@ export const cmdAtom = atom((g) => (g(appConfigAtom).isWin ? 'ctrl' : 'cmd'));
 
 export const runMainScriptAtom = atom(() => () => {
   ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
+});
+
+export const runKenvTrustScriptAtom = atom(() => (kenv: string) => {
+  log.info(`🔑 Running kenv-trust script for ${kenv}`);
+  ipcRenderer.send(AppChannel.RUN_KENV_TRUST_SCRIPT, { kenv });
 });
 
 export const runProcessesAtom = atom(() => () => {

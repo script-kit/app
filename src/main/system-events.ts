@@ -15,16 +15,17 @@ const validSystemEvents = [
   'unlock-screen',
   'user-did-become-active',
   'user-did-resign-active',
-] as const;
+] as Parameters<typeof powerMonitor.addListener>[0][];
+
 
 const systemEventMap = new Map();
 
 // Thought this would work, but had to use any...
 // type SystemEvent = typeof validSystemEvents[number];
-validSystemEvents.forEach((systemEvent: any) => {
+for (const systemEvent of validSystemEvents) {
   const systemEventHandler = () => {
-    systemEventMap.forEach((eventList, scriptPath) => {
-      eventList.forEach((mappedEvent: string) => {
+    for (const [scriptPath, eventList] of systemEventMap) {
+      for (const mappedEvent of eventList) {
         if (mappedEvent === systemEvent) {
           log.info('🗺', { mappedEvent, scriptPath });
           runPromptProcess(scriptPath, [], {
@@ -33,11 +34,11 @@ validSystemEvents.forEach((systemEvent: any) => {
             sponsorCheck: false,
           });
         }
-      });
-    });
+      }
+    }
   };
   powerMonitor.addListener(systemEvent, systemEventHandler);
-});
+}
 
 export const unlinkEvents = (filePath: string) => {
   if (systemEventMap.get(filePath)) {
@@ -69,11 +70,11 @@ export const systemScriptChanged = ({ filePath, kenv, system: systemEventsString
       log.info(`🖥  ${systemEvents} will trigger ${filePath}`);
       systemEventMap.set(filePath, systemEvents);
     } else {
-      systemEvents.forEach((event) => {
+      for (const event of systemEvents) {
         if (!validSystemEvents.includes(event as any)) {
           log.warn(`Found invalid event ${event} in ${filePath}`);
         }
-      });
+      }
     }
   }
 };

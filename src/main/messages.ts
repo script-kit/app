@@ -10,7 +10,7 @@ import https from 'node:https';
 import os from 'node:os';
 import path from 'node:path';
 import { Channel, Key, ProcessType, UI, Value } from '@johnlindquist/kit/core/enum';
-import type { Choice, ProcessInfo, Script } from '@johnlindquist/kit/types/core';
+import type { Choice, ProcessInfo, Script, Scriptlet } from '@johnlindquist/kit/types/core';
 import {
   BrowserWindow,
   Notification,
@@ -1286,6 +1286,18 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         let formattedChoices = choices;
         if (prompt.isScripts) {
           formattedChoices = formatScriptChoices(choices);
+        }
+
+        const defaultTrustedKenvs = ['', '.kit', 'kit-examples', 'examples']
+        const maybeMarkAsUntrusted = (script: Script | Scriptlet) => {
+          if (script?.kenv && !(kitState.trustedKenvs.includes(script.kenv) || defaultTrustedKenvs.includes(script.kenv))) {
+            (script as any).untrusted = true;
+            log.info(`Marking ${script.filePath} from kenv:${script.kenv} as untrusted`, script);
+          }
+        };
+
+        for (const choice of formattedChoices) {
+          maybeMarkAsUntrusted(choice as Script | Scriptlet);
         }
 
         setChoices(prompt, formattedChoices, {

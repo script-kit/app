@@ -779,7 +779,7 @@ export const setupWatchers = async () => {
   }, 60000); // 60000 milliseconds = 1 minute
 
   watchers = startWatching(async (eventName: WatchEvent, filePath: string, source) => {
-    log.info(`🔄 ${eventName} ${filePath} from ${source}`);
+    // log.info(`🔄 ${eventName} ${filePath} from ${source}`);
     // if (!filePath.match(/\.(ts|js|json|txt|env)$/)) return;
     const { base, dir, name } = path.parse(filePath);
 

@@ -833,6 +833,8 @@ export const kenvPackageJsonExists = async () => {
   return await isFile(kenvPath('package.json'));
 };
 
+const TRIGGER_REGEX = /(?<=\[)\w+(?=\])/i;
+
 const cacheTriggers = (choices: Choice[]) => {
   for (const choice of choices) {
     const code = (choice?.shortcode || '').toLowerCase();
@@ -847,7 +849,7 @@ const cacheTriggers = (choices: Choice[]) => {
     }
 
     // TODO: Parse choice.trigger earlier during choice formatting?
-    const trigger = (choice?.trigger || choice?.name?.match(/(?<=\[)\w+(?=\])/i)?.[0] || '').toLowerCase();
+    const trigger = (choice?.trigger || choice?.name?.match(TRIGGER_REGEX)?.[0] || '').toLowerCase();
 
     if (trigger) {
       kitCache.triggers.set(trigger, choice);

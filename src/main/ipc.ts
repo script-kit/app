@@ -22,7 +22,7 @@ import { ipcMain } from 'electron';
 import { debounce } from 'lodash-es';
 import { DownloaderHelper } from 'node-downloader-helper';
 import { KitEvent, emitter } from '../shared/events';
-import { type ProcessAndPrompt, cachePreview, ensureIdleProcess, processes } from './process';
+import { type ProcessAndPrompt, ensureIdleProcess, processes } from './process';
 
 import { getAssetPath } from '../shared/assets';
 import { noChoice } from '../shared/defaults';
@@ -387,6 +387,16 @@ ${data.error}
 
   ipcMain.on(AppChannel.RUN_MAIN_SCRIPT, () => {
     runPromptProcess(getMainScriptPath(), [], {
+      force: true,
+      trigger: Trigger.Kit,
+      sponsorCheck: false,
+    });
+  });
+
+  ipcMain.on(AppChannel.RUN_KENV_TRUST_SCRIPT, (event, { kenv }) => {
+    log.info(`🔑 Running kenv-trust script for ${kenv}`);
+    prompts.focused?.close();
+    runPromptProcess(kitPath('cli', 'kenv-trust.js'), [kenv], {
       force: true,
       trigger: Trigger.Kit,
       sponsorCheck: false,
