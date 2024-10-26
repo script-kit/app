@@ -682,7 +682,7 @@ export const scoredChoicesAtom = atom(
   (g) => g(choices),
   // Setting to `null` should only happen when using setPanel
   // This helps skip sending `onNoChoices`
-  (g, s, cs: ScoredChoice[]) => {
+  (g, s, cs: ScoredChoice[] = []) => {
     // log.info(
     //   `${window.pid} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Setting scoredChoices to ${a?.length}`
     // );
@@ -705,8 +705,8 @@ export const scoredChoicesAtom = atom(
     // s(submittedAtom, false);
 
     // if the first cs has a `border-t-1`, remove it
-    if (cs?.[0]?.item?.className) {
-      cs[0].item.className = cs?.[0]?.item?.className.replace('border-t-1', '');
+    if (cs[0]?.item?.className) {
+      cs[0].item.className = cs[0]?.item?.className.replace('border-t-1', '');
     }
 
     // log.info(`⚽️ Scored choices length: ${cs?.length}`);
@@ -727,13 +727,30 @@ export const scoredChoicesAtom = atom(
     //   }
     // });
 
+    let hasSkip = false;
+    let allSkip = true;
+    let allMiss = true;
+    let allSkipOrMiss = true;
+
+    for (const c of cs ?? []) {
+      const isSkipped = c?.item?.skip;
+      const isMiss = c?.item?.miss;
+      hasSkip = hasSkip || isSkipped;
+      allSkip = allSkip && isSkipped;
+      allMiss = allMiss && isMiss;
+      allSkipOrMiss = allSkipOrMiss && (isSkipped || isMiss);
+
+      // Early exit if we've found all conditions
+      if (hasSkip && !allSkip && !allMiss && !allSkipOrMiss) { break; }
+    }
+
     s(
       hasSkipAtom,
-      cs?.some((c) => c?.item?.skip),
+      hasSkip,
     );
     s(
       allSkipAtom,
-      cs?.every((c) => c?.item?.skip),
+      allSkip,
     );
     if (changed) {
       s(indexAtom, 0);
@@ -743,14 +760,15 @@ export const scoredChoicesAtom = atom(
 
     const channel = g(channelAtom);
 
-    if (cs?.length) {
+    const hasActionableChoices = !allSkipOrMiss;
+    if (hasActionableChoices) {
       s(panelHTMLAtom, '');
 
       const defaultValue: any = g(defaultValueAtom);
       const defaultChoiceId = g(defaultChoiceIdAtom);
       const prevIndex = g(prevIndexAtom);
       const input = g(inputAtom);
-      if (cs?.length && (defaultValue || defaultChoiceId)) {
+      if (cs.length > 0 && (defaultValue || defaultChoiceId)) {
         const i = cs.findIndex(
           (c) => c.item?.id === defaultChoiceId || c.item?.value === defaultValue || c.item?.name === defaultValue,
         );
@@ -1341,7 +1359,7 @@ const resize = debounce(
       placeholderOnly,
       topHeight,
       ui,
-      mainHeight: mh + (g(isWindowAtom) ? 24 : 0),
+      mainHeight: mh + (g(isWindowAtom) ? 24 : 0) + 1,
       footerHeight,
       mode: promptData?.mode || Mode.FILTER,
       hasPanel,

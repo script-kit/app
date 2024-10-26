@@ -387,11 +387,11 @@ const processesChanged = debounce(() => {
 export const clearIdleProcesses = () => {
   // return;
   log.info('Reset all idle processes');
-  processes.getAllProcessInfo().forEach((processInfo) => {
+  for (const processInfo of processes.getAllProcessInfo()) {
     if (processInfo.type === ProcessType.Prompt && processInfo.scriptPath === '') {
       processes.removeByPid(processInfo.pid);
     }
-  });
+  }
 };
 
 export const getIdles = () => {
@@ -1214,3 +1214,4 @@ emitter.on(KitEvent.DID_FINISH_LOAD, () => {
 
   updateTheme();
 });
+

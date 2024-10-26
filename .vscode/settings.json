@@ -49,5 +49,11 @@
   "editor.formatOnSave": true,
   "[typescript]": {
     "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
+  },
+  "files.watcherExclude": {
+    "**/assets/**": true
+  },
+  "files.exclude": {
+    "**/assets/**": true
   }
 }
