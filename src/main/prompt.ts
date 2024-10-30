@@ -5,6 +5,7 @@ import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 import shims from './shims';
 
+import { readFile } from 'fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { getMainScriptPath, kenvPath, kitPath } from '@johnlindquist/kit/core/utils';
@@ -708,6 +709,8 @@ export class KitPrompt {
       }
     };
 
+
+
     log.info(`🎬 Init appearance: ${kitState.appearance}`);
     setAppearance(this.window, kitState.appearance);
 
@@ -765,8 +768,17 @@ export class KitPrompt {
       }
     });
 
-    this.window.once('ready-to-show', () => {
+    this.window.once('ready-to-show', async () => {
       log.info(`${this.pid}: 👍 Ready to show`);
+      try {
+        const css = await readFile(kenvPath('kit.css'), 'utf8');
+        if (css) {
+          this.sendToPrompt(AppChannel.CSS_CHANGED, css);
+        }
+      } catch (error) {
+        log.warn(error);
+        this.sendToPrompt(AppChannel.CSS_CHANGED, '');
+      }
       updateTheme();
     });
 

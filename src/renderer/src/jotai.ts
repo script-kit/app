@@ -1613,12 +1613,16 @@ export const promptDataAtom = atom(
         log.info(`${pid}: 👂 Force input due to keyword or mainScript`);
 
         const prevInput = g(_inputAtom);
-        if (forceInput && !prevInput.startsWith(forceInput)) {
+        const prevInputHasSlash = prevInput.includes('/') || prevInput.includes('\\');
+        // This is one of those weird edges cases where triggers/keywords affect input, so you don't want to override it,
+        // but also the "await path" selected value has a slash in it so we have to check for that
+        if (forceInput && (!prevInput.startsWith(forceInput) || prevInputHasSlash)) {
           s(_inputAtom, forceInput);
         } else if (!forceInput) {
           s(_inputAtom, forceInput);
         }
       }
+
       s(_inputWhileSubmittedAtom, '');
       s(_flaggedValue, '');
       s(hintAtom, a.hint);
