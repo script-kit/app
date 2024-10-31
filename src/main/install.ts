@@ -543,6 +543,7 @@ export const cleanKit = async () => {
     log.info(`Continuing with new Kit SDK at ${kitPath()}`);
   } catch (error) {
     log.error(`Error cleaning the Kit SDK at: ${kitPath()}`, error);
+    log.error(`Please close any open code editors which might be referencing ~/.kit or ~/.kenv and try again.`)
     throw new Error(`Error cleaning ${kitPath()}`);
   }
 };
