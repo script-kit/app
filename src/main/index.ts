@@ -1083,6 +1083,20 @@ const checkKit = async () => {
       startServer();
     }
 
+    if (kitState.kenvEnv?.GITHUB_SCRIPTKIT_TOKEN) {
+      const userExists = existsSync(kitPath('db', 'user.json'));
+      if (!userExists) {
+        log.info('🔑 Token found. Authenticating with GitHub...');
+        optionalSetupScript(kitPath('cli', 'authenticate.js')).then(() => {
+        log.info('🔑 GitHub authenticated');
+      }).catch((error) => {
+        log.error('🔑 Error authenticating with GitHub', error);
+        });
+      } else {
+        log.info('🔑 ~/.kit/db/user.json already exists');
+      }
+    }
+
     // focusPrompt();
     setTimeout(async () => {
       log.info('Parsing scripts...');
