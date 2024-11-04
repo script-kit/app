@@ -2,10 +2,11 @@ import { Channel } from '@johnlindquist/kit/core/enum';
 import type { WidgetOptions } from '@johnlindquist/kit/types/pro';
 import log from 'electron-log/renderer';
 import { createApp } from 'petite-vue';
-import React, { type ErrorInfo, Suspense, useEffect, useState } from 'react';
+import React, { type ErrorInfo, Suspense, useEffect, useLayoutEffect, useState } from 'react';
 import { AppChannel } from '../../shared/enums';
 
 const { ipcRenderer } = window.electron;
+window.ipcRenderer = ipcRenderer;
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
@@ -80,6 +81,7 @@ export default function AppWidget() {
     const handleWidgetInit = (event, options: WidgetOptions) => {
       log.info(`handleWidgetInit`, { options, event });
       setOptions(options);
+      window.widgetId = options.widgetId;
     };
 
     log.info(`Mounted: Adding listener for ${Channel.WIDGET_INIT}`);
@@ -129,6 +131,29 @@ export default function AppWidget() {
     WebkitUserSelect: options?.draggable ? 'none' : undefined,
     WebkitAppRegion: options?.draggable ? 'drag' : undefined,
   };
+
+  useLayoutEffect(() => {
+    // Create a document fragment to parse and execute scripts
+    const range = document.createRange();
+    const container = document.getElementById('__widget-container');
+    if (!container) {
+      return;
+    }
+
+    range.selectNode(container);
+    const fragment = range.createContextualFragment(options?.body || '');
+
+    // Find and execute any scripts
+    const scripts = fragment.querySelectorAll('script');
+    for (const script of scripts) {
+      const newScript = document.createElement('script');
+      for (const attr of script.attributes) {
+        newScript.setAttribute(attr.name, attr.value);
+      }
+      newScript.textContent = script.textContent;
+      document.body.appendChild(newScript);
+    }
+  }, [options?.body]);
 
   useEffect(() => {
     const __widgetContainer = document.getElementById('__widget-container') as HTMLElement;
@@ -224,6 +249,26 @@ export default function AppWidget() {
 
     function Widget() {
       window.onSetState = (state) => {};
+
+      const fitWidget = () => {
+        const firstChild = document.getElementById('__widget-container').firstElementChild;
+        if (!(firstChild && firstChild.offsetWidth && firstChild.offsetHeight)) {
+          return;
+        }
+        const display = firstChild.style.display;
+
+        firstChild.style.display = 'inline-block';
+
+        const data = {
+          width: firstChild.offsetWidth,
+          height: firstChild.offsetHeight,
+          ...options,
+        };
+
+        ipcRenderer.send('WIDGET_MEASURE', data);
+        firstChild.style.display = display;
+      };
+
       return {
         $template: '#widget-template',
         state: options?.state || {},
@@ -234,6 +279,10 @@ export default function AppWidget() {
           }
         },
         mounted() {
+          ipcRenderer.on('WIDGET_FIT', (event, state) => {
+            fitWidget();
+          });
+
           ipcRenderer.on(Channel.WIDGET_SET_STATE, (event, state) => {
             this.setState(state);
             window.onSetState(state);
