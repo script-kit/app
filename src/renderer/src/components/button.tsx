@@ -326,7 +326,7 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
                       onMouseEnter={untrustedMouseEnter}
                       onMouseLeave={untrustedMouseLeave}
                     >
-                      {choice?.untrusted ? ' 🛑' : ''}
+                      {choice?.untrusted ? ' 🔒' : ''}
                     </span>
                   </div>
                 )}

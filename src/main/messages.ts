@@ -82,6 +82,7 @@ import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { showLogWindow } from './window';
 import { createLogger } from '../shared/log-utils';
 import { osTmpPath } from './tmp';
+import { displayError } from './error';
 
 const log = createLogger('messages.ts');
 
@@ -103,6 +104,9 @@ const comparePromptScriptsById = (id1: string, id2: string) => {
 
   return prevResult;
 };
+
+// pid: count
+const errorMap = new Map<string, number>();
 
 const getModifier = () => {
   return kitState.isMac ? ['command'] : ['control'];
@@ -2199,8 +2203,16 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       spawnShebang(value);
     }),
     ERROR: onChildChannelOverride(({ child }, { channel, value }) => {
-      log.error('ERROR', value);
+      log.error(`${child.pid}: ERROR MESSAGE`, value);
       trackEvent(TrackEvent.Error, value);
+      const stack = value?.stack || '';
+      errorMap.set(stack, (errorMap.get(stack) || 0) + 1);
+      if (errorMap.get(stack) > 2) {
+        child.kill('SIGKILL');
+        log.info(`Killed child ${child.pid} after ${errorMap.get(stack)} of the same stack errors`, value);
+        errorMap.delete(stack);
+        displayError(value);
+      }
     }),
     GET_TYPED_TEXT: onChildChannelOverride(({ child }, { channel, value }) => {
       childSend({ channel, value: kitState.typedText });

@@ -776,7 +776,7 @@ export class KitPrompt {
           this.sendToPrompt(AppChannel.CSS_CHANGED, css);
         }
       } catch (error) {
-        log.warn(error);
+        // log.warn(error);
         this.sendToPrompt(AppChannel.CSS_CHANGED, '');
       }
       updateTheme();
@@ -2520,7 +2520,7 @@ export class KitPrompt {
   };
 
   private shouldClosePromptOnInitialEscape = (isEscape: boolean): boolean => {
-    return this.firstPrompt && this.scriptPath === getMainScriptPath() && isEscape && !this.wasActionsJustOpen;
+    return (this.firstPrompt || this.scriptPath === getMainScriptPath()) && isEscape && !this.wasActionsJustOpen;
   };
 
   private beforeInputHandler = (event, input: Input) => {
@@ -2534,11 +2534,14 @@ export class KitPrompt {
     const isEscape = input.key === 'Escape';
 
     if (isEscape) {
+      log.info(`${this.pid}: Escape received by prompt`);
       this.handleEscapePress();
     }
 
     const shouldCloseOnInitialEscape = this.shouldClosePromptOnInitialEscape(isEscape);
+    log.info(`${this.pid}: shouldCloseOnInitialEscape: ${shouldCloseOnInitialEscape}`);
     if ((isW && (kitState.isMac ? input.meta : input.control)) || shouldCloseOnInitialEscape) {
+      log.info(`${this.pid}: Closing prompt window`);
       if (isW) {
         log.purple(`Closing prompt window with ${kitState.isMac ? '⌘' : '⌃'}+w`);
       } else if (isEscape) {
