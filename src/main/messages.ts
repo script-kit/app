@@ -557,6 +557,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
           w.destroy();
 
           remove(widgetState.widgets, ({ id }) => id === widgetId);
+          if (!prompt?.isVisible()) {
+            processes.removeByPid(w.pid);
+          }
         };
 
         widget?.webContents.on('before-input-event', (event, input) => {
@@ -620,7 +623,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       }
 
       log.info(`${widgetId}: Widget closed`);
-      prompt?.focusPrompt();
+      if (prompt?.isVisible()) {
+        prompt?.focusPrompt();
+      }
 
       widget.removeAllListeners();
       widget.destroy();
@@ -632,6 +637,10 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
           channel: Channel.WIDGET_END,
           widgetId,
         });
+      }
+
+      if (!prompt?.isVisible()) {
+        processes.removeByPid(widget.pid);
       }
     }),
 

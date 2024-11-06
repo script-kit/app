@@ -19,14 +19,16 @@ const initWidgets = {
 
 export const widgetState: typeof initWidgets = proxy(initWidgets);
 
-export const findWidget = (id: string, reason = '') => {
+export const findWidget = (id: string, reason = ''): BrowserWindow & { pid: number } | null => {
   const options = widgetState.widgets.find((opts) => opts.id === id);
   if (!options) {
     log.warn(`${reason}: widget not found: ${id}`);
     return null;
   }
 
-  return BrowserWindow.fromId(options.wid);
+  const window = BrowserWindow.fromId(options.wid);
+  (window as any).pid = options.pid; //hack
+  return window as BrowserWindow & { pid: number };
 };
 
 const subWidgets = subscribeKey(widgetState, 'widgets', (widgets) => {
