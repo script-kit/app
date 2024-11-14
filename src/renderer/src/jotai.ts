@@ -729,19 +729,19 @@ export const scoredChoicesAtom = atom(
 
     let hasSkip = false;
     let allSkip = true;
-    let allMiss = true;
-    let allSkipOrMiss = true;
+    let allInfo = true;
+    let allSkipOrInfo = true;
 
     for (const c of cs ?? []) {
       const isSkipped = c?.item?.skip;
-      const isMiss = c?.item?.miss;
+      const isInfo = c?.item?.info;
       hasSkip = hasSkip || isSkipped;
       allSkip = allSkip && isSkipped;
-      allMiss = allMiss && isMiss;
-      allSkipOrMiss = allSkipOrMiss && (isSkipped || isMiss);
+      allInfo = allInfo && isInfo;
+      allSkipOrInfo = allSkipOrInfo && (isSkipped || isInfo);
 
       // Early exit if we've found all conditions
-      if (hasSkip && !allSkip && !allMiss && !allSkipOrMiss) { break; }
+      if (hasSkip && !allSkip && !allInfo && !allSkipOrInfo) { break; }
     }
 
     s(
@@ -760,7 +760,7 @@ export const scoredChoicesAtom = atom(
 
     const channel = g(channelAtom);
 
-    const hasActionableChoices = !allSkipOrMiss;
+    const hasActionableChoices = !allSkipOrInfo;
     if (hasActionableChoices) {
       s(panelHTMLAtom, '');
 
