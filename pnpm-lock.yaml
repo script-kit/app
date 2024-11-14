@@ -16,7 +16,7 @@ importers:
         version: 0.1.38
       '@johnlindquist/kit':
         specifier: latest
-        version: 3.2.2
+        version: 3.2.3
       '@pnpm/exec':
         specifier: ^2.0.0
         version: 2.0.0
@@ -196,8 +196,8 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7
       '@johnlindquist/mac-panel-window':
-        specifier: ^1.6.2
-        version: link:../mac-panel-window
+        specifier: ^1.6.3
+        version: 1.6.3
       '@johnlindquist/node-window-manager':
         specifier: ^1.0.24
         version: 1.0.24
@@ -1180,8 +1180,8 @@ packages:
   '@johnlindquist/kit-internal@1.13.5':
     resolution: {integrity: sha512-+49s4Y8WLTG+bZyuJ+i4MFab9/6yDabesGrnEuum+K9deYEXbCGuCJGfFIwAoShNwaVxXeWvJQEwnRQbtvwZyQ==}
 
-  '@johnlindquist/kit@3.2.2':
-    resolution: {integrity: sha512-MMPynVL7AotJ9kPA78WkLAOZFj15DavOYU5xL0ZDbmX/8HM7GfCEfLiS2LK9tmO4t/uxLQyaTccQBbxZl9OjeQ==}
+  '@johnlindquist/kit@3.2.3':
+    resolution: {integrity: sha512-FtkXFiehQxjWwMKWFRoNmFm8fjTc7tg3r3d7VMRhN2V1Ct9SGmU5Z75/PwgbNy5pLU8xLP6IVZL2N4eAL3QkUw==}
     engines: {node: '>=14.8.0'}
     hasBin: true
 
@@ -1191,6 +1191,10 @@ packages:
 
   '@johnlindquist/mac-frontmost@1.0.7':
     resolution: {integrity: sha512-dCNIV8IRCi0a5yiCIjc8TKy4/QObpjdOmA5r1hz0BThATet+HELo7MyQ42S8HNNiwuXeFiXZKuhnDl6pK9eUBA==}
+    os: [darwin]
+
+  '@johnlindquist/mac-panel-window@1.6.3':
+    resolution: {integrity: sha512-XAbV8l3uxSB33zepC1cYsYkIstLeQrDcBSg2i2RjPbKprvcHp+UoEAjOoO+A0EH3Mh7blOKvs7IuId/B0RCS5w==}
     os: [darwin]
 
   '@johnlindquist/no-dom@1.0.2':
@@ -5351,6 +5355,10 @@ packages:
   node-addon-api@7.1.1:
     resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
 
+  node-addon-api@8.2.2:
+    resolution: {integrity: sha512-9emqXAKhVoNrQ792nLI/wpzPpJ/bj/YXxW0CvAau1+RdGBcCRF1Dmz7719zgVsQNrzHl9Tzn3ImZ4qWFarWL0A==}
+    engines: {node: ^18 || ^20 || >= 21}
+
   node-api-version@0.2.0:
     resolution: {integrity: sha512-fthTTsi8CxaBXMaBAD7ST2uylwvsnYxh2PfaScwpMhos6KlSFajXQPcM4ogNE1q2s3Lbz9GCGqeIHC+C6OZnKg==}
 
@@ -7339,8 +7347,8 @@ packages:
     resolution: {integrity: sha512-9qv4rlDiopXg4E69k+vMHjNN63YFMe9sZMrdlvKnCjlCRWeCBswPPMPUfx+ipsAWq1LXHe70RcbaHdJJpS6hyQ==}
     engines: {node: '>= 10'}
 
-  zx@8.2.0:
-    resolution: {integrity: sha512-ec7Z1Ki9h4CsKqbMjZ8H7G1PbbZYErscxT314LF66Ljx1YRENisqa5m9IN2VjbYgOKxdv5t0MbVd3Hf+II3e7w==}
+  zx@8.2.2:
+    resolution: {integrity: sha512-HSIdpU5P2ONI0nssnhsUZNCH9Sd/Z8LIFk9n8QTbu6JufzJx7qR7ajrMN21s06JqWSApcN012377iWsv8Vs5bg==}
     engines: {node: '>= 12.17.0'}
     hasBin: true
 
@@ -8106,7 +8114,7 @@ snapshots:
 
   '@johnlindquist/kit-internal@1.13.5': {}
 
-  '@johnlindquist/kit@3.2.2':
+  '@johnlindquist/kit@3.2.3':
     dependencies:
       '@johnlindquist/globals': 1.16.4
       '@johnlindquist/kit-internal': 1.13.5
@@ -8145,7 +8153,7 @@ snapshots:
       suggestion: 2.1.2
       tmp-promise: 3.0.3
       untildify: 5.0.0
-      zx: 8.2.0
+      zx: 8.2.2
     optionalDependencies:
       file-icon: 5.1.1
       get-app-icon: 1.0.1
@@ -8162,6 +8170,12 @@ snapshots:
     dependencies:
       bindings: 1.5.0
       node-addon-api: 7.1.1
+    optional: true
+
+  '@johnlindquist/mac-panel-window@1.6.3':
+    dependencies:
+      bindings: 1.5.0
+      node-addon-api: 8.2.2
     optional: true
 
   '@johnlindquist/no-dom@1.0.2': {}
@@ -13198,6 +13212,9 @@ snapshots:
 
   node-addon-api@7.1.1: {}
 
+  node-addon-api@8.2.2:
+    optional: true
+
   node-api-version@0.2.0:
     dependencies:
       semver: 7.6.3
@@ -15317,7 +15334,7 @@ snapshots:
       compress-commons: 4.1.2
       readable-stream: 3.6.2
 
-  zx@8.2.0:
+  zx@8.2.2:
     optionalDependencies:
       '@types/fs-extra': 11.0.4
       '@types/node': 22.9.0

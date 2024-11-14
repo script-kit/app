@@ -189,7 +189,7 @@
   "optionalDependencies": {
     "@johnlindquist/mac-clipboard-listener": "^1.0.3",
     "@johnlindquist/mac-frontmost": "^1.0.7",
-    "@johnlindquist/mac-panel-window": "^1.6.2",
+    "@johnlindquist/mac-panel-window": "^1.6.3",
     "@johnlindquist/node-window-manager": "^1.0.24",
     "node-mac-permissions": "^2.4.0",
     "uiohook-napi": "^1.5.4"
