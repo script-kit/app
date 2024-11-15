@@ -2279,8 +2279,9 @@ export const createAssetAtom = (...parts: string[]) =>
     });
   });
 
-// TODO: Is this still needed?
-// const isReady = atom(false);
+
+// This is only used on the Splash screen so "escape" will trigger the main menu
+// Are there other scenarios where we need to set this to false?
 const isReady = atom(true);
 export const isReadyAtom = atom(
   (g) => {
