@@ -311,9 +311,9 @@ jobs:
           ELECTRON_BUILD_ARCH: x64
           ELECTRON_BUILD_PLATFORM: darwin
 
-        # Wait 3 minutes to start to avoid signing issues
+        # Wait 5 minutes to start to avoid signing issues
         run: |
-            sleep 180
+            sleep 300
             pnpm i
             pnpm vite-prebuild
             pnpm exec kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
