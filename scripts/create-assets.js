@@ -158,14 +158,43 @@ await tar.c(
 
 console.log(`Uploading ${name} to releases...`);
 
-const data = await readFile(kitTarPath);
+async function uploadWithRetry(octokit, releaseData, filePath, name, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Upload attempt ${attempt}/${maxRetries} for ${name}`);
+      const data = await readFile(filePath);
 
-const uploadResponse = await octokit.rest.repos.uploadReleaseAsset({
-  ...github.context.repo,
-  release_id: releaseResponse.data.id,
-  name,
-  data,
-});
+      const uploadResponse = await octokit.rest.repos.uploadReleaseAsset({
+        ...github.context.repo,
+        release_id: releaseData.id,
+        name,
+        data,
+      });
+
+      console.log(`Successfully uploaded ${name} on attempt ${attempt}`);
+      return uploadResponse;
+    } catch (error) {
+      console.error(`Upload attempt ${attempt} failed:`, error.message);
+
+      if (attempt === maxRetries) {
+        throw new Error(`Failed to upload after ${maxRetries} attempts: ${error.message}`);
+      }
+
+      // Wait before retrying (exponential backoff)
+      const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
+      console.log(`Waiting ${delay}ms before retry...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+
+try {
+  const uploadResponse = await uploadWithRetry(octokit, releaseResponse.data, kitTarPath, name);
+  console.log('Upload successful:', uploadResponse.data.browser_download_url);
+} catch (error) {
+  console.error('Final upload error:', error);
+  process.exit(1);
+}
 
 const url = `https://github.com/johnlindquist/kitapp/releases/download/${tag_name}/${name}`;
 const fileName = `kit_url_${platform}_${arch}.txt`;
