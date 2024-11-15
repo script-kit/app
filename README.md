@@ -1,6 +1,8 @@
 # Script Kit App v3
 
-The companion app to Script Kit
+The Script Kit App
+
+The SDK is here: [https://github.com/johnlindquist/kit](https://github.com/johnlindquist/kit)
 
 [https://scriptkit.com](https://scriptkit.com)
 
