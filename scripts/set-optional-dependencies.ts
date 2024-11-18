@@ -53,7 +53,7 @@ if (!optionalDependenciesToRemove.length) {
 const command = `pnpm remove ${optionalDependenciesToRemove.join(' ')}`;
 
 console.log(
-  `BEFORE`,
+  `PREPARE TO UNINSTALL`,
   JSON.stringify({
     pkg: pkg.optionalDependencies,
     optionalDependenciesToKeep,
