@@ -108,13 +108,24 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
+    name: publish(${{ matrix.name }})
     needs: [tag, semantic]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # os: [script-kit-windows-latest-arm64, script-kit-ubuntu-latest-arm64, windows-latest, ubuntu-latest]
-        os: [windows-2022, script-kit-ubuntu-latest-arm64, windows-latest, ubuntu-latest, macos-latest, macos-14]
-
+        include:
+          - os: windows-2022
+            name: win32-arm64
+          - os: script-kit-ubuntu-latest-arm64
+            name: linux-arm64
+          - os: windows-latest
+            name: win32-x64
+          - os: ubuntu-latest
+            name: linux-x64
+          - os: macos-latest
+            name: darwin-x64
+          - os: macos-14
+            name: darwin-arm64
     steps:
       - name: Debug - Echo kit_tag from previous jobs
         run: |
@@ -151,7 +162,7 @@ jobs:
               ;;
           esac
 
-      - name: Platform and Arch - ${{ steps.determine_platform.outputs.platform }} ${{ steps.determine_arch.outputs.arch }}
+      - name: 🖥️ Platform and Arch - ${{ steps.determine_platform.outputs.platform }} ${{ steps.determine_arch.outputs.arch }}
         run: |
           echo "platform=$platform"
           echo "arch=$arch"

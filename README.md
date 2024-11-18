@@ -20,6 +20,18 @@ pnpm i
 pnpm dev
 ```
 
+## Feature Map
+
+| OS      | Arch  | Copy/Paste/Set Text | Expand Text | Monitor Clipboard |
+|---------|-------|:------------------:|:-----------:|:----------------:|
+| Mac     | x64   | ✅                 | ✅          | ✅               |
+| Mac     | arm64 | ✅                 | ✅          | ✅               |
+| Windows | x64   | ✅                 | ✅          | ✅               |
+| Windows | arm64 | ✅                 | ❌          | ✅               |
+| Linux   | x64   | ✅                 | ✅          | ❌               |
+| Linux   | arm64 | ✅                 | ❌          | ❌               |
+
+
 ### Reloading
 
 If you make a change in the `main` dir/process, you'll need to stop and run `npm run dev` again.

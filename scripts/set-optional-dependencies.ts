@@ -48,6 +48,10 @@ if (!optionalDependenciesToKeep) {
 const optionalDependenciesToRemove = Object.keys(pkg.optionalDependencies).filter(
   (dep) => !optionalDependenciesToKeep.includes(dep),
 );
+if (!optionalDependenciesToRemove.length) {
+  console.log('No optional dependencies to remove');
+  process.exit(0);
+}
 
 const command = `pnpm remove ${optionalDependenciesToRemove.join(' ')}`;
 
