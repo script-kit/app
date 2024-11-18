@@ -108,64 +108,34 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
-    name: publish(${{ matrix.name }})
+    name: publish(${{ matrix.platform }}-${{ matrix.arch }})
     needs: [tag, semantic]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: windows-2022
-            name: win32-arm64
+            platform: win32
+            arch: arm64
           - os: script-kit-ubuntu-latest-arm64
-            name: linux-arm64
+            platform: linux
+            arch: arm64
           - os: windows-latest
-            name: win32-x64
+            platform: win32
+            arch: x64
           - os: ubuntu-latest
-            name: linux-x64
+            platform: linux
+            arch: x64
           - os: macos-latest
-            name: darwin-x64
+            platform: mac
+            arch: x64
           - os: macos-14
-            name: darwin-arm64
+            platform: mac
+            arch: arm64
     steps:
       - name: Debug - Echo kit_tag from previous jobs
         run: |
           echo "kit_tag from needs.tag.outputs: ${{ needs.tag.outputs.kit_tag }}"
-
-      # We're essentially treating the runners ending in "latest" as x64, and the others as arm64. Dumb fix, but it works for now.
-      - name: Determine arch from runner name
-        id: determine_arch
-        shell: bash
-        run: |
-          if [[ "${{ matrix.os }}" == "windows-latest" || "${{ matrix.os }}" == "ubuntu-latest" || "${{ matrix.os }}" == "macos-latest" ]]; then
-            echo "arch=x64" >> $GITHUB_OUTPUT
-          else
-            echo "arch=arm64" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Determine platform from runner name
-        id: determine_platform
-        shell: bash
-        run: |
-          case "${{ matrix.os }}" in
-            *"ubuntu"*|*"linux"*)
-              echo "platform=linux" >> $GITHUB_OUTPUT
-              ;;
-            *"macos"*|*"darwin"*)
-              echo "platform=mac" >> $GITHUB_OUTPUT
-              ;;
-            *"windows"*|*"win"*)
-              echo "platform=win32" >> $GITHUB_OUTPUT
-              ;;
-            *)
-              echo "Error: Unknown platform in ${{ matrix.os }}"
-              exit 1
-              ;;
-          esac
-
-      - name: 🖥️ Platform and Arch - ${{ steps.determine_platform.outputs.platform }} ${{ steps.determine_arch.outputs.arch }}
-        run: |
-          echo "platform=$platform"
-          echo "arch=$arch"
 
       - name: Debug - List all job outputs
         run: |
@@ -221,7 +191,7 @@ jobs:
         if: needs.tag.outputs.kit_tag == 'latest'
         uses: johnlindquist/kit-action@main
         with:
-          script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ steps.determine_arch.outputs.arch }} ${{ needs.semantic.outputs.release_id }}
+          script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ matrix.arch }} ${{ needs.semantic.outputs.release_id }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -229,13 +199,13 @@ jobs:
         if: needs.tag.outputs.kit_tag == 'latest'
         uses: johnlindquist/kit-action@main
         with:
-          script: set-optional-dependencies ${{ steps.determine_platform.outputs.platform }} ${{ steps.determine_arch.outputs.arch }}
+          script: set-optional-dependencies ${{ matrix.platform }} ${{ matrix.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
       - name: Publish windows x64
-        if: matrix.os == 'windows-latest'
+        if: matrix.platform == 'win32' && matrix.arch == 'x64'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
@@ -252,7 +222,7 @@ jobs:
             pnpm exec kit ./build.ts win x64 always
 
       - name: Publish windows arm64
-        if: matrix.os == 'windows-2022'
+        if: matrix.platform == 'win32' && matrix.arch == 'arm64'
         run: |
             pnpm i
             pnpm exec kit remove-tick
@@ -270,7 +240,7 @@ jobs:
           ELECTRON_BUILD_PLATFORM: win32
 
       - name: Install GCC 10 and native-keymap dependencies
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'script-kit-ubuntu-latest-arm64'
+        if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libxtst-dev
@@ -282,7 +252,7 @@ jobs:
           echo "CXX=g++-10" >> $GITHUB_ENV
 
       - name: Publish linux x64
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.platform == 'linux' && matrix.arch == 'x64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -303,7 +273,7 @@ jobs:
             pnpm exec kit ./build.ts linux x64 always
 
       - name: Publish linux arm64
-        if: matrix.os == 'script-kit-ubuntu-latest-arm64'
+        if: matrix.platform == 'linux' && matrix.arch == 'arm64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -330,7 +300,7 @@ jobs:
             pnpm exec kit ./build.ts linux arm64 always
 
       - name: Publish mac x64
-        if: matrix.os == 'macos-latest'
+        if: matrix.platform == 'mac' && matrix.arch == 'x64'
         env:
           # These values are used for auto updates signing
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
@@ -351,10 +321,10 @@ jobs:
             sleep 300
             pnpm i
             pnpm vite-prebuild
-            pnpm exec kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
+            pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
 
       - name: Publish mac arm64
-        if: matrix.os == 'macos-14'
+        if: matrix.platform == 'mac' && matrix.arch == 'arm64'
         env:
           # These values are used for auto updates signing
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
@@ -373,13 +343,13 @@ jobs:
         run: |
             pnpm i
             pnpm vite-prebuild
-            pnpm exec kit ./build.ts mac ${{ steps.determine_arch.outputs.arch }} always
+            pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml
-        if: contains(matrix.os, 'macos')
+        if: matrix.platform == 'mac'
         # Just something to keep an eye on in case kit-action changes.
         uses: johnlindquist/kit-action@main
         with:
-          script: merge-mac-latest-yml script-kit kitapp ${{ steps.determine_arch.outputs.arch }}
+          script: merge-mac-latest-yml script-kit kitapp ${{ matrix.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
