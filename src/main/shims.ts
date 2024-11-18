@@ -1,9 +1,9 @@
 import os from 'node:os';
 
 const log = {
-  info: (global as any)?.log.info || console.log,
-  warn: (global as any)?.log.warn || console.warn,
-  error: (global as any)?.log.error || console.error,
+  info: (global as any)?.logInfo || console.log,
+  warn: (global as any)?.logWarn || console.warn,
+  error: (global as any)?.logError || console.error,
 };
 
 // get arch

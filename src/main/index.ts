@@ -13,7 +13,10 @@ electronLog.initialize();
 
 import { createLogger } from '../shared/log-utils';
 const log = createLogger('index.ts');
-(global as any).log = log;
+(global as any).log = log.info;
+(global as any).logInfo = log.info;
+(global as any).logWarn = log.warn;
+(global as any).logError = log.error;
 
 import dotenv from 'dotenv';
 import unhandled from 'electron-unhandled';
