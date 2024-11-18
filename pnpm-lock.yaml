@@ -327,7 +327,7 @@ importers:
         version: 33.2.0
       electron-builder:
         specifier: 26.0.0-alpha.6
-        version: 26.0.0-alpha.6(electron-builder-squirrel-windows@25.1.8)
+        version: 26.0.0-alpha.6(electron-builder-squirrel-windows@25.1.8(dmg-builder@26.0.0-alpha.6))
       electron-mocks:
         specifier: ^1.4.2
         version: 1.4.2
@@ -720,8 +720,8 @@ packages:
     resolution: {integrity: sha512-Qkzpg2s9GnVV2I2BjRksUi43U5e6+zaQMcjoJy0C+C5oxaKl+fmckGDQFtRpZpZV0NQekuZZ+tGz7EA9TVnQtQ==}
     engines: {node: '>=12'}
 
-  '@electron/node-gyp@https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2':
-    resolution: {tarball: https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2}
+  '@electron/node-gyp@git+https://git@github.com:electron/node-gyp.git#06b29aafb7708acef8b3669835c8a7857ebc92d2':
+    resolution: {commit: 06b29aafb7708acef8b3669835c8a7857ebc92d2, repo: git@github.com:electron/node-gyp.git, type: git}
     version: 10.2.0-electron.1
     engines: {node: '>=12.13.0'}
     hasBin: true
@@ -3303,8 +3303,8 @@ packages:
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
-  elliptic@6.5.7:
-    resolution: {integrity: sha512-ESVCtTwiA+XhY3wyh24QqRGBoP3rEdDUl3EDUUo9tft074fi19IrdpH7hLCMMP3CIj7jb3W96rn8lt/BqIlt5Q==}
+  elliptic@6.6.1:
+    resolution: {integrity: sha512-RaddvvMatK2LJHqFJ+YA4WysVN5Ita9E35botqIYspQ4TkRAlCicdzKOjlyv/1Za5RyTNn7di//eEV0uTAfe3g==}
 
   emittery@0.13.1:
     resolution: {integrity: sha512-DeWwawk6r5yR9jFgnDKYt4sLS0LmHJJi3ZOnb5/JdbYwj3nW+FxQnHIjhBKz8YLC7oRNPVM9NQ47I3CVx34eqQ==}
@@ -7696,7 +7696,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@electron/node-gyp@https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2':
+  '@electron/node-gyp@git+https://git@github.com:electron/node-gyp.git#06b29aafb7708acef8b3669835c8a7857ebc92d2':
     dependencies:
       env-paths: 2.2.1
       exponential-backoff: 3.1.1
@@ -7753,7 +7753,7 @@ snapshots:
 
   '@electron/rebuild@3.7.0':
     dependencies:
-      '@electron/node-gyp': https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2
+      '@electron/node-gyp': git+https://git@github.com:electron/node-gyp.git#06b29aafb7708acef8b3669835c8a7857ebc92d2
       '@malept/cross-spawn-promise': 2.0.0
       chalk: 4.1.2
       debug: 4.3.7
@@ -9276,7 +9276,7 @@ snapshots:
 
   app-builder-bin@5.0.0-alpha.11: {}
 
-  app-builder-lib@25.1.8(dmg-builder@26.0.0-alpha.6)(electron-builder-squirrel-windows@25.1.8):
+  app-builder-lib@25.1.8(dmg-builder@26.0.0-alpha.6(electron-builder-squirrel-windows@25.1.8))(electron-builder-squirrel-windows@25.1.8(dmg-builder@26.0.0-alpha.6)):
     dependencies:
       '@develar/schema-utils': 2.6.5
       '@electron/notarize': 2.5.0
@@ -9316,7 +9316,7 @@ snapshots:
       - bluebird
       - supports-color
 
-  app-builder-lib@26.0.0-alpha.6(dmg-builder@26.0.0-alpha.6)(electron-builder-squirrel-windows@25.1.8):
+  app-builder-lib@26.0.0-alpha.6(dmg-builder@26.0.0-alpha.6(electron-builder-squirrel-windows@25.1.8))(electron-builder-squirrel-windows@25.1.8(dmg-builder@26.0.0-alpha.6)):
     dependencies:
       '@develar/schema-utils': 2.6.5
       '@electron/asar': 3.2.17
@@ -9762,7 +9762,7 @@ snapshots:
       browserify-rsa: 4.1.1
       create-hash: 1.2.0
       create-hmac: 1.1.7
-      elliptic: 6.5.7
+      elliptic: 6.6.1
       hash-base: 3.0.4
       inherits: 2.0.4
       parse-asn1: 5.1.7
@@ -10257,7 +10257,7 @@ snapshots:
   create-ecdh@4.0.4:
     dependencies:
       bn.js: 4.12.0
-      elliptic: 6.5.7
+      elliptic: 6.6.1
 
   create-hash@1.2.0:
     dependencies:
@@ -10629,7 +10629,7 @@ snapshots:
 
   dmg-builder@26.0.0-alpha.6(electron-builder-squirrel-windows@25.1.8):
     dependencies:
-      app-builder-lib: 26.0.0-alpha.6(dmg-builder@26.0.0-alpha.6)(electron-builder-squirrel-windows@25.1.8)
+      app-builder-lib: 26.0.0-alpha.6(dmg-builder@26.0.0-alpha.6(electron-builder-squirrel-windows@25.1.8))(electron-builder-squirrel-windows@25.1.8(dmg-builder@26.0.0-alpha.6))
       builder-util: 26.0.0-alpha.3
       builder-util-runtime: 9.2.10
       fs-extra: 10.1.0
@@ -10739,7 +10739,7 @@ snapshots:
 
   electron-builder-squirrel-windows@25.1.8(dmg-builder@26.0.0-alpha.6):
     dependencies:
-      app-builder-lib: 25.1.8(dmg-builder@26.0.0-alpha.6)(electron-builder-squirrel-windows@25.1.8)
+      app-builder-lib: 25.1.8(dmg-builder@26.0.0-alpha.6(electron-builder-squirrel-windows@25.1.8))(electron-builder-squirrel-windows@25.1.8(dmg-builder@26.0.0-alpha.6))
       archiver: 5.3.2
       builder-util: 25.1.7
       fs-extra: 10.1.0
@@ -10748,9 +10748,9 @@ snapshots:
       - dmg-builder
       - supports-color
 
-  electron-builder@26.0.0-alpha.6(electron-builder-squirrel-windows@25.1.8):
+  electron-builder@26.0.0-alpha.6(electron-builder-squirrel-windows@25.1.8(dmg-builder@26.0.0-alpha.6)):
     dependencies:
-      app-builder-lib: 26.0.0-alpha.6(dmg-builder@26.0.0-alpha.6)(electron-builder-squirrel-windows@25.1.8)
+      app-builder-lib: 26.0.0-alpha.6(dmg-builder@26.0.0-alpha.6(electron-builder-squirrel-windows@25.1.8))(electron-builder-squirrel-windows@25.1.8(dmg-builder@26.0.0-alpha.6))
       builder-util: 26.0.0-alpha.3
       builder-util-runtime: 9.2.10
       chalk: 4.1.2
@@ -10858,7 +10858,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  elliptic@6.5.7:
+  elliptic@6.6.1:
     dependencies:
       bn.js: 4.12.0
       brorand: 1.1.0
