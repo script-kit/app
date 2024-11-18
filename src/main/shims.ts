@@ -1,15 +1,20 @@
 import os from 'node:os';
-import log from 'electron-log';
+
+const log = {
+  info: (global as any)?.log.info || console.log,
+  warn: (global as any)?.log.warn || console.warn,
+  error: (global as any)?.log.error || console.error,
+};
 
 // get arch
-console.log({
+log.info({
   ELECTRON_BUILD_ARCH: process.env.ELECTRON_BUILD_ARCH || 'unknown',
   ELECTRON_BUILD_PLATFORM: process.env.ELECTRON_BUILD_PLATFORM || 'unknown',
 });
 const arch = (process.env.ELECTRON_BUILD_ARCH || process.arch) as NodeJS.Architecture;
 const platform = (process.env.ELECTRON_BUILD_PLATFORM || os.platform()) as NodeJS.Platform;
 
-type Target = `${NodeJS.Platform}-${NodeJS.Architecture}`;
+export type Target = `${NodeJS.Platform}-${NodeJS.Architecture}`;
 const target: Target = `${platform}-${arch}`;
 
 const robot = '@jitsi/robotjs' as const;
@@ -20,10 +25,11 @@ const mcl = '@johnlindquist/mac-clipboard-listener' as const;
 const mf = '@johnlindquist/mac-frontmost' as const;
 const mpw = '@johnlindquist/mac-panel-window' as const;
 // Object.keys(packageJson.optionalDependencies)
-const optionalDependencies = [robot, uiohook, nmp, nwm, mcl, mf, mpw] as const;
-type OptionalDependency = (typeof optionalDependencies)[number];
+export const optionalDependencies = [robot, uiohook, nmp, nwm, mcl, mf, mpw] as const;
+export type OptionalDependency = (typeof optionalDependencies)[number];
 
-const supportMap: Partial<Record<Target, OptionalDependency[]>> = {
+// IMPORTANT: You must manually update this map when adding new optional dependencies to optional-dependencies.json
+export const supportMap: Partial<Record<Target, OptionalDependency[]>> = {
   // Consider restoring uiohook once the github actions runner supports bash
   'win32-arm64': [robot, nwm],
   'win32-x64': [robot, uiohook, nwm],
@@ -62,6 +68,7 @@ const createShim = <T extends keyof Shims>(packageName: T, depth = 0): Shims[T] 
     {},
     {
       get: (_target, prop: string) => {
+
         log.warn(`Accessing ${prop.toString()} not supported on ${packageName}`);
 
         if (depth > 0) {
@@ -88,14 +95,14 @@ const shims: Shims = {
 
 export const include = () => {
   const deps = supportMap[target] || [];
-  console.log(`Including shims for ${target}: ${deps.join(', ')}`);
+  log.info(`Including shims for ${target}: ${deps.join(', ')}`);
   return deps;
 };
 
 export const external = () => {
   const internal = include();
   const deps = optionalDependencies.filter((dep) => !internal.includes(dep));
-  console.log(`External shims: ${deps.join(', ')}`);
+  log.info(`External shims: ${deps.join(', ')}`);
   return deps;
 };
 
