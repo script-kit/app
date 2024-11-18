@@ -2539,7 +2539,7 @@ export class KitPrompt {
     }
 
     const shouldCloseOnInitialEscape = this.shouldClosePromptOnInitialEscape(isEscape);
-    log.info(`${this.pid}: shouldCloseOnInitialEscape: ${shouldCloseOnInitialEscape}`);
+    // log.info(`${this.pid}: shouldCloseOnInitialEscape: ${shouldCloseOnInitialEscape}`);
     if ((isW && (kitState.isMac ? input.meta : input.control)) || shouldCloseOnInitialEscape) {
       log.info(`${this.pid}: Closing prompt window`);
       if (isW) {
