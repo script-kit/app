@@ -7,9 +7,8 @@ on:
       - next
 
   workflow_dispatch:
-    branches:
-      - main
-      - next
+    # Remove the branches section as it's not valid for workflow_dispatch
+    # workflow_dispatch allows manual triggering without branch restrictions
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -132,6 +131,31 @@ jobs:
             echo "arch=arm64" >> $GITHUB_OUTPUT
           fi
 
+      - name: Determine platform from runner name
+        id: determine_platform
+        shell: bash
+        run: |
+          case "${{ matrix.os }}" in
+            *"ubuntu"*|*"linux"*)
+              echo "platform=linux" >> $GITHUB_OUTPUT
+              ;;
+            *"macos"*|*"darwin"*)
+              echo "platform=mac" >> $GITHUB_OUTPUT
+              ;;
+            *"windows"*|*"win"*)
+              echo "platform=win32" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "Error: Unknown platform in ${{ matrix.os }}"
+              exit 1
+              ;;
+          esac
+
+      - name: Platform and Arch - ${{ steps.determine_platform.outputs.platform }} ${{ steps.determine_arch.outputs.arch }}
+        run: |
+          echo "platform=$platform"
+          echo "arch=$arch"
+
       - name: Debug - List all job outputs
         run: |
           echo "All job outputs:"
@@ -194,7 +218,7 @@ jobs:
         if: needs.tag.outputs.kit_tag == 'latest'
         uses: johnlindquist/kit-action@main
         with:
-          script: set-optional-dependencies ${{ matrix.os }} ${{ steps.determine_arch.outputs.arch }}
+          script: set-optional-dependencies ${{ steps.determine_platform.outputs.platform }} ${{ steps.determine_arch.outputs.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

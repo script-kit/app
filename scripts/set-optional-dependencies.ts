@@ -9,9 +9,11 @@ console.log(
 const optionalDependencies = await readJson('optional-dependencies.json');
 const pkg = await readJson('package.json');
 
+type Platform = 'linux' | 'mac' | 'win';
+type Arch = 'arm64' | 'x64';
 
-let platform: 'linux' | 'mac' | 'win';
-let arch: 'arm64' | 'x64';
+let platform: Platform;
+let arch: Arch;
 
 if (process.argv.length <= 2) {
   if (process.platform === 'darwin') {
@@ -24,10 +26,10 @@ if (process.argv.length <= 2) {
     throw new Error(`Unsupported platform: ${process.platform}`);
   }
 
-  arch = process.arch as 'arm64' | 'x64';
+  arch = process.arch as Arch;
 } else {
-  platform = (await arg('platform')) as 'linux' | 'mac' | 'win';
-  arch = (await arg('arch')) as 'arm64' | 'x64';
+  platform = (await arg('platform')) as Platform;
+  arch = (await arg('arch')) as Arch;
 }
 
 console.log({
@@ -36,6 +38,8 @@ console.log({
   processPlatform: process.platform,
   processArch: process.arch,
 });
+
+console.log({optionalDependencies});
 
 const optionalDependenciesToKeep = optionalDependencies[platform][arch];
 if (!optionalDependenciesToKeep) {
