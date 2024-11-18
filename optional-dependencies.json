@@ -1,9 +1,9 @@
 {
-  "win32": {
+  "win": {
     "arm64": ["@jitsi/robotjs", "@johnlindquist/node-window-manager"],
     "x64": ["@jitsi/robotjs", "uiohook-napi", "@johnlindquist/node-window-manager"]
   },
-  "darwin": {
+  "mac": {
     "arm64": [
       "@jitsi/robotjs",
       "uiohook-napi",

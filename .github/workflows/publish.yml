@@ -194,7 +194,7 @@ jobs:
         if: needs.tag.outputs.kit_tag == 'latest'
         uses: johnlindquist/kit-action@main
         with:
-          script: set-optional-dependencies
+          script: set-optional-dependencies ${{ matrix.os }} ${{ steps.determine_arch.outputs.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
