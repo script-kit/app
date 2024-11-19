@@ -62,8 +62,9 @@ let UiohookToName: Record<number, string>;
 export function createUiohookToName() {
   const { UiohookKey } = shims['uiohook-napi'];
 
-  if(!UiohookKey){
-    return
+  if (typeof UiohookKey?.Comma !== 'number') {
+    log.error('UiohookKey.Comma is not a number');
+    return;
   }
 
   UiohookToName = {};
