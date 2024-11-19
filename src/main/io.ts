@@ -60,18 +60,16 @@ type KeyCodes = keyof typeof ShiftMap;
 
 let UiohookToName: Record<number, string>;
 export function createUiohookToName() {
-  const uiohookShim = shims['uiohook-napi'];
+  const { UiohookKey } = shims['uiohook-napi'];
 
-  if (!(uiohookShim?.UiohookKey)) {
-    return;
+  if(!UiohookKey){
+    return
   }
-
-  const { UiohookKey } = uiohookShim;
 
   UiohookToName = {};
   for (const [k, v] of Object.entries(UiohookKey)) {
-    if (typeof v !== 'number') {
-      log.error('UiohookKey is not a string', { k, v });
+    if (typeof v !== 'number' || typeof k !== 'string') {
+      log.error('UiohookKey is not a number or string', { k, v });
       return;
     }
     UiohookToName[v] = k;
