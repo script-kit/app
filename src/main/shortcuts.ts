@@ -179,6 +179,9 @@ export const shortcutScriptChanged = async ({
       log.info(`Checking scriptlets in ${otherPath}`);
       const scripts = await parseScriptletsFromPath(otherPath);
       script = scripts.find((s) => s.filePath === otherPath);
+      if (!script) {
+        log.error(`Script ${otherPath} not found. Skipping shortcut unregistration.`);
+      }
     } else {
       script = await parseScript(otherPath);
     }
@@ -328,6 +331,7 @@ const resumeShortcuts = () => {
   log.info('RESUMING GLOBAL SHORTCUTS');
   updateMainShortcut(kitState.kenvEnv?.KIT_MAIN_SHORTCUT || kitState.mainShortcut || '');
   for (const [filePath, script] of kitState.scripts) {
+    // log.info(`🤦‍♂️ Checking script: ${filePath}`, script?.shortcut);
     if (script.shortcut) {
       shortcutScriptChanged(script);
     }

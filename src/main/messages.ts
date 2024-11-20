@@ -2047,14 +2047,16 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       const prevText = clipboard.readText();
       log.info(`${child.pid}: SET SELECTED TEXT`, text, prevText);
-      clipboard.writeText(text);
+      await clipboard.writeText(text);
 
       robot.keyTap('v', getModifier());
       setTimeout(() => {
         kitState.snippet = '';
         childSend({ channel, value });
         log.info(`SET SELECTED TEXT DONE with ${channel}`, text);
-        clipboard.writeText(prevText);
+        setTimeout(() => {
+          clipboard.writeText(prevText);
+        }, 250);
       }, 10);
     }),
 

@@ -57,7 +57,7 @@ function detectArch(): string {
 async function getLatestVersion(): Promise<string> {
   log.info('Fetching latest pnpm version...');
   const response = await fetch('https://registry.npmjs.org/@pnpm/exe');
-  const data = await response.json();
+  const data = await response.json() as { distTags: { latest: string } };
   return data['dist-tags'].latest;
 }
 
@@ -78,7 +78,7 @@ export async function setupPnpm(): Promise<void> {
     log.info(`Platform: ${platform}, Architecture: ${arch}, Version: ${version}`);
 
     // Construct the URL for downloading pnpm binary
-    const archiveUrl = `https://github.com/pnpm/pnpm/releases/download/v${version}/pnpm-${platform}-${arch}`;
+    const archiveUrl = `https://github.com/pnpm/@pnpm/exe/releases/download/v${version}/pnpm-${platform}-${arch}`;
     const fileName = platform === 'win' ? 'pnpm.exe' : 'pnpm';
 
     log.info(`Downloading pnpm from: ${archiveUrl}`);
