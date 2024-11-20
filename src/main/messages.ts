@@ -757,6 +757,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
             isVisible: p.isVisible(),
             isDestroyed: p.isDestroyed(),
             bounds: p.window.getBounds(),
+            name: p.scriptName,
+            scriptPath: p.scriptPath,
+            script: p.script,
           };
         }),
       });

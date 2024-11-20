@@ -188,7 +188,7 @@ export default function App() {
 
   const [promptData] = useAtom(promptDataAtom);
 
-  const setMainHeight = useSetAtom(mainHeightAtom);
+  const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
   const triggerResize = useSetAtom(triggerResizeAtom);
   const setSubmitValue = useSetAtom(submitValueAtom);
   const setMouseEnabled = useSetAtom(mouseEnabledAtom);
@@ -670,7 +670,7 @@ text-text-base
                       />
                     )}
                     <Input key="AppInput" />
-                    {!showTabs && <div className="border-b border-ui-border" />}
+                    {!showTabs && <div className={`${mainHeight > 10 ? 'border-b border-ui-border' : ''}`} />}
                   </>
                 )}
 

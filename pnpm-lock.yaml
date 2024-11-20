@@ -196,8 +196,8 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7
       '@johnlindquist/mac-panel-window':
-        specifier: ^1.6.3
-        version: 1.6.3
+        specifier: ^1.6.4
+        version: 1.6.4
       '@johnlindquist/node-window-manager':
         specifier: ^1.0.24
         version: 1.0.24
@@ -320,8 +320,8 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1
       dompurify:
-        specifier: ^3.2.0
-        version: 3.2.0
+        specifier: ^3.2.1
+        version: 3.2.1
       electron:
         specifier: ^33.2.0
         version: 33.2.0
@@ -356,8 +356,8 @@ importers:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@22.9.1)
       jotai:
-        specifier: ^2.10.2
-        version: 2.10.2(@types/react@18.3.12)(react@18.3.1)
+        specifier: ^2.10.3
+        version: 2.10.3(@types/react@18.3.12)(react@18.3.1)
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
@@ -1208,8 +1208,8 @@ packages:
     resolution: {integrity: sha512-dCNIV8IRCi0a5yiCIjc8TKy4/QObpjdOmA5r1hz0BThATet+HELo7MyQ42S8HNNiwuXeFiXZKuhnDl6pK9eUBA==}
     os: [darwin]
 
-  '@johnlindquist/mac-panel-window@1.6.3':
-    resolution: {integrity: sha512-XAbV8l3uxSB33zepC1cYsYkIstLeQrDcBSg2i2RjPbKprvcHp+UoEAjOoO+A0EH3Mh7blOKvs7IuId/B0RCS5w==}
+  '@johnlindquist/mac-panel-window@1.6.4':
+    resolution: {integrity: sha512-9Nc5FyOnChZT0yXvfQ9sfObWkThxnPrXLp31+eyH+WO1KZUUJSQHcMA5LX+4u7YCPVINUOe0QzhMyACMUSpA1Q==}
     os: [darwin]
 
   '@johnlindquist/no-dom@1.0.2':
@@ -1772,6 +1772,9 @@ packages:
 
   '@types/tough-cookie@4.0.5':
     resolution: {integrity: sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA==}
+
+  '@types/trusted-types@2.0.7':
+    resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
 
   '@types/verror@1.10.10':
     resolution: {integrity: sha512-l4MM0Jppn18hb9xmM6wwD1uTdShpf9Pn80aXTStnK1C94gtPvJcV2FrDmbOQUAQfJ1cKZHktkQUDwEqaAKXMMg==}
@@ -3193,8 +3196,8 @@ packages:
     resolution: {integrity: sha512-cgwlv/1iFQiFnU96XXgROh8xTeetsnJiDsTc7TYCLFd9+/WNkIqPTxiM/8pSd8VIrhXGTf1Ny1q1hquVqDJB5w==}
     engines: {node: '>= 4'}
 
-  dompurify@3.2.0:
-    resolution: {integrity: sha512-AMdOzK44oFWqHEi0wpOqix/fUNY707OmoeFDnbi3Q5I8uOpy21ufUA5cDJPr0bosxrflOVD/H2DMSvuGKJGfmQ==}
+  dompurify@3.2.1:
+    resolution: {integrity: sha512-NBHEsc0/kzRYQd+AY6HR6B/IgsqzBABrqJbpCDQII/OK6h7B7LXzweZTDsqSW2LkTRpoxf18YUP+YjGySk6B3w==}
 
   domutils@3.1.0:
     resolution: {integrity: sha512-H78uMmQtI2AhgDJjWeQmHwJJ2bLPD3GMmO7Zja/ZZh84wkm+4ut+IUnUdRa8uCGX88DiVx1j6FRe1XfxEgjEZA==}
@@ -4811,8 +4814,8 @@ packages:
     resolution: {integrity: sha512-2yTgeWTWzMWkHu6Jp9NKgePDaYHbntiwvYuuJLbbN9vl7DC9DvXKOB2BC3ZZ92D3cvV/aflH0osDfwpHepQ53w==}
     hasBin: true
 
-  jotai@2.10.2:
-    resolution: {integrity: sha512-DqsBTlRglIBviuJLfK6JxZzpd6vKfbuJ4IqRCz70RFEDeZf46Fcteb/FXxNr1UnoxR5oUy3oq7IE8BrEq0G5DQ==}
+  jotai@2.10.3:
+    resolution: {integrity: sha512-Nnf4IwrLhNfuz2JOQLI0V/AgwcpxvVy8Ec8PidIIDeRi4KCFpwTFIpHAAcU+yCgnw/oASYElq9UY0YdUUegsSA==}
     engines: {node: '>=12.20.0'}
     peerDependencies:
       '@types/react': '>=17.0.0'
@@ -8247,7 +8250,7 @@ snapshots:
       node-addon-api: 7.1.1
     optional: true
 
-  '@johnlindquist/mac-panel-window@1.6.3':
+  '@johnlindquist/mac-panel-window@1.6.4':
     dependencies:
       bindings: 1.5.0
       node-addon-api: 8.2.2
@@ -8675,7 +8678,7 @@ snapshots:
 
   '@types/dompurify@3.2.0':
     dependencies:
-      dompurify: 3.2.0
+      dompurify: 3.2.1
 
   '@types/download@8.0.5':
     dependencies:
@@ -8854,6 +8857,9 @@ snapshots:
       minipass: 4.2.8
 
   '@types/tough-cookie@4.0.5': {}
+
+  '@types/trusted-types@2.0.7':
+    optional: true
 
   '@types/verror@1.10.10':
     optional: true
@@ -10680,7 +10686,9 @@ snapshots:
     dependencies:
       domelementtype: 2.3.0
 
-  dompurify@3.2.0: {}
+  dompurify@3.2.1:
+    optionalDependencies:
+      '@types/trusted-types': 2.0.7
 
   domutils@3.1.0:
     dependencies:
@@ -12805,7 +12813,7 @@ snapshots:
 
   jiti@1.21.6: {}
 
-  jotai@2.10.2(@types/react@18.3.12)(react@18.3.1):
+  jotai@2.10.3(@types/react@18.3.12)(react@18.3.1):
     optionalDependencies:
       '@types/react': 18.3.12
       react: 18.3.1

@@ -43,7 +43,7 @@ import {
   tmpDownloadsDir,
 } from '@johnlindquist/kit/core/utils';
 
-import {setEnvVar} from "@johnlindquist/kit/api/kit"
+import { setEnvVar } from '@johnlindquist/kit/api/kit';
 
 import { getPrefsDb } from '@johnlindquist/kit/core/db';
 import { debounce, throttle } from 'lodash-es';
@@ -80,7 +80,7 @@ import {
 import { startIpc } from './ipc';
 import { cliFromParams, runPromptProcess } from './kit';
 import { logMap, mainLog } from './logs';
-import { destroyAllProcesses, ensureIdleProcess, handleWidgetEvents, setTheme } from './process';
+import { destroyAllProcesses, ensureIdleProcess, handleWidgetEvents, processes, setTheme } from './process';
 import { prompts } from './prompts';
 import { createIdlePty, destroyPtyPool } from './pty';
 import { scheduleDownloads, sleepSchedule } from './schedule';
@@ -428,42 +428,49 @@ const systemEvents = () => {
       log.error(error);
     }
 
-    kitState.waking = true;
     kitState.suspended = true;
   });
 
-  powerMonitor.addListener(
-    'resume',
-    debounce(
-      async () => {
-        // wait 5 seconds for the system to wake up
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+  const debouncedResume = debounce(
+    async () => {
+      log.info('🌄 System waking');
+      // await setupWatchers();
 
-        log.info('🌄 System waking');
-        // await setupWatchers();
+      kitState.suspended = false;
 
-        kitState.suspended = false;
+      // startClipboardAndKeyboardWatchers();
 
-        // startClipboardAndKeyboardWatchers();
+      if (!kitState.updateDownloaded) {
+        await new Promise((resolve) => setTimeout(resolve, 10000));
 
-        if (!kitState.updateDownloaded) {
-          await new Promise((resolve) => setTimeout(resolve, 10000));
-
-          try {
-            checkForUpdates();
-          } catch (error) {
-            log.error('Error checking for updates', error);
-          }
+        try {
+          checkForUpdates();
+        } catch (error) {
+          log.error('Error checking for updates', error);
         }
+      }
 
-        setTimeout(() => {
-          kitState.waking = false;
-        }, 10000);
-      },
-      5000,
-      { leading: true },
-    ),
+
+    },
+    2000,
+    { leading: true },
   );
+
+  function resumeHandler() {
+    for (const process of processes) {
+      try {
+        process.child?.send({ channel: Channel.PING });
+        log.info(`☀️ Pinged ${process.scriptPath} that we're awake`);
+      } catch (error) {
+        log.error(error);
+      }
+    }
+
+    // wait 5 seconds for the system to wake up
+    debouncedResume();
+  }
+
+  powerMonitor.addListener('resume', resumeHandler);
 
   powerMonitor.addListener('lock-screen', () => {
     kitState.screenLocked = true;
@@ -627,14 +634,12 @@ const nodeModulesExists = async () => {
   return doesNodeModulesExist;
 };
 
-
-
-export const useElectronNodeVersion = async (cwd: string, config:NpmConfig) => {
+export const useElectronNodeVersion = async (cwd: string, config: NpmConfig) => {
   const pnpmPath = await getPnpmPath();
   log.info(`🚶 Setting pnpm node version to ${process.versions.node} with ${pnpmPath}`);
   await setNpmrcConfig(cwd, config);
 
-  try{
+  try {
     const nodeVersion = await spawnP(pnpmPath, ['node', '--version'], {
       cwd,
     });
@@ -644,7 +649,6 @@ export const useElectronNodeVersion = async (cwd: string, config:NpmConfig) => {
     log.info('🍂 Falling back to internal terminal...');
     await invoke(`${pnpmPath} node --version`, cwd);
   }
-
 };
 
 const verifyInstall = async () => {
@@ -672,7 +676,6 @@ const verifyInstall = async () => {
   await setupLog(isKenvConfigured ? 'kenv .env found' : 'kenv .env missinag');
 
   log.info(`KIT_NODE_PATH: ${process.env.KIT_NODE_PATH}`, `kitState.KIT_NODE_PATH: ${kitState.KIT_NODE_PATH}`);
-
 
   if (checkKit && checkKenv && kitState.KIT_NODE_PATH && isKenvConfigured) {
     await setupLog('Install verified');
@@ -828,12 +831,12 @@ const checkKit = async () => {
 
   let nodePath = '';
   const findNodePath = async () => {
-    if(process.env.KIT_NODE_PATH) {
+    if (process.env.KIT_NODE_PATH) {
       return process.env.KIT_NODE_PATH;
     }
     const pnpmPath = await getPnpmPath();
     log.info(`🚶 Using ${pnpmPath} node -e to find node...`);
-    try{
+    try {
       return await spawnP(pnpmPath, ['node', '-e', '"console.log(process.execPath)"'], {
         cwd: kitPath(),
         env: {
@@ -848,8 +851,7 @@ const checkKit = async () => {
     }
   };
 
-
-  const attemptAssignNodePath = async ()=> {
+  const attemptAssignNodePath = async () => {
     const maxRetries = 2;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -875,7 +877,7 @@ const checkKit = async () => {
     setEnvVar('KIT_NODE_PATH', kitState.KIT_NODE_PATH);
     process.env.PATH = path.dirname(kitState.KIT_NODE_PATH) + path.delimiter + process.env.PATH;
     log.info(`🚶 Assigned PATH with prefixed KIT_NODE_PATH: ${process.env.PATH}`);
-  }
+  };
   const requiresInstall = (await isNewVersion()) || !(await kitExists());
   log.info(`Requires install: ${requiresInstall}`);
   if (await isContributor()) {
@@ -922,7 +924,6 @@ const checkKit = async () => {
     await extractKitTar(kitTarPath);
     await clearPromptCache();
 
-
     await setupLog('Installing pnpm...');
     await getPnpmPath();
     await setupLog('Setting node version in .npmrc...');
@@ -934,14 +935,13 @@ const checkKit = async () => {
     });
 
     log.info(`🚶 Using pnpm to find node. Found ${nodePath}... After...`);
-    await attemptAssignNodePath()
+    await attemptAssignNodePath();
 
     await setupLog('Installing kit deps...');
     await installKitDeps();
   }
 
   await setupLog('.kit installed');
-
 
   // await handleSpawnReturns(`docs-pull`, pullDocsResult);
 
@@ -1007,7 +1007,7 @@ const checkKit = async () => {
   }
 
   await ensureEnv();
-  await attemptAssignNodePath()
+  await attemptAssignNodePath();
   await setupLog('Update .kenv');
 
   if (!process.env.MAIN_SKIP_SETUP) {
@@ -1082,7 +1082,7 @@ const checkKit = async () => {
     kitState.kenvEnv = { ...envData, ...envKitData };
     createIdlePty();
 
-    if(kitState.kenvEnv.KIT_AUTOSTART_SERVER === 'true') {
+    if (kitState.kenvEnv.KIT_AUTOSTART_SERVER === 'true') {
       startServer();
     }
 
@@ -1090,11 +1090,13 @@ const checkKit = async () => {
       const userExists = existsSync(kitPath('db', 'user.json'));
       if (!userExists) {
         log.info('🔑 Token found. Authenticating with GitHub...');
-        optionalSetupScript(kitPath('cli', 'authenticate.js')).then(() => {
-        log.info('🔑 GitHub authenticated');
-      }).catch((error) => {
-        log.error('🔑 Error authenticating with GitHub', error);
-        });
+        optionalSetupScript(kitPath('cli', 'authenticate.js'))
+          .then(() => {
+            log.info('🔑 GitHub authenticated');
+          })
+          .catch((error) => {
+            log.error('🔑 Error authenticating with GitHub', error);
+          });
       } else {
         log.info('🔑 ~/.kit/db/user.json already exists');
       }
@@ -1118,13 +1120,15 @@ emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
   });
 });
 
-app.whenReady()
-.then(loadShellEnv)
-.then(loadSupportedOptionalLibraries)
-.then(checkKit).catch(error => {
-  log.error(`Error in app.whenReady`, error);
-  ohNo(error as Error);
-});
+app
+  .whenReady()
+  .then(loadShellEnv)
+  .then(loadSupportedOptionalLibraries)
+  .then(checkKit)
+  .catch((error) => {
+    log.error(`Error in app.whenReady`, error);
+    ohNo(error as Error);
+  });
 
 app?.on('will-quit', (e) => {
   log.info('🚪 will-quit');

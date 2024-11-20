@@ -345,7 +345,6 @@ const initState = {
   emojiActive: false,
   isThrottling: true,
   ignoreInitial: false,
-  waking: true,
   cmd: isMac ? 'cmd' : 'ctrl',
   noPreview: false,
   cachePreview: false,
@@ -380,10 +379,6 @@ const subStatus = subscribeKey(kitState, 'status', (status: KitStatus) => {
   } else if (kitState.notifications.length > 0) {
     kitState.notifications = [];
   }
-});
-
-const subWaking = subscribeKey(kitState, 'waking', (waking) => {
-  log.info(`👀 Waking: ${waking}`);
 });
 
 const subReady = subscribeKey(kitState, 'ready', (ready) => {
@@ -562,7 +557,6 @@ subs.push(
   subDevToolsCount,
   subStatus,
   subReady,
-  subWaking,
   subIgnoreBlur,
   scriptletsSub,
 );
