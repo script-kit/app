@@ -209,5 +209,6 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node"
-  }
+  },
+  "packageManager": "pnpm@9.14.2"
 }
