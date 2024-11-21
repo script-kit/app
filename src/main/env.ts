@@ -9,7 +9,7 @@ import { clearIdleProcesses, ensureIdleProcess, processes } from './process';
 import { createIdlePty } from './pty';
 import { checkOpenAtLogin } from './settings';
 import { updateMainShortcut } from './shortcuts';
-import { checkTray, destroyTray, setupTray } from './tray';
+import { checkTray } from './tray';
 
 let prevKenvEnv: kenvEnv = {};
 subscribeKey(kitState, 'kenvEnv', (kenvEnv: kenvEnv) => {

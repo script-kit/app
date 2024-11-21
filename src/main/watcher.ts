@@ -27,13 +27,11 @@ import { AppChannel, Trigger } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
 import { sendToAllPrompts } from './channel';
 import { type WatchEvent, startWatching } from './chokidar';
-import { createEnv } from './env.utils';
 import { isInDirectory } from './helpers';
 import { runScript } from './kit';
 import { getFileImports } from './npm';
-import { processes, sendToAllActiveChildren, spawnShebang, updateTheme } from './process';
+import { clearIdleProcesses, ensureIdleProcess, processes, sendToAllActiveChildren, spawnShebang, updateTheme } from './process';
 import { clearPromptCache, clearPromptCacheFor, setKitStateAtom } from './prompt';
-import { prompts } from './prompts';
 import { setCSSVariable } from './theme';
 import { addSnippet, addTextSnippet, removeSnippet } from './tick';
 import { cacheMainScripts } from './install';
@@ -47,6 +45,7 @@ import { actualHideDock, showDock } from './dock';
 import { reloadApps } from './apps';
 
 import { scriptLog, watcherLog } from './logs';
+import { createIdlePty } from './pty';
 const log = createLogger('watcher.ts');
 
 const debounceCacheMainScripts = debounce(cacheMainScripts, 250);
@@ -714,13 +713,6 @@ export const parseEnvFile = debounce(async () => {
   }
 
   kitState.kenvEnv = envData;
-  if (prompts.idle?.pid) {
-    processes.getByPid(prompts.idle?.pid).child?.send({
-      pid: prompts.idle?.pid,
-      channel: Channel.ENV_CHANGED,
-      env: createEnv(),
-    });
-  }
 
   // if (envData?.KIT_SHELL) kitState.envShell = envData?.KIT_SHELL;
   // TODO: Would need to update the dark/light contrast
@@ -803,6 +795,15 @@ export const setupWatchers = async () => {
     if (base === 'run.txt') {
       log.info(`run.txt ${eventName}`);
       triggerRunText(eventName);
+      return;
+    }
+
+    if(base === "globals.ts"){
+      log.info(`globals.ts ${eventName}`);
+      clearIdleProcesses();
+      ensureIdleProcess();
+      createIdlePty();
+
       return;
     }
 

@@ -130,6 +130,13 @@ export const prompts = {
     Array.from(promptMap.values()).find(predicate) ?? null,
 
   /**
+   * Filters the prompts that satisfy the given predicate.
+   * @param predicate The predicate function to test each prompt against.
+   * @returns An array of prompts that satisfy the predicate.
+   */
+  filter: (predicate: (prompt: KitPrompt) => boolean): KitPrompt[] =>
+    Array.from(promptMap.values()).filter(predicate),
+  /**
    * Determines whether any prompt is currently visible.
    * @returns True if any prompt is visible, false otherwise.
    */
