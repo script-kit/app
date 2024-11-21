@@ -15,8 +15,8 @@ importers:
         specifier: ^0.1.38
         version: 0.1.38
       '@johnlindquist/kit':
-        specifier: ^3.3.1
-        version: 3.3.1
+        specifier: ^3.3.2
+        version: 3.3.2
       '@pnpm/exec':
         specifier: ^2.0.0
         version: 2.0.0
@@ -1189,14 +1189,14 @@ packages:
     resolution: {integrity: sha512-VCZf/s7Tbp/8X516zhlbrUuVWx/triWCojXYz07YlxZaqAoFnR7+nhsInT9LTpkLqz5EgdDya4oRp8axZNyS5Q==}
     hasBin: true
 
-  '@johnlindquist/globals@1.16.5':
-    resolution: {integrity: sha512-WFp4o+jiIW0OD4QN+2zDXh14U8cC9NrIKuyDvmvTd6c2Lk0eTpsQKmfOJKC1KvRm8IMOyo1akc+CA6617QiHZQ==}
+  '@johnlindquist/globals@1.16.6':
+    resolution: {integrity: sha512-TC9NGipgdxGMmHsqL50W9uVyVD0bvZ9QF0iiLvX5VQmR7kTHyznuwHC7smuUNfX/G22kqUhgGDXx/J93qSsctA==}
 
   '@johnlindquist/kit-internal@1.13.5':
     resolution: {integrity: sha512-+49s4Y8WLTG+bZyuJ+i4MFab9/6yDabesGrnEuum+K9deYEXbCGuCJGfFIwAoShNwaVxXeWvJQEwnRQbtvwZyQ==}
 
-  '@johnlindquist/kit@3.3.1':
-    resolution: {integrity: sha512-2X0jKV2jtxvqtw1b+7d2jHj4GFyFteofv8hOWJ5I4QudAEfpmpS53TC3NF3OuPpG9Y0wtHKlv3ElVxsMvhmPgg==}
+  '@johnlindquist/kit@3.3.2':
+    resolution: {integrity: sha512-Hq0TjzBZ1kMrCepTMnupT3xXXlMkFbI6t9tdxPLhfwJpOZOO1YIgwYu86XGlUBpPIbzkdAtwr990yeyTRgQaUg==}
     engines: {node: '>=14.8.0'}
     hasBin: true
 
@@ -8181,7 +8181,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@johnlindquist/globals@1.16.5':
+  '@johnlindquist/globals@1.16.6':
     dependencies:
       chalk-template: 0.4.0
       execa: 8.0.1
@@ -8190,9 +8190,9 @@ snapshots:
 
   '@johnlindquist/kit-internal@1.13.5': {}
 
-  '@johnlindquist/kit@3.3.1':
+  '@johnlindquist/kit@3.3.2':
     dependencies:
-      '@johnlindquist/globals': 1.16.5
+      '@johnlindquist/globals': 1.16.6
       '@johnlindquist/kit-internal': 1.13.5
       '@johnlindquist/open': 10.1.1
       '@octokit/auth-oauth-device': 7.1.1
