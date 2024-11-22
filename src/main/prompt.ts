@@ -646,6 +646,13 @@ export class KitPrompt {
   onBlur = () => {
     log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred`);
 
+    const isMainScript = getMainScriptPath() === this.scriptPath;
+    if(isMainScript){
+      log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred. Main script. Make window`);
+      this.hideAndRemoveProcess();
+      return;
+    }
+
     if (kitState.isMac) {
       makeWindow(this.window);
     }
@@ -2523,6 +2530,11 @@ export class KitPrompt {
     return (this.firstPrompt || this.scriptPath === getMainScriptPath()) && isEscape && !this.wasActionsJustOpen;
   };
 
+  private hideAndRemoveProcess = () => {
+    this.hideInstant();
+    processes.removeByPid(this.pid);
+  };
+
   private beforeInputHandler = (event, input: Input) => {
     if (input.type !== 'keyDown' || !input.key) {
       return;
@@ -2547,11 +2559,10 @@ export class KitPrompt {
       } else if (isEscape) {
         log.purple('Closing prompt window with escape');
       }
-      this.hideInstant();
-
+      this.hideAndRemoveProcess();
       // I don't think these are needed anymore, but leaving them in for now
       log.info(`✋ Removing process because of escape ${this.pid}`);
-      processes.removeByPid(this.pid);
+
       // emitter.emit(KitEvent.KillProcess, this.pid);
       // event.preventDefault();
       return;
