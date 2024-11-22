@@ -42,8 +42,6 @@ import { INSTALL_ERROR, show } from './show';
 import { getThemes, kitCache, kitState, preloadChoicesMap, workers } from './state';
 import { ensureDir, writeFile, readJson, writeJson, pathExists, readdir } from './cjs-exports';
 
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 
 import electronLog from 'electron-log';
 import { createLogger } from '../shared/log-utils';
@@ -55,8 +53,6 @@ import { getPnpmPath } from './setup/pnpm';
 import { shortcutMap } from './shortcuts';
 import { showInfo } from './info';
 import { compareCollections, logDifferences } from './compare';
-import { downloadAndInstallPnpm } from './install/install-pnpm';
-import axios from 'axios';
 
 const log = createLogger('install.ts');
 
