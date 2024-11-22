@@ -751,6 +751,13 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
             label: message,
             icon: menuIcon('busy'),
           },
+          {
+            label: 'Check SDK Install Log',
+            click: () => {
+              log.info(`🎨 Opening SDK install log: ${mainLogPath}`);
+              shell.openPath(mainLogPath);
+            },
+          },
           // add quit option
           {
             label: 'Quit',

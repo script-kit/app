@@ -83,7 +83,7 @@ export const ohNo = async (error: Error) => {
     destroyPromptWindow();
     await show(INSTALL_ERROR, showError(error, mainLogContents));
   } catch (copyError) {
-    shell.openExternal(mainLogPath);
+    shell.openPath(mainLogPath);
   }
 
   throw new Error(error.message);

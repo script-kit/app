@@ -1144,11 +1144,12 @@ const resize = debounce(
       return;
     }
 
-    if (promptData?.grid) {
+    let mh = g(mainHeightAtom);
+
+    if (promptData?.grid && document.getElementById('main').clientHeight > 10) {
       return;
     }
 
-    let mh = g(mainHeightAtom);
 
     // if (mh === 0 && [UI.form, UI.div].includes(ui)) return;
 
