@@ -363,7 +363,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
     } else {
       const infos = [];
       for (const choice of prompt.kitSearch.choices) {
-        if (choice?.info && !(choice?.hideWithoutInput && transformedInput === '')) {
+        if (choice?.info && !choice?.miss && !(choice?.hideWithoutInput && transformedInput === '')) {
           infos.push(createScoredChoice(choice));
         }
       }

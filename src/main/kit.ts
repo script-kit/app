@@ -194,6 +194,10 @@ export const runPromptProcess = async (
     headers: {},
   },
 ): Promise<ProcessInfo | null> => {
+  if(!kitState.ready){
+    log.warn('Kit not ready. Ignoring prompt process:', { promptScriptPath, args, options });
+    return null;
+  }
   log.info('runPromptProcess', { promptScriptPath, args, options });
   // log.info(`->>> Prompt script path: ${promptScriptPath}`);
 
