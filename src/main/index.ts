@@ -1088,7 +1088,9 @@ const checkKit = async () => {
 
     if (kitState.kenvEnv?.GITHUB_SCRIPTKIT_TOKEN) {
       const userExists = existsSync(kitPath('db', 'user.json'));
-      if (!userExists) {
+      if (userExists) {
+        log.info('🔑 ~/.kit/db/user.json already exists');
+      } else {
         log.info('🔑 Token found. Authenticating with GitHub...');
         optionalSetupScript(kitPath('cli', 'authenticate.js'))
           .then(() => {
@@ -1097,8 +1099,6 @@ const checkKit = async () => {
           .catch((error) => {
             log.error('🔑 Error authenticating with GitHub', error);
           });
-      } else {
-        log.info('🔑 ~/.kit/db/user.json already exists');
       }
     }
 
