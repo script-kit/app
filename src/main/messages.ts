@@ -927,7 +927,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       clearFlags();
       prompt.clearSearch();
     }),
-    SET_SCRIPT: onChildChannel(async (processInfo: ProcessInfo, data) => {
+    SET_SCRIPT: onChildChannel(async (processInfo: ProcessAndPrompt, data) => {
       // "app-run" will invoke "SET_SCRIPT"
       // TODO: Attempting to preload on SET_SCRIPT causes weird resizing issues
       // Need to figure out initBounds, jotai's resize/hasPreview preload
@@ -978,11 +978,14 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
         processInfo.scriptPath = filePath;
       }
-      debounceSetScriptTimestamp({
-        filePath,
-        changeStamp: Date.now(),
-        reason: `run ${filePath}`,
-      });
+      if(processInfo.launchedFromMain){
+        debounceSetScriptTimestamp({
+          filePath,
+          changeStamp: Date.now(),
+          reason: `run ${filePath}`,
+        });
+      }
+
       await prompt?.setScript(data.value, processInfo.pid);
     }),
     SET_STATUS: onChildChannel((_, data) => {
@@ -2311,12 +2314,16 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     OPEN_ACTIONS: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_FLAG_VALUE, 'action');
     }),
-    STAMP_SCRIPT: onChildChannelOverride(async ({ child }, { channel, value }) => {
+    STAMP_SCRIPT: onChildChannelOverride(async (processInfo: ProcessAndPrompt, { channel, value }) => {
+      if (!processInfo.launchedFromMain) {
+        log.info(`${processInfo.pid}: 🚫 Not stamping pid because it wasn't launched from main`);
+        return;
+      }
       const stamp: Stamp = {
         filePath: value.filePath,
       };
 
-      log.info(`${child.pid}: 📌 ${channel}`, value);
+      log.info(`${processInfo.pid}: 📌 ${channel}`, value);
 
       await cacheMainScripts({
         channel: Channel.CACHE_MAIN_SCRIPTS,

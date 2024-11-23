@@ -149,7 +149,7 @@ export const workers = {
 };
 
 export const debounceSetScriptTimestamp = debounce((stamp: Stamp & { reason?: string }) => {
-  log.info(`💮 Stamping ${stamp?.filePath} - ${stamp?.reason}`);
+  log.info(`💮 Stamping - Reason: ${stamp?.reason}: ${stamp?.filePath}`);
   if (!kitState.hasOpenedMainMenu || stamp?.filePath?.includes('.kit')) {
     return;
   }
