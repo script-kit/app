@@ -5,6 +5,7 @@ import path from 'node:path';
 import url from 'node:url';
 import { ipcRenderer, webFrame, webUtils } from 'electron';
 import { Channel } from '@johnlindquist/kit/core/enum';
+import log from "electron-log"
 
 // Custom APIs for renderer
 const api = {
@@ -26,7 +27,7 @@ function sanitizeForIPC(obj: any) {
   return JSON.parse(JSON.stringify(obj));
 }
 
-let options = {};
+window.options = {};
 // @ts-ignore (define in dts)
 window.send = (channel: string, data: any = {}) => {
   // console.log('send', {
@@ -61,3 +62,13 @@ window.on = (channel: string, callback: (data: any) => void) => {
 
 // @ts-ignore (define in dts)
 window.api = api;
+
+window.addEventListener('load', () => {
+  log.info(`Waiting for ${Channel.WIDGET_INIT}`);
+  ipcRenderer.once(Channel.WIDGET_INIT, (_, options) => {
+    log.info(`Received ${Channel.WIDGET_INIT}`, options);
+    window.options = options;
+    window.widgetId = options.widgetId;
+  });
+  ipcRenderer.send(Channel.WIDGET_GET);
+});

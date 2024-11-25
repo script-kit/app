@@ -383,14 +383,14 @@ export const showWidget = async (
     widgetWindow.webContents.ipc.once(Channel.WIDGET_GET, () => {
       log.info(`Received ${Channel.WIDGET_GET} from widgetWindow`);
       if (widgetWindow) {
-        log.info(`Sending ${Channel.WIDGET_INIT} from widgetWindow`);
-        widgetWindow.webContents.send(
-          Channel.WIDGET_INIT,
-          {
-            ...options,
-            widgetId,
-          } || {},
-        );
+        const widgetOptions = {
+          ...options,
+          widgetId,
+        };
+        log.info(`Sending ${Channel.WIDGET_INIT} from widgetWindow`, {
+          widgetOptions,
+        });
+        widgetWindow.webContents.send(Channel.WIDGET_INIT, widgetOptions);
 
         // Set the css variables from kitState.theme
         const theme = kitState.theme;
