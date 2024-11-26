@@ -34,7 +34,7 @@ pnpm dev
 
 ### Reloading
 
-If you make a change in the `main` dir/process, you'll need to stop and run `npm run dev` again.
+If you make a change in the `main` dir/process, you'll need to stop and run `pnpm run dev` again.
 If you make a change in the `renderer`, it should attempt to hot reload. If that fails, `cmd+w` to close the window, and open a new one.
 
 
@@ -49,7 +49,7 @@ You'll have to Google for your specific issues. On mac, it's usually update xcod
 
 @see - https://stackoverflow.com/questions/77251296/distutils-not-found-when-running-npm-install
 
-If you're using homebrew for Python (or python 3.12), you'll need to install the `setuptools` to be able to run `npm i`
+If you're using homebrew for Python (or python 3.12), you'll need to install the `setuptools` to be able to run `pnpm i`
 
 ```
 brew install python-setuptools
