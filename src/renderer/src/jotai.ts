@@ -2430,6 +2430,9 @@ export const enterButtonNameAtom = atom<string>((g) => {
 });
 
 export const enterButtonDisabledAtom = atom<boolean>((g) => {
+  if (g(submittedAtom)) {
+    return true;
+  }
   if (g(flaggedChoiceValueAtom)) {
     return false;
   }
