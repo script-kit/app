@@ -435,6 +435,12 @@ const subEmoji = subscribeKey(kitState, 'emojiActive', (emoji) => {
   const emojiShortcut = getEmojiShortcut();
   if (emoji) {
     globalShortcut.register(emojiShortcut, () => {
+      if (prompts.focused) {
+        log.info(`👆 Emoji shortcut pressed. 😘. Setting emojiActive to true on focused prompt`, {
+          id: prompts.focused.id,
+        });
+        prompts.focused.emojiActive = true;
+      }
       prompts?.prevFocused?.setPromptAlwaysOnTop(false);
       app.showEmojiPanel();
     });
@@ -643,8 +649,23 @@ export class KitPrompt {
     });
   };
 
+  emojiActive = false;
+
   onBlur = () => {
     log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred`);
+
+    log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred. Emoji active: ${this.emojiActive}`, {
+      emojiActive: this.emojiActive,
+      focusedEmojiActive: prompts?.focused?.emojiActive,
+    });
+    if(this.emojiActive){
+      log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred. Emoji active. Ignore blur`);
+      return;
+    }
+    if(this.window.webContents.isDevToolsOpened()){
+      log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred. Dev tools are open. Ignore blur`);
+      return;
+    }
 
     const isMainScript = getMainScriptPath() === this.scriptPath;
     if(isMainScript){
@@ -904,7 +925,9 @@ export class KitPrompt {
     }
 
     this.window.webContents?.on('devtools-opened', () => {
-      // makeWindow(this.window);
+      // remove blur handler
+      this.window.removeListener('blur', this.onBlur);
+      makeWindow(this.window);
     });
 
     this.window.webContents?.on('devtools-closed', () => {
@@ -962,9 +985,11 @@ export class KitPrompt {
 
     this.window.webContents?.on('focus', () => {
       log.info(`${this.pid}:${this.scriptName}: 👓 WebContents Focus`);
+      this.emojiActive = false;
     });
 
     this.window.on('focus', () => {
+      this.emojiActive = false;
       log.info(`${this.pid}:${this.scriptName}: 👓 Focus bounds:`, this.window.getBounds());
 
       if (!kitState.isLinux) {

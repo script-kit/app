@@ -1288,8 +1288,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         return;
       }
 
-      if (samePrompt) {
+      if (samePrompt && value?.choices) {
         const { choices, skipInitialSearch, inputRegex, generated } = value;
+
 
         // const choiceIds = choices.map((choice) => choice.id).join(',');hks
         // if (prevChoiceIds === choiceIds) {

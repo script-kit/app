@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron';
+import type{ BrowserWindow } from 'electron';
 import { kitState } from '../state';
 import shims from '../shims';
 import { prompts } from '../prompts';
@@ -7,14 +7,14 @@ import { AppChannel } from '../../shared/enums';
 const log = createLogger('utils.ts');
 
 export const prepForClose = (window: BrowserWindow) => {
-  if (kitState.isMac) {
+  if (kitState.isMac && !window.isDestroyed()) {
     log.info(`${window.id}: 📌 Prepping for close`);
     shims['@johnlindquist/mac-panel-window'].prepForClose(window);
   }
 };
 
 export const makeWindow = (window: BrowserWindow) => {
-  if (kitState.isMac) {
+  if (kitState.isMac && !window.isDestroyed()) {
     log.info(`${window.id}: 📌 Making window`);
     shims['@johnlindquist/mac-panel-window'].makeWindow(window);
     // add 20px padding to the top of the body
@@ -23,8 +23,7 @@ export const makeWindow = (window: BrowserWindow) => {
 };
 
 export const makeKeyWindow = (window: BrowserWindow) => {
-
-  if (kitState.isMac) {
+  if (kitState.isMac && !window.isDestroyed()) {
     log.info(`${window.id}: 📌 Making key window`);
     shims['@johnlindquist/mac-panel-window'].makeKeyWindow(window);
     window.webContents.send(AppChannel.MAKE_WINDOW, false);
@@ -32,14 +31,14 @@ export const makeKeyWindow = (window: BrowserWindow) => {
 };
 
 export const makePanel = (window: BrowserWindow) => {
-  if (kitState.isMac) {
+  if (kitState.isMac && !window.isDestroyed()) {
     log.info(`${window.id}: 📌 Making panel`);
     shims['@johnlindquist/mac-panel-window'].makePanel(window);
   }
 };
 
 export const setAppearance = (window: BrowserWindow, appearance: 'light' | 'dark' | 'auto') => {
-  if (kitState.isMac) {
+  if (kitState.isMac && !window.isDestroyed()) {
     log.info(`${window.id}: 📌 Setting appearance to ${appearance}`);
     shims['@johnlindquist/mac-panel-window'].setAppearance(window, appearance);
   }

@@ -266,7 +266,12 @@ const buildPromptsSubmenu = (): MenuItemConstructorOptions[] => {
     label: 'Open Focused Prompt Dev Tools',
     click: () => {
       log.info('Opening focused prompt dev tools...');
-      prompts?.prevFocused?.window?.webContents?.openDevTools();
+      if (prompts?.focused) {
+        log.info(`Opening dev tools for ${prompts.focused.scriptPath}`);
+        prompts.focused.window.webContents.openDevTools();
+      } else {
+        log.warn('No focused prompt found for dev tools');
+      }
     },
   });
 
@@ -274,7 +279,7 @@ const buildPromptsSubmenu = (): MenuItemConstructorOptions[] => {
     label: 'Center Focused Prompt',
     click: () => {
       log.info('Centering focused prompt...');
-      prompts.prevFocused?.forcePromptToCenter();
+      prompts.focused?.forcePromptToCenter();
     },
   });
 
