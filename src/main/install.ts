@@ -407,12 +407,14 @@ export const installLoaderTools = async () => {
   if (packageJson) {
     const esbuildVersion = packageJson.devDependencies?.esbuild || '0.21.4';
     const tsxVersion = packageJson.devDependencies?.tsx || '4.15.7';
+    const viteVersion = packageJson.devDependencies?.vite || '6.0.0';
     log.info(`Using esbuild version: ${esbuildVersion}`);
     log.info(`Using tsx version: ${tsxVersion}`);
+    log.info(`Using vite version: ${viteVersion}`);
 
     const pnpmResult = await installDependencies(
-      ['esbuild', 'tsx'],
-      `i -D esbuild@${esbuildVersion} tsx@${tsxVersion}`,
+      ['esbuild', 'tsx', 'vite'],
+      `i -D esbuild@${esbuildVersion} tsx@${tsxVersion} vite@${viteVersion}`,
       kitPath(),
     );
     return pnpmResult;

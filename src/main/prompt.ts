@@ -650,6 +650,7 @@ export class KitPrompt {
   };
 
   emojiActive = false;
+  shortcutPressed = false;
 
   onBlur = () => {
     log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred`);
@@ -668,7 +669,7 @@ export class KitPrompt {
     }
 
     const isMainScript = getMainScriptPath() === this.scriptPath;
-    if(isMainScript){
+    if(isMainScript && !this.shortcutPressed){
       log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred. Main script. Make window`);
       this.hideAndRemoveProcess();
       return;

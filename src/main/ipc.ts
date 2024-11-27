@@ -581,6 +581,10 @@ ${child?.pid} 📝 Submitting...
           }
         }
 
+        if (channel === Channel.SHORTCUT) {
+          prompt.shortcutPressed = true;
+        }
+
         if (channel === Channel.ESCAPE || (channel === Channel.SHORTCUT && message.state.shortcut === 'escape')) {
           kitState.shortcutsPaused = false;
           log.verbose({

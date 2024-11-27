@@ -338,7 +338,7 @@ function MainInput() {
       if (input && shortcodes.includes(input) && modifiersNotShift.length === 0) {
         log.info(`${window.pid}: preventDefault(): found: '${input}'`);
         // setAppendToLog(`${window.pid}: preventDefault(): found: '${input}'`);
-        // event.preventDefault();
+        event.preventDefault();
         channel(Channel.INPUT, {
           input,
         });
