@@ -2134,9 +2134,9 @@ export class KitPrompt {
       log.info(`${this.pid}: focusPrompt`);
       try {
         if (kitState.isMac) {
+          // this.window?.showInactive();
           makePanel(this.window);
           makeKeyWindow(this.window);
-          this.window?.showInactive();
         } else {
           this.window?.showInactive();
           this.window?.focus();
