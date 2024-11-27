@@ -1,5 +1,6 @@
 import { BrowserWindow, app, crashReporter, nativeTheme, powerMonitor, protocol, screen } from 'electron';
 import './env';
+import log from 'electron-log';
 
 process.on('SIGINT', () => {
   app.quit();
@@ -11,8 +12,7 @@ process.on('SIGINT', () => {
 import electronLog from 'electron-log';
 electronLog.initialize();
 
-import { createLogger } from '../shared/log-utils';
-const log = createLogger('index.ts');
+
 (global as any).log = log.info;
 (global as any).logInfo = log.info;
 (global as any).logWarn = log.warn;
@@ -487,6 +487,7 @@ const systemEvents = () => {
 };
 
 const ready = async () => {
+  log.info('🔄 ready');
   new WindowMonitor();
   assignDisplays();
   try {

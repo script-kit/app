@@ -553,9 +553,13 @@ const parseSnippet = (
 };
 
 export const addTextSnippet = async (filePath: string) => {
+  log.verbose(`Adding text snippet: ${filePath}`);
   for (const [key, value] of snippetMap.entries()) {
-    if (value.filePath === filePath) {
-      log.info(`Removing snippet: ${key} because it's already been added`);
+    if (value.filePath === filePath && value.txt) {
+      log.verbose(`addTextSnippet: Removing snippet: ${key} because it's already been added`, {
+        valueFilePath: value.filePath,
+        scriptFilePath: filePath,
+      });
       snippetMap.delete(key);
     }
   }
@@ -579,12 +583,19 @@ export const addTextSnippet = async (filePath: string) => {
       postfix,
       txt: true,
     });
+
   }
+
+  log.info(`Text snippet: Current snippet map: ${JSON.stringify(Object.fromEntries(snippetMap), null, 2)}`);
 };
 
 export const addSnippet = (script: Script) => {
   for (const [key, value] of snippetMap.entries()) {
-    if (value.filePath === script.filePath) {
+    if (value.filePath === script.filePath && !value.txt) {
+      log.verbose(`addSnippet:Removing snippet: ${key} because it's already been added`, {
+        valueFilePath: value.filePath,
+        scriptFilePath: script.filePath,
+      });
       snippetMap.delete(key);
     }
   }
@@ -610,6 +621,8 @@ export const addSnippet = (script: Script) => {
       txt: false,
     });
   }
+
+  log.info(`Standard Snippet: Current snippet map: ${JSON.stringify(Object.fromEntries(snippetMap), null, 2)}`);
 };
 
 export const removeSnippet = (filePath: string) => {
