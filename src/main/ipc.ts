@@ -32,9 +32,8 @@ import { runPromptProcess } from './kit';
 import type { KitPrompt } from './prompt';
 import { prompts } from './prompts';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
-import { kitCache, kitState } from './state';
+import { kitState } from './state';
 import { createLogger } from '../shared/log-utils';
-import { updateMainShortcut } from './shortcuts';
 const log = createLogger('ipc.ts');
 
 let actionsOpenTimeout: NodeJS.Timeout;
@@ -554,6 +553,7 @@ ${data.error}
         }
 
         if (channel === Channel.VALUE_SUBMITTED) {
+          prompt.mainMenuPreventCloseOnBlur = true;
           log.info(
             `
 -------------
@@ -582,7 +582,7 @@ ${child?.pid} 📝 Submitting...
         }
 
         if (channel === Channel.SHORTCUT) {
-          prompt.shortcutPressed = true;
+          prompt.mainMenuPreventCloseOnBlur = true;
         }
 
         if (channel === Channel.ESCAPE || (channel === Channel.SHORTCUT && message.state.shortcut === 'escape')) {
