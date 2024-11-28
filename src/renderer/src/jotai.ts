@@ -678,14 +678,15 @@ export const hasPreviewAtom = atom<boolean>((g) => {
 let prevFocusedChoiceId = 'prevFocusedChoiceId';
 
 const prevScoredChoicesIdsAtom = atom<string[]>([]);
+
+
+const choicesReadyAtom = atom(false);
 export const scoredChoicesAtom = atom(
   (g) => g(choices),
   // Setting to `null` should only happen when using setPanel
   // This helps skip sending `onNoChoices`
   (g, s, cs: ScoredChoice[] = []) => {
-    // log.info(
-    //   `${window.pid} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Setting scoredChoices to ${a?.length}`
-    // );
+    s(choicesReadyAtom, true);
     s(cachedAtom, false);
     s(loadingAtom, false);
     prevFocusedChoiceId = 'prevFocusedChoiceId';
@@ -1174,12 +1175,18 @@ const resize = debounce(
     // );
 
     if (ui === UI.arg) {
+      const choicesReady = g(choicesReadyAtom);
+      if (!choicesReady) {
+        return;
+      }
       if (choicesHeight > PROMPT.HEIGHT.BASE) {
+        log.info(`🍃 choicesHeight: ${choicesHeight} > PROMPT.HEIGHT.BASE: ${PROMPT.HEIGHT.BASE}`);
         mh =
           (promptData?.height && promptData?.height > PROMPT.HEIGHT.BASE ? promptData?.height : PROMPT.HEIGHT.BASE) -
           topHeight -
           footerHeight;
       } else {
+        log.info(`🍃 choicesHeight: ${choicesHeight} <= PROMPT.HEIGHT.BASE: ${PROMPT.HEIGHT.BASE}`);
         mh = choicesHeight;
       }
     }
@@ -1281,6 +1288,7 @@ const resize = debounce(
     }
 
     if (ui === UI.arg && flaggedValue) {
+      log.info(`🍃 flaggedValue: ${flaggedValue} forceHeight: ${forceHeight}`);
       forceHeight = PROMPT.HEIGHT.BASE;
     }
 
@@ -1352,6 +1360,7 @@ const resize = debounce(
     //   );
     // }
 
+    log.info(`🍃 mh: ${mh}`, `forceHeight: ${forceHeight}`);
     const data: ResizeData = {
       id: promptData?.id || 'missing',
       pid: window.pid,
@@ -1522,6 +1531,7 @@ let wasPromptDataPreloaded = false;
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
+    s(choicesReadyAtom, false);
     const pid = g(pidAtom);
     // s(appendToLogHTMLAtom, a?.id || 'id missing');
 

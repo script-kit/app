@@ -1183,7 +1183,9 @@ export class KitPrompt {
   };
 
   hide = () => {
-    this.hasBeenHidden = true;
+    if(this.window.isVisible()){
+      this.hasBeenHidden = true;
+    }
     log.info('Hiding prompt window...');
     if (this.window.isDestroyed()) {
       log.warn('Prompt window is destroyed. Not hiding.');
@@ -1280,12 +1282,6 @@ export class KitPrompt {
     }
 
     this.setBounds(cachedBounds, 'initBounds');
-
-    if (!show) {
-      return;
-    }
-
-    log.info(`👋 Show Prompt from preloaded ${this.scriptPath}`);
   };
 
   blurPrompt = () => {
@@ -1322,7 +1318,7 @@ export class KitPrompt {
 
     let sameXAndYAsAnotherPrompt = false;
     for (const prompt of prompts) {
-      if (prompt.id === this.id) {
+      if (prompt?.window?.id === this.window?.id) {
         continue;
       }
       if (prompt.getBounds().x === bounds.x && prompt.getBounds().y === bounds.y) {
@@ -1332,6 +1328,7 @@ export class KitPrompt {
         }
       }
     }
+
     const noChange = heightNotChanged && widthNotChanged && xNotChanged && yNotChanged && !sameXAndYAsAnotherPrompt && !prompts.focused;
 
     if (noChange) {
@@ -1801,8 +1798,8 @@ export class KitPrompt {
 
   refocusPrompt = () => {
     const visible = this.isVisible();
-    const promptsThatNeedResize = [UI.arg, UI.div];
-    const dontWaitForResize = !promptsThatNeedResize.includes(this.ui) || this.promptData?.grid;
+    const waitForResize = this.ui === UI.arg || this.ui === UI.div;
+    const dontWaitForResize = !waitForResize || this.promptData?.grid;
 
     log.info('👀 Attempting to refocus prompt', {
       hasBeenHidden: this.hasBeenHidden,
@@ -2510,6 +2507,9 @@ export class KitPrompt {
   );
 
   hideInstant = (type: 'close' | 'hide' = 'hide') => {
+    if (!this.window.isVisible()) {
+      return;
+    }
     if (kitState.isWindows) {
       // REMOVE-NODE-WINDOW-MANAGER
       shims['@johnlindquist/node-window-manager'].windowManager.hideInstantly(this.window?.getNativeWindowHandle());
