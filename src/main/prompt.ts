@@ -426,7 +426,7 @@ export const destroyPromptWindow = () => {
 // );
 
 let prevEmoji = false;
-const subEmoji = subscribeKey(kitState, 'emojiActive', (emoji) => {
+const subEmoji = subscribeKey(kitState, 'emojiActive', debounce((emoji) => {
   if (prevEmoji === emoji) {
     return;
   }
@@ -441,13 +441,17 @@ const subEmoji = subscribeKey(kitState, 'emojiActive', (emoji) => {
         });
         prompts.focused.emojiActive = true;
       }
-      prompts?.prevFocused?.setPromptAlwaysOnTop(false);
+      // prompts?.prevFocused?.setPromptAlwaysOnTop(false);
       app.showEmojiPanel();
     });
   } else {
-    globalShortcut.unregister(emojiShortcut);
-  }
-});
+      globalShortcut.unregister(emojiShortcut);
+    }
+  }, 200, {
+    leading: true,
+    trailing: false,
+  })
+);
 
 const subIsSponsor = subscribeKey(kitState, 'isSponsor', (isSponsor) => {
   log.info('🎨 Sponsor changed:', isSponsor);
@@ -1328,7 +1332,7 @@ export class KitPrompt {
         }
       }
     }
-    const noChange = heightNotChanged && widthNotChanged && xNotChanged && yNotChanged && !sameXAndYAsAnotherPrompt;
+    const noChange = heightNotChanged && widthNotChanged && xNotChanged && yNotChanged && !sameXAndYAsAnotherPrompt && !prompts.focused;
 
     if (noChange) {
       log.info('📐 No change in bounds, ignoring', {
@@ -1351,11 +1355,12 @@ export class KitPrompt {
       `${this.pid}: boundsScreen.id ${boundsScreen.id} mouseScreen.id ${mouseScreen.id} boundsOnMouseScreen ${boundsOnMouseScreen ? 'true' : 'false'} isVisible: ${this.isVisible() ? 'true' : 'false'}`,
     );
 
+    let currentScreen = boundsScreen;
     if (boundsScreen.id !== mouseScreen.id && boundsOnMouseScreen) {
       log.info('🔀 Mouse screen is different, but bounds are within display. Using mouse screen.');
+      currentScreen = mouseScreen;
     }
 
-    const currentScreen = mouseScreen;
     const { x, y, width, height } = { ...currentBounds, ...bounds };
     const { x: workX, y: workY } = currentScreen.workArea;
     const { width: screenWidth, height: screenHeight } = currentScreen.workAreaSize;

@@ -22,7 +22,12 @@ import {
   typingAtom,
   uiAtom,
   scoredFlagsAtom,
+  enterButtonDisabledAtom,
+  enterButtonNameAtom,
+  flaggedChoiceValueAtom,
 } from '../jotai';
+import { EnterButton } from './actionenterbutton';
+import { ActionSeparator } from './actionseparator';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') {
@@ -164,10 +169,14 @@ export default function ActionsInput() {
   const actionsConfig = useAtomValue(actionsConfigAtom);
   const [choices] = useAtom(scoredFlagsAtom);
 
+  const enterButtonName = useAtomValue(enterButtonNameAtom);
+  const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
+  const [flagValue] = useAtom(flaggedChoiceValueAtom);
+
   return (
     <div
       key="input"
-      className={`flex flex-col max-w-screen ${choices?.length > 0 ? 'border-b border-ui-border' : ''} px-0.5`}
+      className={`flex flex-col justify-center max-w-screen ${choices?.length > 0 ? 'border-b border-ui-border' : ''} px-0.5`}
       style={{
         height: inputHeight,
         minHeight: inputHeight,
@@ -182,18 +191,19 @@ export default function ActionsInput() {
         {name} - {description}
       </div> */}
 
-      <div className="max-w-screen flex-1 relative">
-        <input
-          id="actions-input"
-          spellCheck="false"
-          style={
-            {
-              width: '100%',
-              ...(submitted && { caretColor: 'transparent' }),
-            } as any
-          }
-          disabled={submitted}
-          className={`
+      <div className="max-w-screen flex flex-row items-center">
+        <div className="flex-1 relative">
+          <input
+            id="actions-input"
+            spellCheck="false"
+            style={
+              {
+                width: '100%',
+                ...(submitted && { caretColor: 'transparent' }),
+              } as any
+            }
+            disabled={submitted}
+            className={`
       flex-1 bg-transparent tracking-normal text-text-base placeholder-text-base
       placeholder-opacity-25 outline-none
       placeholder:tracking-normal
@@ -204,17 +214,32 @@ export default function ActionsInput() {
       focus:border-none focus:ring-0
       focus:ring-opacity-0
       `}
-          onChange={onChange}
-          onKeyDown={onKeyDown}
-          placeholder={actionsConfig.placeholder}
-          ref={inputRef as LegacyRef<HTMLInputElement>}
-          type={'text'}
-          value={inputValue}
-        />
+            onChange={onChange}
+            onKeyDown={onKeyDown}
+            placeholder={actionsConfig.placeholder}
+            ref={inputRef as LegacyRef<HTMLInputElement>}
+            type={'text'}
+            value={inputValue}
+          />
+          {/*
+          {actionsConfig.name && (
+            <div className="text-primary/90 text-xs absolute right-[8px] top-[5px] font-normal-medium">
+              {actionsConfig.name}
+            </div>
+          )} */}
+        </div>
 
-        {actionsConfig.name && (
-          <div className="text-primary/90 text-xs absolute right-[8px] top-[5px] font-normal-medium">
-            {actionsConfig.name}
+        {enterButtonName && (
+          <div className="enter-container flex min-w-fit flex-row items-center pr-3">
+            <EnterButton
+              key="enter-button"
+              name="Run"
+              position="right"
+              shortcut="⏎"
+              value="enter"
+              flag=""
+              disabled={enterButtonDisabled}
+            />
           </div>
         )}
       </div>

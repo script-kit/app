@@ -24,6 +24,7 @@ import {
   choiceInputsAtom,
   enterButtonDisabledAtom,
   enterButtonNameAtom,
+  flaggedChoiceValueAtom,
   flagsAtom,
   focusedChoiceAtom,
   footerHiddenAtom,
@@ -235,6 +236,7 @@ function MainInput() {
 
   const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(miniShortcutsHoveredAtom);
   const flags = useAtomValue(flagsAtom);
+  const [flagValue] = useAtom(flaggedChoiceValueAtom);
 
   const [pendingInput, setPendingInput] = useState('');
   const cached = useAtomValue(cachedAtom);
@@ -407,7 +409,7 @@ function MainInput() {
             ...(submitted && { caretColor: 'transparent' }),
           } as any
         }
-        disabled={submitted || promptData?.scriptlet}
+        disabled={submitted || promptData?.scriptlet || flagValue}
         className={`
 
 bg-transparent tracking-normal text-text-base placeholder-text-base
@@ -418,7 +420,7 @@ focus:outline-none
 focus:border-none
 border-none
 ${fontSize}
-${submitted && 'text-opacity-50'}
+${(submitted || flagValue) && 'text-opacity-50'}
 
 max-w-full  pl-4 pr-0 py-0 ring-0 ring-opacity-0
 focus:ring-0
@@ -458,6 +460,7 @@ export default function Input() {
   const focusedChoice = useAtomValue(focusedChoiceAtom);
   const action = useAtomValue(signInActionAtom);
   const sendAction = useSetAtom(sendActionAtom);
+  const [flagValue] = useAtom(flaggedChoiceValueAtom);
 
   const onClick = useCallback(
     (event) => {
@@ -565,7 +568,7 @@ export default function Input() {
                   shortcut="⏎"
                   value="enter"
                   flag=""
-                  disabled={enterButtonDisabled}
+                  disabled={enterButtonDisabled || flagValue}
                 />
               ) : null}
               <ActionSeparator key="options-separator" />
