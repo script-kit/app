@@ -1710,14 +1710,7 @@ export const promptDataAtom = atom(
       s(defaultChoiceIdAtom, a?.defaultChoiceId || '');
 
       s(onInputSubmitAtom, a?.shortcodes || {});
-
-      // This prevent a "flash" of shortcuts since the focused choice
-      // changes which shortcuts are visible and it's different from
-      // the preloaded shortcuts
-      // TODO: Consider a "choicesControlShortcuts" prop on promptData or similar
-      if (!g(isMainScriptAtom)) {
-        s(shortcutsAtom, a?.shortcuts || []);
-      }
+      s(shortcutsAtom, a?.shortcuts || []);
 
       s(prevChoicesConfig, []);
       s(audioDotAtom, false);
