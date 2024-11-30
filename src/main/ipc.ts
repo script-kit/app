@@ -561,7 +561,8 @@ ${child?.pid} 📝 Submitting...
 -------------`.trim(),
           );
 
-          if (!message?.state?.value && message?.state?.script) {
+          // TODO: Is this still necessary? It was breaking a scenario around empty strings in an arg.
+          if (!message?.state?.value && message?.state?.script && prompt.kitSearch?.choices?.length > 0) {
             message.state.value = message.state.focused;
           }
 

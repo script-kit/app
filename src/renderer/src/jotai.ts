@@ -1283,7 +1283,11 @@ const resize = debounce(
       if (flaggedValue && promptData?.height && promptData?.height < PROMPT.HEIGHT.BASE) {
         forceHeight = PROMPT.HEIGHT.BASE;
       } else {
-        forceHeight = promptData?.height;
+        if (flaggedValue && !promptData?.height) {
+          forceHeight = PROMPT.HEIGHT.BASE;
+        } else {
+          forceHeight = promptData?.height;
+        }
       }
     }
 
@@ -1987,8 +1991,10 @@ export const submitValueAtom = atom(
       }
     }
 
-    const value = g(uiAtom) === UI.term ? g(termOutputAtom) : checkSubmitFormat(g, a);
-
+    let value = g(uiAtom) === UI.term ? g(termOutputAtom) : checkSubmitFormat(g, a);
+    if(focusedChoice === noChoice && g(inputAtom) === "" && g(choicesAtom).length === 0){
+      value = ""
+    }
     channel(Channel.VALUE_SUBMITTED, {
       value,
       flag,

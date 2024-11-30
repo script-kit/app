@@ -64,15 +64,16 @@ export const startSK = () => {
  * @param stream - The network stream.
  * @param param1 - An object containing status and message.
  */
-function sendResponse(stream: any, { status, message }: { status: number; message: string }) {
+function sendResponse(stream: any, result: { status?: number; message?: string }) {
+  const status = result?.status ?? 500;
+  const message = result?.message;
   const statusText = status === 200 ? 'OK' : 'Not Found';
-  stream.write(
-    `HTTP/1.1 ${status} ${statusText}
-Content-Type: text/plain
+  const response = `HTTP/1.1 ${status} ${statusText}
+Content-Type: text/plain${message ? `
 Content-Length: ${message.length}
 
-${message}`,
-  );
+${message}` : ''}`.trim();
+  stream.write(response);
   stream.end();
 }
 
