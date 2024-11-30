@@ -91,7 +91,7 @@
     "electron-mocks": "^1.4.2",
     "electron-vite": "^2.3.0",
     "emoji-picker-react": "^4.12.0",
-    "eslint": "^9.15.0",
+    "eslint": "^9.16.0",
     "eslint-config-erb": "4.1.0",
     "framer-motion": "^11.12.0",
     "html-react-parser": "^5.1.18",
@@ -127,7 +127,7 @@
   "dependencies": {
     "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/clipboard": "^0.1.38",
-    "@johnlindquist/kit": "^3.4.7",
+    "@johnlindquist/kit": "^3.4.10",
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^28.0.1",
     "@types/express": "^5.0.0",
