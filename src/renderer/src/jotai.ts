@@ -2410,8 +2410,12 @@ export const enterLastPressedAtom = atom<Date | null>(null);
 export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
   const channel = g(channelAtom);
   // const log = log;
-  log.info(`🎬 Send shortcut`, shortcut);
-  if (shortcut === 'enter') {
+  const hasEnterShortcut = g(shortcutsAtom).find((s) => s.key === 'enter');
+  log.info('🎬 Send shortcut', {
+    shortcut,
+    hasEnterShortcut,
+  });
+  if (shortcut === 'enter' && !hasEnterShortcut) {
     s(enterLastPressedAtom, new Date());
   } else {
     channel(Channel.SHORTCUT, { shortcut });

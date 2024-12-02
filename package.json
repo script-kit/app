@@ -86,7 +86,7 @@
     "date-fns": "^4.1.0",
     "detect-port": "^1.6.1",
     "dompurify": "^3.2.2",
-    "electron": "34.0.0-beta.6",
+    "electron": "34.0.0-beta.8",
     "electron-builder": "26.0.0-alpha.6",
     "electron-mocks": "^1.4.2",
     "electron-vite": "^2.3.0",
@@ -119,15 +119,15 @@
     "simplebar-react": "^3.2.6",
     "tailwindcss": "^3.4.15",
     "ts-jest": "^29.2.5",
-    "vite": "^6.0.1",
+    "vite": "^6.0.2",
     "vite-plugin-commonjs-externals": "^0.1.4",
     "vite-plugin-compression": "^0.5.1",
-    "vitest": "^2.1.6"
+    "vitest": "^2.1.8"
   },
   "dependencies": {
     "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/clipboard": "^0.1.38",
-    "@johnlindquist/kit": "^3.4.10",
+    "@johnlindquist/kit": "^3.5.0",
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^28.0.1",
     "@types/express": "^5.0.0",

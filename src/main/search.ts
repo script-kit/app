@@ -328,8 +328,24 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
 
     setScoredChoices(prompt, groupedResults, 'prompt.kitSearch.hasGroup');
   } else if (resultLength === 0) {
-    const scoredChoices: ScoredChoice[] = [];
+    const result: ScoredChoice[] = [];
+    let hasChoice = false;
     for (const choice of prompt.kitSearch.choices) {
+      if (choice?.miss) {
+
+        result.push(createScoredChoice(choice));
+        continue;
+      }
+      if (choice?.pass) {
+
+        result.push(createScoredChoice(choice));
+        continue;
+      }
+      if (choice?.info) {
+
+        result.push(createScoredChoice(choice));
+        continue;
+      }
       for (const key of prompt.kitSearch.keys) {
         let start = -1;
 
@@ -345,15 +361,14 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
             [key]: [[start, end]],
           };
           scoredChoice.score = 1;
-          scoredChoices.push(scoredChoice);
-          break;
-        }
-        if (choice?.miss || choice?.pass || choice?.info) {
-          scoredChoices.push(createScoredChoice(choice));
+          result.push(scoredChoice);
+          hasChoice = true;
           break;
         }
       }
     }
+
+    const scoredChoices = filterAndSortOtherChoices(result, transformedInput, lowerCaseInput, hasChoice);
 
     setScoredChoices(prompt, scoredChoices, 'resultLength === 0');
   } else {
@@ -361,56 +376,82 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
     if (allMisses) {
       setScoredChoices(prompt, result, 'allMisses');
     } else {
-      const infos = [];
+      const result: ScoredChoice[] = [];
+      let hasChoice = false;
       for (const choice of prompt.kitSearch.choices) {
-        if (choice?.info && !choice?.miss && !(choice?.hideWithoutInput && transformedInput === '')) {
-          infos.push(createScoredChoice(choice));
+        if (choice?.miss) {
+
+          result.push(createScoredChoice(choice));
+          continue;
         }
+        if (choice?.pass) {
+
+          result.push(createScoredChoice(choice));
+          continue;
+        }
+        if (choice?.info) {
+
+          result.push(createScoredChoice(choice));
+          continue;
+        }
+
+
+        hasChoice = true
+        result.push(createScoredChoice(choice));
       }
-      const filterConditions = result.filter((r) => {
-        if (r.item.miss) {
-          return false;
-        }
-        if (r.item.info) {
-          return false;
-        }
-        if (r.item.pass) {
-          return true;
-        }
-        if (transformedInput === '' && r.item.hideWithoutInput) {
-          return false;
-        }
 
-        return true;
-      });
-      // Sort that r.item.name.includes(transformedInput) is first
-      // And the closer the includes to the start of the name, the closer to the front of the array
+      const scoredChoices = filterAndSortOtherChoices(result, transformedInput, lowerCaseInput, hasChoice);
 
-      filterConditions.sort((a, b) => {
-        const aIndex = a.item.name.toLowerCase().indexOf(lowerCaseInput);
-        const bIndex = b.item.name.toLowerCase().indexOf(lowerCaseInput);
-
-        if (aIndex === bIndex) {
-          return 0;
-        }
-
-        if (aIndex === -1) {
-          return 1;
-        }
-
-        if (bIndex === -1) {
-          return -1;
-        }
-
-        return aIndex - bIndex;
-      });
-
-      filterConditions.unshift(...infos);
-
-      setScoredChoices(prompt, filterConditions, 'resultLength > 0');
+      setScoredChoices(prompt, scoredChoices, 'resultLength > 0');
     }
   }
 };
+
+function filterAndSortOtherChoices(result: ScoredChoice[], transformedInput: string, lowerCaseInput: string, hasChoice: boolean) {
+  const infos: ScoredChoice[] = [];
+  const filterConditions = result.filter((r) => {
+    if (r.item.miss) {
+      return !hasChoice;
+    }
+    if (r.item.info) {
+      infos.push(r);
+      return false;
+    }
+    if (r.item.pass) {
+      return true;
+    }
+    if (r.item.hideWithoutInput) {
+      return transformedInput !== '';
+    }
+
+    return true;
+  });
+  // Sort that r.item.name.includes(transformedInput) is first
+  // And the closer the includes to the start of the name, the closer to the front of the array
+
+  filterConditions.sort((a, b) => {
+    const aIndex = a.item.name.toLowerCase().indexOf(lowerCaseInput);
+    const bIndex = b.item.name.toLowerCase().indexOf(lowerCaseInput);
+
+    if (aIndex === bIndex) {
+      return 0;
+    }
+
+    if (aIndex === -1) {
+      return 1;
+    }
+
+    if (bIndex === -1) {
+      return -1;
+    }
+
+    return aIndex - bIndex;
+  });
+
+  filterConditions.unshift(...infos);
+
+  return filterConditions;
+}
 
 export const debounceInvokeSearch = debounce(invokeSearch, 100);
 
