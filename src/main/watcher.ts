@@ -40,7 +40,7 @@ import { pathExists, pathExistsSync, writeFile } from './cjs-exports';
 import { createLogger } from '../shared/log-utils';
 import { compareArrays } from '../shared/utils';
 import { clearInterval, setInterval } from 'node:timers';
-import { kenvChokidarPath, slash } from './path-utils';
+import { kenvChokidarPath, kitChokidarPath, slash } from './path-utils';
 import { actualHideDock, showDock } from './dock';
 import { reloadApps } from './apps';
 
@@ -393,7 +393,7 @@ export const teardownWatchers = () => {
   if (pingInterval) {
     clearTimeout(pingInterval);
   }
-  if (watchers.length) {
+  if (watchers.length > 0) {
     for (const watcher of watchers) {
       try {
         watcher.removeAllListeners();
@@ -742,10 +742,55 @@ export const restartWatchers = debounce(
   { leading: false },
 );
 
+export function watchKenvDirectory(){
+  const kenvFolderWatcher = chokidar.watch(kenvChokidarPath(), {
+    ignoreInitial: kitState.ignoreInitial,
+    followSymlinks: true,
+    depth: 0,
+    ignored: (checkPath) => {
+      // Ignore if it's not the exact kenv path
+      return path.normalize(checkPath) !== path.normalize(kenvChokidarPath());
+    }
+  });
+
+  const watcherHandler = (eventName:WatchEvent, filePath:string) => {
+    log.info(`🔄 ${eventName} ${filePath} from kenv folder watcher`);
+    if(eventName === 'addDir'){
+      setTimeout(() => {
+        if(watchers.length === 0){
+          log.warn(`🔄 ${filePath} added. Setting up watchers...`);
+          setupWatchers();
+        }else{
+          log.info(`🔄 ${filePath} added, but watchers already exist. No need to setup watchers...`);
+        }
+      }, 2000);
+    }
+
+    if(eventName === 'unlinkDir'){
+      log.warn(`🔄 ${filePath} unlinked. Tearing down watchers...`);
+      teardownWatchers();
+    }
+  }
+
+  const kitFolderWatcher = chokidar.watch(kitChokidarPath(), {
+    ignoreInitial: kitState.ignoreInitial,
+    followSymlinks: true,
+    depth: 0,
+    ignored: (checkPath) => {
+      // Ignore if it's not the exact kit path
+      return path.normalize(checkPath) !== path.normalize(kitChokidarPath());
+    }
+  });
+
+  kenvFolderWatcher.on('all', watcherHandler);
+  kitFolderWatcher.on('all', watcherHandler);
+}
+
 let pingInterval: NodeJS.Timeout;
-export const setupWatchers = async () => {
+export const setupWatchers = debounce(() => {
   log.green('🔄 Setup Watchers');
-  await teardownWatchers();
+  teardownWatchers();
+
   if (kitState.ignoreInitial) {
     refreshScripts();
   }
@@ -944,7 +989,7 @@ export const setupWatchers = async () => {
 
     log.warn(`🔄 ${eventName} ${filePath}, but not handled... Is this a bug?`);
   });
-};
+}, 1000, { leading: true });
 
 subscribeKey(kitState, 'suspendWatchers', (suspendWatchers) => {
   if (suspendWatchers) {

@@ -9,7 +9,7 @@ import os from 'node:os';
 
 const log = createLogger('chokidar.ts');
 
-export type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
+export type WatchEvent = 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir'
 export type WatchSource = 'app' | 'kenv';
 type WatcherCallback = (eventName: WatchEvent, filePath: string, source?: WatchSource) => Promise<void>;
 export const startWatching = (callback: WatcherCallback) => {
@@ -67,7 +67,7 @@ export const startWatching = (callback: WatcherCallback) => {
       kenvScriptsWatcher.add(globs);
     }, 1000);
   }
-  
+
   kenvsWatcher.on('addDir', kenvsWatcherCallback);
 
 

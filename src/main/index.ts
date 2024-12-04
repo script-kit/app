@@ -52,7 +52,7 @@ import { getAssetPath, getReleaseChannel } from '../shared/assets';
 import { clearPromptCache, clearPromptTimers, logPromptState } from './prompt';
 import { startClipboardAndKeyboardWatchers } from './tick';
 import { checkTray, setupTray } from './tray';
-import { setupWatchers, teardownWatchers } from './watcher';
+import { setupWatchers, teardownWatchers, watchKenvDirectory } from './watcher';
 
 import { KitEvent, emitter } from '../shared/events';
 import { syncClipboardStore } from './clipboard';
@@ -551,6 +551,7 @@ const ready = async () => {
 
     await setupLog('Tray created');
 
+    watchKenvDirectory();
     await setupWatchers();
     await setupLog('Shortcuts Assigned');
 

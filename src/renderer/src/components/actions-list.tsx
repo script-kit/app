@@ -183,7 +183,7 @@ export default function ActionsList() {
       -translate-x-1/2
       origin-top
       rounded-lg
-      bg-bg-base/90
+      bg-bg-base/95
       backdrop-filter
       backdrop-blur-xl
       border border-ui-border
