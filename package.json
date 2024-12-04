@@ -87,7 +87,7 @@
     "detect-port": "^1.6.1",
     "dompurify": "^3.2.2",
     "electron": "34.0.0-beta.8",
-    "electron-builder": "26.0.0-alpha.6",
+    "electron-builder": "26.0.0-alpha.7",
     "electron-mocks": "^1.4.2",
     "electron-vite": "^2.3.0",
     "emoji-picker-react": "^4.12.0",
