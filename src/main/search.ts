@@ -409,7 +409,6 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
 };
 
 function filterAndSortOtherChoices(result: ScoredChoice[], transformedInput: string, lowerCaseInput: string, hasChoice: boolean) {
-  log.info(`filterAndSortOtherChoices`, { transformedInput, lowerCaseInput, hasChoice });
   const infos: ScoredChoice[] = [];
   const filterConditions = result.filter((r) => {
     if (r.item.miss) {
