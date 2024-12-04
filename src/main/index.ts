@@ -540,7 +540,7 @@ const ready = async () => {
 
       await symlink(appLogsPath, kitLogsPath);
     } catch (error) {
-      log.error(error);
+      log.warn(error);
     }
 
     await prepareProtocols();
