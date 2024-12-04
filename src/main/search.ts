@@ -328,22 +328,21 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
 
     setScoredChoices(prompt, groupedResults, 'prompt.kitSearch.hasGroup');
   } else if (resultLength === 0) {
-    const result: ScoredChoice[] = [];
+    const filteredResults: ScoredChoice[] = [];
     let hasChoice = false;
     for (const choice of prompt.kitSearch.choices) {
       if (choice?.miss) {
 
-        result.push(createScoredChoice(choice));
+        filteredResults.push(createScoredChoice(choice));
         continue;
       }
       if (choice?.pass) {
 
-        result.push(createScoredChoice(choice));
+        filteredResults.push(createScoredChoice(choice));
         continue;
       }
       if (choice?.info) {
-
-        result.push(createScoredChoice(choice));
+        filteredResults.push(createScoredChoice(choice));
         continue;
       }
       for (const key of prompt.kitSearch.keys) {
@@ -361,14 +360,15 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
             [key]: [[start, end]],
           };
           scoredChoice.score = 1;
-          result.push(scoredChoice);
+          filteredResults.push(scoredChoice);
           hasChoice = true;
           break;
         }
       }
     }
 
-    const scoredChoices = filterAndSortOtherChoices(result, transformedInput, lowerCaseInput, hasChoice);
+    log.info(`a`)
+    const scoredChoices = filterAndSortOtherChoices(filteredResults, transformedInput, lowerCaseInput, hasChoice);
 
     setScoredChoices(prompt, scoredChoices, 'resultLength === 0');
   } else {
@@ -376,31 +376,32 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
     if (allMisses) {
       setScoredChoices(prompt, result, 'allMisses');
     } else {
-      const result: ScoredChoice[] = [];
+      const filteredResults: ScoredChoice[] = [];
       let hasChoice = false;
-      for (const choice of prompt.kitSearch.choices) {
-        if (choice?.miss) {
+      for (const choice of result) {
+        if (choice?.item?.miss) {
 
-          result.push(createScoredChoice(choice));
+          filteredResults.push(choice);
           continue;
         }
-        if (choice?.pass) {
+        if (choice?.item?.pass) {
 
-          result.push(createScoredChoice(choice));
+          filteredResults.push(choice);
           continue;
         }
-        if (choice?.info) {
+        if (choice?.item?.info) {
 
-          result.push(createScoredChoice(choice));
+          filteredResults.push(choice);
           continue;
         }
 
-
-        hasChoice = true
-        result.push(createScoredChoice(choice));
+        hasChoice = true;
+        filteredResults.push(choice);
+        log.info(`hasChoice ${choice?.item?.name}`)
       }
 
-      const scoredChoices = filterAndSortOtherChoices(result, transformedInput, lowerCaseInput, hasChoice);
+      log.info(`b`)
+      const scoredChoices = filterAndSortOtherChoices(filteredResults, transformedInput, lowerCaseInput, hasChoice);
 
       setScoredChoices(prompt, scoredChoices, 'resultLength > 0');
     }
@@ -408,6 +409,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
 };
 
 function filterAndSortOtherChoices(result: ScoredChoice[], transformedInput: string, lowerCaseInput: string, hasChoice: boolean) {
+  log.info(`filterAndSortOtherChoices`, { transformedInput, lowerCaseInput, hasChoice });
   const infos: ScoredChoice[] = [];
   const filterConditions = result.filter((r) => {
     if (r.item.miss) {

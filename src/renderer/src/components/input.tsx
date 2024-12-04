@@ -82,10 +82,11 @@ const debouncedFocus = debounce(
 );
 
 const minWidth = 24;
+const defaultWidth = 128;
 function ResizableInput({ placeholder, className, index }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const hiddenInputRef = useRef<HTMLSpanElement>(null);
-  const [inputWidth, setInputWidth] = useState(minWidth); // Minimum width
+  const inputWidthRef = useRef(defaultWidth);
   const [currentInput, setCurrentInput] = useState('');
   const [choiceInputs, setChoiceInputs] = useAtom(choiceInputsAtom);
   const [invalidateChoiceInputs, setInvalidateChoiceInputs] = useAtom(invalidateChoiceInputsAtom);
@@ -102,8 +103,10 @@ function ResizableInput({ placeholder, className, index }) {
 
   useResizeObserver(hiddenInputRef, () => {
     const newWidth = Math.ceil((hiddenInputRef?.current?.offsetWidth || minWidth) + 12);
-    const inputWidth = Math.max(newWidth, minWidth);
-    setInputWidth(inputWidth); // Using 128 as minimum width
+    inputWidthRef.current = newWidth; //Math.max(newWidth, minWidth);
+    if (inputRef.current) {
+      inputRef.current.style.width = `${newWidth}px`;
+    }
   });
 
   useEffect(() => {
@@ -172,8 +175,8 @@ mt-0.5
 mx-1
         `}
         style={{
-          minWidth: `${inputWidth}px`,
-          width: `${inputWidth}px`,
+          minWidth: `${inputWidthRef.current}px`,
+          width: `${inputWidthRef.current}px`,
           height: '60%',
           whiteSpace: 'nowrap',
           boxSizing: 'border-box',
