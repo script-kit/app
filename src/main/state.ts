@@ -200,7 +200,9 @@ const scriptKitTheme = `
 :root {
     --name: "Script Kit Dark";
     --appearance: dark;
-    --opacity: 0.5;
+    --opacity-mac: 0.25;
+    --opacity-win: 0.5;
+    --opacity-other: 0.5;
     --color-text: #ffffffee;
     --color-primary: #fbbf24ee;
     --color-secondary: #ffffff;

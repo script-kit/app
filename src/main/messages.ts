@@ -551,6 +551,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
             prompt?.focusPrompt();
           }
 
+          log.info(`${widgetId}: Sending WIDGET_END`);
           childSend({
             channel: Channel.WIDGET_END,
             widgetId,
@@ -561,9 +562,6 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
           w.destroy();
 
           remove(widgetState.widgets, ({ id }) => id === widgetId);
-          if (!prompt?.isVisible()) {
-            processes.removeByPid(w.pid);
-          }
         };
 
         widget?.webContents.on('before-input-event', (event, input) => {
@@ -620,6 +618,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
     WIDGET_END: onChildChannelOverride(({ child }, { value, channel }) => {
       const { widgetId } = value as any;
+      log.info(`WIDGET_END: ${widgetId}: Widget end`);
       const widget = findWidget(widgetId, channel);
 
       if (!widget) {
@@ -641,10 +640,6 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
           channel: Channel.WIDGET_END,
           widgetId,
         });
-      }
-
-      if (!prompt?.isVisible()) {
-        processes.removeByPid(widget.pid);
       }
     }),
 

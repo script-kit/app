@@ -358,6 +358,11 @@ export const onScriptChanged = async (event: WatchEvent, script: Script, rebuilt
     } else {
       log.info(
         `⌚️ ${script.filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`,
+        {
+          ready: kitState.ready,
+          rebuilt: rebuilt,
+          firstBatch: firstBatch,
+        },
       );
     }
 

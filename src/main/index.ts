@@ -635,9 +635,34 @@ const nodeModulesExists = async () => {
   return doesNodeModulesExist;
 };
 
+const readPackageJson = async (cwd: string) => {
+  const packageJsonPath = path.join(cwd, 'package.json');
+  const packageJson = await readJson(packageJsonPath);
+  return packageJson;
+};
+
+const updatePackageJson = async (cwd: string, packageJson: any) => {
+  const packageJsonPath = path.join(cwd, 'package.json');
+  await writeJson(packageJsonPath, packageJson, { spaces: 2 });
+};
+
 export const useElectronNodeVersion = async (cwd: string, config: NpmConfig) => {
   const pnpmPath = await getPnpmPath();
   log.info(`🚶 Setting pnpm node version to ${process.versions.node} with ${pnpmPath}`);
+  // Get pnpm version
+  const pnpmVersion = await spawnP(pnpmPath, ['--version']);
+
+  log.info(`🚶 Using pnpm version ${pnpmVersion} to set node version in ${cwd}`);
+  // Attempt to read/update the package.json engines.node field from the cwd
+  try {
+    const packageJson = await readPackageJson(cwd);
+    packageJson.engines.node = process.versions.node;
+    packageJson.packageManager = `pnpm@${pnpmVersion}`;
+    await updatePackageJson(cwd, packageJson);
+  } catch (error) {
+    log.error(error);
+  }
+
   await setNpmrcConfig(cwd, config);
 
   try {
@@ -992,7 +1017,9 @@ const checkKit = async () => {
   });
 
   if (!isKenvInstalled) {
+    log.info('Cloning examples...');
     optionalSetupScript(kitPath('setup', 'clone-examples.js'));
+    log.info('Cloning sponsors...');
     optionalSetupScript(kitPath('setup', 'clone-sponsors.js'));
   }
 
