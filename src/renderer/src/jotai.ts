@@ -788,8 +788,8 @@ export const scoredChoicesAtom = atom(
       } else if (input.length > 0) {
         s(requiresScrollAtom, g(requiresScrollAtom) > 0 ? 0 : -1);
 
-        const keyword = g(promptDataAtom)?.keyword;
-        log.info({ keyword, inputLength: input.length });
+        // const keyword = g(promptDataAtom)?.keyword;
+        // log.info({ keyword, inputLength: input.length });
         if (changed) {
           s(indexAtom, 0);
         }
@@ -1953,6 +1953,7 @@ export const submitValueAtom = atom(
     const action = g(focusedActionAtom);
     log.info('submitValue', {
       action,
+      a,
     });
     if ((action as FlagsWithKeys).hasAction) {
       channel(Channel.ACTION);
@@ -1992,13 +1993,20 @@ export const submitValueAtom = atom(
     }
 
     let value = g(uiAtom) === UI.term ? g(termOutputAtom) : checkSubmitFormat(g, a);
-    if(focusedChoice === noChoice && g(inputAtom) === "" && g(choicesAtom).length === 0){
+    const focusedChoiceIsNoChoice = focusedChoice === noChoice;
+    const inputIsEmpty = g(inputAtom) === "";
+    const choicesAreEmpty = g(choicesAtom).length === 0;
+    if(focusedChoiceIsNoChoice && inputIsEmpty && choicesAreEmpty){
       value = ""
     }
-    channel(Channel.VALUE_SUBMITTED, {
+
+    const valueSubmitted  =  {
       value,
       flag,
-    });
+    };
+
+    log.info('👀 valueSubmitted', valueSubmitted);
+    channel(Channel.VALUE_SUBMITTED, valueSubmitted);
 
     s(loadingAtom, false);
 

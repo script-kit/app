@@ -562,9 +562,10 @@ ${child?.pid} 📝 Submitting...
           );
 
           // TODO: Is this still necessary? It was breaking a scenario around empty strings in an arg.
-          if (!message?.state?.value && message?.state?.script && prompt.kitSearch?.choices?.length > 0) {
-            message.state.value = message.state.focused;
-          }
+          // It would also need to check if there are "info" choices.
+          // if (!message?.state?.value && message?.state?.script && prompt.kitSearch?.choices?.length > 0) {
+          //   message.state.value = message.state.focused;
+          // }
 
           if (!prompt.ready) {
             log.info(`${prompt.pid}: Prompt not ready..`, message);
