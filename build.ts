@@ -161,6 +161,7 @@ const config: Configuration = {
     //   teamId: '9822B7V7MD',
     // },
     notarize: true,
+
     icon: 'assets/icons/mac/icon.icns',
     category: 'public.app-category.productivity', // Keep as is or update based on package.json if needed
     hardenedRuntime: true,
