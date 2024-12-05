@@ -1725,6 +1725,8 @@ export const promptDataAtom = atom(
 
       if (typeof a?.enter === 'string') {
         s(enterAtom, a.enter);
+      }else{
+        s(enterAtom, 'Submit');
       }
 
       if (!g(hasActionsAtom)) {
@@ -1915,6 +1917,10 @@ export const promptActiveAtom = atom(false);
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
   (g, s, a: any) => {
+    if(g(enterAtom) === ''){
+      log.warn('👀 Preventing submit because enterAtom is empty');
+      return
+    }
     // log.info(
     //   `
     // 👉    👉  👉
@@ -1951,10 +1957,6 @@ export const submitValueAtom = atom(
       return;
     }
     const action = g(focusedActionAtom);
-    log.info('submitValue', {
-      action,
-      a,
-    });
     if ((action as FlagsWithKeys).hasAction) {
       channel(Channel.ACTION);
       if (action?.close && g(flaggedChoiceValueAtom)) {
@@ -1992,11 +1994,12 @@ export const submitValueAtom = atom(
       }
     }
 
-    let value = g(uiAtom) === UI.term ? g(termOutputAtom) : checkSubmitFormat(g, a);
+    const ui = g(uiAtom);
+    let value = ui === UI.term ? g(termOutputAtom) : checkSubmitFormat(g, a);
     const focusedChoiceIsNoChoice = focusedChoice === noChoice;
     const inputIsEmpty = g(inputAtom) === "";
     const choicesAreEmpty = g(choicesAtom).length === 0;
-    if(focusedChoiceIsNoChoice && inputIsEmpty && choicesAreEmpty){
+    if(focusedChoiceIsNoChoice && inputIsEmpty && choicesAreEmpty && ui === UI.arg){
       value = ""
     }
 
@@ -2005,7 +2008,7 @@ export const submitValueAtom = atom(
       flag,
     };
 
-    log.info('👀 valueSubmitted', valueSubmitted);
+    // log.info('👀 valueSubmitted', valueSubmitted);
     channel(Channel.VALUE_SUBMITTED, valueSubmitted);
 
     s(loadingAtom, false);

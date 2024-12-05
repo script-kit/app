@@ -1781,17 +1781,26 @@ export class KitPrompt {
 
   checkPromptDataBounds = (promptData: PromptData) => {
     const { x, y, width, height } = promptData;
+
+    // Handle position
     if (x !== undefined || y !== undefined) {
       const [currentX, currentY] = this.window?.getPosition() || [];
       if ((x !== undefined && x !== currentX) || (y !== undefined && y !== currentY)) {
-        this.window?.setPosition(x !== undefined ? x : currentX, y !== undefined ? y : currentY);
+        this.window?.setPosition(
+          x !== undefined ? Math.round(Number(x)) : currentX,
+          y !== undefined ? Math.round(Number(y)) : currentY
+        );
       }
     }
 
+    // Only handle size if not UI.arg and dimensions are provided
     if (promptData.ui !== UI.arg && (width !== undefined || height !== undefined)) {
       const [currentWidth, currentHeight] = this.window?.getSize() || [];
       if ((width !== undefined && width !== currentWidth) || (height !== undefined && height !== currentHeight)) {
-        this.window?.setSize(width !== undefined ? width : currentWidth, height !== undefined ? height : currentHeight);
+        this.window?.setSize(
+          width !== undefined ? Math.round(Number(width)) : currentWidth,
+          height !== undefined ? Math.round(Number(height)) : currentHeight
+        );
       }
     }
   };
