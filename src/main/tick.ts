@@ -439,36 +439,54 @@ export const startClipboardAndKeyboardWatchers = async () => {
   startKeyboardMonitor();
 };
 
-const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = '') => {
-  // Use `;;` as "end"?
+// --- Optimized Snippet Management ---
+interface SnippetInfo {
+  filePath: string;
+  postfix: boolean;
+  txt: boolean;
+}
+
+const snippetMap = new Map<string, SnippetInfo>();
+const snippetPrefixIndex = new Map<string, string[]>(); // Prefix to snippet keys
+
+const updateSnippetPrefixIndex = () => {
+  snippetPrefixIndex.clear();
+  for (const key of snippetMap.keys()) {
+    // Index snippets by their last 3 characters
+    const prefix = key.slice(-3);
+    if (!snippetPrefixIndex.has(prefix)) {
+      snippetPrefixIndex.set(prefix, []);
+    }
+    snippetPrefixIndex.get(prefix)!.push(key);
+  }
+};
+
+const subSnippet = subscribeKey(kitState, 'snippet', async (snippet: string) => {
   if (snippet.length < 2) {
     return;
   }
-  for await (const snippetKey of snippetMap.keys()) {
+
+  const potentialPrefix = snippet.slice(-3);
+  const potentialSnippetKeys = snippetPrefixIndex.get(potentialPrefix) || [];
+
+  for (const snippetKey of potentialSnippetKeys) {
     if (snippet.endsWith(snippetKey)) {
       let postfix = false;
       log.info(`Running snippet: ${snippetKey}`);
-      const script = snippetMap.get(snippetKey) as {
-        filePath: string;
-        postfix: boolean;
-        txt: boolean;
-      };
+      const script = snippetMap.get(snippetKey) as SnippetInfo;
+
       if (kitConfig.deleteSnippet) {
-        // get postfix from snippetMap
-        if (snippetMap.has(snippetKey)) {
-          postfix = Boolean(snippetMap.get(snippetKey)?.postfix);
-
-          const stringToDelete = postfix ? snippet : snippetKey;
-          log.silly({ stringToDelete, postfix });
-          kitState.snippet = '';
-
-          await deleteText(stringToDelete);
-        }
+        postfix = script.postfix;
+        const stringToDelete = postfix ? snippet : snippetKey;
+        log.silly({ stringToDelete, postfix });
+        kitState.snippet = '';
+        await deleteText(stringToDelete);
       }
+
       if (script.txt) {
         emitter.emit(KitEvent.RunPromptProcess, {
           scriptPath: kitPath('app', 'paste-snippet.js'),
-          args: ['--filePath', script?.filePath],
+          args: ['--filePath', script.filePath],
           options: {
             force: false,
             trigger: Trigger.Snippet,
@@ -477,7 +495,7 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = '') => {
       } else {
         emitter.emit(KitEvent.RunPromptProcess, {
           scriptPath: script.filePath,
-          args: postfix ? [snippet.slice(0, -snippetKey?.length)] : [],
+          args: postfix ? [snippet.slice(0, -snippetKey.length)] : [],
           options: {
             force: false,
             trigger: Trigger.Snippet,
@@ -485,10 +503,10 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = '') => {
         });
       }
     }
+  }
 
-    if (snippet.endsWith(SPACE)) {
-      kitState.snippet = '';
-    }
+  if (snippet.endsWith(SPACE)) {
+    kitState.snippet = '';
   }
 });
 
@@ -496,22 +514,8 @@ const subIsTyping = subscribeKey(kitState, 'isTyping', () => {
   log.silly(`📕 isTyping: ${kitState.isTyping ? 'true' : 'false'}`);
 });
 
-const snippetMap = new Map<
-  string,
-  {
-    filePath: string;
-    postfix: boolean;
-    txt: boolean;
-  }
->();
-
 /**
  * Parses the provided content to extract metadata and the corresponding snippet.
- * Metadata is defined in comment lines at the beginning, followed by the actual snippet.
- *
- * @param contents - The raw content string containing metadata and snippet.
- * @returns An object containing the extracted metadata and the snippet.
- * @throws Will throw an error if the contents parameter is not a string.
  */
 const parseSnippet = (
   contents: string,
@@ -527,10 +531,8 @@ const parseSnippet = (
   const metadata: Record<string, string> = {};
   let snippetStartIndex = lines.length;
 
-  // Iterate through each line to extract metadata from comment lines
   for (let index = 0; index < lines.length; index++) {
     const line = lines[index];
-    // Match lines that start with // or # followed by a key:value pair
     const match = line.match(/^(?:\/\/|#)\s{0,2}([\w-]+):\s*(.*)/);
 
     if (match) {
@@ -539,13 +541,11 @@ const parseSnippet = (
         metadata[key.trim().toLowerCase()] = value.trim();
       }
     } else {
-      // The first non-metadata line indicates the start of the snippet
       snippetStartIndex = index;
       break;
     }
   }
 
-  // Extract the snippet starting from the first non-metadata line
   const snippetLines = lines.slice(snippetStartIndex);
   const snippet = snippetLines.join('\n');
 
@@ -556,7 +556,7 @@ export const addTextSnippet = async (filePath: string) => {
   log.verbose(`Adding text snippet: ${filePath}`);
   for (const [key, value] of snippetMap.entries()) {
     if (value.filePath === filePath && value.txt) {
-      log.verbose(`addTextSnippet: Removing snippet: ${key} because it's already been added`, {
+      log.verbose(`Removing snippet: ${key} because it's already been added`, {
         valueFilePath: value.filePath,
         scriptFilePath: filePath,
       });
@@ -583,16 +583,15 @@ export const addTextSnippet = async (filePath: string) => {
       postfix,
       txt: true,
     });
-
   }
-
+  updateSnippetPrefixIndex();
   log.info(`Text snippet: Current snippet map: ${JSON.stringify(Object.fromEntries(snippetMap), null, 2)}`);
 };
 
 export const addSnippet = (script: Script) => {
   for (const [key, value] of snippetMap.entries()) {
     if (value.filePath === script.filePath && !value.txt) {
-      log.verbose(`addSnippet:Removing snippet: ${key} because it's already been added`, {
+      log.verbose(`Removing snippet: ${key} because it's already been added`, {
         valueFilePath: value.filePath,
         scriptFilePath: script.filePath,
       });
@@ -613,8 +612,6 @@ export const addSnippet = (script: Script) => {
 
   if (expand) {
     log.info(`✂️ Set expansion: ${expand}`);
-
-    // If snippet starts with an '*' then it's a postfix
     snippetMap.set(expand.replace(/^\*/, ''), {
       filePath: script.filePath,
       postfix: expand.startsWith('*'),
@@ -622,6 +619,7 @@ export const addSnippet = (script: Script) => {
     });
   }
 
+  updateSnippetPrefixIndex();
   log.info(`Standard Snippet: Current snippet map: ${JSON.stringify(Object.fromEntries(snippetMap), null, 2)}`);
 };
 
@@ -631,6 +629,7 @@ export const removeSnippet = (filePath: string) => {
       snippetMap.delete(key);
     }
   }
+  updateSnippetPrefixIndex();
 };
 
 subs.push(subSnippet, subIsTyping);
