@@ -162,7 +162,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Nix - Write the current branch to a releaseChannel env var
-        if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'script-kit-ubuntu-latest-arm64' }}
+        if: ${{ matrix.os != 'windows-latest' && matrix.os != 'windows-2022' }}
         run: |
           echo "RELEASE_CHANNEL=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
 
