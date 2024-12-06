@@ -2,6 +2,8 @@
 
 // import '@johnlindquist/kit';
 
+import { chdir } from 'node:process';
+
 console.log('Creating assets');
 
 console.log('🕵️‍♀️ process.env.SCRIPTS_DIR:', process.env.SCRIPTS_DIR);
