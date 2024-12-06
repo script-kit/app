@@ -221,7 +221,7 @@ app.on('window-all-closed', (e: Event) => {
 });
 
 app?.on('browser-window-blur', () => {
-  log.info('🪟 browser-window-blur');
+  log.info('🪟 app: browser-window-blur');
   kitState.emojiActive = false;
 });
 

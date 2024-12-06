@@ -802,6 +802,15 @@ export class KitPrompt {
     });
 
     this.window.once('ready-to-show', async () => {
+      if(kitState.kenvEnv.KIT_PROMPT_POPUP_WITH_ROUNDED_CORNERS){
+        shims['@johnlindquist/node-window-manager'].windowManager.setWindowAsPopupWithRoundedCorners(this.window.getNativeWindowHandle());
+      }
+      if(kitState.kenvEnv?.KIT_PROMPT_OFFSCREEN){
+        this.window.setPosition(OFFSCREEN_X, OFFSCREEN_Y);
+        this.window.showInactive();
+      }
+
+
       log.info(`${this.pid}: 👍 Ready to show`);
       try {
         const css = await readFile(kenvPath('kit.css'), 'utf8');
@@ -1157,20 +1166,8 @@ export class KitPrompt {
 
     this.setPromptAlwaysOnTop(true);
 
-    if (kitState.isMac) {
-      this.focusPrompt();
-    } else {
-      const handler = (event, channel, message) => {
-        if (channel === AppChannel.INPUT_READY) {
-          log.info(`${this.pid}: Received ${AppChannel.INPUT_READY} from prompt`);
-          this.window.webContents.off('ipc-message', handler);
-          this.focusPrompt();
-        }
-      };
-      this.window.webContents.on('ipc-message', handler);
-      log.info(`${this.pid}: Sending ${AppChannel.INPUT_READY} to prompt`);
-      this.window.webContents.send(AppChannel.INPUT_READY);
-    }
+    this.focusPrompt();
+
     this.sendToPrompt(Channel.SET_OPEN, true);
 
     if (topTimeout) {
@@ -2226,6 +2223,10 @@ export class KitPrompt {
   };
 
   isFocused = () => {
+    if(!this.window || this.window.isDestroyed()){
+      log.warn(`${this.pid}: isFocused: window is destroyed`);
+      return false
+    }
     const focused = this.window?.isFocused();
     log.silly(`function: isFocused: ${focused ? 'true' : 'false'}`);
     return focused;
