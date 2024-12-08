@@ -118,8 +118,6 @@ const logQueue = (event: WatchEvent, filePath: string) => {
 
 const unlinkBin = (filePath: string) => {
   const binPath = path.resolve(path.dirname(path.dirname(filePath)), 'bin', path.basename(filePath));
-
-  // if binPath exists, remove it
   if (existsSync(binPath)) {
     unlink(binPath);
   }
@@ -166,7 +164,7 @@ const getDepWatcher = () => {
 
   depWatcher.on('all', async (eventName, filePath) => {
     log.info(
-      `🔍 ${filePath} triggered a ${eventName} event. It's a known dependency of one of more scripts. Doing a reverse lookup...`,
+      `🔍 ${filePath} triggered a ${eventName} event. It's a known dependency of one or more scripts. Doing a reverse lookup...`,
     );
 
     // globby requires forward slashes
@@ -216,8 +214,7 @@ function findEntryScripts(
 ): Set<string> {
   const entries = new Set<string>();
   for (const [script, deps] of Object.entries(graph)) {
-    if (deps.length === 0) {
-    } else if (deps.includes(relativeDepPath) && !checkedScripts.has(script)) {
+    if (deps.includes(relativeDepPath) && !checkedScripts.has(script)) {
       log.info(`🔍 Found ${relativeDepPath} as a dependency of`, script);
       checkedScripts.add(script);
       // Recursively find other scripts that depend on this script
@@ -225,7 +222,6 @@ function findEntryScripts(
       if (more.size === 0) {
         entries.add(script);
       } else {
-        // Merge results from deeper calls
         more.forEach((entry) => entries.add(entry));
       }
     }
@@ -239,7 +235,6 @@ const madgeAllScripts = debounce(async () => {
     withFileTypes: true,
   });
 
-  // globby requires forward slashes
   const allScriptPaths = await globby([
     slash(kenvPath('scripts', '*')),
     ...kenvs.filter((k) => k.isDirectory()).map((kenv) => slash(kenvPath('kenvs', kenv.name, 'scripts', '*'))),
@@ -267,9 +262,9 @@ const madgeAllScripts = debounce(async () => {
       depWatcher.unwatch(filePath);
     }
   }
+
   for (const scriptKey of Object.keys(depGraph)) {
     const deps = depGraph[scriptKey];
-
     for (const dep of deps) {
       const depKenvPath = kenvChokidarPath(dep);
       watcherLog.verbose(`Watching ${depKenvPath}`);
@@ -335,11 +330,7 @@ export const onScriptChanged = async (event: WatchEvent, script: Script, rebuilt
     });
   }
 
-  if (
-    event === 'change' ||
-    // event === 'ready' ||
-    event === 'add'
-  ) {
+  if (event === 'change' || event === 'add') {
     logQueue(event, script.filePath);
 
     if (kitState.ready && !rebuilt && !firstBatch) {
@@ -364,6 +355,7 @@ export const onScriptChanged = async (event: WatchEvent, script: Script, rebuilt
           firstBatch: firstBatch,
         },
       );
+      return
     }
 
     log.info('Shortcut script changed', script.filePath);
@@ -383,31 +375,11 @@ export const onScriptChanged = async (event: WatchEvent, script: Script, rebuilt
   }
 
   if (event === 'add' || event === 'unlink') {
-    debounceCacheMainScripts();
+    debounceCacheMainScripts("Script added or unlinked");
   }
 };
 
-let watchers = [] as FSWatcher[];
-
-export const teardownWatchers = () => {
-  if (pingInterval) {
-    clearTimeout(pingInterval);
-  }
-  if (watchers.length > 0) {
-    for (const watcher of watchers) {
-      try {
-        watcher.removeAllListeners();
-        watcher.close();
-      } catch (error) {
-        log.error('Error closing watcher:', error);
-      }
-    }
-    log.info(`Cleared ${watchers.length} watchers`);
-    watchers.length = 0;
-  }
-};
-
-export const checkUserDb = async (eventName: string) => {
+export const checkUserDb = debounce(async (eventName: string) => {
   log.info(`checkUserDb ${eventName}`);
 
   let currentUser;
@@ -420,16 +392,30 @@ export const checkUserDb = async (eventName: string) => {
     currentUser = {};
   }
 
+  // Check if user data has actually changed
+  if (isEqual(currentUser, kitState.user)) {
+    log.info('User data unchanged, skipping update');
+    return;
+  }
+
   kitState.user = currentUser;
 
-  log.info('🔍 Running set-login', kitState.user.login || Env.REMOVE);
-  await runScript(kitPath('config', 'set-login'), kitState.user.login || Env.REMOVE);
+  // Only run set-login if login value changed
+  const prevLogin = kitState.user?.login;
+  const newLogin = currentUser?.login;
+  if (prevLogin !== newLogin) {
+    log.info('🔍 Running set-login', newLogin || Env.REMOVE);
+    await runScript(kitPath('config', 'set-login'), newLogin || Env.REMOVE);
+  }
 
-  if (kitState?.user?.login) {
-    const isSponsor = await sponsorCheck('Login', false);
-    kitState.isSponsor = isSponsor;
-  } else {
-    kitState.isSponsor = false;
+  // Only check sponsor status if login changed
+  if (prevLogin !== newLogin) {
+    if (newLogin) {
+      const isSponsor = await sponsorCheck('Login', false);
+      kitState.isSponsor = isSponsor;
+    } else {
+      kitState.isSponsor = false;
+    }
   }
 
   const user = snapshot(kitState.user);
@@ -438,9 +424,12 @@ export const checkUserDb = async (eventName: string) => {
     name: user?.name,
   });
 
-  // TODO: Reimplement this
   sendToAllPrompts(AppChannel.USER_CHANGED, user);
-};
+},
+1000,
+{
+  leading: true,
+});
 
 const triggerRunText = debounce(
   async (eventName: WatchEvent) => {
@@ -503,7 +492,7 @@ const handleScriptletsChanged = debounce(async (eventName: WatchEvent, filePath:
   const beforeScriptlets = structuredClone(kitState.scriptlets);
   scriptLog.info('🎬 Starting cacheMainScripts...');
   try {
-    await cacheMainScripts();
+    await cacheMainScripts("File change detected");
   } catch (error) {
     log.error(error);
   }
@@ -534,27 +523,6 @@ const handleScriptletsChanged = debounce(async (eventName: WatchEvent, filePath:
 
 export const parseEnvFile = debounce(async () => {
   const envData = loadKenvEnvironment();
-
-  // const envData = dotenv.parse(readFileSync(filePath)) as kenvEnv;
-
-  // const resetKeyboardAndClipboard = () => {
-  //   if (envData?.KIT_CLIPBOARD) {
-  //     kitState.kenvEnv.KIT_CLIPBOARD = envData?.KIT_CLIPBOARD;
-  //   } else if (!envData?.KIT_CLIPBOARD) {
-  //     delete kitState.kenvEnv.KIT_CLIPBOARD;
-  //   }
-
-  //   if (envData?.KIT_KEYBOARD) {
-  //     kitState.kenvEnv.KIT_KEYBOARD = envData?.KIT_KEYBOARD;
-  //   } else if (!envData?.KIT_KEYBOARD) {
-  //     delete kitState.kenvEnv.KIT_KEYBOARD;
-  //   }
-  // };
-
-  // log.info({
-  //   KIT_THEME_LIGHT: envData?.KIT_THEME_LIGHT,
-  //   KIT_THEME_DARK: envData?.KIT_THEME_DARK,
-  // });
 
   if(envData?.KIT_API_KEY) {
     log.info(`Detected KIT_API_KEY in .env. Setting kitState.kenvEnv.KIT_API_KEY`);
@@ -618,8 +586,7 @@ export const parseEnvFile = debounce(async () => {
     setCSSVariable('--sans-font', defaultKitSans);
   }
 
-  const defaultKitSerif = `'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
-        'serif'`;
+  const defaultKitSerif = `'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times','serif'`;
   if (envData?.KIT_SERIF_FONT) {
     setCSSVariable('--serif-font', envData?.KIT_SERIF_FONT || defaultKitSerif);
   } else if (kitState.kenvEnv.KIT_SERIF_FONT) {
@@ -672,27 +639,6 @@ export const parseEnvFile = debounce(async () => {
     kitState.kenvEnv.KIT_WIDTH = undefined;
   }
 
-  // if (envData?.KIT_LOW_CPU) {
-  //   kitState.kenvEnv.KIT_LOW_CPU = envData?.KIT_LOW_CPU;
-  //   if (envData?.KIT_LOW_CPU === 'true') {
-  //     log.info(`🔋 Low CPU Mode. KIT_LOW_CPU=true`);
-  //     envData.KIT_SUSPEND_WATCHERS = 'true';
-  //     kitState.kenvEnv.KIT_CLIPBOARD = 'false';
-  //     kitState.kenvEnv.KIT_KEYBOARD = 'false';
-  //   } else {
-  //     log.info(`🔋 Normal CPU Mode. KIT_LOW_CPU=false`);
-  //     envData.KIT_SUSPEND_WATCHERS = 'false';
-  //     resetKeyboardAndClipboard();
-  //   }
-  //   startClipboardAndKeyboardWatchers();
-  // } else if (kitState.kenvEnv.KIT_LOW_CPU) {
-  //   delete kitState.kenvEnv.KIT_LOW_CPU;
-  //   log.info(`🔋 Normal CPU Mode. KIT_LOW_CPU=empty string`);
-  //   envData.KIT_SUSPEND_WATCHERS = 'false';
-  //   resetKeyboardAndClipboard();
-  //   startClipboardAndKeyboardWatchers();
-  // }
-
   if (envData?.KIT_CACHE_PROMPT) {
     clearPromptCache();
   } else if (kitState.kenvEnv.KIT_CACHE_PROMPT) {
@@ -706,26 +652,18 @@ export const parseEnvFile = debounce(async () => {
 
     if (suspendWatchers) {
       log.info('⌚️ Suspending Watchers');
-      teardownWatchers();
+      teardownWatchers('suspendWatchers');
     } else {
       log.info('⌚️ Resuming Watchers');
-      setupWatchers();
+      setupWatchers('subscribeKey: suspendWatchers: false');
     }
   } else if (kitState.suspendWatchers) {
     kitState.suspendWatchers = false;
     log.info('⌚️ Resuming Watchers');
-    setupWatchers();
+    setupWatchers('subscribeKey: kitState.suspendWatchers: false');
   }
 
   kitState.kenvEnv = envData;
-
-  // if (envData?.KIT_SHELL) kitState.envShell = envData?.KIT_SHELL;
-  // TODO: Would need to update the dark/light contrast
-  // setCSSVariable('--color-text', envData?.KIT_COLOR_TEXT);
-  // setCSSVariable('--color-background', envData?.KIT_COLOR_BACKGROUND);
-  // setCSSVariable('--color-primary', envData?.KIT_COLOR_PRIMARY);
-  // setCSSVariable('--color-secondary', envData?.KIT_COLOR_SECONDARY);
-  // setCSSVariable('--opacity', envData?.KIT_OPACITY);
 }, 100);
 
 export const restartWatchers = debounce(
@@ -735,8 +673,8 @@ export const restartWatchers = debounce(
     🔄 Restarting watchers because: ${reason} ----------------------------------------------------------------------
 
 `);
-    await teardownWatchers();
-    await setupWatchers();
+    await teardownWatchers('restartWatchers');
+    await setupWatchers('restartWatchers');
   },
   500,
   { leading: false },
@@ -748,7 +686,6 @@ export function watchKenvDirectory(){
     followSymlinks: true,
     depth: 0,
     ignored: (checkPath) => {
-      // Ignore if it's not the exact kenv path
       return path.normalize(checkPath) !== path.normalize(kenvChokidarPath());
     }
   });
@@ -759,7 +696,7 @@ export function watchKenvDirectory(){
       setTimeout(() => {
         if(watchers.length === 0){
           log.warn(`🔄 ${filePath} added. Setting up watchers...`);
-          setupWatchers();
+          setupWatchers('addDir');
         }else{
           log.info(`🔄 ${filePath} added, but watchers already exist. No need to setup watchers...`);
         }
@@ -768,16 +705,15 @@ export function watchKenvDirectory(){
 
     if(eventName === 'unlinkDir'){
       log.warn(`🔄 ${filePath} unlinked. Tearing down watchers...`);
-      teardownWatchers();
+      teardownWatchers('unlinkDir');
     }
-  }
+  };
 
   const kitFolderWatcher = chokidar.watch(kitChokidarPath(), {
     ignoreInitial: kitState.ignoreInitial,
     followSymlinks: true,
     depth: 0,
     ignored: (checkPath) => {
-      // Ignore if it's not the exact kit path
       return path.normalize(checkPath) !== path.normalize(kitChokidarPath());
     }
   });
@@ -786,231 +722,212 @@ export function watchKenvDirectory(){
   kitFolderWatcher.on('all', watcherHandler);
 }
 
-let pingInterval: NodeJS.Timeout;
-export const setupWatchers = debounce(() => {
-  log.green('🔄 Setup Watchers');
-  teardownWatchers();
+// ---- Extracted Helper Functions ----
 
-  if (kitState.ignoreInitial) {
-    refreshScripts();
+function clearAllWatchers(watchers: FSWatcher[]) {
+  if (watchers.length === 0) return;
+
+  for (const watcher of watchers) {
+    try {
+      watcher.removeAllListeners();
+      watcher.close();
+    } catch (error) {
+      log.error('Error closing watcher:', error);
+    }
   }
 
-  // log.yellow('--- 👀 Watching Scripts ---', { pingInterval });
+  log.info(`Cleared ${watchers.length} watchers`);
+  watchers.length = 0;
+}
 
-  // Set up an interval to touch ping.txt every minute
+function stopPingInterval() {
   if (pingInterval) {
     clearInterval(pingInterval);
+    pingInterval = null;
   }
+}
+
+function startPingInterval() {
+  stopPingInterval();
   pingInterval = setInterval(async () => {
-    // log.green('🏓 Updating ping.txt');
     if (kitState.waitingForPing) {
-      await restartWatchers('ping.txt');
+      await restartWatchers('No ping response');
       return;
     }
+
+    kitState.waitingForPing = true;
     const pingPath = kitPath('ping.txt');
     const currentDate = new Date().toISOString();
-
     try {
-      // log.info(`🏓 Updating ping.txt with current date: ${currentDate}`);
-      kitState.waitingForPing = true;
       await writeFile(pingPath, currentDate);
-      // log.info(`🏓 Updated ping.txt with current date: ${currentDate}`);
     } catch (error) {
       log.error(`Error writing to ping.txt: ${error}`);
     }
-  }, 60000); // 60000 milliseconds = 1 minute
+  }, 60000);
+}
 
-  watchers = startWatching(async (eventName: WatchEvent, filePath: string, source) => {
-    // log.info(`🔄 ${eventName} ${filePath} from ${source}`);
-    // if (!filePath.match(/\.(ts|js|json|txt|env)$/)) return;
-    const { base, dir, name } = path.parse(filePath);
-
-    if (base === 'ping.txt') {
-      kitState.waitingForPing = false;
-      return;
-    }
-
-    log.green(`${eventName}: base: ${base}, dir: ${dir}, name: ${name}`);
-
-    if (base === 'user.json') {
-      checkUserDb(eventName);
-      return;
-    }
-
-    if (kitState.ready && base === name && (name === 'scriptlets' || name === 'scripts' || name === 'snippets')) {
-      await restartWatchers(`${filePath}: ${eventName}`);
-      return;
-    }
-
-    if (base === 'run.txt') {
-      log.info(`run.txt ${eventName}`);
-      triggerRunText(eventName);
-      return;
-    }
-
-    if(base === "globals.ts"){
-      log.info(`globals.ts ${eventName}`);
-      clearIdleProcesses();
-      ensureIdleProcess();
-      createIdlePty();
-
-      return;
-    }
-
-    if (base === '.env' || base.startsWith('.env.')) {
-      log.info(`🌎 .env: ${filePath} -> ${eventName}`);
-      parseEnvFile();
-      return;
-    }
-
-    if (base === 'package.json') {
-      log.info('package.json changed');
-
-      return;
-    }
-
-    if (base === 'scripts.json') {
-      log.info('scripts.json changed');
-      try {
-        for (const info of processes) {
-          info?.child?.send({
-            channel: Channel.SCRIPTS_CHANGED,
-          });
-        }
-      } catch (error) {
-        log.warn(error);
-      }
-
-      return;
-    }
-
-    if (dir.endsWith('lib') && eventName !== 'ready') {
-      // for (const scriptPath of allScriptPaths) {
-      //   performance.mark('madge-start');
-      //   const fileMadge = await madge(scriptPath, {
-      //     baseDir: kenvPath(),
-      //     dependencyFilter: (source) => {
-      //       return !source.includes('.kit');
-      //     },
-      //   });
-      //   const obj = fileMadge.obj();
-      // Remove kenvPath() from filePath
-
-      // log.info(`🔍 ${filePath}`, obj, { filePathWithoutKenv });
-      // performance.mark('madge-end');
-      // const madgeDuration = performance.measure(
-      //   'madge',
-      //   'madge-start',
-      //   'madge-end',
-      // );
-      // log.info(
-      //   `🔍 ${filePath} analysis duration: ${madgeDuration.duration}ms`,
-      // );
-      //   }
-      // }
-
-      // Remove the kenvPath("scripts/.cache") files
-      // const scriptsDir = kenvPath('scripts', '.cache');
-      // log.info(
-      //   `Detected changes in ${kenvPath('lib')}. Clearing ${scriptsDir}...`,
-      // );
-      // const files = await readdir(scriptsDir);
-      // for (const file of files) {
-      //   const filePath = path.join(scriptsDir, file);
-      //   try {
-      //     await rm(filePath);
-      //     log.info(`Removed cached file: ${filePath}`);
-      //   } catch (error) {
-      //     log.warn(`Failed to remove cached file: ${filePath}`, error);
-      //   }
-      // }
-      try {
-        log.info(`🔍 Checking imports for ${filePath}...`);
-        await checkFileImports({
-          filePath,
-          kenv: '',
-        } as Script);
-      } catch (error) {
-        log.warn(error);
-      }
-
-      return;
-    }
-
-    if (dir.endsWith('snippets')) {
-      try {
-        await cacheMainScripts();
-        log.info('🏆 Cached main scripts for before snippet change...');
-      } catch (error) {
-        log.error(error);
-      }
-      if (eventName === 'add' || eventName === 'change') {
-        log.info('Snippet added/changed', filePath);
-        addTextSnippet(filePath);
-      } else {
-        removeSnippet(filePath);
-      }
-
-      return;
-    }
-
-    if (dir.endsWith('scriptlets')) {
-      handleScriptletsChanged(eventName, filePath);
-      return;
-    }
-
-    if (dir.endsWith('scripts')) {
-      let script;
-      try {
-        if (eventName !== 'unlink') {
-          script = await parseScript(filePath);
-        } else {
-          script = {
-            filePath,
-            name: path.basename(filePath),
-          };
-        }
-      } catch (error) {
-        log.warn(error);
-        script = {
-          filePath,
-          name: path.basename(filePath),
-        };
-      }
-      await onScriptChanged(eventName, script);
-      return;
-    }
-
-    if (source === 'app') {
-      log.info(`🔄 ${eventName} ${filePath} from app`);
-      reloadApps();
-      return;
-    }
-
-    log.warn(`🔄 ${eventName} ${filePath}, but not handled... Is this a bug?`);
+function startCoreWatchers(): FSWatcher[] {
+  return startWatching(async (eventName: WatchEvent, filePath: string, source) => {
+    await handleFileChangeEvent(eventName, filePath, source);
   });
+}
+
+function refreshScriptsIfNeeded() {
+  if (kitState.ignoreInitial) {
+    refreshScripts();
+  }
+}
+
+function logActionReason(context: 'Setup' | 'Teardown', reason: string) {
+  log.info(`🔄 ${context} watchers because: ${reason}`);
+}
+
+let settingUpWatchers = false;
+let pingInterval: NodeJS.Timeout | null = null;
+let watchers: FSWatcher[] = [];
+let suspendingWatchers: boolean;
+
+export const teardownWatchers = debounce((reason: string) => {
+  logActionReason('Teardown', reason);
+  stopPingInterval();
+  clearAllWatchers(watchers);
+}, 250, { leading: true });
+
+export const setupWatchers = debounce((reason: string) => {
+  if (settingUpWatchers) return;
+  settingUpWatchers = true;
+
+  logActionReason('Setup', reason);
+
+  teardownWatchers('setupWatchers');
+  refreshScriptsIfNeeded();
+  startPingInterval();
+  watchers = startCoreWatchers();
+
+  settingUpWatchers = false;
 }, 1000, { leading: true });
 
 subscribeKey(kitState, 'suspendWatchers', (suspendWatchers) => {
+  if (suspendingWatchers === suspendWatchers) return;
+  suspendingWatchers = suspendWatchers;
+
   if (suspendWatchers) {
-    log.info('⌚️ Suspending Watchers');
-    teardownWatchers();
+    log.info('⌚️ Suspending Watchers due to state change');
+    teardownWatchers('subscribeKey: suspendWatchers');
   } else {
-    log.info('⌚️ Resuming Watchers');
-    setupWatchers();
+    log.info('⌚️ Resuming Watchers due to state change');
+    setupWatchers('subscribeKey: suspendWatchers');
   }
 });
 
 emitter.on(KitEvent.TeardownWatchers, teardownWatchers);
-
 emitter.on(KitEvent.RestartWatcher, async () => {
   try {
-    await setupWatchers();
+    await setupWatchers('KitEvent.RestartWatcher');
   } catch (error) {
     log.error(error);
   }
 });
-
 emitter.on(KitEvent.Sync, () => {
   checkUserDb('sync');
 });
+
+// ---- New handleFileChangeEvent Function ----
+
+async function handleFileChangeEvent(eventName: WatchEvent, filePath: string, source: string) {
+  const { base, dir, name } = path.parse(filePath);
+
+  if (base === 'ping.txt') {
+    kitState.waitingForPing = false;
+    return;
+  }
+
+  if (base === 'user.json') {
+    await checkUserDb(eventName);
+    return;
+  }
+
+  // If directories like 'scripts', 'scriptlets', 'snippets' are removed/added,
+  // we restart watchers to ensure correct state
+  if (kitState.ready && base === name && (name === 'scriptlets' || name === 'scripts' || name === 'snippets')) {
+    await restartWatchers(`${filePath}: ${eventName}`);
+    return;
+  }
+
+  if (base === 'run.txt') {
+    log.info(`run.txt ${eventName}`);
+    await triggerRunText(eventName);
+    return;
+  }
+
+  if (base === "globals.ts") {
+    log.info(`globals.ts ${eventName}`);
+    clearIdleProcesses();
+    ensureIdleProcess();
+    createIdlePty();
+    return;
+  }
+
+  if (base === '.env' || base.startsWith('.env.')) {
+    log.info(`🌎 .env: ${filePath} -> ${eventName}`);
+    parseEnvFile();
+    return;
+  }
+
+  if (base === 'package.json') {
+    log.info('package.json changed');
+    return;
+  }
+
+  if (base === 'scripts.json') {
+    log.info('scripts.json changed');
+    try {
+      for (const info of processes) {
+        info?.child?.send({ channel: Channel.SCRIPTS_CHANGED });
+      }
+    } catch (error) {
+      log.warn(error);
+    }
+    return;
+  }
+
+  if (dir.endsWith('snippets')) {
+    if (eventName === 'add' || eventName === 'change') {
+      await cacheMainScripts("Snippet added or changed");
+      log.info('Snippet added/changed', filePath);
+      addTextSnippet(filePath);
+    } else {
+      removeSnippet(filePath);
+    }
+    return;
+  }
+
+  if (dir.endsWith('scriptlets')) {
+    await handleScriptletsChanged(eventName, filePath);
+    return;
+  }
+
+  if (dir.endsWith('scripts')) {
+    let script: Script;
+    try {
+      if (eventName !== 'unlink') {
+        script = await parseScript(filePath);
+      } else {
+        script = { filePath, name: path.basename(filePath) };
+      }
+    } catch (error) {
+      log.warn(error);
+      script = { filePath, name: path.basename(filePath) };
+    }
+    await onScriptChanged(eventName, script);
+    return;
+  }
+
+  if (source === 'app') {
+    log.info(`🔄 ${eventName} ${filePath} from app`);
+    reloadApps();
+    return;
+  }
+
+  log.warn(`🔄 ${eventName} ${filePath}, but not handled... Is this a bug?`);
+}

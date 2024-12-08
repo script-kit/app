@@ -1090,15 +1090,142 @@ export const cacheMainMenu = ({
 };
 
 // Initialize static properties for cacheMainScripts
+// Initialize static properties for cacheMainScripts
 interface CacheMainScripts {
-  (params?: { channel: Channel; value: any }): Promise<boolean>;
+  (reason: string, params?: { channel: Channel; value: any }): Promise<boolean>;
   pendingResolvers?: Array<{
     resolve: (value: boolean) => void;
     reject: (reason?: any) => void;
   }>;
   postMessage?: (message: any) => void;
 }
-export const cacheMainScripts: CacheMainScripts = (
+
+// Helper function to resolve all pending promises at once
+function resolveAllPending(
+  resolvers: Array<{ resolve: (value: boolean) => void }>,
+  uuid: string
+) {
+  for (const { resolve } of resolvers) {
+    log.info(`Resolving ${uuid}`);
+    resolve(true);
+  }
+}
+
+// Helper function to reject all pending promises at once
+function rejectAllPending(
+  resolvers: Array<{ reject: (reason?: any) => void }>,
+  uuid: string,
+  error: any
+) {
+  for (const { reject } of resolvers) {
+    log.info(`Rejecting ${uuid}`);
+    reject(error);
+  }
+}
+
+// Creates the worker if it doesn't exist, attaches event handlers
+function ensureWorker(
+  uuid: string,
+  handleResolve: () => void,
+  handleReject: (error: any) => void,
+  messageHandler: (message: any) => void,
+  errorHandler: (error: any) => void,
+  messageErrorHandler: (error: any) => void
+) {
+  if (!workers.cacheScripts) {
+    log.info(`Creating worker: ${CACHED_GROUPED_SCRIPTS_WORKER}...`);
+    workers.cacheScripts = new Worker(CACHED_GROUPED_SCRIPTS_WORKER);
+
+    // Handle worker exit scenario
+    workers.cacheScripts.on('exit', (exitCode: number) => {
+      log.error('Worker exited', { exitCode });
+      handleReject(new Error(`Worker exited with code ${exitCode}`));
+    });
+
+    // Attach event handlers for messages and errors
+    workers.cacheScripts.on('message', messageHandler);
+    workers.cacheScripts.on('error', errorHandler);
+    workers.cacheScripts.on('messageerror', messageErrorHandler);
+  }
+}
+
+// Message handler: handles different message channels from worker
+function createMessageHandler(
+  uuid: string,
+  handleResolve: () => void,
+  handleReject: (error: any) => void
+) {
+  return (message: any) => {
+    try {
+      scriptLog.log('Worker message:', message.channel);
+
+      if (message.channel === 'LOG_TO_PARENT') {
+        // Just log to the parent's logger if needed
+        workerLog.info(message.value);
+        return;
+      }
+
+      if (message.channel === Channel.CACHE_MAIN_SCRIPTS) {
+        // If there's an error in the response
+        if (message?.error) {
+          scriptLog.error('Error caching main scripts', message.error);
+          showInfo(
+            message.error?.message || 'Check logs...',
+            'Error...',
+            message.error?.stack || 'Check logs'
+          );
+          handleReject(message.error);
+        } else {
+          // Successfully cached scripts
+          cacheMainMenu(message);
+          handleResolve();
+        }
+      }
+    } catch (err) {
+      log.error(`🏆 ${uuid}: Exception in messageHandler - ${err}`);
+      handleReject(err);
+    }
+  };
+}
+
+// Generic error handler for worker-level errors
+function createErrorHandler(
+  uuid: string,
+  stamp: Stamp | null,
+  handleReject: (error: any) => void
+) {
+  return (error: any) => {
+    try {
+      log.info('Received error for stamp', stamp);
+      scriptLog.error('Error: Failed to cache main scripts', error);
+      handleReject(error);
+    } catch (err) {
+      log.error(`🏆 ${uuid}: Exception in errorHandler - ${err}`);
+      handleReject(err);
+    }
+  };
+}
+
+// Generic messageerror handler for worker-level messaging errors
+function createMessageErrorHandler(
+  uuid: string,
+  stamp: Stamp | null,
+  handleReject: (error: any) => void
+) {
+  return (error: any) => {
+    try {
+      log.info('Received message error for stamp', stamp);
+      scriptLog.error('MessageError: Failed to cache main scripts', error);
+      handleReject(error);
+    } catch (err) {
+      log.error(`🏆 ${uuid}: Exception in messageErrorHandler - ${err}`);
+      handleReject(err);
+    }
+  };
+}
+
+export const cacheMainScripts: CacheMainScripts = async (
+  reason: string,
   {
     channel,
     value,
@@ -1108,10 +1235,11 @@ export const cacheMainScripts: CacheMainScripts = (
   } = {
     channel: Channel.CACHE_MAIN_SCRIPTS,
     value: null,
-  },
+  }
 ): Promise<boolean> => {
+  log.info(`🎁 cacheMainScripts: ${reason}`);
   return new Promise<boolean>((resolve, reject) => {
-    // Initialize a shared array to hold all pending resolvers and rejectors
+    // Ensure we have a pendingResolvers array ready
     if (!cacheMainScripts.pendingResolvers) {
       cacheMainScripts.pendingResolvers = [];
     }
@@ -1120,130 +1248,80 @@ export const cacheMainScripts: CacheMainScripts = (
     cacheMainScripts.pendingResolvers.push({ resolve, reject });
 
     const uuid = crypto.randomUUID();
-    log.info(`🏆 ${uuid} Caching main scripts...`);
+    log.info(`🏆 ${uuid} Caching main scripts: ${reason}`);
+    // We'll only stamp if the channel is for caching main scripts
     let stamp: Stamp | null = null;
-
     if (channel === Channel.CACHE_MAIN_SCRIPTS) {
       stamp = value;
     }
 
-    // Helper functions to handle collective resolve and reject
+    // Helper functions to handle collective resolve/reject of all pending promises
     const handleResolve = () => {
-      for (const { resolve } of cacheMainScripts.pendingResolvers!) {
-        log.info(`Resolving ${uuid}`);
-        resolve(true);
-      }
+      // Temporarily store and clear to avoid race conditions
+      const resolvers = cacheMainScripts.pendingResolvers || [];
       cacheMainScripts.pendingResolvers = [];
+      resolveAllPending(resolvers, uuid);
     };
 
     const handleReject = (error: any) => {
-      for (const { reject } of cacheMainScripts.pendingResolvers!) {
-        log.info(`Rejecting ${uuid}`);
-        reject(error);
-      }
+      // Temporarily store and clear to avoid race conditions
+      const resolvers = cacheMainScripts.pendingResolvers || [];
       cacheMainScripts.pendingResolvers = [];
+      rejectAllPending(resolvers, uuid, error);
     };
 
-    // Event Handlers
-    const messageHandler = (message: any) => {
-      try {
-        scriptLog.log('Worker message:', message.channel);
-        if (message.channel === 'LOG_TO_PARENT') {
-          workerLog.info(message.value);
-          return;
-        }
-        if (message.channel === Channel.CACHE_MAIN_SCRIPTS) {
-          scriptLog.info('Caching main scripts...');
-          if (message?.error) {
-            scriptLog.error('Error caching main scripts', message.error);
-            showInfo(
-              message.error?.message || 'Check logs...',
-              'Error...',
-              message.error?.stack || 'Check logs'
-            );
-            handleReject(message.error);
-          } else {
-            cacheMainMenu(message);
-            handleResolve();
-          }
-        }
-      } catch (err) {
-        log.error(`🏆 ${uuid}: Exception in messageHandler - ${err}`);
-        handleReject(err);
-      }
-    };
-
-    const errorHandler = (error: any) => {
-      try {
-        log.info('Received error for stamp', stamp);
-        scriptLog.error('Error: Failed to cache main scripts', error);
-        handleReject(error);
-      } catch (err) {
-        log.error(`🏆 ${uuid}: Exception in errorHandler - ${err}`);
-        handleReject(err);
-      }
-    };
-
-    const messageErrorHandler = (error: any) => {
-      try {
-        log.info('Received message error for stamp', stamp);
-        scriptLog.error('MessageError: Failed to cache main scripts', error);
-        handleReject(error);
-      } catch (err) {
-        log.error(`🏆 ${uuid}: Exception in messageErrorHandler - ${err}`);
-        handleReject(err);
-      }
-    };
+    // Create and bind event handlers for the worker
+    const messageHandler = createMessageHandler(uuid, handleResolve, handleReject);
+    const errorHandler = createErrorHandler(uuid, stamp, handleReject);
+    const messageErrorHandler = createMessageErrorHandler(uuid, stamp, handleReject);
 
     try {
-      if (!workers.cacheScripts) {
-        log.info(`Creating worker: ${CACHED_GROUPED_SCRIPTS_WORKER}...`);
-        workers.cacheScripts = new Worker(CACHED_GROUPED_SCRIPTS_WORKER);
-        workers.cacheScripts.on('exit', (exitCode) => {
-          log.error('Worker exited', { exitCode });
-          handleReject(new Error(`Worker exited with code ${exitCode}`));
-        });
+      // Ensure the worker is created and handlers are attached
+      ensureWorker(uuid, handleResolve, handleReject, messageHandler, errorHandler, messageErrorHandler);
 
-        // Attach event handlers
-        workers.cacheScripts.on('message', messageHandler);
-        workers.cacheScripts.on('error', errorHandler);
-        workers.cacheScripts.on('messageerror', messageErrorHandler);
-      }
-
+      // If the script file is in a known kitPath directory, we skip stamping
+      // (possibly a performance optimization to ignore certain files)
       if (stamp?.filePath && isInDirectory(stamp.filePath, kitPath())) {
         log.info(`Ignore stamping .kit script: ${stamp.filePath}`);
-        // Optionally resolve immediately if ignoring
+        // Resolve immediately since we're ignoring
         handleResolve();
-      } else {
-        log.info(`Stamping ${stamp?.filePath || 'cache only'} 💟`);
-        if (!cacheMainScripts.postMessage) {
-          cacheMainScripts.postMessage = debounce(
-            (message) => {
-              const body = message ? { ...message, id: uuid } : { id: uuid };
-              log.info(`🏆 ${uuid}: Posting message to worker`);
-              if (workers.cacheScripts) {
-                workers.cacheScripts.postMessage(body);
-              } else {
-                log.warn(`🏆 ${uuid}: Worker is not available to post messages.`);
-                handleReject(new Error('Worker not available'));
-              }
-            },
-            250,
-            {
-              leading: true,
-            }
-          );
-        }
-
-        log.info('Sending stamp to worker', stamp);
-        cacheMainScripts.postMessage({ channel, value, id: uuid });
+        return;
       }
+
+      // If we need to stamp or cache, send a message to the worker
+      log.info(`Stamping ${stamp?.filePath || 'cache only'} 💟`);
+
+      // Initialize postMessage if not already defined
+      if (!cacheMainScripts.postMessage) {
+        cacheMainScripts.postMessage = debounce(
+          (message) => {
+            const body = message ? { ...message, id: uuid } : { id: uuid };
+            log.info(`🏆 ${uuid}: Posting message to worker`);
+            if (workers.cacheScripts) {
+              workers.cacheScripts.postMessage(body);
+            } else {
+              log.warn(`🏆 ${uuid}: Worker is not available to post messages.`);
+              handleReject(new Error('Worker not available'));
+            }
+          },
+          250,
+          {
+            leading: true,
+          }
+        );
+      }
+
+      // Send the message to the worker to start the caching process
+      log.info('Sending stamp to worker', stamp);
+      cacheMainScripts.postMessage({ channel, value, id: uuid });
     } catch (error) {
+      // If something goes wrong at any point, reject all pending resolvers
       log.warn('Failed to cache main scripts at startup', error);
       handleReject(error);
     }
   });
 };
+
 
 // pnpm might trigger a node download, so we need to wait until the final line prints out the version
 export const spawnP = async (

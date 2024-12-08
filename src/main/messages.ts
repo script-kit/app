@@ -2011,7 +2011,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     },
     SET_CONFIG: async (data) => {
       if (data?.value) {
-        for (const [key, value] of Object.entries(data.value)) {
+        for (const [key, value] of Object.entries(data?.value)) {
           let v = value;
           if (key.toLowerCase().includes('path')) {
             v = untildify(v);
@@ -2251,7 +2251,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       }
     }),
     SET_SCORED_CHOICES: onChildChannel(({ child }, { channel, value }) => {
-      log.verbose('SET SCORED CHOICES');
+      log.verbose('SET_SCORED_CHOICES');
       if (!prompt.kitSearch.input) {
         sendToPrompt(channel, value);
       }
@@ -2260,13 +2260,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       prompt.attemptPreload(value);
     }),
     CLEAR_TIMESTAMPS: onChildChannel(({ child }, { channel, value }) => {
-      cacheMainScripts({
+      cacheMainScripts("Clear timestamps requested", {
         channel: Channel.CLEAR_TIMESTAMPS,
         value,
       });
     }),
     REMOVE_TIMESTAMP: onChildChannel(({ child }, { channel, value }) => {
-      cacheMainScripts({
+      cacheMainScripts("Remove timestamp requested", {
         channel: Channel.REMOVE_TIMESTAMP,
         value: {
           filePath: value,
@@ -2277,12 +2277,12 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       log.info('TOGGLE WATCHER DEPRECATED');
     }),
     SET_SELECTED_CHOICES: onChildChannel(({ child }, { channel, value }) => {
-      log.verbose('SET SELECTED CHOICES');
+      log.verbose('SET_SELECTED_CHOICES');
       sendToPrompt(channel, value);
     }),
 
     TOGGLE_ALL_SELECTED_CHOICES: onChildChannel(({ child }, { channel, value }) => {
-      log.verbose('TOGGLE ALL SELECTED CHOICES');
+      log.verbose('TOGGLE_ALL_SELECTED_CHOICES');
       sendToPrompt(channel, value);
     }),
 
@@ -2321,7 +2321,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       log.info(`${processInfo.pid}: 📌 ${channel}`, value);
 
-      await cacheMainScripts({
+      await cacheMainScripts("Script stamp update", {
         channel: Channel.CACHE_MAIN_SCRIPTS,
         value: stamp,
       });

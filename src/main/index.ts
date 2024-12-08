@@ -552,7 +552,7 @@ const ready = async () => {
     await setupLog('Tray created');
 
     watchKenvDirectory();
-    await setupWatchers();
+    await setupWatchers('ready');
     await setupLog('Shortcuts Assigned');
 
     await setupLog('');
@@ -1134,7 +1134,7 @@ const checkKit = async () => {
     // focusPrompt();
     setTimeout(async () => {
       log.info('Parsing scripts...');
-      await cacheMainScripts();
+      await cacheMainScripts("Initial script parsing");
     }, 1000);
   } catch (error) {
     log.error(`Error in verifyInstall`, error);
@@ -1143,7 +1143,7 @@ const checkKit = async () => {
 };
 
 emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
-  await cacheMainScripts({
+  await cacheMainScripts("Script timestamp update", {
     channel: Channel.CACHE_MAIN_SCRIPTS,
     value: stamp,
   });
@@ -1200,7 +1200,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   }
   mainLog.info('😬 Tear down all processes before quit');
   try {
-    teardownWatchers();
+    teardownWatchers('allowQuit');
     sleepSchedule();
     await destroyPtyPool();
 
