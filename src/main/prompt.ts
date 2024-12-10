@@ -859,6 +859,10 @@ export class KitPrompt {
       emitter.emit(KitEvent.DID_FINISH_LOAD);
 
       const messagesReadyHandler = async (event, pid) => {
+        if(!this.window || this.window.isDestroyed()) {
+          log.error(`${this.pid}: 📬 Messages ready. Prompt window is destroyed. Not initializing`);
+          return;
+        }
         log.info(`${this.pid}: 📬 Messages ready. `);
         if(this.ui === UI.splash) {
           this.window.on('blur', ()=> {
