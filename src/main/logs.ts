@@ -2,10 +2,6 @@ import fs from 'node:fs';
 import * as path from 'node:path';
 import { getLogFromScriptPath, kenvPath, kitPath } from '@johnlindquist/kit/core/utils';
 import { app } from 'electron';
-/* eslint-disable import/no-cycle */
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable no-console */
-/* eslint-disable import/prefer-default-export */
 import log, { type FileTransport, type LevelOption } from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
 import { stripAnsi } from './ansi';
@@ -150,5 +146,3 @@ export const { logInstance: workerLog, logPath: workerLogPath } = createLogInsta
 export const { logInstance: keymapLog, logPath: keymapLogPath } = createLogInstance('keymap');
 export const { logInstance: shortcutsLog, logPath: shortcutsLogPath } = createLogInstance('shortcuts');
 export const { logInstance: watcherLog, logPath: watcherLogPath } = createLogInstance('watcher');
-
-
