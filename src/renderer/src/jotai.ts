@@ -2448,12 +2448,18 @@ export const setFocusedChoiceAtom = atom(null, (g, s, a: string) => {
 });
 
 export const enterButtonNameAtom = atom<string>((g) => {
+  if(g(uiAtom) === UI.splash){
+    return ''
+  }
   const focusedChoice = g(focusedChoiceAtom);
   const enter = focusedChoice?.enter || g(enterAtom);
   return enter;
 });
 
 export const enterButtonDisabledAtom = atom<boolean>((g) => {
+  if(g(uiAtom) === UI.splash){
+    return true
+  }
   if (g(submittedAtom)) {
     return true;
   }

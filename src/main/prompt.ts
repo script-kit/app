@@ -426,31 +426,38 @@ export const destroyPromptWindow = () => {
 // );
 
 let prevEmoji = false;
-const subEmoji = subscribeKey(kitState, 'emojiActive', debounce((emoji) => {
-  if (prevEmoji === emoji) {
-    return;
-  }
-  prevEmoji = emoji;
-  log.info(`👆 Emoji changed: ${emoji ? 'on' : 'off'}`);
-  const emojiShortcut = getEmojiShortcut();
-  if (emoji) {
-    globalShortcut.register(emojiShortcut, () => {
-      if (prompts.focused) {
-        log.info(`👆 Emoji shortcut pressed. 😘. Setting emojiActive to true on focused prompt`, {
-          id: prompts.focused.id,
-        });
-        prompts.focused.emojiActive = true;
+const subEmoji = subscribeKey(
+  kitState,
+  'emojiActive',
+  debounce(
+    (emoji) => {
+      if (prevEmoji === emoji) {
+        return;
       }
-      // prompts?.prevFocused?.setPromptAlwaysOnTop(false);
-      app.showEmojiPanel();
-    });
-  } else {
-      globalShortcut.unregister(emojiShortcut);
-    }
-  }, 200, {
-    leading: true,
-    trailing: false,
-  })
+      prevEmoji = emoji;
+      log.info(`👆 Emoji changed: ${emoji ? 'on' : 'off'}`);
+      const emojiShortcut = getEmojiShortcut();
+      if (emoji) {
+        globalShortcut.register(emojiShortcut, () => {
+          if (prompts.focused) {
+            log.info(`👆 Emoji shortcut pressed. 😘. Setting emojiActive to true on focused prompt`, {
+              id: prompts.focused.id,
+            });
+            prompts.focused.emojiActive = true;
+          }
+          // prompts?.prevFocused?.setPromptAlwaysOnTop(false);
+          app.showEmojiPanel();
+        });
+      } else {
+        globalShortcut.unregister(emojiShortcut);
+      }
+    },
+    200,
+    {
+      leading: true,
+      trailing: false,
+    },
+  ),
 );
 
 const subIsSponsor = subscribeKey(kitState, 'isSponsor', (isSponsor) => {
@@ -663,17 +670,17 @@ export class KitPrompt {
       emojiActive: this.emojiActive,
       focusedEmojiActive: prompts?.focused?.emojiActive,
     });
-    if(this.emojiActive){
+    if (this.emojiActive) {
       log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred. Emoji active. Ignore blur`);
       return;
     }
-    if(this.window.webContents.isDevToolsOpened()){
+    if (this.window.webContents.isDevToolsOpened()) {
       log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred. Dev tools are open. Ignore blur`);
       return;
     }
 
     const isMainScript = getMainScriptPath() === this.scriptPath;
-    if(isMainScript && !this.mainMenuPreventCloseOnBlur){
+    if (isMainScript && !this.mainMenuPreventCloseOnBlur) {
       log.info(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred. Main script. Make window`);
       this.hideAndRemoveProcess();
       return;
@@ -742,8 +749,6 @@ export class KitPrompt {
       }
     };
 
-
-
     log.info(`🎬 Init appearance: ${kitState.appearance}`);
     setAppearance(this.window, kitState.appearance);
 
@@ -802,32 +807,35 @@ export class KitPrompt {
     });
 
     this.window.once('ready-to-show', async () => {
-      if(!this.window || this.window.isDestroyed()){
-        return
+      if (!this.window || this.window.isDestroyed()) {
+        return;
       }
-      if(kitState.isMac){
-        return
+      if (kitState.isMac) {
+        return;
       }
 
       const currentBounds = this.window.getBounds();
-      this.window.setOpacity(0.0);
+      // this.window.setOpacity(0.0);
       const x = Number.parseInt(kitState.kenvEnv?.KIT_OFFSCREEN_X, 10) || OFFSCREEN_X;
       const y = Number.parseInt(kitState.kenvEnv?.KIT_OFFSCREEN_Y, 10) || OFFSCREEN_Y;
-      this.window.setPosition(x, y);
-      this.window.showInactive()
-
-      const handler = ()=> {
-        this.window.setOpacity(1.0);
-
-        if(this.hasBeenFocused){
-          return
-        }
-        this.window.hide();
-        this.window.setPosition(currentBounds.x, currentBounds.y);
+      if (kitState.kenvEnv?.KIT_OFFSCREEN === 'false') {
+        this.window.setPosition(x, y);
+        this.window.showInactive();
       }
 
-      this.window.webContents.ipc.on(AppChannel.INPUT_READY, handler)
-      this.window.webContents.ipc.emit(AppChannel.INPUT_READY)
+      const handler = () => {
+        log.info(`${this.pid}: 👍 INPUT_READY`);
+        // this.window.setOpacity(1.0);
+
+        if (this.hasBeenFocused) {
+          return;
+        }
+        // this.window.hide();
+        // this.window.setPosition(currentBounds.x, currentBounds.y);
+      };
+
+      this.window.webContents.ipc.on(AppChannel.INPUT_READY, handler);
+      this.window.webContents.ipc.emit(AppChannel.INPUT_READY);
 
       log.info(`${this.pid}: 👍 Ready to show`);
       try {
@@ -877,16 +885,16 @@ export class KitPrompt {
       emitter.emit(KitEvent.DID_FINISH_LOAD);
 
       const messagesReadyHandler = async (event, pid) => {
-        if(!this.window || this.window.isDestroyed()) {
+        if (!this.window || this.window.isDestroyed()) {
           log.error(`${this.pid}: 📬 Messages ready. Prompt window is destroyed. Not initializing`);
           return;
         }
         log.info(`${this.pid}: 📬 Messages ready. `);
-        if(this.ui === UI.splash) {
-          this.window.on('blur', ()=> {
+        if (this.ui === UI.splash) {
+          this.window.on('blur', () => {
             log.info(`${this.pid}: ${this.scriptName}: 🙈 Prompt window blurred`);
           });
-        }else{
+        } else {
           this.window.on('blur', this.onBlur);
         }
 
@@ -1202,7 +1210,7 @@ export class KitPrompt {
   };
 
   hide = () => {
-    if(this.window.isVisible()){
+    if (this.window.isVisible()) {
       this.hasBeenHidden = true;
     }
     log.info('Hiding prompt window...');
@@ -1348,7 +1356,13 @@ export class KitPrompt {
       }
     }
 
-    const noChange = heightNotChanged && widthNotChanged && xNotChanged && yNotChanged && !sameXAndYAsAnotherPrompt && !prompts.focused;
+    const noChange =
+      heightNotChanged &&
+      widthNotChanged &&
+      xNotChanged &&
+      yNotChanged &&
+      !sameXAndYAsAnotherPrompt &&
+      !prompts.focused;
 
     if (noChange) {
       log.info('📐 No change in bounds, ignoring', {
@@ -1807,7 +1821,7 @@ export class KitPrompt {
       if ((x !== undefined && x !== currentX) || (y !== undefined && y !== currentY)) {
         this.window?.setPosition(
           x !== undefined ? Math.round(Number(x)) : currentX,
-          y !== undefined ? Math.round(Number(y)) : currentY
+          y !== undefined ? Math.round(Number(y)) : currentY,
         );
       }
     }
@@ -1818,7 +1832,7 @@ export class KitPrompt {
       if ((width !== undefined && width !== currentWidth) || (height !== undefined && height !== currentHeight)) {
         this.window?.setSize(
           width !== undefined ? Math.round(Number(width)) : currentWidth,
-          height !== undefined ? Math.round(Number(height)) : currentHeight
+          height !== undefined ? Math.round(Number(height)) : currentHeight,
         );
       }
     }
@@ -1851,7 +1865,7 @@ export class KitPrompt {
     this.promptData = promptData;
 
     const setPromptDataHandler = debounce(
-      (x, {ui}: {ui: UI}) => {
+      (x, { ui }: { ui: UI }) => {
         log.info(`${this.pid}: Received SET_PROMPT_DATA from renderer. ${ui} Ready!`);
         this.refocusPrompt();
       },
@@ -2158,7 +2172,7 @@ export class KitPrompt {
   hasBeenFocused = false;
   focusPrompt = () => {
     this.hasBeenFocused = true;
-    if(!this.window.focusable){
+    if (!this.window.focusable) {
       log.info(`${this.pid}: Setting focusable to true`);
       this.window?.setFocusable(true);
     }
@@ -2193,9 +2207,9 @@ export class KitPrompt {
   };
 
   setPromptAlwaysOnTop = (onTop: boolean, manual = false) => {
-    if(kitState.isMac){
-      log.info(`alwaysOnTop is disabled on mac`)
-      return
+    if (kitState.isMac) {
+      log.info(`alwaysOnTop is disabled on mac`);
+      return;
     }
     if (kitState?.kenvEnv?.KIT_ALWAYS_ON_TOP === 'true') {
       return;
@@ -2247,9 +2261,9 @@ export class KitPrompt {
   };
 
   isFocused = () => {
-    if(!this.window || this.window.isDestroyed()){
+    if (!this.window || this.window.isDestroyed()) {
       log.warn(`${this.pid}: isFocused: window is destroyed`);
-      return false
+      return false;
     }
     const focused = this.window?.isFocused();
     log.silly(`function: isFocused: ${focused ? 'true' : 'false'}`);
@@ -2547,7 +2561,7 @@ export class KitPrompt {
     if (kitState.isWindows) {
       // REMOVE-NODE-WINDOW-MANAGER
       shims['@johnlindquist/node-window-manager'].windowManager.hideInstantly(this.window?.getNativeWindowHandle());
-      if(this.window.isFocused()){
+      if (this.window.isFocused()) {
         this.window?.emit('blur');
         this.window?.emit('hide');
       }

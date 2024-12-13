@@ -61,6 +61,7 @@ const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
           force: true,
           trigger: Trigger.Shortcut,
           sponsorCheck: true,
+          hide: true
         });
       },
       250,
