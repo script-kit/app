@@ -158,6 +158,7 @@
     "electron-store": "^10.0.0",
     "electron-unhandled": "^5.0.0",
     "electron-updater": "^6.3.9",
+    "execa": "^9.5.2",
     "express": "^4.21.2",
     "fs-extra": "^11.2.0",
     "globby": "^14.0.2",

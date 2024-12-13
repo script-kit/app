@@ -901,9 +901,15 @@ const checkKit = async () => {
     kitState.KIT_NODE_PATH = nodePath;
     log.info(`🚶 Assigned KIT_NODE_PATH: ${kitState.KIT_NODE_PATH}`);
     process.env.KIT_NODE_PATH = kitState.KIT_NODE_PATH;
-    setEnvVar('KIT_NODE_PATH', kitState.KIT_NODE_PATH);
+
+    try {
+      await setEnvVar('KIT_NODE_PATH', kitState.KIT_NODE_PATH);
+      log.info(`🚶 Assigned PATH with prefixed KIT_NODE_PATH: ${process.env.PATH}`);
+    } catch (error) {
+      log.error(error);
+    }
+
     process.env.PATH = path.dirname(kitState.KIT_NODE_PATH) + path.delimiter + process.env.PATH;
-    log.info(`🚶 Assigned PATH with prefixed KIT_NODE_PATH: ${process.env.PATH}`);
   };
   const requiresInstall = (await isNewVersion()) || !(await kitExists());
   log.info(`Requires install: ${requiresInstall}`);

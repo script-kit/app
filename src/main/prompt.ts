@@ -802,14 +802,32 @@ export class KitPrompt {
     });
 
     this.window.once('ready-to-show', async () => {
-      if(kitState.kenvEnv.KIT_PROMPT_POPUP_WITH_ROUNDED_CORNERS){
-        shims['@johnlindquist/node-window-manager'].windowManager.setWindowAsPopupWithRoundedCorners(this.window.getNativeWindowHandle());
+      if(!this.window || this.window.isDestroyed()){
+        return
       }
-      if(kitState.kenvEnv?.KIT_PROMPT_OFFSCREEN){
-        this.window.setPosition(OFFSCREEN_X, OFFSCREEN_Y);
-        this.window.showInactive();
+      if(kitState.isMac){
+        return
       }
 
+      const currentBounds = this.window.getBounds();
+      this.window.setOpacity(0.0);
+      const x = Number.parseInt(kitState.kenvEnv?.KIT_OFFSCREEN_X, 10) || OFFSCREEN_X;
+      const y = Number.parseInt(kitState.kenvEnv?.KIT_OFFSCREEN_Y, 10) || OFFSCREEN_Y;
+      this.window.setPosition(x, y);
+      this.window.showInactive()
+
+      const handler = ()=> {
+        this.window.setOpacity(1.0);
+
+        if(this.hasBeenFocused){
+          return
+        }
+        this.window.hide();
+        this.window.setPosition(currentBounds.x, currentBounds.y);
+      }
+
+      this.window.webContents.ipc.on(AppChannel.INPUT_READY, handler)
+      this.window.webContents.ipc.emit(AppChannel.INPUT_READY)
 
       log.info(`${this.pid}: 👍 Ready to show`);
       try {
@@ -2137,7 +2155,9 @@ export class KitPrompt {
     (this.window as any)[key](value);
   };
 
+  hasBeenFocused = false;
   focusPrompt = () => {
+    this.hasBeenFocused = true;
     if(!this.window.focusable){
       log.info(`${this.pid}: Setting focusable to true`);
       this.window?.setFocusable(true);

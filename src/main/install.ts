@@ -1333,7 +1333,7 @@ export const spawnP = async (
   const KENV = kenvPath();
 
   const options: SpawnOptions = {
-    cwd: kenvPath(), // Set the current working directory based on the provided parameter
+    cwd: kitPath(), // Set the current working directory based on the provided parameter
     env: {
       KIT,
       KENV,

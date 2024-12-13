@@ -264,7 +264,7 @@ export const updateMainShortcut = (shortcut?: string) => {
     shortcutMap.delete(getMainScriptPath());
   }
 
-  const mainShortcutAction = async () => {
+  const mainShortcutAction = debounce(async () => {
     kitState.shortcutPressed = finalShortcut;
 
     const isFocusedPromptMainScript = prompts.focused?.scriptPath === getMainScriptPath();
@@ -302,7 +302,9 @@ export const updateMainShortcut = (shortcut?: string) => {
     }
 
     await runMainScript();
-  };
+  }, 500, {
+    leading: true,
+  });
 
   const ret = globalShortcut.register(finalShortcut, mainShortcutAction);
 

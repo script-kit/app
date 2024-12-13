@@ -73,22 +73,22 @@ export const getPromptOptions = () => {
     show = true;
   }
 
-  let backgroundColor = '#00000000';
+  let backgroundColor: BrowserWindowConstructorOptions['backgroundColor'] = '#00000000';
   if (kitState?.kenvEnv?.KIT_BACKGROUND_COLOR) {
     backgroundColor = kitState.kenvEnv.KIT_BACKGROUND_COLOR;
   }
 
-  let backgroundMaterial = 'auto';
+  let backgroundMaterial: BrowserWindowConstructorOptions['backgroundMaterial'] = 'acrylic';
   if (kitState?.kenvEnv?.KIT_BACKGROUND_MATERIAL) {
-    backgroundMaterial = kitState.kenvEnv.KIT_BACKGROUND_MATERIAL;
+    backgroundMaterial = kitState.kenvEnv.KIT_BACKGROUND_MATERIAL as BrowserWindowConstructorOptions['backgroundMaterial'];
   }
 
-  let roundedCorners = true;
+  let roundedCorners: BrowserWindowConstructorOptions['roundedCorners'] = true;
   if (kitState?.kenvEnv?.KIT_ROUNDED_CORNERS === 'false') {
     roundedCorners = false;
   }
 
-  let thickFrame = true;
+  let thickFrame: BrowserWindowConstructorOptions['thickFrame'] = true;
   if (kitState?.kenvEnv?.KIT_THICK_FRAME === 'false') {
     thickFrame = false;
   }
