@@ -844,7 +844,7 @@ export class KitPrompt {
       if (!this.window || this.window.isDestroyed()) {
         return;
       }
-      if (kitState.isMac) {
+      if (!kitState.isWindows) {
         return;
       }
 
@@ -891,6 +891,7 @@ export class KitPrompt {
         os: os.platform(),
         isMac: os.platform().startsWith('darwin'),
         isWin: os.platform().startsWith('win'),
+        isLinux: os.platform().startsWith('linux'),
         assetPath: getAssetPath(),
         version: getVersion(),
         isDark: kitState.isDark,

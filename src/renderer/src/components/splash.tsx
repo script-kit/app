@@ -92,18 +92,29 @@ function Aside() {
                 runMainScript();
               }}
             >
-              Launch with{' '}
-              <span className="text-sm">
-                <kbd className="rounded-md bg-primary bg-opacity-25 p-1">{appConfig?.isMac ? 'CMD' : 'CTRL'}</kbd>
-                <kbd>+</kbd>
-                <kbd className="rounded-md bg-primary bg-opacity-25 p-1">;</kbd>
-                {!appConfig?.isWin ? (
-                  <p className="text-xs font-mono">
-                    <hr className="my-1" />
-                    Or invoke <kbd>~/.kit/kar</kbd>
-                  </p>
-                ) : null}
-              </span>
+              {appConfig?.isLinux ? (
+                <>
+                  <span>🚀 Launch with</span>
+                  <div>
+                    <kbd className="rounded-md border-secondary bg-primary bg-opacity-25 p-1">~/.kit/kar</kbd>
+                  </div>
+                </>
+              ) : (
+                <>
+                  Launch with{' '}
+                  <span className="text-sm">
+                    <kbd className="rounded-md bg-primary bg-opacity-25 p-1">{appConfig?.isMac ? 'CMD' : 'CTRL'}</kbd>
+                    <kbd>+</kbd>
+                    <kbd className="rounded-md bg-primary bg-opacity-25 p-1">;</kbd>
+                    {!appConfig?.isWin && (
+                      <p className="text-xs font-mono">
+                        <hr className="my-1" />
+                        Or invoke <kbd>~/.kit/kar</kbd>
+                      </p>
+                    )}
+                  </span>
+                </>
+              )}
             </button>
           </div>
         )}

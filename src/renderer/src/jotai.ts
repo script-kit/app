@@ -438,12 +438,12 @@ export const directionAtom = atom<1 | -1>(1);
 const _scrollToItemAtom = atom(0);
 export const scrollToItemAtom = atom(
   (g) => g(_scrollToItemAtom),
-  (g, s, a: { index: number; reason?: string, align?: 'start' | 'end' | 'center' }) => {
+  (g, s, a: { index: number; reason?: string; align?: 'start' | 'end' | 'center' }) => {
     s(_scrollToItemAtom, a.index);
     const list = g(listAtom);
-    if(a.index === 0){
+    if (a.index === 0) {
       list?.scrollToItem(a.index, 'start');
-    }else {
+    } else {
       list?.scrollToItem(a.index);
     }
   },
@@ -521,7 +521,6 @@ export const flagsIndexAtom = atom(
       s(flagsIndex, calcIndex);
     }
 
-
     if (list && requiresScroll === -1) {
       list?.scrollToItem(calcIndex);
     }
@@ -592,11 +591,10 @@ export const indexAtom = atom(
 
     const gridReady = g(gridReadyAtom);
 
-
     if (list && cs[0]?.item?.skip && calcIndex === 1 && !gridReady) {
-      s(scrollToItemAtom, {index: 0, reason: 'indexAtom - cs[0]?.item?.skip && calcIndex === 1'});
-    }else if (list && requiresScroll === -1 && !gridReady) {
-      s(scrollToItemAtom, {index: calcIndex, reason: 'indexAtom - requiresScroll === -1'});
+      s(scrollToItemAtom, { index: 0, reason: 'indexAtom - cs[0]?.item?.skip && calcIndex === 1' });
+    } else if (list && requiresScroll === -1 && !gridReady) {
+      s(scrollToItemAtom, { index: calcIndex, reason: 'indexAtom - requiresScroll === -1' });
     }
 
     // const clampedIndex = clamp(a, 0, cs.length - 1);
@@ -679,7 +677,6 @@ let prevFocusedChoiceId = 'prevFocusedChoiceId';
 
 const prevScoredChoicesIdsAtom = atom<string[]>([]);
 
-
 const choicesReadyAtom = atom(false);
 export const scoredChoicesAtom = atom(
   (g) => g(choices),
@@ -742,17 +739,13 @@ export const scoredChoicesAtom = atom(
       allSkipOrInfo = allSkipOrInfo && (isSkipped || isInfo);
 
       // Early exit if we've found all conditions
-      if (hasSkip && !allSkip && !allInfo && !allSkipOrInfo) { break; }
+      if (hasSkip && !allSkip && !allInfo && !allSkipOrInfo) {
+        break;
+      }
     }
 
-    s(
-      hasSkipAtom,
-      hasSkip,
-    );
-    s(
-      allSkipAtom,
-      allSkip,
-    );
+    s(hasSkipAtom, hasSkip);
+    s(allSkipAtom, allSkip);
     if (changed) {
       s(indexAtom, 0);
     }
@@ -1150,7 +1143,6 @@ const resize = debounce(
     if (promptData?.grid && document.getElementById('main').clientHeight > 10) {
       return;
     }
-
 
     // if (mh === 0 && [UI.form, UI.div].includes(ui)) return;
 
@@ -1725,7 +1717,7 @@ export const promptDataAtom = atom(
 
       if (typeof a?.enter === 'string') {
         s(enterAtom, a.enter);
-      }else{
+      } else {
         s(enterAtom, 'Submit');
       }
 
@@ -1917,9 +1909,9 @@ export const promptActiveAtom = atom(false);
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
   (g, s, a: any) => {
-    if(g(enterAtom) === ''){
+    if (g(enterAtom) === '') {
       log.warn('👀 Preventing submit because enterAtom is empty');
-      return
+      return;
     }
     // log.info(
     //   `
@@ -1997,13 +1989,13 @@ export const submitValueAtom = atom(
     const ui = g(uiAtom);
     let value = ui === UI.term ? g(termOutputAtom) : checkSubmitFormat(g, a);
     const focusedChoiceIsNoChoice = focusedChoice === noChoice;
-    const inputIsEmpty = g(inputAtom) === "";
+    const inputIsEmpty = g(inputAtom) === '';
     const choicesAreEmpty = g(choicesAtom).length === 0;
-    if(focusedChoiceIsNoChoice && inputIsEmpty && choicesAreEmpty && ui === UI.arg){
-      value = ""
+    if (focusedChoiceIsNoChoice && inputIsEmpty && choicesAreEmpty && ui === UI.arg) {
+      value = '';
     }
 
-    const valueSubmitted  =  {
+    const valueSubmitted = {
       value,
       flag,
     };
@@ -2266,6 +2258,7 @@ export const splashProgressAtom = atom(0);
 export const appConfigAtom = atom({
   isWin: false,
   isMac: false,
+  isLinux: false,
   os: '',
   sep: '',
   assetPath: '',
@@ -2299,7 +2292,6 @@ export const createAssetAtom = (...parts: string[]) =>
       });
     });
   });
-
 
 // This is only used on the Splash screen so "escape" will trigger the main menu
 // Are there other scenarios where we need to set this to false?
@@ -2448,8 +2440,8 @@ export const setFocusedChoiceAtom = atom(null, (g, s, a: string) => {
 });
 
 export const enterButtonNameAtom = atom<string>((g) => {
-  if(g(uiAtom) === UI.splash){
-    return ''
+  if (g(uiAtom) === UI.splash) {
+    return '';
   }
   const focusedChoice = g(focusedChoiceAtom);
   const enter = focusedChoice?.enter || g(enterAtom);
@@ -2457,8 +2449,8 @@ export const enterButtonNameAtom = atom<string>((g) => {
 });
 
 export const enterButtonDisabledAtom = atom<boolean>((g) => {
-  if(g(uiAtom) === UI.splash){
-    return true
+  if (g(uiAtom) === UI.splash) {
+    return true;
   }
   if (g(submittedAtom)) {
     return true;
