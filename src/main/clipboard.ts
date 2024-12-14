@@ -58,10 +58,7 @@ export const addToClipboardHistory = async (clipboardItem: ClipboardItem) => {
     ? Number.parseInt(kitState?.kenvEnv?.KIT_CLIPBOARD_HISTORY_LIMIT, 10)
     : 128;
 
-  if (
-    // eslint-disable-next-line no-constant-condition
-    clipboardHistory.length > maxHistory
-  ) {
+  if (clipboardHistory.length > maxHistory) {
     clipboardHistory.pop();
   }
 
