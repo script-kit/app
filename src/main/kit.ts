@@ -186,14 +186,12 @@ export const runPromptProcess = async (
     main?: boolean;
     headers?: Record<string, string>;
     sponsorCheck: boolean;
-    hide?: boolean;
   } = {
     force: false,
     trigger: Trigger.App,
     main: false,
     sponsorCheck: false,
     headers: {},
-    hide: false,
   },
 ): Promise<ProcessInfo | null> => {
   if (!kitState.ready) {
@@ -233,10 +231,6 @@ export const runPromptProcess = async (
     kitState.hasOpenedMainMenu = true;
   }
   const { prompt, pid, child } = promptInfo;
-
-  if (options?.hide) {
-    prompt?.window?.hide();
-  }
 
   const isSplash = prompt.ui === UI.splash;
   log.info(`>>>

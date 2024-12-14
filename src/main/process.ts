@@ -437,6 +437,10 @@ export const childShortcutMap = new Map<number, string[]>();
 class Processes extends Array<ProcessAndPrompt> {
   public abandonnedProcesses: ProcessAndPrompt[] = [];
 
+  get hasAvailableProcess(): boolean {
+    return this.some((processInfo) => processInfo.type === ProcessType.Prompt && processInfo?.scriptPath === '');
+  }
+
   public getAllProcessInfo() {
     return this.map(({ scriptPath, type, pid }) => ({
       type,
@@ -1214,4 +1218,3 @@ emitter.on(KitEvent.DID_FINISH_LOAD, () => {
 
   updateTheme();
 });
-

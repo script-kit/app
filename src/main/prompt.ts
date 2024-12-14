@@ -70,9 +70,22 @@ const log = createLogger('prompt.ts');
 
 // TODO: Hack context menu to avoid "object destroyed" errors
 contextMenu({
-  showInspectElement: process.env.NODE_ENV === 'development',
+  showInspectElement: true,
   showSearchWithGoogle: false,
   showLookUpSelection: false,
+  append: (defaultActions, params, browserWindow) => [
+    {
+      label: 'Close',
+      click: async () => {
+        if ((browserWindow as BrowserWindow)?.id) {
+          log.info(`Close prompt: ${browserWindow?.id}`, {
+            browserWindow,
+          });
+          prompts.find((prompt) => prompt?.window?.id === browserWindow?.id)?.close();
+        }
+      },
+    },
+  ],
 });
 
 const getDefaultWidth = () => {
@@ -570,6 +583,27 @@ export class KitPrompt {
 
   modifiedByUser = false;
 
+  opacity = 1;
+  setOpacity = (opacity: number) => {
+    if (opacity === this.opacity) {
+      return;
+    }
+    if (this.window) {
+      this.window.setOpacity(opacity);
+      this.opacity = opacity;
+    }
+  };
+  ignoreMouseEvents = false;
+  setIgnoreMouseEvents = (ignoreMouseEvents: boolean) => {
+    if (ignoreMouseEvents === this.ignoreMouseEvents) {
+      return;
+    }
+    if (this.window) {
+      this.window.setIgnoreMouseEvents(ignoreMouseEvents);
+      this.ignoreMouseEvents = ignoreMouseEvents;
+    }
+  };
+
   kitSearch = {
     input: '',
     inputRegex: undefined as undefined | RegExp,
@@ -814,24 +848,14 @@ export class KitPrompt {
         return;
       }
 
-      const currentBounds = this.window.getBounds();
-      // this.window.setOpacity(0.0);
-      const x = Number.parseInt(kitState.kenvEnv?.KIT_OFFSCREEN_X, 10) || OFFSCREEN_X;
-      const y = Number.parseInt(kitState.kenvEnv?.KIT_OFFSCREEN_Y, 10) || OFFSCREEN_Y;
-      if (kitState.kenvEnv?.KIT_OFFSCREEN === 'false') {
-        this.window.setPosition(x, y);
+      if (kitState.kenvEnv?.KIT_WINDOWS_OPACITY !== 'false') {
+        this.setIgnoreMouseEvents(true);
+        this.setOpacity(0.0);
         this.window.showInactive();
       }
 
       const handler = () => {
         log.info(`${this.pid}: 👍 INPUT_READY`);
-        // this.window.setOpacity(1.0);
-
-        if (this.hasBeenFocused) {
-          return;
-        }
-        // this.window.hide();
-        // this.window.setPosition(currentBounds.x, currentBounds.y);
       };
 
       this.window.webContents.ipc.on(AppChannel.INPUT_READY, handler);
@@ -2179,6 +2203,9 @@ export class KitPrompt {
     if (this.window && !this.window.isDestroyed() && !this.window?.isFocused()) {
       log.info(`${this.pid}: focusPrompt`);
       try {
+        this.setIgnoreMouseEvents(false);
+        this.setOpacity(1);
+
         if (kitState.isMac) {
           // this.window?.showInactive();
           makePanel(this.window);

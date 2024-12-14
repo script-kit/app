@@ -37,38 +37,97 @@ const mainFail = (shortcut: string, filePath: string) =>
 
 <code>${shortcut}</code> failed to register. May already be registered to another app.`;
 
+interface ProcessHandlerOptions {
+  debounceMs?: number
+  pollIntervalMs?: number
+  maxWaitMs?: number
+}
+
+const createProcessHandler = (
+  fn: () => Promise<void> | void,
+  options: ProcessHandlerOptions = {}
+) => {
+  const {
+    debounceMs = 250,
+    pollIntervalMs = 100,
+    maxWaitMs = 5000
+  } = options
+
+  const ignoreFlag = { value: false }
+  let currentTimeout: NodeJS.Timeout | null = null
+
+  const waitForProcess = async (): Promise<void> => {
+    if (processes.hasAvailableProcess) return
+
+    ignoreFlag.value = true
+    const startTime = Date.now()
+
+    try {
+      await new Promise((resolve, reject) => {
+        const interval = setInterval(() => {
+          if (processes.hasAvailableProcess) {
+            clearInterval(interval)
+            resolve(true)
+            return
+          }
+
+          if (Date.now() - startTime > maxWaitMs) {
+            clearInterval(interval)
+            reject(new Error('Timeout waiting for available process'))
+          }
+        }, pollIntervalMs)
+
+        currentTimeout = interval
+      })
+    } finally {
+      ignoreFlag.value = false
+      if (currentTimeout) {
+        clearInterval(currentTimeout)
+        currentTimeout = null
+      }
+    }
+  }
+
+  return debounce(
+    async () => {
+      if (ignoreFlag.value) return
+
+      try {
+        await waitForProcess()
+        return await fn()
+      } catch (error) {
+        log.error('Process handler error:', error)
+        // Could emit an event here if needed
+      }
+    },
+    debounceMs,
+    { leading: true }
+  )
+};
+
 const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
   try {
-    const shortcutAction = debounce(
-      () => {
-        kitState.shortcutPressed = shortcut;
+    const shortcutAction = createProcessHandler(() => {
+      kitState.shortcutPressed = shortcut;
 
-        if (shebang) {
-          // split shebang into command and args
-          log.info(`Running shebang: ${shebang} for ${filePath}`);
-          spawnShebang({ shebang, filePath });
+      if (shebang) {
+        // split shebang into command and args
+        log.info(`Running shebang: ${shebang} for ${filePath}`);
+        spawnShebang({ shebang, filePath });
 
-          return;
-        }
+        return;
+      }
 
-        // I attempted to use "attemptPreload" here, but I need to check if the same script is already running...
-
-        log.info(`
+      log.info(`
 ----------------------------------------
 🏡  Shortcut pressed: ${shortcut} -> ${filePath}`);
 
-        runPromptProcess(filePath, [], {
-          force: true,
-          trigger: Trigger.Shortcut,
-          sponsorCheck: true,
-          hide: true
-        });
-      },
-      250,
-      {
-        leading: true,
-      },
-    );
+      runPromptProcess(filePath, [], {
+        force: true,
+        trigger: Trigger.Shortcut,
+        sponsorCheck: true,
+      });
+    });
     const success = globalShortcut.register(shortcut, shortcutAction);
 
     if (success) {
@@ -265,7 +324,7 @@ export const updateMainShortcut = (shortcut?: string) => {
     shortcutMap.delete(getMainScriptPath());
   }
 
-  const mainShortcutAction = debounce(async () => {
+  const mainShortcutAction = createProcessHandler(async () => {
     kitState.shortcutPressed = finalShortcut;
 
     const isFocusedPromptMainScript = prompts.focused?.scriptPath === getMainScriptPath();
@@ -303,10 +362,7 @@ export const updateMainShortcut = (shortcut?: string) => {
     }
 
     await runMainScript();
-  }, 500, {
-    leading: true,
   });
-
   const ret = globalShortcut.register(finalShortcut, mainShortcutAction);
 
   if (!ret) {

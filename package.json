@@ -91,7 +91,7 @@
     "electron-mocks": "^1.6.0",
     "electron-vite": "^2.3.0",
     "emoji-picker-react": "^4.12.0",
-    "eslint": "^9.16.0",
+    "eslint": "^9.17.0",
     "eslint-config-erb": "4.1.0",
     "framer-motion": "^11.14.4",
     "html-react-parser": "^5.2.0",

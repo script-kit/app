@@ -857,6 +857,21 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         }
       }
     }),
+
+    TERMINATE_PROMPT: onChildChannel(({ child }, { channel, value }) => {
+      const { pid } = value;
+      log.info('🧘 HIDE', value);
+      processes.removeByPid(Number.parseInt(pid, 10));
+      // log.info({ process });
+    }),
+
+    HIDE_PROMPT: onChildChannel(({ child }, { channel, value }) => {
+      const { pid } = value;
+      log.info('🧘 HIDE', value);
+      const process = processes.getByPid(Number.parseInt(pid, 10));
+      // log.info({ process });
+      process?.prompt?.hide();
+    }),
     FOCUS_PROMPT: onChildChannel(({ child }, { channel, value }) => {
       const { pid } = value;
       log.info('🧘 FOCUS_PROMPT', value);
@@ -973,7 +988,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
         processInfo.scriptPath = filePath;
       }
-      if(processInfo.launchedFromMain){
+      if (processInfo.launchedFromMain) {
         debounceSetScriptTimestamp({
           filePath,
           changeStamp: Date.now(),
@@ -1286,7 +1301,6 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       if (samePrompt && value?.choices) {
         const { choices, skipInitialSearch, inputRegex, generated } = value;
 
-
         // const choiceIds = choices.map((choice) => choice.id).join(',');hks
         // if (prevChoiceIds === choiceIds) {
         //   log.info(`${prompt.pid}: ⛔️ SET_CHOICES: No changes`, {
@@ -1303,9 +1317,12 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
           formattedChoices = formatScriptChoices(choices);
         }
 
-        const defaultTrustedKenvs = ['', '.kit', 'kit-examples', 'examples']
+        const defaultTrustedKenvs = ['', '.kit', 'kit-examples', 'examples'];
         const maybeMarkAsUntrusted = (script: Script | Scriptlet) => {
-          if (script?.kenv && !(kitState.trustedKenvs.includes(script.kenv) || defaultTrustedKenvs.includes(script.kenv))) {
+          if (
+            script?.kenv &&
+            !(kitState.trustedKenvs.includes(script.kenv) || defaultTrustedKenvs.includes(script.kenv))
+          ) {
             (script as any).untrusted = true;
             log.info(`Marking ${script.filePath} from kenv:${script.kenv} as untrusted`, script);
           }
@@ -2048,16 +2065,16 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       }
 
       const prevText = clipboard.readText();
-      log.info(`${child.pid}: SET SELECTED TEXT`, text?.slice(0,3) + '...', prevText?.slice(0,3) + '...');
+      log.info(`${child.pid}: SET SELECTED TEXT`, text?.slice(0, 3) + '...', prevText?.slice(0, 3) + '...');
       await clipboard.writeText(text);
 
       robot.keyTap('v', getModifier());
       setTimeout(() => {
         kitState.snippet = '';
         childSend({ channel, value });
-        log.info(`SET SELECTED TEXT DONE with ${channel}`, text?.slice(0,3) + '...');
+        log.info(`SET SELECTED TEXT DONE with ${channel}`, text?.slice(0, 3) + '...');
         setTimeout(() => {
-          log.info(`RESTORING CLIPBOARD with ${channel}`, prevText?.slice(0,3) + '...');
+          log.info(`RESTORING CLIPBOARD with ${channel}`, prevText?.slice(0, 3) + '...');
           clipboard.writeText(prevText);
         }, 250);
       }, 10);
@@ -2260,13 +2277,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       prompt.attemptPreload(value);
     }),
     CLEAR_TIMESTAMPS: onChildChannel(({ child }, { channel, value }) => {
-      cacheMainScripts("Clear timestamps requested", {
+      cacheMainScripts('Clear timestamps requested', {
         channel: Channel.CLEAR_TIMESTAMPS,
         value,
       });
     }),
     REMOVE_TIMESTAMP: onChildChannel(({ child }, { channel, value }) => {
-      cacheMainScripts("Remove timestamp requested", {
+      cacheMainScripts('Remove timestamp requested', {
         channel: Channel.REMOVE_TIMESTAMP,
         value: {
           filePath: value,
@@ -2321,7 +2338,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       log.info(`${processInfo.pid}: 📌 ${channel}`, value);
 
-      await cacheMainScripts("Script stamp update", {
+      await cacheMainScripts('Script stamp update', {
         channel: Channel.CACHE_MAIN_SCRIPTS,
         value: stamp,
       });
