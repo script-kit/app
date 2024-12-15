@@ -1671,9 +1671,12 @@ export class KitPrompt {
     this.saveCurrentPromptBounds();
   }
 
-  private calculateTargetDimensions(resizeData: ResizeData, currentBounds: Electron.Rectangle): Pick<Rectangle,   > {
+  private calculateTargetDimensions(
+    resizeData: ResizeData,
+    currentBounds: Electron.Rectangle,
+  ): Pick<Rectangle, 'width' | 'height'> {
     const {
-Rectangle    topHeight,
+      topHeight,
       mainHeight,
       footerHeight,
       ui,
@@ -1686,8 +1689,8 @@ Rectangle    topHeight,
     } = resizeData;
 
     // Get cached dimensions for main script
-    const getCachedDimensions = (): Partial<Pick<Rectangle,   >> => {
-      if (!Rectanglet) return {};
+    const getCachedDimensions = (): Partial<Pick<Rectangle, 'width' | 'height'>> => {
+      if (!isMainScript) return {};
 
       const cachedBounds = getCurrentScreenPromptCache(getMainScriptPath());
       return {
