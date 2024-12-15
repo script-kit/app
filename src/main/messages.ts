@@ -43,7 +43,6 @@ import {
   kitStore,
   preloadChoicesMap,
   sponsorCheck,
-  workers,
 } from './state';
 
 import { findWidget, widgetState } from '../shared/widget';

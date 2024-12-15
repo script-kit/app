@@ -5,7 +5,7 @@ import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 import shims from './shims';
 
-import { readFile } from 'fs/promises';
+import { readFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { getMainScriptPath, kenvPath, kitPath } from '@johnlindquist/kit/core/utils';
@@ -1656,117 +1656,60 @@ export class KitPrompt {
     }
   };
 
-  resize = async (resizeData: ResizeData) => {
-    // log.info(`${this.pid}: 🌈 Resize: ${resizeData.reason}`, {
-    //   resizeData,
-    //   scriptPath: this.scriptPath,
-    // });
-    // debuginfo(`Testing...`, resizeData);
-    /**
-     * Linux doesn't support the "will-resize" or "resized" events making it impossible to distinguish
-     * between when the user is manually resizing the window and when the window is being resized by the app.
-     * Since we can only enable one, we had to choose to allow the user to manually resize the window.
-     *
-     * Hoping to be able to discover a clever workaround in the future 🤞
-     */
+  private shouldApplyResize(resizeData: ResizeData): boolean {
+    if (kitState.isLinux) return false;
+    if (!(resizeData.forceHeight || this.allowResize || resizeData.forceResize)) return false;
+    if (this.modifiedByUser) return false;
+    if (this.window?.isDestroyed()) return false;
+    return true;
+  }
 
-    if (kitState.isLinux) {
-      return;
-    }
-    // if (isEqual(prevResizeData, resizeData)) return;
-    prevResizeData = resizeData;
+  private handleSettle() {
+    if (!this?.window || this.window?.isDestroyed()) return;
 
+    log.info(`📬 ${this.pid} 📐 Resize settled. Saving bounds`);
+    this.saveCurrentPromptBounds();
+  }
+
+  private calculateTargetDimensions(resizeData: ResizeData, currentBounds: Electron.Rectangle): Pick<Rectangle,   > {
     const {
-      reason,
-      topHeight,
+Rectangle    topHeight,
       mainHeight,
       footerHeight,
       ui,
       isSplash,
       hasPreview,
-      forceResize,
       forceHeight,
       forceWidth,
-      inputChanged,
-      justOpened,
       hasInput,
       isMainScript,
-    }: ResizeData = resizeData;
+    } = resizeData;
 
-    if (this.showAfterNextResize) {
-      log.info('🎤 Showing prompt after next resize...');
-      this.showAfterNextResize = false;
-      this.showPrompt();
-    }
+    // Get cached dimensions for main script
+    const getCachedDimensions = (): Partial<Pick<Rectangle,   >> => {
+      if (!Rectanglet) return {};
 
-    log.info(`📐 Resize main height: ${mainHeight}`);
-    // log.info({
-    //   reason,
-    //   topHeight,
-    //   mainHeight,
-    //   resize: kitState.resize,
-    //   forceResize,
-    //   resizePaused: kitState.resizePaused,
-    //   hasInput,
-    //   inputChanged,
-    //   hasPreview,
-    //   totalChoices,
-    // });
+      const cachedBounds = getCurrentScreenPromptCache(getMainScriptPath());
+      return {
+        width: cachedBounds?.width || getDefaultWidth(),
+        height: !hasInput ? cachedBounds?.height || PROMPT.HEIGHT.BASE : undefined,
+      };
+    };
 
-    // if (kitState.resizePaused) return;
+    const { width: cachedWidth, height: cachedHeight } = getCachedDimensions();
 
-    if (reason === 'SETTLE') {
-      setTimeout(() => {
-        if (!this?.window || this.window?.isDestroyed()) {
-          return;
-        }
-        log.info(`📬 ${this.pid} 📐 Resize settled. Saving bounds`);
-        this.saveCurrentPromptBounds();
-      }, 50);
-    }
-    if (!(forceHeight || this.allowResize || forceResize)) {
-      return;
-    }
-    // if (kitState.promptId !== id || kitState.modifiedByUser) return;
-    if (this.modifiedByUser) {
-      return;
-    }
-    if (this.window?.isDestroyed()) {
-      return;
-    }
-
-    const { width: currentWidth, height: currentHeight, x, y } = this.window.getBounds();
-
+    const maxHeight = Math.max(PROMPT.HEIGHT.BASE, currentBounds.height);
     const targetHeight = topHeight + mainHeight + footerHeight;
 
-    let cachedWidth;
-    let cachedHeight;
-    let cachedX;
-    let cachedY;
-
-    if (isMainScript) {
-      const cachedBounds = getCurrentScreenPromptCache(getMainScriptPath());
-      if (!hasInput) {
-        cachedHeight = cachedBounds?.height || PROMPT.HEIGHT.BASE;
-      }
-      cachedWidth = cachedBounds?.width || getDefaultWidth();
-
-      if (typeof cachedBounds?.x === 'number') {
-        cachedX = cachedBounds?.x;
-      }
-      if (typeof cachedBounds?.y === 'number') {
-        cachedY = cachedBounds?.y;
-      }
-    }
-
-    const maxHeight = Math.max(PROMPT.HEIGHT.BASE, currentHeight);
-    let width = cachedWidth || forceWidth || currentWidth;
+    let width = cachedWidth || forceWidth || currentBounds.width;
     let height = cachedHeight || forceHeight || Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
 
+    // Handle splash screen
     if (isSplash) {
-      log.info(`isSplash: ${isSplash ? 'true' : 'false'}`);
-      width = PROMPT.WIDTH.BASE;
-      height = PROMPT.HEIGHT.BASE;
+      return {
+        width: PROMPT.WIDTH.BASE,
+        height: PROMPT.HEIGHT.BASE,
+      };
     }
 
     height = Math.round(height);
@@ -1774,56 +1717,81 @@ export class KitPrompt {
 
     const heightLessThanBase = height < PROMPT.HEIGHT.BASE;
 
-    if (isMainScript && !hasInput && heightLessThanBase) {
+    // Ensure minimum height for specific conditions
+    if (
+      (isMainScript && !hasInput && heightLessThanBase) ||
+      ([UI.term, UI.editor].includes(ui) && heightLessThanBase)
+    ) {
       height = PROMPT.HEIGHT.BASE;
     }
 
-    if ([UI.term, UI.editor].includes(ui) && heightLessThanBase) {
-      height = PROMPT.HEIGHT.BASE;
+    // Handle preview adjustments
+    if (hasPreview) {
+      if (!isMainScript) {
+        width = Math.max(getDefaultWidth(), width);
+      }
+      height = currentBounds.height < PROMPT.HEIGHT.BASE ? PROMPT.HEIGHT.BASE : currentBounds.height;
     }
 
-    if (currentHeight === height && currentWidth === width) {
+    return { width, height };
+  }
+
+  private calculateTargetPosition(
+    currentBounds: Electron.Rectangle,
+    targetDimensions: Pick<Rectangle, 'width' | 'height'>,
+    cachedBounds?: Partial<Electron.Rectangle>,
+  ): Pick<Rectangle, 'x' | 'y'> {
+    // Center the window horizontally if no cached position
+    const newX = cachedBounds?.x ?? Math.round(currentBounds.x + (currentBounds.width - targetDimensions.width) / 2);
+    const newY = cachedBounds?.y ?? currentBounds.y;
+
+    return { x: newX, y: newY };
+  }
+
+  private saveBoundsIfInitial(resizeData: ResizeData, bounds: Rectangle) {
+    if (this.firstPrompt && !resizeData.inputChanged && resizeData.justOpened) {
+      this.savePromptBounds(this.scriptPath, bounds);
+    }
+  }
+
+  resize = async (resizeData: ResizeData) => {
+    if (!this.shouldApplyResize(resizeData)) {
       return;
     }
 
-    if (hasPreview && !isMainScript) {
-      log.info(`hasPreview: ${hasPreview} && !isMainScript: ${isMainScript ? 'true' : 'false'}`);
-      width = Math.max(getDefaultWidth(), width);
+    prevResizeData = resizeData;
+
+    if (this.showAfterNextResize) {
+      log.info('🎤 Showing prompt after next resize...');
+      this.showAfterNextResize = false;
+      this.showPrompt();
     }
 
-    if (hasPreview) {
-      height = currentHeight < PROMPT.HEIGHT.BASE ? PROMPT.HEIGHT.BASE : currentHeight;
+    if (resizeData.reason === 'SETTLE') {
+      setTimeout(() => this.handleSettle(), 50);
     }
 
-    hadPreview = hasPreview;
+    const currentBounds = this.window.getBounds();
 
-    // center x based on current prompt x position
-    const newX = cachedX || Math.round(x + currentWidth / 2 - width / 2);
-    const newY = cachedY || y;
+    log.info(`📐 Resize main height: ${resizeData.mainHeight}`);
 
-    const bounds = { x: newX, y: newY, width, height };
+    const targetDimensions = this.calculateTargetDimensions(resizeData, currentBounds);
 
-    // log.info({ topHeight, mainHeight, footerHeight });
-    // log.info(
-    //   `Resize Details for PID: ${this.pid} - ${this.scriptPath}\n` +
-    //     `+----------------+----------------+----------------+----------------+----------------+\n` +
-    //     `|                | Current        | Cached         | Forced         | Actual          |\n` +
-    //     `+----------------+----------------+----------------+----------------+----------------+\n` +
-    //     `| Width          | ${currentWidth.toString().padEnd(14)} | ${cachedWidth?.toString().padEnd(14) || ''.padEnd(14)} | ${forceWidth?.toString().padEnd(14) || ''.padEnd(14)} | ${bounds.width.toString().padEnd(14)} |\n` +
-    //     `| Height         | ${currentHeight.toString().padEnd(14)} | ${cachedHeight?.toString().padEnd(14) || ''.padEnd(14)} | ${forceHeight?.toString().padEnd(14) || ''.padEnd(14)} | ${bounds.height.toString().padEnd(14)} |\n` +
-    //     `| Target Height  | ${targetHeight.toString().padEnd(14)} | ----------    | ${maxHeight.toString().padEnd(14)} |                |\n` +
-    //     `+----------------+----------------+----------------+----------------+----------------+\n` +
-    //     `| Force Resize   | ${forceResize ? 'Yes'.padEnd(14) : 'No'.padEnd(14)} |                |                |                |\n` +
-    //     `+----------------+----------------+----------------+----------------+----------------+\n` +
-    //     `| Reason         | ${reason.padEnd(14)} |                |                |                |\n` +
-    //     `+----------------+----------------+----------------+----------------+----------------+`,
-    // );
-
-    this.setBounds(bounds, reason);
-
-    if (this.firstPrompt && !inputChanged && justOpened) {
-      this.savePromptBounds(this.scriptPath, bounds);
+    // Skip resize if dimensions haven't changed
+    if (currentBounds.height === targetDimensions.height && currentBounds.width === targetDimensions.width) {
+      return;
     }
+
+    const cachedBounds = resizeData.isMainScript ? getCurrentScreenPromptCache(getMainScriptPath()) : undefined;
+
+    const targetPosition = this.calculateTargetPosition(currentBounds, targetDimensions, cachedBounds);
+
+    const bounds: Rectangle = { ...targetPosition, ...targetDimensions };
+
+    this.setBounds(bounds, resizeData.reason);
+    this.saveBoundsIfInitial(resizeData, bounds);
+
+    hadPreview = resizeData.hasPreview;
   };
 
   updateShortcodes = () => {
