@@ -1,8 +1,5 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import memoize from 'memoize-one';
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react/require-default-props */
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { VariableSizeList as List } from 'react-window';
 import type { ChoiceButtonProps } from '../../../shared/types';
@@ -21,86 +18,69 @@ import {
 import ActionsInput from './actions-input';
 import FlagButton from './flag-button';
 
-const createItemData = memoize(
-  (choices) =>
-    ({
-      choices,
-    }) as ChoiceButtonProps['data'],
-);
-
-function InnerList({ height }) {
+function InnerList({ height }: { height: number }) {
   const flagsRef = useRef<null | List>(null);
   const innerRef = useRef(null);
-  // TODO: In case items ever have dynamic height
   const [choices] = useAtom(scoredFlagsAtom);
   const [index, onIndexChange] = useAtom(flagsIndexAtom);
-  // const [inputValue] = useAtom(inputAtom);
-  // const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
   const itemHeight = useAtomValue(actionsItemHeightAtom);
-
   const [list, setList] = useAtom(flagsListAtom);
   const [requiresScroll, setRequiresScroll] = useAtom(flagsRequiresScrollAtom);
   const [isScrolling, setIsScrolling] = useAtom(isFlagsScrollingAtom);
 
-  const itemData = createItemData(choices);
+  const handleFlagsRef = useCallback(
+    (node) => {
+      if (node) {
+        setList(node);
+        flagsRef.current = node;
+      }
+    },
+    [setList],
+  );
+
+  const itemData = useMemo(() => ({ choices }), [choices]);
 
   useEffect(() => {
-    if (flagsRef.current) {
-      setList(flagsRef.current);
-    }
-  }, [flagsRef.current]);
-
-  useEffect(() => {
-    if (!flagsRef.current) {
-      return;
-    }
+    if (!flagsRef.current) return;
 
     const scroll = () => {
-      if (requiresScroll === -1) {
-        return;
-      }
+      if (requiresScroll === -1) return;
+
       onIndexChange(requiresScroll);
-      flagsRef?.current?.scrollToItem(
-        requiresScroll,
-        // eslint-disable-next-line no-nested-ternary
-        requiresScroll > 0 ? 'auto' : 'start',
-      );
+      flagsRef.current?.scrollToItem(requiresScroll, requiresScroll > 0 ? 'auto' : 'start');
     };
 
     scroll();
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       if (flagsRef.current) {
         scroll();
         setRequiresScroll(-1);
       }
-    }, 100);
-  }, [requiresScroll, choices]);
+    });
+  }, [requiresScroll, choices.length, onIndexChange, setRequiresScroll]);
 
   useEffect(() => {
-    if (!flagsRef.current) {
-      return;
-    }
-    const needsReset = choices.find((c) => c?.item?.height !== itemHeight);
+    if (!flagsRef.current) return;
+    
+    const needsReset = choices.some(c => c?.item?.height !== itemHeight);
     if (needsReset) {
-      (flagsRef?.current as any)?.resetAfterIndex(0);
+      flagsRef.current?.resetAfterIndex(0);
     }
-  }, [choices, itemHeight]);
+  }, [choices.length, itemHeight]);
 
-  const [scrollTimeout, setScrollTimeout] = useState<any>(null);
+  const [scrollTimeout, setScrollTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const handleScroll = useCallback(() => {
-    if (index === 0 || index === 1) {
+    if (index <= 1) {
       setIsScrolling(false);
     } else {
       setIsScrolling(true);
     }
 
-    // Clear the previous timeout
     if (scrollTimeout) {
       clearTimeout(scrollTimeout);
     }
 
-    // Set a new timeout
     const newTimeout = setTimeout(() => {
       setIsScrolling(false);
     }, 250);
@@ -108,37 +88,43 @@ function InnerList({ height }) {
     setScrollTimeout(newTimeout);
   }, [index, scrollTimeout, setIsScrolling]);
 
+  const itemSize = useCallback(
+    (i: number) => {
+      const maybeHeight = choices?.[i]?.item?.height;
+      return typeof maybeHeight === 'number' ? maybeHeight : itemHeight;
+    },
+    [choices, itemHeight],
+  );
+
+  const itemKey = useCallback(
+    (i: number, data: ChoiceButtonProps['data']) => data?.choices?.[i]?.item?.id || i,
+    [],
+  );
+
+  const listClassName = useMemo(
+    () => `
+      ${isScrolling ? 'scrollbar' : ''}
+      wrapper
+      px-0
+      text-text-base outline-none focus:border-none focus:outline-none
+      w-full
+    `,
+    [isScrolling],
+  );
+
   return (
     <List
-      width={'100%'}
+      width="100%"
       height={height}
-      ref={flagsRef}
+      ref={handleFlagsRef}
       innerRef={innerRef}
       overscanCount={2}
       onScroll={handleScroll}
       itemCount={choices?.length || 0}
-      itemSize={(i) => {
-        const maybeHeight = choices?.[i]?.item?.height;
-
-        const height = typeof maybeHeight === 'number' ? maybeHeight : itemHeight;
-        // log.info(
-        //   `📜 Item ${i}: Name: ${choices?.[i]?.item?.name} height: ${height}`
-        // );
-        return height;
-      }}
-      itemKey={(i, data) => {
-        const id = data?.choices?.[i]?.item?.id;
-        return id || i;
-      }}
+      itemSize={itemSize}
+      itemKey={itemKey}
       itemData={itemData}
-      className={`
-${isScrolling ? 'scrollbar' : ''}
-wrapper
-px-0
-text-text-base outline-none focus:border-none focus:outline-none
-w-full
-`}
-      // onItemsRendered={onItemsRendered}
+      className={listClassName}
     >
       {FlagButton}
     </List>
@@ -153,6 +139,8 @@ export default function ActionsList() {
   const componentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!componentRef.current) return;
+
     const handleClickOutside = (event: MouseEvent) => {
       if (componentRef.current && !componentRef.current.contains(event.target as Node)) {
         setFlagValue('');
@@ -160,6 +148,7 @@ export default function ActionsList() {
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+    
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       if (prevFocusedElement instanceof HTMLElement) {
@@ -168,41 +157,42 @@ export default function ActionsList() {
     };
   }, [prevFocusedElement, setFlagValue]);
 
+  const containerStyle = useMemo(
+    () => ({
+      height: actionsHeight + inputHeight + 2,
+      minHeight: inputHeight,
+    }),
+    [actionsHeight, inputHeight],
+  );
+
   return (
     <div
       id="actions"
       ref={componentRef}
       className="
-      z-50
-      flags-component flex w-96 flex-col overflow-y-hidden
-      max-h-[80vh]
-      absolute
-      top-9
-      transform
-      left-1/2
-      -translate-x-1/2
-      origin-top
-      rounded-lg
-      bg-bg-base/95
-      backdrop-filter
-      backdrop-blur-xl
-      border border-ui-border
-      shadow-lg
+        z-50
+        flags-component flex w-96 flex-col overflow-y-hidden
+        max-h-[80vh]
+        absolute
+        top-9
+        transform
+        left-1/2
+        -translate-x-1/2
+        origin-top
+        rounded-lg
+        bg-bg-base/95
+        backdrop-filter
+        backdrop-blur-xl
+        border border-ui-border
+        shadow-lg
       "
-      style={{
-        height: actionsHeight + inputHeight + 2, // 2px for the border, hmm....
-        minHeight: inputHeight,
-      }}
+      style={containerStyle}
     >
       <ActionsInput />
       <div className="flex h-full">
         <div className="flex-1">
           <AutoSizer disableWidth={true} className="w-full">
-            {({ height }) => (
-              <>
-                <InnerList height={height + 2} />
-              </>
-            )}
+            {({ height }) => <InnerList height={height + 2} />}
           </AutoSizer>
         </div>
       </div>

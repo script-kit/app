@@ -2,23 +2,27 @@ import { Channel } from '@johnlindquist/kit/core/enum';
 import type { WidgetOptions } from '@johnlindquist/kit/types/pro';
 import log from 'electron-log/renderer';
 import { createApp } from 'petite-vue';
-import React, { type ErrorInfo, Suspense, useEffect, useLayoutEffect, useState } from 'react';
+import React, { type ErrorInfo, Suspense, useEffect, useLayoutEffect, useState, useRef } from 'react';
 import { AppChannel } from '../../shared/enums';
 
 const { ipcRenderer } = window.electron;
 window.ipcRenderer = ipcRenderer;
 
+log.info(` AppWidget module loaded`);
+
 class ErrorBoundary extends React.Component {
-  // eslint-disable-next-line react/state-in-constructor
   public state: { hasError: boolean; info: ErrorInfo } = {
     hasError: false,
     info: { componentStack: '' },
   };
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    // Display fallback UI
+    log.error(` ErrorBoundary caught error`, {
+      error: error.message,
+      stack: error.stack,
+      componentStack: info.componentStack,
+    });
     this.setState({ hasError: true, info });
-    // You can also log the error to an error reporting service
     ipcRenderer.send(Channel.WIDGET_ERROR, { error });
   }
 
@@ -26,13 +30,14 @@ class ErrorBoundary extends React.Component {
     const { hasError, info } = this.state;
     const { children } = this.props;
     if (hasError) {
+      log.info(` Rendering error boundary UI`);
       return (
         <div className="p-2 font-mono">
-          {/* Add a button to reload the window */}
           <button
             type="button"
             className="rounded bg-red-500 p-2 text-white"
             onClick={() => {
+              log.info(` User clicked reload button in error boundary`);
               ipcRenderer.send(AppChannel.RELOAD);
             }}
           >
@@ -49,69 +54,60 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// Experimental dynamic component loading
-// const { pathToFileURL } = window.api.url;
-// const componentPath = pathToFileURL(
-//   window.api.utils.kenvPath('components', 'Clock.jsx')
-// ).href;
-// log.info({ componentPath });
-// const DynamicComponent = React.lazy(() => {
-//   /* @vite-ignore */
-//   return import(/* @vite-ignore */ componentPath)
-//     .then((module) => module)
-//     .catch((error) => {
-//       log.error(`Error loading dynamic component at ${componentPath}: `, error);
-//       throw error;
-//     });
-// });
-/*
-      <Suspense fallback={<div>Loading...</div>}>
-        {componentPath}
-        <DynamicComponent />
-      </Suspense>
-*/
-
 export default function AppWidget() {
+  log.info(` AppWidget component rendering`);
   const [options, setOptions] = useState<WidgetOptions>({});
-
   const [contentWidth, setContentWidth] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
+  const previousDimensionsRef = useRef({ width: 0, height: 0 });
 
   useEffect(() => {
+    log.info(` Setting up widget initialization effect`);
+
     const handleWidgetInit = (event, options: WidgetOptions) => {
-      log.info(`handleWidgetInit`, { options, event });
+      log.info(` Widget init received`, {
+        widgetId: options.widgetId,
+        options: JSON.stringify(options),
+      });
       setOptions(options);
       window.widgetId = options.widgetId;
     };
 
-    log.info(`Mounted: Adding listener for ${Channel.WIDGET_INIT}`);
+    log.info(` Adding listener for ${Channel.WIDGET_INIT}`);
     ipcRenderer.on(Channel.WIDGET_INIT, handleWidgetInit);
 
-    // Add other event listeners here
-
-    log.info(`Sending ${Channel.WIDGET_GET} to main process`);
+    log.info(` Sending ${Channel.WIDGET_GET} to main process`);
     ipcRenderer.send(Channel.WIDGET_GET);
+
     return () => {
-      log.info(`Unmounting: Removing listener for ${Channel.WIDGET_INIT}`);
+      log.info(` Cleanup: Removing ${Channel.WIDGET_INIT} listener`);
       ipcRenderer.off(Channel.WIDGET_INIT, handleWidgetInit);
-      // Remove other event listeners here
     };
   }, []);
 
   useEffect(() => {
-    log.info(`Mounting widget with options: ${JSON.stringify(options)}`);
+    log.info(` Setting up resize effect`);
+
     const resize = () => {
       if (!document.body.firstElementChild) {
+        log.warn(` No first element child found for resize calculation`);
         return;
       }
 
       const width = Math.ceil((document.body.firstElementChild as HTMLElement)?.offsetWidth || window.innerWidth);
       const height = Math.ceil((document.body.firstElementChild as HTMLElement)?.offsetHeight || window.innerHeight);
 
-      if (width !== contentWidth || height !== contentHeight) {
-        setContentWidth(width);
-        setContentHeight(height);
+      const prevDimensions = previousDimensionsRef.current;
+      log.info(` Calculated dimensions`, {
+        width,
+        height,
+        previousWidth: prevDimensions.width,
+        previousHeight: prevDimensions.height,
+      });
 
+      if (width !== prevDimensions.width || height !== prevDimensions.height) {
+        log.info(` Resizing widget`, { newWidth: width, newHeight: height });
+        previousDimensionsRef.current = { width, height };
         ipcRenderer.send('WIDGET_RESIZE', { width, height });
       }
     };
@@ -119,75 +115,81 @@ export default function AppWidget() {
     const resizeTimeout = setTimeout(resize, 500);
 
     return () => {
+      log.info(` Cleanup: Clearing resize timeout`);
       clearTimeout(resizeTimeout);
     };
-  }, [contentWidth, contentHeight]);
-
-  // Add useEffect hooks for other event listeners like "click", "mousedown", "input"
-
-  const bodyStyle = {
-    backgroundColor: options?.transparent ? 'rgba(0, 0, 0, 0) !important' : undefined,
-    pointerEvents: 'none',
-    WebkitUserSelect: options?.draggable ? 'none' : undefined,
-    WebkitAppRegion: options?.draggable ? 'drag' : undefined,
-  };
+  }, []);
 
   useLayoutEffect(() => {
-    // Create a document fragment to parse and execute scripts
+    log.info(` Setting up body content effect`);
     const range = document.createRange();
     const container = document.getElementById('__widget-container');
     if (!container) {
+      log.error(` Widget container not found for content insertion`);
       return;
     }
 
-    range.selectNode(container);
-    const fragment = range.createContextualFragment(options?.body || '');
+    try {
+      range.selectNode(container);
+      const fragment = range.createContextualFragment(options?.body || '');
+      log.info(` Created document fragment`, {
+        bodyLength: options?.body?.length,
+        scriptCount: fragment.querySelectorAll('script').length,
+      });
 
-    // Find and execute any scripts
-    const scripts = fragment.querySelectorAll('script');
-    for (const script of scripts) {
-      const newScript = document.createElement('script');
-      for (const attr of script.attributes) {
-        newScript.setAttribute(attr.name, attr.value);
+      const scripts = fragment.querySelectorAll('script');
+      for (const script of scripts) {
+        log.info(` Processing script`, {
+          type: script.type,
+          src: script.src,
+          hasInlineContent: !!script.textContent,
+        });
+        const newScript = document.createElement('script');
+        for (const attr of script.attributes) {
+          newScript.setAttribute(attr.name, attr.value);
+        }
+        newScript.textContent = script.textContent;
+        document.body.appendChild(newScript);
       }
-      newScript.textContent = script.textContent;
-      document.body.appendChild(newScript);
+    } catch (error) {
+      log.error(` Error processing body content`, {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     }
   }, [options?.body]);
 
   useEffect(() => {
+    log.info(` Setting up widget event handlers`);
     const __widgetContainer = document.getElementById('__widget-container') as HTMLElement;
+    if (!__widgetContainer) {
+      log.error(` Widget container not found for event handlers`);
+      return;
+    }
 
     const handleClick = (event) => {
       const closestIdElement = event.target.closest('*[id]');
-      if (!closestIdElement) {
-        return;
-      }
+      if (!closestIdElement) return;
       const targetId = closestIdElement.id;
-      const message = {
-        targetId: targetId,
-        ...options,
-      };
-
-      log.info('handleClick', JSON.stringify(message));
+      const message = { targetId, ...options };
+      log.info(` Click event`, { targetId, options: JSON.stringify(options) });
       ipcRenderer.send(Channel.WIDGET_CLICK, message);
     };
 
     const handleMouseDown = (event) => {
       const closestIdElement = event.target.closest('*[id]');
-      if (!closestIdElement) {
-        return;
-      }
+      if (!closestIdElement) return;
       const targetId = closestIdElement.id;
-      const message = {
-        targetId: targetId,
-        ...options,
-      };
-      log.info('handleMouseDown', JSON.stringify(message));
+      const message = { targetId, ...options };
+      log.info(` MouseDown event`, { targetId, options: JSON.stringify(options) });
       ipcRenderer.send(Channel.WIDGET_MOUSE_DOWN, message);
     };
 
     const handleInput = (event) => {
+      log.info(` Input event`, {
+        targetId: event.target.id,
+        value: event.target.value,
+      });
       ipcRenderer.send(Channel.WIDGET_INPUT, {
         targetId: event.target.id,
         value: event.target.value,
@@ -196,29 +198,30 @@ export default function AppWidget() {
     };
 
     const handleDragEnter = (event) => {
-      log.info('dragenter');
+      log.info(` DragEnter event`);
       __widgetContainer.classList.add('drag-shadow');
       event.preventDefault();
     };
 
     const handleDragEnd = (event) => {
-      log.info('dragend');
+      log.info(` DragEnd event`);
       __widgetContainer.classList.remove('drag-shadow');
     };
 
     const handleDragLeave = (event) => {
-      log.info('dragleave');
+      log.info(` DragLeave event`);
       __widgetContainer.classList.remove('drag-shadow');
     };
 
     const handleDragOver = (event) => {
+      log.info(` DragOver event`);
       event.dataTransfer.dropEffect = 'copy';
       event.preventDefault();
     };
 
     const handleDrop = (event) => {
       event.preventDefault();
-      const { id = '' } = event.target.closest('*[id]');
+      const { id = '' } = event.target.closest('*[id]') || {};
       const files = [];
       const eFiles = event.dataTransfer.files;
 
@@ -227,6 +230,12 @@ export default function AppWidget() {
           files.push(eFiles[key].path);
         }
       }
+
+      log.info(` Drop event`, {
+        targetId: id,
+        fileCount: files.length,
+        files,
+      });
 
       ipcRenderer.send('WIDGET_DROP', {
         dataset: {
@@ -238,6 +247,7 @@ export default function AppWidget() {
       });
     };
 
+    log.info(` Attaching event listeners`);
     document.addEventListener('click', handleClick);
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('input', handleInput);
@@ -248,15 +258,19 @@ export default function AppWidget() {
     document.addEventListener('drop', handleDrop);
 
     function Widget() {
-      window.onSetState = (state) => {};
+      log.info(` Creating Widget instance`);
+      window.onSetState = (state) => {
+        log.info(` onSetState called`, { state: JSON.stringify(state) });
+      };
 
       const fitWidget = () => {
-        const firstChild = document.getElementById('__widget-container').firstElementChild;
+        const firstChild = document.getElementById('__widget-container')?.firstElementChild;
         if (!(firstChild && firstChild.offsetWidth && firstChild.offsetHeight)) {
+          log.warn(` Cannot fit widget: invalid dimensions`);
           return;
         }
-        const display = firstChild.style.display;
 
+        const display = firstChild.style.display;
         firstChild.style.display = 'inline-block';
 
         const data = {
@@ -264,6 +278,11 @@ export default function AppWidget() {
           height: firstChild.offsetHeight,
           ...options,
         };
+
+        log.info(` Fitting widget`, {
+          width: data.width,
+          height: data.height,
+        });
 
         ipcRenderer.send('WIDGET_MEASURE', data);
         firstChild.style.display = display;
@@ -274,20 +293,26 @@ export default function AppWidget() {
         state: options?.state || {},
         ...(options?.state || {}),
         setState(state) {
+          log.info(` Widget setState`, { newState: JSON.stringify(state) });
           for (const [key, value] of Object.entries(state)) {
             this[key] = value;
           }
         },
         mounted() {
+          log.info(` Widget mounted`);
+
           ipcRenderer.on('WIDGET_FIT', (event, state) => {
+            log.info(` WIDGET_FIT event received`);
             fitWidget();
           });
 
           ipcRenderer.on(Channel.WIDGET_SET_STATE, (event, state) => {
+            log.info(` WIDGET_SET_STATE event`, { state: JSON.stringify(state) });
             this.setState(state);
             window.onSetState(state);
           });
 
+          log.info(` Sending WIDGET_INIT`);
           ipcRenderer.send(Channel.WIDGET_INIT, {
             ...options,
           });
@@ -295,12 +320,13 @@ export default function AppWidget() {
       };
     }
 
+    log.info(` Creating Vue app`);
     createApp({
       Widget,
     }).mount();
 
     return () => {
-      console.log('Unmounting widget');
+      log.info(` Cleanup: Removing event listeners`);
       document.removeEventListener('click', handleClick);
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('input', handleInput);
@@ -317,6 +343,11 @@ export default function AppWidget() {
 </template>
 
 <div id="__widget-container" v-scope="Widget()" @vue:mounted="mounted" class="${options.containerClass}"></div>`;
+
+  log.info(` Rendering AppWidget`, {
+    hasBody: !!options?.body,
+    containerClass: options.containerClass,
+  });
 
   return (
     <ErrorBoundary>

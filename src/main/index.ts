@@ -12,7 +12,6 @@ process.on('SIGINT', () => {
 import electronLog from 'electron-log';
 electronLog.initialize();
 
-
 (global as any).log = log.info;
 (global as any).logInfo = log.info;
 (global as any).logWarn = log.warn;
@@ -449,8 +448,6 @@ const systemEvents = () => {
           log.error('Error checking for updates', error);
         }
       }
-
-
     },
     2000,
     { leading: true },
@@ -903,8 +900,11 @@ const checkKit = async () => {
     process.env.KIT_NODE_PATH = kitState.KIT_NODE_PATH;
 
     try {
-      await setEnvVar('KIT_NODE_PATH', kitState.KIT_NODE_PATH);
-      log.info(`🚶 Assigned PATH with prefixed KIT_NODE_PATH: ${process.env.PATH}`);
+      const doesKenvExist = await kenvExists();
+      if (doesKenvExist) {
+        await setEnvVar('KENV', kenvPath());
+        log.info(`🚶 Assigned PATH with prefixed KIT_NODE_PATH: ${process.env.PATH}`);
+      }
     } catch (error) {
       log.error(error);
     }
@@ -1140,7 +1140,7 @@ const checkKit = async () => {
     // focusPrompt();
     setTimeout(async () => {
       log.info('Parsing scripts...');
-      await cacheMainScripts("Initial script parsing");
+      await cacheMainScripts('Initial script parsing');
     }, 1000);
   } catch (error) {
     log.error(`Error in verifyInstall`, error);
@@ -1149,7 +1149,7 @@ const checkKit = async () => {
 };
 
 emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
-  await cacheMainScripts("Script timestamp update", {
+  await cacheMainScripts('Script timestamp update', {
     channel: Channel.CACHE_MAIN_SCRIPTS,
     value: stamp,
   });

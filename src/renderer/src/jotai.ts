@@ -1909,7 +1909,11 @@ export const promptActiveAtom = atom(false);
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
   (g, s, a: any) => {
-    if (g(enterAtom) === '') {
+    const ui = g(uiAtom);
+    const allowEmptyEnterUIs = [UI.term, UI.drop];
+    const enter = g(enterAtom);
+
+    if (enter === '' && !allowEmptyEnterUIs.includes(ui)) {
       log.warn('👀 Preventing submit because enterAtom is empty');
       return;
     }
@@ -1986,7 +1990,6 @@ export const submitValueAtom = atom(
       }
     }
 
-    const ui = g(uiAtom);
     let value = ui === UI.term ? g(termOutputAtom) : checkSubmitFormat(g, a);
     const focusedChoiceIsNoChoice = focusedChoice === noChoice;
     const inputIsEmpty = g(inputAtom) === '';

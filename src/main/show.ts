@@ -18,7 +18,6 @@ import { setTimeout } from 'node:timers/promises';
 
 import { fileURLToPath } from 'node:url';
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { snapshot } from 'valtio';
 import { getAssetPath } from '../shared/assets';
 import { getCurrentScreenFromMouse } from './prompt';
 import { forceQuit, kitState } from './state';
@@ -319,11 +318,24 @@ export const showWidget = async (
   html: string,
   options: WidgetOptions = {},
 ): Promise<BrowserWindow> => {
-  log.info(`Show widget: ${widgetId}`);
+  log.info(`🚀 Starting showWidget`, {
+    scriptPath,
+    widgetId,
+    htmlLength: html?.length,
+    options: JSON.stringify(options),
+  });
+
   options.body = options.body || html || '';
+  log.info(`📐 Calculating window position`, {
+    center: options?.center,
+    options: JSON.stringify(options),
+  });
+  
   const position = options?.center
     ? getCenterOnCurrentScreen(options as BrowserWindowConstructorOptions)
     : getTopRightCurrentScreen(options as BrowserWindowConstructorOptions);
+  
+  log.info(`📍 Calculated position`, { position });
 
   const bwOptions: BrowserWindowConstructorOptions = {
     title: `${path.basename(scriptPath)} | id: ${widgetId}`,
@@ -349,76 +361,146 @@ export const showWidget = async (
     ...(options as BrowserWindowConstructorOptions),
   };
 
+  log.info(`🔧 Final BrowserWindow options`, {
+    bwOptions: JSON.stringify(bwOptions),
+    isMac: kitState.isMac,
+  });
+
   let widgetWindow: BrowserWindow;
-  if (kitState.isMac) {
-    widgetWindow = new BrowserWindow(bwOptions);
-    if (!options.transparent) {
-      widgetWindow.setVibrancy('popover');
+  try {
+    if (kitState.isMac) {
+      log.info(`🍎 Creating Mac BrowserWindow`);
+      widgetWindow = new BrowserWindow(bwOptions);
+      if (!options.transparent) {
+        log.info(`Setting vibrancy to 'popover'`);
+        widgetWindow.setVibrancy('popover');
+      }
+    } else if (options?.transparent) {
+      log.info(`🪟 Creating transparent BrowserWindow`);
+      widgetWindow = new BrowserWindow(bwOptions);
+      widgetWindow.setBackgroundColor('#00000000');
+    } else {
+      log.info(`🪟 Creating standard BrowserWindow`);
+      widgetWindow = new BrowserWindow({
+        ...bwOptions,
+        backgroundColor: '#00000000',
+      });
     }
-  } else if (options?.transparent) {
-    widgetWindow = new BrowserWindow(bwOptions);
-    widgetWindow.setBackgroundColor('#00000000');
-  } else {
-    widgetWindow = new BrowserWindow({
-      ...bwOptions,
-      backgroundColor: '#00000000',
+
+    log.info(`✅ BrowserWindow created successfully`, {
+      windowId: widgetWindow.id,
+      bounds: widgetWindow.getBounds(),
     });
+  } catch (error) {
+    log.error(`❌ Failed to create BrowserWindow`, {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
   }
 
   if (options?.ignoreMouse) {
+    log.info(`🖱️ Setting ignore mouse events`, {
+      windowId: widgetWindow.id,
+      ignoreMouse: true,
+    });
     widgetWindow?.setIgnoreMouseEvents(true, { forward: true });
   }
 
   if (options?.ttl) {
+    log.info(`⏲️ Setting TTL timeout`, {
+      windowId: widgetWindow.id,
+      ttl: options.ttl,
+    });
     await setTimeout(options?.ttl);
-    log.info(`Close widget: ${widgetWindow.id} due to timeout of ${options.ttl}ms`);
+    log.info(`⌛ TTL expired, closing widget`, {
+      windowId: widgetWindow.id,
+      ttl: options.ttl,
+    });
     widgetWindow.close();
   }
 
   return new Promise((resolve, reject) => {
-    log.info(`Waiting for ${Channel.WIDGET_GET} from widgetWindow`, {
-      widgetWindow: widgetWindow?.id || 'unknown',
+    log.info(`🔄 Setting up widget initialization promise`, {
+      windowId: widgetWindow?.id || 'unknown',
       widgetId,
     });
+
+    if (!widgetWindow?.webContents) {
+      const error = new Error('Widget window or webContents is null');
+      log.error(`❌ Widget initialization failed`, {
+        error: error.message,
+        windowId: widgetWindow?.id,
+      });
+      reject(error);
+      return;
+    }
+
     widgetWindow.webContents.ipc.once(Channel.WIDGET_GET, () => {
-      log.info(`Received ${Channel.WIDGET_GET} from widgetWindow`);
+      log.info(`📨 Received WIDGET_GET event`, {
+        windowId: widgetWindow.id,
+        widgetId,
+      });
+
       if (widgetWindow) {
         const widgetOptions = {
           ...options,
           widgetId,
         };
-        log.info(`Sending ${Channel.WIDGET_INIT} from widgetWindow`, {
-          widgetOptions,
+        log.info(`📤 Sending WIDGET_INIT`, {
+          windowId: widgetWindow.id,
+          widgetOptions: JSON.stringify(widgetOptions),
         });
         widgetWindow.webContents.send(Channel.WIDGET_INIT, widgetOptions);
 
-        // Set the css variables from kitState.theme
         const theme = kitState.theme;
-        log.info('Current theme', {
-          channel: Channel.WIDGET_THEME,
-          theme,
+        log.info(`🎨 Sending theme`, {
+          windowId: widgetWindow.id,
+          theme: JSON.stringify(theme),
         });
         widgetWindow.webContents.send(Channel.WIDGET_THEME, theme);
 
         const noShow = typeof options?.show === 'boolean' && options?.show === false;
+        log.info(`👁️ Widget visibility`, {
+          windowId: widgetWindow.id,
+          noShow,
+          showOption: options?.show,
+        });
+
         if (!noShow) {
           widgetWindow?.show();
+          log.info(`✨ Widget shown`, {
+            windowId: widgetWindow.id,
+            bounds: widgetWindow.getBounds(),
+          });
         }
+
         if (options?.showDevTools) {
+          log.info(`🛠️ Opening DevTools`, {
+            windowId: widgetWindow.id,
+          });
           widgetWindow?.webContents.openDevTools();
         }
+
         resolve(widgetWindow);
       } else {
-        log.error(`Widget ${widgetId} failed to load`);
+        const error = new Error(`Widget ${widgetId} failed to load`);
+        log.error(`❌ Widget initialization failed`, {
+          error: error.message,
+          widgetId,
+        });
+        reject(error);
       }
     });
 
     widgetWindow.webContents.on('context-menu', (event: any) => {
-      log.info('Context menu');
+      log.info(`📋 Context menu requested`, {
+        windowId: widgetWindow?.id,
+      });
       event?.preventDefault();
 
       if (!widgetWindow) {
-        log.error('🛑 No BrowserWindow found');
+        log.error(`❌ No BrowserWindow found for context menu`);
         return;
       }
 
@@ -426,7 +508,9 @@ export const showWidget = async (
         {
           label: 'Show Dev Tools',
           click: () => {
-            log.info(`Show dev tools: ${widgetWindow.id}`);
+            log.info(`🛠️ Opening DevTools from context menu`, {
+              windowId: widgetWindow.id,
+            });
             widgetWindow.webContents.openDevTools();
           },
         },
@@ -434,7 +518,10 @@ export const showWidget = async (
           label: 'Enable Click-Through',
           checked: options.ignoreMouse,
           click: () => {
-            log.info(`Enable click-through on ${widgetWindow.id}`);
+            log.info(`🖱️ Toggling click-through`, {
+              windowId: widgetWindow.id,
+              newState: !options.ignoreMouse,
+            });
             options.ignoreMouse = !options.ignoreMouse;
             widgetWindow.setIgnoreMouseEvents(options.ignoreMouse);
           },
@@ -443,11 +530,12 @@ export const showWidget = async (
           label: `Disable Click-Though with ${kitState.isMac ? 'cmd' : 'ctrl'}+L`,
           enabled: false,
         },
-
         {
           label: 'Close',
           click: () => {
-            log.info(`Close widget: ${widgetWindow.id}`);
+            log.info(`🚫 Closing widget from context menu`, {
+              windowId: widgetWindow.id,
+            });
             widgetWindow?.close();
             widgetWindow.destroy();
           },
@@ -457,20 +545,41 @@ export const showWidget = async (
       menu.popup(widgetWindow as PopupOptions);
     });
 
-    // log.info(`Load ${filePath} in ${widgetWindow.id}`);
-
-    log.info({
-      html,
+    log.info(`🌐 Loading content`, {
+      windowId: widgetWindow.id,
+      isUrl: isUrl(html),
+      html: html?.substring(0, 100) + (html?.length > 100 ? '...' : ''),
     });
 
-    if (isUrl(html)) {
-      loadWidgetUrl(widgetWindow, html);
-    } else if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
-      log.info(`Loading URL: ${process.env.ELECTRON_RENDERER_URL}/widget.html`);
-      widgetWindow.loadURL(`${process.env.ELECTRON_RENDERER_URL}/widget.html`);
-    } else {
-      log.info(`Loading file: ${fileURLToPath(new URL('../renderer/widget.html', import.meta.url))}`);
-      widgetWindow.loadFile(fileURLToPath(new URL('../renderer/widget.html', import.meta.url)));
+    try {
+      if (isUrl(html)) {
+        log.info(`🔗 Loading URL content`, {
+          windowId: widgetWindow.id,
+          url: html,
+        });
+        loadWidgetUrl(widgetWindow, html);
+      } else if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
+        const url = `${process.env.ELECTRON_RENDERER_URL}/widget.html`;
+        log.info(`🔗 Loading development URL`, {
+          windowId: widgetWindow.id,
+          url,
+        });
+        widgetWindow.loadURL(url);
+      } else {
+        const filePath = fileURLToPath(new URL('../renderer/widget.html', import.meta.url));
+        log.info(`📄 Loading widget HTML file`, {
+          windowId: widgetWindow.id,
+          filePath,
+        });
+        widgetWindow.loadFile(filePath);
+      }
+    } catch (error) {
+      log.error(`❌ Failed to load widget content`, {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+        windowId: widgetWindow.id,
+      });
+      reject(error);
     }
   });
 };

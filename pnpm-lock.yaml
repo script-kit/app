@@ -15,8 +15,8 @@ importers:
         specifier: ^0.1.38
         version: 0.1.38
       '@johnlindquist/kit':
-        specifier: ^3.6.4
-        version: 3.6.4
+        specifier: ^3.7.2
+        version: 3.7.2
       '@pnpm/exec':
         specifier: ^2.0.0
         version: 2.0.0
@@ -329,8 +329,8 @@ importers:
         specifier: ^3.2.3
         version: 3.2.3
       electron:
-        specifier: 34.0.0-beta.10
-        version: 34.0.0-beta.10
+        specifier: 34.0.0-beta.11
+        version: 34.0.0-beta.11
       electron-builder:
         specifier: 26.0.0-alpha.7
         version: 26.0.0-alpha.7(electron-builder-squirrel-windows@25.1.8)
@@ -1262,8 +1262,8 @@ packages:
     resolution: {integrity: sha512-VCZf/s7Tbp/8X516zhlbrUuVWx/triWCojXYz07YlxZaqAoFnR7+nhsInT9LTpkLqz5EgdDya4oRp8axZNyS5Q==}
     hasBin: true
 
-  '@johnlindquist/kit@3.6.4':
-    resolution: {integrity: sha512-09Z+oqXILuIKRl9E7MH4AdRT32OevoLJ2M2Lcfg0Pbc3DslQl0Q9XyoOkqbeHm2UqLf4lMqZI/hcLyaitnsBRQ==}
+  '@johnlindquist/kit@3.7.2':
+    resolution: {integrity: sha512-ENaejyatrT2ojBCUAhKBoRu4HOfRbUHK29MOSw2khB65/hOJJJ+rJcYFdg6nNeht88MX4/vjtVNUfDtmzxcA8g==}
     engines: {node: '>=14.8.0'}
     hasBin: true
 
@@ -3385,8 +3385,8 @@ packages:
       '@swc/core':
         optional: true
 
-  electron@34.0.0-beta.10:
-    resolution: {integrity: sha512-zr9x7nQkWCQ+VOjYJqie9SpGGfrxryAaq2Vm+CTVNOVkzpmcRQGp6NVQrHT1HuzBw8dVO87hb4qxUiCNH/Vydg==}
+  electron@34.0.0-beta.11:
+    resolution: {integrity: sha512-WhKKjlcLwS7sPeJXynqWL8RYqLi1IpLmVO2+Qx2GyeR+VTINkxN6XLBDMzxUtAK2qOtoZmzsRlYhXFhjphX0CQ==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
@@ -3766,10 +3766,6 @@ packages:
   execa@5.1.1:
     resolution: {integrity: sha512-8uSpZZocAZRBAPIEINJj3Lo9HyGitllczc27Eh5YYojjMFMn8yHMDMaUHE2Jqfq05D/wucwI4JGURyXt1vchyg==}
     engines: {node: '>=10'}
-
-  execa@9.5.1:
-    resolution: {integrity: sha512-QY5PPtSonnGwhhHDNI7+3RvY285c7iuJFFB+lU+oEzMY/gEGJ808owqJsrr8Otd1E/x07po1LkUBmdAc5duPAg==}
-    engines: {node: ^18.19.0 || >=20.5.0}
 
   execa@9.5.2:
     resolution: {integrity: sha512-EHlpxMCpHWSAh1dgS6bVeoLAXGnJNdR93aabr4QCGbzOM73o5XmRfM/e5FUqsw3aagP8S8XEWUWFAxnRBnAF0Q==}
@@ -4283,8 +4279,8 @@ packages:
     resolution: {integrity: sha512-DoufbNNOFzwRPy8uecq+j+VCPQ+JyDelHTmSgygrA5TsR8Cbw4Qcir5sGtWiusB4BdT89nmlaVDhSJOqC/33vw==}
     hasBin: true
 
-  highlight.js@11.10.0:
-    resolution: {integrity: sha512-SYVnVFswQER+zu1laSya563s+F8VDGt7o35d4utbamowvUNLLMovFqwCLSocpZTz3MgaSRA1IbqRWZv97dtErQ==}
+  highlight.js@11.11.0:
+    resolution: {integrity: sha512-6ErL7JlGu2CNFHyRQEuDogOyGPNiqcuWdt4iSSFUPyferNTGlNTPFqeV36Y/XwA4V/TJ8l0sxp6FTnxud/mf8g==}
     engines: {node: '>=12.0.0'}
 
   hmac-drbg@1.0.1:
@@ -5030,8 +5026,8 @@ packages:
   just-extend@6.2.0:
     resolution: {integrity: sha512-cYofQu2Xpom82S6qD778jBDpwvvy39s1l/hrYij2u9AMdQcGRpaBu6kY4mVhuno5kJVi1DAz4aiphA2WI1/OAw==}
 
-  keyv-file@5.0.3:
-    resolution: {integrity: sha512-VoX/Y+sMGM9O/d0PFNfuqQDt1cJaBDKgHDuauQeLfhd3S8LKZgqSsJRDoYBbMW8qvuv/1/TJhfAq4k/AXpWxYw==}
+  keyv-file@5.0.4:
+    resolution: {integrity: sha512-cZ2fBnZlfniRWzdWsPLEloYH/DdoNhtzCXnm8VICZR+4+Pxb2Bq1DJrQwVODXB73B7fORjJ8KWSLqVfwrfUOZA==}
 
   keyv@3.0.0:
     resolution: {integrity: sha512-eguHnq22OE3uVoSYG0LVWNP+4ppamWr9+zWBe1bsNcovIMy6huUJFPgy4mGwCd/rnl3vOLGW1MTlu4c57CT1xA==}
@@ -5039,8 +5035,8 @@ packages:
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
-  keyv@5.2.1:
-    resolution: {integrity: sha512-tpIgCaY02VCW2Pz0zAn4guyct+IeH6Mb5wZdOvpe4oqXeQOJO0C3Wo8fTnf7P3ZD83Vr9kghbkNmzG3lTOhy/A==}
+  keyv@5.2.2:
+    resolution: {integrity: sha512-CRPP4Sq5ofbUE8s4FOirFmDgHeKZFRrH/8+WOUNvLJiMIplRMfnMjxmbaDb+zVd7ex0gGAWqMhZHfcL2u6PrNQ==}
 
   klaw-sync@6.0.0:
     resolution: {integrity: sha512-nIeuVSzdCCs6TDPTqI8w1Yre34sSq7AkZ4B3sfOBbI2CgVSB4Du4aLQijFU2+lhAFCwt9+42Hel6lQNIv6AntQ==}
@@ -8455,7 +8451,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@johnlindquist/kit@3.6.4':
+  '@johnlindquist/kit@3.7.2':
     dependencies:
       '@johnlindquist/open': 10.1.1
       '@octokit/auth-oauth-device': 7.1.1
@@ -8485,16 +8481,16 @@ snapshots:
       download: 8.0.0
       enquirer: 2.4.1
       esbuild: 0.24.0
-      execa: 9.5.1
+      execa: 9.5.2
       filesize: 10.1.6
       fs-extra: 11.2.0
       globby: 14.0.2
       handlebars: 4.7.8
-      highlight.js: 11.10.0
+      highlight.js: 11.11.0
       isomorphic-git: 1.27.2
       jsonfile: 6.1.0
-      keyv: 5.2.1
-      keyv-file: 5.0.3
+      keyv: 5.2.2
+      keyv-file: 5.0.4
       lowdb: 7.0.1
       marked: 4.3.0
       minimist: 1.2.8
@@ -11135,7 +11131,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@34.0.0-beta.10:
+  electron@34.0.0-beta.11:
     dependencies:
       '@electron/get': 2.0.3
       '@types/node': 20.16.11
@@ -11682,21 +11678,6 @@ snapshots:
       onetime: 5.1.2
       signal-exit: 3.0.7
       strip-final-newline: 2.0.0
-
-  execa@9.5.1:
-    dependencies:
-      '@sindresorhus/merge-streams': 4.0.0
-      cross-spawn: 7.0.6
-      figures: 6.1.0
-      get-stream: 9.0.1
-      human-signals: 8.0.0
-      is-plain-obj: 4.1.0
-      is-stream: 4.0.1
-      npm-run-path: 6.0.0
-      pretty-ms: 9.2.0
-      signal-exit: 4.1.0
-      strip-final-newline: 4.0.0
-      yoctocolors: 2.1.1
 
   execa@9.5.2:
     dependencies:
@@ -12321,7 +12302,7 @@ snapshots:
 
   he@0.5.0: {}
 
-  highlight.js@11.10.0: {}
+  highlight.js@11.11.0: {}
 
   hmac-drbg@1.0.1:
     dependencies:
@@ -13236,7 +13217,7 @@ snapshots:
 
   just-extend@6.2.0: {}
 
-  keyv-file@5.0.3:
+  keyv-file@5.0.4:
     dependencies:
       '@keyv/serialize': 1.0.1
       fs-extra: 4.0.3
@@ -13250,7 +13231,7 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
-  keyv@5.2.1:
+  keyv@5.2.2:
     dependencies:
       '@keyv/serialize': 1.0.1
 
