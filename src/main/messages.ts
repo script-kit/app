@@ -1114,9 +1114,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
     SET_SHORTCUTS: onChildChannel(({ child, prompt }, { channel, value, promptId }, samePrompt) => {
       if (samePrompt) {
-        log.info(`${prompt.pid}: 🔑 SET_SHORTCUTS`, {
-          value,
-        });
+        // log.info(`${prompt.pid}: 🔑 SET_SHORTCUTS`, {
+        //   value,
+        // });
         sendToPrompt(channel, value);
       } else {
         log.warn(`${prompt.pid}: ⛔️ SET_SHORTCUTS: Prompt ID mismatch`, {

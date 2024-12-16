@@ -70,7 +70,11 @@ export const shortcutsAtom = atom(
     return g(_shortcuts);
   },
   (g, s, a: Shortcut[]) => {
-    // info.info(`🔥 Setting shortcuts to ${a.length}`, a);
+    const prevShortcuts = g(_shortcuts);
+    if (isEqual(prevShortcuts, a)) {
+      return;
+    }
+    log.info(`🔥 Setting shortcuts to ${a.length}`, a);
     s(_shortcuts, a);
   },
 );
