@@ -117,3 +117,36 @@ export function getPtyOptions(config: Partial<TermConfig>) {
 
   return options;
 }
+
+export function getShellArgs(): string[] {
+  if (process.platform === 'win32') {
+    return ['/c'];
+  }
+
+  if (process.platform === 'darwin') {
+    return ['-il', '-c'];
+  }
+
+  return ['-c'];
+}
+
+export function getCommandSeparator(shell: string): string {
+  const shellName = path.basename(shell).toLowerCase();
+
+  switch (shellName) {
+    case 'powershell.exe':
+    case 'pwsh.exe':
+      return '&';
+    case 'fish':
+      return '; and';
+    case 'csh':
+    case 'tcsh':
+      return ';';
+    default: // bash, zsh, sh, and most others
+      return '&&';
+  }
+}
+
+export function getReturnCharacter(): string {
+  return process.platform === 'win32' ? '\r\n' : '\n';
+}

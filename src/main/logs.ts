@@ -26,12 +26,16 @@ log.info('Skipping Setup?', {
 export interface Logger {
   info: (...args: string[]) => void;
   warn: (...args: string[]) => void;
+  error: (...args: string[]) => void;
+  verbose: (...args: string[]) => void;
+  debug: (...args: string[]) => void;
+  silly: (...args: string[]) => void;
   clear: () => void;
 }
 
 export const logMap = new Map<string, Logger>();
 
-export const getLog = (scriptPath: string): Logger => {
+export const getLog = (scriptPath: string): Logger & { logPath?: string } => {
   try {
     if (logMap.get(scriptPath)) {
       return logMap.get(scriptPath) as Logger;
@@ -50,6 +54,7 @@ export const getLog = (scriptPath: string): Logger => {
     const _verbose = scriptLog.verbose.bind(scriptLog);
     const _debug = scriptLog.debug.bind(scriptLog);
     const _silly = scriptLog.silly.bind(scriptLog);
+    const _error = scriptLog.error.bind(scriptLog);
 
     const wrap =
       (fn: (...args: string[]) => void) =>
@@ -66,9 +71,11 @@ export const getLog = (scriptPath: string): Logger => {
       verbose: wrap(_verbose),
       debug: wrap(_debug),
       silly: wrap(_silly),
+      error: wrap(_error),
       clear: () => {
         fs.writeFileSync(logPath, '');
       },
+      logPath: logPath,
     };
     logMap.set(scriptPath, logger);
 
@@ -81,7 +88,19 @@ export const getLog = (scriptPath: string): Logger => {
       warn: (...args: any[]) => {
         console.warn(...args.map(stripAnsi));
       },
+      error: (...args: any[]) => {
+        console.error(...args.map(stripAnsi));
+      },
       clear: () => {},
+      verbose: (...args: any[]) => {
+        console.log(...args.map(stripAnsi));
+      },
+      debug: (...args: any[]) => {
+        console.log(...args.map(stripAnsi));
+      },
+      silly: (...args: any[]) => {
+        console.log(...args.map(stripAnsi));
+      },
     };
   }
 };

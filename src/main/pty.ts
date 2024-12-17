@@ -393,3 +393,5 @@ export const destroyPtyPool = async () => {
   log.info('🐲 >_ Destroying pty pool');
   await ptyPool.destroyPool();
 };
+
+export { ptyPool }; // Export the ptyPool instance

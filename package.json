@@ -40,12 +40,7 @@
   "bugs": {
     "url": "https://github.com/script-kit/kitapp/issues"
   },
-  "keywords": [
-    "electron",
-    "react",
-    "typescript",
-    "ts"
-  ],
+  "keywords": ["electron", "react", "typescript", "ts"],
   "homepage": "https://github.com/script-kit/kitapp#readme",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -201,12 +196,8 @@
   },
   "browserslist": [],
   "renovate": {
-    "extends": [
-      "bliss"
-    ],
-    "baseBranches": [
-      "next"
-    ]
+    "extends": ["bliss"],
+    "baseBranches": ["next"]
   },
   "jest": {
     "preset": "ts-jest",

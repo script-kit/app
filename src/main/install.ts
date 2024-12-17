@@ -42,7 +42,6 @@ import { INSTALL_ERROR, show } from './show';
 import { getThemes, kitCache, kitState, preloadChoicesMap, workers } from './state';
 import { ensureDir, writeFile, readJson, writeJson, pathExists, readdir } from './cjs-exports';
 
-
 import electronLog from 'electron-log';
 import { createLogger } from '../shared/log-utils';
 import { createForkOptions } from './fork.options';
@@ -53,7 +52,7 @@ import { getPnpmPath } from './setup/pnpm';
 import { shortcutMap } from './shortcuts';
 import { showInfo } from './info';
 import { compareCollections, logDifferences } from './compare';
-
+import { getAllShellEnvs } from './env-utils';
 const log = createLogger('install.ts');
 
 let isOhNo = false;
@@ -541,11 +540,10 @@ export const cleanKit = async () => {
     log.info(`Continuing with new Kit SDK at ${kitPath()}`);
   } catch (error) {
     log.error(`Error cleaning the Kit SDK at: ${kitPath()}`, error);
-    log.error(`Please close any open code editors which might be referencing ~/.kit or ~/.kenv and try again.`)
+    log.error(`Please close any open code editors which might be referencing ~/.kit or ~/.kenv and try again.`);
     throw new Error(`Error cleaning ${kitPath()}`);
   }
 };
-
 
 export const installKitDeps = async () => {
   const pnpmPath = await getPnpmPath();
@@ -577,17 +575,17 @@ export const extractKitTar = async (file: string) => {
 };
 
 export const downloadKit = async () => {
-  let appVersion = ''
+  let appVersion = '';
 
-  if(process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === 'development') {
     appVersion = await getLatestAppTag();
     log.info(`Using latest app tag: ${appVersion}`);
-  }else{
+  } else {
     appVersion = getVersion();
     log.info(`Using app version: ${appVersion}`);
   }
-  if(appVersion?.startsWith('v')){
-    appVersion = appVersion.slice(1)
+  if (appVersion?.startsWith('v')) {
+    appVersion = appVersion.slice(1);
   }
 
   const extension = 'tar.gz';
@@ -610,7 +608,6 @@ export const downloadKit = async () => {
   }
 
   log.info(`Fallback SDK URL: ${fallbackUrl}`);
-
 
   let url: string;
   try {
@@ -1101,10 +1098,7 @@ interface CacheMainScripts {
 }
 
 // Helper function to resolve all pending promises at once
-function resolveAllPending(
-  resolvers: Array<{ resolve: (value: boolean) => void }>,
-  uuid: string
-) {
+function resolveAllPending(resolvers: Array<{ resolve: (value: boolean) => void }>, uuid: string) {
   for (const { resolve } of resolvers) {
     log.info(`Resolving ${uuid}`);
     resolve(true);
@@ -1112,11 +1106,7 @@ function resolveAllPending(
 }
 
 // Helper function to reject all pending promises at once
-function rejectAllPending(
-  resolvers: Array<{ reject: (reason?: any) => void }>,
-  uuid: string,
-  error: any
-) {
+function rejectAllPending(resolvers: Array<{ reject: (reason?: any) => void }>, uuid: string, error: any) {
   for (const { reject } of resolvers) {
     log.info(`Rejecting ${uuid}`);
     reject(error);
@@ -1130,7 +1120,7 @@ function ensureWorker(
   handleReject: (error: any) => void,
   messageHandler: (message: any) => void,
   errorHandler: (error: any) => void,
-  messageErrorHandler: (error: any) => void
+  messageErrorHandler: (error: any) => void,
 ) {
   if (!workers.cacheScripts) {
     log.info(`Creating worker: ${CACHED_GROUPED_SCRIPTS_WORKER}...`);
@@ -1150,11 +1140,7 @@ function ensureWorker(
 }
 
 // Message handler: handles different message channels from worker
-function createMessageHandler(
-  uuid: string,
-  handleResolve: () => void,
-  handleReject: (error: any) => void
-) {
+function createMessageHandler(uuid: string, handleResolve: () => void, handleReject: (error: any) => void) {
   return (message: any) => {
     try {
       scriptLog.log('Worker message:', message.channel);
@@ -1169,11 +1155,7 @@ function createMessageHandler(
         // If there's an error in the response
         if (message?.error) {
           scriptLog.error('Error caching main scripts', message.error);
-          showInfo(
-            message.error?.message || 'Check logs...',
-            'Error...',
-            message.error?.stack || 'Check logs'
-          );
+          showInfo(message.error?.message || 'Check logs...', 'Error...', message.error?.stack || 'Check logs');
           handleReject(message.error);
         } else {
           // Successfully cached scripts
@@ -1189,11 +1171,7 @@ function createMessageHandler(
 }
 
 // Generic error handler for worker-level errors
-function createErrorHandler(
-  uuid: string,
-  stamp: Stamp | null,
-  handleReject: (error: any) => void
-) {
+function createErrorHandler(uuid: string, stamp: Stamp | null, handleReject: (error: any) => void) {
   return (error: any) => {
     try {
       log.info('Received error for stamp', stamp);
@@ -1207,11 +1185,7 @@ function createErrorHandler(
 }
 
 // Generic messageerror handler for worker-level messaging errors
-function createMessageErrorHandler(
-  uuid: string,
-  stamp: Stamp | null,
-  handleReject: (error: any) => void
-) {
+function createMessageErrorHandler(uuid: string, stamp: Stamp | null, handleReject: (error: any) => void) {
   return (error: any) => {
     try {
       log.info('Received message error for stamp', stamp);
@@ -1235,7 +1209,7 @@ export const cacheMainScripts: CacheMainScripts = async (
   } = {
     channel: Channel.CACHE_MAIN_SCRIPTS,
     value: null,
-  }
+  },
 ): Promise<boolean> => {
   log.info(`🎁 cacheMainScripts: ${reason}`);
   return new Promise<boolean>((resolve, reject) => {
@@ -1307,7 +1281,7 @@ export const cacheMainScripts: CacheMainScripts = async (
           250,
           {
             leading: true,
-          }
+          },
         );
       }
 
@@ -1322,7 +1296,6 @@ export const cacheMainScripts: CacheMainScripts = async (
   });
 };
 
-
 // pnpm might trigger a node download, so we need to wait until the final line prints out the version
 export const spawnP = async (
   command: string,
@@ -1332,12 +1305,14 @@ export const spawnP = async (
   const KIT = kitPath();
   const KENV = kenvPath();
 
+  const envResult = await getAllShellEnvs();
   const options: SpawnOptions = {
     cwd: kitPath(), // Set the current working directory based on the provided parameter
     env: {
       KIT,
       KENV,
       PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
+      ...envResult,
     },
     stdio: 'pipe',
     shell: true,

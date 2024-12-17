@@ -2221,6 +2221,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       sendToPrompt(channel, value);
     }),
     SHEBANG: onChildChannel(({ child }, { channel, value }) => {
+      log.info('SHEBANG', value);
       spawnShebang(value);
     }),
     ERROR: onChildChannelOverride(({ child }, { channel, value }) => {

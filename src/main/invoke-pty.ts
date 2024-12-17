@@ -1,70 +1,9 @@
-import * as pty from 'node-pty';
 import * as os from 'node:os';
-import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { kitPnpmPath } from '@johnlindquist/kit/core/utils';
-
-function getDefaultShell(): string {
-  console.log(`Operating System: ${process.platform}`);
-
-  if (process.platform === 'win32') {
-    const shell = process.env.COMSPEC || 'cmd.exe';
-    console.log(`Windows shell: ${shell}`);
-    return shell;
-  }
-
-  console.log('SHELL environment variable:', process.env.SHELL);
-  const shellFromEnv = process.env.SHELL;
-  if (shellFromEnv && fs.existsSync(shellFromEnv)) {
-    console.log(`Using shell from environment: ${shellFromEnv}`);
-    return shellFromEnv;
-  }
-
-  // Fallback options
-  const commonShells = ['/bin/zsh', '/bin/bash', '/bin/sh'];
-  for (const shell of commonShells) {
-    if (fs.existsSync(shell)) {
-      console.log(`Found fallback shell: ${shell}`);
-      return shell;
-    }
-  }
-
-  console.error('No suitable shell found');
-  throw new Error('Unable to determine default shell');
-}
-
-function getCommandSeparator(shell: string): string {
-  const shellName = path.basename(shell).toLowerCase();
-
-  switch (shellName) {
-    case 'powershell.exe':
-    case 'pwsh.exe':
-      return '&';
-    case 'fish':
-      return '; and';
-    case 'csh':
-    case 'tcsh':
-      return ';';
-    default: // bash, zsh, sh, and most others
-      return '&&';
-  }
-}
-
-export function getShellArgs(): string[] {
-  if (process.platform === 'win32') {
-    return ['/c'];
-  }
-
-  if (process.platform === 'darwin') {
-    return ['-l', '-c'];
-  }
-
-  return ['-c'];
-}
-
-export function getReturnCharacter(): string {
-  return process.platform === 'win32' ? '\r\n' : '\n';
-}
+import { ptyPool } from './pty';
+import { getDefaultShell, getCommandSeparator, getReturnCharacter } from './pty-utils';
+import { getShellArgs } from './pty-utils';
 
 export async function invoke(command: string, cwd = os.homedir()): Promise<string> {
   console.log(`Invoking command: ${command}`);
@@ -72,11 +11,9 @@ export async function invoke(command: string, cwd = os.homedir()): Promise<strin
   return new Promise((resolve, reject) => {
     const shell = getDefaultShell();
     const separator = getCommandSeparator(shell);
-
-    // Use a login shell to ensure all initialization scripts are run
-    const shellArgs = getShellArgs();
     const returnCharacter = getReturnCharacter();
     const fullCommand = `${command} ${separator} exit${returnCharacter}`;
+    const shellArgs = getShellArgs();
 
     console.log(`Shell: ${shell}`);
     console.log(`Shell args: ${shellArgs.join(' ')}`);
@@ -95,14 +32,19 @@ export async function invoke(command: string, cwd = os.homedir()): Promise<strin
       env.PATH = `${env.PNPM_HOME}${path.delimiter}${env.PATH}`;
     }
 
-    console.log('Spawning PTY process...');
-
-    const ptyProcess = pty.spawn(shell, [...shellArgs, fullCommand], {
+    const ptyOptions = {
       name: 'xterm-color',
       cols: 80,
       rows: 30,
       cwd,
       env,
+    };
+
+    console.log('Getting PTY from pool...');
+
+    const ptyProcess = ptyPool.getIdlePty(shell, [...shellArgs, fullCommand], ptyOptions, {
+      command: fullCommand,
+      pid: Date.now(),
     });
 
     console.log(`PTY process spawned with PID: ${ptyProcess.pid}`);
@@ -113,7 +55,6 @@ export async function invoke(command: string, cwd = os.homedir()): Promise<strin
       output += data.toString();
       console.log({ output });
     });
-
     // Set a timeout in case the command doesn't complete
     const exitTimeout = setTimeout(() => {
       console.log('Command timed out, killing PTY process...');
@@ -127,8 +68,30 @@ export async function invoke(command: string, cwd = os.homedir()): Promise<strin
       // Trim any leading/trailing whitespace
       const cleanedOutput = output.trim();
       console.log('Cleaned output:', cleanedOutput);
-      resolve(cleanedOutput);
       ptyProcess.kill();
+
+      if (exitCode !== 0) {
+        console.log('Command failed with exit code', exitCode);
+        console.log('Cleaned output:', cleanedOutput);
+        reject(
+          new Error(
+            `
+Scriptlet Failed with exit code ${exitCode}
+
+Attempted to run:
+~~~
+${fullCommand}
+~~~
+
+Error output:
+~~~
+${cleanedOutput}
+~~~
+          `.trim(),
+          ),
+        );
+      }
+      resolve(cleanedOutput);
     });
   });
 }

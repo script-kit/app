@@ -332,12 +332,10 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
     let hasChoice = false;
     for (const choice of prompt.kitSearch.choices) {
       if (choice?.miss) {
-
         filteredResults.push(createScoredChoice(choice));
         continue;
       }
       if (choice?.pass) {
-
         filteredResults.push(createScoredChoice(choice));
         continue;
       }
@@ -367,7 +365,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
       }
     }
 
-    log.info(`a`)
+    log.info(`a`);
     const scoredChoices = filterAndSortOtherChoices(filteredResults, transformedInput, lowerCaseInput, hasChoice);
 
     setScoredChoices(prompt, scoredChoices, 'resultLength === 0');
@@ -380,27 +378,24 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
       let hasChoice = false;
       for (const choice of result) {
         if (choice?.item?.miss) {
-
           filteredResults.push(choice);
           continue;
         }
         if (choice?.item?.pass) {
-
           filteredResults.push(choice);
           continue;
         }
         if (choice?.item?.info) {
-
           filteredResults.push(choice);
           continue;
         }
 
         hasChoice = true;
         filteredResults.push(choice);
-        log.info(`hasChoice ${choice?.item?.name}`)
+        log.info(`hasChoice ${choice?.item?.name}`);
       }
 
-      log.info(`b`)
+      log.info(`b`);
       const scoredChoices = filterAndSortOtherChoices(filteredResults, transformedInput, lowerCaseInput, hasChoice);
 
       setScoredChoices(prompt, scoredChoices, 'resultLength > 0');
@@ -408,7 +403,12 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
   }
 };
 
-function filterAndSortOtherChoices(result: ScoredChoice[], transformedInput: string, lowerCaseInput: string, hasChoice: boolean) {
+function filterAndSortOtherChoices(
+  result: ScoredChoice[],
+  transformedInput: string,
+  lowerCaseInput: string,
+  hasChoice: boolean,
+) {
   const infos: ScoredChoice[] = [];
   const filterConditions = result.filter((r) => {
     if (r.item.miss) {

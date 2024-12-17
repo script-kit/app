@@ -14,7 +14,7 @@ import {
 
 import useResizeObserver from '@react-hook/resize-observer';
 import { debounce } from 'lodash-es';
-import { useFocus, useKeyIndex, useTab } from '../hooks';
+import { useFocus, useKeyIndex, useTab } from '../hooks/index.js';
 import {
   _lastKeyDownWasModifierAtom,
   _modifiers,

@@ -29,3 +29,37 @@ export const loadKenvEnvironment = (): kenvEnv => {
 
   return envData;
 };
+
+import { shellEnv } from 'shell-env';
+
+interface ShellEnvType {
+  [key: string]: string | undefined;
+}
+
+export async function getAllShellEnvs(): Promise<ShellEnvType> {
+  const allEnvs: ShellEnvType = {};
+  const shells = ['/bin/bash', '/bin/zsh', '/usr/bin/fish']; // Unix shells.
+  // Add Windows if we're on that OS and looking for Git Bash.
+  if (process.platform === 'win32') {
+    const gitBashPath = path.join(process.env.ProgramFiles || '', 'Git', 'bin', 'bash.exe');
+    shells.push(gitBashPath);
+  }
+
+  for (const shell of shells) {
+    try {
+      const env = await shellEnv(shell);
+      Object.assign(allEnvs, env);
+      log.info(`Successfully loaded environment variables from ${shell}`);
+    } catch (error) {
+      if (error instanceof Error) {
+        log.silly(`Error loading environment variables from ${shell}: ${error.message}`);
+      } else {
+        log.silly(`An unknown error occurred while loading environment variables from ${shell}`);
+      }
+    }
+  }
+
+  // Merge Node process.env
+  Object.assign(allEnvs, process.env);
+  return allEnvs;
+}

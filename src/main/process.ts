@@ -43,6 +43,8 @@ import { TrackEvent, trackEvent } from './track';
 
 import { createLogger } from '../shared/log-utils';
 import { readFile } from 'node:fs/promises';
+import { getAllShellEnvs } from './env-utils';
+import { invoke } from './invoke-pty';
 
 const log = createLogger('process.ts');
 
@@ -1136,46 +1138,9 @@ export const spawnShebang = async ({
   cwd: string;
   filePath: string;
 }) => {
-  const child = spawn(command.trim(), args, {
-    shell,
-    cwd,
-    windowsHide: true,
-    env: createEnv(),
-  });
-  log.info(`🚀 Spawned process ${child.pid} for ${filePath}:`, {
-    shell,
-    command,
-    args,
-  });
-  processes.addExistingProcess(child, filePath);
+  const fullCommand = `${command.trim()} ${args.join(' ')}`;
 
-  child.unref();
-
-  if (child.stdout && child.stderr) {
-    const scriptLog = getLog(filePath);
-    child.stdout.removeAllListeners();
-    child.stderr.removeAllListeners();
-
-    const routeToScriptLog = (d: any) => {
-      if (child?.killed) {
-        return;
-      }
-      const result = d.toString();
-      scriptLog.info(`\n${stripAnsi(result)}`);
-    };
-
-    child.stdout?.on('data', routeToScriptLog);
-    child.stdout?.on('error', routeToScriptLog);
-
-    child.stderr?.on('data', routeToScriptLog);
-    child.stderr?.on('error', routeToScriptLog);
-
-    // Log out when the process exits
-    child.on('exit', (code) => {
-      scriptLog.info(`\nProcess exited with code ${code}`);
-      processes.removeByPid(child.pid);
-    });
-  }
+  await invoke(fullCommand, cwd);
 };
 
 emitter.on(KitEvent.RemoveMostRecent, processes.removeCurrentProcess.bind(processes));
