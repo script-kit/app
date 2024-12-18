@@ -654,6 +654,7 @@ export const useElectronNodeVersion = async (cwd: string, config: NpmConfig) => 
   // Attempt to read/update the package.json engines.node field from the cwd
   try {
     const packageJson = await readPackageJson(cwd);
+    packageJson.engines = packageJson.engines || {};
     packageJson.engines.node = process.versions.node;
     packageJson.packageManager = `pnpm@${pnpmVersion}`;
     await updatePackageJson(cwd, packageJson);
@@ -1024,23 +1025,11 @@ const checkKit = async () => {
   });
 
   if (!isKenvInstalled) {
-    log.info('Cloning examples...');
-    optionalSetupScript(kitPath('setup', 'clone-examples.js'));
-    invoke('git clone git://github.com/johnlindquist/kit-examples-ts.git examples', kenvPath('kenvs'))
-      .then((result) => {
-        log.info('👍 Examples Cloned', result);
-      })
-      .catch((error) => {
-        log.warn('👎 Examples Cloning Failed', error);
-      });
     log.info('Cloning sponsors...');
-    invoke('git clone git://github.com/johnlindquist/kit-sponsors.git sponsors', kenvPath('kenvs'))
-      .then((result) => {
-        log.info('👍 Sponsors Cloned', result);
-      })
-      .catch((error) => {
-        log.warn('👎 Sponsors Cloning Failed', error);
-      });
+    optionalSetupScript(kitPath('setup', 'clone-sponsors.js')).then(() => {
+      log.info('Cloning examples...');
+      optionalSetupScript(kitPath('setup', 'clone-examples.js'));
+    });
   }
 
   // await installLoaderTools();

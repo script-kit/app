@@ -25,7 +25,7 @@ export const optionalSetupScript = async (
         resolve('timeout');
         log.info(`⚠️ Setup script timed out: ${scriptPath}`);
       }
-    }, 5000);
+    }, 60000);
 
     if (child?.stdout) {
       child.stdout.on('data', (data) => {
@@ -57,10 +57,10 @@ export const optionalSetupScript = async (
         if (id) {
           clearTimeout(id);
         }
-        log.info(`✅ Setup script completed: ${scriptPath}`);
+        log.info(`✅ Optional setup script completed: ${scriptPath}`);
         resolve('done');
       } else {
-        log.info(`⚠️ Setup script exited with code ${code}: ${scriptPath}`);
+        log.info(`⚠️ Optional setup script exited with code ${code}: ${scriptPath}`);
         resolve('error');
       }
     });

@@ -715,10 +715,10 @@ export const requiredSpawnSetup = (command: string, args: string[], options: Spa
 
     child.on('exit', (code) => {
       if (code === 0) {
-        log.info(`✅ Setup script completed: ${args.join(' ')}`);
+        log.info(`✅ Required setup script completed: ${args.join(' ')}`);
         resolve(output);
       } else {
-        log.info(`⚠️ Setup script exited with code ${code}: ${args.join(' ')}`);
+        log.info(`⚠️ Required setup script exited with code ${code}: ${args.join(' ')}`);
         reject('error');
       }
     });
@@ -795,10 +795,10 @@ export const optionalSpawnSetup = (...args: string[]) => {
         if (id) {
           clearTimeout(id);
         }
-        log.info(`✅ Setup script completed: ${args.join(' ')}`);
+        log.info(`✅ Optional spawn setup script completed: ${args.join(' ')}`);
         resolve('done');
       } else {
-        log.info(`⚠️ Setup script exited with code ${code}: ${args.join(' ')}`);
+        log.info(`⚠️ Optional spawn setup script exited with code ${code}: ${args.join(' ')}`);
         resolve('error');
       }
     });

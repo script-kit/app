@@ -99,7 +99,7 @@ jobs:
           echo "Previous Release Channel: ${{ steps.semantic.outputs.last_release_version }}"
           echo "Semantic Version: ${{ steps.semantic.outputs.new_release_version }}"
 
-      - name: Create Release
+      - name: Create Release ${{ steps.semantic.outputs.new_release_version }}
         id: create_release
         uses: johnlindquist/kit-action@main
         with:
@@ -108,7 +108,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
-    name: publish(${{ matrix.platform }}-${{ matrix.arch }})
+    name: publish-${{ needs.semantic.outputs.semantic_version }}-(${{ matrix.platform }}-${{ matrix.arch }})
     needs: [tag, semantic]
     runs-on: ${{ matrix.os }}
     strategy:
