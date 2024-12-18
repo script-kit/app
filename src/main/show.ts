@@ -330,11 +330,11 @@ export const showWidget = async (
     center: options?.center,
     options: JSON.stringify(options),
   });
-  
+
   const position = options?.center
     ? getCenterOnCurrentScreen(options as BrowserWindowConstructorOptions)
     : getTopRightCurrentScreen(options as BrowserWindowConstructorOptions);
-  
+
   log.info(`📍 Calculated position`, { position });
 
   const bwOptions: BrowserWindowConstructorOptions = {
@@ -479,7 +479,9 @@ export const showWidget = async (
           log.info(`🛠️ Opening DevTools`, {
             windowId: widgetWindow.id,
           });
-          widgetWindow?.webContents.openDevTools();
+          widgetWindow?.webContents.openDevTools({
+            mode: 'detach',
+          });
         }
 
         resolve(widgetWindow);
@@ -511,7 +513,9 @@ export const showWidget = async (
             log.info(`🛠️ Opening DevTools from context menu`, {
               windowId: widgetWindow.id,
             });
-            widgetWindow.webContents.openDevTools();
+            widgetWindow.webContents.openDevTools({
+              mode: 'detach',
+            });
           },
         },
         {

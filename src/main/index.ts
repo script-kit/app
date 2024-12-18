@@ -725,7 +725,7 @@ const isNewVersion = async () => {
 
 const setupScript = (...args: string[]) => {
   if (process.env.MAIN_SKIP_SETUP) {
-    log.info('⏭️ Skipping setupScript', args);
+    log.info(`⏭️ 'process.env.MAIN_SKIP_SETUP' Skipping setupScript`, args);
     return;
   }
   return new Promise((resolve, reject) => {
@@ -1026,8 +1026,21 @@ const checkKit = async () => {
   if (!isKenvInstalled) {
     log.info('Cloning examples...');
     optionalSetupScript(kitPath('setup', 'clone-examples.js'));
+    invoke('git clone git://github.com/johnlindquist/kit-examples-ts.git examples', kenvPath('kenvs'))
+      .then((result) => {
+        log.info('👍 Examples Cloned', result);
+      })
+      .catch((error) => {
+        log.warn('👎 Examples Cloning Failed', error);
+      });
     log.info('Cloning sponsors...');
-    optionalSetupScript(kitPath('setup', 'clone-sponsors.js'));
+    invoke('git clone git://github.com/johnlindquist/kit-sponsors.git sponsors', kenvPath('kenvs'))
+      .then((result) => {
+        log.info('👍 Sponsors Cloned', result);
+      })
+      .catch((error) => {
+        log.warn('👎 Sponsors Cloning Failed', error);
+      });
   }
 
   // await installLoaderTools();

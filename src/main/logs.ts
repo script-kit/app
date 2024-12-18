@@ -19,10 +19,6 @@ log.info(`
 
 ���🟢 🟢  !!!SCRIPT KIT TIME!!! 🟢 🟢 🟢 `);
 
-log.info('Skipping Setup?', {
-  MAIN_SKIP_SETUP: process.env.MAIN_SKIP_SETUP,
-});
-
 export interface Logger {
   info: (...args: string[]) => void;
   warn: (...args: string[]) => void;

@@ -1,5 +1,6 @@
 import { PROMPT } from '@johnlindquist/kit/core/enum';
-import type { Script } from '@johnlindquist/kit/types/core';
+import type { Choice, Script } from '@johnlindquist/kit/types/core';
+import type { ScoredChoice } from '../../../shared/types';
 import log from 'electron-log';
 import parse from 'html-react-parser';
 import { useAtom, useAtomValue } from 'jotai';
@@ -50,7 +51,14 @@ const isValidUrl = (url) => {
   }
 };
 
-const ChoiceName = React.memo(({ scoredChoice, input, base, buttonNameFontSize, choice }) => {
+type ChoiceNameProps = {
+  scoredChoice: ScoredChoice;
+  input: string;
+  base: string;
+  buttonNameFontSize: string;
+  choice: Choice;
+};
+const ChoiceName = React.memo(({ scoredChoice, input, base, buttonNameFontSize, choice }: ChoiceNameProps) => {
   const memoizedChoiceName = useMemo(() => {
     if (!choice?.name) {
       return '';
@@ -65,6 +73,15 @@ const ChoiceName = React.memo(({ scoredChoice, input, base, buttonNameFontSize, 
   );
 });
 
+type ChoiceDescriptionProps = {
+  scoredChoice: ScoredChoice;
+  index: number;
+  buttonIndex: number;
+  buttonDescriptionFontSize: string;
+  choice: Choice;
+  modifierDescription: string;
+  shouldHighlightDescription: boolean;
+};
 const ChoiceDescription = React.memo(
   ({
     scoredChoice,
@@ -74,7 +91,7 @@ const ChoiceDescription = React.memo(
     choice,
     modifierDescription,
     shouldHighlightDescription,
-  }) => {
+  }: ChoiceDescriptionProps) => {
     return (
       <>
         {(choice?.focused || choice?.description || modifierDescription) && (
@@ -99,6 +116,23 @@ const ChoiceDescription = React.memo(
   },
 );
 
+type ChoiceButtonContentProps = {
+  choice: Choice;
+  index: number;
+  buttonIndex: number;
+  promptData: Script;
+  selectedChoices: Choice[];
+  scale: string;
+  scoredChoice: ScoredChoice;
+  imageFail: boolean;
+  input: string;
+  base: string;
+  buttonNameFontSize: string;
+  buttonDescriptionFontSize: string;
+  modifierDescription: string;
+  shouldHighlightDescription: boolean;
+  setImageFail: (imageFail: boolean) => void;
+};
 const ChoiceButtonContent = React.memo(
   ({
     choice,
@@ -116,9 +150,9 @@ const ChoiceButtonContent = React.memo(
     modifierDescription,
     shouldHighlightDescription,
     setImageFail,
-  }) => {
+  }: ChoiceButtonContentProps) => {
     return (
-      <div className="flex h-full w-full flex-row items-center justify-between">
+      <div className="flex h-full w-full flex-row items-center justify-between overflow-x-hidden">
         <div className="flex h-full flex-row items-center overflow-x-hidden">
           {/* Checkbox */}
           {promptData?.multiple && (
@@ -165,7 +199,7 @@ const ChoiceButtonContent = React.memo(
                         `}
             />
           )}
-          <div className="flex max-h-full max-w-full flex-col overflow-x-hidden">
+          <div className="flex max-h-full max-w-full flex-col overflow-x-hidden min-w-0">
             <ChoiceName
               scoredChoice={scoredChoice}
               input={input}
@@ -351,6 +385,7 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
             flex
             h-16
             w-full
+            max-w-full
             flex-shrink-0
             flex-row
             items-center

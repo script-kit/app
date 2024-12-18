@@ -75,6 +75,21 @@ contextMenu({
   showLookUpSelection: false,
   append: (defaultActions, params, browserWindow) => [
     {
+      label: 'Detach Dev Tools',
+      click: async () => {
+        if ((browserWindow as BrowserWindow)?.id) {
+          log.info(`Inspect prompt: ${browserWindow?.id}`, {
+            browserWindow,
+          });
+          prompts
+            .find((prompt) => prompt?.window?.id === browserWindow?.id)
+            ?.window?.webContents?.openDevTools({
+              mode: 'detach',
+            });
+        }
+      },
+    },
+    {
       label: 'Close',
       click: async () => {
         if ((browserWindow as BrowserWindow)?.id) {
@@ -1885,7 +1900,7 @@ export class KitPrompt {
         env: promptData.env || {},
       };
 
-      log.info(`termConfig`, termConfig);
+      // log.info(`termConfig`, termConfig);
       this.sendToPrompt(AppChannel.SET_TERM_CONFIG, termConfig);
       createPty(this);
     }

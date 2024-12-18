@@ -743,7 +743,7 @@ export const requiredSpawnSetup = (command: string, args: string[], options: Spa
 
 export const optionalSpawnSetup = (...args: string[]) => {
   if (process.env.MAIN_SKIP_SETUP) {
-    log.info(`⏭️ Skipping setup script: ${args.join(' ')}`);
+    log.info(`⏭️ 'process.env.MAIN_SKIP_SETUP' Skipping setup script: ${args.join(' ')}`);
     return Promise.resolve('done');
   }
   return new Promise((resolve, reject) => {

@@ -2170,7 +2170,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     }),
     OPEN_DEV_TOOLS: onChildChannel(({ child }, { channel, value }) => {
       if (prompt.window) {
-        prompt.window.webContents.openDevTools();
+        prompt.window.webContents.openDevTools({
+          mode: 'detach',
+        });
       }
     }),
     START_DRAG: onChildChannel(({ child }, { channel, value }) => {
