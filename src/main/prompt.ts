@@ -2380,6 +2380,7 @@ export class KitPrompt {
           // This was causing nasty crashes on mac
           this.window.setClosable(true);
         }
+        prepForClose(this.window); // Ensure class is reverted
         this.window.close();
         log.info(`${this?.pid}: window ${this?.window?.id}: closed`);
       } catch (error) {
@@ -2387,9 +2388,6 @@ export class KitPrompt {
       }
 
       setImmediate(() => {
-        if (kitState.isMac) {
-          prepForClose(this.window); // Ensure class is reverted
-        }
         try {
           this.window.destroy();
         } catch (error) {
