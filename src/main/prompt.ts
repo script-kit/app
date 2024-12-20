@@ -488,7 +488,12 @@ const subEmoji = subscribeKey(
   ),
 );
 
+let _isSponsor = false;
 const subIsSponsor = subscribeKey(kitState, 'isSponsor', (isSponsor) => {
+  if (_isSponsor === isSponsor) {
+    return;
+  }
+  _isSponsor = isSponsor;
   log.info('🎨 Sponsor changed:', isSponsor);
   setKitStateAtom({ isSponsor });
 });

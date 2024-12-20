@@ -381,6 +381,7 @@ export default () => {
     });
 
     const kitStateCallback = (_, data) => {
+      log.info('KIT_STATE received', data);
       setKitState(data);
     };
 
@@ -622,7 +623,7 @@ export default () => {
     log.info(`Sending messages ready for ${pid} with ${window.pid}`);
     ipcRenderer.send(AppChannel.MESSAGES_READY, window.pid);
 
-    const handleMakeWindow = (_, data:boolean) => {
+    const handleMakeWindow = (_, data: boolean) => {
       log.info('Received make window message');
       setIsWindow(data);
     };

@@ -30,7 +30,14 @@ import { type WatchEvent, startWatching } from './chokidar';
 import { isInDirectory } from './helpers';
 import { runScript } from './kit';
 import { getFileImports } from './npm';
-import { clearIdleProcesses, ensureIdleProcess, processes, sendToAllActiveChildren, spawnShebang, updateTheme } from './process';
+import {
+  clearIdleProcesses,
+  ensureIdleProcess,
+  processes,
+  sendToAllActiveChildren,
+  spawnShebang,
+  updateTheme,
+} from './process';
 import { clearPromptCache, clearPromptCacheFor, setKitStateAtom } from './prompt';
 import { setCSSVariable } from './theme';
 import { addSnippet, addTextSnippet, removeSnippet } from './tick';
@@ -355,7 +362,7 @@ export const onScriptChanged = async (event: WatchEvent, script: Script, rebuilt
           firstBatch: firstBatch,
         },
       );
-      return
+      return;
     }
 
     log.info('Shortcut script changed', script.filePath);
@@ -375,7 +382,7 @@ export const onScriptChanged = async (event: WatchEvent, script: Script, rebuilt
   }
 
   if (event === 'add' || event === 'unlink') {
-    debounceCacheMainScripts("Script added or unlinked");
+    debounceCacheMainScripts('Script added or unlinked');
   }
 };
 
@@ -403,19 +410,13 @@ export const checkUserDb = debounce(async (eventName: string) => {
   // Only run set-login if login value changed
   const prevLogin = kitState.user?.login;
   const newLogin = currentUser?.login;
+  log.info(`Login status`, {
+    prevLogin: prevLogin || 'undefined',
+    newLogin: newLogin || 'undefined',
+  });
   if (prevLogin !== newLogin) {
     log.info('🔍 Running set-login', newLogin || Env.REMOVE);
     await runScript(kitPath('config', 'set-login'), newLogin || Env.REMOVE);
-  }
-
-  // Only check sponsor status if login changed
-  if (prevLogin !== newLogin) {
-    if (newLogin) {
-      const isSponsor = await sponsorCheck('Login', false);
-      kitState.isSponsor = isSponsor;
-    } else {
-      kitState.isSponsor = false;
-    }
   }
 
   const user = snapshot(kitState.user);
@@ -425,11 +426,11 @@ export const checkUserDb = debounce(async (eventName: string) => {
   });
 
   sendToAllPrompts(AppChannel.USER_CHANGED, user);
-},
-1000,
-{
-  leading: true,
-});
+
+  const isSponsor = await sponsorCheck('Login', false);
+  log.info(`🔍 Sponsor check result: ${isSponsor ? '✅' : '❌'}`);
+  kitState.isSponsor = isSponsor;
+}, 500);
 
 const triggerRunText = debounce(
   async (eventName: WatchEvent) => {
@@ -492,7 +493,7 @@ const handleScriptletsChanged = debounce(async (eventName: WatchEvent, filePath:
   const beforeScriptlets = structuredClone(kitState.scriptlets);
   scriptLog.info('🎬 Starting cacheMainScripts...');
   try {
-    await cacheMainScripts("File change detected");
+    await cacheMainScripts('File change detected');
   } catch (error) {
     log.error(error);
   }
@@ -524,12 +525,34 @@ const handleScriptletsChanged = debounce(async (eventName: WatchEvent, filePath:
 export const parseEnvFile = debounce(async () => {
   const envData = loadKenvEnvironment();
 
-  if(envData?.KIT_API_KEY) {
+  if (envData?.KIT_LOGIN) {
+    log.info(`Detected KIT_LOGIN in .env. Setting kitState.kenvEnv.KIT_LOGIN`);
+    kitState.kenvEnv.KIT_LOGIN = envData?.KIT_LOGIN;
+  } else if (kitState.kenvEnv.KIT_LOGIN) {
+    log.info(`Removing KIT_LOGIN from kitState.kenvEnv`);
+    delete kitState.kenvEnv.KIT_LOGIN;
+    kitState.isSponsor = false;
+  }
+
+  if (envData?.GITHUB_SCRIPTKIT_TOKEN) {
+    log.info(`Detected GITHUB_SCRIPTKIT_TOKEN in .env. Setting kitState.kenvEnv.GITHUB_SCRIPTKIT_TOKEN`);
+    kitState.kenvEnv.GITHUB_SCRIPTKIT_TOKEN = envData?.GITHUB_SCRIPTKIT_TOKEN;
+  } else if (kitState.kenvEnv.GITHUB_SCRIPTKIT_TOKEN) {
+    log.info(`Removing GITHUB_SCRIPTKIT_TOKEN from kitState.kenvEnv`);
+    delete kitState.kenvEnv.GITHUB_SCRIPTKIT_TOKEN;
+    kitState.isSponsor = false;
+
+    checkUserDb();
+  }
+
+  if (envData?.KIT_API_KEY) {
     log.info(`Detected KIT_API_KEY in .env. Setting kitState.kenvEnv.KIT_API_KEY`);
     kitState.kenvEnv.KIT_API_KEY = envData?.KIT_API_KEY;
-  }else if(kitState.kenvEnv.KIT_API_KEY){
+  } else if (kitState.kenvEnv.KIT_API_KEY) {
     log.info(`Removing KIT_API_KEY from kitState.kenvEnv`);
     delete kitState.kenvEnv.KIT_API_KEY;
+
+    checkUserDb();
   }
 
   if (envData?.KIT_DOCK) {
@@ -680,30 +703,30 @@ export const restartWatchers = debounce(
   { leading: false },
 );
 
-export function watchKenvDirectory(){
+export function watchKenvDirectory() {
   const kenvFolderWatcher = chokidar.watch(kenvChokidarPath(), {
     ignoreInitial: kitState.ignoreInitial,
     followSymlinks: true,
     depth: 0,
     ignored: (checkPath) => {
       return path.normalize(checkPath) !== path.normalize(kenvChokidarPath());
-    }
+    },
   });
 
-  const watcherHandler = (eventName:WatchEvent, filePath:string) => {
+  const watcherHandler = (eventName: WatchEvent, filePath: string) => {
     log.info(`🔄 ${eventName} ${filePath} from kenv folder watcher`);
-    if(eventName === 'addDir'){
+    if (eventName === 'addDir') {
       setTimeout(() => {
-        if(watchers.length === 0){
+        if (watchers.length === 0) {
           log.warn(`🔄 ${filePath} added. Setting up watchers...`);
           setupWatchers('addDir');
-        }else{
+        } else {
           log.info(`🔄 ${filePath} added, but watchers already exist. No need to setup watchers...`);
         }
       }, 2000);
     }
 
-    if(eventName === 'unlinkDir'){
+    if (eventName === 'unlinkDir') {
       log.warn(`🔄 ${filePath} unlinked. Tearing down watchers...`);
       teardownWatchers('unlinkDir');
     }
@@ -715,7 +738,7 @@ export function watchKenvDirectory(){
     depth: 0,
     ignored: (checkPath) => {
       return path.normalize(checkPath) !== path.normalize(kitChokidarPath());
-    }
+    },
   });
 
   kenvFolderWatcher.on('all', watcherHandler);
@@ -787,25 +810,33 @@ let pingInterval: NodeJS.Timeout | null = null;
 let watchers: FSWatcher[] = [];
 let suspendingWatchers: boolean;
 
-export const teardownWatchers = debounce((reason: string) => {
-  logActionReason('Teardown', reason);
-  stopPingInterval();
-  clearAllWatchers(watchers);
-}, 250, { leading: true });
+export const teardownWatchers = debounce(
+  (reason: string) => {
+    logActionReason('Teardown', reason);
+    stopPingInterval();
+    clearAllWatchers(watchers);
+  },
+  250,
+  { leading: true },
+);
 
-export const setupWatchers = debounce((reason: string) => {
-  if (settingUpWatchers) return;
-  settingUpWatchers = true;
+export const setupWatchers = debounce(
+  (reason: string) => {
+    if (settingUpWatchers) return;
+    settingUpWatchers = true;
 
-  logActionReason('Setup', reason);
+    logActionReason('Setup', reason);
 
-  teardownWatchers('setupWatchers');
-  refreshScriptsIfNeeded();
-  startPingInterval();
-  watchers = startCoreWatchers();
+    teardownWatchers('setupWatchers');
+    refreshScriptsIfNeeded();
+    startPingInterval();
+    watchers = startCoreWatchers();
 
-  settingUpWatchers = false;
-}, 1000, { leading: true });
+    settingUpWatchers = false;
+  },
+  1000,
+  { leading: true },
+);
 
 subscribeKey(kitState, 'suspendWatchers', (suspendWatchers) => {
   if (suspendingWatchers === suspendWatchers) return;
@@ -860,7 +891,7 @@ async function handleFileChangeEvent(eventName: WatchEvent, filePath: string, so
     return;
   }
 
-  if (base === "globals.ts") {
+  if (base === 'globals.ts') {
     log.info(`globals.ts ${eventName}`);
     clearIdleProcesses();
     ensureIdleProcess();
@@ -893,7 +924,7 @@ async function handleFileChangeEvent(eventName: WatchEvent, filePath: string, so
 
   if (dir.endsWith('snippets')) {
     if (eventName === 'add' || eventName === 'change') {
-      await cacheMainScripts("Snippet added or changed");
+      await cacheMainScripts('Snippet added or changed');
       log.info('Snippet added/changed', filePath);
       addTextSnippet(filePath);
     } else {

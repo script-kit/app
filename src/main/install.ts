@@ -1088,13 +1088,21 @@ export const cacheMainMenu = ({
 
 // Initialize static properties for cacheMainScripts
 // Initialize static properties for cacheMainScripts
+export type CacheMainScriptsMessage = {
+  channel: Channel;
+  value: any;
+  id: string;
+  state?: {
+    isSponsor: boolean;
+  };
+};
 interface CacheMainScripts {
   (reason: string, params?: { channel: Channel; value: any }): Promise<boolean>;
   pendingResolvers?: Array<{
     resolve: (value: boolean) => void;
     reject: (reason?: any) => void;
   }>;
-  postMessage?: (message: any) => void;
+  postMessage?: (message: CacheMainScriptsMessage) => void;
 }
 
 // Helper function to resolve all pending promises at once
@@ -1268,7 +1276,7 @@ export const cacheMainScripts: CacheMainScripts = async (
       // Initialize postMessage if not already defined
       if (!cacheMainScripts.postMessage) {
         cacheMainScripts.postMessage = debounce(
-          (message) => {
+          (message: CacheMainScriptsMessage) => {
             const body = message ? { ...message, id: uuid } : { id: uuid };
             log.info(`🏆 ${uuid}: Posting message to worker`);
             if (workers.cacheScripts) {
@@ -1287,7 +1295,14 @@ export const cacheMainScripts: CacheMainScripts = async (
 
       // Send the message to the worker to start the caching process
       log.info('Sending stamp to worker', stamp);
-      cacheMainScripts.postMessage({ channel, value, id: uuid });
+      if (cacheMainScripts.postMessage) {
+        const state = {
+          isSponsor: kitState.isSponsor,
+        };
+        cacheMainScripts.postMessage({ channel, value, id: uuid, state });
+      } else {
+        log.error('cacheMainScripts.postMessage is not defined');
+      }
     } catch (error) {
       // If something goes wrong at any point, reject all pending resolvers
       log.warn('Failed to cache main scripts at startup', error);

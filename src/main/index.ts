@@ -1025,11 +1025,8 @@ const checkKit = async () => {
   });
 
   if (!isKenvInstalled) {
-    log.info('Cloning sponsors...');
-    optionalSetupScript(kitPath('setup', 'clone-sponsors.js')).then(() => {
-      log.info('Cloning examples...');
-      optionalSetupScript(kitPath('setup', 'clone-examples.js'));
-    });
+    log.info('Cloning examples...');
+    optionalSetupScript(kitPath('setup', 'clone-examples.js'));
   }
 
   // await installLoaderTools();
@@ -1168,6 +1165,7 @@ app
   });
 
 app?.on('will-quit', (e) => {
+  destroyPtyPool();
   log.info('🚪 will-quit');
 });
 

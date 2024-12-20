@@ -29,6 +29,7 @@ import { TrackEvent, trackEvent } from './track';
 import { createLogger } from '../shared/log-utils';
 import { createForkOptions } from './fork.options';
 import { mainLogPath } from './logs';
+import { refreshScripts } from '@johnlindquist/kit/core/db';
 
 const log = createLogger('kit.ts');
 
@@ -364,12 +365,12 @@ export const runScript = (...args: string[]) => {
 subscribeKey(kitState, 'isSponsor', (isSponsor) => {
   log.info('🎨 Sponsor changed:', isSponsor);
 
-  // runScript(
-  //   kitPath('config', 'toggle-sponsor.js'),
-  //   isSponsor ? 'true' : 'false'
-  // );
+  // Sets the env var for when scripts parse to exclude main sponsor script
+  runScript(kitPath('config', 'toggle-sponsor.js'), isSponsor ? 'true' : 'false');
 
   kitStore.set('sponsor', isSponsor);
+
+  refreshScripts();
 });
 
 emitter.on(KitEvent.OpenLog, async (scriptPath) => {

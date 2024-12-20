@@ -194,7 +194,7 @@ export default function App() {
   const setMouseEnabled = useSetAtom(mouseEnabledAtom);
   const setTopRef = useSetAtom(topRefAtom);
   const setProcesses = useSetAtom(processesAtom);
-  const setUser = useSetAtom(userAtom);
+  const [user, setUser] = useAtom(userAtom);
   const setIsMouseDown = useSetAtom(isMouseDownAtom);
 
   const [kitState] = useAtom(kitStateAtom);
@@ -684,7 +684,6 @@ text-text-base
               {pid}
               {shortcodes}
             </span> */}
-
             <main id="main" className="min-h-[1px] w-full flex-1 overflow-y-hidden">
               {flagValue && <ActionsList key="ActionsList" />}
               <PanelGroup

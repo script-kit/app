@@ -608,7 +608,7 @@ export default function Input() {
             )}
 
             <div className="flex flex-row items-center">
-              {kitState.isSponsor && (
+              {user.login && (
                 <span
                   className={`relative ${inputHeight === PROMPT.INPUT.HEIGHT.XS ? 'w-[28px]' : 'w-[30px]'} pl-1 pr-1 mr-1`}
                 >
@@ -625,21 +625,23 @@ export default function Input() {
                       className="z-0 w-[22px] h-[22px] cursor-pointer rounded-full hover:opacity-75 bg-current"
                     />
                   )}
-                  <svg
-                    height="24"
-                    width="24"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="absolute right-[-7px] top-[-7px] z-10 h-[15px] text-primary opacity-90"
-                  >
-                    <g fill="currentColor">
-                      <path
-                        d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z"
-                        fill="current"
-                        fillOpacity="0.9"
-                      />
-                    </g>
-                  </svg>
+                  {kitState.isSponsor && (
+                    <svg
+                      height="24"
+                      width="24"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="absolute right-[-7px] top-[-7px] z-10 h-[15px] text-primary opacity-90"
+                    >
+                      <g fill="currentColor">
+                        <path
+                          d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z"
+                          fill="current"
+                          fillOpacity="0.9"
+                        />
+                      </g>
+                    </svg>
+                  )}
                 </span>
               )}
 
