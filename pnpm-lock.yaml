@@ -329,8 +329,8 @@ importers:
         specifier: ^3.2.3
         version: 3.2.3
       electron:
-        specifier: 34.0.0-beta.12
-        version: 34.0.0-beta.12
+        specifier: 34.0.0-beta.13
+        version: 34.0.0-beta.13
       electron-builder:
         specifier: 26.0.0-alpha.7
         version: 26.0.0-alpha.7(electron-builder-squirrel-windows@25.1.8)
@@ -3385,8 +3385,8 @@ packages:
       '@swc/core':
         optional: true
 
-  electron@34.0.0-beta.12:
-    resolution: {integrity: sha512-KHVyAs0lGLWSEUMLlTL64lZf1sXePdMd71GTYcxOq7kLAlyFc0QlbX5a90AmmN4/LAWdJ9vK8k4dm/PP6p1KOQ==}
+  electron@34.0.0-beta.13:
+    resolution: {integrity: sha512-vn7vM4NflcADuAN1pxsbWGvz/B/BHaywUhsey0rKZ+Yr3r7ys98OkuHi/ut6QJSNr74NtPPc/UpX5iWgtQ7O7w==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
@@ -11131,7 +11131,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@34.0.0-beta.12:
+  electron@34.0.0-beta.13:
     dependencies:
       '@electron/get': 2.0.3
       '@types/node': 20.16.11

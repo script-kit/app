@@ -3,7 +3,6 @@ import type { Choice, PromptBounds, PromptData, Script, Scriptlet } from '@johnl
 
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
-import shims from './shims';
 
 import { readFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -65,6 +64,7 @@ import { getVersion } from './version';
 import { makeKeyWindow, makePanel, makeWindow, prepForClose, setAppearance } from './window/utils';
 
 import { createLogger } from '../shared/log-utils';
+import { hideInstant } from './prompt/hide';
 
 const log = createLogger('prompt.ts');
 
@@ -2077,7 +2077,7 @@ export class KitPrompt {
 
     log.info('🙈 Hiding prompt window');
 
-    this.hideInstant();
+    hideInstant(this.window);
   };
 
   isVisible = () => {
@@ -2375,7 +2375,7 @@ export class KitPrompt {
     log.info(`${this.pid} ${this.window.id} 👋 Close prompt`);
     try {
       if (kitState.isMac) {
-        this.hideInstant();
+        hideInstant(this.window);
       }
 
       this.sendToPrompt = () => {};
@@ -2571,33 +2571,6 @@ export class KitPrompt {
     },
   );
 
-  hideInstant = (type: 'close' | 'hide' = 'hide') => {
-    if (!this.window.isVisible()) {
-      return;
-    }
-    if (kitState.isWindows) {
-      // REMOVE-NODE-WINDOW-MANAGER
-      shims['@johnlindquist/node-window-manager'].windowManager.hideInstantly(this.window?.getNativeWindowHandle());
-      if (this.window.isFocused()) {
-        this.window?.emit('blur');
-        this.window?.emit('hide');
-      }
-
-      // END-REMOVE-NODE-WINDOW-MANAGER
-    }
-
-    if (kitState.isMac) {
-      log.info(`${this.pid}: 📌 Hiding instant`);
-      shims['@johnlindquist/mac-panel-window'].hideInstant(this.window);
-    }
-
-    if (kitState.isLinux) {
-      this.window?.hide();
-    }
-
-    kitState.shortcutsPaused = false;
-  };
-
   // Extracted and combined escape key handling into handleEscapePress
   private escapePressCount = 0;
   private lastEscapePressTime = 0;
@@ -2630,7 +2603,7 @@ export class KitPrompt {
   };
 
   private hideAndRemoveProcess = () => {
-    this.hideInstant();
+    hideInstant(this.window);
     processes.removeByPid(this.pid);
   };
 
@@ -2678,5 +2651,5 @@ export const makeSplashWindow = (window?: BrowserWindow) => {
     return;
   }
 
-  shims['@johnlindquist/mac-panel-window'].prepForClose(window);
+  prepForClose(window);
 };

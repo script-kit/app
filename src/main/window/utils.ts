@@ -1,4 +1,4 @@
-import type{ BrowserWindow } from 'electron';
+import type { BrowserWindow } from 'electron';
 import { kitState } from '../state';
 import shims from '../shims';
 import { prompts } from '../prompts';
