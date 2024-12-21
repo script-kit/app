@@ -2347,10 +2347,6 @@ export class KitPrompt {
 
     this.sendToPrompt(Channel.SET_PID, pid);
 
-    // if (promptWindow?.isAlwaysOnTop() && !script?.debug) {
-    //   // promptWindow?.setAlwaysOnTop(false);
-    //   // log.warn(`Prompt is always on top, but not a debug script`);
-    // }
     this.scriptPath = serializableScript.filePath;
     kitState.hasSnippet = Boolean(serializableScript?.snippet);
     // if (promptScript?.filePath === script?.filePath) return;
