@@ -1,6 +1,5 @@
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import type { Choice, PromptBounds, PromptData, Script, Scriptlet } from '@johnlindquist/kit/types/core';
-
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 
@@ -62,9 +61,9 @@ import {
 import { TrackEvent, trackEvent } from './track';
 import { getVersion } from './version';
 import { makeKeyWindow, makePanel, makeWindow, prepForClose, setAppearance } from './window/utils';
+import shims from './shims';
 
 import { createLogger } from '../shared/log-utils';
-import { hideInstant } from './prompt/hide';
 
 const log = createLogger('prompt.ts');
 
@@ -2077,7 +2076,7 @@ export class KitPrompt {
 
     log.info('🙈 Hiding prompt window');
 
-    hideInstant(this.window);
+    this.hideInstant();
   };
 
   isVisible = () => {
@@ -2186,7 +2185,15 @@ export class KitPrompt {
   };
 
   hasBeenFocused = false;
+  focusPromptCoolingDown = false;
   focusPrompt = () => {
+    if (this.focusPromptCoolingDown) {
+      return;
+    }
+    this.focusPromptCoolingDown = true;
+    setTimeout(() => {
+      this.focusPromptCoolingDown = false;
+    }, 1000);
     this.hasBeenFocused = true;
     if (!this.window.focusable) {
       log.info(`${this.pid}: Setting focusable to true`);
@@ -2362,8 +2369,50 @@ export class KitPrompt {
     return 'allowed';
   };
 
+  private hideInstantCoolingDown = false;
+
+  hideInstant = () => {
+    // If we're currently cooling down, just ignore this call
+    if (this.hideInstantCoolingDown) {
+      log.info(`${this.pid}: "hideInstant" still cooling down`);
+      return;
+    }
+
+    // Start cooling down for 100ms
+    this.hideInstantCoolingDown = true;
+    setTimeout(() => {
+      this.hideInstantCoolingDown = false;
+    }, 100);
+
+    // --- Original hide logic below ---
+    if (!this.window || this.window.isDestroyed() || !this.window.isVisible()) {
+      return;
+    }
+
+    if (kitState.isWindows) {
+      shims['@johnlindquist/node-window-manager'].windowManager.hideInstantly(this.window.getNativeWindowHandle());
+      if (this.window.isFocused()) {
+        this.window.emit('blur');
+        this.window.emit('hide');
+      }
+    } else if (kitState.isMac) {
+      shims['@johnlindquist/mac-panel-window'].hideInstant(this.window);
+    } else if (kitState.isLinux) {
+      this.window.hide();
+    }
+  };
+
   closed = false;
+  closeCoolingDown = false;
   close = () => {
+    if (this.closeCoolingDown) {
+      log.info(`${this.pid}: "close" still cooling down`);
+      return;
+    }
+    this.closeCoolingDown = true;
+    setTimeout(() => {
+      this.closeCoolingDown = false;
+    }, 100);
     if (this.closed) {
       return;
     }
@@ -2375,7 +2424,7 @@ export class KitPrompt {
     log.info(`${this.pid} ${this.window.id} 👋 Close prompt`);
     try {
       if (kitState.isMac) {
-        hideInstant(this.window);
+        this.hideInstant();
       }
 
       this.sendToPrompt = () => {};
@@ -2603,7 +2652,7 @@ export class KitPrompt {
   };
 
   private hideAndRemoveProcess = () => {
-    hideInstant(this.window);
+    this.hideInstant();
     processes.removeByPid(this.pid);
   };
 

@@ -119,7 +119,7 @@
     "simplebar-react": "^3.3.0",
     "tailwindcss": "^3.4.17",
     "ts-jest": "^29.2.5",
-    "vite": "^6.0.4",
+    "vite": "^6.0.5",
     "vite-plugin-commonjs-externals": "^0.1.4",
     "vite-plugin-compression": "^0.5.1",
     "vitest": "^2.1.8"
@@ -127,7 +127,7 @@
   "dependencies": {
     "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/clipboard": "^0.1.38",
-    "@johnlindquist/kit": "^3.7.10",
+    "@johnlindquist/kit": "^3.7.12",
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^28.0.2",
     "@types/express": "^5.0.0",
@@ -212,5 +212,5 @@
     "preset": "ts-jest",
     "testEnvironment": "node"
   },
-  "packageManager": "pnpm@9.15.0"
+  "packageManager": "pnpm@9.15.1"
 }

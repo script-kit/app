@@ -82,7 +82,6 @@ import { showLogWindow } from './window';
 import { createLogger } from '../shared/log-utils';
 import { osTmpPath } from './tmp';
 import { displayError } from './error';
-import { hideInstant } from './prompt/hide';
 
 const log = createLogger('messages.ts');
 
@@ -839,7 +838,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       }
       exiting = true;
       log.info(`${pid}: 🚪 Before exit`);
-      hideInstant(prompt?.window);
+      prompt.hideInstant();
       processes.stampPid(pid);
       processes.removeByPid(pid);
     }),
