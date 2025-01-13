@@ -301,6 +301,7 @@ export const startClipboardMonitor = async () => {
       log.error(e);
     }
   }).pipe(
+    // biome-ignore lint/suspicious/useAwait: need to return a promise
     switchMap(async (type: string) => {
       if (kitState.isMac && frontmost) {
         try {
