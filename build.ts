@@ -122,28 +122,25 @@ const config: Configuration = {
   },
 };
 
-let targets: PackagerOptions['targets'];
+let targets: PackagerOptions['targets'] = new Map();
 
 const archFlags: Arch[] = arch === 'both' ? [Arch.x64, Arch.arm64] : [Arch[arch]];
 
-const createPlatformTarget = (platform: Platform, formats: string[], archFlags: Arch[]) =>
-  archFlags.length > 1
-    ? archFlags.reduce((acc, arch) => {
-        const newTarget = platform.createTarget(formats, arch);
-        newTarget.forEach((value, key) => acc.set(key, value));
-        return acc;
-      }, new Map())
-    : platform.createTarget(formats, archFlags[0]);
-
 switch (platform) {
   case 'mac':
-    targets = createPlatformTarget(Platform.MAC, ['dmg', 'zip'], archFlags);
+    targets.set(
+      Platform.MAC,
+      new Map([
+        [Arch.x64, ['dmg', 'zip']],
+        [Arch.arm64, ['dmg', 'zip']],
+      ]),
+    );
     break;
   case 'win':
-    targets = createPlatformTarget(Platform.WINDOWS, ['nsis'], archFlags);
+    targets.set(Platform.WINDOWS, new Map([[Arch[arch], ['nsis']]]));
     break;
   case 'linux':
-    targets = createPlatformTarget(Platform.LINUX, ['AppImage', 'deb', 'rpm'], archFlags);
+    targets.set(Platform.LINUX, new Map([[Arch[arch], ['AppImage', 'deb', 'rpm']]]));
     break;
   default:
     throw new Error(`Unsupported platform: ${platform}`);
@@ -159,11 +156,14 @@ try {
     const pkg = await fsExtra.readJson('package.json');
     console.log(`Optional dependencies before: ${JSON.stringify(pkg.optionalDependencies, null, 2)}`);
   }
-  const result = await build({
+  const cliOptions = {
     config,
     publish,
     targets,
-  });
+  };
+
+  console.log('Building with options', cliOptions);
+  const result = await build(cliOptions);
   console.log('Build result', result);
 } catch (e) {
   console.error('Build failed', e);
