@@ -256,15 +256,23 @@ export const startClipboardMonitor = async () => {
         log.info('Attempting to start @johnlindquist/mac-clipboard-listener...');
         shims['@johnlindquist/mac-clipboard-listener'].start();
 
-        const onImageChange = debounce(() => {
-          log.info('@johnlindquist/mac-clipboard-listener image changed...');
-          observer.next('image');
-        }, 100, { leading: true });
+        const onImageChange = debounce(
+          () => {
+            log.info('@johnlindquist/mac-clipboard-listener image changed...');
+            observer.next('image');
+          },
+          100,
+          { leading: true },
+        );
 
-        const onTextChange = debounce(() => {
-          log.info('@johnlindquist/mac-clipboard-listener text changed...');
-          observer.next('text');
-        }, 100, { leading: true });
+        const onTextChange = debounce(
+          () => {
+            log.info('@johnlindquist/mac-clipboard-listener text changed...');
+            observer.next('text');
+          },
+          100,
+          { leading: true },
+        );
 
         shims['@johnlindquist/mac-clipboard-listener'].onClipboardImageChange(onImageChange);
         shims['@johnlindquist/mac-clipboard-listener'].onClipboardTextChange(onTextChange);
@@ -368,7 +376,7 @@ export const startClipboardMonitor = async () => {
         );
       }
 
-      const appName = prompts?.prevFocused ? 'Script Kit' : (app?.localizedName || 'Unknown');
+      const appName = prompts?.prevFocused ? 'Script Kit' : app?.localizedName || 'Unknown';
       const clipboardItem = {
         id: nanoid(),
         name: itemName,
@@ -417,45 +425,47 @@ function updateSnippetPrefixIndex() {
 
 const subSnippet = subscribeKey(kitState, 'snippet', async (snippet: string) => {
   const sl = snippet.length;
-  if (sl < 2) return;
+  if (sl < 2) {
+    return;
+  }
 
-  const endIndex = sl - 3;
   const potentialPrefix = sl >= 3 ? snippet.slice(-3) : snippet.slice(0, sl);
   const potentialSnippetKeys = snippetPrefixIndex.get(potentialPrefix);
-  if (!potentialSnippetKeys) return;
+  if (!potentialSnippetKeys) {
+    return;
+  }
 
   for (let i = 0; i < potentialSnippetKeys.length; i++) {
     const snippetKey = potentialSnippetKeys[i];
     if (snippet.endsWith(snippetKey)) {
       log.info(`Running snippet: ${snippetKey}`);
       const script = snippetMap.get(snippetKey)!;
-      let postfix = script.postfix;
+      const postfix = script.postfix;
 
       if (kitConfig.deleteSnippet) {
         const stringToDelete = postfix ? snippet : snippetKey;
-        log.silly({ stringToDelete, postfix });
+        log.info({ stringToDelete, postfix });
         kitState.snippet = '';
         await deleteText(stringToDelete);
       }
 
+      const args = postfix ? [snippet.slice(0, snippet.length - snippetKey.length)] : [];
+      const options = {
+        force: false,
+        trigger: Trigger.Snippet,
+      };
+
       if (script.txt) {
         emitter.emit(KitEvent.RunPromptProcess, {
           scriptPath: kitPath('app', 'paste-snippet.js'),
-          args: ['--filePath', script.filePath],
-          options: {
-            force: false,
-            trigger: Trigger.Snippet,
-          },
+          args: [...args, '--filePath', script.filePath],
+          options,
         });
       } else {
-        const args = postfix ? [snippet.slice(0, snippet.length - snippetKey.length)] : [];
         emitter.emit(KitEvent.RunPromptProcess, {
           scriptPath: script.filePath,
           args,
-          options: {
-            force: false,
-            trigger: Trigger.Snippet,
-          },
+          options,
         });
       }
     }
@@ -505,7 +515,9 @@ export const addTextSnippet = async (filePath: string) => {
         toDelete.push(key);
       }
     }
-    for (let i = 0; i < toDelete.length; i++) snippetMap.delete(toDelete[i]);
+    for (let i = 0; i < toDelete.length; i++) {
+      snippetMap.delete(toDelete[i]);
+    }
   }
 
   const contents = await readFile(filePath, 'utf8');
@@ -539,7 +551,9 @@ export const addSnippet = (script: Script) => {
         toDelete.push(key);
       }
     }
-    for (let i = 0; i < toDelete.length; i++) snippetMap.delete(toDelete[i]);
+    for (let i = 0; i < toDelete.length; i++) {
+      snippetMap.delete(toDelete[i]);
+    }
   }
 
   const expand = script?.expand || script?.snippet;
