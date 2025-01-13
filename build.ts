@@ -6,7 +6,7 @@ import type { Configuration, PackagerOptions } from 'electron-builder';
 import packageJson from './package.json';
 
 let platform: 'linux' | 'mac' | 'win';
-let arch: 'arm64' | 'x64';
+let arch: 'arm64' | 'x64' | 'both';
 let publish: 'always' | 'never' | undefined;
 
 if (process.argv.length <= 2) {
@@ -20,11 +20,11 @@ if (process.argv.length <= 2) {
     throw new Error(`Unsupported platform: ${process.platform}`);
   }
 
-  arch = process.arch as 'arm64' | 'x64';
+  arch = process.arch as 'arm64' | 'x64' | 'both';
   publish = undefined;
 } else {
   platform = (await arg('platform')) as 'linux' | 'mac' | 'win';
-  arch = (await arg('arch')) as 'arm64' | 'x64';
+  arch = (await arg('arch')) as 'arm64' | 'x64' | 'both';
   publish = (await arg('publish')) as 'always' | 'never' | undefined;
 }
 
@@ -48,7 +48,7 @@ const dirFiles = (await fsExtra.readdir('.', { withFileTypes: true })).filter(
       dir.name.startsWith('package.json')
     ),
 );
-4;
+
 const files = dirFiles
   .filter((file) => file.isDirectory())
   .map((dir) => `!${dir.name}/**/*`)
@@ -123,19 +123,28 @@ const config: Configuration = {
 };
 
 let targets: PackagerOptions['targets'];
-const archFlag = Arch[arch as 'x64' | 'arm64'];
+
+const archFlags: Arch[] = arch === 'both' ? [Arch.x64, Arch.arm64] : [Arch[arch]];
+
+const createPlatformTarget = (platform: Platform, formats: string[], archFlags: Arch[]) =>
+  archFlags.length > 1
+    ? archFlags.reduce((acc, arch) => {
+        const newTarget = platform.createTarget(formats, arch);
+        newTarget.forEach((value, key) => acc.set(key, value));
+        return acc;
+      }, new Map())
+    : platform.createTarget(formats, archFlags[0]);
 
 switch (platform) {
   case 'mac':
-    targets = Platform.MAC.createTarget(['dmg', 'zip'], archFlag);
+    targets = createPlatformTarget(Platform.MAC, ['dmg', 'zip'], archFlags);
     break;
   case 'win':
-    targets = Platform.WINDOWS.createTarget(['nsis'], archFlag);
+    targets = createPlatformTarget(Platform.WINDOWS, ['nsis'], archFlags);
     break;
   case 'linux':
-    targets = Platform.LINUX.createTarget(['AppImage', 'deb', 'rpm'], archFlag);
+    targets = createPlatformTarget(Platform.LINUX, ['AppImage', 'deb', 'rpm'], archFlags);
     break;
-
   default:
     throw new Error(`Unsupported platform: ${platform}`);
 }

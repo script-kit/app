@@ -289,32 +289,32 @@ jobs:
             pnpm --version
             pnpm exec kit ./build.ts linux arm64 always
 
-      - name: Publish mac x64
-        if: matrix.platform == 'mac' && matrix.arch == 'x64'
-        env:
-          # These values are used for auto updates signing
-          # APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-          # APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          # This is used for uploading release assets to github
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ELECTRON_BUILD_ARCH: x64
-          ELECTRON_BUILD_PLATFORM: darwin
+      # - name: Publish mac x64
+      #   if: matrix.platform == 'mac' && matrix.arch == 'x64'
+      #   env:
+      #     # These values are used for auto updates signing
+      #     # APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+      #     # APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      #     APPLE_ID: ${{ secrets.APPLE_ID }}
+      #     APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
+      #     APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      #     CSC_LINK: ${{ secrets.CSC_LINK }}
+      #     CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+      #     APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      #     # This is used for uploading release assets to github
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     ELECTRON_BUILD_ARCH: x64
+      #     ELECTRON_BUILD_PLATFORM: darwin
 
-        # Wait 5 minutes to start to avoid signing issues
-        run: |
-            sleep 300
-            pnpm i
-            pnpm vite-prebuild
-            pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
+      #   # Wait 5 minutes to start to avoid signing issues
+      #   run: |
+      #       sleep 300
+      #       pnpm i
+      #       pnpm vite-prebuild
+      #       pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
 
-      - name: Publish mac arm64
-        if: matrix.platform == 'mac' && matrix.arch == 'arm64'
+      - name: Publish mac "both" (arm64 and x64)
+        if: matrix.platform == 'mac'
         env:
           # These values are used for auto updates signing
           # APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
@@ -333,13 +333,13 @@ jobs:
         run: |
             pnpm i
             pnpm vite-prebuild
-            pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
+            pnpm exec kit ./build.ts mac both always
 
-      - name: Merge latest-mac.yml and latest-mac-arm64.yml
-        if: matrix.platform == 'mac'
-        # Just something to keep an eye on in case kit-action changes.
-        uses: johnlindquist/kit-action@main
-        with:
-          script: merge-mac-latest-yml script-kit kitapp ${{ matrix.arch }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Merge latest-mac.yml and latest-mac-arm64.yml
+      #   if: matrix.platform == 'mac'
+      #   # Just something to keep an eye on in case kit-action changes.
+      #   uses: johnlindquist/kit-action@main
+      #   with:
+      #     script: merge-mac-latest-yml script-kit kitapp ${{ matrix.arch }}
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
