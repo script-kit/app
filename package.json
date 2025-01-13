@@ -40,12 +40,7 @@
   "bugs": {
     "url": "https://github.com/script-kit/kitapp/issues"
   },
-  "keywords": [
-    "electron",
-    "react",
-    "typescript",
-    "ts"
-  ],
+  "keywords": ["electron", "react", "typescript", "ts"],
   "homepage": "https://github.com/script-kit/kitapp#readme",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -127,7 +122,7 @@
   "dependencies": {
     "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/clipboard": "^0.1.38",
-    "@johnlindquist/kit": "^3.7.13",
+    "@johnlindquist/kit": "^3.7.14",
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^28.0.2",
     "@types/express": "^5.0.0",
@@ -170,9 +165,10 @@
     "monaco-editor": "^0.52.2",
     "nanoid": "5.0.9",
     "node-downloader-helper": "^2.1.9",
-    "node-pty": "^1.1.0-beta26",
+    "node-pty": "1.1.0-beta27",
     "node-schedule": "2.1.1",
     "node-stream-zip": "^1.15.0",
+    "pnpm": "10",
     "prop-types": "^15.8.1",
     "quick-score": "0.2.0",
     "react": "^19.0.0",
@@ -201,16 +197,12 @@
   },
   "browserslist": [],
   "renovate": {
-    "extends": [
-      "bliss"
-    ],
-    "baseBranches": [
-      "next"
-    ]
+    "extends": ["bliss"],
+    "baseBranches": ["next"]
   },
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node"
   },
-  "packageManager": "pnpm@9.15.3"
+  "packageManager": "pnpm@10.0.0"
 }
