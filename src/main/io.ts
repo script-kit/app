@@ -60,6 +60,12 @@ type KeyCodes = keyof typeof ShiftMap;
 
 let UiohookToName: Record<number, string>;
 export function createUiohookToName() {
+  if (!supportsDependency('uiohook-napi')) {
+    log.warn('uiohook-napi is not supported on this platform', {
+      target,
+    });
+    return;
+  }
   const { UiohookKey } = shims['uiohook-napi'];
 
   if (typeof UiohookKey?.Comma !== 'number') {

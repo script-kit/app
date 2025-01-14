@@ -191,9 +191,6 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
-      uiohook-napi:
-        specifier: ^1.5.4
-        version: 1.5.4
       untildify:
         specifier: 5.0.0
         version: 5.0.0
@@ -445,6 +442,9 @@ importers:
       node-mac-permissions:
         specifier: ^2.4.0
         version: 2.4.0
+      uiohook-napi:
+        specifier: ^1.5.4
+        version: 1.5.4
 
 packages:
 
@@ -15358,6 +15358,7 @@ snapshots:
   uiohook-napi@1.5.4:
     dependencies:
       node-gyp-build: 4.8.4
+    optional: true
 
   umd@3.0.3: {}
 

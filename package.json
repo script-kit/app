@@ -40,7 +40,12 @@
   "bugs": {
     "url": "https://github.com/script-kit/kitapp/issues"
   },
-  "keywords": ["electron", "react", "typescript", "ts"],
+  "keywords": [
+    "electron",
+    "react",
+    "typescript",
+    "ts"
+  ],
   "homepage": "https://github.com/script-kit/kitapp#readme",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -180,7 +185,6 @@
     "tar": "^7.4.3",
     "timeago.js": "^4.0.2",
     "typescript": "^5.7.3",
-    "uiohook-napi": "^1.5.4",
     "untildify": "5.0.0",
     "valtio": "^2.1.2",
     "xstate": "^5.19.2"
@@ -190,15 +194,20 @@
     "@johnlindquist/mac-frontmost": "^1.0.7",
     "@johnlindquist/mac-panel-window": "^1.6.4",
     "@johnlindquist/node-window-manager": "^1.0.24",
-    "node-mac-permissions": "^2.4.0"
+    "node-mac-permissions": "^2.4.0",
+    "uiohook-napi": "^1.5.4"
   },
   "engines": {
     "node": "22.9.0"
   },
   "browserslist": [],
   "renovate": {
-    "extends": ["bliss"],
-    "baseBranches": ["next"]
+    "extends": [
+      "bliss"
+    ],
+    "baseBranches": [
+      "next"
+    ]
   },
   "jest": {
     "preset": "ts-jest",
