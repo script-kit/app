@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  electron: npm:electron-nightly@35.0.0-nightly.20250113
+
 importers:
 
   .:
@@ -188,6 +191,9 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
+      uiohook-napi:
+        specifier: ^1.5.4
+        version: 1.5.4
       untildify:
         specifier: 5.0.0
         version: 5.0.0
@@ -313,8 +319,8 @@ importers:
         specifier: ^3.2.3
         version: 3.2.3
       electron:
-        specifier: 34.0.0
-        version: 34.0.0
+        specifier: npm:electron-nightly@35.0.0-nightly.20250113
+        version: electron-nightly@35.0.0-nightly.20250113
       electron-builder:
         specifier: 26.0.0-alpha.8
         version: 26.0.0-alpha.8(electron-builder-squirrel-windows@26.0.0-alpha.7)
@@ -1753,9 +1759,6 @@ packages:
 
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
-
-  '@types/node@20.17.12':
-    resolution: {integrity: sha512-vo/wmBgMIiEA23A/knMfn/cf37VnuF52nZh5ZoW0GWt4e4sxNquibrMRJ7UQsA06+MBx9r/H1jsI9grYjQCQlw==}
 
   '@types/node@22.10.6':
     resolution: {integrity: sha512-qNiuwC4ZDAUNcY47xgaSuS92cjf8JbSUoaKS77bmLG1rU7MlATVSiw/IlrjtIyyskXBZ8KkNfjK/P5na7rgXbQ==}
@@ -3312,6 +3315,11 @@ packages:
   electron-mocks@1.6.0:
     resolution: {integrity: sha512-xkSmZ67ujXmEfCMGdTkYW1XX0EGSmw8j2f3vCU/JAK+TdNc8A2sEuZU2ZViszuLvTKPd5JQZGWoNBix5FShc3A==}
 
+  electron-nightly@35.0.0-nightly.20250113:
+    resolution: {integrity: sha512-BBLNNw7mEIJwDGhnHfsJPTBqZy3ktKqyn02odNIaxYGYZ+ZkLJRrDJNX11IixjwvLYvpXAGvbcTYD6uwmnxQtg==}
+    engines: {node: '>= 12.20.55'}
+    hasBin: true
+
   electron-publish@26.0.0-alpha.7:
     resolution: {integrity: sha512-mV4uP3G7WWwgnYSyFdxSmvAhH8hcyNm4aUHDC9ALRH0zG53x4P3Et3KhAHhollMY4U7OrvlL9jiP8y/4VuZVeQ==}
 
@@ -3342,11 +3350,6 @@ packages:
     peerDependenciesMeta:
       '@swc/core':
         optional: true
-
-  electron@34.0.0:
-    resolution: {integrity: sha512-fpaPb0lifoUJ6UJa4Lk8/0B2Ku/xDZWdc1Gkj67jbygTCrvSon0qquju6Ltx1Kz23GRqqlIHXiy9EvrjpY7/Wg==}
-    engines: {node: '>= 12.20.55'}
-    hasBin: true
 
   elliptic@6.6.1:
     resolution: {integrity: sha512-RaddvvMatK2LJHqFJ+YA4WysVN5Ita9E35botqIYspQ4TkRAlCicdzKOjlyv/1Za5RyTNn7di//eEV0uTAfe3g==}
@@ -7105,6 +7108,10 @@ packages:
     resolution: {integrity: sha512-ZPtzy0hu4cZjv3z5NW9gfKnNLjoz4y6uv4HlelAjDK7sY/xOkKZv9xK/WQpcsBB3jEybChz9DPC2U/+cusjJVQ==}
     engines: {node: '>=18'}
 
+  uiohook-napi@1.5.4:
+    resolution: {integrity: sha512-7vPVDNwgb6MwTgviA/dnF2MrW0X5xm76fAqaOAC3cEKkswqAZOPw1USu14Sr6383s5qhXegcJaR63CpJOPCNAg==}
+    engines: {node: '>= 16'}
+
   umd@3.0.3:
     resolution: {integrity: sha512-4IcGSufhFshvLNcMCV80UnQVlZ5pMOC8mvNPForqwA4+lzYQuetTESLDQkeLmihq8bRcnpbQa48Wb8Lh16/xow==}
     hasBin: true
@@ -7119,9 +7126,6 @@ packages:
   undeclared-identifiers@1.1.3:
     resolution: {integrity: sha512-pJOW4nxjlmfwKApE4zvxLScM/njmwj/DiUBv7EabwE4O8kRUy+HIwxQtZLBPll/jx1LJyBcqNfB3/cpv9EZwOw==}
     hasBin: true
-
-  undici-types@6.19.8:
-    resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
 
   undici-types@6.20.0:
     resolution: {integrity: sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==}
@@ -8940,10 +8944,6 @@ snapshots:
 
   '@types/node@12.20.55':
     optional: true
-
-  '@types/node@20.17.12':
-    dependencies:
-      undici-types: 6.19.8
 
   '@types/node@22.10.6':
     dependencies:
@@ -10938,6 +10938,14 @@ snapshots:
     dependencies:
       sinon: 19.0.2
 
+  electron-nightly@35.0.0-nightly.20250113:
+    dependencies:
+      '@electron/get': 2.0.3
+      '@types/node': 22.10.6
+      extract-zip: 2.0.1
+    transitivePeerDependencies:
+      - supports-color
+
   electron-publish@26.0.0-alpha.7:
     dependencies:
       '@types/fs-extra': 9.0.13
@@ -11001,14 +11009,6 @@ snapshots:
       magic-string: 0.30.17
       picocolors: 1.1.1
       vite: 6.0.7(@types/node@22.10.6)(jiti@1.21.7)(yaml@2.7.0)
-    transitivePeerDependencies:
-      - supports-color
-
-  electron@34.0.0:
-    dependencies:
-      '@electron/get': 2.0.3
-      '@types/node': 20.17.12
-      extract-zip: 2.0.1
     transitivePeerDependencies:
       - supports-color
 
@@ -15355,6 +15355,10 @@ snapshots:
 
   uint8array-extras@1.4.0: {}
 
+  uiohook-napi@1.5.4:
+    dependencies:
+      node-gyp-build: 4.8.4
+
   umd@3.0.3: {}
 
   unbox-primitive@1.1.0:
@@ -15376,8 +15380,6 @@ snapshots:
       get-assigned-identifiers: 1.2.0
       simple-concat: 1.0.1
       xtend: 4.0.2
-
-  undici-types@6.19.8: {}
 
   undici-types@6.20.0: {}
 
