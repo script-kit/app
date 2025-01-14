@@ -1344,7 +1344,7 @@ export const spawnP = async (
 
     let output = '';
     if (child.stdout) {
-      log.info('stdout exists');
+      log.info(`stdout exists for ${command} ${quotedArgs.join(' ')}`);
       child.stdout.on('data', (data) => {
         const dataString = data.toString();
         log.info(`stdout data: ${dataString}`);
@@ -1354,7 +1354,7 @@ export const spawnP = async (
     }
 
     if (child.stderr) {
-      log.info('stderr exists');
+      log.info(`stderr exists for ${command} ${quotedArgs.join(' ')}`);
       child.stderr.on('data', (data) => {
         log.error(`stderr: ${data}`);
         reject(new Error(`stderr: ${data}`));

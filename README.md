@@ -64,11 +64,23 @@ MSVC v143 - VS 2022 C++ x64/x86 Spectre-mitigated libs (Latest)
 
 ### Linux
 
+I've had the most issues working on Linux. I've often had to manually end the Electron process:
+
+```
+killall Electron
+```
+
+Or clear the vite cache:
+
+```
+pnpm clear-cache
+```
+
 #### arm64
 
-You will need to uninstall uiohook-napi to avoid errors:
+You may need to uninstall uiohook-napi to avoid errors:
 ```bash
-npm un uiohook-napi
+pnpm un uiohook-napi
 ```
 
 
@@ -77,6 +89,14 @@ npm un uiohook-napi
 #### pnpm
 
 This will install pnpm to ~/.kit/pnpm
+
+#### Native Dependencies
+
+Some dependencies require build scripts. These are configured in package.json under `pnpm.onlyBuiltDependencies`. If you see build script warnings, you may need to run:
+
+```bash
+pnpm rebuild
+```
 
 #### Vite Cache Issues
 

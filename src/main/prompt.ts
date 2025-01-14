@@ -1856,7 +1856,7 @@ export class KitPrompt {
   refocusPrompt = () => {
     const visible = this.isVisible();
     const waitForResize = this.ui === UI.arg || this.ui === UI.div;
-    const dontWaitForResize = !waitForResize || this.promptData?.grid;
+    const dontWaitForResize = !waitForResize || this.promptData?.grid || kitState.isLinux;
 
     log.info('👀 Attempting to refocus prompt', {
       hasBeenHidden: this.hasBeenHidden,
@@ -1865,6 +1865,7 @@ export class KitPrompt {
       count: this.count,
       ui: this.ui,
       grid: this.promptData?.grid,
+      scriptPath: this.promptData?.scriptPath,
     });
 
     // "grid" is currently an "arg" prompt that doesn't need a resize... Need to make grid it's own UI type...

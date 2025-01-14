@@ -57,11 +57,11 @@ const buildRunningScriptsSubmenu = async (): Promise<MenuItemConstructorOptions[
     // Terminate all running scripts
 
     runningScripts.push({
-      type: 'separator',
+      type: 'separator' as const,
     });
 
     runningScripts.push({
-      type: 'separator',
+      type: 'separator' as const,
     });
 
     runningScripts.push({
@@ -126,7 +126,7 @@ const buildRunningScriptsSubmenu = async (): Promise<MenuItemConstructorOptions[
     }
 
     runningScripts.push({
-      type: 'separator',
+      type: 'separator' as const,
     });
   }
 
@@ -146,7 +146,7 @@ const buildNotifySubmenu = (): MenuItemConstructorOptions[] => {
 
   if (notifyItems.length) {
     notifyItems.push({
-      type: 'separator',
+      type: 'separator' as const,
     });
   }
 
@@ -194,7 +194,7 @@ const buildUpdateSubmenu = (): MenuItemConstructorOptions[] => {
     });
 
     updateItems.push({
-      type: 'separator',
+      type: 'separator' as const,
     });
   }
 
@@ -208,7 +208,7 @@ const buildUpdateSubmenu = (): MenuItemConstructorOptions[] => {
     });
 
     updateItems.push({
-      type: 'separator',
+      type: 'separator' as const,
     });
   }
 
@@ -325,7 +325,7 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
 
   toolsSubmenu.push(
     {
-      type: 'separator',
+      type: 'separator' as const,
     },
     {
       label: 'Open main.log',
@@ -357,7 +357,7 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
   });
 
   toolsSubmenu.push({
-    type: 'separator',
+    type: 'separator' as const,
   });
 
   toolsSubmenu.push({
@@ -368,7 +368,7 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
   });
 
   toolsSubmenu.push({
-    type: 'separator',
+    type: 'separator' as const,
   });
 
   toolsSubmenu.push({
@@ -377,7 +377,7 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
   });
 
   toolsSubmenu.push({
-    type: 'separator',
+    type: 'separator' as const,
   });
 
   toolsSubmenu.push({
@@ -410,7 +410,7 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
   });
 
   toolsSubmenu.push({
-    type: 'separator',
+    type: 'separator' as const,
   });
 
   toolsSubmenu.push({
@@ -419,7 +419,7 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
   });
 
   toolsSubmenu.push({
-    type: 'separator',
+    type: 'separator' as const,
   });
 
   return toolsSubmenu;
@@ -474,7 +474,7 @@ export const openMenu = debounce(
 
       const updateMenu: MenuItemConstructorOptions = {
         label: 'Check for Updates',
-        click: async () => {
+        click: () => {
           emitter.emit(KitEvent.CheckForUpdates, true);
         },
       };
@@ -530,7 +530,7 @@ export const openMenu = debounce(
         ...buildAuthSubmenu(),
         createOpenMain(),
         {
-          type: 'separator',
+          type: 'separator' as const,
         },
         {
           label: 'Script Kit Forum',
@@ -559,7 +559,7 @@ export const openMenu = debounce(
           icon: menuIcon('browse'),
         },
         {
-          type: 'separator',
+          type: 'separator' as const,
         },
         {
           label: `Script Kit ${getVersion()}`,
@@ -583,7 +583,7 @@ export const openMenu = debounce(
         },
         updateMenu,
         {
-          type: 'separator',
+          type: 'separator' as const,
         },
         // {
         //   label: `Open Settings`,
@@ -606,7 +606,7 @@ export const openMenu = debounce(
                 enabled: false,
               },
               {
-                type: 'separator',
+                type: 'separator' as const,
               },
             ]
           : []),
@@ -617,6 +617,7 @@ export const openMenu = debounce(
           },
         },
       ]);
+
       contextMenu.once('menu-will-close', () => {
         log.info('🎨 menu-will-close Closing tray menu...');
         if (!kitState.starting && kitState.trayScripts.length === 0) {
@@ -846,6 +847,7 @@ subs.push(subReady);
 let leftClickOverride: null | ((event: any) => void) = null;
 export const setTrayMenu = async (scriptPaths: string[]) => {
   kitState.trayScripts = scriptPaths;
+  tray?.setToolTip('Script Kit');
   if (!scriptPaths?.length) {
     if (leftClickOverride) {
       tray?.removeAllListeners('mouse-down');
@@ -882,7 +884,7 @@ export const setTrayMenu = async (scriptPaths: string[]) => {
   }
 
   scriptMenuItems.push({
-    type: 'separator',
+    type: 'separator' as const,
   });
 
   scriptMenuItems.push(createOpenMain());

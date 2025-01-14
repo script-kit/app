@@ -4,7 +4,7 @@ import { createLogger } from '../shared/log-utils';
 const log = createLogger('io.ts');
 import { chars } from './chars';
 import { sendToAllActiveChildren } from './process';
-import shims from './shims';
+import shims, { supportsDependency, target } from './shims';
 import { getAccessibilityAuthorized, kitState, kitStore } from './state';
 
 export const ShiftMap = {
@@ -127,8 +127,15 @@ export const registerIO = async (handler: (event: any) => void) => {
     return;
   }
 
+  if (!supportsDependency('uiohook-napi')) {
+    log.info('uiohook-napi is not supported on this platform', {
+      target,
+    });
+    return;
+  }
+
   log.info('Adding click listeners...');
-  uIOhook.on('click', (event) => {
+  uIOhook?.on('click', (event) => {
     try {
       handler(event);
       sendToAllActiveChildren({
@@ -140,7 +147,7 @@ export const registerIO = async (handler: (event: any) => void) => {
     }
   });
 
-  uIOhook.on('mousedown', (event) => {
+  uIOhook?.on('mousedown', (event) => {
     try {
       sendToAllActiveChildren({
         channel: Channel.SYSTEM_MOUSEDOWN,
@@ -151,7 +158,7 @@ export const registerIO = async (handler: (event: any) => void) => {
     }
   });
 
-  uIOhook.on('mouseup', (event) => {
+  uIOhook?.on('mouseup', (event) => {
     try {
       sendToAllActiveChildren({
         channel: Channel.SYSTEM_MOUSEUP,
@@ -162,7 +169,7 @@ export const registerIO = async (handler: (event: any) => void) => {
     }
   });
 
-  uIOhook.on('mousemove', (event) => {
+  uIOhook?.on('mousemove', (event) => {
     try {
       sendToAllActiveChildren({
         channel: Channel.SYSTEM_MOUSEMOVE,
@@ -173,7 +180,7 @@ export const registerIO = async (handler: (event: any) => void) => {
     }
   });
 
-  uIOhook.on('wheel', (event) => {
+  uIOhook?.on('wheel', (event) => {
     try {
       sendToAllActiveChildren({
         channel: Channel.SYSTEM_WHEEL,
@@ -186,7 +193,7 @@ export const registerIO = async (handler: (event: any) => void) => {
 
   log.info('Adding keydown listeners...');
   let key = '';
-  uIOhook.on('keydown', (event) => {
+  uIOhook?.on('keydown', (event) => {
     try {
       key = toKey(event.keycode, event.shiftKey);
       (event as any).key = key;
@@ -207,7 +214,7 @@ export const registerIO = async (handler: (event: any) => void) => {
     }
   });
 
-  uIOhook.on('keyup', (event) => {
+  uIOhook?.on('keyup', (event) => {
     (event as any).key = key;
     (event as any).text = kitState.snippet;
     sendToAllActiveChildren({

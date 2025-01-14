@@ -168,7 +168,7 @@
     "node-pty": "1.1.0-beta27",
     "node-schedule": "2.1.1",
     "node-stream-zip": "^1.15.0",
-    "pnpm": "10",
+    "pnpm": "10.0.0",
     "prop-types": "^15.8.1",
     "quick-score": "0.2.0",
     "react": "^19.0.0",
@@ -189,8 +189,7 @@
     "@johnlindquist/mac-frontmost": "^1.0.7",
     "@johnlindquist/mac-panel-window": "^1.6.4",
     "@johnlindquist/node-window-manager": "^1.0.24",
-    "node-mac-permissions": "^2.4.0",
-    "uiohook-napi": "^1.5.4"
+    "node-mac-permissions": "^2.4.0"
   },
   "engines": {
     "node": "20.18.1"
@@ -204,5 +203,16 @@
     "preset": "ts-jest",
     "testEnvironment": "node"
   },
-  "packageManager": "pnpm@10.0.0"
+  "packageManager": "pnpm@10.0.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@biomejs/biome",
+      "@jitsi/robotjs",
+      "@johnlindquist/kit",
+      "@johnlindquist/node-window-manager",
+      "electron",
+      "esbuild",
+      "node-pty"
+    ]
+  }
 }

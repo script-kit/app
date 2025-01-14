@@ -15,7 +15,7 @@ const arch = (process.env.ELECTRON_BUILD_ARCH || process.arch) as NodeJS.Archite
 const platform = (process.env.ELECTRON_BUILD_PLATFORM || os.platform()) as NodeJS.Platform;
 
 export type Target = `${NodeJS.Platform}-${NodeJS.Architecture}`;
-const target: Target = `${platform}-${arch}`;
+export const target: Target = `${platform}-${arch}`;
 
 const robot = '@jitsi/robotjs' as const;
 const uiohook = 'uiohook-napi' as const;
@@ -68,7 +68,6 @@ const createShim = <T extends keyof Shims>(packageName: T, depth = 0): Shims[T] 
     {},
     {
       get: (_target, prop: string) => {
-
         log.warn(`Accessing ${prop.toString()} not supported on ${packageName}`);
 
         if (depth > 0) {
