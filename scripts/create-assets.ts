@@ -29,7 +29,7 @@ async function uploadWithRetry(octokit, releaseData, filePath, name, maxRetries 
         throw new Error(`Failed to upload after ${maxRetries} attempts: ${error.message}`);
       }
 
-      // Wait before retrying (exponential backoff)
+      // Wait before retrying (exponential backoff)...
       const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
       console.log(`Waiting ${delay}ms before retry...`);
       await new Promise((resolve) => setTimeout(resolve, delay));
