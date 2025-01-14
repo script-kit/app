@@ -291,18 +291,11 @@ jobs:
         if: matrix.platform == 'mac'
         env:
           # These values are used for auto updates signing
-          # APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-          # APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          # This is used for uploading release assets to github
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ELECTRON_BUILD_ARCH: arm64
-          ELECTRON_BUILD_PLATFORM: darwin
 
         run: |
             pnpm i
