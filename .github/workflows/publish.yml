@@ -10,6 +10,7 @@ on:
     # Remove the branches section as it's not valid
     # workflow_dispatch allows manual triggering without branch restrictions
 
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
