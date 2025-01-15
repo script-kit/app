@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  electron: npm:electron-nightly@35.0.0-nightly.20250113
-
 importers:
 
   .:
