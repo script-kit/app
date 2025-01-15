@@ -6,7 +6,7 @@ import type { Configuration, PackagerOptions } from 'electron-builder';
 import packageJson from './package.json';
 
 let platform: 'linux' | 'mac' | 'win';
-let arch: 'arm64' | 'x64' | 'both';
+let arch: 'arm64' | 'x64';
 let publish: 'always' | 'never' | undefined;
 
 if (process.argv.length <= 2) {
@@ -20,11 +20,11 @@ if (process.argv.length <= 2) {
     throw new Error(`Unsupported platform: ${process.platform}`);
   }
 
-  arch = process.arch as 'arm64' | 'x64' | 'both';
+  arch = process.arch as 'arm64' | 'x64';
   publish = undefined;
 } else {
   platform = (await arg('platform')) as 'linux' | 'mac' | 'win';
-  arch = (await arg('arch')) as 'arm64' | 'x64' | 'both';
+  arch = (await arg('arch')) as 'arm64' | 'x64';
   publish = (await arg('publish')) as 'always' | 'never' | undefined;
 }
 
@@ -48,7 +48,7 @@ const dirFiles = (await fsExtra.readdir('.', { withFileTypes: true })).filter(
       dir.name.startsWith('package.json')
     ),
 );
-
+4;
 const files = dirFiles
   .filter((file) => file.isDirectory())
   .map((dir) => `!${dir.name}/**/*`)
@@ -122,24 +122,20 @@ const config: Configuration = {
   },
 };
 
-let targets: PackagerOptions['targets'] = new Map();
+let targets: PackagerOptions['targets'];
+const archFlag = Arch[arch as 'x64' | 'arm64'];
 
 switch (platform) {
   case 'mac':
-    targets.set(
-      Platform.MAC,
-      new Map([
-        [Arch.x64, ['dmg', 'zip']],
-        [Arch.arm64, ['dmg', 'zip']],
-      ]),
-    );
+    targets = Platform.MAC.createTarget(['dmg', 'zip'], archFlag);
     break;
   case 'win':
-    targets.set(Platform.WINDOWS, new Map([[Arch[arch], ['nsis']]]));
+    targets = Platform.WINDOWS.createTarget(['nsis'], archFlag);
     break;
   case 'linux':
-    targets.set(Platform.LINUX, new Map([[Arch[arch], ['AppImage', 'deb', 'rpm']]]));
+    targets = Platform.LINUX.createTarget(['AppImage', 'deb', 'rpm'], archFlag);
     break;
+
   default:
     throw new Error(`Unsupported platform: ${platform}`);
 }
@@ -154,14 +150,11 @@ try {
     const pkg = await fsExtra.readJson('package.json');
     console.log(`Optional dependencies before: ${JSON.stringify(pkg.optionalDependencies, null, 2)}`);
   }
-  const cliOptions = {
+  const result = await build({
     config,
     publish,
     targets,
-  };
-
-  console.log('Building with options', cliOptions);
-  const result = await build(cliOptions);
+  });
   console.log('Build result', result);
 } catch (e) {
   console.error('Build failed', e);

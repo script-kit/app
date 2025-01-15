@@ -126,10 +126,12 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             arch: x64
-          - os: macos-15-large
+          - os: macos-latest
             platform: mac
-            arch: both
-
+            arch: x64
+          - os: macos-14
+            platform: mac
+            arch: arm64
     steps:
       - name: Debug - Echo kit_tag from previous jobs
         run: |
@@ -149,7 +151,7 @@ jobs:
       - name: Install Node, pnpm and Yarn
         uses: actions/setup-node@v4
         with:
-          node-version: 22.9.0
+          node-version: 20.18.1
 
       - name: Write the Semantic Version to package.json version property for main
         if: needs.tag.outputs.kit_tag == 'latest'
@@ -287,22 +289,57 @@ jobs:
             pnpm --version
             pnpm exec kit ./build.ts linux arm64 always
 
-      - name: Publish mac "both" (arm64 and x64)
-        if: matrix.platform == 'mac'
+      - name: Publish mac x64
+        if: matrix.platform == 'mac' && matrix.arch == 'x64'
         env:
           # These values are used for auto updates signing
-          # macOS Code signing certificates
+          # APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          # APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_API_KEY: ~/.private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ELECTRON_BUILD_ARCH: x64
+          ELECTRON_BUILD_PLATFORM: darwin
 
+        # Wait 10 minutes to start to avoid signing overlap issues
         run: |
-            mkdir -p ~/.private_keys
-            echo '${{ secrets.APPLE_API_KEY }}' > ~/.private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
+            sleep 10m
             pnpm i
             pnpm vite-prebuild
-            pnpm exec kit ./build.ts mac both always
+            pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
+
+      - name: Publish mac arm64
+        if: matrix.platform == 'mac' && matrix.arch == 'arm64'
+        env:
+          # These values are used for auto updates signing
+          # APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          # APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          # This is used for uploading release assets to github
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ELECTRON_BUILD_ARCH: arm64
+          ELECTRON_BUILD_PLATFORM: darwin
+
+        run: |
+            pnpm i
+            pnpm vite-prebuild
+            pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
+
+      - name: Merge latest-mac.yml and latest-mac-arm64.yml
+        if: matrix.platform == 'mac'
+        # Just something to keep an eye on in case kit-action changes.
+        uses: johnlindquist/kit-action@main
+        with:
+          script: merge-mac-latest-yml script-kit kitapp ${{ matrix.arch }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

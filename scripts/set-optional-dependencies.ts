@@ -31,7 +31,6 @@ console.log({ supportMap });
 let platformFinal: 'darwin' | 'win32' | 'linux';
 if (platform === 'mac') {
   platformFinal = 'darwin';
-  arch = 'arm64'; // because all deps are supported on arm64 and x64 and we use a "both" flag
 } else {
   platformFinal = platform;
 }
