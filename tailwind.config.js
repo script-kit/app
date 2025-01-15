@@ -3,11 +3,7 @@ const defaultTheme = require('tailwindcss/defaultTheme');
 const colors = require('tailwindcss/colors');
 const peers = require('tailwindcss/peers');
 
-colors.lightBlue = undefined;
-colors.coolGray = undefined;
-colors.blueGray = undefined;
-colors.trueGray = undefined;
-colors.warmGray = undefined;
+const { lightBlue, coolGray, blueGray, trueGray, warmGray, ...safeColors } = colors;
 
 const colorVar = (name, opacityName) => (v) => {
   const { opacityVariable, opacityValue } = v;
@@ -109,8 +105,8 @@ module.exports = {
     },
     colors: {
       ...defaultTheme.colors,
-      ...colors,
-      gray: colors.coolGray,
+      ...safeColors,
+      gray: colors.gray,
       primary: colorVar('primary'),
       'primary-25': colorVar('primary', 0.25),
       'primary-50': colorVar('primary', 0.5),

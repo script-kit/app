@@ -18,8 +18,8 @@ importers:
         specifier: ^0.1.38
         version: 0.1.38
       '@johnlindquist/kit':
-        specifier: ^3.7.14
-        version: 3.7.16
+        specifier: ^3.8.0
+        version: 3.8.0
       '@pnpm/exec':
         specifier: ^2.0.0
         version: 2.0.0
@@ -104,9 +104,6 @@ importers:
       electron-store:
         specifier: ^10.0.0
         version: 10.0.0
-      electron-unhandled:
-        specifier: ^5.0.0
-        version: 5.0.0
       electron-updater:
         specifier: ^6.3.9
         version: 6.3.9
@@ -265,7 +262,7 @@ importers:
         specifier: ^2.1.7
         version: 2.1.7
       '@types/react':
-        specifier: ^19.0.6
+        specifier: ^19.0.7
         version: 19.0.7
       '@types/react-dom':
         specifier: ^19.0.3
@@ -294,6 +291,9 @@ importers:
       ansi-to-html:
         specifier: 0.7.2
         version: 0.7.2
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.4.20(postcss@8.5.1)
       classnames:
         specifier: ^2.5.1
         version: 2.5.1
@@ -316,8 +316,8 @@ importers:
         specifier: ^3.2.3
         version: 3.2.3
       electron:
-        specifier: npm:electron-nightly@35.0.0-nightly.20250113
-        version: electron-nightly@35.0.0-nightly.20250113
+        specifier: 34.0.0
+        version: 34.0.0
       electron-builder:
         specifier: 26.0.0-alpha.8
         version: 26.0.0-alpha.8(electron-builder-squirrel-windows@26.0.0-alpha.7)
@@ -337,7 +337,7 @@ importers:
         specifier: 4.1.0
         version: 4.1.0(eslint@9.18.0(jiti@1.21.7))(jest@29.7.0(@types/node@22.10.6))(prettier@3.4.2)(react@19.0.0)(typescript@5.7.3)
       framer-motion:
-        specifier: ^11.17.0
+        specifier: ^11.18.0
         version: 11.18.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       html-react-parser:
         specifier: ^5.2.2
@@ -364,7 +364,7 @@ importers:
         specifier: ^3.1.11
         version: 3.1.11(rollup@4.30.1)
       node-abi:
-        specifier: ^3.71.0
+        specifier: ^3.72.0
         version: 3.72.0
       patch-package:
         specifier: ^8.0.0
@@ -1221,8 +1221,8 @@ packages:
     resolution: {integrity: sha512-VCZf/s7Tbp/8X516zhlbrUuVWx/triWCojXYz07YlxZaqAoFnR7+nhsInT9LTpkLqz5EgdDya4oRp8axZNyS5Q==}
     hasBin: true
 
-  '@johnlindquist/kit@3.7.16':
-    resolution: {integrity: sha512-vnUFSyZBJ1y6G7Z5cqhjR7EVNq8fnv2wLzyhj8m9p/4U3D/7mK341FWUS5uR5czEFwC071DKT6V4VlOo76iOvw==}
+  '@johnlindquist/kit@3.8.0':
+    resolution: {integrity: sha512-UWet6bLXCF6PeesX07PQaDZlRWsL9WEwZGImgioCAhCVx3pJz33nVfaUfD+bvkIetGJI8XoZ/R5/2FNw0RrA+A==}
     engines: {node: '>=14.8.0'}
     hasBin: true
 
@@ -1759,6 +1759,9 @@ packages:
 
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
+
+  '@types/node@20.17.13':
+    resolution: {integrity: sha512-RNf+4dEeV69PIvyp++4IKM2vnLXtmp/JovfeQm5P5+qpKb6wHoH7INywLdZ7z+gVX46kgBP/fwJJvZYaHxtdyw==}
 
   '@types/node@22.10.6':
     resolution: {integrity: sha512-qNiuwC4ZDAUNcY47xgaSuS92cjf8JbSUoaKS77bmLG1rU7MlATVSiw/IlrjtIyyskXBZ8KkNfjK/P5na7rgXbQ==}
@@ -2335,6 +2338,13 @@ packages:
     resolution: {integrity: sha512-OgxiAm4q9EBf9EeXdPBiVNENaWE3jUZofwrhAkWjHDYGezu1k3FRZHU8V2FBxGuSJOHzKmTJEd0G7L7/0xDGFA==}
     engines: {node: '>=4.0.0'}
 
+  autoprefixer@10.4.20:
+    resolution: {integrity: sha512-XY25y5xSv/wEoqzDyXXME4AFfkZI0P23z6Fs3YgymDnKJkCGOnkL0iTxCa85UTqaSgfcqyf3UA6+c7wUvx/16g==}
+    engines: {node: ^10 || ^12 || >=14}
+    hasBin: true
+    peerDependencies:
+      postcss: ^8.1.0
+
   available-typed-arrays@1.0.7:
     resolution: {integrity: sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==}
     engines: {node: '>= 0.4'}
@@ -2683,10 +2693,6 @@ packages:
   clean-stack@4.2.0:
     resolution: {integrity: sha512-LYv6XPxoyODi36Dp976riBtSY27VmFo+MKqEU9QCCWyTrdEPDog+RWA7xQWHi6Vbp61j5c4cdzzX1NidnwtUWg==}
     engines: {node: '>=12'}
-
-  clean-stack@5.2.0:
-    resolution: {integrity: sha512-TyUIUJgdFnCISzG5zu3291TAsE77ddchd0bepon1VVQrKLGKFED4iXFEDQ24mIPdPBbyE16PK3F8MYE1CmcBEQ==}
-    engines: {node: '>=14.16'}
 
   cli-cursor@3.1.0:
     resolution: {integrity: sha512-I/zHAwsKf9FqGoXM4WWRACob9+SNukZTd94DWF57E4toouRulbCxcUh6RKUEOQlYTHJnzkPMySvPNaaSLNfLZw==}
@@ -3315,11 +3321,6 @@ packages:
   electron-mocks@1.6.0:
     resolution: {integrity: sha512-xkSmZ67ujXmEfCMGdTkYW1XX0EGSmw8j2f3vCU/JAK+TdNc8A2sEuZU2ZViszuLvTKPd5JQZGWoNBix5FShc3A==}
 
-  electron-nightly@35.0.0-nightly.20250113:
-    resolution: {integrity: sha512-BBLNNw7mEIJwDGhnHfsJPTBqZy3ktKqyn02odNIaxYGYZ+ZkLJRrDJNX11IixjwvLYvpXAGvbcTYD6uwmnxQtg==}
-    engines: {node: '>= 12.20.55'}
-    hasBin: true
-
   electron-publish@26.0.0-alpha.7:
     resolution: {integrity: sha512-mV4uP3G7WWwgnYSyFdxSmvAhH8hcyNm4aUHDC9ALRH0zG53x4P3Et3KhAHhollMY4U7OrvlL9jiP8y/4VuZVeQ==}
 
@@ -3332,10 +3333,6 @@ packages:
 
   electron-to-chromium@1.5.82:
     resolution: {integrity: sha512-Zq16uk1hfQhyGx5GpwPAYDwddJuSGhtRhgOA2mCxANYaDT79nAeGnaXogMGng4KqLaJUVnOnuL0+TDop9nLOiA==}
-
-  electron-unhandled@5.0.0:
-    resolution: {integrity: sha512-spH7quQUrNWgTp1rJNa0sCPTPHwKywctnHLVbrQxpjxojQLhGxXHMdETBkag0No8x9Jwo/c6r2T/nfeoG+4Cxw==}
-    engines: {node: '>=18'}
 
   electron-updater@6.3.9:
     resolution: {integrity: sha512-2PJNONi+iBidkoC5D1nzT9XqsE8Q1X28Fn6xRQhO3YX8qRRyJ3mkV4F1aQsuRnYPqq6Hw+E51y27W75WgDoofw==}
@@ -3350,6 +3347,11 @@ packages:
     peerDependenciesMeta:
       '@swc/core':
         optional: true
+
+  electron@34.0.0:
+    resolution: {integrity: sha512-fpaPb0lifoUJ6UJa4Lk8/0B2Ku/xDZWdc1Gkj67jbygTCrvSon0qquju6Ltx1Kz23GRqqlIHXiy9EvrjpY7/Wg==}
+    engines: {node: '>= 12.20.55'}
+    hasBin: true
 
   elliptic@6.6.1:
     resolution: {integrity: sha512-RaddvvMatK2LJHqFJ+YA4WysVN5Ita9E35botqIYspQ4TkRAlCicdzKOjlyv/1Za5RyTNn7di//eEV0uTAfe3g==}
@@ -3394,10 +3396,6 @@ packages:
   enquirer@2.4.1:
     resolution: {integrity: sha512-rRqJg/6gd538VHvR3PSrdRBb/1Vy2YfzHqzvbhGIQpDRKIa4FgV/54b5Q1xYSxOOwKvjXweS26E0Q+nAMwp2pQ==}
     engines: {node: '>=8.6'}
-
-  ensure-error@4.0.0:
-    resolution: {integrity: sha512-7Xenn3+R6tp2UqAbH9Jqs6QCSABQok+1VAhaPaF0jjm3iuhVHCblfBh18nYtpm3K9/V4Jpxz1JIqFZyrjstBtw==}
-    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
   entities@2.2.0:
     resolution: {integrity: sha512-p92if5Nz619I0w+akJrLZH0MX0Pb5DX39XOwQTtXSdQQOaYH03S1uIQp4mhOZtAXrxq4ViO67YTiLBo2638o9A==}
@@ -3957,6 +3955,9 @@ packages:
   forwarded@0.2.0:
     resolution: {integrity: sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==}
     engines: {node: '>= 0.6'}
+
+  fraction.js@4.3.7:
+    resolution: {integrity: sha512-ZsDfxO51wGAXREY55a7la9LScWpwv9RxIrYABrlvOFBlH/ShPnrtsXeuUIfXKKOVicNxQ+o8JTbJvjS4M89yew==}
 
   framer-motion@11.18.0:
     resolution: {integrity: sha512-Vmjl5Al7XqKHzDFnVqzi1H9hzn5w4eN/bdqXTymVpU2UuMQuz9w6UPdsL9dFBeH7loBlnu4qcEXME+nvbkcIOw==}
@@ -5058,9 +5059,6 @@ packages:
   lodash.castarray@4.4.0:
     resolution: {integrity: sha512-aVx8ztPv7/2ULbArGJ2Y42bG1mEQ5mGjpdvrbJcJFU3TbYybe+QlLS4pst9zV52ymy2in1KpFPiZnAOATxD4+Q==}
 
-  lodash.debounce@4.0.8:
-    resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
-
   lodash.defaults@4.2.0:
     resolution: {integrity: sha512-qjxPLHd3r5DnsdGacqOMU6pb/avJzdh9tFX2ymgoZE27BmjXrNy/y4LoaiTeAb+O3gL8AfpJGtqfX/ae2leYYQ==}
 
@@ -5515,6 +5513,10 @@ packages:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
     engines: {node: '>=0.10.0'}
 
+  normalize-range@0.1.2:
+    resolution: {integrity: sha512-bdok/XvKII3nUpklnV6P2hxtMNrCboOjAcyBuQnWEhO665FwrSNRxU+AqpsyvO6LgGYPspN+lu5CLtw4jPRKNA==}
+    engines: {node: '>=0.10.0'}
+
   normalize-url@2.0.1:
     resolution: {integrity: sha512-D6MUW4K/VzoJ4rJ01JFKxDrtY1v9wrgzCX5f2qj/lzH1m/lW6MhUZFKerVsnyjOhOsYzI9Kqqak+10l4LvLpMw==}
     engines: {node: '>=4'}
@@ -5586,6 +5588,10 @@ packages:
   onetime@5.1.2:
     resolution: {integrity: sha512-kbpaSSGJTWdAY5KPVeMOKXSrPtr8C8C7wodJbcsd51jRnmD+GZu8Y0VoU6Dm5Z4vWr0Ig/1NKuWRKf7j5aaYSg==}
     engines: {node: '>=6'}
+
+  open@10.1.0:
+    resolution: {integrity: sha512-mnkeQ1qP5Ue2wd+aivTD3NHd/lZ96Lu0jgf0pwktLPtx6cTZiH7tyeGRRHs0zX0rbrahXPnXlUnbeXyaBBuIaw==}
+    engines: {node: '>=18'}
 
   open@7.4.2:
     resolution: {integrity: sha512-MVHddDVweXZF3awtlAS+6pgKLlm/JgxZ90+/NBurBoQctVOOB/zDdVjcyPzQ+0laDGbsWgrRkflI65sQeOgT9Q==}
@@ -6427,10 +6433,6 @@ packages:
     resolution: {integrity: sha512-dW41u5VfLXu8SJh5bwRmyYUbAoSB3c9uQh6L8h/KtsFREPWpbX1lrljJo186Jc4nmci/sGUZ9a0a0J2zgfq2hw==}
     engines: {node: '>= 0.8.0'}
 
-  serialize-error@11.0.3:
-    resolution: {integrity: sha512-2G2y++21dhj2R7iHAdd0FIzjGwuKZld+7Pl/bTU6YIkrC2ZMbVUjm+luj6A6V34Rv9XfKJDKpTWu9W4Gse1D9g==}
-    engines: {node: '>=14.16'}
-
   serialize-error@7.0.1:
     resolution: {integrity: sha512-8I8TjW5KMOKsZQTvoxjuSIa7foAwPWGOts+6o7sgjz41/qMD9VQHEDxi6PBvK2l0MXUmqZyNpUK+T2tQaaElvw==}
     engines: {node: '>=10'}
@@ -7055,10 +7057,6 @@ packages:
     resolution: {integrity: sha512-t0rzBq87m3fVcduHDUFhKmyyX+9eo6WQjZvf51Ea/M0Q7+T374Jp1aUiyUl0GKxp8M/OETVHSDvmkyPgvX+X2w==}
     engines: {node: '>=10'}
 
-  type-fest@2.19.0:
-    resolution: {integrity: sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA==}
-    engines: {node: '>=12.20'}
-
   type-fest@4.32.0:
     resolution: {integrity: sha512-rfgpoi08xagF3JSdtJlCwMq9DGNDE0IMh3Mkpc1wUypg9vPi786AiqeBBKcqvIkq42azsBM85N490fyZjeUftw==}
     engines: {node: '>=16'}
@@ -7126,6 +7124,9 @@ packages:
   undeclared-identifiers@1.1.3:
     resolution: {integrity: sha512-pJOW4nxjlmfwKApE4zvxLScM/njmwj/DiUBv7EabwE4O8kRUy+HIwxQtZLBPll/jx1LJyBcqNfB3/cpv9EZwOw==}
     hasBin: true
+
+  undici-types@6.19.8:
+    resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
 
   undici-types@6.20.0:
     resolution: {integrity: sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==}
@@ -8321,7 +8322,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@johnlindquist/kit@3.7.16':
+  '@johnlindquist/kit@3.8.0':
     dependencies:
       '@johnlindquist/open': 10.1.1
       '@octokit/auth-oauth-device': 7.1.2
@@ -8364,6 +8365,7 @@ snapshots:
       lowdb: 7.0.1
       marked: 4.3.0
       minimist: 1.2.8
+      open: 10.1.0
       p-retry: 6.2.1
       pnpm: 10.0.0
       project-name-generator: 2.1.9
@@ -8944,6 +8946,10 @@ snapshots:
 
   '@types/node@12.20.55':
     optional: true
+
+  '@types/node@20.17.13':
+    dependencies:
+      undici-types: 6.19.8
 
   '@types/node@22.10.6':
     dependencies:
@@ -9691,6 +9697,16 @@ snapshots:
       untildify: 3.0.3
       winreg: 1.2.4
 
+  autoprefixer@10.4.20(postcss@8.5.1):
+    dependencies:
+      browserslist: 4.24.4
+      caniuse-lite: 1.0.30001692
+      fraction.js: 4.3.7
+      normalize-range: 0.1.2
+      picocolors: 1.1.1
+      postcss: 8.5.1
+      postcss-value-parser: 4.2.0
+
   available-typed-arrays@1.0.7:
     dependencies:
       possible-typed-array-names: 1.0.0
@@ -10229,10 +10245,6 @@ snapshots:
     dependencies:
       escape-string-regexp: 5.0.0
     optional: true
-
-  clean-stack@5.2.0:
-    dependencies:
-      escape-string-regexp: 5.0.0
 
   cli-cursor@3.1.0:
     dependencies:
@@ -10938,14 +10950,6 @@ snapshots:
     dependencies:
       sinon: 19.0.2
 
-  electron-nightly@35.0.0-nightly.20250113:
-    dependencies:
-      '@electron/get': 2.0.3
-      '@types/node': 22.10.6
-      extract-zip: 2.0.1
-    transitivePeerDependencies:
-      - supports-color
-
   electron-publish@26.0.0-alpha.7:
     dependencies:
       '@types/fs-extra': 9.0.13
@@ -10979,14 +10983,6 @@ snapshots:
 
   electron-to-chromium@1.5.82: {}
 
-  electron-unhandled@5.0.0:
-    dependencies:
-      clean-stack: 5.2.0
-      electron-is-dev: 3.0.1
-      ensure-error: 4.0.0
-      lodash.debounce: 4.0.8
-      serialize-error: 11.0.3
-
   electron-updater@6.3.9:
     dependencies:
       builder-util-runtime: 9.2.10
@@ -11009,6 +11005,14 @@ snapshots:
       magic-string: 0.30.17
       picocolors: 1.1.1
       vite: 6.0.7(@types/node@22.10.6)(jiti@1.21.7)(yaml@2.7.0)
+    transitivePeerDependencies:
+      - supports-color
+
+  electron@34.0.0:
+    dependencies:
+      '@electron/get': 2.0.3
+      '@types/node': 20.17.13
+      extract-zip: 2.0.1
     transitivePeerDependencies:
       - supports-color
 
@@ -11057,8 +11061,6 @@ snapshots:
     dependencies:
       ansi-colors: 4.1.3
       strip-ansi: 6.0.1
-
-  ensure-error@4.0.0: {}
 
   entities@2.2.0: {}
 
@@ -11657,8 +11659,7 @@ snapshots:
 
   extsprintf@1.3.0: {}
 
-  extsprintf@1.4.1:
-    optional: true
+  extsprintf@1.4.1: {}
 
   fast-content-type-parse@2.0.1: {}
 
@@ -11839,6 +11840,8 @@ snapshots:
       mime-types: 2.1.35
 
   forwarded@0.2.0: {}
+
+  fraction.js@4.3.7: {}
 
   framer-motion@11.18.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
@@ -13183,8 +13186,6 @@ snapshots:
 
   lodash.castarray@4.4.0: {}
 
-  lodash.debounce@4.0.8: {}
-
   lodash.defaults@4.2.0: {}
 
   lodash.difference@4.5.0: {}
@@ -13610,6 +13611,8 @@ snapshots:
 
   normalize-path@3.0.0: {}
 
+  normalize-range@0.1.2: {}
+
   normalize-url@2.0.1:
     dependencies:
       prepend-http: 2.0.0
@@ -13687,6 +13690,13 @@ snapshots:
   onetime@5.1.2:
     dependencies:
       mimic-fn: 2.1.0
+
+  open@10.1.0:
+    dependencies:
+      default-browser: 5.2.1
+      define-lazy-prop: 3.0.0
+      is-inside-container: 1.0.0
+      is-wsl: 3.1.0
 
   open@7.4.2:
     dependencies:
@@ -14579,10 +14589,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  serialize-error@11.0.3:
-    dependencies:
-      type-fest: 2.19.0
-
   serialize-error@7.0.1:
     dependencies:
       type-fest: 0.13.1
@@ -15299,8 +15305,6 @@ snapshots:
 
   type-fest@0.21.3: {}
 
-  type-fest@2.19.0: {}
-
   type-fest@4.32.0: {}
 
   type-is@1.6.18:
@@ -15381,6 +15385,8 @@ snapshots:
       get-assigned-identifiers: 1.2.0
       simple-concat: 1.0.1
       xtend: 4.0.2
+
+  undici-types@6.19.8: {}
 
   undici-types@6.20.0: {}
 
@@ -15472,7 +15478,7 @@ snapshots:
     dependencies:
       assert-plus: 1.0.0
       core-util-is: 1.0.2
-      extsprintf: 1.3.0
+      extsprintf: 1.4.1
 
   verror@1.10.1:
     dependencies:

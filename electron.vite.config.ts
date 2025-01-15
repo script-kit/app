@@ -14,6 +14,7 @@ const build: BuildOptions = {
     },
     external: external(),
   },
+  target: 'node22',
 };
 
 export default defineConfig(() => ({
@@ -66,6 +67,4 @@ export default defineConfig(() => ({
       },
     },
   },
-}))
-
-
+}));

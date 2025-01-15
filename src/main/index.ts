@@ -904,9 +904,11 @@ const checkKit = async () => {
       const doesKenvExist = await kenvExists();
       if (doesKenvExist) {
         await setEnvVar('KENV', kenvPath());
+        await setEnvVar('KIT_NODE_PATH', kitState.KIT_NODE_PATH);
         log.info(`🚶 Assigned PATH with prefixed KIT_NODE_PATH: ${process.env.PATH}`);
       }
     } catch (error) {
+      log.error('Failed to set KENV and KIT_NODE_PATH');
       log.error(error);
     }
 
