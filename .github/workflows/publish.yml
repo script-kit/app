@@ -126,10 +126,10 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             arch: x64
-          - os: macos-latest
+          - os: macos-latest-large
             platform: mac
             arch: x64
-          - os: macos-14
+          - os: macos-latest-xlarge
             platform: mac
             arch: arm64
     steps:
@@ -289,12 +289,18 @@ jobs:
             pnpm --version
             pnpm exec kit ./build.ts linux arm64 always
 
+      - name: Write Apple API Key to ~/.private_keys
+        run: |
+          mkdir -p ~/.private_keys
+          echo '${{ secrets.APPLE_API_KEY }}' > ~/.private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
+
       - name: Publish mac x64
         if: matrix.platform == 'mac' && matrix.arch == 'x64'
         env:
           # These values are used for auto updates signing
-          # APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-          # APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -308,7 +314,7 @@ jobs:
 
         # Wait 10 minutes to start to avoid signing overlap issues
         run: |
-            sleep 10m
+            sleep 600
             pnpm i
             pnpm vite-prebuild
             pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
@@ -317,8 +323,9 @@ jobs:
         if: matrix.platform == 'mac' && matrix.arch == 'arm64'
         env:
           # These values are used for auto updates signing
-          # APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-          # APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
