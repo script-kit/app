@@ -7,7 +7,7 @@ on:
       - next
 
   workflow_dispatch:
-    # Remove the branches section as it's not valid for workflow_dispatch
+    # Remove the branches section as it's not valid
     # workflow_dispatch allows manual triggering without branch restrictions
 
 concurrency:
