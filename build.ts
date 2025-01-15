@@ -124,8 +124,6 @@ const config: Configuration = {
 
 let targets: PackagerOptions['targets'] = new Map();
 
-const archFlags: Arch[] = arch === 'both' ? [Arch.x64, Arch.arm64] : [Arch[arch]];
-
 switch (platform) {
   case 'mac':
     targets.set(
