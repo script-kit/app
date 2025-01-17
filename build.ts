@@ -64,7 +64,7 @@ const config: Configuration = {
     output: './release',
     buildResources: 'build',
   },
-  asar: true,
+  asar: false,
   asarUnpack,
   // afterSign: platform === 'mac' ? afterSign : undefined,
   files,

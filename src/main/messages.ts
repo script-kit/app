@@ -1014,11 +1014,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       sendToPrompt(Channel.SET_HINT, data.value);
     },
 
-    SET_BOUNDS: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_BOUNDS: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_BOUNDS, value);
     }),
 
-    SET_IGNORE_BLUR: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_IGNORE_BLUR: onChildChannel(({ child }, { channel, value }) => {
       log.info('SET_IGNORE_BLUR', { value });
     }),
 
@@ -1026,12 +1026,12 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       prompt.allowResize = data?.value;
     },
 
-    SET_PAUSE_RESIZE: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_PAUSE_RESIZE: onChildChannel(({ child }, { channel, value }) => {
       log.info('⏸ Resize', `${value ? 'paused' : 'resumed'}`);
       kitState.resizePaused = value;
     }),
 
-    SET_INPUT: onChildChannel(async ({ child }, { channel, value, promptId }, samePrompt) => {
+    SET_INPUT: onChildChannel(({ child }, { channel, value, promptId }, samePrompt) => {
       if (samePrompt) {
         // log.info(`💌 SET_INPUT to ${value}`);
         prompt.kitSearch.keywords.clear();
@@ -1050,43 +1050,43 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       sendToPrompt(Channel.GET_INPUT);
     }),
 
-    EDITOR_GET_SELECTION: onChildChannel(async ({ child }, { channel }) => {
+    EDITOR_GET_SELECTION: onChildChannel(({ child }, { channel }) => {
       sendToPrompt(Channel.EDITOR_GET_SELECTION);
     }),
 
-    EDITOR_GET_CURSOR_OFFSET: onChildChannel(async ({ child }, { channel }) => {
+    EDITOR_GET_CURSOR_OFFSET: onChildChannel(({ child }, { channel }) => {
       sendToPrompt(Channel.EDITOR_GET_CURSOR_OFFSET);
     }),
 
-    EDITOR_SET_CODE_HINT: onChildChannel(async ({ child }, { channel }) => {
+    EDITOR_SET_CODE_HINT: onChildChannel(({ child }, { channel }) => {
       sendToPrompt(Channel.EDITOR_SET_CODE_HINT);
     }),
 
-    EDITOR_MOVE_CURSOR: onChildChannel(async ({ child }, { channel, value }) => {
+    EDITOR_MOVE_CURSOR: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.EDITOR_MOVE_CURSOR, value);
     }),
 
-    EDITOR_INSERT_TEXT: onChildChannel(async ({ child }, { channel, value }) => {
+    EDITOR_INSERT_TEXT: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.EDITOR_INSERT_TEXT, value);
     }),
 
-    APPEND_INPUT: onChildChannel(async ({ child }, { channel, value }) => {
+    APPEND_INPUT: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.APPEND_INPUT, value);
     }),
 
-    SCROLL_TO: onChildChannel(async ({ child }, { channel, value }) => {
+    SCROLL_TO: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.SCROLL_TO, value);
     }),
 
-    SET_PLACEHOLDER: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_PLACEHOLDER: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_PLACEHOLDER, value);
     }),
 
-    SET_ENTER: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_ENTER: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_ENTER, value);
     }),
 
-    SET_FOOTER: onChildChannel(async ({ child }, { channel, value }) => {
+    SET_FOOTER: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_FOOTER, value);
     }),
 
@@ -1497,9 +1497,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       sendToPrompt(Channel.PREVENT_SUBMIT, data.value);
     },
 
-    SET_FILTER_INPUT: (data) => {
-      sendToPrompt(Channel.SET_FILTER_INPUT, data.value);
-    },
+    SET_FILTER_INPUT: onChildChannel(({ child }, { channel, value }) => {
+      sendToPrompt(Channel.SET_FILTER_INPUT, value);
+    }),
     NOTIFY: onChildChannel(({ child }, { channel, value }) => {
       const notification = new Notification(value);
       notification.show();

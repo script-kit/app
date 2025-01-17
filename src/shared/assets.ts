@@ -26,9 +26,7 @@ const checkPackaged = (name: string) => {
   //   isPackaged: app.isPackaged,
   //   resourcesPath: process.resourcesPath,
   // });
-  return app.isPackaged
-    ? path.resolve(process.resourcesPath, 'app.asar.unpacked', name)
-    : path.resolve(dirname, '..', '..', name);
+  return app.isPackaged ? path.resolve(process.resourcesPath, 'app', name) : path.resolve(dirname, '..', '..', name);
 };
 
 export const getAssetPath = (...paths: string[]): string => {

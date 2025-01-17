@@ -64,7 +64,7 @@ export default function ActionBar() {
           .filter((action) => action.position === 'left')
           .flatMap((action, i, array) => [
             // eslint-disable-next-line react/jsx-key
-            <ActionButton {...{ ...action, key: undefined }} key={action.key} />,
+            <ActionButton key={action.key} {...{ ...action, key: undefined }} />,
             i < array.length - 1 ? <ActionSeparator key={`${action?.key}-separator`} /> : null,
             i === array.length - 1 && footer?.length ? <ActionSeparator key={`${action?.key}-separator`} /> : null,
           ])}
