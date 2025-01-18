@@ -12,6 +12,8 @@ export type WatchEvent = 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir';
 export type WatchSource = 'app' | 'kenv';
 type WatcherCallback = (eventName: WatchEvent, filePath: string, source?: WatchSource) => Promise<void>;
 
+export const KENV_GLOB_TIMEOUT = 1000;
+
 export interface WatchOptions {
   ignoreInitial?: boolean;
 }
@@ -69,7 +71,7 @@ export const startWatching = (callback: WatcherCallback, options: WatchOptions =
     setTimeout(() => {
       log.info(`Adding globs: ${globs}`);
       kenvScriptsWatcher.add(globs);
-    }, 1000);
+    }, KENV_GLOB_TIMEOUT);
   };
 
   kenvsWatcher.on('addDir', kenvsWatcherCallback);
