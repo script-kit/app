@@ -19,11 +19,25 @@ export interface WatchOptions {
 }
 
 export const startWatching = (callback: WatcherCallback, options: WatchOptions = { ignoreInitial: true }) => {
-  log.info(`🔍 Watching ${userDbPath}`);
-  const userDbPathWatcher = chokidar.watch(slash(userDbPath));
+  const userDbDir = path.dirname(userDbPath);
+  log.info(`🔍 Watching user.json in: ${userDbDir}`);
+
+  const userDbPathWatcher = chokidar.watch([slash(userDbDir), slash(userDbPath)], {
+    ignoreInitial: options.ignoreInitial,
+    persistent: true,
+    alwaysStat: true,
+    depth: 0,
+    ignored: (filePath) => {
+      const basename = path.basename(filePath);
+      const isUserJson = basename === 'user.json';
+      const isDbDir = filePath === userDbDir;
+      log.info(`🔍 Checking path ${filePath} (${basename}): ${isUserJson || isDbDir ? 'watching' : 'ignoring'}`);
+      return !(isUserJson || isDbDir);
+    },
+  });
 
   userDbPathWatcher.on('all', (eventName, filePath) => {
-    log.info(`🔍 Watching ${userDbPath} -> ${eventName} ${filePath}`);
+    log.info(`🔍 User DB event: ${eventName} ${filePath}`);
     callback(eventName as WatchEvent, filePath);
   });
 
