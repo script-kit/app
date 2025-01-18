@@ -790,9 +790,12 @@ function startPingInterval() {
 }
 
 function startCoreWatchers(): FSWatcher[] {
-  return startWatching(async (eventName: WatchEvent, filePath: string, source) => {
-    await handleFileChangeEvent(eventName, filePath, source);
-  });
+  return startWatching(
+    async (eventName: WatchEvent, filePath: string, source) => {
+      await handleFileChangeEvent(eventName, filePath, source);
+    },
+    { ignoreInitial: kitState.ignoreInitial },
+  );
 }
 
 function refreshScriptsIfNeeded() {

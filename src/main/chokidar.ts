@@ -1,7 +1,6 @@
 import path from 'node:path';
 import { userDbPath } from '@johnlindquist/kit/core/utils';
 import chokidar from 'chokidar';
-import { kitState } from './state';
 import { createLogger } from '../shared/log-utils';
 import { kitChokidarPath, kenvChokidarPath, pathChokidarResolve, slash } from './path-utils';
 import { readdirSync } from 'node:fs';
@@ -9,10 +8,15 @@ import os from 'node:os';
 
 const log = createLogger('chokidar.ts');
 
-export type WatchEvent = 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir'
+export type WatchEvent = 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir';
 export type WatchSource = 'app' | 'kenv';
 type WatcherCallback = (eventName: WatchEvent, filePath: string, source?: WatchSource) => Promise<void>;
-export const startWatching = (callback: WatcherCallback) => {
+
+export interface WatchOptions {
+  ignoreInitial?: boolean;
+}
+
+export const startWatching = (callback: WatcherCallback, options: WatchOptions = { ignoreInitial: true }) => {
   log.info(`🔍 Watching ${userDbPath}`);
   const userDbPathWatcher = chokidar.watch(slash(userDbPath));
 
@@ -31,14 +35,14 @@ export const startWatching = (callback: WatcherCallback) => {
       depth: 0,
       // ignore dotfiles
       ignored: (filePath) => path.basename(filePath).startsWith('.'),
-      ignoreInitial: kitState.ignoreInitial,
+      ignoreInitial: options.ignoreInitial,
     },
   );
 
   kenvScriptsWatcher.on('all', callback);
 
   const kenvsWatcher = chokidar.watch(kenvChokidarPath('kenvs'), {
-    ignoreInitial: kitState.ignoreInitial,
+    ignoreInitial: options.ignoreInitial,
     followSymlinks: true,
     depth: 0,
     ignored: (filePath) => {
@@ -66,13 +70,12 @@ export const startWatching = (callback: WatcherCallback) => {
       log.info(`Adding globs: ${globs}`);
       kenvScriptsWatcher.add(globs);
     }, 1000);
-  }
+  };
 
   kenvsWatcher.on('addDir', kenvsWatcherCallback);
 
-
   const watchedKenvs = readdirSync(kenvChokidarPath('kenvs'));
-  for(const kenv of watchedKenvs) {
+  for (const kenv of watchedKenvs) {
     const kenvPath = pathChokidarResolve(kenvChokidarPath('kenvs', kenv));
     log.info(`🕵️‍♀️ Watching ${kenvPath}`);
     kenvsWatcherCallback(kenvPath);
@@ -100,7 +103,7 @@ export const startWatching = (callback: WatcherCallback) => {
 
   const kenvRootWatcher = chokidar.watch(kenvChokidarPath('*'), {
     depth: 0,
-    ignoreInitial: kitState.ignoreInitial,
+    ignoreInitial: options.ignoreInitial,
   });
 
   kenvRootWatcher.on('all', callback);
@@ -119,7 +122,6 @@ export const startWatching = (callback: WatcherCallback) => {
 
   pingWatcher.on('all', callback);
 
-  // Add this function to get app directories based on the OS
   function getAppDirectories(): string[] {
     if (process.platform === 'darwin') {
       return ['/Applications', path.join(os.homedir(), 'Applications')];
@@ -133,14 +135,13 @@ export const startWatching = (callback: WatcherCallback) => {
         path.join(os.homedir(), 'AppData', 'Roaming'),
       ].map(slash);
     }
-    return []; // For other platforms, return an empty array
+    return [];
   }
 
-  // Replace the existing appWatcher code with this:
   const appDirectories = getAppDirectories();
   const appWatcher = chokidar.watch(appDirectories, {
     ignoreInitial: true,
-    depth: 0, // Only watch the top-level of these directories
+    depth: 0,
   });
 
   appWatcher.on('all', (event, filePath) => {
@@ -150,21 +151,5 @@ export const startWatching = (callback: WatcherCallback) => {
     }
   });
 
-  kitState.ignoreInitial = true;
-
   return [kenvScriptsWatcher, kenvsWatcher, userDbPathWatcher, kenvRootWatcher, runWatcher, pingWatcher, appWatcher];
-
-  // TODO: Do I need to watch scripts.json?
-  // const scriptsJsonWatcher = chokidar.watch(kitPath('db', 'scripts.json'), {
-  //   disableGlobbing: true,
-  //   ignoreInitial: true,
-  // });
-  // scriptsJsonWatcher.on('all', callback);
-  // return [
-  //   kenvScriptsWatcher,
-  //   kenvsWatcher,
-  //   fileWatcher,
-  //   runWatcher,
-  //   scriptsJsonWatcher,
-  // ];
 };
