@@ -117,7 +117,7 @@ export const startWatching = (callback: WatcherCallback, options: WatchOptions =
     kenvScriptsWatcher.unwatch(pathChokidarResolve(filePath, 'scripts', '*'));
   });
 
-  const kenvRootWatcher = chokidar.watch(kenvChokidarPath('*'), {
+  const kenvRootWatcher = chokidar.watch([kenvChokidarPath(), kenvChokidarPath('*')], {
     depth: 0,
     ignoreInitial: options.ignoreInitial,
   });
