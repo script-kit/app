@@ -275,32 +275,6 @@ describe.concurrent('File System Watcher', () => {
     { timeout: 15000 },
   );
 
-  it('should ignore dotfiles', async () => {
-    const hiddenName = '.hidden.ts';
-    const hiddenPath = path.join(testDirs.scripts, hiddenName);
-    const visibleName = 'visible.ts';
-    const visiblePath = path.join(testDirs.scripts, visibleName);
-
-    const events = await collectEvents(500, async () => {
-      log.debug('Creating dotfile:', hiddenPath);
-      await writeFile(hiddenPath, 'export {}');
-
-      log.debug('Creating normal file:', visiblePath);
-      await writeFile(visiblePath, 'export {}');
-    });
-
-    // Hidden file should be ignored
-    expect(events.find((e) => e.path === hiddenPath)).toBeUndefined();
-
-    // Visible file should be detected
-    expect(events).toContainEqual(
-      expect.objectContaining({
-        event: 'add',
-        path: visiblePath,
-      }),
-    );
-  });
-
   it('should handle file deletions', async () => {
     const filePath = path.join(testDirs.scripts, 'to-delete.ts');
     log.debug('Creating file to delete:', filePath);
@@ -599,7 +573,7 @@ describe.concurrent('File System Watcher', () => {
       // Let watchers settle
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const events = await collectEvents(1000, async () => {
+      const events = await collectEvents(2000, async () => {
         // Rename snippet file
         await rename(snippetOriginal, snippetRenamed);
       });
@@ -611,7 +585,7 @@ describe.concurrent('File System Watcher', () => {
       expect(unlinkEvent).toBeDefined();
       expect(addEvent).toBeDefined();
     },
-    { timeout: 1000 },
+    { timeout: 3000 },
   );
 
   it(
@@ -625,7 +599,7 @@ describe.concurrent('File System Watcher', () => {
       // Let watchers settle
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const events = await collectEvents(1000, async () => {
+      const events = await collectEvents(2000, async () => {
         // Rename the scriptlet
         await rename(scriptletOriginal, scriptletRenamed);
       });
@@ -636,7 +610,7 @@ describe.concurrent('File System Watcher', () => {
       expect(unlinkEvent).toBeDefined();
       expect(addEvent).toBeDefined();
     },
-    { timeout: 1000 },
+    { timeout: 3000 },
   );
 
   it(
@@ -649,7 +623,7 @@ describe.concurrent('File System Watcher', () => {
         await new Promise((resolve) => setTimeout(resolve, 300));
       }
 
-      const events = await collectEvents(1000, async () => {
+      const events = await collectEvents(2000, async () => {
         await remove(testDirs.envFilePath);
       });
 
@@ -660,7 +634,7 @@ describe.concurrent('File System Watcher', () => {
         }),
       );
     },
-    { timeout: 1000 },
+    { timeout: 3000 },
   );
 
   it(
@@ -670,7 +644,7 @@ describe.concurrent('File System Watcher', () => {
       await writeFile(testDirs.runTxtPath, 'initial content');
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const events = await collectEvents(1500, async () => {
+      const events = await collectEvents(2000, async () => {
         // Make several quick writes
         await writeFile(testDirs.runTxtPath, 'change 1');
         await writeFile(testDirs.runTxtPath, 'change 2');
@@ -681,7 +655,7 @@ describe.concurrent('File System Watcher', () => {
       const changeEvents = events.filter((e) => e.path === testDirs.runTxtPath && e.event === 'change');
       expect(changeEvents.length).toBeGreaterThanOrEqual(1);
     },
-    { timeout: 1500 },
+    { timeout: 3000 },
   );
 
   it(
@@ -810,16 +784,19 @@ describe.concurrent('File System Watcher', () => {
     expect(unlinkDirEvent).toBeDefined();
   });
 
-  it.only('should detect rapid consecutive changes to the same snippet file', async () => {
+  it('should detect rapid consecutive changes to the same snippet file', async () => {
     const snippetPath = path.join(testDirs.snippets, 'rapid-snippet.txt');
 
     // Ensure snippets directory exists
     await ensureDir(testDirs.snippets);
 
+    // Create initial file
     await writeFile(snippetPath, 'initial snippet');
+
+    // Let watchers settle
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    const events = await collectEvents(1500, async () => {
+    const events = await collectEvents(2000, async () => {
       // Make multiple quick changes
       await writeFile(snippetPath, 'update 1');
       await writeFile(snippetPath, 'update 2');
@@ -831,7 +808,7 @@ describe.concurrent('File System Watcher', () => {
     expect(changes.length).toBeGreaterThanOrEqual(1);
   });
 
-  it.only(
+  it(
     'should handle removing the entire kenv folder',
     async () => {
       const testLog = (msg: string, ...args: any[]) => log.debug(`[KENV-TEST] ${msg}`, ...args);

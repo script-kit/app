@@ -12,7 +12,7 @@ export type WatchEvent = 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir';
 export type WatchSource = 'app' | 'kenv';
 type WatcherCallback = (eventName: WatchEvent, filePath: string, source?: WatchSource) => Promise<void>;
 
-export const KENV_GLOB_TIMEOUT = 1000;
+export const TIMEOUT_MS = 1000;
 
 export interface WatchOptions {
   ignoreInitial?: boolean;
@@ -85,7 +85,7 @@ export const startWatching = (callback: WatcherCallback, options: WatchOptions =
     setTimeout(() => {
       log.info(`Adding globs: ${globs}`);
       kenvScriptsWatcher.add(globs);
-    }, KENV_GLOB_TIMEOUT);
+    }, TIMEOUT_MS);
   };
 
   kenvsWatcher.on('addDir', kenvsWatcherCallback);
@@ -97,6 +97,7 @@ export const startWatching = (callback: WatcherCallback, options: WatchOptions =
     kenvsWatcherCallback(kenvPath);
   }
 
+  let timeoutId: NodeJS.Timeout | null = null;
   kenvsWatcher.on('unlinkDir', (filePath) => {
     log.info(`🕵️‍♂️ Detected removed dir in "kenvs": ${filePath}`);
 
@@ -107,10 +108,13 @@ export const startWatching = (callback: WatcherCallback, options: WatchOptions =
       pathChokidarResolve(filePath, '*'),
     ];
 
-    setTimeout(() => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => {
       log.info(`Removing globs: ${globs}`);
       kenvScriptsWatcher.unwatch(globs);
-    }, 1000);
+    }, TIMEOUT_MS);
   });
 
   kenvsWatcher.on('unlink', (filePath) => {
