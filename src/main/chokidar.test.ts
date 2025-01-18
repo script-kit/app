@@ -4,6 +4,7 @@ import path from 'node:path';
 // Constants for test timing - increased for parallel execution
 const WATCHER_SETTLE_TIME = 200;
 const EVENT_COLLECTION_TIME = 200;
+const KENV_GLOB_TIMEOUT = 1000;
 
 const testDir = vi.hoisted(() => {
   console.log('[HOISTED] Setting up testDir');
@@ -48,14 +49,18 @@ vi.mock('@johnlindquist/kit/core/utils', async () => {
 });
 
 // Rest of imports can go here
-import { ensureDir, writeFile, remove, rename, pathExists, readFile } from 'fs-extra';
-import { startWatching, KENV_GLOB_TIMEOUT, type WatchEvent, type WatchSource } from './chokidar';
+import { ensureDir, writeFile, remove, rename, pathExists, readFile, readdir } from 'fs-extra';
+import { startWatching, type WatchEvent, type WatchSource } from './chokidar';
 import type { FSWatcher } from 'chokidar';
 import os from 'node:os';
 
 const log = {
-  debug: (...args: any[]) => console.log('[DEBUG]', ...args),
-  error: (...args: any[]) => console.error('[ERROR]', ...args),
+  debug: (...args: any[]) => console.log(`[${new Date().toISOString()}] [DEBUG]`, ...args),
+  error: (...args: any[]) => console.error(`[${new Date().toISOString()}] [ERROR]`, ...args),
+  test: (testName: string, ...args: any[]) => console.log(`[${new Date().toISOString()}] [TEST:${testName}]`, ...args),
+  watcher: (...args: any[]) => console.log(`[${new Date().toISOString()}] [WATCHER]`, ...args),
+  event: (...args: any[]) => console.log(`[${new Date().toISOString()}] [EVENT]`, ...args),
+  dir: (...args: any[]) => console.log(`[${new Date().toISOString()}] [DIR]`, ...args),
 };
 
 interface TestEvent {
@@ -63,6 +68,22 @@ interface TestEvent {
   path: string;
   source?: WatchSource;
 }
+
+// Move testDirs to module scope
+const testDirs = {
+  root: '',
+  kit: '',
+  kenv: '',
+  scripts: '',
+  snippets: '',
+  scriptlets: '',
+  kenvs: '',
+  dbDir: '',
+  userJsonPath: '',
+  runTxtPath: '',
+  pingTxtPath: '',
+  envFilePath: '',
+};
 
 /**
  * Wait for all watchers to emit their "ready" event.
@@ -92,6 +113,25 @@ async function waitForWatchersReady(watchers: FSWatcher[]) {
   log.debug('All watchers are ready');
 }
 
+async function logDirectoryState(dir: string, depth = 0) {
+  try {
+    const contents = await readdir(dir, { withFileTypes: true });
+    log.dir(
+      `Directory ${dir} contents:`,
+      contents.map((d) => d.name),
+    );
+    if (depth > 0) {
+      for (const entry of contents) {
+        if (entry.isDirectory()) {
+          await logDirectoryState(path.join(dir, entry.name), depth - 1);
+        }
+      }
+    }
+  } catch (error) {
+    log.dir(`Error reading directory ${dir}:`, error);
+  }
+}
+
 /**
  * Collect events while watchers are active, ensuring watchers are fully ready
  * before performing the test action. Then wait a bit to gather events.
@@ -99,57 +139,50 @@ async function waitForWatchersReady(watchers: FSWatcher[]) {
 async function collectEvents(
   duration: number,
   action: (events: TestEvent[]) => Promise<void> | void,
+  testName: string,
 ): Promise<TestEvent[]> {
   const events: TestEvent[] = [];
-  log.debug('Starting watchers');
+  log.test(testName, `Starting collectEvents with duration ${duration}ms`);
 
-  // Start watchers with ignoreInitial: false
+  // Log initial directory state
+  log.test(testName, 'Initial directory state:');
+  await logDirectoryState(testDirs.kenv, 2);
+
+  log.test(testName, 'Starting watchers');
   const watchers = startWatching(
     async (event, filePath, source) => {
-      log.debug('Event received:', { event, filePath, source });
+      const eventInfo = { event, filePath, source, timestamp: new Date().toISOString() };
+      log.event(`Event received in ${testName}:`, eventInfo);
       events.push({ event, path: filePath, source });
     },
     { ignoreInitial: false },
   );
 
   try {
-    // Wait for watchers to be fully ready
+    log.test(testName, 'Waiting for watchers to be ready');
     await waitForWatchersReady(watchers);
+    log.test(testName, 'Watchers are ready');
 
-    // Add a small delay to ensure watchers are definitely ready for changes
     await new Promise((resolve) => setTimeout(resolve, 100));
-
-    log.debug('Executing test action');
+    log.test(testName, 'Executing test action');
     await action(events);
 
-    // Wait for events to be processed
-    log.debug(`Waiting ${duration}ms for events to be processed`);
+    log.test(testName, `Waiting ${duration}ms for events`);
     await new Promise((resolve) => setTimeout(resolve, duration));
 
-    log.debug('Final events:', events);
+    log.test(testName, 'Final directory state:');
+    await logDirectoryState(testDirs.kenv, 2);
+
+    log.test(testName, 'Final events:', events);
     return events;
   } finally {
-    log.debug('Cleaning up watchers');
+    log.test(testName, 'Cleaning up watchers');
     await Promise.all(watchers.map((w) => w.close()));
+    log.test(testName, 'Watchers cleaned up');
   }
 }
 
 describe.concurrent('File System Watcher', () => {
-  const testDirs = {
-    root: '',
-    kit: '',
-    kenv: '',
-    scripts: '',
-    snippets: '',
-    scriptlets: '',
-    kenvs: '',
-    dbDir: '',
-    userJsonPath: '',
-    runTxtPath: '',
-    pingTxtPath: '',
-    envFilePath: '',
-  };
-
   beforeAll(async () => {
     log.debug('Setting up test environment');
     const tmpDir = await testDir;
@@ -213,10 +246,14 @@ describe.concurrent('File System Watcher', () => {
       const scriptName = 'test-script.ts';
       const scriptPath = path.join(testDirs.scripts, scriptName);
 
-      const events = await collectEvents(500, async () => {
-        log.debug('Creating test script:', scriptPath);
-        await writeFile(scriptPath, 'export {}');
-      });
+      const events = await collectEvents(
+        500,
+        async () => {
+          log.debug('Creating test script:', scriptPath);
+          await writeFile(scriptPath, 'export {}');
+        },
+        'should detect new script files',
+      );
 
       expect(events).toContainEqual(
         expect.objectContaining({
@@ -243,26 +280,30 @@ describe.concurrent('File System Watcher', () => {
       });
 
       // Use the collectEvents helper instead of managing watchers directly
-      const events = await collectEvents(KENV_GLOB_TIMEOUT + 2000, async () => {
-        // Create directory structure first
-        log.debug('Creating directory:', newKenvScriptsDir);
-        await ensureDir(newKenvScriptsDir);
+      const events = await collectEvents(
+        KENV_GLOB_TIMEOUT + 2000,
+        async () => {
+          // Create directory structure first
+          log.debug('Creating directory:', newKenvScriptsDir);
+          await ensureDir(newKenvScriptsDir);
 
-        // Wait for globs to be added
-        log.debug('Waiting for globs to be added...');
-        await new Promise((resolve) => setTimeout(resolve, KENV_GLOB_TIMEOUT + WATCHER_SETTLE_TIME));
+          // Wait for globs to be added
+          log.debug('Waiting for globs to be added...');
+          await new Promise((resolve) => setTimeout(resolve, KENV_GLOB_TIMEOUT + WATCHER_SETTLE_TIME));
 
-        // Write initial content
-        log.debug('Writing initial content:', newKenvScriptPath);
-        await writeFile(newKenvScriptPath, 'export {}');
+          // Write initial content
+          log.debug('Writing initial content:', newKenvScriptPath);
+          await writeFile(newKenvScriptPath, 'export {}');
 
-        // Wait for chokidar to detect the file
-        await new Promise((resolve) => setTimeout(resolve, WATCHER_SETTLE_TIME));
+          // Wait for chokidar to detect the file
+          await new Promise((resolve) => setTimeout(resolve, WATCHER_SETTLE_TIME));
 
-        // Write new content
-        log.debug('Writing new content:', newKenvScriptPath);
-        await writeFile(newKenvScriptPath, 'export const foo = "bar"');
-      });
+          // Write new content
+          log.debug('Writing new content:', newKenvScriptPath);
+          await writeFile(newKenvScriptPath, 'export const foo = "bar"');
+        },
+        'should detect new kenv directories and watch their contents',
+      );
 
       log.debug('Final events:', events);
 
@@ -283,10 +324,14 @@ describe.concurrent('File System Watcher', () => {
     // Let watchers settle
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    const events = await collectEvents(500, async () => {
-      log.debug('Deleting file:', filePath);
-      await remove(filePath);
-    });
+    const events = await collectEvents(
+      500,
+      async () => {
+        log.debug('Deleting file:', filePath);
+        await remove(filePath);
+      },
+      'should handle file deletions',
+    );
 
     expect(events).toContainEqual(
       expect.objectContaining({
@@ -297,12 +342,16 @@ describe.concurrent('File System Watcher', () => {
   });
 
   it('should detect changes to user.json (userDbPath)', async () => {
-    const events = await collectEvents(200, async () => {
-      // Update user.json so watchers see a "change"
-      const updatedContent = { foo: 'bar' };
-      log.debug('Updating user.json:', testDirs.userJsonPath);
-      await writeFile(testDirs.userJsonPath, JSON.stringify(updatedContent, null, 2));
-    });
+    const events = await collectEvents(
+      200,
+      async () => {
+        // Update user.json so watchers see a "change"
+        const updatedContent = { foo: 'bar' };
+        log.debug('Updating user.json:', testDirs.userJsonPath);
+        await writeFile(testDirs.userJsonPath, JSON.stringify(updatedContent, null, 2));
+      },
+      'should detect changes to user.json (userDbPath)',
+    );
 
     // We expect to see a "change" event for user.json
     expect(events).toContainEqual(
@@ -315,10 +364,14 @@ describe.concurrent('File System Watcher', () => {
 
   it('should detect new snippet file', async () => {
     const snippetPath = path.join(testDirs.snippets, 'my-snippet.txt');
-    const events = await collectEvents(500, async () => {
-      log.debug('Creating snippet:', snippetPath);
-      await writeFile(snippetPath, 'Hello Snippet!');
-    });
+    const events = await collectEvents(
+      500,
+      async () => {
+        log.debug('Creating snippet:', snippetPath);
+        await writeFile(snippetPath, 'Hello Snippet!');
+      },
+      'should detect new snippet file',
+    );
 
     const foundSnippet = events.some((e) => e.event === 'add' && e.path === snippetPath);
     expect(foundSnippet).toBe(true);
@@ -331,10 +384,14 @@ describe.concurrent('File System Watcher', () => {
     // Let watchers see the file
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    const events = await collectEvents(500, async () => {
-      log.debug('Removing snippet:', snippetPath);
-      await remove(snippetPath);
-    });
+    const events = await collectEvents(
+      500,
+      async () => {
+        log.debug('Removing snippet:', snippetPath);
+        await remove(snippetPath);
+      },
+      'should detect snippet removal',
+    );
 
     expect(events).toContainEqual(
       expect.objectContaining({
@@ -346,10 +403,14 @@ describe.concurrent('File System Watcher', () => {
 
   it('should detect new scriptlet file', async () => {
     const scriptletPath = path.join(testDirs.scriptlets, 'my-scriptlet.js');
-    const events = await collectEvents(500, async () => {
-      log.debug('Creating scriptlet:', scriptletPath);
-      await writeFile(scriptletPath, '// scriptlet content');
-    });
+    const events = await collectEvents(
+      500,
+      async () => {
+        log.debug('Creating scriptlet:', scriptletPath);
+        await writeFile(scriptletPath, '// scriptlet content');
+      },
+      'should detect new scriptlet file',
+    );
 
     const foundScriptlet = events.some((e) => e.event === 'add' && e.path === scriptletPath);
     expect(foundScriptlet).toBe(true);
@@ -362,10 +423,14 @@ describe.concurrent('File System Watcher', () => {
     // Let watchers see the file
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    const events = await collectEvents(500, async () => {
-      log.debug('Removing scriptlet:', scriptletPath);
-      await remove(scriptletPath);
-    });
+    const events = await collectEvents(
+      500,
+      async () => {
+        log.debug('Removing scriptlet:', scriptletPath);
+        await remove(scriptletPath);
+      },
+      'should detect scriptlet deletion',
+    );
 
     expect(events).toContainEqual(
       expect.objectContaining({
@@ -382,10 +447,14 @@ describe.concurrent('File System Watcher', () => {
     // Let everything settle
     await new Promise((resolve) => setTimeout(resolve, 200));
 
-    const events = await collectEvents(400, async () => {
-      log.debug('Writing to run.txt:', testDirs.runTxtPath);
-      await writeFile(testDirs.runTxtPath, 'my-script.ts arg1 arg2');
-    });
+    const events = await collectEvents(
+      400,
+      async () => {
+        log.debug('Writing to run.txt:', testDirs.runTxtPath);
+        await writeFile(testDirs.runTxtPath, 'my-script.ts arg1 arg2');
+      },
+      'should detect changes to run.txt',
+    );
 
     log.debug('Events received:', events);
 
@@ -403,9 +472,13 @@ describe.concurrent('File System Watcher', () => {
     // Let watchers settle
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    const events = await collectEvents(500, async () => {
-      await remove(testDirs.runTxtPath);
-    });
+    const events = await collectEvents(
+      500,
+      async () => {
+        await remove(testDirs.runTxtPath);
+      },
+      'should detect removals of run.txt',
+    );
 
     expect(events).toContainEqual(
       expect.objectContaining({
@@ -422,10 +495,14 @@ describe.concurrent('File System Watcher', () => {
     // Let everything settle
     await new Promise((resolve) => setTimeout(resolve, 200));
 
-    const events = await collectEvents(400, async () => {
-      log.debug('Writing to .env:', testDirs.envFilePath);
-      await writeFile(testDirs.envFilePath, 'KIT_DOCK=true');
-    });
+    const events = await collectEvents(
+      400,
+      async () => {
+        log.debug('Writing to .env:', testDirs.envFilePath);
+        await writeFile(testDirs.envFilePath, 'KIT_DOCK=true');
+      },
+      'should detect changes to .env file',
+    );
 
     log.debug('Events received:', events);
 
@@ -435,10 +512,14 @@ describe.concurrent('File System Watcher', () => {
   });
 
   it('should detect changes to ping.txt', async () => {
-    const events = await collectEvents(200, async () => {
-      log.debug('Creating ping.txt:', testDirs.pingTxtPath);
-      await writeFile(testDirs.pingTxtPath, new Date().toISOString());
-    });
+    const events = await collectEvents(
+      200,
+      async () => {
+        log.debug('Creating ping.txt:', testDirs.pingTxtPath);
+        await writeFile(testDirs.pingTxtPath, new Date().toISOString());
+      },
+      'should detect changes to ping.txt',
+    );
 
     // ping.txt is not in the watched paths, so we should not see any events
     const foundPingEvent = events.some(
@@ -449,10 +530,14 @@ describe.concurrent('File System Watcher', () => {
 
   it('should detect new files in the root of .kenv directory', async () => {
     const rootFile = path.join(testDirs.kenv, 'root-file.txt');
-    const events = await collectEvents(500, async () => {
-      log.debug('Creating root file in .kenv:', rootFile);
-      await writeFile(rootFile, 'root-level file');
-    });
+    const events = await collectEvents(
+      500,
+      async () => {
+        log.debug('Creating root file in .kenv:', rootFile);
+        await writeFile(rootFile, 'root-level file');
+      },
+      'should detect new files in the root of .kenv directory',
+    );
 
     expect(events).toContainEqual(
       expect.objectContaining({
@@ -475,10 +560,14 @@ describe.concurrent('File System Watcher', () => {
     // Wait to see the "add" event
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    const events = await collectEvents(2500, async () => {
-      log.debug('Renaming script from', originalPath, 'to', renamedPath);
-      await rename(originalPath, renamedPath);
-    });
+    const events = await collectEvents(
+      2500,
+      async () => {
+        log.debug('Renaming script from', originalPath, 'to', renamedPath);
+        await rename(originalPath, renamedPath);
+      },
+      'should detect renamed scripts within /scripts directory',
+    );
 
     // Some OS/file systems emit separate unlink/add events, others might show rename
     const unlinkEvent = events.find((e) => e.event === 'unlink' && e.path === originalPath);
@@ -489,28 +578,94 @@ describe.concurrent('File System Watcher', () => {
   });
 
   it('should ignore deeper nested directories in .kenv/kenvs beyond depth=0 for the kenvsWatcher', async () => {
+    const testName = 'nested-dirs';
+    log.test(testName, 'Starting test');
+
     // By default in `chokidar.ts`, it sets depth: 0 for .kenv/kenvs
     // so it should not pick up subfolders deeper than that
     const newKenvNestedPath = path.join(testDirs.kenvs, 'deep-kenv', 'nested', 'scripts');
     const scriptPath = path.join(newKenvNestedPath, 'deep-script.ts');
 
-    const events = await collectEvents(300, async () => {
-      log.debug('Creating deep kenv nested path:', newKenvNestedPath);
-      await ensureDir(newKenvNestedPath);
-
-      // Wait for the directories to be created
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      log.debug('Creating deep script file:', scriptPath);
-      await writeFile(scriptPath, 'export {}');
+    log.test(testName, 'Test paths:', {
+      newKenvNestedPath,
+      scriptPath,
+      kenvs: testDirs.kenvs,
     });
+
+    // Clean up any existing directories first
+    log.test(testName, 'Cleaning up existing directories');
+    await remove(path.join(testDirs.kenvs, 'deep-kenv')).catch((err) => {
+      log.test(testName, 'Error during cleanup:', err);
+    });
+
+    // Log initial state
+    log.test(testName, 'Initial kenvs directory state:');
+    await logDirectoryState(testDirs.kenvs, 3);
+
+    const events = await collectEvents(
+      1000,
+      async () => {
+        log.test(testName, 'Creating deep kenv nested path');
+        await ensureDir(newKenvNestedPath);
+
+        // Wait for the directories to be created and watchers to settle
+        log.test(testName, 'Waiting for directories to settle');
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Log intermediate state
+        log.test(testName, 'Directory state after creating nested path:');
+        await logDirectoryState(testDirs.kenvs, 3);
+
+        log.test(testName, 'Creating deep script file');
+        await writeFile(scriptPath, 'export {}');
+
+        // Wait for potential file events
+        log.test(testName, 'Waiting for file events');
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Verify file exists
+        const exists = await pathExists(scriptPath);
+        log.test(testName, 'Script file exists:', exists);
+      },
+      testName,
+    );
+
+    log.test(testName, 'Events received:', events);
+
+    // We should only see events for the top-level kenv directory
+    const addDirEvents = events.filter((e) => e.event === 'addDir').map((e) => e.path);
+    log.test(testName, 'addDir events:', addDirEvents);
+
+    // Log all events by type
+    const eventsByType = events.reduce(
+      (acc, e) => {
+        acc[e.event] = acc[e.event] || [];
+        acc[e.event].push(e.path);
+        return acc;
+      },
+      {} as Record<string, string[]>,
+    );
+    log.test(testName, 'Events by type:', eventsByType);
 
     // Because the watchers have depth=0 for "kenvs", we shouldn't see "add" or "addDir" for nested subdirs
     const foundNestedAdd = events.some((e) => e.event === 'add' && e.path.endsWith('deep-script.ts'));
+    log.test(testName, 'Found nested add:', foundNestedAdd);
     expect(foundNestedAdd).toBe(false);
 
     const foundNestedDir = events.some((e) => e.event === 'addDir' && e.path.includes('nested'));
+    log.test(testName, 'Found nested dir:', foundNestedDir);
     expect(foundNestedDir).toBe(false);
+
+    // Final directory state
+    log.test(testName, 'Final directory state:');
+    await logDirectoryState(testDirs.kenvs, 3);
+
+    // Cleanup
+    log.test(testName, 'Starting cleanup');
+    await remove(path.join(testDirs.kenvs, 'deep-kenv')).catch((err) => {
+      log.test(testName, 'Error during cleanup:', err);
+    });
+    log.test(testName, 'Test complete');
   });
 
   it('should detect application changes in /Applications or user Applications directory', async () => {
@@ -523,7 +678,7 @@ describe.concurrent('File System Watcher', () => {
     const originalHomedir = os.homedir;
     const originalPlatform = os.platform;
     os.homedir = vi.fn(() => path.join(testDirs.root, 'Users', 'test'));
-    os.platform = vi.fn(() => 'linux');
+    os.platform = vi.fn(() => 'linux' as NodeJS.Platform);
     log.debug('Mocked os functions:', {
       homedir: os.homedir(),
       platform: os.platform(),
@@ -573,10 +728,14 @@ describe.concurrent('File System Watcher', () => {
       // Let watchers settle
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const events = await collectEvents(2000, async () => {
-        // Rename snippet file
-        await rename(snippetOriginal, snippetRenamed);
-      });
+      const events = await collectEvents(
+        2000,
+        async () => {
+          // Rename snippet file
+          await rename(snippetOriginal, snippetRenamed);
+        },
+        'should detect rename of snippet file',
+      );
 
       // We expect an "unlink" on the old path and an "add" on the new path
       const unlinkEvent = events.find((e) => e.event === 'unlink' && e.path === snippetOriginal);
@@ -599,10 +758,14 @@ describe.concurrent('File System Watcher', () => {
       // Let watchers settle
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const events = await collectEvents(2000, async () => {
-        // Rename the scriptlet
-        await rename(scriptletOriginal, scriptletRenamed);
-      });
+      const events = await collectEvents(
+        2000,
+        async () => {
+          // Rename the scriptlet
+          await rename(scriptletOriginal, scriptletRenamed);
+        },
+        'should detect rename of scriptlet file',
+      );
 
       const unlinkEvent = events.find((e) => e.event === 'unlink' && e.path === scriptletOriginal);
       const addEvent = events.find((e) => e.event === 'add' && e.path === scriptletRenamed);
@@ -623,9 +786,13 @@ describe.concurrent('File System Watcher', () => {
         await new Promise((resolve) => setTimeout(resolve, 300));
       }
 
-      const events = await collectEvents(2000, async () => {
-        await remove(testDirs.envFilePath);
-      });
+      const events = await collectEvents(
+        2000,
+        async () => {
+          await remove(testDirs.envFilePath);
+        },
+        'should handle removal of .env',
+      );
 
       expect(events).toContainEqual(
         expect.objectContaining({
@@ -644,12 +811,16 @@ describe.concurrent('File System Watcher', () => {
       await writeFile(testDirs.runTxtPath, 'initial content');
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const events = await collectEvents(2000, async () => {
-        // Make several quick writes
-        await writeFile(testDirs.runTxtPath, 'change 1');
-        await writeFile(testDirs.runTxtPath, 'change 2');
-        await writeFile(testDirs.runTxtPath, 'change 3');
-      });
+      const events = await collectEvents(
+        2000,
+        async () => {
+          // Make several quick writes
+          await writeFile(testDirs.runTxtPath, 'change 1');
+          await writeFile(testDirs.runTxtPath, 'change 2');
+          await writeFile(testDirs.runTxtPath, 'change 3');
+        },
+        'should detect multiple rapid changes to run.txt',
+      );
 
       // We expect at least one or more "change" events
       const changeEvents = events.filter((e) => e.path === testDirs.runTxtPath && e.event === 'change');
@@ -676,22 +847,26 @@ describe.concurrent('File System Watcher', () => {
       log.debug('Waiting for watchers to stabilize after removal');
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const events = await collectEvents(2000, async () => {
-        log.debug('Re-creating user.json');
-        // Re-create user.json
-        const updated = { foo: 'bar', time: Date.now() };
-        await writeFile(testDirs.userJsonPath, JSON.stringify(updated, null, 2));
-        log.debug('Finished writing user.json');
+      const events = await collectEvents(
+        2000,
+        async () => {
+          log.debug('Re-creating user.json');
+          // Re-create user.json
+          const updated = { foo: 'bar', time: Date.now() };
+          await writeFile(testDirs.userJsonPath, JSON.stringify(updated, null, 2));
+          log.debug('Finished writing user.json');
 
-        // Verify file exists
-        const exists = await pathExists(testDirs.userJsonPath);
-        log.debug('Verifying user.json exists:', exists);
+          // Verify file exists
+          const exists = await pathExists(testDirs.userJsonPath);
+          log.debug('Verifying user.json exists:', exists);
 
-        if (exists) {
-          const content = await readFile(testDirs.userJsonPath, 'utf8');
-          log.debug('user.json content:', content);
-        }
-      });
+          if (exists) {
+            const content = await readFile(testDirs.userJsonPath, 'utf8');
+            log.debug('user.json content:', content);
+          }
+        },
+        'should detect re-creation of user.json after removal',
+      );
 
       log.debug('Events collected:', JSON.stringify(events, null, 2));
 
@@ -714,10 +889,14 @@ describe.concurrent('File System Watcher', () => {
     await writeFile(originalPath, 'export const isTS = true;');
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    const events = await collectEvents(1200, async () => {
-      // Rename the extension from .ts to .js
-      await rename(originalPath, newPath);
-    });
+    const events = await collectEvents(
+      1200,
+      async () => {
+        // Rename the extension from .ts to .js
+        await rename(originalPath, newPath);
+      },
+      'should detect a script extension change (.ts -> .js)',
+    );
 
     const unlinkEvent = events.find((e) => e.event === 'unlink' && e.path === originalPath);
     const addEvent = events.find((e) => e.event === 'add' && e.path === newPath);
@@ -730,9 +909,13 @@ describe.concurrent('File System Watcher', () => {
     // Some watchers look for package.json changes to do installs or updates
     const packageJsonPath = path.join(testDirs.kenv, 'package.json');
 
-    const events = await collectEvents(1000, async () => {
-      await writeFile(packageJsonPath, JSON.stringify({ name: 'test-kenv' }, null, 2));
-    });
+    const events = await collectEvents(
+      1000,
+      async () => {
+        await writeFile(packageJsonPath, JSON.stringify({ name: 'test-kenv' }, null, 2));
+      },
+      'should detect new package.json in .kenv',
+    );
 
     // We expect an "add" event for the new package.json
     const pkgEvent = events.find((e) => e.event === 'add' && e.path === packageJsonPath);
@@ -745,9 +928,13 @@ describe.concurrent('File System Watcher', () => {
     await writeFile(packageJsonPath, JSON.stringify({ name: 'test-kenv' }, null, 2));
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    const events = await collectEvents(1000, async () => {
-      await writeFile(packageJsonPath, JSON.stringify({ name: 'test-kenv', version: '1.0.1' }, null, 2));
-    });
+    const events = await collectEvents(
+      1000,
+      async () => {
+        await writeFile(packageJsonPath, JSON.stringify({ name: 'test-kenv', version: '1.0.1' }, null, 2));
+      },
+      'should detect changes to package.json in .kenv',
+    );
 
     // We expect a "change" event
     const pkgChange = events.find((e) => e.event === 'change' && e.path === packageJsonPath);
@@ -760,10 +947,14 @@ describe.concurrent('File System Watcher', () => {
     await writeFile(scriptletPath, '// temp content');
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    const events = await collectEvents(1500, async () => {
-      // Remove the entire "scriptlets" folder
-      await remove(testDirs.scriptlets);
-    });
+    const events = await collectEvents(
+      1500,
+      async () => {
+        // Remove the entire "scriptlets" folder
+        await remove(testDirs.scriptlets);
+      },
+      'should handle removing the entire scriptlets folder',
+    );
 
     const unlinkDirEvent = events.find((e) => e.event === 'unlinkDir' && e.path === testDirs.scriptlets);
     expect(unlinkDirEvent).toBeDefined();
@@ -775,10 +966,14 @@ describe.concurrent('File System Watcher', () => {
     await writeFile(snippetPath, 'temp snippet');
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    const events = await collectEvents(1500, async () => {
-      // Remove the entire "snippets" folder
-      await remove(testDirs.snippets);
-    });
+    const events = await collectEvents(
+      1500,
+      async () => {
+        // Remove the entire "snippets" folder
+        await remove(testDirs.snippets);
+      },
+      'should handle removing the entire snippets folder',
+    );
 
     const unlinkDirEvent = events.find((e) => e.event === 'unlinkDir' && e.path === testDirs.snippets);
     expect(unlinkDirEvent).toBeDefined();
@@ -786,26 +981,71 @@ describe.concurrent('File System Watcher', () => {
 
   it('should detect rapid consecutive changes to the same snippet file', async () => {
     const snippetPath = path.join(testDirs.snippets, 'rapid-snippet.txt');
+    log.test('rapid-changes', 'Starting test with path:', snippetPath);
 
-    // Ensure snippets directory exists
+    // Log initial state
+    log.test('rapid-changes', 'Initial directory state:');
+    await logDirectoryState(testDirs.kenv, 2);
+
+    // Ensure snippets directory exists and is clean
+    log.test('rapid-changes', 'Cleaning up snippets directory');
+    await remove(testDirs.snippets).catch((err) => {
+      log.test('rapid-changes', 'Error removing snippets directory:', err);
+    });
+
+    log.test('rapid-changes', 'Creating fresh snippets directory');
     await ensureDir(testDirs.snippets);
 
+    // Verify directory exists
+    const exists = await pathExists(testDirs.snippets);
+    log.test('rapid-changes', 'Snippets directory exists:', exists);
+
     // Create initial file
+    log.test('rapid-changes', 'Creating initial file');
     await writeFile(snippetPath, 'initial snippet');
 
-    // Let watchers settle
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Verify file exists
+    const fileExists = await pathExists(snippetPath);
+    log.test('rapid-changes', 'Initial file exists:', fileExists);
 
-    const events = await collectEvents(2000, async () => {
-      // Make multiple quick changes
-      await writeFile(snippetPath, 'update 1');
-      await writeFile(snippetPath, 'update 2');
-      await writeFile(snippetPath, 'update 3');
-    });
+    // Let watchers settle
+    log.test('rapid-changes', 'Waiting for watchers to settle');
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const events = await collectEvents(
+      2000,
+      async () => {
+        log.test('rapid-changes', 'Starting rapid changes');
+        // Make multiple quick changes with small delays to ensure they're picked up
+        await writeFile(snippetPath, 'update 1');
+        log.test('rapid-changes', 'Wrote update 1');
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        await writeFile(snippetPath, 'update 2');
+        log.test('rapid-changes', 'Wrote update 2');
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        await writeFile(snippetPath, 'update 3');
+        log.test('rapid-changes', 'Wrote update 3');
+      },
+      'rapid-changes',
+    );
+
+    // Log final state
+    log.test('rapid-changes', 'Final directory state:');
+    await logDirectoryState(testDirs.kenv, 2);
 
     // We expect at least 1 "change" event
     const changes = events.filter((e) => e.path === snippetPath && e.event === 'change');
+    log.test('rapid-changes', `Found ${changes.length} change events:`, changes);
     expect(changes.length).toBeGreaterThanOrEqual(1);
+
+    // Cleanup
+    log.test('rapid-changes', 'Starting cleanup');
+    await remove(snippetPath).catch((err) => {
+      log.test('rapid-changes', 'Error cleaning up snippet file:', err);
+    });
+    log.test('rapid-changes', 'Test complete');
   });
 
   it(
