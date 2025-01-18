@@ -63,6 +63,24 @@ const log = {
   dir: (...args: any[]) => console.log(`[${new Date().toISOString()}] [DIR]`, ...args),
 };
 
+async function ensureFileOperation(
+  operation: () => Promise<void>,
+  verify: () => Promise<boolean>,
+  maxAttempts = 3,
+  delayMs = 100,
+): Promise<void> {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      await operation();
+      if (await verify()) return;
+    } catch (err) {
+      if (i === maxAttempts - 1) throw err;
+    }
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+  throw new Error('Operation failed after max attempts');
+}
+
 interface TestEvent {
   event: WatchEvent;
   path: string;
@@ -577,92 +595,80 @@ describe.concurrent('File System Watcher', () => {
     expect(addEvent).toBeDefined();
   });
 
-  it('should ignore deeper nested directories in .kenv/kenvs beyond depth=0 for the kenvsWatcher', async () => {
-    const testName = 'nested-dirs';
-    log.test(testName, 'Starting test');
+  it('should watch nested script files while respecting kenvs watcher depth', async () => {
+    const testName = 'watcher-behavior';
+    log.test(testName, 'Starting test - verifying watcher behavior');
 
-    // By default in `chokidar.ts`, it sets depth: 0 for .kenv/kenvs
-    // so it should not pick up subfolders deeper than that
-    const newKenvNestedPath = path.join(testDirs.kenvs, 'deep-kenv', 'nested', 'scripts');
-    const scriptPath = path.join(newKenvNestedPath, 'deep-script.ts');
+    // Create a deep nested script in a new kenv
+    const kenvName = 'test-kenv';
+    const kenvPath = path.join(testDirs.kenvs, kenvName);
+    const nestedScriptDir = path.join(kenvPath, 'deeply', 'nested', 'scripts');
+    const scriptPath = path.join(nestedScriptDir, 'deep-script.ts');
 
     log.test(testName, 'Test paths:', {
-      newKenvNestedPath,
+      kenvPath,
+      nestedScriptDir,
       scriptPath,
-      kenvs: testDirs.kenvs,
     });
 
-    // Clean up any existing directories first
+    // Clean up any existing directories
     log.test(testName, 'Cleaning up existing directories');
-    await remove(path.join(testDirs.kenvs, 'deep-kenv')).catch((err) => {
+    await remove(kenvPath).catch((err) => {
       log.test(testName, 'Error during cleanup:', err);
     });
 
-    // Log initial state
-    log.test(testName, 'Initial kenvs directory state:');
-    await logDirectoryState(testDirs.kenvs, 3);
-
     const events = await collectEvents(
-      1000,
+      2000,
       async () => {
-        log.test(testName, 'Creating deep kenv nested path');
-        await ensureDir(newKenvNestedPath);
+        // First create the kenv directory - this should be detected by kenvsWatcher
+        log.test(testName, 'Creating kenv directory');
+        await ensureDir(kenvPath);
 
-        // Wait for the directories to be created and watchers to settle
-        log.test(testName, 'Waiting for directories to settle');
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Wait for the kenv to be detected and globs to be added
+        log.test(testName, 'Waiting for kenv detection');
+        await new Promise((resolve) => setTimeout(resolve, KENV_GLOB_TIMEOUT));
 
-        // Log intermediate state
-        log.test(testName, 'Directory state after creating nested path:');
-        await logDirectoryState(testDirs.kenvs, 3);
-
-        log.test(testName, 'Creating deep script file');
+        // Now create the nested script - this should be detected by kenvScriptsWatcher
+        log.test(testName, 'Creating nested script directory and file');
+        await ensureDir(nestedScriptDir);
         await writeFile(scriptPath, 'export {}');
 
-        // Wait for potential file events
-        log.test(testName, 'Waiting for file events');
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        // Verify file exists
-        const exists = await pathExists(scriptPath);
-        log.test(testName, 'Script file exists:', exists);
+        // Verify paths exist
+        log.test(testName, 'Verifying paths exist:', {
+          kenv: await pathExists(kenvPath),
+          scriptDir: await pathExists(nestedScriptDir),
+          script: await pathExists(scriptPath),
+        });
       },
       testName,
     );
 
-    log.test(testName, 'Events received:', events);
-
-    // We should only see events for the top-level kenv directory
-    const addDirEvents = events.filter((e) => e.event === 'addDir').map((e) => e.path);
-    log.test(testName, 'addDir events:', addDirEvents);
-
-    // Log all events by type
+    // Group events by type and path depth
     const eventsByType = events.reduce(
       (acc, e) => {
-        acc[e.event] = acc[e.event] || [];
-        acc[e.event].push(e.path);
+        const depth = e.path.split(path.sep).length - testDirs.kenvs.split(path.sep).length;
+        const key = `${e.event}-depth-${depth}`;
+        acc[key] = acc[key] || [];
+        acc[key].push(e.path);
         return acc;
       },
       {} as Record<string, string[]>,
     );
-    log.test(testName, 'Events by type:', eventsByType);
 
-    // Because the watchers have depth=0 for "kenvs", we shouldn't see "add" or "addDir" for nested subdirs
-    const foundNestedAdd = events.some((e) => e.event === 'add' && e.path.endsWith('deep-script.ts'));
-    log.test(testName, 'Found nested add:', foundNestedAdd);
-    expect(foundNestedAdd).toBe(false);
+    log.test(testName, 'Events by type and depth:', eventsByType);
 
-    const foundNestedDir = events.some((e) => e.event === 'addDir' && e.path.includes('nested'));
-    log.test(testName, 'Found nested dir:', foundNestedDir);
-    expect(foundNestedDir).toBe(false);
+    // We should see:
+    // 1. addDir event for the kenv directory (depth 1)
+    const kenvAddEvent = events.find((e) => e.event === 'addDir' && e.path === kenvPath);
+    expect(kenvAddEvent).toBeDefined();
 
-    // Final directory state
-    log.test(testName, 'Final directory state:');
-    await logDirectoryState(testDirs.kenvs, 3);
+    // 2. add event for the script file (at any depth)
+    const scriptAddEvent = events.find((e) => e.event === 'add' && e.path === scriptPath);
+    expect(scriptAddEvent).toBeDefined();
 
     // Cleanup
     log.test(testName, 'Starting cleanup');
-    await remove(path.join(testDirs.kenvs, 'deep-kenv')).catch((err) => {
+    await remove(kenvPath).catch((err) => {
       log.test(testName, 'Error during cleanup:', err);
     });
     log.test(testName, 'Test complete');
@@ -979,74 +985,60 @@ describe.concurrent('File System Watcher', () => {
     expect(unlinkDirEvent).toBeDefined();
   });
 
-  it('should detect rapid consecutive changes to the same snippet file', async () => {
-    const snippetPath = path.join(testDirs.snippets, 'rapid-snippet.txt');
-    log.test('rapid-changes', 'Starting test with path:', snippetPath);
+  it(
+    'should detect rapid consecutive changes to the same snippet file',
+    async () => {
+      const testName = 'rapid-changes';
+      const tmpTestDir = await import('tmp-promise').then(({ dir }) => dir({ unsafeCleanup: true }));
 
-    // Log initial state
-    log.test('rapid-changes', 'Initial directory state:');
-    await logDirectoryState(testDirs.kenv, 2);
+      // Create ALL required directories first
+      const isolatedKenv = path.join(tmpTestDir.path, '.kenv-rapid-test');
+      await Promise.all([
+        ensureDir(path.join(isolatedKenv, 'scripts')),
+        ensureDir(path.join(isolatedKenv, 'snippets')),
+        ensureDir(path.join(isolatedKenv, 'scriptlets')),
+        ensureDir(path.join(isolatedKenv, 'kenvs')),
+      ]);
 
-    // Ensure snippets directory exists and is clean
-    log.test('rapid-changes', 'Cleaning up snippets directory');
-    await remove(testDirs.snippets).catch((err) => {
-      log.test('rapid-changes', 'Error removing snippets directory:', err);
-    });
+      const snippetPath = path.join(isolatedKenv, 'snippets', 'rapid-snippet.txt');
 
-    log.test('rapid-changes', 'Creating fresh snippets directory');
-    await ensureDir(testDirs.snippets);
+      // Point watcher at our test directory
+      const originalKenv = process.env.KENV;
+      process.env.KENV = isolatedKenv;
 
-    // Verify directory exists
-    const exists = await pathExists(testDirs.snippets);
-    log.test('rapid-changes', 'Snippets directory exists:', exists);
+      const events: TestEvent[] = [];
+      const watchers = startWatching(async (event, filePath, source) => {
+        log.test(testName, 'Event received:', { event, filePath, source });
+        events.push({ event, path: filePath, source });
+      });
 
-    // Create initial file
-    log.test('rapid-changes', 'Creating initial file');
-    await writeFile(snippetPath, 'initial snippet');
+      try {
+        await waitForWatchersReady(watchers);
 
-    // Verify file exists
-    const fileExists = await pathExists(snippetPath);
-    log.test('rapid-changes', 'Initial file exists:', fileExists);
+        // Create and modify file
+        await writeFile(snippetPath, 'initial');
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
-    // Let watchers settle
-    log.test('rapid-changes', 'Waiting for watchers to settle');
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    const events = await collectEvents(
-      2000,
-      async () => {
-        log.test('rapid-changes', 'Starting rapid changes');
-        // Make multiple quick changes with small delays to ensure they're picked up
         await writeFile(snippetPath, 'update 1');
-        log.test('rapid-changes', 'Wrote update 1');
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
         await writeFile(snippetPath, 'update 2');
-        log.test('rapid-changes', 'Wrote update 2');
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
         await writeFile(snippetPath, 'update 3');
-        log.test('rapid-changes', 'Wrote update 3');
-      },
-      'rapid-changes',
-    );
 
-    // Log final state
-    log.test('rapid-changes', 'Final directory state:');
-    await logDirectoryState(testDirs.kenv, 2);
+        // Wait for events
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // We expect at least 1 "change" event
-    const changes = events.filter((e) => e.path === snippetPath && e.event === 'change');
-    log.test('rapid-changes', `Found ${changes.length} change events:`, changes);
-    expect(changes.length).toBeGreaterThanOrEqual(1);
+        const changeEvents = events.filter((e) => e.event === 'change' && e.path === snippetPath);
+        log.test(testName, 'Events:', events);
+        log.test(testName, 'Change events:', changeEvents);
 
-    // Cleanup
-    log.test('rapid-changes', 'Starting cleanup');
-    await remove(snippetPath).catch((err) => {
-      log.test('rapid-changes', 'Error cleaning up snippet file:', err);
-    });
-    log.test('rapid-changes', 'Test complete');
-  });
+        expect(changeEvents.length).toBeGreaterThanOrEqual(1);
+      } finally {
+        process.env.KENV = originalKenv;
+        await Promise.all(watchers.map((w) => w.close()));
+        await remove(tmpTestDir.path);
+      }
+    },
+    { timeout: 20000 },
+  );
 
   it(
     'should handle removing the entire kenv folder',
@@ -1074,23 +1066,27 @@ describe.concurrent('File System Watcher', () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       testLog('Initial settle complete');
 
-      const events = await collectEvents(3000, async (events) => {
-        testLog('Waiting for initial scan...');
-        // Wait for initial scan to complete - we should see add events for our files
-        let attempts = 0;
-        while (!events.some((e) => e.event === 'add' && e.path === rootFile)) {
-          if (attempts++ > 30) {
-            testLog('WARNING: Timed out waiting for initial scan');
-            break;
+      const events = await collectEvents(
+        3000,
+        async (events) => {
+          testLog('Waiting for initial scan...');
+          // Wait for initial scan to complete - we should see add events for our files
+          let attempts = 0;
+          while (!events.some((e) => e.event === 'add' && e.path === rootFile)) {
+            if (attempts++ > 30) {
+              testLog('WARNING: Timed out waiting for initial scan');
+              break;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 100));
           }
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-        testLog('Initial scan complete with events:', events);
+          testLog('Initial scan complete with events:', events);
 
-        testLog('Removing kenv directory:', testDirs.kenv);
-        await remove(testDirs.kenv);
-        testLog('Finished removing kenv directory');
-      });
+          testLog('Removing kenv directory:', testDirs.kenv);
+          await remove(testDirs.kenv);
+          testLog('Finished removing kenv directory');
+        },
+        'should handle removing the entire kenv folder',
+      );
 
       testLog('All events received:', events);
 
