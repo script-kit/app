@@ -1,12 +1,10 @@
 import path from 'node:path';
 import os from 'node:os';
 import { readdirSync } from 'node:fs';
-import chokidar, { FSWatcher } from 'chokidar';
+import chokidar, { type FSWatcher } from 'chokidar';
 
 import { createLogger } from '../shared/log-utils';
-import { kenvChokidarPath, kitChokidarPath, pathChokidarResolve, slash } from './path-utils';
-
-import { kenvPath, kitPath, userDbPath } from '@johnlindquist/kit/core/utils';
+import { kenvChokidarPath, kitChokidarPath, slash } from './path-utils';
 
 // Types
 export type WatchEvent = 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir';
@@ -72,10 +70,10 @@ const logAllWatcherPaths = (watchers: FSWatcher[]) => {
 function getEnvFiles(): string[] {
   const results: string[] = [];
   try {
-    const listing = readdirSync(kenvPath());
+    const listing = readdirSync(kenvChokidarPath());
     for (const item of listing) {
       if (item.startsWith('.env')) {
-        results.push(kenvPath(item));
+        results.push(kenvChokidarPath(item));
       }
     }
   } catch (error) {
@@ -96,7 +94,7 @@ export const startWatching = (
   // ─────────────────────────────────────────────────────────────────────────────
   // 1) Watch kit/db (db folder), user.json, scripts.json changes
   // ─────────────────────────────────────────────────────────────────────────────
-  const kitDbPath = kitPath('db'); // This folder has user.json, scripts.json, etc.
+  const kitDbPath = kitChokidarPath('db'); // This folder has user.json, scripts.json, etc.
   log.info(`🔍 Watching kit db folder: ${kitDbPath}`);
   const dbWatcher = chokidar.watch(kitDbPath, {
     ignoreInitial: options.ignoreInitial,
@@ -134,8 +132,8 @@ export const startWatching = (
   // 3) Watch .env (and .env.*), globals.ts, package.json in main kenv
   // ─────────────────────────────────────────────────────────────────────────────
   const singleKenvFiles = [
-    kenvPath('globals.ts'),
-    kenvPath('package.json'),
+    kenvChokidarPath('globals.ts'),
+    kenvChokidarPath('package.json'),
     ...getEnvFiles(), // gather .env & .env.whatever
   ];
   log.info(`🔍 Watching main kenv individual files: ${singleKenvFiles}`);
@@ -155,7 +153,7 @@ export const startWatching = (
   // ─────────────────────────────────────────────────────────────────────────────
   // 4) Watch scripts, snippets, scriptlets in the main kenv at top-level
   // ─────────────────────────────────────────────────────────────────────────────
-  const mainKenvDirs = [kenvPath('scripts'), kenvPath('snippets'), kenvPath('scriptlets')];
+  const mainKenvDirs = [kenvChokidarPath('scripts'), kenvChokidarPath('snippets'), kenvChokidarPath('scriptlets')];
   log.info(`🔍 Watching main kenv dirs: ${mainKenvDirs.join(', ')}`);
 
   const mainKenvWatcher = chokidar.watch(mainKenvDirs, {
@@ -177,9 +175,9 @@ export const startWatching = (
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 5) Handle sub-kenvs inside kenvPath('kenvs')
+  // 5) Handle sub-kenvs inside kenvChokidarPath('kenvs')
   // ─────────────────────────────────────────────────────────────────────────────
-  const kenvsRoot = kenvPath('kenvs');
+  const kenvsRoot = kenvChokidarPath('kenvs');
   log.info(`🔍 Watching kenvs root: ${kenvsRoot}`);
 
   // This watcher is just for noticing new or removed sub-kenv directories
