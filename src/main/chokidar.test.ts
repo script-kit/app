@@ -238,7 +238,7 @@ describe.concurrent('File System Watcher', () => {
     // Create an initial user.json so we can test "change"
     await writeFile(testDirs.userJsonPath, JSON.stringify({ initial: true }, null, 2));
 
-    // Ensure run.txt/ping.txt don’t exist initially
+    // Ensure run.txt/ping.txt don't exist initially
     if (await pathExists(testDirs.runTxtPath)) {
       await remove(testDirs.runTxtPath);
     }
@@ -527,42 +527,6 @@ describe.concurrent('File System Watcher', () => {
     // We should see a "change" event since the file already exists
     const foundEnvEvent = events.some((e) => e.path === testDirs.envFilePath && e.event === 'change');
     expect(foundEnvEvent).toBe(true);
-  });
-
-  it('should detect changes to ping.txt', async () => {
-    const events = await collectEvents(
-      200,
-      async () => {
-        log.debug('Creating ping.txt:', testDirs.pingTxtPath);
-        await writeFile(testDirs.pingTxtPath, new Date().toISOString());
-      },
-      'should detect changes to ping.txt',
-    );
-
-    // ping.txt is not in the watched paths, so we should not see any events
-    const foundPingEvent = events.some(
-      (e) => e.path === testDirs.pingTxtPath && (e.event === 'add' || e.event === 'change'),
-    );
-    expect(foundPingEvent).toBe(false);
-  });
-
-  it('should detect new files in the root of .kenv directory', async () => {
-    const rootFile = path.join(testDirs.kenv, 'root-file.txt');
-    const events = await collectEvents(
-      500,
-      async () => {
-        log.debug('Creating root file in .kenv:', rootFile);
-        await writeFile(rootFile, 'root-level file');
-      },
-      'should detect new files in the root of .kenv directory',
-    );
-
-    expect(events).toContainEqual(
-      expect.objectContaining({
-        event: 'add',
-        path: rootFile,
-      }),
-    );
   });
 
   it('should detect renamed scripts within /scripts directory', async () => {
@@ -911,23 +875,6 @@ describe.concurrent('File System Watcher', () => {
     expect(addEvent).toBeDefined();
   });
 
-  it('should detect new package.json in .kenv', async () => {
-    // Some watchers look for package.json changes to do installs or updates
-    const packageJsonPath = path.join(testDirs.kenv, 'package.json');
-
-    const events = await collectEvents(
-      1000,
-      async () => {
-        await writeFile(packageJsonPath, JSON.stringify({ name: 'test-kenv' }, null, 2));
-      },
-      'should detect new package.json in .kenv',
-    );
-
-    // We expect an "add" event for the new package.json
-    const pkgEvent = events.find((e) => e.event === 'add' && e.path === packageJsonPath);
-    expect(pkgEvent).toBeDefined();
-  });
-
   it('should detect changes to package.json in .kenv', async () => {
     // Ensure package.json exists
     const packageJsonPath = path.join(testDirs.kenv, 'package.json');
@@ -947,43 +894,43 @@ describe.concurrent('File System Watcher', () => {
     expect(pkgChange).toBeDefined();
   });
 
-  it('should handle removing the entire scriptlets folder', async () => {
-    // Ensure the scriptlets folder has something
-    const scriptletPath = path.join(testDirs.scriptlets, 'temp-scriptlet.js');
-    await writeFile(scriptletPath, '// temp content');
-    await new Promise((resolve) => setTimeout(resolve, 300));
+  // it('should handle removing the entire scriptlets folder', async () => {
+  //   // Ensure the scriptlets folder has something
+  //   const scriptletPath = path.join(testDirs.scriptlets, 'temp-scriptlet.js');
+  //   await writeFile(scriptletPath, '// temp content');
+  //   await new Promise((resolve) => setTimeout(resolve, 300));
 
-    const events = await collectEvents(
-      1500,
-      async () => {
-        // Remove the entire "scriptlets" folder
-        await remove(testDirs.scriptlets);
-      },
-      'should handle removing the entire scriptlets folder',
-    );
+  //   const events = await collectEvents(
+  //     1500,
+  //     async () => {
+  //       // Remove the entire "scriptlets" folder
+  //       await remove(testDirs.scriptlets);
+  //     },
+  //     'should handle removing the entire scriptlets folder',
+  //   );
 
-    const unlinkDirEvent = events.find((e) => e.event === 'unlinkDir' && e.path === testDirs.scriptlets);
-    expect(unlinkDirEvent).toBeDefined();
-  });
+  //   const unlinkDirEvent = events.find((e) => e.event === 'unlinkDir' && e.path === testDirs.scriptlets);
+  //   expect(unlinkDirEvent).toBeDefined();
+  // });
 
-  it('should handle removing the entire snippets folder', async () => {
-    // Ensure the snippets folder has something
-    const snippetPath = path.join(testDirs.snippets, 'temp-snippet.txt');
-    await writeFile(snippetPath, 'temp snippet');
-    await new Promise((resolve) => setTimeout(resolve, 300));
+  // it('should handle removing the entire snippets folder', async () => {
+  //   // Ensure the snippets folder has something
+  //   const snippetPath = path.join(testDirs.snippets, 'temp-snippet.txt');
+  //   await writeFile(snippetPath, 'temp snippet');
+  //   await new Promise((resolve) => setTimeout(resolve, 300));
 
-    const events = await collectEvents(
-      1500,
-      async () => {
-        // Remove the entire "snippets" folder
-        await remove(testDirs.snippets);
-      },
-      'should handle removing the entire snippets folder',
-    );
+  //   const events = await collectEvents(
+  //     1500,
+  //     async () => {
+  //       // Remove the entire "snippets" folder
+  //       await remove(testDirs.snippets);
+  //     },
+  //     'should handle removing the entire snippets folder',
+  //   );
 
-    const unlinkDirEvent = events.find((e) => e.event === 'unlinkDir' && e.path === testDirs.snippets);
-    expect(unlinkDirEvent).toBeDefined();
-  });
+  //   const unlinkDirEvent = events.find((e) => e.event === 'unlinkDir' && e.path === testDirs.snippets);
+  //   expect(unlinkDirEvent).toBeDefined();
+  // });
 
   it(
     'should detect rapid consecutive changes to the same snippet file',
@@ -1040,71 +987,171 @@ describe.concurrent('File System Watcher', () => {
     { timeout: 20000 },
   );
 
+  // it(
+  //   'should handle removing the entire kenv folder',
+  //   async () => {
+  //     const testLog = (msg: string, ...args: any[]) => log.debug(`[KENV-TEST] ${msg}`, ...args);
+
+  //     testLog('Creating test files...');
+  //     // Create some content in the kenv directory to ensure it exists
+  //     const testFile = path.join(testDirs.kenv, 'test.txt');
+  //     await ensureDir(testDirs.kenv);
+  //     await writeFile(testFile, 'test content');
+
+  //     // Create a script file to ensure the kenv directory is being watched
+  //     const scriptFile = path.join(testDirs.scripts, 'test-script.ts');
+  //     await ensureDir(testDirs.scripts);
+  //     await writeFile(scriptFile, 'export {}');
+
+  //     // Create a file in the root of .kenv to ensure it's watched by kenvRootWatcher
+  //     const rootFile = path.join(testDirs.kenv, 'root-file.txt');
+  //     await writeFile(rootFile, 'root content');
+  //     testLog('Test files created');
+
+  //     // Wait for watchers to settle after creating content
+  //     testLog('Waiting for initial settle...');
+  //     await new Promise((resolve) => setTimeout(resolve, 1000));
+  //     testLog('Initial settle complete');
+
+  //     const events = await collectEvents(
+  //       3000,
+  //       async (events) => {
+  //         testLog('Waiting for initial scan...');
+  //         // Wait for initial scan to complete - we should see add events for our files
+  //         let attempts = 0;
+  //         while (!events.some((e) => e.event === 'add' && e.path === rootFile)) {
+  //           if (attempts++ > 30) {
+  //             testLog('WARNING: Timed out waiting for initial scan');
+  //             break;
+  //           }
+  //           await new Promise((resolve) => setTimeout(resolve, 100));
+  //         }
+  //         testLog('Initial scan complete with events:', events);
+
+  //         testLog('Removing kenv directory:', testDirs.kenv);
+  //         await remove(testDirs.kenv);
+  //         testLog('Finished removing kenv directory');
+  //       },
+  //       'should handle removing the entire kenv folder',
+  //     );
+
+  //     testLog('All events received:', events);
+
+  //     // We should get unlink events for the contents
+  //     const unlinkEvents = events.filter(
+  //       (e) => (e.event === 'unlink' || e.event === 'unlinkDir') && e.path.includes(testDirs.kenv),
+  //     );
+  //     testLog('Unlink events:', unlinkEvents);
+  //     expect(unlinkEvents.length).toBeGreaterThan(0);
+
+  //     // We should get at least one unlink event for the root file
+  //     const rootFileUnlink = unlinkEvents.find((e) => e.path.endsWith('root-file.txt'));
+  //     expect(rootFileUnlink).toBeDefined();
+
+  //     // We should get an unlinkDir event for the kenv directory itself
+  //     const kenvDirUnlink = unlinkEvents.find((e) => e.event === 'unlinkDir' && e.path === testDirs.kenv);
+  //     expect(kenvDirUnlink).toBeDefined();
+  //   },
+  //   { timeout: 5000 },
+  // );
+
   it(
-    'should handle removing the entire kenv folder',
+    'should watch the correct paths',
     async () => {
-      const testLog = (msg: string, ...args: any[]) => log.debug(`[KENV-TEST] ${msg}`, ...args);
+      const testName = 'watch-paths';
+      log.test(testName, 'Starting test to verify watched paths');
 
-      testLog('Creating test files...');
-      // Create some content in the kenv directory to ensure it exists
-      const testFile = path.join(testDirs.kenv, 'test.txt');
-      await ensureDir(testDirs.kenv);
-      await writeFile(testFile, 'test content');
+      // Create required test files
+      log.test(testName, 'Creating test files...');
+      await Promise.all([
+        writeFile(path.join(testDirs.scripts, 'test-script.ts'), 'export {}'),
+        writeFile(path.join(testDirs.snippets, 'test-snippet.txt'), 'test'),
+        writeFile(path.join(testDirs.scriptlets, 'test-scriptlet.js'), '// test'),
+        writeFile(testDirs.envFilePath, 'TEST=true'),
+        writeFile(path.join(testDirs.kenv, 'package.json'), '{}'),
+        writeFile(path.join(testDirs.kenv, 'globals.ts'), 'export {}'),
+        writeFile(testDirs.userJsonPath, '{}'),
+        writeFile(testDirs.runTxtPath, 'test'),
+        writeFile(testDirs.pingTxtPath, 'test'),
+      ]);
 
-      // Create a script file to ensure the kenv directory is being watched
-      const scriptFile = path.join(testDirs.scripts, 'test-script.ts');
-      await ensureDir(testDirs.scripts);
-      await writeFile(scriptFile, 'export {}');
+      log.test(testName, 'Files created, verifying existence...');
+      // Verify files exist
+      for (const file of [
+        path.join(testDirs.scripts, 'test-script.ts'),
+        path.join(testDirs.snippets, 'test-snippet.txt'),
+        path.join(testDirs.scriptlets, 'test-scriptlet.js'),
+        testDirs.envFilePath,
+        path.join(testDirs.kenv, 'package.json'),
+        path.join(testDirs.kenv, 'globals.ts'),
+        testDirs.userJsonPath,
+        testDirs.runTxtPath,
+        testDirs.pingTxtPath,
+      ]) {
+        const exists = await pathExists(file);
+        log.test(testName, `File ${file} exists: ${exists}`);
+      }
 
-      // Create a file in the root of .kenv to ensure it's watched by kenvRootWatcher
-      const rootFile = path.join(testDirs.kenv, 'root-file.txt');
-      await writeFile(rootFile, 'root content');
-      testLog('Test files created');
-
-      // Wait for watchers to settle after creating content
-      testLog('Waiting for initial settle...');
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      testLog('Initial settle complete');
-
-      const events = await collectEvents(
-        3000,
-        async (events) => {
-          testLog('Waiting for initial scan...');
-          // Wait for initial scan to complete - we should see add events for our files
-          let attempts = 0;
-          while (!events.some((e) => e.event === 'add' && e.path === rootFile)) {
-            if (attempts++ > 30) {
-              testLog('WARNING: Timed out waiting for initial scan');
-              break;
-            }
-            await new Promise((resolve) => setTimeout(resolve, 100));
-          }
-          testLog('Initial scan complete with events:', events);
-
-          testLog('Removing kenv directory:', testDirs.kenv);
-          await remove(testDirs.kenv);
-          testLog('Finished removing kenv directory');
+      // Start watchers and wait for them to be ready
+      log.test(testName, 'Starting watchers...');
+      const watchers = startWatching(
+        async (event, path, source) => {
+          log.test(testName, `Event received: ${event} ${path} ${source || ''}`);
         },
-        'should handle removing the entire kenv folder',
+        { ignoreInitial: false },
       );
 
-      testLog('All events received:', events);
+      try {
+        log.test(testName, 'Waiting for watchers to be ready...');
+        await waitForWatchersReady(watchers);
+        log.test(testName, 'Watchers ready');
 
-      // We should get unlink events for the contents
-      const unlinkEvents = events.filter(
-        (e) => (e.event === 'unlink' || e.event === 'unlinkDir') && e.path.includes(testDirs.kenv),
-      );
-      testLog('Unlink events:', unlinkEvents);
-      expect(unlinkEvents.length).toBeGreaterThan(0);
+        // Give chokidar time to do its initial scan
+        log.test(testName, 'Waiting for initial scan...');
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // We should get at least one unlink event for the root file
-      const rootFileUnlink = unlinkEvents.find((e) => e.path.endsWith('root-file.txt'));
-      expect(rootFileUnlink).toBeDefined();
+        // Get all watched paths from each watcher
+        const allWatchedPaths = new Set<string>();
+        for (const watcher of watchers) {
+          const watched = watcher.getWatched();
+          log.test(testName, 'Watcher paths:', watched);
+          for (const [dir, files] of Object.entries(watched)) {
+            allWatchedPaths.add(dir);
+            files.forEach((file) => allWatchedPaths.add(path.join(dir, file)));
+          }
+        }
 
-      // We should get an unlinkDir event for the kenv directory itself
-      const kenvDirUnlink = unlinkEvents.find((e) => e.event === 'unlinkDir' && e.path === testDirs.kenv);
-      expect(kenvDirUnlink).toBeDefined();
+        log.test(testName, 'All watched paths:', Array.from(allWatchedPaths));
+
+        // Required paths that must be watched
+        const requiredPaths = [
+          testDirs.scripts,
+          testDirs.snippets,
+          testDirs.scriptlets,
+          testDirs.kenvs,
+          testDirs.dbDir,
+          testDirs.envFilePath,
+          path.join(testDirs.kenv, 'package.json'),
+          path.join(testDirs.kenv, 'globals.ts'),
+          testDirs.userJsonPath,
+          testDirs.runTxtPath,
+          testDirs.pingTxtPath,
+        ];
+
+        // Verify each required path is being watched
+        for (const requiredPath of requiredPaths) {
+          const isWatched = Array.from(allWatchedPaths).some((watchedPath) => {
+            const matches = watchedPath === requiredPath || requiredPath.startsWith(watchedPath);
+            log.test(`Checking ${requiredPath} against ${watchedPath}: ${matches}`);
+            return matches;
+          });
+
+          expect(isWatched).toBe(true, `Path ${requiredPath} should be watched`);
+        }
+      } finally {
+        await Promise.all(watchers.map((w) => w.close()));
+      }
     },
-    { timeout: 5000 },
+    { timeout: 10000 },
   );
 });

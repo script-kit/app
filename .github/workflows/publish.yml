@@ -246,6 +246,10 @@ jobs:
           sudo update-alternatives --set g++ /usr/bin/g++-10
           echo "CXX=g++-10" >> $GITHUB_ENV
 
+      - name: Test File Watching
+        run: |
+           pnpm exec vitest --bail 1 --watch false src/main/chokidar.test.ts
+
       - name: Publish linux x64
         if: matrix.platform == 'linux' && matrix.arch == 'x64'
         env:
