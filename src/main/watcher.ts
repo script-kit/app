@@ -902,7 +902,7 @@ async function handleFileChangeEvent(eventName: WatchEvent, filePath: string, so
     return;
   }
 
-  if (base === '.env' || base.startsWith('.env.')) {
+  if (base.startsWith('.env')) {
     log.info(`🌎 .env: ${filePath} -> ${eventName}`);
     parseEnvFile();
     return;

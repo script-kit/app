@@ -3,7 +3,6 @@ import path from 'node:path';
 
 // Constants for test timing - increased for parallel execution
 const WATCHER_SETTLE_TIME = 200;
-const EVENT_COLLECTION_TIME = 200;
 const KENV_GLOB_TIMEOUT = 1000;
 
 const testDir = vi.hoisted(() => {
@@ -559,66 +558,76 @@ describe.concurrent('File System Watcher', () => {
     expect(addEvent).toBeDefined();
   });
 
-  it('should watch nested script files while respecting kenvs watcher depth', async () => {
-    const testName = 'watcher-behavior';
-    log.test(testName, 'Starting test - verifying watcher behavior');
+  it(
+    'should NOT watch nested script files in sub-kenvs',
+    async () => {
+      const testName = 'watcher-behavior';
+      log.test(testName, 'Starting test - verifying watcher behavior');
 
-    // Create a deep nested script in a new kenv
-    const kenvName = 'test-kenv';
-    const kenvPathDir = path.join(testDirs.kenvs, kenvName);
-    const scriptsDir = path.join(kenvPathDir, 'scripts');
-    const nestedDir = path.join(scriptsDir, 'deeply', 'nested');
-    const scriptPath = path.join(nestedDir, 'deep-script.ts');
+      // Create a script in a new kenv at root level AND a nested script
+      const kenvName = 'test-kenv';
+      const kenvPathDir = path.join(testDirs.kenvs, kenvName);
+      const scriptsDir = path.join(kenvPathDir, 'scripts');
+      const rootScriptPath = path.join(scriptsDir, 'root-script.ts');
+      const nestedDir = path.join(scriptsDir, 'nested');
+      const nestedScriptPath = path.join(nestedDir, 'nested-script.ts');
 
-    log.test(testName, 'Test paths:', {
-      kenvPathDir,
-      scriptsDir,
-      nestedDir,
-      scriptPath,
-    });
+      log.test(testName, 'Test paths:', {
+        kenvPathDir,
+        scriptsDir,
+        rootScriptPath,
+        nestedScriptPath,
+      });
 
-    // Clean up any existing directories
-    log.test(testName, 'Cleaning up existing directories');
-    await remove(kenvPathDir).catch((err) => {
-      log.test(testName, 'Error during cleanup:', err);
-    });
+      // Clean up any existing directories
+      log.test(testName, 'Cleaning up existing directories');
+      await remove(kenvPathDir).catch((err) => {
+        log.test(testName, 'Error during cleanup:', err);
+      });
 
-    const events = await collectEvents(
-      2000,
-      async () => {
-        // First create the kenv directory and scripts directory
-        log.test(testName, 'Creating kenv and scripts directories');
-        await ensureDir(kenvPathDir);
-        await ensureDir(scriptsDir);
+      const events = await collectEvents(
+        2000,
+        async () => {
+          // First create the kenv directory and scripts directory
+          log.test(testName, 'Creating kenv and scripts directories');
+          await ensureDir(kenvPathDir);
+          await ensureDir(scriptsDir);
+          await ensureDir(nestedDir);
 
-        // Wait for the kenv and scripts watchers to attach
-        log.test(testName, 'Waiting for kenv and scripts detection');
-        await new Promise((resolve) => setTimeout(resolve, KENV_GLOB_TIMEOUT));
+          // Wait for the kenv and scripts watchers to attach
+          log.test(testName, 'Waiting for kenv and scripts detection');
+          await new Promise((resolve) => setTimeout(resolve, KENV_GLOB_TIMEOUT));
 
-        // Now create the nested script
-        log.test(testName, 'Creating nested script directory and file');
-        await ensureDir(nestedDir);
-        await writeFile(scriptPath, 'export {}');
+          // Create both root and nested scripts
+          log.test(testName, 'Creating root and nested script files');
+          await writeFile(rootScriptPath, 'export {}');
+          await writeFile(nestedScriptPath, 'export {}');
 
-        // Verify paths exist
-        log.test(testName, 'Verifying paths exist:', {
-          kenv: await pathExists(kenvPathDir),
-          scriptDir: await pathExists(scriptsDir),
-          nestedDir: await pathExists(nestedDir),
-          script: await pathExists(scriptPath),
-        });
-      },
-      testName,
-    );
+          // Verify paths exist
+          log.test(testName, 'Verifying paths exist:', {
+            kenv: await pathExists(kenvPathDir),
+            scriptDir: await pathExists(scriptsDir),
+            rootScript: await pathExists(rootScriptPath),
+            nestedScript: await pathExists(nestedScriptPath),
+          });
+        },
+        testName,
+      );
 
-    // We should see an addDir for the main kenv folder
-    const kenvAddEvent = events.find((e) => e.event === 'addDir' && e.path === kenvPathDir);
-    expect(kenvAddEvent).toBeDefined();
+      // We should see an addDir for the main kenv folder
+      const kenvAddEvent = events.find((e) => e.event === 'addDir' && e.path === kenvPathDir);
+      expect(kenvAddEvent).toBeDefined();
 
-    // We also expect an "add" event for the deep-script.ts
-    const scriptAddEvent = events.find((e) => e.event === 'add' && e.path === scriptPath);
-    expect(scriptAddEvent).toBeDefined();
-  });
+      // We expect an "add" event for the root-script.ts since it's at root level
+      const rootScriptAddEvent = events.find((e) => e.event === 'add' && e.path === rootScriptPath);
+      expect(rootScriptAddEvent).toBeDefined();
+
+      // We should NOT see any events for the nested script
+      const nestedScriptEvent = events.find((e) => e.path === nestedScriptPath);
+      expect(nestedScriptEvent).toBeUndefined();
+    },
+    { timeout: 10000 },
+  );
 
   it('should detect application changes in /Applications or user Applications directory', async () => {
     // Mock directories

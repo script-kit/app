@@ -21,20 +21,8 @@ const log = createLogger('chokidar.ts');
 // For sub-kenvs, we specifically watch only {subKenv}/scripts, {subKenv}/snippets, and {subKenv}/scriptlets
 // so we do NOT watch node_modules/.git/etc at all.
 
-// Let's keep a small utility just to read .env files in main kenv
-function getEnvFiles(): string[] {
-  const results: string[] = [];
-  try {
-    const listing = readdirSync(kenvChokidarPath());
-    for (const item of listing) {
-      if (item.startsWith('.env')) {
-        results.push(kenvChokidarPath(item));
-      }
-    }
-  } catch (error) {
-    log.warn(`Failed reading .env files: ${error}`);
-  }
-  return results;
+function getConfigFiles(): string[] {
+  return ['globals.ts', 'package.json'];
 }
 
 /**
@@ -56,14 +44,22 @@ function createSubKenvWatchers(subKenvDir: string, callback: WatcherCallback, op
 
       const w = chokidar.watch(dirPath, {
         ignoreInitial: options.ignoreInitial,
-        depth: 99, // or Infinity
+        depth: 0, // Only watch root level
         followSymlinks: true,
+        ignored: [
+          '**/node_modules/**',
+          '**/.git/**',
+          '**/*/[^/]*', // Ignore anything in subdirectories
+        ],
       });
       w.on('all', (event, changedPath) => {
-        callback(event as WatchEvent, changedPath);
+        // Only emit events for files directly in the watched directory
+        if (path.dirname(changedPath) === dirPath) {
+          callback(event as WatchEvent, changedPath);
+        }
       });
       w.on('ready', () => {
-        log.info(`📁 Sub-Kenv Watcher ready for: ${dirPath}`);
+        log.info('📁 Sub-Kenv Watcher ready for:', dirPath);
       });
       return w;
     } catch (err) {
@@ -134,20 +130,28 @@ export const startWatching = (
   allWatchers.push(runPingWatcher);
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 3) Watch .env (and .env.*), globals.ts, package.json in main kenv
+  // 3) Watch kenv root for config files (.env, globals.ts, package.json)
   // ─────────────────────────────────────────────────────────────────────────────
-  const mainKenvFiles = [kenvChokidarPath('globals.ts'), kenvChokidarPath('package.json'), ...getEnvFiles()];
-  log.info(`🔍 Watching main kenv single files: ${mainKenvFiles}`);
-  const kenvFilesWatcher = chokidar.watch(mainKenvFiles, {
+  const configFiles = getConfigFiles();
+  const envPattern = '.env';
+  log.info(`🔍 Watching kenv root for config files: ${configFiles.join(', ')}`);
+  const kenvRootWatcher = chokidar.watch(kenvChokidarPath(), {
     ignoreInitial: options.ignoreInitial,
+    depth: 0,
+    followSymlinks: true,
   });
-  kenvFilesWatcher.on('all', (event, filePath) => {
-    callback(event as WatchEvent, filePath);
+
+  kenvRootWatcher.on('all', (event, filePath) => {
+    const filename = path.basename(filePath);
+    if (configFiles.includes(filename) || filename.startsWith(envPattern)) {
+      callback(event as WatchEvent, filePath);
+    }
   });
-  kenvFilesWatcher.on('ready', () => {
-    log.info(`📁 Kenv Files Watcher ready`);
+
+  kenvRootWatcher.on('ready', () => {
+    log.info(`📁 Kenv Root Watcher ready`);
   });
-  allWatchers.push(kenvFilesWatcher);
+  allWatchers.push(kenvRootWatcher);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 4) Watch scripts, snippets, scriptlets in the main kenv (depth=∞)
@@ -159,7 +163,7 @@ export const startWatching = (
   function watchDir(dirPath: string, label: string) {
     const w = chokidar.watch(dirPath, {
       ignoreInitial: options.ignoreInitial,
-      depth: 99, // or Infinity
+      depth: 0, // Only watch root level
       followSymlinks: true,
     });
     w.on('all', (event, filePath) => {
