@@ -991,8 +991,9 @@ describe.concurrent('File System Watcher', () => {
         for (const watcher of watchers) {
           const watched = watcher.getWatched();
           for (const [dir, files] of Object.entries(watched)) {
-            allWatchedPaths.add(dir);
-            files.forEach((file) => allWatchedPaths.add(path.join(dir, file)));
+            const normalizedDir = path.normalize(dir);
+            allWatchedPaths.add(normalizedDir);
+            files.forEach((file) => allWatchedPaths.add(path.normalize(path.join(dir, file))));
           }
         }
 
@@ -1011,12 +1012,27 @@ describe.concurrent('File System Watcher', () => {
           testDirs.userJsonPath,
           testDirs.runTxtPath,
           testDirs.pingTxtPath,
-        ];
+        ].map(path.normalize);
 
         // Verify each required path is being watched
         for (const requiredPath of requiredPaths) {
-          const isWatched = Array.from(allWatchedPaths).some((watchedPath) => requiredPath.startsWith(watchedPath));
-          expect(isWatched).toBe(true, `Path ${requiredPath} should be watched`);
+          const normalizedRequired = path.normalize(requiredPath);
+          log.test(testName, `Checking if ${normalizedRequired} is watched...`);
+
+          const isWatched = Array.from(allWatchedPaths).some((watchedPath) => {
+            const normalizedWatched = path.normalize(watchedPath);
+            const isMatch =
+              normalizedRequired === normalizedWatched ||
+              normalizedRequired.startsWith(normalizedWatched + path.sep) ||
+              normalizedWatched.startsWith(normalizedRequired + path.sep);
+
+            if (isMatch) {
+              log.test(testName, `Found match: ${normalizedWatched} for ${normalizedRequired}`);
+            }
+            return isMatch;
+          });
+
+          expect(isWatched).toBe(true, `Path ${normalizedRequired} should be watched`);
         }
       } finally {
         await Promise.all(watchers.map((w) => w.close()));
