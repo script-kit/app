@@ -305,7 +305,7 @@ describe.concurrent('File System Watcher', () => {
           log.debug('Creating directory:', newKenvScriptsDir);
           await ensureDir(newKenvScriptsDir);
 
-          // Wait for globs to be added
+          // Wait for watchers to detect the new kenv directory
           log.debug('Waiting for globs to be added...');
           await new Promise((resolve) => setTimeout(resolve, KENV_GLOB_TIMEOUT + WATCHER_SETTLE_TIME));
 
@@ -565,77 +565,59 @@ describe.concurrent('File System Watcher', () => {
 
     // Create a deep nested script in a new kenv
     const kenvName = 'test-kenv';
-    const kenvPath = path.join(testDirs.kenvs, kenvName);
-    const nestedScriptDir = path.join(kenvPath, 'deeply', 'nested', 'scripts');
-    const scriptPath = path.join(nestedScriptDir, 'deep-script.ts');
+    const kenvPathDir = path.join(testDirs.kenvs, kenvName);
+    const scriptsDir = path.join(kenvPathDir, 'scripts');
+    const nestedDir = path.join(scriptsDir, 'deeply', 'nested');
+    const scriptPath = path.join(nestedDir, 'deep-script.ts');
 
     log.test(testName, 'Test paths:', {
-      kenvPath,
-      nestedScriptDir,
+      kenvPathDir,
+      scriptsDir,
+      nestedDir,
       scriptPath,
     });
 
     // Clean up any existing directories
     log.test(testName, 'Cleaning up existing directories');
-    await remove(kenvPath).catch((err) => {
+    await remove(kenvPathDir).catch((err) => {
       log.test(testName, 'Error during cleanup:', err);
     });
 
     const events = await collectEvents(
       2000,
       async () => {
-        // First create the kenv directory - this should be detected by kenvsWatcher
-        log.test(testName, 'Creating kenv directory');
-        await ensureDir(kenvPath);
+        // First create the kenv directory and scripts directory
+        log.test(testName, 'Creating kenv and scripts directories');
+        await ensureDir(kenvPathDir);
+        await ensureDir(scriptsDir);
 
-        // Wait for the kenv to be detected and globs to be added
-        log.test(testName, 'Waiting for kenv detection');
+        // Wait for the kenv and scripts watchers to attach
+        log.test(testName, 'Waiting for kenv and scripts detection');
         await new Promise((resolve) => setTimeout(resolve, KENV_GLOB_TIMEOUT));
 
-        // Now create the nested script - this should be detected by kenvScriptsWatcher
+        // Now create the nested script
         log.test(testName, 'Creating nested script directory and file');
-        await ensureDir(nestedScriptDir);
+        await ensureDir(nestedDir);
         await writeFile(scriptPath, 'export {}');
 
         // Verify paths exist
         log.test(testName, 'Verifying paths exist:', {
-          kenv: await pathExists(kenvPath),
-          scriptDir: await pathExists(nestedScriptDir),
+          kenv: await pathExists(kenvPathDir),
+          scriptDir: await pathExists(scriptsDir),
+          nestedDir: await pathExists(nestedDir),
           script: await pathExists(scriptPath),
         });
       },
       testName,
     );
 
-    // Group events by type and path depth
-    const eventsByType = events.reduce(
-      (acc, e) => {
-        const depth = e.path.split(path.sep).length - testDirs.kenvs.split(path.sep).length;
-        const key = `${e.event}-depth-${depth}`;
-        acc[key] = acc[key] || [];
-        acc[key].push(e.path);
-        return acc;
-      },
-      {} as Record<string, string[]>,
-    );
-
-    log.test(testName, 'Events by type and depth:', eventsByType);
-
-    // We should see:
-    // 1. addDir event for the kenv directory (depth 1)
-    const kenvAddEvent = events.find((e) => e.event === 'addDir' && e.path === kenvPath);
+    // We should see an addDir for the main kenv folder
+    const kenvAddEvent = events.find((e) => e.event === 'addDir' && e.path === kenvPathDir);
     expect(kenvAddEvent).toBeDefined();
 
-    // 2. add event for the script file (at any depth)
+    // We also expect an "add" event for the deep-script.ts
     const scriptAddEvent = events.find((e) => e.event === 'add' && e.path === scriptPath);
     expect(scriptAddEvent).toBeDefined();
-
-    // Cleanup
-    log.test(testName, 'Starting cleanup');
-    await remove(kenvPath).catch((err) => {
-      log.test(testName, 'Error during cleanup:', err);
-    });
-    log.test(testName, 'Test complete');
   });
 
   it('should detect application changes in /Applications or user Applications directory', async () => {
@@ -671,7 +653,8 @@ describe.concurrent('File System Watcher', () => {
       await waitForWatchersReady(watchers);
       log.debug('Watchers are ready');
 
-      // Since we're mocked to linux, we should get no app events
+      // Since we're mocked to linux, we should get no app watchers
+      // => no events from /Applications
       expect(events.filter((e) => e.source === 'app')).toHaveLength(0);
     } finally {
       // Restore original functions
@@ -684,7 +667,7 @@ describe.concurrent('File System Watcher', () => {
   }, 10000);
 
   //
-  // ADD THESE TESTS *AFTER* YOUR EXISTING TESTS
+  // ADDITIONAL TESTS *AFTER* YOUR EXISTING TESTS
   //
 
   it(
@@ -894,44 +877,6 @@ describe.concurrent('File System Watcher', () => {
     expect(pkgChange).toBeDefined();
   });
 
-  // it('should handle removing the entire scriptlets folder', async () => {
-  //   // Ensure the scriptlets folder has something
-  //   const scriptletPath = path.join(testDirs.scriptlets, 'temp-scriptlet.js');
-  //   await writeFile(scriptletPath, '// temp content');
-  //   await new Promise((resolve) => setTimeout(resolve, 300));
-
-  //   const events = await collectEvents(
-  //     1500,
-  //     async () => {
-  //       // Remove the entire "scriptlets" folder
-  //       await remove(testDirs.scriptlets);
-  //     },
-  //     'should handle removing the entire scriptlets folder',
-  //   );
-
-  //   const unlinkDirEvent = events.find((e) => e.event === 'unlinkDir' && e.path === testDirs.scriptlets);
-  //   expect(unlinkDirEvent).toBeDefined();
-  // });
-
-  // it('should handle removing the entire snippets folder', async () => {
-  //   // Ensure the snippets folder has something
-  //   const snippetPath = path.join(testDirs.snippets, 'temp-snippet.txt');
-  //   await writeFile(snippetPath, 'temp snippet');
-  //   await new Promise((resolve) => setTimeout(resolve, 300));
-
-  //   const events = await collectEvents(
-  //     1500,
-  //     async () => {
-  //       // Remove the entire "snippets" folder
-  //       await remove(testDirs.snippets);
-  //     },
-  //     'should handle removing the entire snippets folder',
-  //   );
-
-  //   const unlinkDirEvent = events.find((e) => e.event === 'unlinkDir' && e.path === testDirs.snippets);
-  //   expect(unlinkDirEvent).toBeDefined();
-  // });
-
   it(
     'should detect rapid consecutive changes to the same snippet file',
     async () => {
@@ -987,74 +932,6 @@ describe.concurrent('File System Watcher', () => {
     { timeout: 20000 },
   );
 
-  // it(
-  //   'should handle removing the entire kenv folder',
-  //   async () => {
-  //     const testLog = (msg: string, ...args: any[]) => log.debug(`[KENV-TEST] ${msg}`, ...args);
-
-  //     testLog('Creating test files...');
-  //     // Create some content in the kenv directory to ensure it exists
-  //     const testFile = path.join(testDirs.kenv, 'test.txt');
-  //     await ensureDir(testDirs.kenv);
-  //     await writeFile(testFile, 'test content');
-
-  //     // Create a script file to ensure the kenv directory is being watched
-  //     const scriptFile = path.join(testDirs.scripts, 'test-script.ts');
-  //     await ensureDir(testDirs.scripts);
-  //     await writeFile(scriptFile, 'export {}');
-
-  //     // Create a file in the root of .kenv to ensure it's watched by kenvRootWatcher
-  //     const rootFile = path.join(testDirs.kenv, 'root-file.txt');
-  //     await writeFile(rootFile, 'root content');
-  //     testLog('Test files created');
-
-  //     // Wait for watchers to settle after creating content
-  //     testLog('Waiting for initial settle...');
-  //     await new Promise((resolve) => setTimeout(resolve, 1000));
-  //     testLog('Initial settle complete');
-
-  //     const events = await collectEvents(
-  //       3000,
-  //       async (events) => {
-  //         testLog('Waiting for initial scan...');
-  //         // Wait for initial scan to complete - we should see add events for our files
-  //         let attempts = 0;
-  //         while (!events.some((e) => e.event === 'add' && e.path === rootFile)) {
-  //           if (attempts++ > 30) {
-  //             testLog('WARNING: Timed out waiting for initial scan');
-  //             break;
-  //           }
-  //           await new Promise((resolve) => setTimeout(resolve, 100));
-  //         }
-  //         testLog('Initial scan complete with events:', events);
-
-  //         testLog('Removing kenv directory:', testDirs.kenv);
-  //         await remove(testDirs.kenv);
-  //         testLog('Finished removing kenv directory');
-  //       },
-  //       'should handle removing the entire kenv folder',
-  //     );
-
-  //     testLog('All events received:', events);
-
-  //     // We should get unlink events for the contents
-  //     const unlinkEvents = events.filter(
-  //       (e) => (e.event === 'unlink' || e.event === 'unlinkDir') && e.path.includes(testDirs.kenv),
-  //     );
-  //     testLog('Unlink events:', unlinkEvents);
-  //     expect(unlinkEvents.length).toBeGreaterThan(0);
-
-  //     // We should get at least one unlink event for the root file
-  //     const rootFileUnlink = unlinkEvents.find((e) => e.path.endsWith('root-file.txt'));
-  //     expect(rootFileUnlink).toBeDefined();
-
-  //     // We should get an unlinkDir event for the kenv directory itself
-  //     const kenvDirUnlink = unlinkEvents.find((e) => e.event === 'unlinkDir' && e.path === testDirs.kenv);
-  //     expect(kenvDirUnlink).toBeDefined();
-  //   },
-  //   { timeout: 5000 },
-  // );
-
   it(
     'should watch the correct paths',
     async () => {
@@ -1076,7 +953,6 @@ describe.concurrent('File System Watcher', () => {
       ]);
 
       log.test(testName, 'Files created, verifying existence...');
-      // Verify files exist
       for (const file of [
         path.join(testDirs.scripts, 'test-script.ts'),
         path.join(testDirs.snippets, 'test-snippet.txt'),
@@ -1114,7 +990,6 @@ describe.concurrent('File System Watcher', () => {
         const allWatchedPaths = new Set<string>();
         for (const watcher of watchers) {
           const watched = watcher.getWatched();
-          log.test(testName, 'Watcher paths:', watched);
           for (const [dir, files] of Object.entries(watched)) {
             allWatchedPaths.add(dir);
             files.forEach((file) => allWatchedPaths.add(path.join(dir, file)));
@@ -1140,12 +1015,7 @@ describe.concurrent('File System Watcher', () => {
 
         // Verify each required path is being watched
         for (const requiredPath of requiredPaths) {
-          const isWatched = Array.from(allWatchedPaths).some((watchedPath) => {
-            const matches = watchedPath === requiredPath || requiredPath.startsWith(watchedPath);
-            log.test(`Checking ${requiredPath} against ${watchedPath}: ${matches}`);
-            return matches;
-          });
-
+          const isWatched = Array.from(allWatchedPaths).some((watchedPath) => requiredPath.startsWith(watchedPath));
           expect(isWatched).toBe(true, `Path ${requiredPath} should be watched`);
         }
       } finally {
@@ -1154,4 +1024,141 @@ describe.concurrent('File System Watcher', () => {
     },
     { timeout: 10000 },
   );
+
+  // -------------------------------------------------------
+  // NEW TESTS TO ENSURE WE *DO NOT* WATCH node_modules OR .git
+  // -------------------------------------------------------
+
+  describe('Ensure node_modules and .git are NOT watched', () => {
+    it('should not trigger events when creating files inside node_modules in main kenv', async () => {
+      const nodeModulesDir = path.join(testDirs.kenv, 'node_modules');
+      const fileInside = path.join(nodeModulesDir, 'test-file.txt');
+
+      const events = await collectEvents(
+        1000,
+        async () => {
+          await ensureDir(nodeModulesDir);
+          await writeFile(fileInside, 'this should not be watched');
+        },
+        'node_modules in main kenv should not be watched',
+      );
+
+      // Verify no events
+      const anyNodeModulesEvent = events.some((e) => e.path.includes('node_modules'));
+      expect(anyNodeModulesEvent).toBe(false);
+    });
+
+    it('should not trigger events when creating files inside .git in main kenv', async () => {
+      const dotGitDir = path.join(testDirs.kenv, '.git');
+      const fileInside = path.join(dotGitDir, 'HEAD');
+
+      const events = await collectEvents(
+        1000,
+        async () => {
+          await ensureDir(dotGitDir);
+          await writeFile(fileInside, 'ref: refs/heads/main');
+        },
+        '.git in main kenv should not be watched',
+      );
+
+      // Verify no events
+      const anyDotGitEvent = events.some((e) => e.path.includes('.git'));
+      expect(anyDotGitEvent).toBe(false);
+    });
+
+    it('should not trigger events when creating files inside node_modules of a sub-kenv', async () => {
+      const subKenvName = 'ignore-sub-kenv';
+      const subKenvPath = path.join(testDirs.kenvs, subKenvName);
+      const nodeModulesDir = path.join(subKenvPath, 'node_modules');
+      const fileInside = path.join(nodeModulesDir, 'ignored.txt');
+
+      const events = await collectEvents(
+        2000,
+        async () => {
+          // Create sub-kenv
+          await ensureDir(subKenvPath);
+          // Let watchers settle
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          // Create node_modules
+          await ensureDir(nodeModulesDir);
+          // Write file
+          await writeFile(fileInside, 'should not be watched');
+        },
+        'node_modules in sub-kenv should not be watched',
+      );
+
+      const anyNodeModulesEvent = events.some((e) => e.path.includes('node_modules'));
+      expect(anyNodeModulesEvent).toBe(false);
+    });
+
+    it('should not trigger events when creating files inside .git of a sub-kenv', async () => {
+      const subKenvName = 'git-sub-kenv';
+      const subKenvPath = path.join(testDirs.kenvs, subKenvName);
+      const dotGitDir = path.join(subKenvPath, '.git');
+      const fileInside = path.join(dotGitDir, 'HEAD');
+
+      const events = await collectEvents(
+        2000,
+        async () => {
+          // Create sub-kenv
+          await ensureDir(subKenvPath);
+          // Let watchers settle
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          // Create .git folder
+          await ensureDir(dotGitDir);
+          // Write file
+          await writeFile(fileInside, 'ref: refs/heads/main');
+        },
+        '.git in sub-kenv should not be watched',
+      );
+
+      const anyDotGitEvent = events.some((e) => e.path.includes('.git'));
+      expect(anyDotGitEvent).toBe(false);
+    });
+
+    it('should not trigger events for random files outside watched paths', async () => {
+      // Create some random files in various locations
+      const randomFiles = [
+        path.join(testDirs.kenv, 'random.txt'),
+        path.join(testDirs.kenv, 'some-dir', 'file.txt'),
+        path.join(testDirs.kenv, 'kenvs', 'random-file.txt'),
+        path.join(testDirs.kenv, 'random-dir', 'nested', 'file.ts'),
+      ];
+
+      const events = await collectEvents(
+        1000,
+        async () => {
+          // Create each file and its parent directory
+          for (const file of randomFiles) {
+            await ensureDir(path.dirname(file));
+            await writeFile(file, 'random content');
+          }
+        },
+        'random files should not be watched',
+      );
+
+      // Verify no events for these random files
+      const randomFileEvents = events.filter((e) => randomFiles.some((file) => e.path === file));
+
+      expect(randomFileEvents).toHaveLength(0);
+
+      // Double check by modifying the files
+      const moreEvents = await collectEvents(
+        1000,
+        async () => {
+          // Modify each file
+          for (const file of randomFiles) {
+            await writeFile(file, 'modified content');
+          }
+        },
+        'modified random files should not be watched',
+      );
+
+      const modifyEvents = moreEvents.filter((e) => randomFiles.some((file) => e.path === file));
+
+      expect(modifyEvents).toHaveLength(0);
+    });
+  });
 });

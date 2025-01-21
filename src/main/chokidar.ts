@@ -1,6 +1,6 @@
 import path from 'node:path';
 import os from 'node:os';
-import { readdirSync } from 'node:fs';
+import { readdirSync, statSync } from 'node:fs';
 import chokidar, { type FSWatcher } from 'chokidar';
 
 import { createLogger } from '../shared/log-utils';
@@ -17,56 +17,11 @@ export interface WatchOptions {
 type WatcherCallback = (eventName: WatchEvent, filePath: string, source?: WatchSource) => Promise<void>;
 
 const log = createLogger('chokidar.ts');
-export const TIMEOUT_MS = 1000;
 
-// For sub-kenvs, we only care about deeply nested "scripts", "snippets", or "scriptlets" folders.
-// We'll ignore "node_modules" (and anything else you want to skip)
-const IGNORED_FOLDERS = ['node_modules', '.git', '.DS_Store'];
-const maxSubKenvDepth = 20; // or 99 if you expect extremely deep nesting
+// For sub-kenvs, we specifically watch only {subKenv}/scripts, {subKenv}/snippets, and {subKenv}/scriptlets
+// so we do NOT watch node_modules/.git/etc at all.
 
-// Add memory tracking utilities
-const getMemoryUsage = () => {
-  const used = process.memoryUsage();
-  return {
-    heapTotal: `${Math.round(used.heapTotal / 1024 / 1024)}MB`,
-    heapUsed: `${Math.round(used.heapUsed / 1024 / 1024)}MB`,
-    rss: `${Math.round(used.rss / 1024 / 1024)}MB`,
-  };
-};
-
-const watcherStats = (watcher: FSWatcher, label: string) => {
-  const watched = watcher.getWatched();
-  const paths = Object.entries(watched).reduce((acc, [dir, files]) => {
-    return acc + files.length;
-  }, 0);
-
-  log.info(`📊 Watcher Stats [${label}]:
-    - Total paths watched: ${paths}
-    - Memory: ${JSON.stringify(getMemoryUsage(), null, 2)}
-  `);
-
-  // Log all watched paths at debug level
-  Object.entries(watched).forEach(([dir, files]) => {
-    log.info(`📂 [${label}] Watching dir: ${dir}
-      Files: ${files.join(', ')}
-    `);
-  });
-};
-
-// Add new function to log all watchers' paths
-const logAllWatcherPaths = (watchers: FSWatcher[]) => {
-  log.info(`🔍 All Watcher Paths:`);
-  watchers.forEach((watcher, index) => {
-    const watched = watcher.getWatched();
-    log.info(`\n📺 Watcher ${index}:`);
-    Object.entries(watched).forEach(([dir, files]) => {
-      log.info(`  📁 ${dir}:`);
-      files.forEach((file) => log.info(`    - ${file}`));
-    });
-  });
-};
-
-// Utility: gather .env and .env.* files from the main kenv
+// Let's keep a small utility just to read .env files in main kenv
 function getEnvFiles(): string[] {
   const results: string[] = [];
   try {
@@ -82,190 +37,205 @@ function getEnvFiles(): string[] {
   return results;
 }
 
+/**
+ * Create watchers for a *single* sub-kenv (for its scripts/snippets/scriptlets).
+ */
+function createSubKenvWatchers(subKenvDir: string, callback: WatcherCallback, options: WatchOptions): FSWatcher[] {
+  const watchers: FSWatcher[] = [];
+  // We only watch {subKenv}/scripts, {subKenv}/snippets, {subKenv}/scriptlets
+  // That's it, no node_modules, no ignoring required, since we never watch them.
+  const subKenvScripts = path.join(subKenvDir, 'scripts');
+  const subKenvSnippets = path.join(subKenvDir, 'snippets');
+  const subKenvScriptlets = path.join(subKenvDir, 'scriptlets');
+
+  // Helper: Start a watcher for a directory if it exists
+  const watchIfExists = (dirPath: string): FSWatcher | null => {
+    try {
+      const stats = statSync(dirPath);
+      if (!stats.isDirectory()) return null;
+
+      const w = chokidar.watch(dirPath, {
+        ignoreInitial: options.ignoreInitial,
+        depth: 99, // or Infinity
+        followSymlinks: true,
+      });
+      w.on('all', (event, changedPath) => {
+        callback(event as WatchEvent, changedPath);
+      });
+      w.on('ready', () => {
+        log.info(`📁 Sub-Kenv Watcher ready for: ${dirPath}`);
+      });
+      return w;
+    } catch (err) {
+      // If directory doesn't exist, that's fine
+      return null;
+    }
+  };
+
+  const scriptsWatcher = watchIfExists(subKenvScripts);
+  if (scriptsWatcher) watchers.push(scriptsWatcher);
+
+  const snippetsWatcher = watchIfExists(subKenvSnippets);
+  if (snippetsWatcher) watchers.push(snippetsWatcher);
+
+  const scriptletsWatcher = watchIfExists(subKenvScriptlets);
+  if (scriptletsWatcher) watchers.push(scriptletsWatcher);
+
+  return watchers;
+}
+
 export const startWatching = (
   callback: WatcherCallback,
   options: WatchOptions = { ignoreInitial: true },
 ): FSWatcher[] => {
-  log.info(`🚀 Starting watchers with memory usage:`, getMemoryUsage());
-
-  // We'll collect references so we can unwatch sub-kenvs
-  const subKenvWatchers: Map<string, FSWatcher> = new Map();
+  log.info(`🚀 Starting watchers (specific) with ignoreInitial=${options.ignoreInitial ?? false}`);
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 1) Watch kit/db (db folder), user.json, scripts.json changes
+  // Collect watchers in an array so we can return them
+  const allWatchers: FSWatcher[] = [];
+
+  // We'll track each sub-kenv's watchers so we can remove them if the sub-kenv is deleted
+  const subKenvWatchers = new Map<string, FSWatcher[]>();
+
   // ─────────────────────────────────────────────────────────────────────────────
-  const kitDbPath = kitChokidarPath('db'); // This folder has user.json, scripts.json, etc.
-  log.info(`🔍 Watching kit db folder: ${kitDbPath}`);
-  const dbWatcher = chokidar.watch(kitDbPath, {
+  // 1) Watch kit/db (only top level => depth=0)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const dbPath = kitChokidarPath('db');
+  log.info(`🔍 Watching kit db folder: ${dbPath}`);
+  const dbWatcher = chokidar.watch(dbPath, {
     ignoreInitial: options.ignoreInitial,
     depth: 0,
+    followSymlinks: true,
   });
-
-  dbWatcher.on('ready', () => {
-    watcherStats(dbWatcher, 'DB Watcher');
-  });
-
   dbWatcher.on('all', (event, filePath) => {
     callback(event as WatchEvent, filePath);
   });
+  dbWatcher.on('ready', () => {
+    log.info(`📁 DB Watcher ready`);
+  });
+  allWatchers.push(dbWatcher);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 2) Watch run.txt + ping.txt in kitPath
   // ─────────────────────────────────────────────────────────────────────────────
   const runTxt = kitChokidarPath('run.txt');
   const pingTxt = kitChokidarPath('ping.txt');
-  log.info(`🔍 Watching run.txt & ping.txt: [${runTxt}, ${pingTxt}]`);
-
+  log.info(`🔍 Watching run.txt & ping.txt: ${[runTxt, pingTxt].join(', ')}`);
   const runPingWatcher = chokidar.watch([runTxt, pingTxt], {
     ignoreInitial: options.ignoreInitial,
+    followSymlinks: true,
   });
-
-  runPingWatcher.on('ready', () => {
-    watcherStats(runPingWatcher, 'Run/Ping Watcher');
-  });
-
   runPingWatcher.on('all', (event, filePath) => {
     callback(event as WatchEvent, filePath);
   });
+  runPingWatcher.on('ready', () => {
+    log.info(`📁 Run/Ping Watcher ready`);
+  });
+  allWatchers.push(runPingWatcher);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 3) Watch .env (and .env.*), globals.ts, package.json in main kenv
   // ─────────────────────────────────────────────────────────────────────────────
-  const singleKenvFiles = [
-    kenvChokidarPath('globals.ts'),
-    kenvChokidarPath('package.json'),
-    ...getEnvFiles(), // gather .env & .env.whatever
-  ];
-  log.info(`🔍 Watching main kenv individual files: ${singleKenvFiles}`);
-
-  const kenvFilesWatcher = chokidar.watch(singleKenvFiles, {
+  const mainKenvFiles = [kenvChokidarPath('globals.ts'), kenvChokidarPath('package.json'), ...getEnvFiles()];
+  log.info(`🔍 Watching main kenv single files: ${mainKenvFiles}`);
+  const kenvFilesWatcher = chokidar.watch(mainKenvFiles, {
     ignoreInitial: options.ignoreInitial,
   });
-
-  kenvFilesWatcher.on('ready', () => {
-    watcherStats(kenvFilesWatcher, 'Kenv Files Watcher');
-  });
-
   kenvFilesWatcher.on('all', (event, filePath) => {
     callback(event as WatchEvent, filePath);
   });
+  kenvFilesWatcher.on('ready', () => {
+    log.info(`📁 Kenv Files Watcher ready`);
+  });
+  allWatchers.push(kenvFilesWatcher);
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 4) Watch scripts, snippets, scriptlets in the main kenv at top-level
+  // 4) Watch scripts, snippets, scriptlets in the main kenv (depth=∞)
   // ─────────────────────────────────────────────────────────────────────────────
-  const mainKenvDirs = [kenvChokidarPath('scripts'), kenvChokidarPath('snippets'), kenvChokidarPath('scriptlets')];
-  log.info(`🔍 Watching main kenv dirs: ${mainKenvDirs.join(', ')}`);
+  const mainKenvScripts = kenvChokidarPath('scripts');
+  const mainKenvSnippets = kenvChokidarPath('snippets');
+  const mainKenvScriptlets = kenvChokidarPath('scriptlets');
 
-  const mainKenvWatcher = chokidar.watch(mainKenvDirs, {
-    ignoreInitial: options.ignoreInitial,
-    depth: 0,
-    ignored: (filePath) => {
-      // skip hidden items like .DS_Store
-      const base = path.basename(filePath);
-      return base.startsWith('.') || IGNORED_FOLDERS.includes(base);
-    },
-  });
+  function watchDir(dirPath: string, label: string) {
+    const w = chokidar.watch(dirPath, {
+      ignoreInitial: options.ignoreInitial,
+      depth: 99, // or Infinity
+      followSymlinks: true,
+    });
+    w.on('all', (event, filePath) => {
+      callback(event as WatchEvent, filePath);
+    });
+    w.on('ready', () => {
+      log.info(`📁 Main Kenv ${label} watcher ready: ${dirPath}`);
+    });
+    allWatchers.push(w);
+  }
 
-  mainKenvWatcher.on('ready', () => {
-    watcherStats(mainKenvWatcher, 'Main Kenv Watcher');
-  });
-
-  mainKenvWatcher.on('all', (event, filePath) => {
-    callback(event as WatchEvent, filePath);
-  });
+  watchDir(mainKenvScripts, 'Scripts');
+  watchDir(mainKenvSnippets, 'Snippets');
+  watchDir(mainKenvScriptlets, 'Scriptlets');
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 5) Handle sub-kenvs inside kenvChokidarPath('kenvs')
+  // 5) Watch the kenvs root directory (depth=0)
+  //    - On addDir => create watchers for that sub-kenv's scripts/snippets/scriptlets
+  //    - On unlinkDir => remove watchers
   // ─────────────────────────────────────────────────────────────────────────────
   const kenvsRoot = kenvChokidarPath('kenvs');
   log.info(`🔍 Watching kenvs root: ${kenvsRoot}`);
-
-  // This watcher is just for noticing new or removed sub-kenv directories
   const kenvsWatcher = chokidar.watch(kenvsRoot, {
     ignoreInitial: options.ignoreInitial,
-    depth: 0, // only see "kenvs/my-kenv"
+    depth: 0, // only see top-level kenv names
+    followSymlinks: true,
   });
 
-  kenvsWatcher.on('addDir', async (subKenvDir) => {
-    // subKenvDir => e.g. ~/.kenv/kenvs/test-kenv
-    log.info(`📁 New sub-kenv folder detected: ${subKenvDir}`);
-    callback('addDir', subKenvDir); // so the test sees addDir with path===subKenvDir
-
-    // Create a dedicated watcher for that sub-kenv, focusing on scripts/snippets/scriptlets
-    if (subKenvWatchers.has(subKenvDir)) {
-      log.info(`Watcher for ${subKenvDir} already exists. Skipping re-init.`);
-      return;
-    }
-
-    // Start a sub-watcher that can see deeply nested "scripts" or "snippets" or "scriptlets"
-    const subKenvWatcher = chokidar.watch(subKenvDir, {
-      ignoreInitial: false, // or your preference
-      depth: maxSubKenvDepth,
-      ignored: (filePath, stats) => {
-        if (!stats) return false;
-        // Skip node_modules, .git, etc.
-        if (stats.isDirectory()) {
-          const base = path.basename(filePath);
-          if (IGNORED_FOLDERS.includes(base)) return true;
+  kenvsWatcher.on('ready', () => {
+    log.info(`📁 Kenvs Root Watcher ready: ${kenvsRoot}`);
+    // On startup, watch existing sub-kenvs
+    try {
+      const entries = readdirSync(kenvsRoot, { withFileTypes: true });
+      for (const dirent of entries) {
+        if (dirent.isDirectory()) {
+          const subKenvDir = path.join(kenvsRoot, dirent.name);
+          // create watchers now
+          log.info(`🚀 Found existing sub-kenv: ${subKenvDir}`);
+          const watchers = createSubKenvWatchers(subKenvDir, callback, options);
+          subKenvWatchers.set(subKenvDir, watchers);
         }
-        return false;
-      },
-    });
-
-    // Forward all events from sub-kenv to the callback, but only if it's in
-    // "scripts", "snippets", or "scriptlets" somewhere in the path:
-    subKenvWatcher.on('all', (event, changedPath) => {
-      // If the user puts "scripts" deeper, e.g. "deeply/nested/scripts",
-      // the below check ensures we only yield events for files/folders
-      // within some directory named "scripts", "snippets", or "scriptlets":
-      const lowerPath = changedPath.toLowerCase();
-      const isScripts = lowerPath.includes(`${path.sep}scripts${path.sep}`) || lowerPath.endsWith(`${path.sep}scripts`);
-      const isSnippets =
-        lowerPath.includes(`${path.sep}snippets${path.sep}`) || lowerPath.endsWith(`${path.sep}snippets`);
-      const isScriptlets =
-        lowerPath.includes(`${path.sep}scriptlets${path.sep}`) || lowerPath.endsWith(`${path.sep}scriptlets`);
-
-      if (isScripts || isSnippets || isScriptlets) {
-        callback(event as WatchEvent, changedPath);
       }
-    });
+    } catch (err) {
+      log.warn(`Error scanning existing sub-kenvs: ${err}`);
+    }
+  });
 
-    subKenvWatchers.set(subKenvDir, subKenvWatcher);
+  kenvsWatcher.on('addDir', (subKenvDir) => {
+    log.info(`📁 New sub-kenv folder detected: ${subKenvDir}`);
+    callback('addDir', subKenvDir); // so tests can see this
+    if (!subKenvWatchers.has(subKenvDir)) {
+      const watchers = createSubKenvWatchers(subKenvDir, callback, options);
+      subKenvWatchers.set(subKenvDir, watchers);
+    }
   });
 
   kenvsWatcher.on('unlinkDir', async (subKenvDir) => {
-    // e.g. sub-kenv is removed
     log.info(`🗑 Removed sub-kenv folder: ${subKenvDir}`);
     callback('unlinkDir', subKenvDir);
-
-    const existing = subKenvWatchers.get(subKenvDir);
-    if (existing) {
-      log.info(`Closing watcher for removed kenv: ${subKenvDir}`);
-      await existing.close().catch((err) => {
-        log.warn(`Error closing subKenvWatcher: ${err}`);
-      });
+    if (subKenvWatchers.has(subKenvDir)) {
+      const watchers = subKenvWatchers.get(subKenvDir) || [];
+      for (const w of watchers) {
+        try {
+          await w.close();
+        } catch (err) {
+          log.warn(`Error closing watchers for sub-kenv ${subKenvDir}: ${err}`);
+        }
+      }
       subKenvWatchers.delete(subKenvDir);
     }
   });
 
-  // On init, watch existing sub-kenvs so we catch scripts in them too
-  try {
-    const subDirs = readdirSync(kenvsRoot, { withFileTypes: true })
-      .filter((dirent) => dirent.isDirectory())
-      .map((dirent) => path.join(kenvsRoot, dirent.name));
-
-    for (const existingSubKenvDir of subDirs) {
-      // Manually emit addDir so the code above re-uses the same logic
-      // We do a small trick with kenvsWatcher.emit if you want, or just call directly:
-      log.info(`🚀 Found existing sub-kenv folder: ${existingSubKenvDir}`);
-      kenvsWatcher.emit('addDir', existingSubKenvDir);
-    }
-  } catch (error) {
-    log.warn(`Reading existing sub-kenvs failed: ${error}`);
-  }
+  allWatchers.push(kenvsWatcher);
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 6) Optional: watch app directories (macOS/Windows)
+  // 6) Optional: watch application directories on Mac/Win
   // ─────────────────────────────────────────────────────────────────────────────
   function getAppDirectories(): string[] {
     if (process.platform === 'darwin') {
@@ -282,47 +252,27 @@ export const startWatching = (
   }
 
   const appDirs = getAppDirectories();
-  const appWatcher = chokidar.watch(appDirs, {
-    ignoreInitial: true,
-    depth: 0,
-  });
-  appWatcher.on('ready', () => {
-    watcherStats(appWatcher, 'App Watcher');
-  });
+  if (appDirs.length) {
+    const appWatcher = chokidar.watch(appDirs, {
+      ignoreInitial: true,
+      depth: 0,
+      followSymlinks: true,
+    });
+    appWatcher.on('all', (event, filePath) => {
+      log.info(`App change detected: ${event} ${filePath}`);
+      if (!path.basename(filePath).startsWith('.')) {
+        callback(event as WatchEvent, filePath, 'app');
+      }
+    });
+    appWatcher.on('ready', () => {
+      log.info(`📁 App Watcher ready`);
+    });
+    allWatchers.push(appWatcher);
+  }
 
-  appWatcher.on('all', (event, filePath) => {
-    log.info(`App change detected: ${event} ${filePath}`);
-    if (!path.basename(filePath).startsWith('.')) {
-      callback(event as WatchEvent, filePath, 'app');
-    }
-  });
-
-  // Add periodic memory checks
-  const memoryCheckInterval = setInterval(() => {
-    log.info('💾 Memory check:', getMemoryUsage());
-  }, 60000); // Check every minute
-
-  // Add logging after all watchers are created
-  const watchers = [dbWatcher, runPingWatcher, kenvFilesWatcher, mainKenvWatcher, kenvsWatcher, appWatcher];
-
-  // Log all paths after setup
-  log.info(`\n📋 Initial Watcher Setup Complete`);
-  logAllWatcherPaths(watchers);
-
-  // Add periodic path logging
-  const pathCheckInterval = setInterval(() => {
-    log.info(`\n🔄 Periodic Watcher Path Check`);
-    logAllWatcherPaths(watchers);
-  }, 60000); // Check every minute
-
-  // Return cleanup function with watchers
-  return watchers.map((watcher) => {
-    const originalClose = watcher.close;
-    watcher.close = async () => {
-      clearInterval(pathCheckInterval);
-      clearInterval(memoryCheckInterval);
-      return originalClose.call(watcher);
-    };
-    return watcher;
-  });
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Return all watchers
+  // ─────────────────────────────────────────────────────────────────────────────
+  log.info('✅ All watchers set up. Returning references.');
+  return allWatchers;
 };

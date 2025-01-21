@@ -914,7 +914,10 @@ async function handleFileChangeEvent(eventName: WatchEvent, filePath: string, so
   }
 
   if (base === 'scripts.json') {
-    log.info('scripts.json changed');
+    log.info('scripts.json changed. Is this a bug?');
+
+    return;
+
     try {
       for (const info of processes) {
         info?.child?.send({ channel: Channel.SCRIPTS_CHANGED });
