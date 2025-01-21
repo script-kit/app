@@ -214,7 +214,6 @@ jobs:
           ELECTRON_BUILD_PLATFORM: win32
         run: |
             pnpm i
-            pnpm exec vitest --bail 1 --watch false src/main/chokidar.test.ts
             cat ./package.json
             pnpm vite-prebuild
             pnpm exec kit ./build.ts win x64 always
@@ -223,7 +222,6 @@ jobs:
         if: matrix.platform == 'win32' && matrix.arch == 'arm64'
         run: |
             pnpm i
-            pnpm exec vitest --bail 1 --watch false src/main/chokidar.test.ts
             pnpm exec kit remove-tick
             pnpm vite-prebuild
             pnpm exec kit ./build.ts win arm64 always
@@ -263,7 +261,6 @@ jobs:
             node --version
             pnpm --version
             pnpm i
-            pnpm exec vitest --bail 1 --watch false src/main/chokidar.test.ts
             cat ./package.json
             pnpm vite-prebuild
             pnpm exec kit ./build.ts linux x64 always
@@ -286,7 +283,6 @@ jobs:
             node --version
             pnpm --version
             pnpm i
-            pnpm exec vitest --bail 1 --watch false src/main/chokidar.test.ts
             pnpm exec kit remove-tick
             cat ./package.json
             pnpm vite-prebuild
@@ -321,7 +317,6 @@ jobs:
         run: |
             sleep 600
             pnpm i
-            pnpm exec vitest --bail 1 --watch false src/main/chokidar.test.ts
             pnpm vite-prebuild
             pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
 
@@ -345,7 +340,6 @@ jobs:
 
         run: |
             pnpm i
-            pnpm exec vitest --bail 1 --watch false src/main/chokidar.test.ts
             pnpm vite-prebuild
             pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
 

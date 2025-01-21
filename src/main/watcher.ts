@@ -698,7 +698,6 @@ export const restartWatchers = debounce(
 `);
     teardownWatchers.cancel();
     setupWatchers.cancel();
-    teardownWatchers('restartWatchers');
     setupWatchers('restartWatchers');
   },
   500,
@@ -808,7 +807,6 @@ function logActionReason(context: 'Setup' | 'Teardown', reason: string) {
   log.info(`🔄 ${context} watchers because: ${reason}`);
 }
 
-let settingUpWatchers = false;
 let pingInterval: NodeJS.Timeout | null = null;
 let watchers: FSWatcher[] = [];
 let suspendingWatchers: boolean;
@@ -825,17 +823,12 @@ export const teardownWatchers = debounce(
 
 export const setupWatchers = debounce(
   (reason: string) => {
-    if (settingUpWatchers) return;
-    settingUpWatchers = true;
-
     logActionReason('Setup', reason);
 
     teardownWatchers('setupWatchers');
     refreshScriptsIfNeeded();
     startPingInterval();
     watchers = startCoreWatchers();
-
-    settingUpWatchers = false;
   },
   1000,
   { leading: true },

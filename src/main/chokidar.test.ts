@@ -1407,3 +1407,46 @@ it(
   },
   { timeout: 5000 },
 );
+
+it(
+  'should handle consecutive sub-kenv deletions',
+  async () => {
+    const kenv1 = path.join(testDirs.kenvs, 'kenv-1');
+    const kenv2 = path.join(testDirs.kenvs, 'kenv-2');
+    const kenv1Scripts = path.join(kenv1, 'scripts');
+    const kenv2Scripts = path.join(kenv2, 'scripts');
+
+    const events = await collectEvents(
+      KENV_GLOB_TIMEOUT + 3000,
+      async () => {
+        // 1) Create 2 sub-kenvs
+        await ensureDir(kenv1Scripts);
+        await ensureDir(kenv2Scripts);
+
+        // Wait for watchers to see them
+        await new Promise((resolve) => setTimeout(resolve, KENV_GLOB_TIMEOUT + WATCHER_SETTLE_TIME));
+
+        // 2) Delete the first sub-kenv
+        await remove(kenv1);
+
+        // Wait for watchers
+        await new Promise((resolve) => setTimeout(resolve, KENV_GLOB_TIMEOUT + WATCHER_SETTLE_TIME));
+
+        // 3) Delete the second sub-kenv
+        await remove(kenv2);
+
+        // Wait for watchers again
+        await new Promise((resolve) => setTimeout(resolve, WATCHER_SETTLE_TIME));
+      },
+      'should handle consecutive sub-kenv deletions',
+    );
+
+    // We should see "unlinkDir" for each sub-kenv folder
+    const kenv1Removed = events.filter((e) => e.event === 'unlinkDir' && e.path === kenv1);
+    const kenv2Removed = events.filter((e) => e.event === 'unlinkDir' && e.path === kenv2);
+
+    expect(kenv1Removed.length).toBeGreaterThan(0);
+    expect(kenv2Removed.length).toBeGreaterThan(0);
+  },
+  { timeout: 20000 },
+);
