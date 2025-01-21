@@ -1,7 +1,7 @@
-import { debounce } from 'lodash-es';
+import { debounce, DebouncedFunc } from 'lodash-es';
 import { isEqual, omit } from 'lodash-es';
 
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { lstat, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { getScripts, getUserJson } from '@johnlindquist/kit/core/db';
@@ -690,14 +690,16 @@ export const parseEnvFile = debounce(async () => {
 }, 100);
 
 export const restartWatchers = debounce(
-  async (reason: string) => {
+  (reason: string) => {
     log.info(`
 
     🔄 Restarting watchers because: ${reason} ----------------------------------------------------------------------
 
 `);
-    await teardownWatchers('restartWatchers');
-    await setupWatchers('restartWatchers');
+    teardownWatchers.cancel();
+    setupWatchers.cancel();
+    teardownWatchers('restartWatchers');
+    setupWatchers('restartWatchers');
   },
   500,
   { leading: false },
@@ -713,24 +715,22 @@ export function watchKenvDirectory() {
     },
   });
 
-  const watcherHandler = (eventName: WatchEvent, filePath: string) => {
+  const watcherHandler = debounce((eventName: WatchEvent, filePath: string) => {
     log.info(`🔄 ${eventName} ${filePath} from kenv folder watcher`);
     if (eventName === 'addDir') {
-      setTimeout(() => {
-        if (watchers.length === 0) {
-          log.warn(`🔄 ${filePath} added. Setting up watchers...`);
-          setupWatchers('addDir');
-        } else {
-          log.info(`🔄 ${filePath} added, but watchers already exist. No need to setup watchers...`);
-        }
-      }, 2000);
+      if (watchers.length === 0) {
+        log.warn(`🔄 ${filePath} added. Setting up watchers...`);
+        setupWatchers('addDir');
+      } else {
+        log.info(`🔄 ${filePath} added, but watchers already exist. No need to setup watchers...`);
+      }
     }
 
     if (eventName === 'unlinkDir') {
       log.warn(`🔄 ${filePath} unlinked. Tearing down watchers...`);
       teardownWatchers('unlinkDir');
     }
-  };
+  }, 500);
 
   const kitFolderWatcher = chokidar.watch(kitChokidarPath(), {
     ignoreInitial: kitState.ignoreInitial,
@@ -883,8 +883,12 @@ async function handleFileChangeEvent(eventName: WatchEvent, filePath: string, so
 
   // If directories like 'scripts', 'scriptlets', 'snippets' are removed/added,
   // we restart watchers to ensure correct state
-  if (kitState.ready && base === name && (name === 'scriptlets' || name === 'scripts' || name === 'snippets')) {
-    await restartWatchers(`${filePath}: ${eventName}`);
+  const isRestartEvent = eventName === 'addDir' || eventName === 'unlinkDir' || eventName === 'changeDir';
+  if (kitState.ready && isRestartEvent) {
+    restartWatchers.cancel();
+    log.info(`🔄 Changed: ${eventName} ${filePath} from ${source}`);
+
+    restartWatchers(`${filePath}: ${eventName}`);
     return;
   }
 
