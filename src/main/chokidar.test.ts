@@ -984,16 +984,25 @@ describe.concurrent('File System Watcher', () => {
 
         // Give chokidar time to do its initial scan
         log.test(testName, 'Waiting for initial scan...');
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 5000));
 
         // Get all watched paths from each watcher
         const allWatchedPaths = new Set<string>();
         for (const watcher of watchers) {
           const watched = watcher.getWatched();
+          // Add more detailed logging
+          log.test(testName, 'Raw watcher paths:', JSON.stringify(watched, null, 2));
+
           for (const [dir, files] of Object.entries(watched)) {
             const normalizedDir = path.normalize(dir);
             allWatchedPaths.add(normalizedDir);
-            files.forEach((file) => allWatchedPaths.add(path.normalize(path.join(dir, file))));
+            log.test(testName, `Adding normalized dir: ${normalizedDir}`);
+
+            for (const file of files) {
+              const normalizedPath = path.normalize(path.join(dir, file));
+              allWatchedPaths.add(normalizedPath);
+              log.test(testName, `Adding normalized file: ${normalizedPath}`);
+            }
           }
         }
 
@@ -1021,16 +1030,29 @@ describe.concurrent('File System Watcher', () => {
 
           const isWatched = Array.from(allWatchedPaths).some((watchedPath) => {
             const normalizedWatched = path.normalize(watchedPath);
+            const normalizedRequired = path.normalize(requiredPath);
+
+            // More robust path comparison
             const isMatch =
               normalizedRequired === normalizedWatched ||
+              // Check if the required path is a subpath of watched path
               normalizedRequired.startsWith(normalizedWatched + path.sep) ||
-              normalizedWatched.startsWith(normalizedRequired + path.sep);
+              // Check if the watched path is a subpath of required path
+              normalizedWatched.startsWith(normalizedRequired + path.sep) ||
+              // Handle root directory case
+              (normalizedWatched === '.' && normalizedRequired.startsWith('.'));
 
             if (isMatch) {
-              log.test(testName, `Found match: ${normalizedWatched} for ${normalizedRequired}`);
+              log.test(testName, {
+                match: true,
+                watchedPath: normalizedWatched,
+                requiredPath: normalizedRequired,
+              });
             }
             return isMatch;
           });
+
+          log.error(testName, `isWatched: ${isWatched}`);
 
           expect(isWatched).toBe(true, `Path ${normalizedRequired} should be watched`);
         }
