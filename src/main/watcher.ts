@@ -884,7 +884,8 @@ async function handleFileChangeEvent(eventName: WatchEvent, filePath: string, so
   // If directories like 'scripts', 'scriptlets', 'snippets' are removed/added,
   // we restart watchers to ensure correct state
   const isRestartEvent = eventName === 'addDir' || eventName === 'unlinkDir' || eventName === 'changeDir';
-  if (kitState.ready && isRestartEvent) {
+  const isRestartDirectory = base === 'scripts' || base === 'scriptlets' || base === 'snippets';
+  if (kitState.ready && isRestartEvent && isRestartDirectory) {
     restartWatchers.cancel();
     log.info(`🔄 Changed: ${eventName} ${filePath} from ${source}`);
 

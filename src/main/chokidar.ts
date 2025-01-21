@@ -56,6 +56,7 @@ function createSubKenvWatchers(
 
       const w = manager.createWatcher(key, dirPath, {
         depth: 0, // Only watch root level
+        ignoreInitial: true,
         ignored: [
           '**/node_modules/**',
           '**/.git/**',
@@ -209,6 +210,7 @@ export const startWatching = (
   const kenvsWatcher = manager.createWatcher('kenvs-root', kenvsRoot, {
     depth: 1, // Watch both kenvs root and immediate subdirectories
     alwaysStat: true, // Ensure we get proper directory events during renames
+    ignoreInitial: true,
     ignored: [
       '**/node_modules/**',
       '**/node_modules',

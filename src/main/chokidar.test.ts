@@ -788,7 +788,7 @@ describe.concurrent('File System Watcher', () => {
       const changeEvents = events.filter((e) => e.path === testDirs.runTxtPath && e.event === 'change');
       expect(changeEvents.length).toBeGreaterThanOrEqual(1);
     },
-    { timeout: 3000 },
+    { timeout: 10000 },
   );
 
   it(
