@@ -215,6 +215,9 @@ export const startWatching = (
       '**/.git/**',
       '**/.git',
       '**/*/[^/]*', // Ignore anything in subdirectories beyond depth 1
+      '**/.cache/**',
+      '**/tmp/**',
+      '**/logs/**',
     ],
   });
 
