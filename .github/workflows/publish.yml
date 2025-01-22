@@ -151,8 +151,6 @@ jobs:
 
       - name: Install Node, pnpm and Yarn
         uses: actions/setup-node@v4
-        with:
-          node-version: 22.9.0
 
       - name: Write the Semantic Version to package.json version property for main
         if: needs.tag.outputs.kit_tag == 'latest'
