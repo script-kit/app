@@ -19,6 +19,17 @@ type WatcherCallback = (eventName: WatchEvent, filePath: string, source?: WatchS
 
 const log = createLogger('chokidar.ts');
 
+const ignored = [
+  '**/node_modules/**',
+  '**/node_modules',
+  '**/.git/**',
+  '**/.git',
+  '**/*/[^/]*', // Ignore anything in subdirectories beyond depth 1
+  '**/.cache/**',
+  '**/tmp/**',
+  '**/logs/**',
+];
+
 // For sub-kenvs, we specifically watch only {subKenv}/scripts, {subKenv}/snippets, and {subKenv}/scriptlets
 // so we do NOT watch node_modules/.git/etc at all.
 
@@ -57,11 +68,7 @@ function createSubKenvWatchers(
       const w = manager.createWatcher(key, dirPath, {
         depth: 0, // Only watch root level
         ignoreInitial: true,
-        ignored: [
-          '**/node_modules/**',
-          '**/.git/**',
-          '**/*/[^/]*', // Ignore anything in subdirectories
-        ],
+        ignored,
       });
 
       w.on('all', (event, changedPath) => {
@@ -158,6 +165,7 @@ export const startWatching = (
   log.info(`🔍 Watching kenv root for config files: ${configFiles.join(', ')}`);
   const kenvRootWatcher = manager.createWatcher('kenv-root', kenvChokidarPath(), {
     depth: 0,
+    ignored,
   });
 
   kenvRootWatcher.on('all', (event, filePath) => {
@@ -187,6 +195,7 @@ export const startWatching = (
 
     const w = manager.createWatcher(key, dirPath, {
       depth: 0, // Only watch root level
+      ignored,
     });
     w.on('all', (event, filePath) => {
       callback(event as WatchEvent, filePath);
@@ -211,16 +220,7 @@ export const startWatching = (
     depth: 1, // Watch both kenvs root and immediate subdirectories
     alwaysStat: true, // Ensure we get proper directory events during renames
     ignoreInitial: true,
-    ignored: [
-      '**/node_modules/**',
-      '**/node_modules',
-      '**/.git/**',
-      '**/.git',
-      '**/*/[^/]*', // Ignore anything in subdirectories beyond depth 1
-      '**/.cache/**',
-      '**/tmp/**',
-      '**/logs/**',
-    ],
+    ignored,
   });
 
   kenvsWatcher.on('ready', () => {
@@ -281,6 +281,7 @@ export const startWatching = (
     const appWatcher = manager.createWatcher('apps', appDirs, {
       ignoreInitial: true,
       depth: 0,
+      ignored,
     });
     appWatcher.on('all', (event, filePath) => {
       log.info(`App change detected: ${event} ${filePath}`);
