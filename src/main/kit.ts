@@ -2,7 +2,7 @@ import path from 'node:path';
 import { app, shell } from 'electron';
 
 import minimist from 'minimist';
-import { pathExistsSync, readJson, readFile } from './cjs-exports';
+import { pathExistsSync, readJson } from './cjs-exports';
 import { fork } from 'node:child_process';
 
 import type { ProcessInfo } from '@johnlindquist/kit';

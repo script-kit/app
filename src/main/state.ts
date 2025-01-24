@@ -75,15 +75,12 @@ const schema = {
 export const kitStore = new Store<typeof schema>({
   schema,
   watch: true,
-}) as Store<typeof schema> &
-// Hacking the Store type due to some CJS thing I don't have the time to figure out
+}) as Store<typeof schema> & // Hacking the Store type due to some CJS thing I don't have the time to figure out
 {
-  get: <K extends keyof typeof schema>(key: K) => (typeof schema[K])['default'];
-  set: <K extends keyof typeof schema>(key: K, value: (typeof schema[K])['type']) => void;
+  get: <K extends keyof typeof schema>(key: K) => (typeof schema)[K]['default'];
+  set: <K extends keyof typeof schema>(key: K, value: (typeof schema)[K]['type']) => void;
   path: string;
 };
-
-
 
 const storedKenv = process.env?.KENV || kitStore.get('KENV');
 log.info(`📀 Stored KENV: ${storedKenv}`);
@@ -357,7 +354,8 @@ const initState = {
   waitingForPing: false,
   KIT_NODE_PATH: '',
   PNPM_KIT_NODE_PATH: '',
-  serverRunning: false, // {{ added }}
+  serverRunning: false,
+  firstBatch: true,
 };
 
 const initConfig: Config = {

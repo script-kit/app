@@ -304,7 +304,6 @@ function watchTheme() {
   }
 }
 
-let firstBatch = true;
 let firstBatchTimeout: NodeJS.Timeout;
 export const reevaluateAllScripts = async () => {
   scriptLog.info('🚨 reevaluateAllScripts');
@@ -315,12 +314,12 @@ export const reevaluateAllScripts = async () => {
 
 export const onScriptChanged = async (event: WatchEvent, script: Script, rebuilt = false) => {
   scriptLog.info('🚨 onScriptChanged', event, script.filePath);
-  if (firstBatch) {
+  if (kitState.firstBatch) {
     if (firstBatchTimeout) {
       clearTimeout(firstBatchTimeout);
     }
     firstBatchTimeout = setTimeout(() => {
-      firstBatch = false;
+      kitState.firstBatch = false;
       scriptLog.info('Finished parsing scripts ✅');
     }, 1000);
   }
@@ -340,7 +339,7 @@ export const onScriptChanged = async (event: WatchEvent, script: Script, rebuilt
   if (event === 'change' || event === 'add') {
     logQueue(event, script.filePath);
 
-    if (kitState.ready && !rebuilt && !firstBatch) {
+    if (kitState.ready && !rebuilt && !kitState.firstBatch) {
       debounceSetScriptTimestamp({
         filePath: script.filePath,
         changeStamp: Date.now(),
@@ -359,7 +358,7 @@ export const onScriptChanged = async (event: WatchEvent, script: Script, rebuilt
         {
           ready: kitState.ready,
           rebuilt: rebuilt,
-          firstBatch: firstBatch,
+          firstBatch: kitState.firstBatch,
         },
       );
       return;

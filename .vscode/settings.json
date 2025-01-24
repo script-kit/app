@@ -54,6 +54,7 @@
     "**/assets/**": true
   },
   "files.exclude": {
-    "**/assets/**": true
+    "": true,
+    "assets/**": true
   }
 }
