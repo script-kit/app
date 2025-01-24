@@ -40,12 +40,7 @@
   "bugs": {
     "url": "https://github.com/script-kit/kitapp/issues"
   },
-  "keywords": [
-    "electron",
-    "react",
-    "typescript",
-    "ts"
-  ],
+  "keywords": ["electron", "react", "typescript", "ts"],
   "homepage": "https://github.com/script-kit/kitapp#readme",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -118,7 +113,7 @@
     "react-window": "1.8.11",
     "rimraf": "^6.0.1",
     "simplebar-react": "^3.3.0",
-    "tailwindcss": "^4.0.0",
+    "tailwindcss": "^3.4.17",
     "tmp-promise": "^3.0.3",
     "ts-jest": "^29.2.5",
     "vite": "^6.0.11",
@@ -207,12 +202,8 @@
   },
   "browserslist": [],
   "renovate": {
-    "extends": [
-      "bliss"
-    ],
-    "baseBranches": [
-      "next"
-    ]
+    "extends": ["bliss"],
+    "baseBranches": ["next"]
   },
   "jest": {
     "preset": "ts-jest",
