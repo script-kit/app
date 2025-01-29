@@ -430,29 +430,6 @@ const systemEvents = () => {
     kitState.suspended = true;
   });
 
-  const debouncedResume = debounce(
-    async () => {
-      log.info('🌄 System waking');
-      // await setupWatchers();
-
-      kitState.suspended = false;
-
-      // startClipboardAndKeyboardWatchers();
-
-      if (!kitState.updateDownloaded) {
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-
-        try {
-          checkForUpdates();
-        } catch (error) {
-          log.error('Error checking for updates', error);
-        }
-      }
-    },
-    2000,
-    { leading: true },
-  );
-
   function resumeHandler() {
     for (const process of processes) {
       try {
@@ -463,9 +440,32 @@ const systemEvents = () => {
       }
     }
 
-    // wait 5 seconds for the system to wake up
     debouncedResume();
   }
+
+  const debouncedResume = debounce(
+    async () => {
+      log.info('🌄 System waking');
+      kitState.suspended = false;
+
+      // ADD THIS (to re-init watchers that re-schedule scripts)
+      if (!kitState.suspendWatchers) {
+        log.info('🌄 Re-initializing watchers and schedules after wake');
+        setupWatchers('resumeHandler');
+      }
+
+      if (!kitState.updateDownloaded) {
+        await new Promise((resolve) => setTimeout(resolve, 10000));
+        try {
+          checkForUpdates();
+        } catch (error) {
+          log.error('Error checking for updates', error);
+        }
+      }
+    },
+    2000,
+    { leading: true },
+  );
 
   powerMonitor.addListener('resume', resumeHandler);
 
