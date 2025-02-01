@@ -192,6 +192,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install GCC 10 and native-keymap dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libx11-dev libxkbfile-dev libxtst-dev make gcc libpng++-dev g++-10
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
+          sudo update-alternatives --set g++ /usr/bin/g++-10
+          echo "CXX=g++-10" >> $GITHUB_ENV
+
       - name: Set Optional Dependencies Based on Platform and Architecture
         if: needs.tag.outputs.kit_tag == 'latest'
         uses: johnlindquist/kit-action@main
@@ -231,15 +240,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ELECTRON_BUILD_ARCH: arm64
           ELECTRON_BUILD_PLATFORM: win32
-
-      - name: Install GCC 10 and native-keymap dependencies
-        if: matrix.platform == 'linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pkg-config libx11-dev libxkbfile-dev libxtst-dev make gcc libpng++-dev g++-10
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
-          sudo update-alternatives --set g++ /usr/bin/g++-10
-          echo "CXX=g++-10" >> $GITHUB_ENV
 
 
       - name: Publish linux x64
