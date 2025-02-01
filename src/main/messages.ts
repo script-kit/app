@@ -22,7 +22,7 @@ import {
   screen,
   shell,
 } from 'electron';
-import { remove } from 'lodash-es';
+import { remove, debounce } from 'lodash-es';
 import { snapshot } from 'valtio';
 
 import type { ChannelMap, SendData } from '@johnlindquist/kit/types/kitapp';
@@ -30,7 +30,7 @@ import type { ChannelMap, SendData } from '@johnlindquist/kit/types/kitapp';
 import { getMainScriptPath, kenvPath, kitPath, processPlatformSpecificTheme } from '@johnlindquist/kit/core/utils';
 
 // const { pathExistsSync, readJson } = fsExtra;
-import { type Stamp, getTimestamps } from '@johnlindquist/kit/core/db';
+import type { Stamp } from '@johnlindquist/kit/core/db';
 import { type Logger, getLog } from './logs';
 import { clearPromptCache, getCurrentScreenFromMouse } from './prompt';
 import {
@@ -1848,47 +1848,61 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // END-REMOVE-NUT
     }),
 
-    KEYBOARD_COPY: onChildChannelOverride(async ({ child }, { channel, value }) => {
-      if (!kitState.supportsNut) {
-        log.warn('Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a cv soon!');
-        return;
-      }
+    KEYBOARD_COPY: onChildChannelOverride(
+      debounce(
+        async ({ child }, { channel, value }) => {
+          if (!kitState.supportsNut) {
+            log.warn('Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a cv soon!');
+            return;
+          }
 
-      // REMOVE-NUT
-      const modifier = getModifier();
-      log.info(`COPYING with ${modifier}+c`);
-      const beforeText = clipboard.readText();
-      shims['@jitsi/robotjs'].keyTap('c', modifier);
+          // REMOVE-NUT
+          const modifier = getModifier();
+          log.info(`COPYING with ${modifier}+c`);
+          const beforeText = clipboard.readText();
+          shims['@jitsi/robotjs'].keyTap('c', modifier);
 
-      let afterText = clipboard.readText();
-      const maxTries = 5;
-      let tries = 0;
-      while (beforeText === afterText && tries < maxTries) {
-        afterText = clipboard.readText();
-        tries++;
-        log.info('Retrying copy', { tries, afterText });
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
+          let afterText = clipboard.readText();
+          const maxTries = 5;
+          let tries = 0;
+          while (beforeText === afterText && tries < maxTries) {
+            afterText = clipboard.readText();
+            tries++;
+            log.info('Retrying copy', { tries, afterText });
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
 
-      childSend({ channel, value });
+          childSend({ channel, value });
 
-      // END-REMOVE-NUT
-    }),
+          // END-REMOVE-NUT
+        },
+        50,
+        { leading: true, trailing: false },
+      ),
+    ),
 
-    KEYBOARD_PASTE: onChildChannelOverride(async ({ child }, { channel, value }) => {
-      if (!kitState.supportsNut) {
-        log.warn('Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!');
-        return;
-      }
+    KEYBOARD_PASTE: onChildChannelOverride(
+      debounce(
+        async ({ child }, { channel, value }) => {
+          if (!kitState.supportsNut) {
+            log.warn(
+              'Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!',
+            );
+            return;
+          }
 
-      // REMOVE-NUT
-      const modifier = getModifier();
-      log.info(`PASTING with ${modifier}+v`);
-      shims['@jitsi/robotjs'].keyTap('v', modifier);
+          // REMOVE-NUT
+          const modifier = getModifier();
+          log.info(`PASTING with ${modifier}+v`);
+          shims['@jitsi/robotjs'].keyTap('v', modifier);
 
-      childSend({ channel, value });
-      // END-REMOVE-NUT
-    }),
+          childSend({ channel, value });
+          // END-REMOVE-NUT
+        },
+        50,
+        { leading: true, trailing: false },
+      ),
+    ),
 
     KEYBOARD_CUT: onChildChannelOverride(async ({ child }, { channel, value }) => {
       if (!kitState.supportsNut) {
@@ -2055,29 +2069,35 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       }
     }),
 
-    SET_SELECTED_TEXT: onChildChannelOverride(async ({ child }, { channel, value }) => {
-      const text = value?.text;
-      const hide = value?.hide;
+    SET_SELECTED_TEXT: onChildChannelOverride(
+      debounce(
+        async ({ child }, { channel, value }) => {
+          const text = value?.text;
+          const hide = value?.hide;
 
-      if (hide && kitState.isMac && app?.dock && app?.dock?.isVisible()) {
-        app?.dock?.hide();
-      }
+          if (hide && kitState.isMac && app?.dock && app?.dock?.isVisible()) {
+            app?.dock?.hide();
+          }
 
-      const prevText = clipboard.readText();
-      log.info(`${child.pid}: SET SELECTED TEXT`, text?.slice(0, 3) + '...', prevText?.slice(0, 3) + '...');
-      await clipboard.writeText(text);
+          const prevText = clipboard.readText();
+          log.info(`${child.pid}: SET SELECTED TEXT`, text?.slice(0, 3) + '...', prevText?.slice(0, 3) + '...');
+          await clipboard.writeText(text);
 
-      robot.keyTap('v', getModifier());
-      setTimeout(() => {
-        kitState.snippet = '';
-        childSend({ channel, value });
-        log.info(`SET SELECTED TEXT DONE with ${channel}`, text?.slice(0, 3) + '...');
-        setTimeout(() => {
-          log.info(`RESTORING CLIPBOARD with ${channel}`, prevText?.slice(0, 3) + '...');
-          clipboard.writeText(prevText);
-        }, 250);
-      }, 10);
-    }),
+          robot.keyTap('v', getModifier());
+          setTimeout(() => {
+            kitState.snippet = '';
+            childSend({ channel, value });
+            log.info(`SET SELECTED TEXT DONE with ${channel}`, text?.slice(0, 3) + '...');
+            setTimeout(() => {
+              log.info(`RESTORING CLIPBOARD with ${channel}`, prevText?.slice(0, 3) + '...');
+              clipboard.writeText(prevText);
+            }, 250);
+          }, 10);
+        },
+        50,
+        { leading: true, trailing: false },
+      ),
+    ),
 
     SHOW_EMOJI_PANEL: onChildChannel(async ({ child }, { channel, value }) => {
       app.showEmojiPanel();

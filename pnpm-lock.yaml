@@ -446,8 +446,8 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7
       '@johnlindquist/mac-panel-window':
-        specifier: link:/Users/johnlindquist/dev/mac-panel-window
-        version: link:../mac-panel-window
+        specifier: ^1.7.0
+        version: 1.7.0
       '@johnlindquist/node-window-manager':
         specifier: ^1.0.24
         version: 1.0.24
@@ -1259,6 +1259,10 @@ packages:
 
   '@johnlindquist/mac-frontmost@1.0.7':
     resolution: {integrity: sha512-dCNIV8IRCi0a5yiCIjc8TKy4/QObpjdOmA5r1hz0BThATet+HELo7MyQ42S8HNNiwuXeFiXZKuhnDl6pK9eUBA==}
+    os: [darwin]
+
+  '@johnlindquist/mac-panel-window@1.7.0':
+    resolution: {integrity: sha512-mgyasW1eh8Rl5p+tKNsNJrpqLUrlVOSugDa7Yg5S9yj7MdbowV/KxAvEgy07gngnKr8YojdzlN9wHTORXFgaGg==}
     os: [darwin]
 
   '@johnlindquist/no-dom@1.0.2':
@@ -5901,6 +5905,10 @@ packages:
   node-addon-api@7.1.1:
     resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
 
+  node-addon-api@8.3.0:
+    resolution: {integrity: sha512-8VOpLHFrOQlAH+qA0ZzuGRlALRA6/LVh8QJldbrC4DY0hXoMP0l4Acq8TzFC018HztWiRqyCEj2aTWY2UvnJUg==}
+    engines: {node: ^18 || ^20 || >= 21}
+
   node-api-version@0.2.0:
     resolution: {integrity: sha512-fthTTsi8CxaBXMaBAD7ST2uylwvsnYxh2PfaScwpMhos6KlSFajXQPcM4ogNE1q2s3Lbz9GCGqeIHC+C6OZnKg==}
 
@@ -8964,6 +8972,12 @@ snapshots:
     dependencies:
       bindings: 1.5.0
       node-addon-api: 7.1.1
+    optional: true
+
+  '@johnlindquist/mac-panel-window@1.7.0':
+    dependencies:
+      bindings: 1.5.0
+      node-addon-api: 8.3.0
     optional: true
 
   '@johnlindquist/no-dom@1.0.2': {}
@@ -14519,6 +14533,9 @@ snapshots:
     optional: true
 
   node-addon-api@7.1.1: {}
+
+  node-addon-api@8.3.0:
+    optional: true
 
   node-api-version@0.2.0:
     dependencies:
