@@ -127,10 +127,10 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             arch: x64
-          - os: macos-latest
+          - os: macos-13
             platform: mac
             arch: x64
-          - os: macos-latest
+          - os: macos-13
             platform: mac
             arch: arm64
     steps:
