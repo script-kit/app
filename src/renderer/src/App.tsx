@@ -70,14 +70,6 @@ import {
   zoomAtom,
 } from './jotai';
 
-declare global {
-  interface Navigator {
-    keyboard: {
-      getLayoutMap(): Promise<Map<string, string>>;
-    };
-  }
-}
-
 import { loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { AppChannel } from '../../shared/enums';
@@ -530,44 +522,6 @@ export default function App() {
   //   }),
   //   [promptData?.previewWidthPercent],
   // );
-
-  useEffect(() => {
-    const getKeyboardLayout = async () => {
-      if ('keyboard' in navigator && 'getLayoutMap' in navigator.keyboard) {
-        try {
-          const layout = await navigator.keyboard.getLayoutMap();
-          const layoutMap: Record<string, string> = {};
-
-          for (const [code, key] of layout.entries()) {
-            layoutMap[code] = key;
-          }
-
-          const detectedLayout = detectKeyboardLayout(layoutMap);
-
-          log.info(`Detected keyboard layout: ${detectedLayout}`);
-
-          ipcRenderer.send(AppChannel.SET_KEYBOARD_LAYOUT, detectedLayout === 'QWERTY' ? {} : layoutMap);
-        } catch (error) {
-          log.warn('Error getting keyboard layout:', error);
-          ipcRenderer.send(AppChannel.SET_KEYBOARD_LAYOUT, null);
-        }
-      } else {
-        log.warn('Keyboard API not supported');
-        ipcRenderer.send(AppChannel.SET_KEYBOARD_LAYOUT, null);
-      }
-    };
-
-    getKeyboardLayout();
-
-    const handleFocus = () => {
-      getKeyboardLayout();
-    };
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, []);
 
   return (
     <ErrorBoundary>

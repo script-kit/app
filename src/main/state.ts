@@ -43,6 +43,7 @@ import internetAvailable from '../shared/internet-available';
 import shims from './shims';
 
 import { createLogger } from '../shared/log-utils';
+import type { IKeyboardMapping } from '@johnlindquist/native-keymap';
 const log = createLogger('state.ts');
 const keymapLog = createLogger('keymapLog');
 
@@ -327,7 +328,7 @@ const initState = {
   themeName: '',
   tempTheme: '',
   appearance: 'auto' as 'auto' | 'light' | 'dark',
-  keymap: {} as Record<string, string>,
+  keymap: {} as IKeyboardMapping,
   keyboardConfig: {
     autoDelayMs: 0,
   } as any,
@@ -649,7 +650,7 @@ export const convertKey = (sourceKey: string): string => {
   // Find the entry where the value matches the sourceKey
   let entry;
   for (const [code, value] of Object.entries(kitState.keymap)) {
-    if (value.toLowerCase() === sourceKey.toLowerCase()) {
+    if (value?.value?.toLowerCase() === sourceKey.toLowerCase()) {
       entry = [code, value];
       break;
     }

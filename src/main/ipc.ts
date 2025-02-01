@@ -697,19 +697,4 @@ ${child?.pid} 📝 Submitting...
       sponsorCheck: false,
     });
   });
-
-  ipcMain.on(AppChannel.APPLY_UPDATE, (event, data: any) => {
-    log.info('🚀 Applying update');
-    kitState.applyUpdate = true;
-  });
-
-  ipcMain.on(AppChannel.SET_KEYBOARD_LAYOUT, (event, layoutMap: Record<string, string> | null) => {
-    newKeymap = JSON.stringify(layoutMap);
-    if (newKeymap !== currentKeymap) {
-      kitState.keymap = layoutMap || {};
-      currentKeymap = newKeymap;
-
-      log.info(`🌐 Keyboard layout:`, kitState.keymap);
-    }
-  });
 };

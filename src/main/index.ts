@@ -1,3 +1,4 @@
+import { getCurrentKeyboardLayout, getKeyMap, onDidChangeKeyboardLayout } from '@johnlindquist/native-keymap';
 import { BrowserWindow, app, crashReporter, nativeTheme, powerMonitor, protocol, screen } from 'electron';
 import './env';
 import log from 'electron-log';
@@ -11,6 +12,8 @@ process.on('SIGINT', () => {
 
 import electronLog from 'electron-log';
 electronLog.initialize();
+
+log.info(`Electron executable: ${app.getPath('exe')}`);
 
 (global as any).log = log.info;
 (global as any).logInfo = log.info;
@@ -603,6 +606,13 @@ const ready = async () => {
   setInterval(() => {
     selfCheck().catch((err) => log.error('Self-check failed:', err));
   }, SELF_CHECK_INTERVAL);
+
+  kitState.keymap = getKeyMap();
+  log.info('🌐 Keyboard map:', getCurrentKeyboardLayout());
+  onDidChangeKeyboardLayout(() => {
+    kitState.keymap = getKeyMap();
+    log.info('🌐 Keyboard map:', getCurrentKeyboardLayout());
+  });
 };
 
 const SELF_CHECK_INTERVAL = 1000 * 60; // Every 1 minute

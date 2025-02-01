@@ -40,12 +40,7 @@
   "bugs": {
     "url": "https://github.com/script-kit/kitapp/issues"
   },
-  "keywords": [
-    "electron",
-    "react",
-    "typescript",
-    "ts"
-  ],
+  "keywords": ["electron", "react", "typescript", "ts"],
   "homepage": "https://github.com/script-kit/kitapp#readme",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -130,6 +125,7 @@
     "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/clipboard": "^0.1.38",
     "@johnlindquist/kit": "^3.10.6",
+    "@johnlindquist/native-keymap": "^3.3.8",
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^28.0.2",
     "@tailwindcss/postcss": "^4.0.0",
@@ -207,12 +203,8 @@
   },
   "browserslist": [],
   "renovate": {
-    "extends": [
-      "bliss"
-    ],
-    "baseBranches": [
-      "next"
-    ]
+    "extends": ["bliss"],
+    "baseBranches": ["next"]
   },
   "jest": {
     "preset": "ts-jest",
@@ -233,7 +225,8 @@
       "esbuild",
       "node-pty",
       "node-mac-permissions",
-      "uiohook-napi"
+      "uiohook-napi",
+      "@johnlindquist/native-keymap"
     ]
   }
 }
