@@ -1,3 +1,7 @@
+import type { SnippetInfo } from './types';
+
+export const snippetMap = new Map<string, SnippetInfo>();
+
 export const getClipboardHistory = () => {
   return [];
 };
