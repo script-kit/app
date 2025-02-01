@@ -106,7 +106,7 @@ module.exports = {
     colors: {
       ...defaultTheme.colors,
       ...safeColors,
-      gray: colors.gray,
+      gray: colors.stone,
       primary: colorVar('primary'),
       'primary-25': colorVar('primary', 0.25),
       'primary-50': colorVar('primary', 0.5),
@@ -245,6 +245,7 @@ module.exports = {
             '--tw-prose-quotes': theme('colors.text.base'),
             '--tw-prose-links': theme('colors.text.base'),
             '--tw-prose-pre-code': theme('colors.text.base'),
+            '--tw-prose-pre-bg': 'transparent',
             '--tw-prose-bold': theme('colors.text.base'),
             '--tw-prose-italic': theme('colors.text.base'),
             thead: {

@@ -23,7 +23,7 @@ import {
   kitPnpmPath,
   processPlatformSpecificTheme,
 } from '@johnlindquist/kit/core/utils';
-import type { Choice, FlagsObject, Script, Scriptlet, Shortcut } from '@johnlindquist/kit/types';
+import type { Choice, FlagsObject, Script, Scriptlet, Shortcut, Snippet } from '@johnlindquist/kit/types';
 import { CACHED_GROUPED_SCRIPTS_WORKER, CREATE_BIN_WORKER } from '@johnlindquist/kit/workers';
 
 import { KitPrompt, destroyPromptWindow, makeSplashWindow } from './prompt';
@@ -53,6 +53,7 @@ import { shortcutMap } from './shortcuts';
 import { showInfo } from './info';
 import { compareCollections, logDifferences } from './compare';
 import { getAllShellEnvs } from './env-utils';
+import { onScriptChanged } from './watcher';
 const log = createLogger('install.ts');
 
 let isOhNo = false;
@@ -975,7 +976,23 @@ export function isBinnableScript(script: Script) {
   return script?.group !== 'Kit' && script?.kenv !== '.kit' && !script?.skip && script?.command && script.filePath;
 }
 
-export const cacheMainMenu = ({
+export const syncScripts = async () => {
+  log.info('Syncing scripts...');
+  for await (const scriptlet of kitState.scriptlets.values()) {
+    await onScriptChanged('add', scriptlet, true, true);
+  }
+
+  for await (const script of kitState.scripts.values()) {
+    await onScriptChanged('add', script, true, true);
+  }
+
+  for await (const snippet of kitState.snippets.values()) {
+    await onScriptChanged('add', snippet, true, true);
+  }
+};
+
+let firstRun = true;
+export const cacheMainMenu = async ({
   scripts,
   preview,
   shortcuts,
@@ -995,6 +1012,11 @@ export const cacheMainMenu = ({
       scripts: scripts?.length,
       preview: preview?.length,
     });
+
+    // Log the name of every scripts as a string with newlines between each name
+    log.info(`ALL SCRIPTS: ${scripts.length}`);
+    log.info(scripts.map((s) => s.name).join('\n'));
+
     preloadChoicesMap.set(getMainScriptPath(), scripts);
 
     if (preview) {
@@ -1036,6 +1058,14 @@ export const cacheMainMenu = ({
     };
 
     for (const script of scripts) {
+      log.info(`Found script: name: ${script.name}, filePath: ${script.filePath}`);
+
+      if (script.expand) {
+        log.info(`Adding snippet: ${script.filePath}`, { script });
+        kitState.snippets.set(script.filePath, script as Snippet);
+        continue;
+      }
+
       if ((script as Scriptlet).scriptlet) {
         queueLog(`Scriptlet ${script.filePath}`);
         kitState.scriptlets.set(script.filePath, script as Scriptlet);
@@ -1071,8 +1101,6 @@ export const cacheMainMenu = ({
     // Ensure any remaining logs are flushed
     flushLogQueue();
 
-    syncBins();
-
     log.info(`Shortcut check: ${shortcutMap.size} shortcuts cached`);
     if (shortcutMap.size === 0) {
       log.info(`Found no shortcuts, checking scripts`);
@@ -1082,6 +1110,11 @@ export const cacheMainMenu = ({
           log.info(`Found script with shortcut: ${script.filePath}, adding to cache`);
         }
       }
+    }
+
+    if (firstRun) {
+      firstRun = false;
+      await syncScripts();
     }
   }
 };
@@ -1310,6 +1343,8 @@ export const cacheMainScripts: CacheMainScripts = async (
     }
   });
 };
+
+export const debounceCacheMainScripts = debounce(cacheMainScripts, 250);
 
 // pnpm might trigger a node download, so we need to wait until the final line prints out the version
 export const spawnP = async (

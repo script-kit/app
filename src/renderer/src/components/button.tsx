@@ -328,23 +328,6 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
     setImageFail(false);
   }, [choice]);
 
-  const memoizedHtmlDomNode = useRef<ReturnType<typeof parse> | null>(null);
-
-  useEffect(() => {
-    if (choice?.html) {
-      memoizedHtmlDomNode.current = parse(choice?.html, {
-        replace: (domNode: any) => {
-          if (domNode?.attribs && index === buttonIndex) {
-            domNode.attribs.class += ' focused';
-          }
-          return domNode;
-        },
-      });
-    } else {
-      memoizedHtmlDomNode.current = null;
-    }
-  }, [choice, index, buttonIndex]);
-
   useEffect(() => {
     const modifier = modifiers.find((m) => {
       return Object.keys(choice).includes(m);
@@ -403,7 +386,14 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
       onMouseOver={onMouseEnter}
     >
       {choice?.html ? (
-        memoizedHtmlDomNode.current
+        parse(choice.html, {
+          replace: (domNode: any) => {
+            if (domNode?.attribs && index === buttonIndex) {
+              domNode.attribs.class += ' focused';
+            }
+            return domNode;
+          },
+        })
       ) : (
         <ChoiceButtonContent
           choice={choice}

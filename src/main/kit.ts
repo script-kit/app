@@ -127,6 +127,8 @@ emitter.on(
     // } else {
     //   log.info(`Show App: ${scriptPath}`);
     // }
+
+    log.info('Running prompt process', { scriptPath, args, options });
     runPromptProcess(scriptPath, args, options);
   },
 );
@@ -286,6 +288,9 @@ export const runPromptProcess = async (
   });
 
   const scriptlet = kitState.scriptlets.get(promptScriptPath);
+  if (scriptlet) {
+    log.info('Found scriptlet', { scriptlet });
+  }
 
   const script = scriptlet || (await findScript(promptScriptPath));
   if (!script) {

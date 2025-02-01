@@ -275,7 +275,7 @@ function MainInput() {
       } else if (cached) {
         setPendingInput(event.target.value);
       } else {
-        log.info(`Setting input: ${event.target.value}`);
+        // log.info(`Setting input: ${event.target.value}`);
         setInput(event.target.value);
         setPendingInput('');
       }

@@ -112,20 +112,19 @@ export default function ChoiceList({ width, height }: ListProps) {
   const CELL_GAP = promptData?.gridGap ? promptData.gridGap / 2 : 0;
 
   const gridDimensions = useMemo(() => {
-    const minColumnWidth = promptData?.columnWidth || 100;
-    const columnCount =
-      promptData?.columns ||
-      (promptData?.columnWidth
-        ? Math.min(choices.length, Math.floor(width / promptData.columnWidth))
-        : Math.min(choices.length, Math.floor(width / minColumnWidth)));
+    const minColumnWidth = promptData?.columnWidth ?? 100;
+    const columnCount = Math.max(
+      1,
+      promptData?.columns ?? Math.min(choices.length, Math.floor(width / (promptData?.columnWidth ?? minColumnWidth))),
+    );
 
-    const columnWidth = calculateColumnWidth(width, columnCount, CELL_GAP, promptData.columnWidth);
-    const rowHeight = promptData.rowHeight || promptData.columnWidth || columnWidth;
+    const columnWidth = calculateColumnWidth(width, columnCount, CELL_GAP, promptData?.columnWidth);
+    const rowHeight = promptData?.rowHeight ?? promptData?.columnWidth ?? columnWidth;
 
     return {
       minColumnWidth,
       columnCount,
-      rowCount: Math.ceil(choices.length / columnCount),
+      rowCount: Math.max(1, Math.ceil(choices.length / columnCount)),
       columnWidth,
       rowHeight,
     };

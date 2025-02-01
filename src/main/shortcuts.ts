@@ -38,71 +38,64 @@ const mainFail = (shortcut: string, filePath: string) =>
 <code>${shortcut}</code> failed to register. May already be registered to another app.`;
 
 interface ProcessHandlerOptions {
-  debounceMs?: number
-  pollIntervalMs?: number
-  maxWaitMs?: number
+  debounceMs?: number;
+  pollIntervalMs?: number;
+  maxWaitMs?: number;
 }
 
-const createProcessHandler = (
-  fn: () => Promise<void> | void,
-  options: ProcessHandlerOptions = {}
-) => {
-  const {
-    debounceMs = 250,
-    pollIntervalMs = 100,
-    maxWaitMs = 5000
-  } = options
+const createProcessHandler = (fn: () => Promise<void> | void, options: ProcessHandlerOptions = {}) => {
+  const { debounceMs = 250, pollIntervalMs = 100, maxWaitMs = 5000 } = options;
 
-  const ignoreFlag = { value: false }
-  let currentTimeout: NodeJS.Timeout | null = null
+  const ignoreFlag = { value: false };
+  let currentTimeout: NodeJS.Timeout | null = null;
 
   const waitForProcess = async (): Promise<void> => {
-    if (processes.hasAvailableProcess) return
+    if (processes.hasAvailableProcess) return;
 
-    ignoreFlag.value = true
-    const startTime = Date.now()
+    ignoreFlag.value = true;
+    const startTime = Date.now();
 
     try {
       await new Promise((resolve, reject) => {
         const interval = setInterval(() => {
           if (processes.hasAvailableProcess) {
-            clearInterval(interval)
-            resolve(true)
-            return
+            clearInterval(interval);
+            resolve(true);
+            return;
           }
 
           if (Date.now() - startTime > maxWaitMs) {
-            clearInterval(interval)
-            reject(new Error('Timeout waiting for available process'))
+            clearInterval(interval);
+            reject(new Error('Timeout waiting for available process'));
           }
-        }, pollIntervalMs)
+        }, pollIntervalMs);
 
-        currentTimeout = interval
-      })
+        currentTimeout = interval;
+      });
     } finally {
-      ignoreFlag.value = false
+      ignoreFlag.value = false;
       if (currentTimeout) {
-        clearInterval(currentTimeout)
-        currentTimeout = null
+        clearInterval(currentTimeout);
+        currentTimeout = null;
       }
     }
-  }
+  };
 
   return debounce(
     async () => {
-      if (ignoreFlag.value) return
+      if (ignoreFlag.value) return;
 
       try {
-        await waitForProcess()
-        return await fn()
+        await waitForProcess();
+        return await fn();
       } catch (error) {
-        log.error('Process handler error:', error)
+        log.error('Process handler error:', error);
         // Could emit an event here if needed
       }
     },
     debounceMs,
-    { leading: true }
-  )
+    { leading: true },
+  );
 };
 
 const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
@@ -432,6 +425,72 @@ export const handleKeymapChange = async () => {
 
   prevKeymap = kitState.keymap;
 };
+
+export async function shortcutsSelfCheck() {
+  const shouldBeRegistered = new Set<string>();
+
+  // For each script in kitState.scripts
+  for (const [filePath, script] of kitState.scripts) {
+    const hasShortcut = Boolean(script.shortcut);
+    const isTrusted = !script.kenv || script.kenv === '' || kitState.trustedKenvs.includes(script.kenv);
+
+    if (hasShortcut && isTrusted) {
+      shouldBeRegistered.add(filePath);
+
+      if (shortcutMap.has(filePath)) {
+        const current = shortcutMap.get(filePath)?.shortcut;
+        const scriptShortcut = script.shortcut;
+
+        if (current !== scriptShortcut) {
+          log.info(
+            `[watchShortcuts] Shortcut mismatch. Re-registering ${filePath}. Old: ${current} | New: ${scriptShortcut}`,
+          );
+          await shortcutScriptChanged(script);
+        }
+      } else {
+        log.info(`[watchShortcuts] Missing registered shortcut for ${filePath}. Re-registering...`);
+        await shortcutScriptChanged(script);
+      }
+    }
+  }
+
+  // Unregister shortcuts that are in shortcutMap but shouldn’t be.
+  for (const [filePath, { shortcut }] of shortcutMap.entries()) {
+    // Always keep the main shortcut registered.
+    if (filePath === getMainScriptPath()) continue;
+    if (!shouldBeRegistered.has(filePath)) {
+      log.info(`[watchShortcuts] No longer needs shortcut for ${filePath}. Un-registering "${shortcut}"...`);
+      unlinkShortcuts(filePath);
+    }
+  }
+
+  checkMainShortcutRegistered();
+}
+
+export function checkMainShortcutRegistered() {
+  // The main script is basically "getMainScriptPath()"
+  // We'll rely on kitState.mainShortcut or the environment variable
+  const mainShortcut = kitState.mainShortcut || kitState.kenvEnv?.KIT_MAIN_SHORTCUT;
+  if (!mainShortcut) {
+    log.info('[watchShortcuts] No main shortcut set in kitState.kenvEnv or kitState. Doing nothing.');
+    return;
+  }
+
+  // If the main shortcut is not actually registered, re-register it
+  const isRegistered = globalShortcut.isRegistered(mainShortcut);
+  if (!isRegistered) {
+    log.info(`[watchShortcuts] Main shortcut "${mainShortcut}" is missing. Re-registering...`);
+    updateMainShortcut(mainShortcut);
+  }
+
+  // Also check "kill latest" shortcut if you want:
+  const semicolon = kitState.isMac ? ';' : ';'; // or use convertKey(';') if needed
+  const killLatestShortcut = `CommandOrControl+Shift+${semicolon}`;
+  if (!globalShortcut.isRegistered(killLatestShortcut)) {
+    log.info(`[watchShortcuts] Kill-latest "${killLatestShortcut}" missing. Re-registering...`);
+    registerKillLatestShortcut();
+  }
+}
 
 const debouncedHandleKeymapChange = debounce(handleKeymapChange, 200);
 const subKeymap = subscribeKey(kitState, 'keymap', debouncedHandleKeymapChange);

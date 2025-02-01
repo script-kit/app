@@ -41,7 +41,7 @@ import {
 import { clearPromptCache, clearPromptCacheFor, setKitStateAtom } from './prompt';
 import { setCSSVariable } from './theme';
 import { addSnippet, addTextSnippet, removeSnippet } from './tick';
-import { cacheMainScripts } from './install';
+import { cacheMainScripts, debounceCacheMainScripts } from './install';
 import { loadKenvEnvironment } from './env-utils';
 import { pathExists, pathExistsSync, writeFile } from './cjs-exports';
 import { createLogger } from '../shared/log-utils';
@@ -53,9 +53,8 @@ import { reloadApps } from './apps';
 
 import { scriptLog, watcherLog } from './logs';
 import { createIdlePty } from './pty';
+import { parseSnippet } from './snippet-cache';
 const log = createLogger('watcher.ts');
-
-const debounceCacheMainScripts = debounce(cacheMainScripts, 250);
 
 const unlink = (filePath: string) => {
   cancelSchedule(filePath);
@@ -304,83 +303,166 @@ function watchTheme() {
   }
 }
 
-let firstBatchTimeout: NodeJS.Timeout;
-export const reevaluateAllScripts = async () => {
-  scriptLog.info('🚨 reevaluateAllScripts');
-  for (const script of kitState.scripts.values()) {
-    await onScriptChanged('change', script, true);
-  }
-};
+const settleFirstBatch = debounce(() => {
+  kitState.firstBatch = false;
+  scriptLog.info('First batch settled ✅');
+}, 1000);
 
-export const onScriptChanged = async (event: WatchEvent, script: Script, rebuilt = false) => {
+/**
+ * Determines whether we should timestamp the script and notify
+ * children about the script change based on the current kit state
+ * and whether this script is a result of a rebuild, etc.
+ */
+function shouldTimestampScript(event: WatchEvent, rebuilt: boolean, skipCacheMainMenu: boolean): boolean {
+  // If kitState isn't ready or we are rebuilding or still in first batch,
+  // we won't timestamp the script and run the standard "change" flow.
+  // The return value indicates if we proceed with timestamping.
+  return kitState.ready && !rebuilt && !kitState.firstBatch;
+}
+
+/**
+ * Handles the script timestamping and notifying children
+ * that a script has changed.
+ */
+function timestampAndNotifyChildren(event: WatchEvent, script: Script) {
+  debounceSetScriptTimestamp({
+    filePath: script.filePath,
+    changeStamp: Date.now(),
+    reason: `${event} ${script.filePath}`,
+  });
+
+  // Only notify children of a script change if it's actually a change (not an add).
+  if (event === 'change') {
+    checkFileImports(script);
+    sendToAllActiveChildren({
+      channel: Channel.SCRIPT_CHANGED,
+      state: script.filePath,
+    });
+  }
+}
+
+/**
+ * Handles the scenario where we're not ready to timestamp or
+ * skip the standard steps. We log a message and possibly bail out
+ * early if skipCacheMainMenu is false.
+ */
+function handleNotReady(script: Script, event: WatchEvent, rebuilt: boolean, skipCacheMainMenu: boolean) {
+  log.info(
+    `⌚️ ${script.filePath} changed, but main menu hasn't run yet. ` + `Skipping compiling TS and/or timestamping...`,
+    {
+      ready: kitState.ready,
+      rebuilt,
+      firstBatch: kitState.firstBatch,
+    },
+  );
+
+  // If we can't skip the main menu caching, exit early to avoid
+  // the usual add/change flow.
+  if (!skipCacheMainMenu) {
+    return true; // indicates early return
+  }
+
+  return false; // indicates we should continue
+}
+
+/**
+ * Perform the additional script-changed logic that happens after
+ * the timestamping step is either applied or skipped.
+ */
+async function finalizeScriptChange(script: Script) {
+  log.info('Shortcut script changed', script.filePath);
+
+  // All these calls are side-effects that happen for both add/change
+  // once we've either timestamped or decided not to.
+  scheduleScriptChanged(script);
+  systemScriptChanged(script);
+  watchScriptChanged(script);
+  backgroundScriptChanged(script);
+  addSnippet(script);
+  await shortcutScriptChanged(script);
+
+  // Once the script is fully "added" or "changed", let all children know.
+  sendToAllActiveChildren({
+    channel: Channel.SCRIPT_ADDED,
+    state: script.filePath,
+  });
+
+  // Clear any prompt caches associated with this script.
+  clearPromptCacheFor(script.filePath);
+}
+
+/**
+ * If the event is "unlink," perform all necessary cleanup.
+ */
+function handleUnlinkEvent(script: Script) {
+  unlink(script.filePath);
+  unlinkBin(script.filePath);
+
+  sendToAllActiveChildren({
+    channel: Channel.SCRIPT_REMOVED,
+    state: script.filePath,
+  });
+}
+
+/**
+ * If the event is "add" or "change," we have a specific flow.
+ * This function orchestrates whether we timestamp the script,
+ * notify children, or skip certain steps.
+ */
+async function handleAddOrChangeEvent(event: WatchEvent, script: Script, rebuilt: boolean, skipCacheMainMenu: boolean) {
+  // Log the queue right away for "add"/"change"
+  logQueue(event, script.filePath);
+
+  // Decide if we do normal timestamp or skip
+  if (shouldTimestampScript(event, rebuilt, skipCacheMainMenu)) {
+    timestampAndNotifyChildren(event, script);
+  } else {
+    // If handleNotReady returns true, we exit early
+    const didExitEarly = handleNotReady(script, event, rebuilt, skipCacheMainMenu);
+    if (didExitEarly) return;
+  }
+
+  // Wrap up the rest of the script-changed logic
+  await finalizeScriptChange(script);
+}
+
+/**
+ * Main function to handle script changes. We keep the signature the same
+ * so we don't break any existing contracts. Internally, we orchestrate
+ * smaller, well-named functions for each part of the flow.
+ */
+export const onScriptChanged = async (
+  event: WatchEvent,
+  script: Script,
+  rebuilt = false,
+  skipCacheMainMenu = false,
+) => {
   scriptLog.info('🚨 onScriptChanged', event, script.filePath);
+
+  // If this is the first batch of scripts, settle that first.
   if (kitState.firstBatch) {
-    if (firstBatchTimeout) {
-      clearTimeout(firstBatchTimeout);
-    }
-    firstBatchTimeout = setTimeout(() => {
-      kitState.firstBatch = false;
-      scriptLog.info('Finished parsing scripts ✅');
-    }, 1000);
+    settleFirstBatch();
   }
 
+  // Re-run any dependency checks across scripts
   madgeAllScripts();
 
   log.info(`👀 ${event} ${script.filePath}`);
+
+  // 1. Handle "unlink" events
   if (event === 'unlink') {
-    unlink(script.filePath);
-    unlinkBin(script.filePath);
-    sendToAllActiveChildren({
-      channel: Channel.SCRIPT_REMOVED,
-      state: script.filePath,
-    });
+    handleUnlinkEvent(script);
   }
 
+  // 2. Handle "add" or "change" events
   if (event === 'change' || event === 'add') {
-    logQueue(event, script.filePath);
-
-    if (kitState.ready && !rebuilt && !kitState.firstBatch) {
-      debounceSetScriptTimestamp({
-        filePath: script.filePath,
-        changeStamp: Date.now(),
-        reason: `${event} ${script.filePath}`,
-      });
-      if (event === 'change') {
-        checkFileImports(script);
-        sendToAllActiveChildren({
-          channel: Channel.SCRIPT_CHANGED,
-          state: script.filePath,
-        });
-      }
-    } else {
-      log.info(
-        `⌚️ ${script.filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`,
-        {
-          ready: kitState.ready,
-          rebuilt: rebuilt,
-          firstBatch: kitState.firstBatch,
-        },
-      );
-      return;
-    }
-
-    log.info('Shortcut script changed', script.filePath);
-    scheduleScriptChanged(script);
-    systemScriptChanged(script);
-    watchScriptChanged(script);
-    backgroundScriptChanged(script);
-    addSnippet(script);
-    await shortcutScriptChanged(script);
-
-    sendToAllActiveChildren({
-      channel: Channel.SCRIPT_ADDED,
-      state: script.filePath,
-    });
-
-    clearPromptCacheFor(script.filePath);
+    await handleAddOrChangeEvent(event, script, rebuilt, skipCacheMainMenu);
   }
 
-  if (event === 'add' || event === 'unlink') {
+  // 3. Update the main scripts cache if necessary.
+  //    If we added or removed a script, but skipping main menu caching is false,
+  //    then trigger the debounced cache re-build.
+  if ((event === 'add' || event === 'unlink') && !skipCacheMainMenu) {
     debounceCacheMainScripts('Script added or unlinked');
   }
 };
@@ -470,12 +552,17 @@ const triggerRunText = debounce(
   },
 );
 
-const refreshScripts = debounce(
+export const refreshScripts = debounce(
   async () => {
     log.info('🌈 Refreshing Scripts...');
-    const scripts = await getScripts();
-    for (const script of scripts) {
-      onScriptChanged('change', script, true);
+    const scripts = kitState.scripts.values();
+    for await (const script of scripts) {
+      await onScriptChanged('change', script, true);
+    }
+
+    const scriptlets = kitState.scriptlets.values();
+    for await (const scriptlet of scriptlets) {
+      await onScriptChanged('change', scriptlet, true);
     }
   },
   500,
@@ -520,6 +607,38 @@ const handleScriptletsChanged = debounce(async (eventName: WatchEvent, filePath:
 
   return;
 }, 50);
+
+export async function handleSnippetFileChange(eventName: WatchEvent, snippetPath: string) {
+  if (eventName === 'unlink') {
+    // remove from kitState.snippets
+    kitState.snippets.delete(snippetPath);
+    return;
+  }
+
+  // if 'add' or 'change', parse once, update map
+  try {
+    const contents = await readFile(snippetPath, 'utf8');
+    const { metadata, snippetKey, postfix } = parseSnippet(contents);
+
+    if (!snippetKey) {
+      // No expand snippet found => remove from kitState if it had one
+      kitState.snippets.delete(snippetPath);
+      return;
+    }
+
+    kitState.snippets.set(snippetPath, {
+      filePath: snippetPath,
+      snippetKey,
+      postfix, // TODO: fix types
+      rawMetadata: metadata,
+      contents,
+    });
+  } catch (error) {
+    log.warn(`[handleSnippetFileChange] Error reading snippet: ${snippetPath}`, error);
+    // remove from kitState
+    kitState.snippets.delete(snippetPath);
+  }
+}
 
 export const parseEnvFile = debounce(async () => {
   const envData = loadKenvEnvironment();
@@ -796,12 +915,6 @@ function startCoreWatchers(): FSWatcher[] {
   );
 }
 
-function refreshScriptsIfNeeded() {
-  if (kitState.ignoreInitial) {
-    refreshScripts();
-  }
-}
-
 function logActionReason(context: 'Setup' | 'Teardown', reason: string) {
   log.info(`🔄 ${context} watchers because: ${reason}`);
 }
@@ -825,7 +938,6 @@ export const setupWatchers = debounce(
     logActionReason('Setup', reason);
 
     teardownWatchers('setupWatchers');
-    refreshScriptsIfNeeded();
     startPingInterval();
     watchers = startCoreWatchers();
   },
@@ -860,7 +972,7 @@ emitter.on(KitEvent.Sync, () => {
 
 // ---- New handleFileChangeEvent Function ----
 
-async function handleFileChangeEvent(eventName: WatchEvent, filePath: string, source: string) {
+export async function handleFileChangeEvent(eventName: WatchEvent, filePath: string, source: string) {
   const { base, dir, name } = path.parse(filePath);
 
   if (base === 'ping.txt') {
@@ -926,14 +1038,7 @@ async function handleFileChangeEvent(eventName: WatchEvent, filePath: string, so
   }
 
   if (dir.endsWith('snippets')) {
-    if (eventName === 'add' || eventName === 'change') {
-      await cacheMainScripts('Snippet added or changed');
-      log.info('Snippet added/changed', filePath);
-      addTextSnippet(filePath);
-    } else {
-      removeSnippet(filePath);
-    }
-    return;
+    return handleSnippetFileChange(eventName, filePath);
   }
 
   if (dir.endsWith('scriptlets')) {

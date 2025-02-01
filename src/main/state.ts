@@ -22,6 +22,7 @@ import type {
   Script,
   Scriptlet,
   Shortcut,
+  Snippet,
 } from '@johnlindquist/kit/types/core';
 import schedule, { type Job } from 'node-schedule';
 
@@ -75,8 +76,8 @@ const schema = {
 export const kitStore = new Store<typeof schema>({
   schema,
   watch: true,
-}) as Store<typeof schema> & // Hacking the Store type due to some CJS thing I don't have the time to figure out
-{
+}) as Store<typeof schema> & {
+  // Hacking the Store type due to some CJS thing I don't have the time to figure out
   get: <K extends keyof typeof schema>(key: K) => (typeof schema)[K]['default'];
   set: <K extends keyof typeof schema>(key: K, value: (typeof schema)[K]['type']) => void;
   path: string;
@@ -180,6 +181,14 @@ export const getKitScript = async (filePath: string): Promise<Script> => {
   return script;
 };
 
+export interface SnippetFile {
+  filePath: string;
+  snippetKey: string; // e.g. 'foo' or '*foo'
+  postfix: boolean; // whether snippetKey started with '*'
+  rawMetadata: Record<string, string>;
+  contents: string; // entire file content, or you can skip storing if not needed
+}
+
 export const kitCache = {
   choices: [] as ScoredChoice[],
   scripts: [] as Script[],
@@ -244,6 +253,7 @@ export const theme = nativeTheme.shouldUseDarkColors ? getThemes().scriptKitThem
 const initState = {
   scripts: new Map<string, Script>(),
   scriptlets: new Map<string, Scriptlet>(),
+  snippets: new Map<string, Snippet>(),
   gpuEnabled: true,
   displays: [] as Display[],
   debugging: false,

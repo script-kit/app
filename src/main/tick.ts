@@ -223,6 +223,7 @@ export const startKeyboardMonitor = async () => {
   }
 };
 
+const maybeSecretRegex = /^(?=.*[0-9])(?=.*[a-zA-Z])[a-zA-Z0-9!@#$%^&*()-_=+{}[\]<>;:,.|~]{5,}$/i;
 export const startClipboardMonitor = async () => {
   if (kitState.kenvEnv?.KIT_CLIPBOARD === 'false') {
     log.info('🔇 Clipboard monitor disabled');
@@ -370,8 +371,7 @@ export const startClipboardMonitor = async () => {
         }
 
         maybeSecret = Boolean(
-          (!value.match(/\n/g) &&
-            value.match(/^(?=.*[0-9])(?=.*[a-zA-Z])[a-zA-Z0-9!@#$%^&*()-_=+{}[\]<>;:,.|~]{5,}$/i)) ||
+          (!value.match(/\n/g) && value.match(maybeSecretRegex)) ||
             (kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX &&
               value.match(new RegExp(kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX))),
         );
@@ -406,7 +406,7 @@ interface SnippetInfo {
   txt: boolean;
 }
 
-const snippetMap = new Map<string, SnippetInfo>();
+export const snippetMap = new Map<string, SnippetInfo>();
 const snippetPrefixIndex = new Map<string, string[]>();
 
 function updateSnippetPrefixIndex() {
@@ -441,6 +441,7 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet: string) => 
     if (snippet.endsWith(snippetKey)) {
       log.info(`Running snippet: ${snippetKey}`);
       const script = snippetMap.get(snippetKey)!;
+      log.info('script', script, { snippetKey });
       const postfix = script.postfix;
 
       if (kitConfig.deleteSnippet) {
@@ -456,13 +457,15 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet: string) => 
         trigger: Trigger.Snippet,
       };
 
-      if (script.txt) {
+      if (script.txt || script.filePath.endsWith('.txt')) {
+        log.info(`Running text snippet: ${script.filePath}`);
         emitter.emit(KitEvent.RunPromptProcess, {
           scriptPath: kitPath('app', 'paste-snippet.js'),
           args: [...args, '--filePath', script.filePath],
           options,
         });
       } else {
+        log.info(`Running scriptlet snippet: ${script.filePath}`);
         emitter.emit(KitEvent.RunPromptProcess, {
           scriptPath: script.filePath,
           args,
@@ -531,6 +534,7 @@ export const addTextSnippet = async (filePath: string) => {
       postfix = true;
       expand = expand.slice(1);
     }
+    log.info(`Mapped snippet: ${expand} to ${filePath}`);
     snippetMap.set(expand, {
       filePath,
       postfix,
@@ -543,18 +547,17 @@ export const addTextSnippet = async (filePath: string) => {
 
 export const addSnippet = (script: Script) => {
   // Remove if already added
-  {
-    const keys = snippetMap.keys();
-    const toDelete: string[] = [];
-    for (const key of keys) {
-      const val = snippetMap.get(key)!;
-      if (val.filePath === script.filePath && !val.txt) {
-        toDelete.push(key);
-      }
+
+  const keys = snippetMap.keys();
+  const toDelete: string[] = [];
+  for (const key of keys) {
+    const val = snippetMap.get(key)!;
+    if (val.filePath === script.filePath && !val.txt) {
+      toDelete.push(key);
     }
-    for (let i = 0; i < toDelete.length; i++) {
-      snippetMap.delete(toDelete[i]);
-    }
+  }
+  for (let i = 0; i < toDelete.length; i++) {
+    snippetMap.delete(toDelete[i]);
   }
 
   const expand = script?.expand || script?.snippet;
@@ -575,6 +578,7 @@ export const addSnippet = (script: Script) => {
       postfix = true;
       exp = exp.slice(1);
     }
+    log.info(`Mapped snippet: ${exp} to ${script.filePath}`);
     snippetMap.set(exp, {
       filePath: script.filePath,
       postfix,
@@ -595,7 +599,9 @@ export const removeSnippet = (filePath: string) => {
       toDelete.push(key);
     }
   }
-  for (let i = 0; i < toDelete.length; i++) snippetMap.delete(toDelete[i]);
+  for (let i = 0; i < toDelete.length; i++) {
+    snippetMap.delete(toDelete[i]);
+  }
   updateSnippetPrefixIndex();
 };
 

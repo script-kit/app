@@ -37,6 +37,13 @@ export const makePanel = (window: BrowserWindow) => {
   }
 };
 
+export const makeKeyPanel = (window: BrowserWindow) => {
+  if (kitState.isMac && !window.isDestroyed()) {
+    log.info(`${window.id}: 📌 Making key panel`);
+    shims['@johnlindquist/mac-panel-window'].makeKeyPanel(window);
+  }
+};
+
 export const setAppearance = (window: BrowserWindow, appearance: 'light' | 'dark' | 'auto') => {
   if (kitState.isMac && !window.isDestroyed()) {
     log.info(`${window.id}: 📌 Setting appearance to ${appearance}`);

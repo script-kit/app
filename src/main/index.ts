@@ -51,7 +51,7 @@ import { getAssetPath, getReleaseChannel } from '../shared/assets';
 import { clearPromptCache, clearPromptTimers, logPromptState } from './prompt';
 import { startClipboardAndKeyboardWatchers } from './tick';
 import { checkTray, setupTray } from './tray';
-import { setupWatchers, teardownWatchers, watchKenvDirectory } from './watcher';
+import { refreshScripts, setupWatchers, teardownWatchers, watchKenvDirectory } from './watcher';
 
 import { KitEvent, emitter } from '../shared/events';
 import { syncClipboardStore } from './clipboard';
@@ -82,10 +82,10 @@ import { logMap, mainLog } from './logs';
 import { destroyAllProcesses, ensureIdleProcess, handleWidgetEvents, processes, setTheme } from './process';
 import { prompts } from './prompts';
 import { createIdlePty, destroyPtyPool } from './pty';
-import { scheduleDownloads, sleepSchedule } from './schedule';
+import { scheduleDownloads, sleepSchedule, rescheduleAllScripts, scheduleSelfCheck } from './schedule';
 import { startSettings as setupSettings } from './settings';
 import shims, { loadSupportedOptionalLibraries } from './shims';
-import { handleKeymapChange, registerKillLatestShortcut, updateMainShortcut } from './shortcuts';
+import { handleKeymapChange, registerKillLatestShortcut, shortcutsSelfCheck, updateMainShortcut } from './shortcuts';
 import { startSK } from './sk';
 import { cacheKitScripts, getThemes, kitState, kitStore, subs } from './state';
 import { TrackEvent, trackEvent } from './track';
@@ -106,6 +106,8 @@ import { type NpmConfig, setNpmrcConfig } from './setup/npm';
 import { startServer } from './server';
 import { invoke } from './invoke-pty';
 import { loadShellEnv } from './shell';
+import { snippetsSelfCheck } from './snippet-heal';
+import { cacheSnippets } from './snippet-cache';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -448,10 +450,10 @@ const systemEvents = () => {
       log.info('🌄 System waking');
       kitState.suspended = false;
 
-      // ADD THIS (to re-init watchers that re-schedule scripts)
       if (!kitState.suspendWatchers) {
         log.info('🌄 Re-initializing watchers and schedules after wake');
         setupWatchers('resumeHandler');
+        await rescheduleAllScripts();
       }
 
       if (!kitState.updateDownloaded) {
@@ -596,7 +598,22 @@ const ready = async () => {
   } catch (error) {
     log.warn(error);
   }
+
+  await refreshScripts();
+  setInterval(() => {
+    selfCheck().catch((err) => log.error('Self-check failed:', err));
+  }, SELF_CHECK_INTERVAL);
 };
+
+const SELF_CHECK_INTERVAL = 1000 * 60; // Every 1 minute
+
+async function selfCheck() {
+  try {
+    await Promise.all([scheduleSelfCheck(), shortcutsSelfCheck(), snippetsSelfCheck()]);
+  } catch (error) {
+    log.error('Error during self-check:', error);
+  }
+}
 
 const kitExists = async () => {
   setupLog(kitPath());

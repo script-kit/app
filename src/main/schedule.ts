@@ -10,7 +10,7 @@ import { kitState, online, scheduleMap } from './state';
 // ADD THIS (new function to log the entire scheduleMap)
 function logAllScheduledJobs() {
   const jobNames = Object.keys(schedule.scheduledJobs);
-  log.info(`[SCHEDULE_MAP] Currently scheduled jobs: ${jobNames.length ? jobNames.join(', ') : '(none)'}`);
+  log.info(`[SCHEDULE_MAP] Currently scheduled jobs: ${jobNames.length > 0 ? jobNames.join(', ') : '(none)'}`);
   for (const jobName of jobNames) {
     const job = schedule.scheduledJobs[jobName];
     if (job) {
@@ -51,7 +51,7 @@ export const cancelJob = (filePath: string) => {
 
 export const sleepSchedule = () => {
   // ADD THIS
-  log.info(`[SLEEP_SCHEDULE] Computer sleeping. Canceling all scheduled jobs...`);
+  log.info('[SLEEP_SCHEDULE] Computer sleeping. Canceling all scheduled jobs...');
 
   for (const [filePath, job] of scheduleMap) {
     if (job?.name) {
@@ -100,50 +100,81 @@ export const cancelSchedule = (filePath: string) => {
   cancelJob(filePath);
 };
 
-export const scheduleScriptChanged = ({ filePath, kenv, schedule: scheduleString }: Script) => {
+// Add this new function to re-schedule all scripts with schedules
+export const rescheduleAllScripts = async () => {
+  log.info('[RESCHEDULE_ALL] Re-scheduling all scripts with schedules...');
+  const scripts = await getScripts();
+  for (const script of scripts) {
+    if (script.schedule) {
+      log.info(`[RESCHEDULE_ALL] Found scheduled script: "${script.filePath}" with schedule: "${script.schedule}"`);
+      scheduleScriptChanged(script);
+    }
+  }
+};
+
+export const scheduleScriptChanged = async ({ filePath, kenv, schedule: scheduleString }: Script) => {
   // If we already have a job for this script, clear it out
   if (scheduleMap.has(filePath)) {
     log.info(`[SCHEDULE_SCRIPT_CHANGED] Script exists. Reschedule: "${filePath}" => "${scheduleString}"`);
     cancelJob(filePath);
   }
 
-  // If script belongs to a Kenv that isn’t trusted, skip scheduling
-  if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
-    if (scheduleString) {
-      log.info(`[SCHEDULE_SCRIPT_CHANGED] Ignoring schedule for "${filePath}" because it's not trusted.`);
-      log.info(`Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`);
-    }
-    return;
+  if (scheduleString) {
+    log.info(`[SCHEDULE_SCRIPT_CHANGED] 📆 schedule: "${scheduleString}", script: "${filePath}"`);
+
+    const scheduledFunction = () => {
+      log.info(`[SCHEDULED_FUNCTION] Running script "${filePath}" at ${new Date().toISOString()}`);
+      runPromptProcess(filePath, [], {
+        force: false,
+        trigger: Trigger.Schedule,
+        sponsorCheck: false,
+      });
+    };
+
+    // Use filePath as the job name for clarity
+    const job = schedule.scheduleJob(filePath, scheduleString, scheduledFunction);
+
+    log.info(`[SCHEDULE_SCRIPT_CHANGED] Scheduling job: "${filePath}" for cron: "${scheduleString}"`);
+    scheduleMap.set(filePath, job);
+  } else {
+    log.info(`[SCHEDULE_SCRIPT_CHANGED] No scheduleString found for "${filePath}". Not scheduling.`);
   }
 
-  try {
-    if (scheduleString) {
-      log.info(`[SCHEDULE_SCRIPT_CHANGED] 📆 schedule: "${scheduleString}", script: "${filePath}"`);
-
-      const scheduledFunction = () => {
-        // ADD THIS
-        log.info(`[SCHEDULED_FUNCTION] Running script "${filePath}" at ${new Date().toISOString()}`);
-
-        runPromptProcess(filePath, [], {
-          force: false,
-          trigger: Trigger.Schedule,
-          sponsorCheck: false,
-        });
-      };
-
-      // This uses filePath as the job name
-      const job = schedule.scheduleJob(filePath, scheduleString, scheduledFunction);
-
-      log.info(`[SCHEDULE_SCRIPT_CHANGED] Scheduling job: "${filePath}" for cron: "${scheduleString}"`);
-      scheduleMap.set(filePath, job);
-    } else {
-      // ADD THIS
-      log.info(`[SCHEDULE_SCRIPT_CHANGED] No scheduleString found for "${filePath}". Not scheduling.`);
-    }
-  } catch (error) {
-    log.warn(`[SCHEDULE_SCRIPT_CHANGED] Error scheduling "${filePath}":`, error);
-  }
-
-  // ADD THIS
   logAllScheduledJobs();
 };
+
+export async function scheduleSelfCheck() {
+  try {
+    const scripts = await getScripts();
+    const shouldBeScheduled = new Set<string>();
+
+    for (const script of scripts) {
+      if (script.schedule) {
+        // Only schedule if no kenv or if trusted
+        if (!script.kenv || script.kenv === '' || kitState.trustedKenvs.includes(script.kenv)) {
+          shouldBeScheduled.add(script.filePath);
+
+          if (scheduleMap.has(script.filePath)) {
+            log.silly(`[WATCH_SCHEDULES] ${script.filePath} already scheduled, skipping...`);
+          } else {
+            log.info(`[WATCH_SCHEDULES] Missing schedule for ${script.filePath}. Re-scheduling...`);
+            await scheduleScriptChanged(script);
+          }
+        } else if (scheduleMap.has(script.filePath)) {
+          log.info(`[WATCH_SCHEDULES] Untrusting scheduled script ${script.filePath}. Cancelling job...`);
+          cancelJob(script.filePath);
+        }
+      }
+    }
+
+    // Cancel any scheduled job that no longer should be scheduled.
+    for (const [filePath] of scheduleMap.entries()) {
+      if (!shouldBeScheduled.has(filePath)) {
+        log.info(`[WATCH_SCHEDULES] ${filePath} no longer requires scheduling. Cancelling job...`);
+        cancelJob(filePath);
+      }
+    }
+  } catch (error) {
+    log.error('[WATCH_SCHEDULES] Error in scheduleSelfCheck:', error);
+  }
+}

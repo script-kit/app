@@ -60,7 +60,7 @@ import {
 } from './state';
 import { TrackEvent, trackEvent } from './track';
 import { getVersion } from './version';
-import { makeKeyWindow, makePanel, makeWindow, prepForClose, setAppearance } from './window/utils';
+import { makeKeyPanel, makeKeyWindow, makePanel, makeWindow, prepForClose, setAppearance } from './window/utils';
 import shims from './shims';
 
 import { createLogger } from '../shared/log-utils';
@@ -1877,7 +1877,7 @@ export class KitPrompt {
   };
 
   setPromptData = async (promptData: PromptData) => {
-    log.info(`🔥 Setting prompt data: ${promptData.scriptPath}`);
+    log.info(`🔥 Setting prompt data: ${promptData.scriptPath}`, JSON.stringify(promptData, null, 2));
     this.promptData = promptData;
 
     const setPromptDataHandler = debounce(
@@ -1987,6 +1987,7 @@ export class KitPrompt {
       log.info(`${this.pid} After initBounds`);
       // TODO: STRONGLY consider waiting for SET_PROMPT_DATA to complete and the UI to change before focusing the prompt
       // this.focusPrompt();
+      log.info(`${this.pid} Disabling firstPrompt`);
       this.firstPrompt = false;
     }
 
@@ -2017,6 +2018,9 @@ export class KitPrompt {
       this.actualHide();
     }
 
+    if (!visible && promptData?.scriptPath.includes('.md#')) {
+      this.focusPrompt();
+    }
     if (boundsCheck) {
       clearTimeout(boundsCheck);
     }
@@ -2208,8 +2212,7 @@ export class KitPrompt {
 
         if (kitState.isMac) {
           // this.window?.showInactive();
-          makePanel(this.window);
-          makeKeyWindow(this.window);
+          makeKeyPanel(this.window);
         } else {
           this.window?.showInactive();
           this.window?.focus();

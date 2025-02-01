@@ -43,7 +43,6 @@ import { TrackEvent, trackEvent } from './track';
 
 import { createLogger } from '../shared/log-utils';
 import { readFile } from 'node:fs/promises';
-import { getAllShellEnvs } from './env-utils';
 import { invoke } from './invoke-pty';
 
 const log = createLogger('process.ts');
@@ -183,7 +182,7 @@ export const sendToAllActiveChildren = (data: {
     if (prevent) {
       continue;
     }
-    log.info({ pid: processInfo?.pid, prevent, channel: data.channel });
+    log.info('sendToAllActiveChildren', { pid: processInfo?.pid, prevent, channel: data.channel });
     childSend(processInfo.child, data);
   }
 };
