@@ -192,14 +192,58 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install GCC 10 and native-keymap dependencies
+      - name: Install dependencies, set PKG_CONFIG_PATH and log debugging info (Linux)
         if: matrix.platform == 'linux'
         run: |
+          echo "Starting dependency installation..."
           sudo apt-get update
           sudo apt-get install -y pkg-config libx11-dev libxkbfile-dev libxtst-dev make gcc libpng++-dev g++-10
+
+          echo "Setting g++ alternatives..."
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
           sudo update-alternatives --set g++ /usr/bin/g++-10
-          echo "CXX=g++-10" >> $GITHUB_ENV
+          echo "g++ version:"
+          g++ --version
+
+          # Set PKG_CONFIG_PATH based on architecture.
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            export PKG_CONFIG_PATH="/usr/lib/aarch64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH"
+          else
+            export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH"
+          fi
+          echo "PKG_CONFIG_PATH is set to: $PKG_CONFIG_PATH"
+
+          echo "Verifying that pkg-config exists..."
+          command -v pkg-config || { echo "ERROR: pkg-config not found"; exit 1; }
+          echo "pkg-config version: $(pkg-config --version)"
+
+          echo "Listing pkg-config directory contents..."
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            ls -l /usr/lib/aarch64-linux-gnu/pkgconfig || true
+          else
+            ls -l /usr/lib/x86_64-linux-gnu/pkgconfig || true
+          fi
+
+          echo "Searching for x11.pc and xkbfile.pc files..."
+          X11_PC=$(find /usr -name "x11.pc" 2>/dev/null)
+          if [ -z "$X11_PC" ]; then
+            echo "ERROR: x11.pc not found!"
+            exit 1
+          else
+            echo "Found x11.pc at: $X11_PC"
+          fi
+
+          XKBFILE_PC=$(find /usr -name "xkbfile.pc" 2>/dev/null)
+          if [ -z "$XKBFILE_PC" ]; then
+            echo "ERROR: xkbfile.pc not found!"
+            exit 1
+          else
+            echo "Found xkbfile.pc at: $XKBFILE_PC"
+          fi
+
+          echo "Listing available pkg-config packages for x11 and xkbfile:"
+          pkg-config --list-all | grep -E 'x11|xkbfile' || echo "No matching pkg-config packages found."
+
 
       - name: Set Optional Dependencies Based on Platform and Architecture
         if: needs.tag.outputs.kit_tag == 'latest'
