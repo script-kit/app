@@ -236,13 +236,11 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libxtst-dev
-          sudo apt-get install -y make gcc libpng++-dev
-          sudo apt-get install -y g++-10
-          sudo apt-get install -y libx11-dev libxkbfile-dev
+          sudo apt-get install -y pkg-config libx11-dev libxkbfile-dev libxtst-dev make gcc libpng++-dev g++-10
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
           sudo update-alternatives --set g++ /usr/bin/g++-10
           echo "CXX=g++-10" >> $GITHUB_ENV
+
 
       - name: Publish linux x64
         if: matrix.platform == 'linux' && matrix.arch == 'x64'
