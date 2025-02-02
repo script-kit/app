@@ -352,6 +352,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ELECTRON_BUILD_ARCH: x64
           ELECTRON_BUILD_PLATFORM: darwin
+          DEBUG: electron-notarize
 
         # Wait 10 minutes to start to avoid signing overlap issues
         run: |
@@ -377,7 +378,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ELECTRON_BUILD_ARCH: arm64
           ELECTRON_BUILD_PLATFORM: darwin
-
+          DEBUG: electron-notarize
         run: |
             pnpm i
             pnpm vite-prebuild

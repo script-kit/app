@@ -1914,7 +1914,7 @@ export const submitValueAtom = atom(
   (g) => g(_submitValue),
   (g, s, a: any) => {
     const ui = g(uiAtom);
-    const allowEmptyEnterUIs = [UI.term, UI.drop];
+    const allowEmptyEnterUIs = [UI.term, UI.drop, UI.hotkey];
     const enter = g(enterAtom);
 
     if (enter === '' && !allowEmptyEnterUIs.includes(ui)) {
