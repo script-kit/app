@@ -718,14 +718,19 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
     tray = new Tray(trayIcon(state));
     tray.setIgnoreDoubleClickEvents(true);
 
-    subscribeKey(kitState, 'status', (status: KitStatus) => {
-      try {
-        log.info(`🎨 Tray status: ${status.status}`);
-        tray?.setImage(trayIcon(status.status));
-      } catch (error) {
-        log.error(error);
-      }
-    });
+    // linux doesn't support tray icons
+    if (kitState.isLinux) {
+      tray.setImage(trayIcon('default'));
+    } else {
+      subscribeKey(kitState, 'status', (status: KitStatus) => {
+        try {
+          log.info(`🎨 Tray status: ${status.status}`);
+          tray?.setImage(trayIcon(status.status));
+        } catch (error) {
+          log.error(error);
+        }
+      });
+    }
   }
   if (kitState.starting) {
     const startingMenu = () => {
