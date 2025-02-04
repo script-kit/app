@@ -203,7 +203,6 @@ export const shortcutScriptChanged = async ({
   shebang?: string;
   kenv: string;
 }) => {
-  log.info(`shortcutScriptChanged: ${filePath} ${shortcut} ${shebang} ${kenv}`);
   const convertedShortcut = convertShortcut(shortcut || '', filePath);
   const old = shortcutMap.get(filePath);
   // TODO: Bring back trusted kenvs

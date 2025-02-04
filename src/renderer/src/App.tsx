@@ -115,7 +115,6 @@ self.MonacoEnvironment = {
 loader.config({ monaco });
 
 import { createLogger } from '../../shared/log-utils';
-import { KNOWN_KEYBOARD_LAYOUTS, QWERTY, detectKeyboardLayout } from '../../shared/keyboard/layout';
 const log = createLogger('App.tsx');
 const windowPadding = '24';
 

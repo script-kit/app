@@ -2,19 +2,19 @@ import schedule, { type Job } from 'node-schedule';
 
 import { kitPath } from '@johnlindquist/kit/core/utils';
 import type { Script } from '@johnlindquist/kit/types/core';
-import log from 'electron-log';
 import { Trigger } from '../shared/enums';
 import { runPromptProcess, runScript } from './kit';
 import { kitState, online, scheduleMap } from './state';
+import { scheduleLog } from './logs';
 
 // ADD THIS (new function to log the entire scheduleMap)
 function logAllScheduledJobs() {
   const jobNames = Object.keys(schedule.scheduledJobs);
-  log.info(`[SCHEDULE_MAP] Currently scheduled jobs: ${jobNames.length > 0 ? jobNames.join(', ') : '(none)'}`);
+  scheduleLog.info(`[SCHEDULE_MAP] Currently scheduled jobs: ${jobNames.length > 0 ? jobNames.join(', ') : '(none)'}`);
   for (const jobName of jobNames) {
     const job = schedule.scheduledJobs[jobName];
     if (job) {
-      log.info(`- Job: "${jobName}", nextInvocation: ${job.nextInvocation()?.toString() || 'N/A'}`);
+      scheduleLog.info(`- Job: "${jobName}", nextInvocation: ${job.nextInvocation()?.toString() || 'N/A'}`);
     }
   }
 }
@@ -26,7 +26,7 @@ export const cancelJob = (filePath: string) => {
   let success = false;
   if (scheduleMap.has(filePath)) {
     // ADD THIS
-    log.info(`[CANCEL_JOB] Attempting to unschedule job for: "${filePath}"`);
+    scheduleLog.info(`[CANCEL_JOB] Attempting to unschedule job for: "${filePath}"`);
 
     const job = scheduleMap.get(filePath) as Job;
     if (job?.name) {
@@ -35,9 +35,9 @@ export const cancelJob = (filePath: string) => {
         job.cancelNext();
         job.cancel(true);
         // ADD THIS
-        log.info(`[CANCEL_JOB] Success? ${success ? 'Yes' : 'No'} for "${filePath}"`);
+        scheduleLog.info(`[CANCEL_JOB] Success? ${success ? 'Yes' : 'No'} for "${filePath}"`);
       } catch (error) {
-        log.error(`[CANCEL_JOB] Error canceling "${filePath}":`, error);
+        scheduleLog.error(`[CANCEL_JOB] Error canceling "${filePath}":`, error);
       }
     }
     scheduleMap.delete(filePath);
@@ -51,15 +51,15 @@ export const cancelJob = (filePath: string) => {
 
 export const sleepSchedule = () => {
   // ADD THIS
-  log.info('[SLEEP_SCHEDULE] Computer sleeping. Canceling all scheduled jobs...');
+  scheduleLog.info('[SLEEP_SCHEDULE] Computer sleeping. Canceling all scheduled jobs...');
 
   for (const [filePath, job] of scheduleMap) {
     if (job?.name) {
       try {
         const cancelled = cancelJob(filePath);
-        log.info(`[SLEEP_SCHEDULE] Cancelled job: "${job.name}" => ${cancelled ? 'success' : 'failed'}`);
+        scheduleLog.info(`[SLEEP_SCHEDULE] Cancelled job: "${job.name}" => ${cancelled ? 'success' : 'failed'}`);
       } catch (error) {
-        log.error(`[SLEEP_SCHEDULE] Error canceling "${job.name}":`, error);
+        scheduleLog.error(`[SLEEP_SCHEDULE] Error canceling "${job.name}":`, error);
       }
     }
   }
@@ -73,40 +73,42 @@ export const sleepSchedule = () => {
 let downloadsRunning = false;
 export const scheduleDownloads = async () => {
   if (downloadsRunning) {
-    log.info('[SCHEDULE_DOWNLOADS] Already running... Skipping downloads.js');
+    scheduleLog.info('[SCHEDULE_DOWNLOADS] Already running... Skipping downloads.js');
     return;
   }
 
   const isOnline = await online();
   if (!isOnline) {
-    log.info('[SCHEDULE_DOWNLOADS] Not online... Skipping downloads.js');
+    scheduleLog.info('[SCHEDULE_DOWNLOADS] Not online... Skipping downloads.js');
     return;
   }
 
   try {
-    log.info(`[SCHEDULE_DOWNLOADS] Running downloads script: ${kitPath('setup', 'downloads.js')}`);
+    scheduleLog.info(`[SCHEDULE_DOWNLOADS] Running downloads script: ${kitPath('setup', 'downloads.js')}`);
     downloadsRunning = true;
     await runScript(kitPath('setup', 'downloads.js'), process.env.NODE_ENV === 'development' ? '--dev' : '');
     downloadsRunning = false;
-    log.info('[SCHEDULE_DOWNLOADS] Finished running downloads.js');
+    scheduleLog.info('[SCHEDULE_DOWNLOADS] Finished running downloads.js');
   } catch (error) {
-    log.error('[SCHEDULE_DOWNLOADS] Error:', error);
+    scheduleLog.error('[SCHEDULE_DOWNLOADS] Error:', error);
   }
 };
 
 export const cancelSchedule = (filePath: string) => {
   // ADD THIS
-  log.info(`[CANCEL_SCHEDULE] Called for "${filePath}"`);
+  scheduleLog.info(`[CANCEL_SCHEDULE] Called for "${filePath}"`);
   cancelJob(filePath);
 };
 
 // Add this new function to re-schedule all scripts with schedules
 export const rescheduleAllScripts = async () => {
-  log.info('[RESCHEDULE_ALL] Re-scheduling all scripts with schedules...');
+  scheduleLog.info('[RESCHEDULE_ALL] Re-scheduling all scripts with schedules...');
   const scripts = await getScripts();
   for (const script of scripts) {
     if (script.schedule) {
-      log.info(`[RESCHEDULE_ALL] Found scheduled script: "${script.filePath}" with schedule: "${script.schedule}"`);
+      scheduleLog.info(
+        `[RESCHEDULE_ALL] Found scheduled script: "${script.filePath}" with schedule: "${script.schedule}"`,
+      );
       scheduleScriptChanged(script);
     }
   }
@@ -115,15 +117,15 @@ export const rescheduleAllScripts = async () => {
 export const scheduleScriptChanged = async ({ filePath, kenv, schedule: scheduleString }: Script) => {
   // If we already have a job for this script, clear it out
   if (scheduleMap.has(filePath)) {
-    log.info(`[SCHEDULE_SCRIPT_CHANGED] Script exists. Reschedule: "${filePath}" => "${scheduleString}"`);
+    scheduleLog.info(`[SCHEDULE_SCRIPT_CHANGED] Script exists. Reschedule: "${filePath}" => "${scheduleString}"`);
     cancelJob(filePath);
   }
 
   if (scheduleString) {
-    log.info(`[SCHEDULE_SCRIPT_CHANGED] 📆 schedule: "${scheduleString}", script: "${filePath}"`);
+    scheduleLog.info(`[SCHEDULE_SCRIPT_CHANGED] 📆 schedule: "${scheduleString}", script: "${filePath}"`);
 
     const scheduledFunction = () => {
-      log.info(`[SCHEDULED_FUNCTION] Running script "${filePath}" at ${new Date().toISOString()}`);
+      scheduleLog.info(`[SCHEDULED_FUNCTION] Running script "${filePath}" at ${new Date().toISOString()}`);
       runPromptProcess(filePath, [], {
         force: false,
         trigger: Trigger.Schedule,
@@ -134,10 +136,10 @@ export const scheduleScriptChanged = async ({ filePath, kenv, schedule: schedule
     // Use filePath as the job name for clarity
     const job = schedule.scheduleJob(filePath, scheduleString, scheduledFunction);
 
-    log.info(`[SCHEDULE_SCRIPT_CHANGED] Scheduling job: "${filePath}" for cron: "${scheduleString}"`);
+    scheduleLog.info(`[SCHEDULE_SCRIPT_CHANGED] Scheduling job: "${filePath}" for cron: "${scheduleString}"`);
     scheduleMap.set(filePath, job);
   } else {
-    log.info(`[SCHEDULE_SCRIPT_CHANGED] No scheduleString found for "${filePath}". Not scheduling.`);
+    scheduleLog.info(`[SCHEDULE_SCRIPT_CHANGED] No scheduleString found for "${filePath}". Not scheduling.`);
   }
 
   logAllScheduledJobs();
@@ -155,13 +157,13 @@ export async function scheduleSelfCheck() {
           shouldBeScheduled.add(script.filePath);
 
           if (scheduleMap.has(script.filePath)) {
-            log.silly(`[WATCH_SCHEDULES] ${script.filePath} already scheduled, skipping...`);
+            scheduleLog.silly(`[WATCH_SCHEDULES] ${script.filePath} already scheduled, skipping...`);
           } else {
-            log.info(`[WATCH_SCHEDULES] Missing schedule for ${script.filePath}. Re-scheduling...`);
+            scheduleLog.info(`[WATCH_SCHEDULES] Missing schedule for ${script.filePath}. Re-scheduling...`);
             await scheduleScriptChanged(script);
           }
         } else if (scheduleMap.has(script.filePath)) {
-          log.info(`[WATCH_SCHEDULES] Untrusting scheduled script ${script.filePath}. Cancelling job...`);
+          scheduleLog.info(`[WATCH_SCHEDULES] Untrusting scheduled script ${script.filePath}. Cancelling job...`);
           cancelJob(script.filePath);
         }
       }
@@ -170,11 +172,11 @@ export async function scheduleSelfCheck() {
     // Cancel any scheduled job that no longer should be scheduled.
     for (const [filePath] of scheduleMap.entries()) {
       if (!shouldBeScheduled.has(filePath)) {
-        log.info(`[WATCH_SCHEDULES] ${filePath} no longer requires scheduling. Cancelling job...`);
+        scheduleLog.info(`[WATCH_SCHEDULES] ${filePath} no longer requires scheduling. Cancelling job...`);
         cancelJob(filePath);
       }
     }
   } catch (error) {
-    log.error('[WATCH_SCHEDULES] Error in scheduleSelfCheck:', error);
+    scheduleLog.error('[WATCH_SCHEDULES] Error in scheduleSelfCheck:', error);
   }
 }

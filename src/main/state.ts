@@ -43,7 +43,7 @@ import internetAvailable from '../shared/internet-available';
 import shims from './shims';
 
 import { createLogger } from '../shared/log-utils';
-import type { IKeyboardMapping } from '@johnlindquist/native-keymap';
+import type { IKeyboardMapping } from 'native-keymap';
 const log = createLogger('state.ts');
 const keymapLog = createLogger('keymapLog');
 

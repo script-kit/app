@@ -6,6 +6,7 @@ import { chars } from './chars';
 import { sendToAllActiveChildren } from './process';
 import shims, { supportsDependency, target } from './shims';
 import { getAccessibilityAuthorized, kitState, kitStore } from './state';
+import { keymapLog } from './logs';
 
 export const ShiftMap = {
   '`': '~',
@@ -91,7 +92,7 @@ export function createUiohookToName() {
   UiohookToName[UiohookKey.Minus] = '-';
   UiohookToName[UiohookKey.Quote] = "'";
 
-  log.info('UiohookToName', UiohookToName);
+  keymapLog.info('UiohookToName', UiohookToName);
 }
 
 export const toKey = (keycode: number, shift = false) => {

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import * as path from 'node:path';
-import { getLogFromScriptPath, kenvPath, kitPath } from '@johnlindquist/kit/core/utils';
+import { getLogFromScriptPath } from '@johnlindquist/kit/core/utils';
 import { app } from 'electron';
 import log, { type FileTransport, type LevelOption } from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
@@ -11,99 +11,86 @@ import { TrackEvent, trackEvent } from './track';
 const isDev = process.env.NODE_ENV === 'development';
 
 if (isDev) {
-  app.setAppLogsPath(app.getPath('logs').replace('Electron', 'Kit'));
+  const logsPath = app.getPath('logs').replace('Electron', 'Kit');
+  app.setAppLogsPath(logsPath);
 }
 
 log.info(`
 
-
 ���🟢 🟢  !!!SCRIPT KIT TIME!!! 🟢 🟢 🟢 `);
 
 export interface Logger {
-  info: (...args: string[]) => void;
-  warn: (...args: string[]) => void;
-  error: (...args: string[]) => void;
-  verbose: (...args: string[]) => void;
-  debug: (...args: string[]) => void;
-  silly: (...args: string[]) => void;
+  info: (...args: any[]) => void;
+  warn: (...args: any[]) => void;
+  error: (...args: any[]) => void;
+  verbose: (...args: any[]) => void;
+  debug: (...args: any[]) => void;
+  silly: (...args: any[]) => void;
   clear: () => void;
 }
 
-export const logMap = new Map<string, Logger>();
+type LogMap = Map<string, Logger & { logPath: string }>;
+export const logMap = new Map<string, LogMap>();
 
-export const getLog = (scriptPath: string): Logger & { logPath?: string } => {
+export const getLog = (scriptPath: string) => {
+  if (logMap.has(scriptPath)) {
+    return logMap.get(scriptPath)!;
+  }
+
   try {
-    if (logMap.get(scriptPath)) {
-      return logMap.get(scriptPath) as Logger;
-    }
-
-    const scriptLog = log.create({
-      logId: scriptPath,
-    });
+    const scriptLog = log.create({ logId: scriptPath });
     const logPath = getLogFromScriptPath(scriptPath);
     log.info(`Log path: ${logPath}`);
-    (scriptLog.transports.file as FileTransport).resolvePathFn = () => logPath;
-    (scriptLog.transports.file as FileTransport).level = kitState.logLevel;
 
-    const _info = scriptLog.info.bind(scriptLog);
-    const _warn = scriptLog.warn.bind(scriptLog);
-    const _verbose = scriptLog.verbose.bind(scriptLog);
-    const _debug = scriptLog.debug.bind(scriptLog);
-    const _silly = scriptLog.silly.bind(scriptLog);
-    const _error = scriptLog.error.bind(scriptLog);
+    const fileTransport = scriptLog.transports.file as FileTransport;
+    fileTransport.resolvePathFn = () => logPath;
+    fileTransport.level = kitState.logLevel;
 
-    const wrap =
-      (fn: (...args: string[]) => void) =>
-      (...args: string[]) => {
+    // Generic wrapper to catch errors in logging functions
+    const wrap = <T extends unknown[]>(fn: (...args: T) => void): ((...args: T) => void) => {
+      return (...args: T): void => {
         try {
           fn(...args);
-        } catch (error) {
-          console.log(error);
+        } catch (error: unknown) {
+          console.error('Logging error:', error);
         }
       };
-    const logger = {
-      info: wrap(_info),
-      warn: wrap(_warn),
-      verbose: wrap(_verbose),
-      debug: wrap(_debug),
-      silly: wrap(_silly),
-      error: wrap(_error),
+    };
+
+    const logger: Logger & { logPath: string } = {
+      info: wrap(scriptLog.info.bind(scriptLog)),
+      warn: wrap(scriptLog.warn.bind(scriptLog)),
+      error: wrap(scriptLog.error.bind(scriptLog)),
+      verbose: wrap(scriptLog.verbose.bind(scriptLog)),
+      debug: wrap(scriptLog.debug.bind(scriptLog)),
+      silly: wrap(scriptLog.silly.bind(scriptLog)),
       clear: () => {
         fs.writeFileSync(logPath, '');
       },
-      logPath: logPath,
+      logPath,
     };
-    logMap.set(scriptPath, logger);
 
+    logMap.set(scriptPath, logger);
     return logger;
-  } catch {
-    return {
-      info: (...args: any[]) => {
-        console.log(...args.map(stripAnsi));
-      },
-      warn: (...args: any[]) => {
-        console.warn(...args.map(stripAnsi));
-      },
-      error: (...args: any[]) => {
-        console.error(...args.map(stripAnsi));
-      },
+  } catch (error) {
+    console.error('Failed to create logger for scriptPath:', scriptPath, error);
+    // Fallback logger using console and removing duplicate "clear" property
+    const fallbackLogger: Logger & { logPath: string } = {
+      info: (...args: Parameters<typeof log.info>) => console.log(...args.map(stripAnsi)),
+      warn: (...args: Parameters<typeof log.warn>) => console.warn(...args.map(stripAnsi)),
+      error: (...args: Parameters<typeof log.error>) => console.error(...args.map(stripAnsi)),
+      verbose: (...args: Parameters<typeof log.verbose>) => console.log(...args.map(stripAnsi)),
+      debug: (...args: Parameters<typeof log.debug>) => console.log(...args.map(stripAnsi)),
+      silly: (...args: Parameters<typeof log.silly>) => console.log(...args.map(stripAnsi)),
       clear: () => {},
-      verbose: (...args: any[]) => {
-        console.log(...args.map(stripAnsi));
-      },
-      debug: (...args: any[]) => {
-        console.log(...args.map(stripAnsi));
-      },
-      silly: (...args: any[]) => {
-        console.log(...args.map(stripAnsi));
-      },
+      logPath: '',
     };
+    return fallbackLogger;
   }
 };
 
-export const warn = (message: string) => {
-  // TODO: Which prompt should I send warnings to?
-  // sendToSpecificPrompt(Channel.CONSOLE_WARN, message);
+export const warn = (message: string): void => {
+  // TODO: Determine the appropriate prompt for warnings
   log.warn(message);
 };
 
@@ -121,43 +108,148 @@ if (process.env.VITE_LOG_LEVEL) {
   log.transports.file.level = 'verbose';
 }
 
-const _error = log.error.bind(log);
-log.error = (message: string, ...args: any[]) => {
+const originalError = log.error.bind(log);
+log.error = (message: string, ...args: any[]): void => {
   try {
     trackEvent(TrackEvent.LogError, { message, args });
-  } catch (error) {
-    //
+  } catch (error: unknown) {
+    console.error('Error tracking log error:', error);
   }
-  _error(message, ...args);
+  originalError(message, ...args);
 };
 
-const subLogLevel = subscribeKey(kitState, 'logLevel', (level) => {
+const subLogLevel = subscribeKey(kitState, 'logLevel', (level: LevelOption) => {
   log.info(`📋 Log level set to: ${level}`);
-  log.transports.file.level = level;
+  (log.transports.file as FileTransport).level = level;
 });
-
 subs.push(subLogLevel);
 
-function createLogInstance(logId: string, level?: LevelOption) {
+function createLogInstance(logId: string, level?: LevelOption): { logInstance: typeof log; logPath: string } {
   const logPath = path.resolve(app.getPath('logs'), `${logId}.log`);
   const logInstance = log.create({ logId });
-  (logInstance.transports.file as FileTransport).resolvePathFn = () => logPath;
-  log.info(`${logId} log path:`, logPath);
+  const fileTransport = logInstance.transports.file as FileTransport;
+  fileTransport.resolvePathFn = () => logPath;
+  logInstance.info('🟢 Script Kit Starting Up...');
+  logInstance.info(`${logId} log path: ${logPath}`);
 
   if (level) {
-    (logInstance.transports.console as any).level = level;
+    (logInstance.transports.console as { level: LevelOption }).level = level;
   }
   return { logInstance, logPath };
 }
 
-export const { logInstance: updateLog, logPath: updateLogPath } = createLogInstance('update');
-export const { logInstance: mainLog, logPath: mainLogPath } = createLogInstance('main');
-export const { logInstance: scriptLog, logPath: scriptLogPath } = createLogInstance('scripts');
-export const { logInstance: windowLog, logPath: windowLogPath } = createLogInstance('window');
-export const { logInstance: kitLog, logPath: kitLogPath } = createLogInstance('kit');
-export const { logInstance: debugLog, logPath: debugLogPath } = createLogInstance('debug');
-export const { logInstance: consoleLog, logPath: consoleLogPath } = createLogInstance('console');
-export const { logInstance: workerLog, logPath: workerLogPath } = createLogInstance('worker');
-export const { logInstance: keymapLog, logPath: keymapLogPath } = createLogInstance('keymap');
-export const { logInstance: shortcutsLog, logPath: shortcutsLogPath } = createLogInstance('shortcuts');
-export const { logInstance: watcherLog, logPath: watcherLogPath } = createLogInstance('watcher');
+const logTypes = [
+  'update',
+  'main',
+  'script',
+  'window',
+  'kit',
+  'debug',
+  'console',
+  'worker',
+  'keymap',
+  'shortcuts',
+  'schedule',
+  'snippet',
+  'scriptlet',
+  'watcher',
+  'error',
+  'prompt',
+  'process',
+  'widget',
+  'theme',
+] as const;
+
+type LogType = (typeof logTypes)[number];
+
+export interface Logger {
+  info: (...args: any[]) => void;
+  warn: (...args: any[]) => void;
+  error: (...args: any[]) => void;
+  verbose: (...args: any[]) => void;
+  debug: (...args: any[]) => void;
+  silly: (...args: any[]) => void;
+  clear: () => void;
+}
+
+type LogExports = {
+  [K in LogType as `${K}Log`]: Omit<Logger, 'clear'>;
+} & {
+  [K in LogType as `${K}LogPath`]: string;
+};
+
+function createLogExports<T extends readonly LogType[]>(
+  types: T,
+): {
+  [K in T[number] as `${K}Log`]: Omit<Logger, 'clear'>;
+} & {
+  [K in T[number] as `${K}LogPath`]: string;
+} {
+  const entries = types.flatMap((logType) => {
+    const { logInstance, logPath } = createLogInstance(logType);
+    return [
+      [`${logType}Log` as const, logInstance],
+      [`${logType}LogPath` as const, logPath],
+    ];
+  });
+
+  // Build the object from the entries. We use Object.fromEntries and assert that the result satisfies the expected type.
+  return Object.fromEntries(entries) as {
+    [K in T[number] as `${K}Log`]: Omit<Logger, 'clear'>;
+  } & {
+    [K in T[number] as `${K}LogPath`]: string;
+  };
+}
+
+// Now, instead of manually building logExports in a loop, we do:
+// First, create your logExports using your helper function:
+const logExports = createLogExports(logTypes) satisfies LogExports;
+
+// Then, destructure logExports into individual named exports.
+// We capture any extra keys with ...rest and force that it’s empty.
+export const {
+  updateLog,
+  updateLogPath,
+  mainLog,
+  mainLogPath,
+  scriptLog,
+  scriptLogPath,
+  windowLog,
+  windowLogPath,
+  kitLog,
+  kitLogPath,
+  debugLog,
+  debugLogPath,
+  consoleLog,
+  consoleLogPath,
+  workerLog,
+  workerLogPath,
+  keymapLog,
+  keymapLogPath,
+  shortcutsLog,
+  shortcutsLogPath,
+  scheduleLog,
+  scheduleLogPath,
+  snippetLog,
+  snippetLogPath,
+  scriptletLog,
+  scriptletLogPath,
+  watcherLog,
+  watcherLogPath,
+  errorLog,
+  errorLogPath,
+  promptLog,
+  promptLogPath,
+  processLog,
+  processLogPath,
+  widgetLog,
+  widgetLogPath,
+  themeLog,
+  themeLogPath,
+  ...rest
+} = logExports;
+
+// Helper type that enforces no extra keys remain.
+type EnsureExhaustive<T> = keyof T extends never ? true : never;
+// If rest is not empty, this assignment will cause a compile-time error.
+const _exhaustivenessCheck: EnsureExhaustive<typeof rest> = true;

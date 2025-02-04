@@ -1,10 +1,15 @@
 import log from 'electron-log';
 
-const ignoredPrefixes = new Set<string>(process.env.KIT_LOG_IGNORE_PREFIX?.split(',') || []);
-const filteredPrefixes = new Set<string>(process.env.KIT_LOG_FILTER_PREFIX?.split(',') || []);
+let ignoredPrefixes: string[] = [];
+let filteredPrefixes: string[] = [];
+
+if (process) {
+  ignoredPrefixes = process?.env?.KIT_LOG_IGNORE_PREFIX?.split(',') || [];
+  filteredPrefixes = process?.env?.KIT_LOG_FILTER_PREFIX?.split(',') || [];
+}
 
 function isLoggerDisabled(prefix: string): boolean {
-  return (filteredPrefixes.size > 0 && !filteredPrefixes.has(prefix)) || ignoredPrefixes.has(prefix);
+  return (filteredPrefixes.length > 0 && !filteredPrefixes.includes(prefix)) || ignoredPrefixes.includes(prefix);
 }
 
 export class Logger {

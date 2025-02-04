@@ -28,7 +28,7 @@ import { TrackEvent, trackEvent } from './track';
 
 import { createLogger } from '../shared/log-utils';
 import { createForkOptions } from './fork.options';
-import { mainLogPath } from './logs';
+import { mainLogPath, errorLog } from './logs';
 import { refreshScripts } from '@johnlindquist/kit/core/db';
 
 const log = createLogger('kit.ts');
@@ -74,6 +74,7 @@ app.on('activate', async (_event, hasVisibleWindows) => {
 process.on('uncaughtException', (error) => {
   log.warn(`Uncaught Exception: ${error.message}`);
   log.warn(error);
+  errorLog.error(`Uncaught Exception: ${error.message}`, error);
 });
 
 emitter.on(
@@ -363,6 +364,7 @@ export const runScript = (...args: string[]) => {
       });
     } catch (error) {
       log.warn(`Failed to run script ${args}`);
+      errorLog.error(`Failed to run script ${args}`, error);
     }
   });
 };

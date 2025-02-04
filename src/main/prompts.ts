@@ -1,6 +1,6 @@
 import { KitPrompt } from './prompt';
 import { createLogger } from '../shared/log-utils';
-
+import { promptLog } from './logs';
 const log = createLogger('prompts.ts');
 
 const promptMap = new Map<number, KitPrompt>();
@@ -10,6 +10,10 @@ export const prompts = {
   lastFocused: null as KitPrompt | null,
   pids() {
     return Array.from(promptMap.keys());
+  },
+
+  getPromptMap() {
+    return promptMap;
   },
   /**
    * The idle prompt, which is used when no other prompt is active.
@@ -23,7 +27,7 @@ export const prompts = {
   createPromptIfNoIdle: function (): boolean {
     if (this.idle === null && this.appRunning) {
       this.idle = new KitPrompt();
-      log.info(`🌅 Initializing idle prompt with window id:${this.idle?.window?.id}`);
+      promptLog.info(`🌅 Initializing idle prompt with window id:${this.idle?.window?.id}`);
       return true;
     }
     return false;
@@ -38,10 +42,10 @@ export const prompts = {
     this.createPromptIfNoIdle();
     const idlePrompt = this.idle;
     if (idlePrompt && !idlePrompt.ready) {
-      log.info('🐞 Waiting for prompt to be ready...');
+      promptLog.info('🐞 Waiting for prompt to be ready...');
       await idlePrompt.waitForReady();
     }
-    log.info(`${idlePrompt?.pid}: 🌅 Idle prompt ready with window id:${idlePrompt?.window?.id}`);
+    promptLog.info(`${idlePrompt?.pid}: 🌅 Idle prompt ready with window id:${idlePrompt?.window?.id}`);
     return idlePrompt!;
   },
 
@@ -56,19 +60,30 @@ export const prompts = {
    * @param pid The PID of the process to attach the prompt to.
    * @returns The attached prompt.
    */
-  attachIdlePromptToProcess(pid: number): KitPrompt {
-    const created = this.createPromptIfNoIdle();
-    log.info(`🔗 Attaching idle prompt ${this.idle?.window?.id} to process ${pid}`);
+  attachIdlePromptToProcess(pid: number, idlePrompt?: KitPrompt): KitPrompt {
+    if (idlePrompt) {
+      promptLog.info(`🚀 Force attaching idlePrompt ${idlePrompt.window?.id} to process ${pid}`);
+      this.idle = idlePrompt;
+    }
+    const created = this.createPromptIfNoIdle() && !this.idle;
+    promptLog.info(`🔗 Attaching created prompt ${this.idle?.window?.id} to process ${pid}`);
     const prompt = this.idle as KitPrompt;
     this.idle = null;
     prompt.bindToProcess(pid);
+
+    promptMap.set(pid, prompt);
+    if (idlePrompt) {
+      return prompt;
+    }
+
     prompt.window?.on('focus', () => {
       this.focused = prompt;
       this.prevFocused = null;
-      log.info(`${pid}: Focusing on prompt ${prompt.id}`);
+      promptLog.info(`${pid}: Focusing on prompt from prompts handler ${prompt.id}`);
     });
     prompt.window?.on('blur', () => {
       this.prevFocused = prompt;
+      promptLog.info(`${pid}: Blurred prompt from prompts handler ${prompt.id}`);
     });
 
     prompt.window?.on('hide', () => {
@@ -79,10 +94,10 @@ export const prompts = {
         this.prevFocused = null;
       }
     });
-    promptMap.set(pid, prompt);
     // Only set a new idle prompt if the current one has been used
     setTimeout(() => {
       if (!created) {
+        promptLog.info(`🔗 Creating new idle prompt ${this.idle?.window?.id} after timeout`);
         this.createPromptIfNoIdle();
       }
     }, 100);
@@ -109,9 +124,9 @@ export const prompts = {
       this.prevFocused = null;
     }
     prompt.actualHide();
-    log.info(`${pid}: 🥱 Closing prompt`);
+    promptLog.info(`${pid}: 🥱 Closing prompt`);
     prompt.close();
-    log.info(`${pid}: 🚮 Deleted prompt. ${promptMap.size} prompts remaining.`);
+    promptLog.info(`${pid}: 🚮 Deleted prompt. ${promptMap.size} prompts remaining.`);
   },
 
   /**
@@ -134,8 +149,7 @@ export const prompts = {
    * @param predicate The predicate function to test each prompt against.
    * @returns An array of prompts that satisfy the predicate.
    */
-  filter: (predicate: (prompt: KitPrompt) => boolean): KitPrompt[] =>
-    Array.from(promptMap.values()).filter(predicate),
+  filter: (predicate: (prompt: KitPrompt) => boolean): KitPrompt[] => Array.from(promptMap.values()).filter(predicate),
   /**
    * Determines whether any prompt is currently visible.
    * @returns True if any prompt is visible, false otherwise.
@@ -155,13 +169,13 @@ export const prompts = {
   getPrevFocusedPrompt: (): KitPrompt | null => {
     for (const prompt of prompts) {
       if (prompt.isFocused()) {
-        log.info(`🔍 Found focused prompt: ${prompt.id}.`);
+        promptLog.info(`🔍 Found focused prompt: ${prompt.id}.`);
         return null;
       }
     }
     const prevFocused = prompts.focused && !prompts.focused.isDestroyed() && !prompts.focused ? prompts.focused : null;
 
-    log.info(`🔍 Found prev-focused prompt that's not focused: ${prevFocused?.id}`);
+    promptLog.info(`🔍 Found prev-focused prompt that's not focused: ${prevFocused?.id}`);
     return prevFocused;
   },
 

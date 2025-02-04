@@ -2160,7 +2160,7 @@ const setAppearance = debounce((s: Setter, theme: string) => {
     }
   }
 
-  log.info(`🎨 Parsed theme: `, themeObj?.appearance);
+  // log.info(`🎨 Parsed theme: `, themeObj?.appearance);
 
   // Read the --appearance CSS variable
   const appearance = themeObj?.appearance;

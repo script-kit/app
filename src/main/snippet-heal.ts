@@ -1,7 +1,7 @@
 import { kitState } from './state';
 import { snippetMap } from './tick'; // The in-memory snippetMap that powers expansions
 import { addSnippet, addTextSnippet } from './tick';
-import log from 'electron-log';
+import { snippetLog } from './logs';
 
 export async function snippetsSelfCheck() {
   try {
@@ -15,12 +15,14 @@ export async function snippetsSelfCheck() {
       if (snippetMap.has(s.snippetKey)) {
         const existing = snippetMap.get(s.snippetKey);
         if (existing?.filePath !== s.filePath) {
-          log.info(`[selfHealSnippets] Snippet key '${s.snippetKey}' mismatched file path. Re-adding...`);
+          snippetLog.info(`[selfHealSnippets] Snippet key '${s.snippetKey}' mismatched file path. Re-adding...`);
           snippetMap.delete(s.snippetKey);
           await addTextSnippet(s.filePath);
         }
       } else {
-        log.info(`[selfHealSnippets] Missing snippet key '${s.snippetKey}' from file: ${s.filePath}. Re-adding...`);
+        snippetLog.info(
+          `[selfHealSnippets] Missing snippet key '${s.snippetKey}' from file: ${s.filePath}. Re-adding...`,
+        );
         await addTextSnippet(s.filePath);
       }
     }
@@ -42,12 +44,14 @@ export async function snippetsSelfCheck() {
       if (snippetMap.has(snippetKey)) {
         const existing = snippetMap.get(snippetKey);
         if (existing?.filePath !== filePath) {
-          log.info(`[selfHealSnippets] Snippet key '${snippetKey}' mismatched file path. Re-adding...`);
+          snippetLog.info(`[selfHealSnippets] Snippet key '${snippetKey}' mismatched file path. Re-adding...`);
           snippetMap.delete(snippetKey);
           await addSnippet(script);
         }
       } else {
-        log.info(`[selfHealSnippets] Missing snippet key '${snippetKey}' from script: ${filePath}. Re-adding...`);
+        snippetLog.info(
+          `[selfHealSnippets] Missing snippet key '${snippetKey}' from script: ${filePath}. Re-adding...`,
+        );
         await addSnippet(script);
       }
     }
@@ -55,11 +59,11 @@ export async function snippetsSelfCheck() {
     // 3) Remove any extra entries from snippetMap.
     for (const [key] of snippetMap.entries()) {
       if (!expansionsNeeded.has(key)) {
-        log.info(`[selfHealSnippets] snippetMap has extra key '${key}'. Removing...`);
+        snippetLog.info(`[selfHealSnippets] snippetMap has extra key '${key}'. Removing...`);
         snippetMap.delete(key);
       }
     }
   } catch (error) {
-    log.error('[selfHealSnippets] Error:', error);
+    snippetLog.error('[selfHealSnippets] Error:', error);
   }
 }

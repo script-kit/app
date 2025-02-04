@@ -1,4 +1,4 @@
-import { getCurrentKeyboardLayout, getKeyMap, onDidChangeKeyboardLayout } from '@johnlindquist/native-keymap';
+import { getCurrentKeyboardLayout, getKeyMap, onDidChangeKeyboardLayout } from 'native-keymap';
 import { BrowserWindow, app, crashReporter, nativeTheme, powerMonitor, protocol, screen } from 'electron';
 import './env';
 import log from 'electron-log';
@@ -81,7 +81,7 @@ import {
 } from './install';
 import { startIpc } from './ipc';
 import { cliFromParams, runPromptProcess } from './kit';
-import { logMap, mainLog } from './logs';
+import { logMap, mainLog, errorLog } from './logs';
 import { destroyAllProcesses, ensureIdleProcess, handleWidgetEvents, processes, setTheme } from './process';
 import { prompts } from './prompts';
 import { createIdlePty, destroyPtyPool } from './pty';
@@ -110,11 +110,11 @@ import { startServer } from './server';
 import { invoke } from './invoke-pty';
 import { loadShellEnv } from './shell';
 import { snippetsSelfCheck } from './snippet-heal';
-import { cacheSnippets } from './snippet-cache';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
 log.info('Setting up process.env');
+errorLog.info('App Launching...');
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 // process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -542,7 +542,7 @@ const ready = async () => {
 
       await symlink(appLogsPath, kitLogsPath);
     } catch (error) {
-      log.warn(error);
+      log.info(error);
     }
 
     await prepareProtocols();
@@ -604,7 +604,10 @@ const ready = async () => {
 
   await refreshScripts();
   setInterval(() => {
-    selfCheck().catch((err) => log.error('Self-check failed:', err));
+    selfCheck().catch((err) => {
+      log.error('Self-check failed:', err);
+      errorLog.error('Self-check failed:', err);
+    });
   }, SELF_CHECK_INTERVAL);
 
   kitState.keymap = getKeyMap();
@@ -698,6 +701,7 @@ export const useElectronNodeVersion = async (cwd: string, config: NpmConfig) => 
     log.info(`Set node version in: ${nodeVersion} for ${cwd} .npmrc`);
   } catch (error) {
     log.error(error);
+    errorLog.error(error);
     log.info('🍂 Falling back to internal terminal...');
     await invoke(`${pnpmPath} node --version`, cwd);
   }
@@ -787,6 +791,7 @@ const setupScript = (...args: string[]) => {
 
     child.on('error', (error: Error) => {
       log.error(`Error in setupScript`, error);
+      errorLog.error(`Error in setupScript`, error);
       reject(error);
       ohNo(error);
     });
