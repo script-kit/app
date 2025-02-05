@@ -299,8 +299,8 @@ const buildPromptsSubmenu = (): MenuItemConstructorOptions[] => {
       log.info('Force closing all prompts...');
       for (const prompt of prompts) {
         prompt.hide();
-        prompt.close();
-        processes.removeByPid(prompt.pid);
+        prompt.close('tray prompt cleanup');
+        processes.removeByPid(prompt.pid, 'tray prompt cleanup');
       }
     },
   });

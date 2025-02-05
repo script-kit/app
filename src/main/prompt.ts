@@ -95,7 +95,7 @@ contextMenu({
           promptLog.info(`Close prompt: ${browserWindow?.id}`, {
             browserWindow,
           });
-          prompts.find((prompt) => prompt?.window?.id === browserWindow?.id)?.close();
+          prompts.find((prompt) => prompt?.window?.id === browserWindow?.id)?.close('detach dev tools');
         }
       },
     },
@@ -694,12 +694,6 @@ export class KitPrompt {
     promptLog.info(`${pid} -> ${this?.window?.id}: 🔗 Binding prompt to process`);
   };
 
-  releaseProcess = () => {
-    promptLog.info(`${this.pid} -> ${this?.window?.id}: ⛓️‍💥 Releasing prompt from process`);
-    this.boundToProcess = false;
-    this.pid = 0;
-  };
-
   promptBounds = {
     id: '',
     x: 0,
@@ -782,6 +776,18 @@ export class KitPrompt {
     }
 
     kitState.blurredByKit = false;
+  };
+
+  initMainPrompt = (reason = 'unknown') => {
+    this.initPromptData();
+    this.initMainChoices();
+    this.initMainPreview();
+    this.initMainShortcuts();
+    this.initMainFlags();
+    this.initTheme();
+
+    promptLog.info(`${this.pid}: 🚀 Prompt init: ${reason}`);
+    this.initPrompt();
   };
 
   constructor() {
@@ -949,15 +955,7 @@ export class KitPrompt {
         }
 
         if (this.initMain) {
-          this.initPromptData();
-          this.initMainChoices();
-          this.initMainPreview();
-          this.initMainShortcuts();
-          this.initMainFlags();
-          this.initTheme();
-
-          promptLog.info(`${pid}: 🚀 Prompt init`);
-          this.initPrompt();
+          this.initMainPrompt('messages ready');
         }
 
         this.readyEmitter.emit('ready');
@@ -1047,47 +1045,51 @@ export class KitPrompt {
       }
     });
 
+    const formatLog = (event: string) => {
+      return `pid: ${this.pid}: id: ${this.id} scriptName: ${this.scriptName} windowId: ${this.window.id}: ${event}`;
+    };
+
     this.window.on('always-on-top-changed', () => {
-      promptLog.info(`📌 always-on-top-changed: ${this.window.isAlwaysOnTop()}`);
+      promptLog.info(formatLog('📌 always-on-top-changed'));
     });
 
     this.window.on('minimize', () => {
-      promptLog.info('📌 minimize');
+      promptLog.info(formatLog('📌 minimize'));
     });
 
     this.window.on('restore', () => {
-      promptLog.info('📌 restore');
+      promptLog.info(formatLog('📌 restore'));
     });
 
     this.window.on('maximize', () => {
-      promptLog.info('📌 maximize');
+      promptLog.info(formatLog('📌 maximize'));
     });
 
     this.window.on('unmaximize', () => {
-      promptLog.info('📌 unmaximize');
+      promptLog.info(formatLog('📌 unmaximize'));
     });
 
     this.window.on('close', () => {
-      processes.removeByPid(this.pid);
-      promptLog.info('📌 close');
+      processes.removeByPid(this.pid, 'prompt destroy cleanup');
+      promptLog.info(formatLog('📌 close'));
     });
 
     this.window.on('closed', () => {
-      promptLog.info('📌 closed');
+      promptLog.info(formatLog('📌 closed'));
       kitState.emojiActive = false;
     });
 
     this.window.webContents?.on('focus', () => {
-      promptLog.info(`${this.pid}:${this.scriptName}: 👓 WebContents Focus`);
+      promptLog.info(formatLog('� WebContents Focus'));
       this.emojiActive = false;
     });
 
     this.window.on('focus', () => {
       this.emojiActive = false;
-      promptLog.info(`${this.pid}:${this.scriptName}: 👓 Focus bounds:`, this.window.getBounds());
+      promptLog.info(formatLog('👓 Focus bounds:'));
 
       if (!kitState.isLinux) {
-        log.verbose(`${this.pid}:${this.scriptName}: 👓 Registering emoji shortcut`);
+        log.verbose(formatLog('👓 Registering emoji shortcut'));
         kitState.emojiActive = true;
       }
 
@@ -1100,7 +1102,7 @@ export class KitPrompt {
     });
 
     this.window.on('hide', () => {
-      promptLog.info(`${this.pid}:${this.scriptName}: 🫣 Prompt window hidden`);
+      promptLog.info(formatLog('🫣 Prompt window hidden'));
 
       if (!kitState.isLinux) {
         kitState.emojiActive = false;
@@ -1108,39 +1110,35 @@ export class KitPrompt {
     });
 
     this.window.on('show', () => {
-      promptLog.info(`${this.pid}:${this.scriptName}: 😳 Prompt window shown`);
+      promptLog.info(formatLog('😳 Prompt window shown'));
     });
 
     this.window.webContents?.on('did-fail-load', (errorCode, errorDescription, validatedURL, isMainFrame) => {
-      promptLog.error(`${this.pid} did-fail-load:`, {
-        errorCode,
-        errorDescription,
-        isMainFrame,
-      });
+      promptLog.error(formatLog(`did-fail-load: ${errorCode} ${errorDescription} ${validatedURL} ${isMainFrame}`));
     });
 
     this.window.webContents?.on('did-stop-loading', () => {
-      promptLog.info(`${this.pid}:${this?.window?.id}: ${this.scriptName}: did-stop-loading`);
+      promptLog.info(formatLog('did-stop-loading'));
     });
 
     this.window.webContents?.on('dom-ready', () => {
-      promptLog.info(`${this.pid}:${this?.window?.id} 🍀 dom-ready on ${this?.scriptPath}`);
+      promptLog.info(formatLog(`🍀 dom-ready on ${this?.scriptPath}`));
 
       this.sendToPrompt(Channel.SET_READY, true);
     });
 
     this.window.webContents?.on('render-process-gone', (event, details) => {
-      processes.removeByPid(this.pid);
+      processes.removeByPid(this.pid, 'prompt exit cleanup');
       this.sendToPrompt = () => {};
       this.window.webContents.send = () => {};
-      promptLog.error(`${this.pid}: ${this.scriptName}: 🫣 Render process gone...`);
+      promptLog.error(formatLog('🫣 Render process gone...'));
       promptLog.error({ event, details });
     });
 
     const onResized = () => {
       log.silly('event: onResized');
       this.modifiedByUser = false;
-      promptLog.info(`Resized: ${this.window.getSize()}`);
+      promptLog.info(formatLog(`Resized: ${this.window.getSize()}`));
 
       if (this.resizing) {
         this.resizing = false;
@@ -2169,7 +2167,7 @@ export class KitPrompt {
           resolve(null);
           return;
         }
-        this?.close();
+        this?.close('prompt.prepPromptForQuit');
         resolve(null);
       });
     });
@@ -2328,51 +2326,73 @@ export class KitPrompt {
   };
 
   resetState = () => {
+    this.boundToProcess = false;
+    this.pid = 0;
     this.ui = UI.arg;
     this.count = 0;
     this.id = '';
-    this.pid = 0;
-    this.initMain = true;
-    this.script = noScript;
-    this.scriptPath = '';
-    this.allowResize = true;
-    this.resizing = false;
-    this.isScripts = true;
-    this.promptData = null as null | PromptData;
-    this.firstPrompt = true;
-    this.justFocused = true;
-    this.ready = false;
-    this.shown = false;
-    this.alwaysOnTop = true;
-    this.hideOnEscape = false;
-    this.cacheScriptChoices = false;
-    this.cacheScriptPromptData = false;
-    this.cacheScriptPreview = false;
-    this.actionsOpen = false;
-    this.wasActionsJustOpen = false;
-
-    this.initPromptData();
-    this.initMainChoices();
-    this.initMainPreview();
-    this.initMainShortcuts();
-    this.initMainFlags();
-    this.initTheme();
+    prompts.setIdle(this);
 
     promptLog.info(`${this.pid}: 🚀 Prompt re-initialized`);
     const idles = getIdles();
     promptLog.info(`${this.pid}: 🚀 Idles: ${idles.length}. Prompts: ${prompts.getPromptMap().size}`);
     // Logs all idle pids and prompts ids in a nice table format
     promptLog.info(
-      `Idles: \n${idles.map((idle) => `${idle.pid}: ${prompts.get(idle.pid)?.window?.id || 'none'}`).join('\n')}`,
+      `Idles: ${idles.map((idle) => `${idle.pid}: ${prompts.get(idle.pid)?.window?.id || 'none'}`).join(',')}`,
     );
 
+    const browserWindows = BrowserWindow.getAllWindows();
+    promptLog.info(`Browser windows: ${browserWindows.map((window) => window.id).join(',')}`);
+
     const allPrompts = [...prompts];
-    promptLog.info(`Prompts:\n${allPrompts.map((prompt) => `${prompt.pid}: ${prompt.window?.id}`).join('\n')}`);
+    promptLog.info(`Prompts: ${allPrompts.map((prompt) => `${prompt.pid}: ${prompt.window?.id}`).join('\n')}`);
 
-    promptLog.info(`Prompt map: \n${allPrompts.map((prompt) => `${prompt.pid}: ${prompt.window?.id}`).join('\n')}`);
+    promptLog.info(`Prompt map: ${allPrompts.map((prompt) => `${prompt.pid}: ${prompt.window?.id}`).join('\n')}`);
 
-    prompts.attachIdlePromptToProcess(idles[0].pid, this);
-    // this.initPrompt();
+    this.initMainPreview();
+    this.initMainShortcuts();
+    this.initMainChoices();
+    this.initMainFlags();
+    return;
+    // this.initMain = true;
+    // this.script = noScript;
+    // this.scriptPath = '';
+    // this.allowResize = true;
+    // this.resizing = false;
+    // this.isScripts = true;
+    // this.promptData = null as null | PromptData;
+    // this.firstPrompt = true;
+    // this.justFocused = true;
+    // this.ready = false;
+    // this.shown = false;
+    // this.alwaysOnTop = true;
+    // this.hideOnEscape = false;
+    // this.cacheScriptChoices = false;
+    // this.cacheScriptPromptData = false;
+    // this.cacheScriptPreview = false;
+    // this.actionsOpen = false;
+    // this.wasActionsJustOpen = false;
+
+    // promptLog.info(`${this.pid}: 🚀 Prompt re-initialized`);
+    // const idles = getIdles();
+    // promptLog.info(`${this.pid}: 🚀 Idles: ${idles.length}. Prompts: ${prompts.getPromptMap().size}`);
+    // // Logs all idle pids and prompts ids in a nice table format
+    // promptLog.info(
+    //   `Idles: ${idles.map((idle) => `${idle.pid}: ${prompts.get(idle.pid)?.window?.id || 'none'}`).join(',')}`,
+    // );
+
+    // const browserWindows = BrowserWindow.getAllWindows();
+    // promptLog.info(`Browser windows: ${browserWindows.map((window) => window.id).join(',')}`);
+
+    // const allPrompts = [...prompts];
+    // promptLog.info(`Prompts: ${allPrompts.map((prompt) => `${prompt.pid}: ${prompt.window?.id}`).join('\n')}`);
+
+    // promptLog.info(`Prompt map: ${allPrompts.map((prompt) => `${prompt.pid}: ${prompt.window?.id}`).join('\n')}`);
+
+    // // const idleProcess = idles[0];
+    // prompts.setIdle(this);
+    // // prompts.attachIdlePromptToProcess('♻️ prompt reset state', idleProcess.pid, this);
+    // // this.initPrompt();
   };
 
   scriptSet = false;
@@ -2458,14 +2478,16 @@ export class KitPrompt {
 
   closed = false;
   closeCoolingDown = false;
-  close = () => {
+  close = (reason = 'unknown') => {
+    promptLog.info(`${this.pid}: "close" because ${reason}`);
     if (!kitState.allowQuit) {
       if (this.boundToProcess) {
         promptLog.info(`${this.pid}: "close" bound to process`);
-        if (!this.hasBeenFocused) {
-          promptLog.info(`${this.pid}: "close" bound to process but has not been focused`);
+        if (this.hasBeenFocused) {
+          promptLog.info(`${this.pid}: "close" hasBeenFocused`);
+        } else {
+          promptLog.info(`${this.pid}: "close" !hasBeenFocused`);
           this.resetState();
-          this.releaseProcess();
           return;
         }
       } else {
@@ -2697,7 +2719,7 @@ export class KitPrompt {
       promptLog.error(
         `${this.pid}: ${this.scriptName}: Escape pressed, but no script path. Killing process and prompt.`,
       );
-      processes.removeByPid(this.pid);
+      processes.removeByPid(this.pid, 'prompt exit cleanup');
       emitter.emit(KitEvent.KillProcess, this.pid);
       this.hide();
       return;
@@ -2723,7 +2745,7 @@ export class KitPrompt {
 
   private hideAndRemoveProcess = () => {
     this.hideInstant();
-    processes.removeByPid(this.pid);
+    processes.removeByPid(this.pid, 'prompt close cleanup');
   };
 
   private beforeInputHandler = (event, input: Input) => {

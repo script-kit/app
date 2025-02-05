@@ -840,7 +840,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       log.info(`${pid}: 🚪 Before exit`);
       prompt.hideInstant();
       processes.stampPid(pid);
-      processes.removeByPid(pid);
+      processes.removeByPid(pid, 'beforeExit');
     }),
 
     QUIT_APP: onChildChannel(({ child }, { channel, value }) => {
@@ -860,7 +860,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     TERMINATE_PROMPT: onChildChannel(({ child }, { channel, value }) => {
       const { pid } = value;
       log.info('🧘 HIDE', value);
-      processes.removeByPid(Number.parseInt(pid, 10));
+      processes.removeByPid(Number.parseInt(pid, 10), 'messages pid cleanup');
       // log.info({ process });
     }),
 
@@ -889,7 +889,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       }
 
       if (processInfo?.child?.pid) {
-        processes.removeByPid(processInfo?.child?.pid);
+        processes.removeByPid(processInfo?.child?.pid, 'messages child process cleanup');
       }
       log.info('DEBUG_SCRIPT', data?.value?.filePath);
       trackEvent(TrackEvent.DebugScript, {
@@ -1527,14 +1527,14 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     }),
     TERMINATE_PROCESS: onChildChannel(async ({ child }, { channel, value }) => {
       log.warn(`${value}: Terminating process ${value}`);
-      processes.removeByPid(value);
+      processes.removeByPid(value, 'messages value pid cleanup');
     }),
     TERMINATE_ALL_PROCESSES: onChildChannel(async ({ child }, { channel }) => {
       log.warn('Terminating all processes');
       const activeProcesses = processes.getActiveProcesses();
       activeProcesses.forEach((process) => {
         try {
-          processes.removeByPid(process?.pid);
+          processes.removeByPid(process?.pid, 'messages process cleanup');
         } catch (error) {
           log.error(`Error terminating process ${process?.pid}`, error);
         }

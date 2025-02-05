@@ -177,7 +177,7 @@ const handleMessageFail = debounce(
   (message: AppMessage) => {
     log.warn(`${message?.pid}: pid closed. Attempted ${message.channel}, but ignored.`);
 
-    processes.removeByPid(message?.pid);
+    processes.removeByPid(message?.pid, 'ipc handleMessageFail');
     // TODO: Reimplement failed message with specific prompt
     // maybeHide(HideReason.MessageFailed);
     ensureIdleProcess();
@@ -317,7 +317,7 @@ ${data.error}
       processInfoType: typeof processInfo,
     });
     if (processInfo) {
-      processes.removeByPid(pid);
+      processes.removeByPid(pid, 'ipc endProcess');
     }
   });
 
@@ -394,7 +394,7 @@ ${data.error}
 
   ipcMain.on(AppChannel.RUN_KENV_TRUST_SCRIPT, (event, { kenv }) => {
     log.info(`🔑 Running kenv-trust script for ${kenv}`);
-    prompts.focused?.close();
+    prompts.focused?.close('run kenv-trust script');
     runPromptProcess(kitPath('cli', 'kenv-trust.js'), [kenv], {
       force: true,
       trigger: Trigger.Kit,

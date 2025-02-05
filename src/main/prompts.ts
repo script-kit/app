@@ -1,7 +1,5 @@
 import { KitPrompt } from './prompt';
-import { createLogger } from '../shared/log-utils';
 import { promptLog } from './logs';
-const log = createLogger('prompts.ts');
 
 const promptMap = new Map<number, KitPrompt>();
 
@@ -26,8 +24,31 @@ export const prompts = {
    */
   createPromptIfNoIdle: function (): boolean {
     if (this.idle === null && this.appRunning) {
-      this.idle = new KitPrompt();
-      promptLog.info(`🌅 Initializing idle prompt with window id:${this.idle?.window?.id}`);
+      promptLog.info(`-------------------------------> No idle... 🌅 Initializing idle prompt`);
+      const prompt = new KitPrompt();
+      promptLog.info(`🌅 Initializing idle prompt with window id:${prompt.window?.id}`);
+
+      prompt.window?.on('focus', () => {
+        this.focused = prompt;
+        this.prevFocused = null;
+        promptLog.info(`${prompt.pid}: Focusing on prompt from prompts handler ${prompt.id}`);
+      });
+      prompt.window?.on('blur', () => {
+        this.prevFocused = prompt;
+        promptLog.info(`${prompt.pid}: Blurred prompt from prompts handler ${prompt.id}`);
+      });
+
+      prompt.window?.on('hide', () => {
+        if (this.focused === prompt) {
+          this.focused = null;
+        }
+        if (this.prevFocused === prompt) {
+          this.prevFocused = null;
+        }
+      });
+
+      this.idle = prompt;
+
       return true;
     }
     return false;
@@ -60,47 +81,55 @@ export const prompts = {
    * @param pid The PID of the process to attach the prompt to.
    * @returns The attached prompt.
    */
-  attachIdlePromptToProcess(pid: number, idlePrompt?: KitPrompt): KitPrompt {
-    if (idlePrompt) {
-      promptLog.info(`🚀 Force attaching idlePrompt ${idlePrompt.window?.id} to process ${pid}`);
-      this.idle = idlePrompt;
+  timeout: null as NodeJS.Timeout | null,
+  setIdle: function (idlePrompt: KitPrompt) {
+    promptLog.info(`-------------------------------> Setting idle prompt to ${idlePrompt.pid}`);
+    promptMap.delete(idlePrompt.pid);
+    const [pid, prompt] = Array.from(promptMap.entries()).find(([_, prompt]) => prompt === idlePrompt) || [];
+    if (pid) {
+      promptLog.info(
+        `-------------------------------> Deleting idle prompt ${pid} because it's already set from ${idlePrompt.pid} : ${prompt?.window?.id}`,
+      );
+      promptMap.delete(pid);
     }
-    const created = this.createPromptIfNoIdle() && !this.idle;
-    promptLog.info(`🔗 Attaching created prompt ${this.idle?.window?.id} to process ${pid}`);
+    this.idle = idlePrompt;
+  },
+  attachIdlePromptToProcess(reason: string, pid: number): KitPrompt {
+    const idleSet = this.idle !== null;
+    const runId = Math.random().toString(36).substring(2, 15);
+    promptLog.info(
+      `${runId}: 🔗 Attaching idle prompt to process ${pid} because ${reason}: idleSet? ${idleSet ? 'yes' : 'no'}`,
+    );
+
+    const created = this.createPromptIfNoIdle();
+    promptLog.info(
+      `🔗 Attaching created prompt ${this.idle?.window?.id} to process ${pid}. Created? ${created ? 'yes' : 'no'}`,
+    );
     const prompt = this.idle as KitPrompt;
     this.idle = null;
     prompt.bindToProcess(pid);
 
     promptMap.set(pid, prompt);
-    if (idlePrompt) {
-      return prompt;
+
+    if (idleSet) {
+      prompt.initMainPrompt('attachIdlePromptToProcess');
     }
 
-    prompt.window?.on('focus', () => {
-      this.focused = prompt;
-      this.prevFocused = null;
-      promptLog.info(`${pid}: Focusing on prompt from prompts handler ${prompt.id}`);
-    });
-    prompt.window?.on('blur', () => {
-      this.prevFocused = prompt;
-      promptLog.info(`${pid}: Blurred prompt from prompts handler ${prompt.id}`);
-    });
-
-    prompt.window?.on('hide', () => {
-      if (this.focused === prompt) {
-        this.focused = null;
+    if (!(created || idleSet)) {
+      if (this.timeout) {
+        clearTimeout(this.timeout);
+        this.timeout = null;
+        promptLog.info(`${runId}: 🔗 Cleared timeout`);
       }
-      if (this.prevFocused === prompt) {
-        this.prevFocused = null;
-      }
-    });
-    // Only set a new idle prompt if the current one has been used
-    setTimeout(() => {
-      if (!created) {
-        promptLog.info(`🔗 Creating new idle prompt ${this.idle?.window?.id} after timeout`);
+      promptLog.info(`${runId}: 🔗 Starting a timeout to create a new idle prompt because`, {
+        created: created ? 'yes' : 'no',
+      });
+      this.timeout = setTimeout(() => {
+        promptLog.info(`${runId}: 🔗 Creating new idle prompt after timeout`);
+        this.timeout = null;
         this.createPromptIfNoIdle();
-      }
-    }, 100);
+      }, 100);
+    }
     return prompt;
   },
 
@@ -111,8 +140,10 @@ export const prompts = {
   delete: function (pid: number): void {
     const prompt = promptMap.get(pid);
     if (!prompt) {
+      promptLog.info(`${pid}: 🤷‍♂️ Attempted "delete". Prompt not found...`);
       return;
     }
+    promptLog.info(`${pid}: 🥱 promptMap delete`);
     promptMap.delete(pid);
     if (prompt.isDestroyed()) {
       return;
@@ -125,7 +156,7 @@ export const prompts = {
     }
     prompt.actualHide();
     promptLog.info(`${pid}: 🥱 Closing prompt`);
-    prompt.close();
+    prompt.close('prompts.delete');
     promptLog.info(`${pid}: 🚮 Deleted prompt. ${promptMap.size} prompts remaining.`);
   },
 

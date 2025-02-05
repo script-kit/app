@@ -25,7 +25,7 @@ export const removeBackground = (filePath: string) => {
     backgroundMap.delete(filePath);
     if (child?.pid) {
       log.red('Removing background task', filePath);
-      processes.removeByPid(child.pid);
+      processes.removeByPid(child.pid, 'background remove');
     }
   } else if (background && background.status === 'starting') {
     log.info(`Background task starting up, skip removing...`);

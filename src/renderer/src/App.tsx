@@ -288,9 +288,16 @@ export default function App() {
   }, [submitted]);
 
   useEffect(() => {
-    document.addEventListener('visibilitychange', () => {
+    const handleVisibilityChange = () => {
       log.info(`${pid}: 👁️‍🗨️ visibilitychange: ${document.visibilityState}`);
-    });
+    };
+
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [pid]);
 
   // useEffect(() => {

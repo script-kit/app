@@ -124,6 +124,11 @@ export const scheduleScriptChanged = async ({ filePath, kenv, schedule: schedule
   if (scheduleString) {
     scheduleLog.info(`[SCHEDULE_SCRIPT_CHANGED] 📆 schedule: "${scheduleString}", script: "${filePath}"`);
 
+    if (kenv && kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
+      scheduleLog.info(`🙅‍♂️ [SCHEDULE_SCRIPT_CHANGED] Script "${filePath}" is not in a trusted kenv. Not scheduling.`);
+      return;
+    }
+
     const scheduledFunction = () => {
       scheduleLog.info(`[SCHEDULED_FUNCTION] Running script "${filePath}" at ${new Date().toISOString()}`);
       runPromptProcess(filePath, [], {

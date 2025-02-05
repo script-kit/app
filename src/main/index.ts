@@ -1225,6 +1225,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   prompts.appRunning = false;
   await prepQuitWindow();
   for (const prompt of prompts) {
+    log.info(`🔗 Prepping prompt ${prompt.window?.id} for quit`);
     await prompt.prepPromptForQuit();
   }
 

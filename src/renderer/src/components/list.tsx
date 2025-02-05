@@ -140,11 +140,11 @@ export default function ChoiceList({ width, height }: ListProps) {
         shouldForceUpdate: true,
       });
     }
-  }, [choices, promptData.columnWidth, promptData.rowHeight]);
+  }, [choices, promptData?.columnWidth, promptData?.rowHeight]);
 
   const columnWidthCallback = useCallback(
-    (index: number) => choices[index]?.item?.width || gridDimensions.columnWidth,
-    [choices, gridDimensions.columnWidth],
+    (index: number) => choices[index]?.item?.width || gridDimensions?.columnWidth,
+    [choices, gridDimensions?.columnWidth],
   );
 
   const rowHeightCallback = useCallback(

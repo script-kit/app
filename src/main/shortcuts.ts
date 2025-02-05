@@ -330,8 +330,7 @@ export const updateMainShortcut = (shortcut?: string) => {
           prompts.focused?.id,
           prompts.focused?.pid,
         );
-        // prompts.focused?.hideInstant();
-        processes.removeByPid(prompts.focused?.pid);
+        processes.removeByPid(prompts.focused?.pid, 'shortcuts focused prompt cleanup');
         prompts.focused = null;
         return;
       }
@@ -453,7 +452,7 @@ export async function shortcutsSelfCheck() {
     }
   }
 
-  // Unregister shortcuts that are in shortcutMap but shouldn’t be.
+  // Unregister shortcuts that are in shortcutMap but shouldn't be.
   for (const [filePath, { shortcut }] of shortcutMap.entries()) {
     // Always keep the main shortcut registered.
     if (filePath === getMainScriptPath()) continue;

@@ -32,9 +32,9 @@ export interface Logger {
 type LogMap = Map<string, Logger & { logPath: string }>;
 export const logMap = new Map<string, LogMap>();
 
-export const getLog = (scriptPath: string) => {
+export const getLog = (scriptPath: string): Logger & { logPath: string } => {
   if (logMap.has(scriptPath)) {
-    return logMap.get(scriptPath)!;
+    return logMap.get(scriptPath)! as unknown as Logger & { logPath: string };
   }
 
   try {

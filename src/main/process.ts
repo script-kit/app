@@ -354,7 +354,7 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
     const scriptLog = getLog(scriptPath);
 
     const routeToScriptLog = (d: any) => {
-      scriptprocessLog.info(`\n${stripAnsi(d.toString())}`);
+      scriptLog.info(`\n${stripAnsi(d.toString())}`);
     };
 
     child.stdout?.on('data', routeToScriptLog);
@@ -390,7 +390,7 @@ export const clearIdleProcesses = () => {
   processLog.info('Reset all idle processes');
   for (const processInfo of processes.getAllProcessInfo()) {
     if (processInfo.type === ProcessType.Prompt && processInfo.scriptPath === '') {
-      processes.removeByPid(processInfo.pid);
+      processes.removeByPid(processInfo.pid, 'clearIdleProcesses');
     }
   }
 };
@@ -408,6 +408,11 @@ export const ensureIdleProcess = () => {
   processLog.info('Ensure idle process');
   setTimeout(() => {
     const idles = getIdles();
+    const all = processes.getAllProcessInfo();
+    log.info(
+      'All processes',
+      all.map((p) => `${p.pid}: ${p.scriptPath || 'idle'}`),
+    );
     const requiredIdleProcesses = kitState?.kenvEnv?.KIT_IDLE_PROCESSES
       ? Number.parseInt(kitState.kenvEnv.KIT_IDLE_PROCESSES)
       : 1;
@@ -437,6 +442,25 @@ export const childShortcutMap = new Map<number, string[]>();
 
 class Processes extends Array<ProcessAndPrompt> {
   public abandonnedProcesses: ProcessAndPrompt[] = [];
+  private pidDebounceMap = new Map<number, NodeJS.Timeout>();
+
+  private clearDebounceTimeout(pid: number) {
+    const timeout = this.pidDebounceMap.get(pid);
+    if (timeout) {
+      clearTimeout(timeout);
+      this.pidDebounceMap.delete(pid);
+      processLog.info(
+        `🕐 Delete removeByPid from pidDebounceMap: ${pid}. ${this.pidDebounceMap.size} debounce timeouts left.`,
+      );
+    }
+  }
+
+  public clearAllDebounceTimeouts() {
+    for (const [pid, timeout] of this.pidDebounceMap.entries()) {
+      clearTimeout(timeout);
+    }
+    this.pidDebounceMap.clear();
+  }
 
   get hasAvailableProcess(): boolean {
     return this.some((processInfo) => processInfo.type === ProcessType.Prompt && processInfo?.scriptPath === '');
@@ -541,9 +565,7 @@ class Processes extends Array<ProcessAndPrompt> {
       throw new Error('Child process has no pid');
     }
 
-    // Don't bind prompts for background processes
-    const shouldBind = type !== ProcessType.Background;
-    const prompt = prompts.attachIdlePromptToProcess(child.pid);
+    const prompt = prompts.attachIdlePromptToProcess('➕ add process', child.pid);
 
     processLog.info(`${child.pid}: 👶 Create child ${type} process: ${child.pid}`, scriptPath, args);
 
@@ -587,13 +609,13 @@ class Processes extends Array<ProcessAndPrompt> {
 
     child.once('close', () => {
       processLog.info(`${pid}: CLOSE`);
-      processes.removeByPid(pid);
+      processes.removeByPid(pid, 'process manual cleanup');
     });
 
     child.once('disconnect', () => {
       processLog.info(`${pid}: DISCONNECTED`);
       this.stampPid(pid);
-      processes.removeByPid(pid);
+      processes.removeByPid(pid, 'process self cleanup');
     });
 
     child.once('exit', (code) => {
@@ -628,7 +650,7 @@ class Processes extends Array<ProcessAndPrompt> {
         setTrayScriptError(pid);
       }
 
-      processes.removeByPid(pid);
+      processes.removeByPid(pid, 'process final cleanup');
     });
 
     child.on('error', (error) => {
@@ -686,6 +708,9 @@ class Processes extends Array<ProcessAndPrompt> {
   }
 
   public removeAllRunningProcesses() {
+    // Clear all debounce timeouts before mass removal
+    this.clearAllDebounceTimeouts();
+
     const runningIds = this.filter(({ scriptPath }) => scriptPath).map(({ pid, scriptPath }) => ({ pid, scriptPath }));
     for (const { pid, scriptPath } of runningIds) {
       processLog.info(`🔥 Attempt removeAllRunningProcesses: ${pid} - ${scriptPath}`);
@@ -693,13 +718,36 @@ class Processes extends Array<ProcessAndPrompt> {
     }
   }
 
-  public removeByPid(pid: number) {
-    processLog.info(`🛑 removeByPid: ${pid}`);
+  public removeByPid(pid: number, reason = 'unknown') {
+    prompts.get(pid)?.close(`process.removeByPid: ${reason}`);
+    prompts.getPromptMap().delete(pid);
+
     if (pid === 0) {
       processLog.info(`Invalid pid: ${pid} 🤔`);
+      return;
     }
-    prompts.delete(pid);
+
+    // Check if this pid is currently being debounced
+    if (this.pidDebounceMap.has(pid)) {
+      processLog.info(`🕐 Debounced removeByPid: ${pid} - ${reason}`);
+      return;
+    }
+
+    processLog.info(`🛑 removeByPid: ${pid} - ${reason}`);
+
+    // Clear any existing timeout for this pid (safety cleanup)
+    this.clearDebounceTimeout(pid);
+
+    // Set new debounce timeout for this pid
+    this.pidDebounceMap.set(
+      pid,
+      setTimeout(() => {
+        this.clearDebounceTimeout(pid);
+      }, 1000),
+    );
+
     const index = this.findIndex((info) => info.pid === pid);
+
     if (index === -1) {
       processLog.info(`No process found for pid: ${pid}`);
       // Find a system process with the pid and kill it
@@ -730,7 +778,7 @@ class Processes extends Array<ProcessAndPrompt> {
       if (child?.pid && childShortcutMap.has(child.pid)) {
         processLog.info(`${child.pid}: Unregistering shortcuts`);
         const shortcuts = childShortcutMap.get(child.pid) || [];
-        shortcuts.forEach((shortcut) => {
+        for (const shortcut of shortcuts) {
           processLog.info(`${child.pid}: Unregistering shortcut: ${shortcut}`);
 
           try {
@@ -738,7 +786,7 @@ class Processes extends Array<ProcessAndPrompt> {
           } catch (error) {
             processLog.error(`${child.pid}: Error unregistering shortcut: ${shortcut}`, error);
           }
-        });
+        }
         childShortcutMap.delete(child.pid);
       }
 
@@ -795,7 +843,7 @@ export const removeAbandonnedKit = () => {
   if (kitProcess) {
     setTimeout(() => {
       processLog.info(`🛑 Cancel main menu process: ${kitProcess.scriptPath}`);
-      processes.removeByPid(kitProcess.pid);
+      processes.removeByPid(kitProcess.pid, 'process kit cleanup');
     }, 250);
   }
 };
@@ -1117,6 +1165,7 @@ emitter.on(KitEvent.TermExited, (pid) => {
 
 export const destroyAllProcesses = () => {
   processLog.info('Destroy all processes');
+  processes.clearAllDebounceTimeouts();
   processes.forEach((pinfo) => {
     if (!pinfo?.child.killed) {
       pinfo?.child?.removeAllListeners();
