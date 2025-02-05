@@ -26,12 +26,12 @@ import electronUpdater from 'electron-updater';
 
 const { autoUpdater } = electronUpdater;
 
-import { type SpawnSyncOptions, exec, fork } from 'node:child_process';
+import { type SpawnSyncOptions, fork } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 
 import semver from 'semver';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { readdir, lstat } from 'node:fs/promises';
 
 import {
@@ -84,7 +84,7 @@ import { cliFromParams, runPromptProcess } from './kit';
 import { logMap, mainLog, errorLog } from './logs';
 import { destroyAllProcesses, ensureIdleProcess, handleWidgetEvents, processes, setTheme } from './process';
 import { prompts } from './prompts';
-import { createIdlePty, destroyPtyPool } from './pty';
+import { destroyPtyPool } from './pty';
 import { scheduleDownloads, sleepSchedule, rescheduleAllScripts, scheduleSelfCheck } from './schedule';
 import { startSettings as setupSettings } from './settings';
 import shims, { loadSupportedOptionalLibraries } from './shims';
@@ -110,6 +110,7 @@ import { startServer } from './server';
 import { invoke } from './invoke-pty';
 import { loadShellEnv } from './shell';
 import { snippetsSelfCheck } from './snippet-heal';
+import { HealthMonitor } from './health-monitor';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -1148,7 +1149,13 @@ const checkKit = async () => {
     const envKitData = existsSync(envKitPath) ? dotenv.parse(readFileSync(envKitPath)) : {};
     // log.info(`envData`, envPath, envData);
     kitState.kenvEnv = { ...envData, ...envKitData };
-    createIdlePty();
+    const trustedKenvs = (envData?.[kitState.trustedKenvsKey] || '')
+      .split(',')
+      .filter(Boolean)
+      .map((kenv) => kenv.trim());
+
+    log.info('👍 Trusting kenvs at startup', trustedKenvs);
+    kitState.trustedKenvs = trustedKenvs;
 
     if (kitState.kenvEnv.KIT_AUTOSTART_SERVER === 'true') {
       startServer();
@@ -1188,11 +1195,16 @@ emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
   });
 });
 
+const startHealthMonitor = () => {
+  new HealthMonitor().startMonitoring();
+};
+
 app
   .whenReady()
   .then(loadShellEnv)
   .then(loadSupportedOptionalLibraries)
   .then(checkKit)
+  .then(startHealthMonitor)
   .catch((error) => {
     log.error(`Error in app.whenReady`, error);
     ohNo(error as Error);

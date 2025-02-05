@@ -223,7 +223,7 @@ export const shortcutScriptChanged = async ({
   // Handle existing shortcuts
 
   const exists = [...shortcutMap.entries()].find(([, s]) => s?.shortcut === convertedShortcut);
-  log.info({ sameScript, exists });
+  // log.info({ sameScript, exists });
   if (exists && !sameScript) {
     const otherPath = exists[0];
     let script;

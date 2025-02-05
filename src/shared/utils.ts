@@ -12,6 +12,13 @@ export const compareArrays = (arr1: any[], arr2: any[]) => {
   return true;
 };
 
+// Diff arrays. Return an array of what's been added and removed.
+export const diffArrays = (arr1: any[], arr2: any[]) => {
+  const added = arr2.filter((item) => !arr1.includes(item));
+  const removed = arr1.filter((item) => !arr2.includes(item));
+  return { added, removed };
+};
+
 /**
  * Compares two objects and returns an object describing the differences.
  * @param obj1 The first object to compare

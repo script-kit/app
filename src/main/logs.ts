@@ -158,6 +158,7 @@ const logTypes = [
   'process',
   'widget',
   'theme',
+  'health', // ADD THE NEW LOGGER HERE
 ] as const;
 
 type LogType = (typeof logTypes)[number];
@@ -246,6 +247,8 @@ export const {
   widgetLogPath,
   themeLog,
   themeLogPath,
+  healthLog, // Add health log here
+  healthLogPath, // Add health log path
   ...rest
 } = logExports;
 

@@ -1,10 +1,10 @@
-import { debounce, DebouncedFunc } from 'lodash-es';
+import { debounce } from 'lodash-es';
 import { isEqual, omit } from 'lodash-es';
 
-import { existsSync, statSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { lstat, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
-import { getScripts, getUserJson } from '@johnlindquist/kit/core/db';
+import { getUserJson } from '@johnlindquist/kit/core/db';
 import { Channel, Env } from '@johnlindquist/kit/core/enum';
 import type { Script, Scriptlet } from '@johnlindquist/kit/types';
 import { globby } from 'globby';
@@ -40,12 +40,12 @@ import {
 } from './process';
 import { clearPromptCache, clearPromptCacheFor, setKitStateAtom } from './prompt';
 import { setCSSVariable } from './theme';
-import { addSnippet, addTextSnippet, removeSnippet } from './tick';
+import { addSnippet, removeSnippet } from './tick';
 import { cacheMainScripts, debounceCacheMainScripts } from './install';
 import { loadKenvEnvironment } from './env-utils';
 import { pathExists, pathExistsSync, writeFile } from './cjs-exports';
 import { createLogger } from '../shared/log-utils';
-import { compareArrays } from '../shared/utils';
+import { compareArrays, diffArrays } from '../shared/utils';
 import { clearInterval, setInterval } from 'node:timers';
 import { kenvChokidarPath, kitChokidarPath, slash } from './path-utils';
 import { actualHideDock, showDock } from './dock';
@@ -416,10 +416,6 @@ async function handleAddOrChangeEvent(event: WatchEvent, script: Script, rebuilt
   // Decide if we do normal timestamp or skip
   if (shouldTimestampScript(event, rebuilt, skipCacheMainMenu)) {
     timestampAndNotifyChildren(event, script);
-  } else {
-    // If handleNotReady returns true, we exit early
-    const didExitEarly = handleNotReady(script, event, rebuilt, skipCacheMainMenu);
-    if (didExitEarly) return;
   }
 
   // Wrap up the rest of the script-changed logic
@@ -660,7 +656,7 @@ export const parseEnvFile = debounce(async () => {
     delete kitState.kenvEnv.GITHUB_SCRIPTKIT_TOKEN;
     kitState.isSponsor = false;
 
-    checkUserDb();
+    checkUserDb('GITHUB_SCRIPTKIT_TOKEN removed');
   }
 
   if (envData?.KIT_API_KEY) {
@@ -670,7 +666,7 @@ export const parseEnvFile = debounce(async () => {
     log.info(`Removing KIT_API_KEY from kitState.kenvEnv`);
     delete kitState.kenvEnv.KIT_API_KEY;
 
-    checkUserDb();
+    checkUserDb('KIT_API_KEY removed');
   }
 
   if (envData?.KIT_DOCK) {
@@ -757,10 +753,19 @@ export const parseEnvFile = debounce(async () => {
   log.info('👩‍⚖️ Trusted Kenvs', trustedKenvs);
 
   const trustedKenvsChanged = !compareArrays(trustedKenvs, kitState.trustedKenvs);
+  const { added, removed } = diffArrays(kitState.trustedKenvs, trustedKenvs);
+  if (added.length > 0 || removed.length > 0) {
+    log.info({
+      added,
+      removed,
+    });
+  }
 
   kitState.trustedKenvs = trustedKenvs;
 
   if (trustedKenvsChanged) {
+    log.info('🍺 Trusted Kenvs changed. Refreshing scripts...');
+
     await refreshScripts();
   }
 
