@@ -27,12 +27,13 @@ export interface Logger {
   clear: () => void;
 }
 
-type LogMap = Map<string, Logger & { logPath: string }>;
-export const logMap = new Map<string, LogMap>();
+type LoggerWithPath = Logger & { logPath: string };
+type LogMap = Map<string, LoggerWithPath>;
+export const logMap: LogMap = new Map<string, LoggerWithPath>();
 
-export const getLog = (scriptPath: string): Logger & { logPath: string } => {
+export const getLog = (scriptPath: string): LoggerWithPath => {
   if (logMap.has(scriptPath)) {
-    return logMap.get(scriptPath)! as unknown as Logger & { logPath: string };
+    return logMap.get(scriptPath)!;
   }
 
   try {
@@ -55,7 +56,7 @@ export const getLog = (scriptPath: string): Logger & { logPath: string } => {
       };
     };
 
-    const logger: Logger & { logPath: string } = {
+    const logger: LoggerWithPath = {
       info: wrap(scriptLog.info.bind(scriptLog)),
       warn: wrap(scriptLog.warn.bind(scriptLog)),
       error: wrap(scriptLog.error.bind(scriptLog)),
