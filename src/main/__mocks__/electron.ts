@@ -47,50 +47,21 @@ const mockShell = {
   openPath: vi.fn(),
 };
 
+const mockNativeTheme = {
+  shouldUseDarkColors: false,
+  themeSource: 'system',
+  on: vi.fn(),
+};
+
 // Create a proper event emitter for powerMonitor
-const listeners = new Map();
 const mockPowerMonitor = {
-  addListener: vi.fn((event: string, callback: () => void) => {
-    if (!listeners.has(event)) {
-      listeners.set(event, []);
-    }
-    listeners.get(event).push(callback);
-  }),
-  removeListener: vi.fn((event: string, callback: () => void) => {
-    if (listeners.has(event)) {
-      const callbacks = listeners.get(event);
-      const index = callbacks.indexOf(callback);
-      if (index > -1) {
-        callbacks.splice(index, 1);
-      }
-    }
-  }),
-  removeAllListeners: vi.fn((event?: string) => {
-    if (event) {
-      listeners.delete(event);
-    } else {
-      listeners.clear();
-    }
-  }),
-  // Helper method to emit events (not part of the actual electron API)
-  emit: (event: string) => {
-    if (listeners.has(event)) {
-      listeners.get(event).forEach((callback: () => void) => callback());
-    }
-  },
+  addListener: vi.fn(),
+  removeListener: vi.fn(),
+  removeAllListeners: vi.fn(),
+  emit: vi.fn(),
 };
 
-// Provide both default and named exports
-export {
-  mockApp as app,
-  mockBrowserWindow as BrowserWindow,
-  mockIpcMain as ipcMain,
-  mockScreen as screen,
-  mockShell as shell,
-  mockPowerMonitor as powerMonitor,
-};
-
-// Default export for compatibility
+// Export all mocks as a single object
 export default {
   app: mockApp,
   BrowserWindow: mockBrowserWindow,
@@ -98,4 +69,13 @@ export default {
   screen: mockScreen,
   shell: mockShell,
   powerMonitor: mockPowerMonitor,
+  nativeTheme: mockNativeTheme,
+  // Also include named exports
+  app: mockApp,
+  BrowserWindow: mockBrowserWindow,
+  ipcMain: mockIpcMain,
+  screen: mockScreen,
+  shell: mockShell,
+  powerMonitor: mockPowerMonitor,
+  nativeTheme: mockNativeTheme,
 };

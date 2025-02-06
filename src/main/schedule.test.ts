@@ -1,4 +1,4 @@
-import { vi, beforeAll, afterAll, beforeEach, afterEach, describe, it, expect } from 'vitest';
+import { vi, beforeEach, afterEach, describe, it, expect } from 'vitest';
 import path from 'node:path';
 import schedule from 'node-schedule';
 import { ProcessType } from '@johnlindquist/kit/core/enum';
@@ -7,6 +7,7 @@ import { Trigger } from '../shared/enums';
 
 // Mock modules
 vi.mock('node-schedule');
+vi.mock('./logs');
 vi.mock('electron-log');
 vi.mock('./kit', () => ({
   runPromptProcess: vi.fn(),
@@ -23,7 +24,7 @@ vi.mock('@johnlindquist/kit/core/utils');
 import { sleepSchedule, scheduleScriptChanged, cancelJob } from './schedule';
 import { kitState, scheduleMap } from './state';
 import { runPromptProcess } from './kit';
-import log from 'electron-log';
+import { scheduleLog as log } from './logs';
 
 describe('Schedule Resume/Suspend Tests', () => {
   beforeEach(() => {
@@ -139,7 +140,7 @@ describe('Schedule Resume/Suspend Tests', () => {
 
     // Verify script was not scheduled
     expect(scheduleMap.has(scriptPath)).toBe(false);
-    expect(log.info).toHaveBeenCalledWith(expect.stringContaining('Ignoring schedule for'));
+    expect(log.info).toHaveBeenCalledWith(expect.stringContaining('not in a trusted kenv'));
   });
 
   it('should handle canceling non-existent jobs gracefully', () => {

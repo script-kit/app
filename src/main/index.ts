@@ -111,6 +111,7 @@ import { invoke } from './invoke-pty';
 import { loadShellEnv } from './shell';
 import { snippetsSelfCheck } from './snippet-heal';
 import { HealthMonitor } from './health-monitor';
+import { systemEventsSelfCheck } from './system-events';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -623,7 +624,7 @@ const SELF_CHECK_INTERVAL = 1000 * 60; // Every 1 minute
 
 async function selfCheck() {
   try {
-    await Promise.all([scheduleSelfCheck(), shortcutsSelfCheck(), snippetsSelfCheck()]);
+    await Promise.all([scheduleSelfCheck(), shortcutsSelfCheck(), snippetsSelfCheck(), systemEventsSelfCheck()]);
   } catch (error) {
     log.error('Error during self-check:', error);
   }

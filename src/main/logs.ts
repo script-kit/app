@@ -15,9 +15,7 @@ if (isDev) {
   app.setAppLogsPath(logsPath);
 }
 
-log.info(`
-
-���🟢 🟢  !!!SCRIPT KIT TIME!!! 🟢 🟢 🟢 `);
+log.info('🚀 Script Kit Starting Up...');
 
 export interface Logger {
   info: (...args: any[]) => void;
@@ -159,6 +157,8 @@ const logTypes = [
   'widget',
   'theme',
   'health', // ADD THE NEW LOGGER HERE
+  'system',
+  'background',
 ] as const;
 
 type LogType = (typeof logTypes)[number];
@@ -247,8 +247,12 @@ export const {
   widgetLogPath,
   themeLog,
   themeLogPath,
-  healthLog, // Add health log here
-  healthLogPath, // Add health log path
+  healthLog,
+  healthLogPath,
+  systemLog,
+  systemLogPath,
+  backgroundLog,
+  backgroundLogPath,
   ...rest
 } = logExports;
 

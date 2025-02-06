@@ -1,5 +1,4 @@
 import type { Channel } from '@johnlindquist/kit/core/enum';
-import { parseScript } from '@johnlindquist/kit/core/utils';
 import type { Script } from '@johnlindquist/kit/types/core';
 import type { SendData } from '@johnlindquist/kit/types/kitapp';
 import { Trigger } from '../shared/enums';
@@ -7,9 +6,7 @@ import { KitEvent, emitter } from '../shared/events';
 import { runPromptProcess } from './kit';
 import { processes } from './process';
 import { type Background, backgroundMap, kitState } from './state';
-import { createLogger } from '../shared/log-utils';
-
-const log = createLogger('background.ts');
+import { backgroundLog as log } from './logs';
 
 export const removeBackground = (filePath: string) => {
   if (!filePath) {
@@ -24,17 +21,17 @@ export const removeBackground = (filePath: string) => {
     log.info('Removing background task. Checking pid:', child?.pid);
     backgroundMap.delete(filePath);
     if (child?.pid) {
-      log.red('Removing background task', filePath);
+      log.info('Removing background task', filePath);
       processes.removeByPid(child.pid, 'background remove');
     }
   } else if (background && background.status === 'starting') {
-    log.info(`Background task starting up, skip removing...`);
+    log.info('Background task starting up, skip removing...');
   }
 };
 
 export const startBackgroundTask = async (filePath: string, args: string[] = []) => {
   const background = backgroundMap.get(filePath);
-  log.info(`Checking background`, background, backgroundMap.entries());
+  log.info('Checking background', background, backgroundMap.entries());
   if (background && background.child === null) {
     log.info('Background already starting up. Ignoring...', filePath);
     return;
@@ -93,8 +90,9 @@ export const backgroundScriptChanged = ({ filePath, kenv, background: background
   }
 };
 
-export const updateBackground = async (filePath: string, fileChange = false) => {
-  const script = await parseScript(filePath);
+export const updateBackground = (filePath: string, fileChange = false) => {
+  const script = kitState.scripts.get(filePath);
+  log.info('updateBackground', { filePath, background: script?.background });
   const backgroundString = script?.background;
 
   // Task not running. File not changed
@@ -113,11 +111,11 @@ export const updateBackground = async (filePath: string, fileChange = false) => 
   }
 };
 
-export const toggleBackground = async (filePath: string) => {
+export const toggleBackground = (filePath: string) => {
   if (backgroundMap.get(filePath)) {
     removeBackground(filePath);
   } else {
-    await updateBackground(filePath);
+    updateBackground(filePath);
   }
 };
 
