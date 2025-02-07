@@ -70,3 +70,9 @@ export type TermConfig = {
   pid?: number;
   cleanPath?: boolean;
 };
+
+export interface SnippetInfo {
+  filePath: string;
+  postfix: boolean;
+  txt: boolean;
+}

@@ -1,4 +1,4 @@
-import type { SnippetInfo } from './types';
+import type { SnippetInfo } from '../shared/types';
 
 export const snippetMap = new Map<string, SnippetInfo>();
 
@@ -18,7 +18,7 @@ export const toggleTickOn = async () => {};
 
 export const destroyInterval = () => {};
 
-export const addSnippet = () => {
+export const snippetScriptChanged = () => {
   return null as any;
 };
 

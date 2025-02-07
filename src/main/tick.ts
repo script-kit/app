@@ -47,6 +47,7 @@ let prevKey = -1;
 
 // @ts-ignore platform-dependent imports
 import type { UiohookKey, UiohookKeyboardEvent, UiohookMouseEvent } from 'uiohook-napi';
+import type { SnippetInfo } from '../shared/types';
 let uiohookKeyCode: typeof UiohookKey;
 
 const SPACE = '_';
@@ -400,13 +401,6 @@ export const startClipboardAndKeyboardWatchers = async () => {
   startClipboardMonitor();
   startKeyboardMonitor();
 };
-
-// --- Optimized Snippet Management ---
-interface SnippetInfo {
-  filePath: string;
-  postfix: boolean;
-  txt: boolean;
-}
 
 export const snippetMap = new Map<string, SnippetInfo>();
 const snippetPrefixIndex = new Map<string, string[]>();
