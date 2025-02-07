@@ -985,10 +985,6 @@ export const syncScripts = async () => {
   for await (const script of kitState.scripts.values()) {
     await onScriptChanged('add', script, true, true);
   }
-
-  for await (const snippet of kitState.snippets.values()) {
-    await onScriptChanged('add', snippet, true, true);
-  }
 };
 
 let firstRun = true;
@@ -1059,12 +1055,6 @@ export const cacheMainMenu = async ({
 
     for (const script of scripts) {
       log.info(`Found script: name: ${script.name}, filePath: ${script.filePath}`);
-
-      if (script.expand) {
-        log.info(`Adding snippet: ${script.filePath}`, { script });
-        kitState.snippets.set(script.filePath, script as Snippet);
-        continue;
-      }
 
       if ((script as Scriptlet).scriptlet) {
         queueLog(`Scriptlet ${script.filePath}`);

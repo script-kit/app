@@ -306,7 +306,7 @@ const initState = {
   downloadPercent: 0,
   applyUpdate: false,
   previousDownload: new Date(),
-  logLevel: 'info' as LogLevel,
+  logLevel: (process?.env?.KIT_LOG_LEVEL as LogLevel) || 'info',
   preventResize: false,
   trayOpen: false,
   trayScripts: [] as string[],

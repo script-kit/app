@@ -86,8 +86,6 @@ export async function cacheSnippets() {
       });
     }
 
-    // Replace the old map in kitState
-    kitState.snippets = newSnippetMap;
     log.info(`[cacheSnippets] Cached ${newSnippetMap.size} snippet files`);
   } catch (error) {
     log.error('[cacheSnippets] Error:', error);

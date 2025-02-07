@@ -229,7 +229,21 @@ export const shortcutScriptChanged = async ({
     let script;
     if (otherPath.includes('#')) {
       log.info(`Checking scriptlets in ${otherPath}`);
-      const scripts = await parseScriptletsFromPath(otherPath);
+      let scripts;
+
+      try {
+        scripts = await parseScriptletsFromPath(otherPath);
+      } catch (error) {
+        log.error(`Error parsing scriptlets from ${otherPath}:`, error);
+        scripts = [
+          {
+            filePath: otherPath,
+            shortcut: '',
+            shebang: '',
+            kenv: '',
+          },
+        ];
+      }
       script = scripts.find((s) => s.filePath === otherPath);
       if (!script) {
         log.error(`Script ${otherPath} not found. Skipping shortcut unregistration.`);

@@ -24,7 +24,7 @@ import { registerIO } from './io';
 import { prompts } from './prompts';
 import shims from './shims';
 import { createLogger } from '../shared/log-utils';
-
+import { snippetLog } from './logs';
 const log = createLogger('tick.ts');
 
 type FrontmostApp = {
@@ -102,9 +102,9 @@ const ioEvent = (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
     let key: string;
     try {
       key = (event as any).key as string;
-      log.silly(`key: ${key} code: ${kc}`);
+      snippetLog.silly(`key: ${key} code: ${kc}`);
     } catch (error) {
-      log.error(error);
+      snippetLog.error(error);
       kitState.snippet = '';
       return;
     }
@@ -115,19 +115,19 @@ const ioEvent = (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
       kc === uiohookKeyCode.ArrowUp ||
       kc === uiohookKeyCode.ArrowDown
     ) {
-      log.silly('Ignoring arrow key and clearing snippet');
+      snippetLog.silly('Ignoring arrow key and clearing snippet');
       kitState.snippet = '';
       kitState.typedText = '';
       return;
     }
 
     if (kc === uiohookKeyCode.Shift || kc === uiohookKeyCode.ShiftRight) {
-      log.silly('Ignoring shift key');
+      snippetLog.silly('Ignoring shift key');
       return;
     }
 
     if (e.metaKey || e.ctrlKey || e.altKey) {
-      log.silly('Ignoring modifier key and clearing snippet');
+      snippetLog.silly('Ignoring modifier key and clearing snippet');
       kitState.snippet = '';
       if (kc === uiohookKeyCode.Backspace) {
         kitState.typedText = '';
@@ -136,18 +136,20 @@ const ioEvent = (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
     }
 
     if (kc === uiohookKeyCode.Backspace) {
-      log.silly('Backspace: Removing last character from snippet');
+      snippetLog.silly('Backspace: Removing last character from snippet');
       kitState.snippet = kitState.snippet.slice(0, -1);
       kitState.typedText = kitState.typedText.slice(0, -1);
     } else if (kc === uiohookKeyCode.Space) {
-      log.silly('Space: Adding space to snippet');
+      snippetLog.silly('Space: Adding space to snippet');
       if (prevKey === uiohookKeyCode.Backspace || kitState.snippet.length === 0) {
+        snippetLog.silly('Clearing snippet because of backspace or empty snippet');
         kitState.snippet = '';
       } else {
         kitState.snippet += SPACE;
         kitState.typedText = kitState.typedText + ' ';
       }
     } else if (kc === uiohookKeyCode.Quote || key.length > 1 || key === '') {
+      snippetLog.silly('Clearing snippet because of quote or empty key');
       kitState.snippet = '';
       kitState.typedText += key;
     } else {
@@ -156,7 +158,7 @@ const ioEvent = (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
       const tl = tt.length;
       const limit = kitState.typedLimit;
       kitState.typedText = tl > limit ? tt.slice(-limit) : tt;
-      log.silly('kitState.snippet = ', kitState.snippet);
+      snippetLog.silly('kitState.snippet = ', kitState.snippet);
     }
     prevKey = kc;
   } catch (error) {
@@ -484,6 +486,7 @@ const subIsTyping = subscribeKey(kitState, 'isTyping', () => {
   log.silly(`📕 isTyping: ${kitState.isTyping ? 'true' : 'false'}`);
 });
 
+const snippetRegex = /^(?:\/\/|#)\s{0,2}([\w-]+):\s*(.*)/;
 function parseSnippet(contents: string): {
   metadata: Record<string, string>;
   snippet: string;
@@ -494,7 +497,7 @@ function parseSnippet(contents: string): {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const match = line.match(/^(?:\/\/|#)\s{0,2}([\w-]+):\s*(.*)/);
+    const match = line.match(snippetRegex);
     if (match) {
       metadata[match[1].trim().toLowerCase()] = match[2].trim();
     } else {
@@ -545,7 +548,7 @@ export const addTextSnippet = async (filePath: string) => {
   log.info(`Text snippet: Current snippet map: ${JSON.stringify(Object.fromEntries(snippetMap), null, 2)}`);
 };
 
-export const addSnippet = (script: Script) => {
+export const snippetScriptChanged = (script: Script) => {
   // Remove if already added
 
   const keys = snippetMap.keys();
@@ -553,10 +556,12 @@ export const addSnippet = (script: Script) => {
   for (const key of keys) {
     const val = snippetMap.get(key)!;
     if (val.filePath === script.filePath && !val.txt) {
+      snippetLog.info(`Adding snippet key to remove: ${key}`);
       toDelete.push(key);
     }
   }
   for (let i = 0; i < toDelete.length; i++) {
+    snippetLog.info(`Removing snippet key: ${toDelete[i]}`);
     snippetMap.delete(toDelete[i]);
   }
 
@@ -564,21 +569,21 @@ export const addSnippet = (script: Script) => {
 
   if (script?.kenv !== '' && !kitState.trustedKenvs.includes(script?.kenv)) {
     if (expand) {
-      log.info(`Ignoring ${script?.filePath} // Snippet metadata because it's not trusted.`);
-      log.info(`Add "${kitState.trustedKenvsKey}=${script?.kenv}" to your .env file to trust it.`);
+      snippetLog.info(`Ignoring ${script?.filePath} // Snippet metadata because it's not trusted.`);
+      snippetLog.info(`Add "${kitState.trustedKenvsKey}=${script?.kenv}" to your .env file to trust it.`);
     }
     return;
   }
 
   if (expand) {
-    log.info(`✂️ Set expansion: ${expand}`);
+    snippetLog.info(`✂️ Set expansion: ${expand}`);
     let postfix = false;
     let exp = expand;
     if (exp.startsWith('*')) {
       postfix = true;
       exp = exp.slice(1);
     }
-    log.info(`Mapped snippet: ${exp} to ${script.filePath}`);
+    snippetLog.info(`Mapped snippet: ${exp} to ${script.filePath}`);
     snippetMap.set(exp, {
       filePath: script.filePath,
       postfix,
@@ -587,7 +592,7 @@ export const addSnippet = (script: Script) => {
   }
 
   updateSnippetPrefixIndex();
-  log.info(`Standard Snippet: Current snippet map: ${JSON.stringify(Object.fromEntries(snippetMap), null, 2)}`);
+  snippetLog.info(`Standard Snippet: Current snippet map: ${JSON.stringify(Object.fromEntries(snippetMap), null, 2)}`);
 };
 
 export const removeSnippet = (filePath: string) => {

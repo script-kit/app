@@ -293,7 +293,10 @@ export const runPromptProcess = async (
     log.info('Found scriptlet', { scriptlet });
   }
 
-  const script = scriptlet || (await findScript(promptScriptPath));
+  let script: Script | undefined;
+  try {
+    script = scriptlet || (await findScript(promptScriptPath));
+  } catch {}
   if (!script) {
     log.error(`Couldn't find script, blocking run: `, promptScriptPath);
     return null;

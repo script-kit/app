@@ -40,21 +40,19 @@ import {
 } from './process';
 import { clearPromptCache, clearPromptCacheFor, setKitStateAtom } from './prompt';
 import { setCSSVariable } from './theme';
-import { addSnippet, removeSnippet } from './tick';
+import { snippetScriptChanged, removeSnippet, snippetMap } from './tick';
 import { cacheMainScripts, debounceCacheMainScripts } from './install';
 import { loadKenvEnvironment } from './env-utils';
 import { pathExists, pathExistsSync, writeFile } from './cjs-exports';
-import { createLogger } from '../shared/log-utils';
 import { compareArrays, diffArrays } from '../shared/utils';
 import { clearInterval, setInterval } from 'node:timers';
 import { kenvChokidarPath, kitChokidarPath, slash } from './path-utils';
 import { actualHideDock, showDock } from './dock';
 import { reloadApps } from './apps';
 
-import { scriptLog, watcherLog } from './logs';
+import { scriptLog, watcherLog as log } from './logs';
 import { createIdlePty } from './pty';
 import { parseSnippet } from './snippet-cache';
-const log = createLogger('watcher.ts');
 
 const unlink = (filePath: string) => {
   cancelSchedule(filePath);
@@ -95,13 +93,13 @@ const logAllEvents = () => {
   });
 
   if (adds.length) {
-    watcherLog.info('adds', adds);
+    log.info('adds', adds);
   }
   if (changes.length) {
-    watcherLog.info('changes', changes);
+    log.info('changes', changes);
   }
   if (removes.length) {
-    watcherLog.info('removes', removes);
+    log.info('removes', removes);
   }
 
   adds.length = 0;
@@ -246,7 +244,7 @@ const madgeAllScripts = debounce(async () => {
     ...kenvs.filter((k) => k.isDirectory()).map((kenv) => slash(kenvPath('kenvs', kenv.name, 'scripts', '*'))),
   ]);
 
-  watcherLog.info(`🔍 ${allScriptPaths.length} scripts found`);
+  log.info(`🔍 ${allScriptPaths.length} scripts found`);
 
   const fileMadge = await madge(allScriptPaths, {
     baseDir: kenvChokidarPath(),
@@ -264,7 +262,7 @@ const madgeAllScripts = debounce(async () => {
   for (const [dir, files] of Object.entries(watched)) {
     for (const file of files) {
       const filePath = path.join(dir, file);
-      watcherLog.verbose(`Unwatching ${filePath}`);
+      log.verbose(`Unwatching ${filePath}`);
       depWatcher.unwatch(filePath);
     }
   }
@@ -273,12 +271,12 @@ const madgeAllScripts = debounce(async () => {
     const deps = depGraph[scriptKey];
     for (const dep of deps) {
       const depKenvPath = kenvChokidarPath(dep);
-      watcherLog.verbose(`Watching ${depKenvPath}`);
+      log.verbose(`Watching ${depKenvPath}`);
       depWatcher.add(depKenvPath);
     }
 
     if (deps.length > 0) {
-      watcherLog.info(`${scriptKey} has ${deps.length} dependencies`, deps);
+      log.info(`${scriptKey} has ${deps.length} dependencies`, deps);
     }
   }
 }, 100);
@@ -288,16 +286,16 @@ function watchTheme() {
   const themePath: string =
     (kitState.isDark ? kitState.kenvEnv?.KIT_THEME_DARK : kitState.kenvEnv?.KIT_THEME_LIGHT) || '';
   if (themeWatcher) {
-    watcherLog.info(`🎨 Unwatching ${themePath}`);
+    log.info(`🎨 Unwatching ${themePath}`);
     themeWatcher.close();
   }
   if (pathExistsSync(themePath)) {
-    watcherLog.info(`🎨 Watching ${themePath}`);
+    log.info(`🎨 Watching ${themePath}`);
     themeWatcher = chokidar.watch(slash(themePath), {
       ignoreInitial: true,
     });
     themeWatcher.on('all', (eventName, filePath) => {
-      watcherLog.info(`🎨 ${filePath} changed`);
+      log.info(`🎨 ${filePath} changed`);
       updateTheme();
     });
   }
@@ -378,7 +376,7 @@ async function finalizeScriptChange(script: Script) {
   systemScriptChanged(script);
   watchScriptChanged(script);
   backgroundScriptChanged(script);
-  addSnippet(script);
+  snippetScriptChanged(script);
   await shortcutScriptChanged(script);
 
   // Once the script is fully "added" or "changed", let all children know.
@@ -606,8 +604,7 @@ const handleScriptletsChanged = debounce(async (eventName: WatchEvent, filePath:
 
 export async function handleSnippetFileChange(eventName: WatchEvent, snippetPath: string) {
   if (eventName === 'unlink') {
-    // remove from kitState.snippets
-    kitState.snippets.delete(snippetPath);
+    snippetMap.delete(snippetPath);
     return;
   }
 
@@ -618,11 +615,11 @@ export async function handleSnippetFileChange(eventName: WatchEvent, snippetPath
 
     if (!snippetKey) {
       // No expand snippet found => remove from kitState if it had one
-      kitState.snippets.delete(snippetPath);
+      snippetMap.delete(snippetPath);
       return;
     }
 
-    kitState.snippets.set(snippetPath, {
+    snippetMap.set(snippetPath, {
       filePath: snippetPath,
       snippetKey,
       postfix, // TODO: fix types
@@ -632,7 +629,7 @@ export async function handleSnippetFileChange(eventName: WatchEvent, snippetPath
   } catch (error) {
     log.warn(`[handleSnippetFileChange] Error reading snippet: ${snippetPath}`, error);
     // remove from kitState
-    kitState.snippets.delete(snippetPath);
+    snippetMap.delete(snippetPath);
   }
 }
 
@@ -1073,5 +1070,5 @@ export async function handleFileChangeEvent(eventName: WatchEvent, filePath: str
     return;
   }
 
-  log.warn(`🔄 ${eventName} ${filePath}, but not handled... Is this a bug?`);
+  log.verbose(`🔄 ${eventName} ${filePath}, but not handled... Is this a bug?`);
 }

@@ -123,7 +123,7 @@ const subLogLevel = subscribeKey(kitState, 'logLevel', (level: LevelOption) => {
 });
 subs.push(subLogLevel);
 
-function createLogInstance(logId: string, level?: LevelOption): { logInstance: typeof log; logPath: string } {
+function createLogInstance(logId: string): { logInstance: typeof log; logPath: string } {
   const logPath = path.resolve(app.getPath('logs'), `${logId}.log`);
   const logInstance = log.create({ logId });
   const fileTransport = logInstance.transports.file as FileTransport;
@@ -131,9 +131,9 @@ function createLogInstance(logId: string, level?: LevelOption): { logInstance: t
   logInstance.info('🟢 Script Kit Starting Up...');
   logInstance.info(`${logId} log path: ${logPath}`);
 
-  if (level) {
-    (logInstance.transports.console as { level: LevelOption }).level = level;
-  }
+  logInstance.transports.console.level = kitState.logLevel;
+  logInstance.transports.file.level = kitState.logLevel;
+
   return { logInstance, logPath };
 }
 
