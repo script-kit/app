@@ -17,7 +17,7 @@ import { createScoredChoice } from './helpers';
 import { cacheChoices } from './messages';
 import type { KitPrompt } from './prompt';
 import { kitCache, kitState } from './state';
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 const log = createLogger('search.ts');
 
 export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'normal') => {

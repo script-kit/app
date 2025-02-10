@@ -1,4 +1,4 @@
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 import { createForkOptions } from './fork.options';
 import { kitState } from './state';
 import { kitPath } from '@johnlindquist/kit/core/utils';

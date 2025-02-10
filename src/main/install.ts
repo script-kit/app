@@ -43,7 +43,7 @@ import { getThemes, kitCache, kitState, preloadChoicesMap, workers } from './sta
 import { ensureDir, writeFile, readJson, writeJson, pathExists, readdir } from './cjs-exports';
 
 import electronLog from 'electron-log';
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 import { createForkOptions } from './fork.options';
 import { osTmpPath } from './tmp';
 import { getAssetPath } from '../shared/assets';

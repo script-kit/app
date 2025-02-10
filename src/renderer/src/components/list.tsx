@@ -15,7 +15,7 @@ import {
   scoredChoicesAtom,
 } from '../jotai';
 import ChoiceButton from './button';
-import { createLogger } from '../../../shared/log-utils';
+import { createLogger } from '../log-utils';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { hotkeysOptions } from '@renderer/hooks/shared';
 const log = createLogger('List.tsx');

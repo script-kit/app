@@ -18,7 +18,6 @@ export enum KitEvent {
   OpenLog = 'OpenLog',
   OpenScript = 'OpenScript',
   TrayClick = 'TrayClick',
-  OpenDevTools = 'OpenDevTools',
   MainScript = 'MainScript',
   RestartWatcher = 'RestartWatcher',
   TeardownWatchers = 'TeardownWatchers',

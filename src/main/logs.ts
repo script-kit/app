@@ -93,17 +93,20 @@ export const warn = (message: string): void => {
   log.warn(message);
 };
 
-log.transports.console.level = 'info';
+log.transports.console.level = false;
+
+if (log.transports.ipc) {
+  log.transports.ipc.level = false;
+}
 
 if (process.env.VITE_LOG_LEVEL) {
   log.info('🪵 Setting log level', process.env.VITE_LOG_LEVEL);
   log.transports.file.level = process.env.VITE_LOG_LEVEL as LevelOption;
+  log.transports.console.level = false;
 } else if (process.env.NODE_ENV === 'production') {
   log.transports.file.level = 'info';
+  log.transports.console.level = false;
 } else {
-  if (log.transports.ipc) {
-    log.transports.ipc.level = 'error';
-  }
   log.transports.file.level = 'verbose';
 }
 
@@ -131,7 +134,8 @@ function createLogInstance(logId: string): { logInstance: typeof log; logPath: s
   logInstance.info('🟢 Script Kit Starting Up...');
   logInstance.info(`${logId} log path: ${logPath}`);
 
-  logInstance.transports.console.level = kitState.logLevel;
+  logInstance.transports.console.level = false;
+  logInstance.transports.ipc.level = false;
   logInstance.transports.file.level = kitState.logLevel;
 
   return { logInstance, logPath };

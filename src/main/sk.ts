@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import net from 'node:net';
 import { handleScript } from './handleScript'; // Import the shared handleScript
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 import { kitPath } from '@johnlindquist/kit/core/utils';
 
 const log = createLogger('sk');
@@ -69,10 +69,14 @@ function sendResponse(stream: any, result: { status?: number; message?: string }
   const message = result?.message;
   const statusText = status === 200 ? 'OK' : 'Not Found';
   const response = `HTTP/1.1 ${status} ${statusText}
-Content-Type: text/plain${message ? `
+Content-Type: text/plain${
+    message
+      ? `
 Content-Length: ${message.length}
 
-${message}` : ''}`.trim();
+${message}`
+      : ''
+  }`.trim();
   stream.write(response);
   stream.end();
 }

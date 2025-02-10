@@ -6,7 +6,7 @@ import { MIN_WIDTH } from '../shared/defaults';
 import { getCurrentScreen } from './screen';
 import { kitState } from './state';
 
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 
 const log = createLogger('prompt.options.ts');
 
@@ -80,7 +80,8 @@ export const getPromptOptions = () => {
 
   let backgroundMaterial: BrowserWindowConstructorOptions['backgroundMaterial'] = 'acrylic';
   if (kitState?.kenvEnv?.KIT_BACKGROUND_MATERIAL) {
-    backgroundMaterial = kitState.kenvEnv.KIT_BACKGROUND_MATERIAL as BrowserWindowConstructorOptions['backgroundMaterial'];
+    backgroundMaterial = kitState.kenvEnv
+      .KIT_BACKGROUND_MATERIAL as BrowserWindowConstructorOptions['backgroundMaterial'];
   }
 
   let roundedCorners: BrowserWindowConstructorOptions['roundedCorners'] = true;

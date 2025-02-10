@@ -1,4 +1,7 @@
-import log from 'electron-log';
+import log from 'electron-log/renderer';
+
+log.transports.console.level = false;
+log.transports.ipc.level = 'info';
 
 let ignoredPrefixes: string[] = [];
 let filteredPrefixes: string[] = [];
@@ -82,7 +85,7 @@ export class Logger {
     }
   }
 
-  // TODO: Need to reach across the electron-log/renderer bounds to disable them too
+  // TODO: Need to reach across the electron-log bounds to disable them too
   only(...args: any[]) {
     // Disable all other loggers
     for (const [prefix, logger] of loggers) {

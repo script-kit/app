@@ -41,7 +41,7 @@ import {
   isWindowAtom,
   kitStateAtom,
   loadingAtom,
-  logVisibleAtom,
+  logHTMLAtom,
   mainHeightAtom,
   micIdAtom,
   micMediaRecorderAtom,
@@ -114,7 +114,7 @@ self.MonacoEnvironment = {
 
 loader.config({ monaco });
 
-import { createLogger } from '../../shared/log-utils';
+import { createLogger } from './log-utils';
 const log = createLogger('App.tsx');
 const windowPadding = '24';
 
@@ -175,7 +175,7 @@ export default function App() {
   const showTabs = useAtomValue(showTabsAtom);
   const onPaste = useAtomValue(onPasteAtom);
   const onDrop = useAtomValue(onDropAtom);
-  const logVisible = useAtomValue(logVisibleAtom);
+  const logHTML = useAtomValue(logHTMLAtom);
 
   const [promptData] = useAtom(promptDataAtom);
 
@@ -528,6 +528,8 @@ export default function App() {
   //   }),
   //   [promptData?.previewWidthPercent],
   // );
+
+  const logVisible = logHTML?.length > 0 && scriptAtom?.log !== 'false';
 
   return (
     <ErrorBoundary>

@@ -101,7 +101,7 @@ import {
   isWindowAtom,
 } from '../jotai';
 
-import { createLogger } from '../../../shared/log-utils';
+import { createLogger } from '../log-utils';
 const log = createLogger('useMessages.ts');
 
 import { AppChannel, WindowChannel } from '../../../shared/enums';
@@ -223,7 +223,7 @@ export default () => {
   const [init, setInit] = useState(false);
 
   useEffect(() => {
-    console.log(`Setting up messages for ${pid}: ${init ? '✅' : '🚫'}`);
+    log.info(`Setting up messages for ${pid}: ${init ? '✅' : '🚫'}`);
   }, [init]);
 
   type ChannelAtomMap = {
@@ -594,7 +594,7 @@ export default () => {
     const handleInputReady = (event, data) => {
       let rafId: number;
       const timeoutId = setTimeout(() => {
-        console.warn(`Timeout reached after 250ms for element with id: "input"`);
+        log.warn(`Timeout reached after 250ms for element with id: "input"`);
         ipcRenderer.send(AppChannel.INPUT_READY);
         cancelAnimationFrame(rafId);
       }, 250);
@@ -615,7 +615,6 @@ export default () => {
     ipcRenderer.once(AppChannel.INPUT_READY, handleInputReady);
 
     const config = ipcRenderer.sendSync(AppChannel.GET_KIT_CONFIG);
-    // log.info({ config });
     window.pid = config.pid;
 
     setKitConfig(config);
@@ -633,7 +632,7 @@ export default () => {
     }
 
     return () => {
-      console.log(`🔑 Removing message listeners for ${pid}`);
+      log.info(`🔑 Removing message listeners for ${pid}`);
 
       Object.entries(messageMap).forEach(([key, fn]) => {
         ipcRenderer.off(key, fn);

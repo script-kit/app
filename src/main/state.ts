@@ -42,7 +42,7 @@ import { KitEvent, emitter } from '../shared/events';
 import internetAvailable from '../shared/internet-available';
 import shims from './shims';
 
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 import type { IKeyboardMapping } from 'native-keymap';
 const log = createLogger('state.ts');
 const keymapLog = createLogger('keymapLog');

@@ -3,7 +3,7 @@ import { Trigger } from '../shared/enums';
 import { runPromptProcess } from './kit';
 import { spawnShebang } from './process';
 import { runMainScript } from './main-script';
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 import { getApiKey } from './server/server-utils';
 import { Channel } from '@johnlindquist/kit/core/enum';
 

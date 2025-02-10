@@ -15,7 +15,7 @@ import {
 } from '../jotai';
 import { type Action, bg, textContrast } from './actions';
 import { IconSwapper } from './iconswapper';
-import { createLogger } from '../../../shared/log-utils';
+import { createLogger } from '../log-utils';
 
 const log = createLogger('actionbutton.tsx');
 

@@ -1,6 +1,6 @@
 import { Channel } from '@johnlindquist/kit/core/enum';
 import type { WidgetOptions } from '@johnlindquist/kit/types/pro';
-import log from 'electron-log/renderer';
+import log from 'electron-log';
 import { createApp } from 'petite-vue';
 import React, { type ErrorInfo, Suspense, useEffect, useLayoutEffect, useState, useRef } from 'react';
 import { AppChannel } from '../../shared/enums';

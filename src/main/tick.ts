@@ -23,7 +23,7 @@ import { addToClipboardHistory, getClipboardHistory } from './clipboard';
 import { registerIO } from './io';
 import { prompts } from './prompts';
 import shims from './shims';
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 import { snippetLog } from './logs';
 const log = createLogger('tick.ts');
 

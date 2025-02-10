@@ -33,7 +33,7 @@ import type { KitPrompt } from './prompt';
 import { prompts } from './prompts';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
 import { kitState } from './state';
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 const log = createLogger('ipc.ts');
 
 let actionsOpenTimeout: NodeJS.Timeout;

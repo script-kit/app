@@ -2,7 +2,7 @@ import path from 'node:path';
 import type { FSWatcher, WatchOptions as ChokidarWatchOptions, Stats } from 'chokidar';
 import type { EventName } from 'chokidar/types/index';
 import chokidar from 'chokidar';
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 import type { WatchEvent, WatchOptions, WatchSource } from './chokidar';
 
 const log = createLogger('watcher-manager.ts');

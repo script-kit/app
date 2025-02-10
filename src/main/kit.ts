@@ -26,7 +26,7 @@ import { setShortcodes } from './search';
 import { getKitScript, kitCache, kitState, kitStore, sponsorCheck } from './state';
 import { TrackEvent, trackEvent } from './track';
 
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 import { createForkOptions } from './fork.options';
 import { mainLogPath, errorLog } from './logs';
 import { refreshScripts } from '@johnlindquist/kit/core/db';

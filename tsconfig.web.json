@@ -9,11 +9,11 @@
   ],
   "compilerOptions": {
     "target": "esnext",
-    "module": "NodeNext",
+    "module": "ESNext",
     "composite": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "bundler",
     "paths": {
       "@renderer/*": [
         "src/renderer/src/*"

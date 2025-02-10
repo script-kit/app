@@ -1,4 +1,4 @@
-import log from 'electron-log/renderer';
+import log from 'electron-log';
 import { useCallback, useEffect, useRef, useState } from 'react';
 const path = window.api.path;
 const os = window.api.os;

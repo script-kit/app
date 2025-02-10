@@ -1,5 +1,5 @@
 import { isEqual } from 'lodash';
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 import { MainLogger } from 'electron-log';
 
 const log = createLogger('compare');

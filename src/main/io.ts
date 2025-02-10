@@ -1,6 +1,6 @@
 import { app, Notification } from 'electron';
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 const log = createLogger('io.ts');
 import { chars } from './chars';
 import { sendToAllActiveChildren } from './process';

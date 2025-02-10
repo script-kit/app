@@ -1,7 +1,7 @@
 import { vi, describe, it, expect } from 'vitest';
 
 // Mocking the log-utils module
-vi.mock('../shared/log-utils', () => ({
+vi.mock('./log-utils', () => ({
   createLogger: vi.fn(() => ({
     info: vi.fn(),
   })),

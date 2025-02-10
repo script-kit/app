@@ -546,14 +546,16 @@ export default function Input() {
                 .filter((action) => action.position === 'right')
                 .flatMap((action, i, array) => {
                   if (!action?.visible && miniShortcutsVisible) {
+                    const key = `${action?.key}-button`;
+                    const keySeparator = `${action?.key}-separator`;
                     return [
                       // eslint-disable-next-line react/jsx-key
-                      <ActionButton key={`${action?.key}-button`} {...action} />,
+                      <ActionButton {...action} key={key} />,
                       // eslint-disable-next-line no-nested-ternary
                       i < array.length - 1 ? (
-                        <ActionSeparator key={`${action?.key}-separator`} />
+                        <ActionSeparator key={keySeparator} />
                       ) : enterButtonName ? (
-                        <ActionSeparator key={`${action?.key}-separator`} />
+                        <ActionSeparator key={keySeparator} />
                       ) : null,
                     ];
                   }

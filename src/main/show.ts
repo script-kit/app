@@ -24,7 +24,7 @@ import { forceQuit, kitState } from './state';
 
 export const INSTALL_ERROR = 'install-error';
 
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 import { isUrl } from './helpers';
 
 const log = createLogger('show.ts');

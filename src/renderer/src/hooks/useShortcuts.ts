@@ -1,7 +1,7 @@
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { createLogger } from '../../../shared/log-utils';
+import { createLogger } from '../log-utils';
 import {
   actionsConfigAtom,
   actionsInputFocusAtom,

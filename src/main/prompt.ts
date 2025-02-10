@@ -22,7 +22,7 @@ import {
   shell,
 } from 'electron';
 import contextMenu from 'electron-context-menu';
-import type { Display } from 'electron/main';
+import type { Display } from 'electron';
 import { debounce } from 'lodash-es';
 
 import type { ChildProcess } from 'node:child_process';
@@ -63,7 +63,7 @@ import { getVersion } from './version';
 import { makeKeyPanel, makeKeyWindow, makePanel, makeWindow, prepForClose, setAppearance } from './window/utils';
 import shims from './shims';
 
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 import { promptLog, themeLog } from './logs';
 const log = createLogger('prompt.ts');
 
@@ -791,16 +791,18 @@ export class KitPrompt {
   };
 
   constructor() {
-    ipcMain.on(AppChannel.GET_KIT_CONFIG, (event) => {
+    const getKitConfig = (event) => {
       event.returnValue = {
         kitPath: kitPath(),
         mainScriptPath: getMainScriptPath(),
         pid: this.pid,
       };
-    });
+    };
 
     const options = getPromptOptions();
     this.window = new BrowserWindow(options);
+
+    this.window.webContents.ipc.on(AppChannel.GET_KIT_CONFIG, getKitConfig);
 
     this.sendToPrompt = (channel: Channel | AppChannel, data) => {
       log.silly(`sendToPrompt: ${String(channel)}`, data);
@@ -967,6 +969,7 @@ export class KitPrompt {
 
         this.sendToPrompt(AppChannel.FORCE_RENDER);
         await this.window?.webContents?.executeJavaScript('console.log(document.body.offsetHeight);');
+        await this.window?.webContents?.executeJavaScript('console.clear();');
 
         this.window.webContents.setBackgroundThrottling(true);
       };
@@ -1032,17 +1035,6 @@ export class KitPrompt {
         this.setPromptAlwaysOnTop(false);
       }
       this.maybeHide(HideReason.DevToolsClosed);
-    });
-
-    emitter.on(KitEvent.OpenDevTools, () => {
-      log.silly('event: OpenDevTools');
-      if (prompts.prevFocused?.pid === this?.pid) {
-        this.window.webContents?.openDevTools({
-          activate: true,
-          mode: 'detach',
-          title: 'Kit Dev Tools',
-        });
-      }
     });
 
     const formatLog = (event: string) => {

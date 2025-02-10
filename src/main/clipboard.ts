@@ -3,7 +3,7 @@ import type { Choice } from '@johnlindquist/kit/types';
 import { remove } from 'lodash-es';
 import { kitClipboard, kitState, kitStore } from './state';
 
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 
 const log = createLogger('clipboard.ts');
 

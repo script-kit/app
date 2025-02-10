@@ -3,7 +3,7 @@ import type { BrowserWindow } from 'electron';
 import { AppChannel } from '../shared/enums';
 import type { ProcessAndPrompt } from './process';
 import { prompts } from './prompts';
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 
 const log = createLogger('channel.ts');
 

@@ -6,7 +6,7 @@ import axios from 'axios';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
-import { createLogger } from '../../shared/log-utils';
+import { createLogger } from '.././log-utils';
 
 const log = createLogger('install-pnpm');
 

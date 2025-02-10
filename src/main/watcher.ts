@@ -54,23 +54,14 @@ import { scriptLog, watcherLog as log } from './logs';
 import { createIdlePty } from './pty';
 import { parseSnippet } from './snippet-cache';
 
-const unlink = (filePath: string) => {
+const unlinkScript = (filePath: string) => {
   cancelSchedule(filePath);
   unlinkEvents(filePath);
   removeWatch(filePath);
   removeBackground(filePath);
   removeSnippet(filePath);
   unlinkShortcuts(filePath);
-
-  const binPath = path.resolve(
-    path.dirname(path.dirname(filePath)),
-    'bin',
-    path.basename(filePath).replace(new RegExp(`\\${path.extname(filePath)}$`), ''),
-  );
-
-  if (existsSync(binPath)) {
-    rm(binPath);
-  }
+  unlinkBin(filePath);
 };
 
 const logEvents: { event: WatchEvent; filePath: string }[] = [];
@@ -92,13 +83,13 @@ const logAllEvents = () => {
     }
   });
 
-  if (adds.length) {
+  if (adds.length > 0) {
     log.info('adds', adds);
   }
-  if (changes.length) {
+  if (changes.length > 0) {
     log.info('changes', changes);
   }
-  if (removes.length) {
+  if (removes.length > 0) {
     log.info('removes', removes);
   }
 
@@ -122,8 +113,10 @@ const logQueue = (event: WatchEvent, filePath: string) => {
 
 const unlinkBin = (filePath: string) => {
   const binPath = path.resolve(path.dirname(path.dirname(filePath)), 'bin', path.basename(filePath));
-  if (existsSync(binPath)) {
-    unlink(binPath);
+  const { dir } = path.parse(binPath);
+  if (existsSync(binPath) && dir.endsWith('bin')) {
+    log.info(`Removing ${binPath}`);
+    rm(binPath);
   }
 };
 
@@ -188,7 +181,7 @@ const getDepWatcher = () => {
         log.info(`🔥 Clearing cache for ${relativeScriptPath} at ${cachePath}`);
         await rm(cachePath);
       } else {
-        log.info(`🤔 Cache for ${relativeScriptPath} at ${cachePath} does not exist`);
+        log.info(`🤔 Cache for ${relativeScriptPath} at ${cachePath} does not exist...`);
       }
 
       const fullPath = kenvPath(relativeScriptPath);
@@ -393,8 +386,7 @@ async function finalizeScriptChange(script: Script) {
  * If the event is "unlink," perform all necessary cleanup.
  */
 function handleUnlinkEvent(script: Script) {
-  unlink(script.filePath);
-  unlinkBin(script.filePath);
+  unlinkScript(script.filePath);
 
   sendToAllActiveChildren({
     channel: Channel.SCRIPT_REMOVED,

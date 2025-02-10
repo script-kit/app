@@ -41,7 +41,7 @@ import { prompts } from './prompts';
 import shims from './shims';
 import { TrackEvent, trackEvent } from './track';
 
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 import { readFile } from 'node:fs/promises';
 import { invoke } from './invoke-pty';
 

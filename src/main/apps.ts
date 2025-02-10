@@ -1,6 +1,6 @@
 import { optionalSpawnSetup } from './install';
 import { kitPath } from '@johnlindquist/kit/core/utils';
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 import { kitState } from './state';
 import { debounce } from 'lodash-es';
 

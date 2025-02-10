@@ -79,9 +79,10 @@ import shims from './shims';
 import { TrackEvent, trackEvent } from './track';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { showLogWindow } from './window';
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 import { osTmpPath } from './tmp';
 import { displayError } from './error';
+import { consoleLog } from './logs';
 
 const log = createLogger('messages.ts');
 
@@ -286,22 +287,30 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     }),
 
     CONSOLE_LOG: (data) => {
-      getLog(data.kitScript).info(data?.value || Value.Undefined);
-      setLog(data.value || Value.Undefined);
+      const value = data?.value || Value.Undefined;
+      consoleLog.info(value);
+      getLog(data.kitScript).info(value);
+      setLog(value);
     },
     CONSOLE_INFO: (data) => {
-      getLog(data.kitScript).info(data?.value || Value.Undefined);
-      setLog(data.value || Value.Undefined);
+      const value = data?.value || Value.Undefined;
+      consoleLog.info(value);
+      getLog(data.kitScript).info(value);
+      setLog(value);
     },
 
     CONSOLE_WARN: (data) => {
-      getLog(data.kitScript).warn(data.value);
-      setLog(data.value);
+      const value = data?.value || Value.Undefined;
+      consoleLog.warn(value);
+      getLog(data.kitScript).warn(value);
+      setLog(value);
     },
 
     CONSOLE_ERROR: (data) => {
-      getLog(data.kitScript).warn(data.value);
-      setLog(data.value);
+      const value = data?.value || Value.Undefined;
+      consoleLog.error(value);
+      getLog(data.kitScript).error(value);
+      setLog(value);
     },
 
     COPY_PATH_AS_PICTURE: (data) => {

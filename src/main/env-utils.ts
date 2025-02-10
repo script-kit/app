@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { kenvPath } from '@johnlindquist/kit/core/utils';
 import type { kenvEnv } from '@johnlindquist/kit/types/env';
 import { pathExistsSync } from './cjs-exports';
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 
 const log = createLogger('env-utils.ts');
 

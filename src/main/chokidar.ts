@@ -3,7 +3,7 @@ import os from 'node:os';
 import { readdirSync, statSync } from 'node:fs';
 import type { FSWatcher } from 'chokidar';
 
-import { createLogger } from '../shared/log-utils';
+import { createLogger } from './log-utils';
 import { kenvChokidarPath, kitChokidarPath, slash } from './path-utils';
 import { WatcherManager } from './watcher-manager';
 

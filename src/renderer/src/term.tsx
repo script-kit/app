@@ -27,7 +27,7 @@ import { AppChannel } from '../../shared/enums';
 import XTerm from './components/xterm';
 import { AttachIPCAddon } from './term-attach-ipc-addon';
 
-import { createLogger } from '../../shared/log-utils';
+import { createLogger } from './log-utils';
 const log = createLogger('term.tsx');
 
 const defaultTheme = {

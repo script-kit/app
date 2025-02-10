@@ -4,7 +4,7 @@ const { ipcRenderer } = window.electron;
 import type { ITerminalAddon, Terminal } from '@xterm/xterm';
 import { AppChannel } from '../../shared/enums';
 import type { TermConfig } from '../../shared/types';
-import { createLogger } from '../../shared/log-utils';
+import { createLogger } from './log-utils';
 const log = createLogger('term-attach-ipc-addon.ts');
 
 export class AttachIPCAddon implements ITerminalAddon {

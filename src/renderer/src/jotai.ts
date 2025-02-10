@@ -14,7 +14,7 @@ import type {
 } from '@johnlindquist/kit/types/core';
 import Convert from 'ansi-to-html';
 import DOMPurify from 'dompurify';
-import { createLogger } from '../../shared/log-utils';
+import { createLogger } from './log-utils';
 import { type Atom, type Getter, type Setter, atom } from 'jotai';
 
 import type {
@@ -332,10 +332,6 @@ export const appendToLogHTMLAtom = atom(null, (g, s, a: string) => {
 });
 
 export const logHeightAtom = atom<number>(0);
-
-export const logVisibleAtom = atom((g) => {
-  return g(logHTMLAtom)?.length > 0 && g(scriptAtom)?.log !== 'false';
-});
 
 const editorConfig = atom<EditorConfig | null>({
   value: '',
@@ -1243,7 +1239,7 @@ const resize = debounce(
       // log.info(`hasPreview: ${PROMPT.HEIGHT.BASE} mh ${mh}`);
     }
 
-    if (g(logVisibleAtom)) {
+    if (g(logHTMLAtom)?.length > 0 && g(scriptAtom)?.log !== 'false') {
       const logHeight = document.getElementById('log')?.offsetHeight;
       // log.info(`logHeight: ${logHeight}`);
       mh += logHeight || 0;

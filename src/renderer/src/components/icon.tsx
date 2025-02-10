@@ -13,7 +13,7 @@ import {
   uiAtom,
 } from '../jotai';
 
-import { createLogger } from '../../../shared/log-utils';
+import { createLogger } from '../log-utils';
 import { useState } from 'react';
 import { UI } from '@johnlindquist/kit/core/enum';
 

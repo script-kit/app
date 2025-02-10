@@ -5,7 +5,8 @@ import path from 'node:path';
 import url from 'node:url';
 import { ipcRenderer, webFrame, webUtils } from 'electron';
 import { Channel } from '@johnlindquist/kit/core/enum';
-import log from "electron-log"
+import log from 'electron-log';
+log.transports.console.level = false;
 
 // Custom APIs for renderer
 const api = {
@@ -20,7 +21,7 @@ const api = {
 window.electron = {
   ipcRenderer,
   webFrame,
-  webUtils
+  webUtils,
 };
 
 function sanitizeForIPC(obj: any) {
