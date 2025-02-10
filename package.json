@@ -40,7 +40,12 @@
   "bugs": {
     "url": "https://github.com/script-kit/kitapp/issues"
   },
-  "keywords": ["electron", "react", "typescript", "ts"],
+  "keywords": [
+    "electron",
+    "react",
+    "typescript",
+    "ts"
+  ],
   "homepage": "https://github.com/script-kit/kitapp#readme",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -87,9 +92,9 @@
     "electron-mocks": "^1.6.0",
     "electron-vite": "^2.3.0",
     "emoji-picker-react": "^4.12.0",
-    "eslint": "^9.19.0",
+    "eslint": "^9.20.0",
     "eslint-config-erb": "4.1.0",
-    "framer-motion": "^12.3.1",
+    "framer-motion": "^12.4.2",
     "html-react-parser": "^5.2.2",
     "husky": "^9.1.7",
     "jest": "^29.7.0",
@@ -101,7 +106,7 @@
     "node-abi": "^3.74.0",
     "patch-package": "^8.0.0",
     "petite-vue": "^0.4.1",
-    "prettier": "^3.4.2",
+    "prettier": "^3.5.0",
     "react-chat-elements": "^12.0.17",
     "react-dom": "^19.0.0",
     "react-hotkeys-hook": "4.6.1",
@@ -124,7 +129,7 @@
   "dependencies": {
     "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/clipboard": "^0.1.38",
-    "@johnlindquist/kit": "^3.12.0",
+    "@johnlindquist/kit": "^3.12.1",
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^28.0.2",
     "@tailwindcss/postcss": "^4.0.0",
@@ -152,7 +157,7 @@
     "dns-socket": "^4.2.2",
     "dotenv": "^16.4.7",
     "download": "^8.0.0",
-    "electron-context-menu": "^4.0.4",
+    "electron-context-menu": "^4.0.5",
     "electron-log": "^5.3.0",
     "electron-store": "^10.0.1",
     "electron-unhandled": "^5.0.0",
@@ -160,7 +165,7 @@
     "execa": "^9.5.2",
     "express": "^4.21.2",
     "fs-extra": "^11.3.0",
-    "globby": "^14.0.2",
+    "globby": "^14.1.0",
     "hpagent": "^1.2.0",
     "i": "^0.3.7",
     "image-size": "1.2.0",
@@ -173,7 +178,7 @@
     "node-pty": "1.1.0-beta27",
     "node-schedule": "2.1.1",
     "node-stream-zip": "^1.15.0",
-    "pnpm": "10.2.0",
+    "pnpm": "10.2.1",
     "prop-types": "^15.8.1",
     "quick-score": "0.2.0",
     "react": "^19.0.0",
@@ -203,14 +208,18 @@
   },
   "browserslist": [],
   "renovate": {
-    "extends": ["bliss"],
-    "baseBranches": ["next"]
+    "extends": [
+      "bliss"
+    ],
+    "baseBranches": [
+      "next"
+    ]
   },
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node"
   },
-  "packageManager": "pnpm@10.2.0",
+  "packageManager": "pnpm@10.2.1",
   "pnpm": {
     "onlyBuiltDependencies": [
       "@biomejs/biome",

@@ -40,7 +40,7 @@ import { prompts } from './prompts';
 import { forceQuit, kitState, subs } from './state';
 import { getVersion } from './version';
 import { getServerPort } from './serverTrayUtils';
-import { startServer, stopServer, restartServer } from './server';
+import { startServer, stopServer } from './server';
 
 let tray: Tray | null = null;
 
@@ -432,12 +432,6 @@ const buildServerSubmenu = (): MenuItemConstructorOptions[] => {
         label: 'Stop Server',
         click: () => {
           stopServer();
-        },
-      },
-      {
-        label: 'Restart Server',
-        click: () => {
-          restartServer();
         },
       },
     ];

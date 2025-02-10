@@ -1,16 +1,15 @@
 import express from 'express';
 import https from 'node:https';
+import http from 'node:http';
 import fs from 'node:fs';
 import { Bonjour } from 'bonjour-service';
 import { handleScript } from './handleScript';
-import { createLogger } from '../shared/log-utils';
 import { getServerPort } from './serverTrayUtils';
 import { kitState } from './state';
 import { kenvPath } from '@johnlindquist/kit/core/utils';
 import { splitEnvVarIntoArray } from '@johnlindquist/kit/api/kit';
 import cors from 'cors';
-
-const log = createLogger('server');
+import { serverLog as log } from './logs';
 
 let serverInstance: https.Server | null = null;
 let bonjour: Bonjour | null = null;
@@ -132,10 +131,10 @@ export const startServer = () => {
     } catch (error) {
       log.error('Failed to read SSL certificates:', error);
       log.info('Falling back to HTTP');
-      server = app;
+      server = http.createServer(app);
     }
   } else {
-    server = app;
+    server = http.createServer(app);
     log.info('Configured to use HTTP');
   }
 
@@ -150,7 +149,7 @@ export const startServer = () => {
       name: 'Kit Server',
       type: 'http',
       port: getServerPort(),
-      host: kitState.kenvEnv.KIT_BONJOUR_HOST as string | undefined || 'kit.local',
+      host: (kitState.kenvEnv.KIT_BONJOUR_HOST as string | undefined) || 'kit.local',
     });
 
     service.on('up', () => {
@@ -194,10 +193,4 @@ export const stopServer = () => {
   } else {
     log.warn('Server is not running');
   }
-};
-
-// Server restart function
-export const restartServer = () => {
-  stopServer();
-  startServer();
 };

@@ -157,9 +157,10 @@ const logTypes = [
   'process',
   'widget',
   'theme',
-  'health', // ADD THE NEW LOGGER HERE
+  'health',
   'system',
   'background',
+  'server',
 ] as const;
 
 type LogType = (typeof logTypes)[number];
@@ -254,7 +255,8 @@ export const {
   systemLogPath,
   backgroundLog,
   backgroundLogPath,
-  ...rest
+  serverLog,
+  serverLogPath,
 } = logExports;
 
 // Helper type that enforces no extra keys remain.
