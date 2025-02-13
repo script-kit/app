@@ -165,6 +165,8 @@ const logTypes = [
   'system',
   'background',
   'server',
+  'search',
+  'ipc',
 ] as const;
 
 type LogType = (typeof logTypes)[number];
@@ -261,6 +263,10 @@ export const {
   backgroundLogPath,
   serverLog,
   serverLogPath,
+  searchLog,
+  searchLogPath,
+  ipcLog,
+  ipcLogPath,
 } = logExports;
 
 // Helper type that enforces no extra keys remain.

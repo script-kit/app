@@ -33,13 +33,10 @@ import type { KitPrompt } from './prompt';
 import { prompts } from './prompts';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
 import { kitState } from './state';
-import { createLogger } from './log-utils';
-const log = createLogger('ipc.ts');
+import { ipcLog as log } from './logs';
 
 let actionsOpenTimeout: NodeJS.Timeout;
 let prevTransformedInput = '';
-let currentKeymap = '';
-let newKeymap = '';
 
 const checkShortcodesAndKeywords = (prompt: KitPrompt, rawInput: string): boolean => {
   //   log.info(`
@@ -91,26 +88,29 @@ const checkShortcodesAndKeywords = (prompt: KitPrompt, rawInput: string): boolea
   // });
   if (trigger) {
     if (prompt.ready) {
-      log.info(`${prompt.pid}: 👢 Trigger: ${transformedInput} triggered`, trigger);
+      log.info(`${prompt.getLogPrefix()}: 👢 Trigger: ${transformedInput} triggered`, trigger);
 
-      if (trigger?.value?.inputs?.length) {
-        log.info(`${prompt.pid}: 📝 Trigger: ${transformedInput} blocked. Inputs required`, trigger.value.inputs);
+      if (trigger?.value?.inputs?.length > 0) {
+        log.info(
+          `${prompt.getLogPrefix()}: 📝 Trigger: ${transformedInput} blocked. Inputs required`,
+          trigger.value.inputs,
+        );
         sendToPrompt(Channel.SET_INVALIDATE_CHOICE_INPUTS, true);
       } else {
         sendToPrompt(Channel.SET_SUBMIT_VALUE, trigger?.value ? trigger.value : trigger);
         return false;
       }
     } else {
-      log.info(`${prompt.pid}: 😩 Not ready`, JSON.stringify(trigger));
+      log.info(`${prompt.getLogPrefix()}: 😩 Not ready`, JSON.stringify(trigger));
     }
   }
 
   for (const [postfix, choice] of prompt.kitSearch.postfixes.entries()) {
     if (choice && lowerCaseInput.endsWith(postfix)) {
-      log.info(`🥾 Postfix: ${transformedInput} triggered`, choice);
-      if ((choice as Scriptlet)?.inputs?.length) {
+      log.info(`${prompt.getLogPrefix()}: 🥾 Postfix: ${transformedInput} triggered`, choice);
+      if ((choice as Scriptlet)?.inputs?.length > 0) {
         log.info(
-          `${prompt.pid}: 📝 Postfix: ${transformedInput} blocked. Inputs required`,
+          `${prompt.getLogPrefix()}: 📝 Postfix: ${transformedInput} blocked. Inputs required`,
           (choice as Scriptlet).inputs,
         );
         sendToPrompt(Channel.SET_INVALIDATE_CHOICE_INPUTS, true);
@@ -129,7 +129,7 @@ const checkShortcodesAndKeywords = (prompt: KitPrompt, rawInput: string): boolea
     }
     prompt.kitSearch.keyword = keyword;
     prompt.kitSearch.inputRegex = undefined;
-    log.info(`🔑 ${keyword} cleared`);
+    log.info(`${prompt.getLogPrefix()}: 🔑 ${keyword} cleared`);
     prompt.kitSearch.keywordCleared = true;
     sendToPrompt(AppChannel.TRIGGER_KEYWORD, {
       keyword,
@@ -144,7 +144,7 @@ const checkShortcodesAndKeywords = (prompt: KitPrompt, rawInput: string): boolea
       const shortcodeChoice = prompt.kitSearch.shortcodes.get(transformedInput.toLowerCase().trimEnd());
       if (shortcodeChoice) {
         sendToPrompt(Channel.SET_SUBMIT_VALUE, shortcodeChoice.value);
-        log.info(`🔑 Shortcode: ${transformedInput} triggered`);
+        log.info(`${prompt.getLogPrefix()}: 🔑 Shortcode: ${transformedInput} triggered`);
         return false;
       }
     }
@@ -155,7 +155,7 @@ const checkShortcodesAndKeywords = (prompt: KitPrompt, rawInput: string): boolea
       if (keywordChoice) {
         prompt.kitSearch.keyword = keyword;
         prompt.kitSearch.inputRegex = new RegExp(`^${keyword} `, 'gi');
-        log.info(`🔑 ${keyword} triggered`);
+        log.info(`${prompt.getLogPrefix()}: 🔑 ${keyword} triggered`);
         sendToPrompt(AppChannel.TRIGGER_KEYWORD, {
           keyword,
           choice: keywordChoice,

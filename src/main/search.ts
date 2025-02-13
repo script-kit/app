@@ -17,8 +17,7 @@ import { createScoredChoice } from './helpers';
 import { cacheChoices } from './messages';
 import type { KitPrompt } from './prompt';
 import { kitCache, kitState } from './state';
-import { createLogger } from './log-utils';
-const log = createLogger('search.ts');
+import { searchLog as log } from './logs';
 
 export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'normal') => {
   // log.info(`${prompt.pid}: ${reason}: Invoke search: '${rawInput}'`);
@@ -113,7 +112,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
         alias = structuredClone(choice);
         alias.pass = false;
         alias.group = choice?.trigger ? 'Trigger' : 'Alias';
-        log.info(`${prompt.pid}: 🔔 Alias: ${alias.name} with group ${alias.group}`);
+        log.info(`${prompt.getLogPrefix()}: 🔔 Alias: ${alias.name} with group ${alias.group}`);
       } else if (
         !(choice?.skip || choice?.miss) &&
         (lowerCaseName?.includes(lowerCaseInput) || lowerCaseKeyword.includes(lowerCaseInput))
@@ -365,7 +364,6 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
       }
     }
 
-    log.info(`a`);
     const scoredChoices = filterAndSortOtherChoices(filteredResults, transformedInput, lowerCaseInput, hasChoice);
 
     setScoredChoices(prompt, scoredChoices, 'resultLength === 0');
@@ -392,10 +390,9 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'norm
 
         hasChoice = true;
         filteredResults.push(choice);
-        log.info(`hasChoice ${choice?.item?.name}`);
+        log.info(`${prompt.getLogPrefix()}: hasChoice ${choice?.item?.name}`);
       }
 
-      log.info(`b`);
       const scoredChoices = filterAndSortOtherChoices(filteredResults, transformedInput, lowerCaseInput, hasChoice);
 
       setScoredChoices(prompt, scoredChoices, 'resultLength > 0');
@@ -457,7 +454,6 @@ function filterAndSortOtherChoices(
 export const debounceInvokeSearch = debounce(invokeSearch, 100);
 
 export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
-  // log.info(`Flag search: ${input} <<<`);
   prompt.flagSearch.input = input;
   if (input === '') {
     setScoredFlags(
@@ -537,7 +533,7 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
 };
 
 export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys & Partial<Choice>) => {
-  log.info(`🔥 Setting flags: ${Object.keys(f)}`);
+  log.info(`${prompt.getLogPrefix()}: 🔥 Setting flags: ${Object.keys(f)}`);
   const order = f?.order || [];
   const sortChoicesKey = f?.sortChoicesKey || [];
 
@@ -600,7 +596,7 @@ export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys & Partial<Choice>) 
 
   // setFlagShortcodes(choices);
 
-  log.info(`Flag choices: ${choices.length}`);
+  log.info(`${prompt.getLogPrefix()}: Flag choices: ${choices.length}`);
   invokeFlagSearch(prompt, prompt.flagSearch.input);
 };
 
@@ -625,6 +621,7 @@ export const setShortcodes = (prompt: KitPrompt, choices: Choice[]) => {
     const trigger = (choice?.trigger || choice?.name?.match(/(?<=\[)\w+(?=\])/i)?.[0] || '').toLowerCase();
 
     if (trigger) {
+      log.info(`${prompt.getLogPrefix()}: 🔔 Setting trigger: ${trigger} to ${choice.name}`);
       prompt.kitSearch.triggers.set(trigger, choice);
     }
 
@@ -639,7 +636,7 @@ export const setShortcodes = (prompt: KitPrompt, choices: Choice[]) => {
 
   // Log the keywords and shortcodes
   log.info(
-    `${prompt.pid}: Short stats: 🗝 ${prompt.kitSearch.keywords.size} keywords, ${prompt.kitSearch.shortcodes.size} shortcodes, ${prompt.kitSearch.postfixes.size} postfixes, ${prompt.kitSearch.triggers.size} triggers`,
+    `${prompt.getLogPrefix()}: Short stats: 🗝 ${prompt.kitSearch.keywords.size} keywords, ${prompt.kitSearch.shortcodes.size} shortcodes, ${prompt.kitSearch.postfixes.size} postfixes, ${prompt.kitSearch.triggers.size} triggers`,
   );
 };
 
@@ -669,19 +666,14 @@ export const setChoices = (
   choices: Choice[],
   { preload, skipInitialSearch, generated }: { preload: boolean; skipInitialSearch?: boolean; generated?: boolean },
 ) => {
-  log.info(
-    `
-❤️ ---- ${prompt.scriptPath} ---- ❤️
-  ${prompt.pid}: setChoices:`,
-    {
-      input: prompt.kitSearch.input,
-      isArray: Array.isArray(choices),
-      length: choices?.length,
-      preload,
-      skipInitialSearch,
-      generated,
-    },
-  );
+  log.info(`${prompt.getLogPrefix()}: setChoices:`, {
+    input: prompt.kitSearch.input,
+    isArray: Array.isArray(choices),
+    length: choices?.length,
+    preload,
+    skipInitialSearch,
+    generated,
+  });
   const sendToPrompt = prompt.sendToPrompt;
   sendToPrompt(
     Channel.SET_SELECTED_CHOICES,
@@ -689,12 +681,12 @@ export const setChoices = (
   );
 
   if (prompt.cacheScriptChoices) {
-    log.info(`Caching script choices for ${prompt.scriptPath}: ${choices.length}`);
+    log.info(`${prompt.getLogPrefix()}: Caching script choices for ${prompt.scriptPath}: ${choices.length}`);
     // TODO: Sync up the kitCache.choices approach with this older approach
     cacheChoices(prompt.scriptPath, choices);
     prompt.cacheScriptChoices = false;
   } else if (prompt?.scriptPath && choices?.length) {
-    log.info(`Not caching script choices for ${prompt.scriptPath}: ${choices.length}`);
+    log.info(`${prompt.getLogPrefix()}: Not caching script choices for ${prompt.scriptPath}: ${choices.length}`);
   }
 
   if (!(choices && Array.isArray(choices)) || choices?.length === 0) {
@@ -712,7 +704,7 @@ export const setChoices = (
   }
 
   if (prompt.scriptPath === getMainScriptPath()) {
-    log.info(`💝 Caching main menu choices. First script: ${scoredChoices?.[1]?.item?.name}`);
+    log.info(`${prompt.getLogPrefix()}: 💝 Caching main menu choices. First script: ${scoredChoices?.[1]?.item?.name}`);
     kitCache.choices = scoredChoices;
   }
 
@@ -751,12 +743,14 @@ export const setScoredChoices = (prompt: KitPrompt, choices: ScoredChoice[], rea
     !prompt.kitSearch.inputRegex &&
     choices?.length
   ) {
-    log.info(`${prompt.pid}: Caching main scored choices: ${choices.length}. First choice: ${choices[0]?.item?.name}`);
+    log.info(
+      `${prompt.getLogPrefix()}: Caching main scored choices: ${choices.length}. First choice: ${choices[0]?.item?.name}`,
+    );
     sendToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, choices);
   }
 };
 
 export const setScoredFlags = (prompt: KitPrompt, choices: ScoredChoice[] = []) => {
-  log.silly(`🎼 Scored flags count: ${choices.length}`);
+  log.silly(`${prompt.getLogPrefix()}: 🎼 Scored flags count: ${choices.length}`);
   prompt.sendToPrompt(Channel.SET_SCORED_FLAGS, choices);
 };

@@ -107,3 +107,27 @@ npm run clear-cache
 ```
 
 This is due to Vite not picking up on some changes to a linked SDK.
+
+## Current Weather Alerts for Utah
+
+### Winter Weather Advisory
+- Area: Western Uinta Mountains
+- Status: Active
+- Severity: Moderate
+- Details: Winter Weather Advisory issued February 7 at 10:59PM MST until February 7 at 11:00PM MST
+
+### Wind Advisory
+Multiple areas affected:
+- Great Salt Lake Desert and Mountains
+- Tooele and Rush Valleys
+- Western Millard and Juab Counties
+- Southwest Utah
+- Eastern Uinta Basin
+- Lower Yampa River Basin
+- Central Yampa River Basin
+- Central Colorado River Basin
+
+Status: Active
+Severity: Moderate
+
+*Weather information last updated: February 7, 2024*

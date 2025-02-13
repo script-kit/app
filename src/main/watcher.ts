@@ -361,8 +361,6 @@ function handleNotReady(script: Script, event: WatchEvent, rebuilt: boolean, ski
  * the timestamping step is either applied or skipped.
  */
 async function finalizeScriptChange(script: Script) {
-  log.info('Shortcut script changed', script.filePath);
-
   // All these calls are side-effects that happen for both add/change
   // once we've either timestamped or decided not to.
   scheduleScriptChanged(script);
