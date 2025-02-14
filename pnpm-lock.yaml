@@ -452,8 +452,8 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7
       '@johnlindquist/mac-panel-window':
-        specifier: ^1.7.0
-        version: 1.7.0
+        specifier: ^2.0.0
+        version: 2.0.0
       '@johnlindquist/node-window-manager':
         specifier: ^1.0.24
         version: 1.0.24
@@ -1421,8 +1421,8 @@ packages:
     resolution: {integrity: sha512-dCNIV8IRCi0a5yiCIjc8TKy4/QObpjdOmA5r1hz0BThATet+HELo7MyQ42S8HNNiwuXeFiXZKuhnDl6pK9eUBA==}
     os: [darwin]
 
-  '@johnlindquist/mac-panel-window@1.7.0':
-    resolution: {integrity: sha512-mgyasW1eh8Rl5p+tKNsNJrpqLUrlVOSugDa7Yg5S9yj7MdbowV/KxAvEgy07gngnKr8YojdzlN9wHTORXFgaGg==}
+  '@johnlindquist/mac-panel-window@2.0.0':
+    resolution: {integrity: sha512-MzC8p6WghdrXflJNfW+/4D5DzscbjparAd2xHXbue3bxdXuP8c4TKWozdWcxigg6arQ6cI7hn+mL4ZYzfUZgxw==}
     os: [darwin]
 
   '@johnlindquist/mac-windows@1.0.2':
@@ -9248,7 +9248,7 @@ snapshots:
       node-addon-api: 7.1.1
     optional: true
 
-  '@johnlindquist/mac-panel-window@1.7.0':
+  '@johnlindquist/mac-panel-window@2.0.0':
     dependencies:
       bindings: 1.5.0
       node-addon-api: 8.3.0
