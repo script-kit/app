@@ -2232,9 +2232,7 @@ export class KitPrompt {
         this.setOpacity(1);
 
         if (kitState.isMac) {
-          this.window?.showInactive();
           makeKeyPanel(this.window);
-          this.window?.webContents.focus();
         } else {
           this.window?.showInactive();
           this.window?.focus();
