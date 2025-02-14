@@ -167,6 +167,7 @@ const logTypes = [
   'server',
   'search',
   'ipc',
+  'term',
 ] as const;
 
 type LogType = (typeof logTypes)[number];
@@ -267,6 +268,8 @@ export const {
   searchLogPath,
   ipcLog,
   ipcLogPath,
+  termLog,
+  termLogPath,
 } = logExports;
 
 // Helper type that enforces no extra keys remain.

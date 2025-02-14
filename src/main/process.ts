@@ -44,6 +44,7 @@ import { TrackEvent, trackEvent } from './track';
 import { createLogger } from './log-utils';
 import { readFile } from 'node:fs/promises';
 import { invoke } from './invoke-pty';
+import { createIdlePty } from './pty';
 
 const log = createLogger('process.ts');
 
@@ -793,6 +794,7 @@ class Processes extends Array<ProcessAndPrompt> {
       processLog.info(`${pid}: 🛑 removed`);
 
       kitState.shortcutsPaused = false;
+      createIdlePty();
     }
 
     // TODO: Does this matter anymore?

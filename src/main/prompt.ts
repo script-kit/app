@@ -987,11 +987,11 @@ export class KitPrompt {
         this.readyEmitter.emit('ready');
         this.ready = true;
 
-        // this.logInfo(`🚀 Prompt ready. Forcing render. ${this.window?.isVisible() ? 'visible' : 'hidden'}`);
+        this.logInfo(`🚀 Prompt ready. Forcing render. ${this.window?.isVisible() ? 'visible' : 'hidden'}`);
 
-        // this.sendToPrompt(AppChannel.FORCE_RENDER);
-        // await this.window?.webContents?.executeJavaScript('console.log(document.body.offsetHeight);');
-        // await this.window?.webContents?.executeJavaScript('console.clear();');
+        this.sendToPrompt(AppChannel.FORCE_RENDER);
+        await this.window?.webContents?.executeJavaScript('console.log(document.body.offsetHeight);');
+        await this.window?.webContents?.executeJavaScript('console.clear();');
 
         // this.window.webContents.setBackgroundThrottling(true);
       };
@@ -2232,8 +2232,9 @@ export class KitPrompt {
         this.setOpacity(1);
 
         if (kitState.isMac) {
-          // this.window?.showInactive();
+          this.window?.showInactive();
           makeKeyPanel(this.window);
+          this.window?.webContents.focus();
         } else {
           this.window?.showInactive();
           this.window?.focus();

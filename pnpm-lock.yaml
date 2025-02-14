@@ -59,6 +59,9 @@ importers:
       acorn-typescript:
         specifier: ^1.4.13
         version: 1.4.13(acorn@8.14.0)
+      add:
+        specifier: ^2.0.6
+        version: 2.0.6
       auto-launch:
         specifier: ^5.0.6
         version: 5.0.6
@@ -328,8 +331,8 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4
       electron:
-        specifier: 35.0.0-alpha.2
-        version: 35.0.0-alpha.2
+        specifier: 35.0.0-beta.6
+        version: 35.0.0-beta.6
       electron-builder:
         specifier: 26.0.1
         version: 26.0.1(electron-builder-squirrel-windows@26.0.0-alpha.10)
@@ -2345,6 +2348,9 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
+  add@2.0.6:
+    resolution: {integrity: sha512-j5QzrmsokwWWp6kUcJQySpbG+xfOBqqKnup3OIk1pz+kB/80SLorZ9V8zHFLO92Lcd+hbvq8bT+zOGoPkmBV0Q==}
+
   address@1.2.2:
     resolution: {integrity: sha512-4B/qKCfeE/ODUaAUpSwfzazo5x29WD4r3vXiWsB7I2mSDAihwEqKO+g8GELZUQSSAo5e1XTYh3ZVfLyxBc12nA==}
     engines: {node: '>= 10.0.0'}
@@ -3751,8 +3757,8 @@ packages:
       '@swc/core':
         optional: true
 
-  electron@35.0.0-alpha.2:
-    resolution: {integrity: sha512-XTvHd8KQfamTVqoYVbTYlWvJov+THAlrpemGRjW9akYQC56d4CVp0LdUy3Ayvv/m52LzQOGpfLBD79zu7GALdw==}
+  electron@35.0.0-beta.6:
+    resolution: {integrity: sha512-Qgp7mFpfCmYsWwGkIbsix64xka9cCLPikTHitn7Jgc31ZnJQAGGxcfXa06v7j09PJZmb/KcCegkwksN/fFQENQ==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
@@ -10250,6 +10256,8 @@ snapshots:
 
   acorn@8.14.0: {}
 
+  add@2.0.6: {}
+
   address@1.2.2: {}
 
   address@2.0.3: {}
@@ -12077,7 +12085,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@35.0.0-alpha.2:
+  electron@35.0.0-beta.6:
     dependencies:
       '@electron/get': 2.0.3
       '@types/node': 22.13.2

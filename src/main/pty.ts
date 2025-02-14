@@ -1,6 +1,6 @@
 import { ipcMain, type IpcMainEvent } from 'electron';
 /* eslint-disable no-nested-ternary */
-import log from 'electron-log';
+import { termLog as log } from './logs';
 import { debounce } from 'lodash-es';
 import * as pty from 'node-pty';
 import { AppChannel } from '../shared/enums';
@@ -39,7 +39,7 @@ class PtyPool {
     return new Promise((resolve) => {
       setTimeout(() => {
         this.ptys.forEach((p) => {
-          log.info(`🐲 Killing stray pty ${p.pid}`);
+          log.info(`🐲 Killing stray pty ${p.pid}. Current pty count: ${this.ptys.length}`);
           try {
             p.kill();
           } catch (error) {
@@ -77,7 +77,7 @@ class PtyPool {
       this.idlePty = null;
     }
     if (this?.disposer?.dispose) {
-      log.info(`🐲 Disposing idle pty ${this.idlePty?.pid}`);
+      log.info(`🐲 Disposing idle pty ${this.idlePty?.pid}. Current pty count: ${this.ptys.length}`);
       this.disposer.dispose();
     }
   }
@@ -153,8 +153,13 @@ class PtyPool {
 
 const ptyPool = new PtyPool();
 export const createIdlePty = () => {
-  ptyPool.killIdlePty();
-  ptyPool.prepareNextIdlePty();
+  if (ptyPool.ptys.length === 0) {
+    log.info('🐲 >_ Creating idle pty. Current pty count: ', ptyPool.ptys.length);
+    ptyPool.killIdlePty();
+    ptyPool.prepareNextIdlePty();
+  } else {
+    log.info('🐲 >_ Idle pty already exists. Current pty count: ', ptyPool.ptys.length);
+  }
 };
 
 export const createPty = (prompt: KitPrompt) => {
