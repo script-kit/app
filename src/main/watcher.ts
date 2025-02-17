@@ -1015,7 +1015,7 @@ export async function handleFileChangeEvent(eventName: WatchEvent, filePath: str
   }
 
   if (base === 'scripts.json') {
-    log.info('scripts.json changed. Is this a bug?');
+    log.silly('scripts.json changed. Is this a bug?');
 
     return;
 

@@ -665,7 +665,7 @@ export class KitPrompt {
     this.updateShortcodes();
     this.kitSearch.hasGroup = false;
     this.kitSearch.commandChars = [];
-    this.kitSearch.keys = ['slicedName', 'tag', 'group', 'command'];
+    this.kitSearch.keys = ['slicedName', 'tag', 'group', 'command', 'alias'];
   };
 
   flagSearch = {
