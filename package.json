@@ -179,6 +179,7 @@
     "node-pty": "1.1.0-beta27",
     "node-schedule": "2.1.1",
     "node-stream-zip": "^1.15.0",
+    "package-up": "^5.0.0",
     "pnpm": "10.4.1",
     "prop-types": "^15.8.1",
     "quick-score": "0.2.0",
@@ -199,7 +200,7 @@
   "optionalDependencies": {
     "@johnlindquist/mac-clipboard-listener": "^1.0.3",
     "@johnlindquist/mac-frontmost": "^1.0.7",
-    "@johnlindquist/mac-panel-window": "^1.7.0",
+    "@johnlindquist/mac-panel-window": "1",
     "@johnlindquist/node-window-manager": "^1.0.24",
     "node-mac-permissions": "^2.4.0",
     "uiohook-napi": "^1.5.4"

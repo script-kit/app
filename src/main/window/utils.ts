@@ -30,7 +30,6 @@ export const makeKeyPanel = (window: BrowserWindow) => {
 };
 
 export const setAppearance = (window: BrowserWindow, appearance: 'light' | 'dark' | 'auto') => {
-  return;
   if (kitState.isMac && !window.isDestroyed()) {
     log.info(`${window.id}: 📌 Setting appearance to ${appearance}`);
     shims['@johnlindquist/mac-panel-window'].setAppearance(window, appearance);

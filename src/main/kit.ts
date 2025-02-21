@@ -25,13 +25,9 @@ import { prompts } from './prompts';
 import { setShortcodes } from './search';
 import { getKitScript, kitCache, kitState, kitStore, sponsorCheck } from './state';
 import { TrackEvent, trackEvent } from './track';
-
-import { createLogger } from './log-utils';
 import { createForkOptions } from './fork.options';
-import { mainLogPath, errorLog } from './logs';
+import { mainLogPath, errorLog, kitLog as log } from './logs';
 import { refreshScripts } from '@johnlindquist/kit/core/db';
-
-const log = createLogger('kit.ts');
 
 app.on('second-instance', (_event, argv) => {
   log.info('second-instance', argv);
@@ -87,6 +83,7 @@ emitter.on(
           options: {
             force: boolean;
             trigger: Trigger;
+            cwd?: string;
           };
         }
       | string,
@@ -117,6 +114,7 @@ emitter.on(
               force: false,
               trigger: Trigger.Kit,
               sponsorCheck: true,
+              cwd: '',
             },
           }
         : scriptOrScriptAndData;
@@ -139,6 +137,7 @@ emitter.on(KitEvent.RunBackgroundProcess, (scriptPath: string) => {
     force: false,
     trigger: Trigger.Background,
     sponsorCheck: false,
+    cwd: '',
   });
 });
 
@@ -190,12 +189,14 @@ export const runPromptProcess = async (
     main?: boolean;
     headers?: Record<string, string>;
     sponsorCheck: boolean;
+    cwd?: string;
   } = {
     force: false,
     trigger: Trigger.App,
     main: false,
     sponsorCheck: false,
     headers: {},
+    cwd: '',
   },
 ): Promise<ProcessInfo | null> => {
   if (!kitState.ready) {
@@ -326,6 +327,8 @@ export const runPromptProcess = async (
     options?.trigger ? options.trigger : 'unknown',
     '--force',
     options?.force ? 'true' : 'false',
+    '--cwd',
+    options?.cwd || '',
   ];
 
   log.info(`${pid}: 🚀 Send ${promptScriptPath} with `, { argsWithTrigger });

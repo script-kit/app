@@ -1,6 +1,6 @@
 import { debounce } from 'lodash-es';
 import { isEqual, omit } from 'lodash-es';
-
+import { packageUp } from 'package-up';
 import { existsSync } from 'node:fs';
 import { lstat, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
@@ -136,6 +136,14 @@ const checkFileImports = debounce(async (script: Script) => {
   log.info({ imports });
 
   if (imports?.length && kitState.kenvEnv?.KIT_AUTO_INSTALL !== 'false') {
+    const scriptDirPath = path.dirname(script.filePath);
+    const packagePath = await packageUp({
+      cwd: scriptDirPath,
+    });
+    let cwd = '';
+    if (packagePath) {
+      cwd = path.dirname(packagePath);
+    }
     log.info(`📦 ${script.filePath} missing imports`, imports);
     emitter.emit(KitEvent.RunPromptProcess, {
       scriptPath: kitPath('cli', 'npm.js'),
@@ -143,6 +151,7 @@ const checkFileImports = debounce(async (script: Script) => {
       options: {
         force: true,
         trigger: Trigger.Info,
+        cwd,
       },
     });
   }

@@ -164,6 +164,9 @@ importers:
       node-stream-zip:
         specifier: ^1.15.0
         version: 1.15.0
+      package-up:
+        specifier: ^5.0.0
+        version: 5.0.0
       pnpm:
         specifier: 10.4.1
         version: 10.4.1
@@ -452,8 +455,8 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7
       '@johnlindquist/mac-panel-window':
-        specifier: ^1.7.0
-        version: 1.7.0
+        specifier: '1'
+        version: 1.8.1
       '@johnlindquist/node-window-manager':
         specifier: ^1.0.24
         version: 1.0.24
@@ -1421,8 +1424,8 @@ packages:
     resolution: {integrity: sha512-dCNIV8IRCi0a5yiCIjc8TKy4/QObpjdOmA5r1hz0BThATet+HELo7MyQ42S8HNNiwuXeFiXZKuhnDl6pK9eUBA==}
     os: [darwin]
 
-  '@johnlindquist/mac-panel-window@1.7.0':
-    resolution: {integrity: sha512-mgyasW1eh8Rl5p+tKNsNJrpqLUrlVOSugDa7Yg5S9yj7MdbowV/KxAvEgy07gngnKr8YojdzlN9wHTORXFgaGg==}
+  '@johnlindquist/mac-panel-window@1.8.1':
+    resolution: {integrity: sha512-ayPFUSZGbbJ5A30j4knYjVznW8LM4EycvQ3dq5GbBl6rNCMJZyHtNVS2QNxQXaXi2D9/fng0ZfntMDfG5a6o2Q==}
     os: [darwin]
 
   '@johnlindquist/mac-windows@1.0.2':
@@ -4341,6 +4344,10 @@ packages:
   find-root@1.1.0:
     resolution: {integrity: sha512-NKfW6bec6GfKc0SGx1e07QZY9PE99u0Bft/0rzSD5k3sO/vwkVUpDUKVm5Gpp5Ue3YfShPFTX2070tDs5kB9Ng==}
 
+  find-up-simple@1.0.0:
+    resolution: {integrity: sha512-q7Us7kcjj2VMePAa02hDAF6d+MzsdsAWEwYyOpwUtlerRBkOEPBCRZrAV4XfcSN8fHAgaD0hP7miwoay6DCprw==}
+    engines: {node: '>=18'}
+
   find-up@4.1.0:
     resolution: {integrity: sha512-PpOwAdQ/YlXQ2vj8a3h8IipDuYRi3wceVQQGYWxNINccq40Anw7BlsEXCMbt1Zt+OLA6Fq9suIpIWD0OsnISlw==}
     engines: {node: '>=8'}
@@ -6104,8 +6111,8 @@ packages:
   node-addon-api@7.1.1:
     resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
 
-  node-addon-api@8.3.0:
-    resolution: {integrity: sha512-8VOpLHFrOQlAH+qA0ZzuGRlALRA6/LVh8QJldbrC4DY0hXoMP0l4Acq8TzFC018HztWiRqyCEj2aTWY2UvnJUg==}
+  node-addon-api@8.3.1:
+    resolution: {integrity: sha512-lytcDEdxKjGJPTLEfW4mYMigRezMlyJY8W4wxJK8zE533Jlb8L8dRuObJFWg2P+AuOIxoCgKF+2Oq4d4Zd0OUA==}
     engines: {node: ^18 || ^20 || >= 21}
 
   node-api-version@0.2.0:
@@ -6341,6 +6348,10 @@ packages:
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
+
+  package-up@5.0.0:
+    resolution: {integrity: sha512-MQEgDUvXCa3sGvqHg3pzHO8e9gqTCMPVrWUko3vPQGntwegmFo52mZb2abIVTjFnUcW0BcPz0D93jV5Cas1DWA==}
+    engines: {node: '>=18'}
 
   pako@0.2.9:
     resolution: {integrity: sha512-NUcwaKxUxWrZLpDG+z/xZaCgQITkA/Dv4V/T6bw7VON6l1Xz/VnrBqrYjZQ12TamKHzITTfOEIYUj48y2KXImA==}
@@ -9257,10 +9268,10 @@ snapshots:
       node-addon-api: 7.1.1
     optional: true
 
-  '@johnlindquist/mac-panel-window@1.7.0':
+  '@johnlindquist/mac-panel-window@1.8.1':
     dependencies:
       bindings: 1.5.0
-      node-addon-api: 8.3.0
+      node-addon-api: 8.3.1
     optional: true
 
   '@johnlindquist/mac-windows@1.0.2':
@@ -12957,6 +12968,8 @@ snapshots:
 
   find-root@1.1.0: {}
 
+  find-up-simple@1.0.0: {}
+
   find-up@4.1.0:
     dependencies:
       locate-path: 5.0.0
@@ -14939,7 +14952,7 @@ snapshots:
 
   node-addon-api@7.1.1: {}
 
-  node-addon-api@8.3.0:
+  node-addon-api@8.3.1:
     optional: true
 
   node-api-version@0.2.0:
@@ -15185,6 +15198,10 @@ snapshots:
   p-try@2.2.0: {}
 
   package-json-from-dist@1.0.1: {}
+
+  package-up@5.0.0:
+    dependencies:
+      find-up-simple: 1.0.0
 
   pako@0.2.9: {}
 

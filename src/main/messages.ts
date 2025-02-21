@@ -1023,8 +1023,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       sendToPrompt(Channel.SET_HINT, data.value);
     },
 
-    SET_BOUNDS: onChildChannel(({ child }, { channel, value }) => {
-      sendToPrompt(Channel.SET_BOUNDS, value);
+    SET_BOUNDS: onChildChannel(async ({ child }, { channel, value }) => {
+      prompt.modifiedByUser = true;
+      (value as any).human = true;
+      await waitForPrompt(Channel.SET_BOUNDS, value);
+      prompt.setBounds(value);
     }),
 
     SET_IGNORE_BLUR: onChildChannel(({ child }, { channel, value }) => {

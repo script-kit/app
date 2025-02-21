@@ -185,12 +185,19 @@ export const uiAtom = atom(
       ipcRenderer.send(a);
     }, 250);
 
+    let attempts = 0;
+    const maxAttempts = 60; // roughly one second at 60fps
+
     requestAnimationFrame(function checkElement() {
+      attempts++;
       if (document.getElementById(id)) {
         clearTimeout(timeoutId);
         ipcRenderer.send(a);
-      } else {
+      } else if (attempts < maxAttempts) {
         requestAnimationFrame(checkElement);
+      } else {
+        clearTimeout(timeoutId);
+        console.warn(`Element with id: ${id} not found after ${maxAttempts} attempts.`);
       }
     });
     // s(previewHTMLAtom, g(cachedMainPreview));
@@ -1113,11 +1120,12 @@ const resize = debounce(
   (g: Getter, s: Setter, reason = 'UNSET') => {
     const human = g(promptResizedByHumanAtom);
     if (human) {
+      g(channelAtom)(Channel.SET_BOUNDS, g(promptBoundsAtom));
       return;
     }
     // log.info(`${g(pidAtom)}: ${g(scriptAtom)?.filePath}: 🌈 resize: ${reason}`);
     if (reason !== 'SETTLE') {
-      resizeSettle(g, s);
+      // resizeSettle(g, s);
     }
 
     const active = g(promptActiveAtom);

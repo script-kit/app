@@ -741,6 +741,8 @@ export class KitPrompt {
     log.silly(this.getLogPrefix(), ...args);
   };
 
+  isWindow = false;
+
   onBlur = () => {
     this.logInfo('🙈 Prompt window blurred');
 
@@ -764,8 +766,9 @@ export class KitPrompt {
       return;
     }
 
-    if (kitState.isMac) {
+    if (kitState.isMac && !this.isWindow) {
       makeWindow(this.window);
+      this.isWindow = true;
     }
 
     if (this.justFocused && this.isVisible()) {
@@ -1044,15 +1047,19 @@ export class KitPrompt {
     this.window.webContents?.on('devtools-opened', () => {
       // remove blur handler
       this.window.removeListener('blur', this.onBlur);
-      makeWindow(this.window);
+      if (kitState.isMac && !this.isWindow) {
+        makeWindow(this.window);
+        this.isWindow = true;
+      }
     });
 
     this.window.webContents?.on('devtools-closed', () => {
       this.logSilly('event: devtools-closed');
 
-      if (kitState.isMac) {
+      if (kitState.isMac && !this.isWindow) {
         this.logInfo('👋 setPromptAlwaysOnTop: false, so makeWindow');
         makeWindow(this.window);
+        this.isWindow = true;
       } else {
         this.setPromptAlwaysOnTop(false);
       }
@@ -1377,6 +1384,9 @@ export class KitPrompt {
       return;
     }
     if (this.window) {
+      if (kitState.isMac) {
+        shims['@johnlindquist/mac-panel-window'].blurInstant(this.window);
+      }
       this.window.blur();
     }
   };
