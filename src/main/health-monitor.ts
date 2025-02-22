@@ -3,8 +3,6 @@ import { app, BrowserWindow } from 'electron';
 import { healthLog } from './logs';
 import { kitState } from './state';
 
-// --- Type Definitions ---
-
 // A generic type for recursively nested numeric metric values.
 type UnitString = `${number} MB` | `${number} ms`;
 type MetricsValue = number | UnitString | MetricsValue[] | { [key: string]: MetricsValue } | HealthReport | FullMetrics;
