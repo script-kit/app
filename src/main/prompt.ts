@@ -2425,6 +2425,15 @@ export class KitPrompt {
 
   setScript = (script: Script, pid: number, force = false): 'denied' | 'allowed' => {
     const { preview, scriptlet, inputs, tag, ...serializableScript } = script as Scriptlet;
+
+    log.info(`${this.pid}: setScript`, serializableScript, JSON.stringify(script));
+
+    if (typeof script?.prompt === 'boolean' && script.prompt === false) {
+      this.hideInstant();
+      this.resetState();
+      return 'denied';
+    }
+
     this.scriptSet = true;
     this.logInfo(`${this.pid}: ${pid} setScript`, serializableScript, {
       preloaded: this.preloaded || 'none',

@@ -129,7 +129,7 @@
   "dependencies": {
     "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/clipboard": "^0.1.38",
-    "@johnlindquist/kit": "^3.12.5",
+    "@johnlindquist/kit": "^3.12.9",
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^28.0.2",
     "@tailwindcss/postcss": "^4.0.0",

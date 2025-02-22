@@ -15,8 +15,8 @@ importers:
         specifier: ^0.1.38
         version: 0.1.38
       '@johnlindquist/kit':
-        specifier: ^3.12.5
-        version: 3.12.5
+        specifier: ^3.12.9
+        version: 3.12.9
       '@pnpm/exec':
         specifier: ^2.0.0
         version: 2.0.0
@@ -1411,8 +1411,8 @@ packages:
     resolution: {integrity: sha512-VCZf/s7Tbp/8X516zhlbrUuVWx/triWCojXYz07YlxZaqAoFnR7+nhsInT9LTpkLqz5EgdDya4oRp8axZNyS5Q==}
     hasBin: true
 
-  '@johnlindquist/kit@3.12.5':
-    resolution: {integrity: sha512-A5w95X8OQm7xQcy5OnNhiYAWrvuDYwBTh4PuPqbbdH+s14xr1m1RJ+wm/ipaGwWlAOU3lpa28NvDOySkL/mMpg==}
+  '@johnlindquist/kit@3.12.9':
+    resolution: {integrity: sha512-gDexCNZ+t29NNl7cBAy8zOpdFG0VccWpMLR9rG/hEjjnoLdJK/OKFg8/aY/PNRkYSQHJJhLH/JQ7YqNR/+s+Uw==}
     engines: {node: '>=14.8.0'}
     hasBin: true
 
@@ -1553,8 +1553,8 @@ packages:
     peerDependencies:
       '@octokit/core': '>=6'
 
-  '@octokit/plugin-retry@7.1.3':
-    resolution: {integrity: sha512-8nKOXvYWnzv89gSyIvgFHmCBAxfQAOPRlkacUHL9r5oWtp5Whxl8Skb2n3ACZd+X6cYijD6uvmrQuPH/UCL5zQ==}
+  '@octokit/plugin-retry@7.1.4':
+    resolution: {integrity: sha512-7AIP4p9TttKN7ctygG4BtR7rrB0anZqoU9ThXFk8nETqIfvgPUANTSYHqWYknK7W3isw59LpZeLI8pcEwiJdRg==}
     engines: {node: '>= 18'}
     peerDependencies:
       '@octokit/core': '>=6'
@@ -1564,10 +1564,6 @@ packages:
     engines: {node: '>= 18'}
     peerDependencies:
       '@octokit/core': ^6.1.3
-
-  '@octokit/request-error@6.1.6':
-    resolution: {integrity: sha512-pqnVKYo/at0NuOjinrgcQYpEbv4snvP3bKMRqHaD9kIsk9u1LCpb2smHZi8/qJfgeNqLo5hNW4Z7FezNdEo0xg==}
-    engines: {node: '>= 18'}
 
   '@octokit/request-error@6.1.7':
     resolution: {integrity: sha512-69NIppAwaauwZv6aOzb+VVLwt+0havz9GT5YplkeJv7fG7a40qpLt/yZKyiDxAhgz0EtgNdNcb96Z0u+Zyuy2g==}
@@ -6532,11 +6528,6 @@ packages:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
     engines: {node: '>=4'}
 
-  pnpm@10.4.0:
-    resolution: {integrity: sha512-a4SdB4fZf49OHwOpuP+PA4554VPW8RrlOa58Q1/555bfaoYsmRUCaVx/no+siur8GsWo2rR+NhSNGDgy2IbdUg==}
-    engines: {node: '>=18.12'}
-    hasBin: true
-
   pnpm@10.4.1:
     resolution: {integrity: sha512-x1O2w616+hOvOI+m2AgDWgCOMOqZk/WMZmPivF/yFnmqg02wlJhxKapNSIuG31f3tjSYGy+CfNysxpjMDPuIrw==}
     engines: {node: '>=18.12'}
@@ -9187,17 +9178,18 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@johnlindquist/kit@3.12.5':
+  '@johnlindquist/kit@3.12.9':
     dependencies:
       '@johnlindquist/open': 10.1.1
       '@octokit/auth-oauth-device': 7.1.3
       '@octokit/core': 6.1.4
       '@octokit/plugin-paginate-rest': 11.4.2(@octokit/core@6.1.4)
       '@octokit/plugin-rest-endpoint-methods': 13.3.1(@octokit/core@6.1.4)
-      '@octokit/plugin-retry': 7.1.3(@octokit/core@6.1.4)
+      '@octokit/plugin-retry': 7.1.4(@octokit/core@6.1.4)
       '@octokit/plugin-throttling': 9.4.0(@octokit/core@6.1.4)
       '@types/chalk': 2.2.4
       '@types/date-fns': 2.6.3
+      '@types/download': 8.0.5
       '@types/fs-extra': 11.0.4
       '@types/shelljs': 0.8.15
       '@typescript/lib-dom': '@johnlindquist/no-dom@1.0.2'
@@ -9235,7 +9227,7 @@ snapshots:
       minimist: 1.2.8
       open: 10.1.0
       p-retry: 6.2.1
-      pnpm: 10.4.0
+      pnpm: 10.4.1
       project-name-generator: 2.1.9
       quick-score: 0.2.0
       replace-in-file: 8.3.0
@@ -9415,10 +9407,10 @@ snapshots:
       '@octokit/core': 6.1.4
       '@octokit/types': 13.8.0
 
-  '@octokit/plugin-retry@7.1.3(@octokit/core@6.1.4)':
+  '@octokit/plugin-retry@7.1.4(@octokit/core@6.1.4)':
     dependencies:
       '@octokit/core': 6.1.4
-      '@octokit/request-error': 6.1.6
+      '@octokit/request-error': 6.1.7
       '@octokit/types': 13.8.0
       bottleneck: 2.19.5
 
@@ -9427,10 +9419,6 @@ snapshots:
       '@octokit/core': 6.1.4
       '@octokit/types': 13.8.0
       bottleneck: 2.19.5
-
-  '@octokit/request-error@6.1.6':
-    dependencies:
-      '@octokit/types': 13.8.0
 
   '@octokit/request-error@6.1.7':
     dependencies:
@@ -15352,8 +15340,6 @@ snapshots:
       xmlbuilder: 15.1.1
 
   pluralize@8.0.0: {}
-
-  pnpm@10.4.0: {}
 
   pnpm@10.4.1: {}
 
