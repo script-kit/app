@@ -31,7 +31,7 @@ const ignored = [
 ];
 
 // For sub-kenvs, we specifically watch only {subKenv}/scripts, {subKenv}/snippets, and {subKenv}/scriptlets
-// so we do NOT watch node_modules/.git/etc at all.
+// so we do NOT watch node_modules/.git/etc at all
 
 function getConfigFiles(): string[] {
   return ['globals.ts', 'package.json'];
