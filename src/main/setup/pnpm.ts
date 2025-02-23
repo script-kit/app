@@ -22,8 +22,12 @@ const execFileAsync = promisify(execFile);
 async function detectPlatform(): Promise<string> {
   log.info('Detecting platform...');
   const osType = platform();
-  if (osType === 'win32') { return 'win'; }
-  if (osType === 'darwin') { return 'macos'; }
+  if (osType === 'win32') {
+    return 'win';
+  }
+  if (osType === 'darwin') {
+    return 'macos';
+  }
   if (osType === 'linux') {
     // Check if it's glibc compatible
     try {
@@ -57,7 +61,7 @@ function detectArch(): string {
 async function getLatestVersion(): Promise<string> {
   log.info('Fetching latest pnpm version...');
   const response = await fetch('https://registry.npmjs.org/@pnpm/exe');
-  const data = await response.json() as { distTags: { latest: string } };
+  const data = (await response.json()) as { distTags: { latest: string } };
   return data['dist-tags'].latest;
 }
 
@@ -238,7 +242,6 @@ export const existsAndIsExecutable = (filePath: string | undefined): boolean => 
 };
 
 export const findPnpmBin = async (): Promise<string> => {
-
   if (kitState?.kenvEnv?.KIT_PNPM) {
     log.info(`Checking KIT_PNPM: ${kitState.kenvEnv.KIT_PNPM}`);
     if (existsSync(kitState.kenvEnv.KIT_PNPM)) {
@@ -381,13 +384,15 @@ export async function getPnpmPath(): Promise<string> {
   _pnpmPath = _pnpmPath.replace(/^"|"$/g, '');
   log.info(`pnpm path after removing quotes: ${_pnpmPath}`);
 
-  // If the path contains spaces, wrap it in quotes
-  if (_pnpmPath.includes(' ')) {
+  // On Windows, if the path contains spaces, wrap it in quotes
+  if (process.platform === 'win32' && _pnpmPath.includes(' ')) {
     _pnpmPath = `"${_pnpmPath}"`;
   }
-
   log.info(`pnpm path after wrapping in quotes: ${_pnpmPath}`);
-  const PNPM_KIT_NODE_PATH = path.join(path.dirname(_pnpmPath), 'nodejs', process.versions.node, 'bin');
+
+  // Use the unquoted path for directory operations
+  const unquotedPnpmPath = _pnpmPath.replace(/^"|"$/g, '');
+  const PNPM_KIT_NODE_PATH = path.join(path.dirname(unquotedPnpmPath), 'nodejs', process.versions.node, 'bin');
   log.info(`pnpm bin path: ${PNPM_KIT_NODE_PATH}`);
   kitState.PNPM_KIT_NODE_PATH = PNPM_KIT_NODE_PATH;
   process.env.PATH = PNPM_KIT_NODE_PATH + path.delimiter + process.env.PATH;
