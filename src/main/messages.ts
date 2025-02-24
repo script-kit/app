@@ -79,12 +79,11 @@ import shims from './shims';
 import { TrackEvent, trackEvent } from './track';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { showLogWindow } from './window';
-import { createLogger } from './log-utils';
 import { osTmpPath } from './tmp';
 import { displayError } from './error';
 import { consoleLog } from './logs';
 
-const log = createLogger('messages.ts');
+import { messagesLog as log } from './logs';
 
 let prevId1: string;
 let prevId2: string;
@@ -429,7 +428,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         return;
       }
 
-      // log.purple('VITE_WIDGET_SEND', channel, value);
+      // log.info('VITE_WIDGET_SEND', channel, value);
       if (widget) {
         widget?.webContents.send(value?.channel, data);
       } else {
@@ -515,9 +514,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
         kitState.blurredByKit = true;
         const widgetId = Date.now().toString();
-        log.green(`${child?.pid}: ⚙️ Creating widget ${widgetId}`);
+        log.info(`${child?.pid}: ⚙️ Creating widget ${widgetId}`);
         const widget = await showWidget(scriptPath, widgetId, html, options);
-        log.green(`${child?.pid}: ⚙️ Created widget ${widgetId}`);
+        log.info(`${child?.pid}: ⚙️ Created widget ${widgetId}`);
 
         widgetState.widgets.push({
           id: widgetId,
@@ -725,7 +724,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         }),
       );
 
-      log.purple(`Sending`, { displays: displaysWithThumbnails });
+      log.info(`Sending`, { displays: displaysWithThumbnails });
 
       childSend({ channel, displays: displaysWithThumbnails });
     }),
@@ -1991,17 +1990,20 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
     MOUSE_LEFT_CLICK: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
+      log.info('MOUSE LEFT CLICK');
       shims['@jitsi/robotjs'].mouseClick('left');
       // END-REMOVE-NUT
     }),
 
     MOUSE_RIGHT_CLICK: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
+      log.info('MOUSE RIGHT CLICK');
       shims['@jitsi/robotjs'].mouseClick('right');
       // END-REMOVE-NUT
     }),
 
     MOUSE_MOVE: onChildChannel(async ({ child }, { channel, value }) => {
+      log.info('MOUSE MOVE', value);
       // REMOVE-NUT
       for (const v of value) {
         shims['@jitsi/robotjs'].moveMouseSmooth(v.x, v.y);
@@ -2011,6 +2013,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
     MOUSE_SET_POSITION: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
+      log.info('MOUSE SET POSITION', value);
       shims['@jitsi/robotjs'].moveMouse(value.x, value.y);
       // END-REMOVE-NUT
     }),

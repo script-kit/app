@@ -1,22 +1,29 @@
-import type { FSWatcher } from 'node:fs';
+import type { Stats } from 'node:fs';
 import path from 'node:path';
 import type { Script } from '@johnlindquist/kit/types/core';
 import chokidar from 'chokidar';
 import { app } from 'electron';
-/* eslint-disable no-nested-ternary */
-import log from 'electron-log';
 import { Trigger } from '../shared/enums';
 import { runPromptProcess } from './kit';
 import { kitState } from './state';
 import { slash } from './path-utils';
+import { metadataWatcherLog as log } from './logs';
+import { glob } from 'node:fs/promises';
 
 export const watchMap = new Map();
 
-export const removeWatch = (filePath: string) => {
+type FSWatcher = ReturnType<typeof chokidar.watch>;
+
+export const removeWatch = async (filePath: string) => {
   const watcher = watchMap.get(filePath) as FSWatcher;
   if (watcher) {
     log.info(`🗑 Remove watch: ${filePath}`);
-    watcher.close();
+    // If it's a glob pattern, unwatch the resolved paths
+    if (filePath.includes('*')) {
+      const resolvedPaths = await Array.fromAsync(glob(filePath));
+      watcher.unwatch(resolvedPaths);
+    }
+    await watcher.close();
     watchMap.delete(filePath);
   }
 };
@@ -38,21 +45,58 @@ const normalizePath = (scriptPath: string) => (filePath: string) => {
 
 const validWatchEvents = ['add', 'change', 'unlink'];
 
-const addWatch = (watchString: string, scriptPath: string) => {
+const addWatch = async (watchString: string, scriptPath: string) => {
   try {
     log.info(`Watch: ${watchString} - from - ${scriptPath}`);
 
     const [pathsString] = watchString.split('|');
 
-    const paths: string | string[] = pathsString.startsWith('[')
-      ? JSON.parse(pathsString).map(normalizePath(scriptPath))
-      : normalizePath(scriptPath)(pathsString);
+    // Handle the path(s) to watch
+    let paths: string | string[];
+    let watchOptions: Parameters<typeof chokidar.watch>[1] = { ignoreInitial: true };
+
+    if (pathsString.startsWith('[')) {
+      // Handle array of paths
+      const pathArray = JSON.parse(pathsString).map(normalizePath(scriptPath));
+
+      // If any path contains a glob pattern, resolve it
+      if (pathArray.some((p) => p.includes('*'))) {
+        const expandedPaths = await Promise.all(
+          pathArray.map(async (p) => {
+            if (p.includes('*')) {
+              return await glob(p);
+            }
+            return [p];
+          }),
+        );
+        paths = expandedPaths.flat();
+      } else {
+        paths = pathArray;
+      }
+    } else {
+      const normalizedPath = normalizePath(scriptPath)(pathsString);
+
+      // If it's a glob pattern, resolve it first
+      if (pathsString.includes('*')) {
+        const dir = path.dirname(normalizedPath);
+        paths = dir;
+
+        // For patterns like ~/Downloads/*.js, filter by extension
+        const ext = path.extname(pathsString);
+        if (ext) {
+          watchOptions = {
+            ...watchOptions,
+            ignored: (path: string, stats?: Stats) => (stats?.isFile() ?? false) && !path.endsWith(ext),
+          };
+        }
+      } else {
+        paths = normalizedPath;
+      }
+    }
 
     log.info('Watched paths:', { paths });
 
-    const watcher = chokidar.watch(paths, {
-      ignoreInitial: true,
-    });
+    const watcher = chokidar.watch(paths, watchOptions);
 
     watcher.on('all', (eventName: string, filePath: string) => {
       log.info({ eventName, filePath });
@@ -68,14 +112,18 @@ const addWatch = (watchString: string, scriptPath: string) => {
 
     watchMap.set(scriptPath, watcher);
   } catch (error) {
-    removeWatch(scriptPath);
-    log.warn(error?.message);
+    await removeWatch(scriptPath);
+    if (error instanceof Error) {
+      log.warn(error.message);
+    } else {
+      log.warn('Unknown error in addWatch');
+    }
   }
 };
 
-export const watchScriptChanged = ({ filePath, kenv, watch: watchString }: Script) => {
+export const watchScriptChanged = async ({ filePath, kenv, watch: watchString }: Script) => {
   if (!watchString && watchMap.get(filePath)) {
-    removeWatch(filePath);
+    await removeWatch(filePath);
     return;
   }
 
@@ -84,17 +132,16 @@ export const watchScriptChanged = ({ filePath, kenv, watch: watchString }: Scrip
       log.info(`Ignoring ${filePath} // Background metadata because it's not trusted in a trusted kenv.`);
       log.info(`Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`);
     }
-
     return;
   }
 
   if (watchString && !watchMap.get(filePath)) {
-    addWatch(watchString, filePath);
+    await addWatch(watchString, filePath);
     return;
   }
 
   if (watchString && watchMap.get(filePath)) {
-    removeWatch(filePath);
-    addWatch(watchString, filePath);
+    await removeWatch(filePath);
+    await addWatch(watchString, filePath);
   }
 };

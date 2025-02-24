@@ -54,6 +54,58 @@ import { scriptLog, watcherLog as log } from './logs';
 import { createIdlePty } from './pty';
 import { parseSnippet } from './snippet-cache';
 
+// Add a map to track recently processed files
+const recentlyProcessedFiles = new Map<string, number>();
+
+/**
+ * Normalize a file path to ensure consistent comparison across platforms
+ * This handles differences between Windows and Unix-style paths
+ */
+const normalizePath = (filePath: string): string => {
+  // Convert to forward slashes for consistency
+  const normalized = filePath.replace(/\\/g, '/');
+  // Ensure case-insensitive comparison on Windows
+  return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
+};
+
+// Helper to check if a file was recently processed
+const wasRecentlyProcessed = (filePath: string): boolean => {
+  const normalizedPath = normalizePath(filePath);
+
+  // Check for exact match first
+  let timestamp = recentlyProcessedFiles.get(normalizedPath);
+
+  // If no exact match, check if any stored path resolves to the same file
+  if (!timestamp) {
+    for (const [storedPath, storedTimestamp] of recentlyProcessedFiles.entries()) {
+      // For Windows, do case-insensitive comparison
+      if (normalizePath(storedPath) === normalizedPath) {
+        timestamp = storedTimestamp;
+        break;
+      }
+    }
+  }
+
+  if (!timestamp) return false;
+
+  const now = Date.now();
+  const fiveSecondsAgo = now - 5000; // 5 second cooldown
+
+  // If the file was processed in the last 5 seconds, ignore it
+  return timestamp > fiveSecondsAgo;
+};
+
+// Helper to mark a file as processed
+const markFileAsProcessed = (filePath: string): void => {
+  const normalizedPath = normalizePath(filePath);
+  recentlyProcessedFiles.set(normalizedPath, Date.now());
+
+  // Schedule cleanup of old entries
+  setTimeout(() => {
+    recentlyProcessedFiles.delete(normalizedPath);
+  }, 5000);
+};
+
 const unlinkScript = (filePath: string) => {
   cancelSchedule(filePath);
   unlinkEvents(filePath);
@@ -180,7 +232,15 @@ const getDepWatcher = () => {
     log.info(`🔍 ${filePath} is a dependency of these scripts:`, Array.from(affectedScripts));
     log.info('Clearing their respective caches...');
 
+    // Mark the dependency file as processed - using normalized path
+    markFileAsProcessed(filePath);
+
     for await (const relativeScriptPath of affectedScripts) {
+      const fullPath = kenvPath(relativeScriptPath);
+
+      // Mark affected scripts as processed to prevent duplicate change events - using normalized path
+      markFileAsProcessed(fullPath);
+
       const cachePath = path.join(
         path.dirname(kenvPath(relativeScriptPath)),
         '.cache',
@@ -193,7 +253,6 @@ const getDepWatcher = () => {
         log.info(`🤔 Cache for ${relativeScriptPath} at ${cachePath} does not exist...`);
       }
 
-      const fullPath = kenvPath(relativeScriptPath);
       log.info(`Sending ${fullPath} to all active children`, {
         event: Channel.SCRIPT_CHANGED,
         state: fullPath,
@@ -248,6 +307,11 @@ const madgeAllScripts = debounce(async () => {
 
   log.info(`🔍 ${allScriptPaths.length} scripts found`);
 
+  // Mark all scripts as being processed - using normalized paths
+  for (const scriptPath of allScriptPaths) {
+    markFileAsProcessed(scriptPath);
+  }
+
   const fileMadge = await madge(allScriptPaths, {
     baseDir: kenvChokidarPath(),
     dependencyFilter: (source) => {
@@ -275,6 +339,9 @@ const madgeAllScripts = debounce(async () => {
       const depKenvPath = kenvChokidarPath(dep);
       log.verbose(`Watching ${depKenvPath}`);
       depWatcher.add(depKenvPath);
+
+      // Mark dependencies as processed too - using normalized paths
+      markFileAsProcessed(depKenvPath);
     }
 
     if (deps.length > 0) {
@@ -431,6 +498,13 @@ export const onScriptChanged = async (
   skipCacheMainMenu = false,
 ) => {
   scriptLog.info('🚨 onScriptChanged', event, script.filePath);
+
+  // Check if this file was recently processed by madgeAllScripts
+  // If so, ignore this change event to prevent cascading changes
+  if (wasRecentlyProcessed(script.filePath) && !rebuilt) {
+    log.info(`🛑 Ignoring change event for ${script.filePath} - recently processed by dependency scanner`);
+    return;
+  }
 
   // If this is the first batch of scripts, settle that first.
   if (kitState.firstBatch) {
@@ -974,6 +1048,8 @@ emitter.on(KitEvent.Sync, () => {
 // ---- New handleFileChangeEvent Function ----
 
 export async function handleFileChangeEvent(eventName: WatchEvent, filePath: string, source: string) {
+  // Normalize the file path for consistent handling
+  const normalizedPath = normalizePath(filePath);
   const { base, dir, name } = path.parse(filePath);
 
   if (base === 'ping.txt') {
@@ -1048,16 +1124,22 @@ export async function handleFileChangeEvent(eventName: WatchEvent, filePath: str
   }
 
   if (dir.endsWith('scripts')) {
+    // Check if this file was recently processed to avoid duplicate processing
+    if (wasRecentlyProcessed(filePath) && eventName === 'change') {
+      log.info(`🛑 Ignoring change event for ${filePath} in handleFileChangeEvent - recently processed`);
+      return;
+    }
+
     let script: Script;
     try {
       if (eventName !== 'unlink') {
         script = await parseScript(filePath);
       } else {
-        script = { filePath, name: path.basename(filePath) };
+        script = { filePath, name: path.basename(filePath) } as Script;
       }
     } catch (error) {
       log.warn(error);
-      script = { filePath, name: path.basename(filePath) };
+      script = { filePath, name: path.basename(filePath) } as Script;
     }
     await onScriptChanged(eventName, script);
     return;
