@@ -1919,9 +1919,14 @@ export const submitValueAtom = atom(
   (g, s, a: any) => {
     const ui = g(uiAtom);
     const allowEmptyEnterUIs = [UI.term, UI.drop, UI.hotkey];
+    const flaggedValue = g(flaggedChoiceValueAtom);
+    const flag = g(focusedFlagValueAtom);
+    const action = g(focusedActionAtom);
     const enter = g(enterAtom);
 
-    if (enter === '' && !allowEmptyEnterUIs.includes(ui)) {
+    const preventSubmitDueToUI = allowEmptyEnterUIs.includes(ui);
+
+    if (enter === '' && !preventSubmitDueToUI && !flaggedValue && !action) {
       log.warn('👀 Preventing submit because enterAtom is empty');
       return;
     }
@@ -1935,8 +1940,6 @@ export const submitValueAtom = atom(
 
     // log.info('submitValue', a);
     // log.info(`scriptlet?`, a?.scriptlet);
-    const flaggedValue = g(flaggedChoiceValueAtom);
-    const flag = g(focusedFlagValueAtom);
 
     /*
      * TODO: Make a list of all the states that impact submission.
@@ -1960,7 +1963,7 @@ export const submitValueAtom = atom(
       log.info('👀 preventSubmitWithoutActionAtom');
       return;
     }
-    const action = g(focusedActionAtom);
+
     if ((action as FlagsWithKeys).hasAction) {
       channel(Channel.ACTION);
       if (action?.close && g(flaggedChoiceValueAtom)) {
@@ -3563,9 +3566,14 @@ export const submitInputAtom = atom(null, (g, s) => {
 
 export const setFlagByShortcutAtom = atom(null, (g, s, a: string) => {
   const flags = g(flagsAtom);
+  console.log('🏴‍☠️ Setting flag by shortcut', { a, flags });
   const flag = Object.keys(flags).find((key) => flags[key]?.shortcut === a);
+  console.log('🏴‍☠️ Setting flag by shortcut', { flag });
   log.info(`🏴‍☠️ Setting flag by shortcut: ${flag}`);
-  s(flaggedChoiceValueAtom, flag);
+  if (flag) {
+    s(flaggedChoiceValueAtom, flag);
+    s(focusedFlagValueAtom, flag);
+  }
 });
 
 const _choiceInputsAtom = atom<string[]>([]);

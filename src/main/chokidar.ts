@@ -69,6 +69,7 @@ function createSubKenvWatchers(
         depth: 0, // Only watch root level
         ignoreInitial: true,
         ignored,
+        alwaysStat: true,
       });
 
       w.on('all', (event, changedPath) => {
@@ -120,6 +121,7 @@ export const startWatching = (
   log.info(`🔍 Watching kit db folder: ${dbPath}`);
   const dbWatcher = manager.createWatcher('db', dbPath, {
     depth: 0,
+    alwaysStat: true,
   });
   dbWatcher.on('all', (event, filePath) => {
     callback(event as WatchEvent, filePath);
@@ -137,6 +139,7 @@ export const startWatching = (
   log.info(`🔍 Watching run.txt & ping.txt: ${[runTxt, pingTxt].join(', ')}`);
   const runPingWatcher = manager.createWatcher('run-ping', kitPath, {
     depth: 0,
+    alwaysStat: true,
     ignored: (path: string) => {
       // Don't ignore the parent directory
       if (path === kitPath) return false;
@@ -165,6 +168,7 @@ export const startWatching = (
   log.info(`🔍 Watching kenv root for config files: ${configFiles.join(', ')}`);
   const kenvRootWatcher = manager.createWatcher('kenv-root', kenvChokidarPath(), {
     depth: 0,
+    alwaysStat: true,
     ignored,
   });
 
@@ -196,6 +200,7 @@ export const startWatching = (
     const w = manager.createWatcher(key, dirPath, {
       depth: 0, // Only watch root level
       ignored,
+      alwaysStat: true,
     });
     w.on('all', (event, filePath) => {
       callback(event as WatchEvent, filePath);
@@ -281,6 +286,7 @@ export const startWatching = (
     const appWatcher = manager.createWatcher('apps', appDirs, {
       ignoreInitial: true,
       depth: 0,
+      alwaysStat: true,
       ignored,
     });
     appWatcher.on('all', (event, filePath) => {

@@ -2,6 +2,9 @@ import { getCurrentKeyboardLayout, getKeyMap, onDidChangeKeyboardLayout } from '
 import { BrowserWindow, app, crashReporter, nativeTheme, powerMonitor, protocol, screen } from 'electron';
 import './env';
 import log from 'electron-log';
+import { symlink } from 'node:fs/promises';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
 
 process.on('SIGINT', () => {
   app.quit();
@@ -542,9 +545,17 @@ const ready = async () => {
         await rimraf(kitLogsPath);
       }
 
-      await symlink(appLogsPath, kitLogsPath);
+      if (os.platform() === 'win32') {
+        // Windows: Create a junction point (doesn't require admin rights)
+        const execAsync = promisify(exec);
+        await execAsync(`mklink /J "${kitLogsPath}" "${appLogsPath}"`);
+        log.info(`Created junction point from ${kitLogsPath} to ${appLogsPath}`);
+      } else {
+        // Mac/Linux: Keep existing behavior
+        await symlink(appLogsPath, kitLogsPath);
+      }
     } catch (error) {
-      log.info(error);
+      log.info('Error creating logs link:', error);
     }
 
     await prepareProtocols();

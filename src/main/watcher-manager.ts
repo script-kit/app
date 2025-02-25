@@ -18,6 +18,10 @@ interface WatcherInfo {
 // Default ignored patterns
 const DEFAULT_IGNORED = ['**/node_modules/**', '**/.git/**', '**/node_modules', '**/.git'];
 
+// Maximum age (in milliseconds) for a file change to be considered valid
+// If the file's modification time is older than this, it will be considered a phantom change
+const MAX_CHANGE_AGE_MS = 60 * 1000; // 1 minute
+
 export class WatcherManager {
   readonly watchers = new Map<string, WatcherInfo>();
   private options: WatchOptions;
@@ -164,11 +168,12 @@ export class WatcherManager {
       ignoreInitial: true,
       followSymlinks: true,
       ignored,
+      alwaysStat: true, // Always get stats to verify file changes
       ...options,
     });
 
     // Set up event handlers
-    watcher.on('all', (eventName: EventName, filePath: string, _stats?: Stats) => {
+    watcher.on('all', (eventName: EventName, filePath: string, stats?: Stats) => {
       const normalizedPath = this.normalizePath(filePath);
 
       // First check if the path is explicitly watched or matches our allowed patterns
@@ -186,6 +191,23 @@ export class WatcherManager {
       ) {
         log.debug(`Ignoring event for excluded path: ${filePath}`);
         return;
+      }
+
+      // For change events, verify the file modification time to filter out phantom changes
+      if (eventName === 'change' && stats) {
+        const currentTime = Date.now();
+        const modTime = stats.mtimeMs;
+        const ageMs = currentTime - modTime;
+
+        // If the file's modification time is older than our threshold, consider it a phantom change
+        if (ageMs > MAX_CHANGE_AGE_MS) {
+          log.info(`🔍 PHANTOM CHANGE DETECTED: ${filePath}`);
+          log.info(`  → Current time: ${new Date(currentTime).toISOString()}`);
+          log.info(`  → File mod time: ${new Date(modTime).toISOString()}`);
+          log.info(`  → Age: ${Math.round(ageMs / 1000)}s (threshold: ${MAX_CHANGE_AGE_MS / 1000}s)`);
+          log.info(`  → Ignoring this change event as it appears to be a Windows phantom change`);
+          return;
+        }
       }
 
       // Cast eventName to WatchEvent since we know it's compatible
