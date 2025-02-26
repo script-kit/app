@@ -1174,7 +1174,7 @@ function ensureWorker(
 function createMessageHandler(uuid: string, handleResolve: () => void, handleReject: (error: any) => void) {
   return (message: any) => {
     try {
-      scriptLog.log('Worker message:', message.channel);
+      scriptLog.info('Worker message:', message.channel);
 
       if (message.channel === 'LOG_TO_PARENT') {
         // Just log to the parent's logger if needed

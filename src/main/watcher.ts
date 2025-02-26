@@ -1045,12 +1045,33 @@ emitter.on(KitEvent.Sync, () => {
   checkUserDb('sync');
 });
 
-// ---- New handleFileChangeEvent Function ----
+const IGNORE_TIME = 2000;
+async function checkValidChange(eventName: WatchEvent, filePath: string): Promise<boolean> {
+  if (eventName === 'change') {
+    const stats = await stat(filePath).catch(() => {
+      return null;
+    });
+
+    if (stats && stats.mtime.getTime() < Date.now() - IGNORE_TIME) {
+      log.info(
+        `🛑 Ignoring phantom change event for ${filePath} in handleFileChangeEvent - File hasn't changed since ${stats?.mtime}`,
+      );
+      return false;
+    }
+  }
+  return true;
+}
 
 export async function handleFileChangeEvent(eventName: WatchEvent, filePath: string, source: string) {
   // Normalize the file path for consistent handling
-  const normalizedPath = normalizePath(filePath);
+
   const { base, dir, name } = path.parse(filePath);
+
+  const validChange = await checkValidChange(eventName, filePath);
+
+  if (!validChange) {
+    return;
+  }
 
   if (base === 'ping.txt') {
     kitState.waitingForPing = false;
