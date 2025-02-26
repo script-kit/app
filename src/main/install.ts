@@ -635,11 +635,11 @@ export const downloadKit = async () => {
   try {
     let buffer;
     try {
-      log.green(`Attempting to download SDK from NPM: ${url}`);
+      log.info(`Attempting to download SDK from NPM: ${url}`);
       buffer = await download(url, getOptions());
     } catch (e) {
-      log.red('Failed to download SDK from NPM', e);
-      log.green(`Downloading SDK from GitHub Releases: ${fallbackUrl}`);
+      log.error('Failed to download SDK from NPM', e);
+      log.info(`Downloading SDK from GitHub Releases: ${fallbackUrl}`);
       buffer = await download(fallbackUrl, getOptions());
     }
     const afterDownload = performance.now();

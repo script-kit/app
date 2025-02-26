@@ -1045,14 +1045,18 @@ emitter.on(KitEvent.Sync, () => {
   checkUserDb('sync');
 });
 
-const IGNORE_TIME = 2000;
+const COOL_DOWN = 2000;
 async function checkValidChange(eventName: WatchEvent, filePath: string): Promise<boolean> {
   if (eventName === 'change') {
     const stats = await stat(filePath).catch(() => {
       return null;
     });
 
-    if (stats && stats.mtime.getTime() < Date.now() - IGNORE_TIME) {
+    let ignoreTime = COOL_DOWN;
+    if (kitState?.kenvEnv?.KIT_CHANGE_COOL_DOWN) {
+      ignoreTime = Number.parseInt(kitState?.kenvEnv?.KIT_CHANGE_COOL_DOWN, 10);
+    }
+    if (stats && stats.mtime.getTime() < Date.now() - ignoreTime) {
       log.info(
         `🛑 Ignoring phantom change event for ${filePath} in handleFileChangeEvent - File hasn't changed since ${stats?.mtime}`,
       );

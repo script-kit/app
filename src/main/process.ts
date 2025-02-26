@@ -41,12 +41,11 @@ import { prompts } from './prompts';
 import shims from './shims';
 import { TrackEvent, trackEvent } from './track';
 
-import { createLogger } from './log-utils';
 import { readFile } from 'node:fs/promises';
 import { invoke } from './invoke-pty';
 import { createIdlePty } from './pty';
 
-const log = createLogger('process.ts');
+import { processLog as log } from './logs';
 
 export type ProcessAndPrompt = ProcessInfo & {
   prompt: KitPrompt;
@@ -813,7 +812,7 @@ class Processes extends Array<ProcessAndPrompt> {
     const activeWidgets = widgetState.widgets.filter((w) => w.pid === pid);
     if (activeWidgets.length) {
       for (const w of activeWidgets) {
-        log.red(`${pid}: Removing active widget ${w.id}`);
+        log.error(`${pid}: Removing active widget ${w.id}`);
         BrowserWindow.fromId(w.wid)?.close();
       }
     }

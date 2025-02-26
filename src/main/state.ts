@@ -533,7 +533,7 @@ export const sponsorCheck = debounce(
       if (block) {
         kitState.isSponsor = false;
 
-        log.red(`
+        log.error(`
 -----------------------------------------------------------
 🚨 User attempted to use: ${feature}, but is not a sponsor.
 -----------------------------------------------------------
