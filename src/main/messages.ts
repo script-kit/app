@@ -2124,7 +2124,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // Show electron file selector dialog
       const response = await dialog.showOpenDialog(prompt.window, {
         defaultPath: os.homedir(),
-        message: 'Select a file',
+        message: value,
         properties: ['openFile'],
       });
 
@@ -2142,7 +2142,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // Show electron file selector dialog
       const response = await dialog.showOpenDialog(prompt.window, {
         defaultPath: os.homedir(),
-        message: 'Select a file',
+        message: value,
         properties: ['openDirectory'],
       });
 

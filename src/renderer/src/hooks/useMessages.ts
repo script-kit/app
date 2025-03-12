@@ -99,6 +99,7 @@ import {
   invalidateChoiceInputsAtom,
   termOutputAtom,
   isWindowAtom,
+  triggerResizeAtom,
 } from '../jotai';
 
 import { createLogger } from '../log-utils';
@@ -221,6 +222,7 @@ export default () => {
   const setIsWindow = useSetAtom(isWindowAtom);
   const clearCache = useSetAtom(clearCacheAtom);
   const [init, setInit] = useState(false);
+  const triggerResize = useSetAtom(triggerResizeAtom);
 
   useEffect(() => {
     log.info(`Setting up messages for ${pid}: ${init ? '✅' : '🚫'}`);
@@ -361,6 +363,7 @@ export default () => {
     [WindowChannel.SET_LAST_LOG_LINE]: setLastLogLine,
     [WindowChannel.SET_LOG_VALUE]: setLogValue,
     [WindowChannel.SET_EDITOR_LOG_MODE]: setEditorLogMode,
+    [AppChannel.TRIGGER_RESIZE]: triggerResize,
   };
 
   useEffect(() => {

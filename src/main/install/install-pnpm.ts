@@ -82,7 +82,7 @@ function detectArch(): string {
   return arch;
 }
 
-const PNPM_VERSION = '10.5.0';
+const PNPM_VERSION = '10.6.2';
 
 export async function downloadAndInstallPnpm(): Promise<void> {
   const platform = detectPlatform();

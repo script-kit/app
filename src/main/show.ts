@@ -350,6 +350,8 @@ export const showWidget = async (
       preload: fileURLToPath(new URL('../preload/index.mjs', import.meta.url)),
       webSecurity: false,
       devTools: true,
+      webviewTag: true,
+      allowRunningInsecureContent: true,
     },
     ...position,
     show: false,

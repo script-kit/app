@@ -201,12 +201,20 @@ if (!app.requestSingleInstanceLock()) {
 
 log.info('Appending switch: ignore-certificate-errors');
 app.commandLine.appendSwitch('ignore-certificate-errors');
+// if windows, append high-dpi-support and force-device-scale-factor
 
 const envData = loadKenvEnvironment();
 // Legacy KIT_DISABLE_GPU
 if ((envData as any).KIT_DISABLE_GPU || envData.KIT_GPU === 'false') {
   app.disableHardwareAcceleration();
   kitState.gpuEnabled = false;
+}
+
+if (os.platform() === 'win32') {
+  app.commandLine.appendSwitch('high-dpi-support', '1');
+  if (envData.KIT_FORCE_DPI) {
+    app.commandLine.appendSwitch('force-device-scale-factor', envData.KIT_FORCE_DPI);
+  }
 }
 
 app.setName(APP_NAME);

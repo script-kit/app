@@ -743,6 +743,14 @@ export class KitPrompt {
 
   isWindow = false;
 
+  makeWindow = () => {
+    if (kitState.isMac && !this.isWindow) {
+      makeWindow(this.window);
+      this.isWindow = true;
+      this.sendToPrompt(AppChannel.TRIGGER_RESIZE, 'makeWindow');
+    }
+  };
+
   onBlur = () => {
     this.logInfo('🙈 Prompt window blurred');
 
@@ -766,10 +774,7 @@ export class KitPrompt {
       return;
     }
 
-    if (kitState.isMac && !this.isWindow) {
-      makeWindow(this.window);
-      this.isWindow = true;
-    }
+    this.makeWindow();
 
     if (this.justFocused && this.isVisible()) {
       this.logInfo('Prompt window was just focused. Ignore blur');
@@ -1047,10 +1052,7 @@ export class KitPrompt {
     this.window.webContents?.on('devtools-opened', () => {
       // remove blur handler
       this.window.removeListener('blur', this.onBlur);
-      if (kitState.isMac && !this.isWindow) {
-        makeWindow(this.window);
-        this.isWindow = true;
-      }
+      this.makeWindow();
     });
 
     this.window.webContents?.on('devtools-closed', () => {
@@ -1058,8 +1060,7 @@ export class KitPrompt {
 
       if (kitState.isMac && !this.isWindow) {
         this.logInfo('👋 setPromptAlwaysOnTop: false, so makeWindow');
-        makeWindow(this.window);
-        this.isWindow = true;
+        this.makeWindow();
       } else {
         this.setPromptAlwaysOnTop(false);
       }
@@ -1198,6 +1199,18 @@ export class KitPrompt {
     this.window.on('will-move', willMoveHandler);
     this.window.on('resized', onResized);
     this.window.on('moved', onMoved);
+    if (kitState.isWindows) {
+      const handler = (e, display, changedMetrics) => {
+        if (changedMetrics.includes('scaleFactor')) {
+          this.window.webContents.setZoomFactor(1 / display.scaleFactor);
+        }
+      };
+      screen.on('display-metrics-changed', handler);
+      this.window.webContents.setZoomFactor(1 / screen.getPrimaryDisplay().scaleFactor);
+      this.window.on('close', () => {
+        screen.removeListener('display-metrics-changed', handler);
+      });
+    }
   }
 
   appearance: 'light' | 'dark' | 'auto' = 'auto';
@@ -1575,6 +1588,33 @@ export class KitPrompt {
       // }
 
       this.logInfo('setBounds', finalBounds);
+
+      const getTitleBarHeight = () => {
+        const normalBounds = this.window.getNormalBounds();
+        const contentBounds = this.window.getContentBounds();
+        const windowBounds = this.window.getBounds();
+        const size = this.window.getSize();
+        const contentSize = this.window.getContentSize();
+        const minimumSize = this.window.getMinimumSize();
+
+        const titleBarHeight = windowBounds.height - contentBounds.height;
+        log.info('titleBarHeight', {
+          normalBounds,
+          contentBounds,
+          windowBounds,
+          size,
+          contentSize,
+          minimumSize,
+        });
+        return titleBarHeight;
+      };
+
+      const titleBarHeight = getTitleBarHeight();
+      if (finalBounds.height < PROMPT.INPUT.HEIGHT.XS + titleBarHeight) {
+        this.logInfo('too small, setting to min height', PROMPT.INPUT.HEIGHT.XS);
+        finalBounds.height = PROMPT.INPUT.HEIGHT.XS + titleBarHeight;
+      }
+
       this.window.setBounds(finalBounds, false);
       this.promptBounds = {
         id: this.id,
