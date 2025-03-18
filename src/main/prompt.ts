@@ -2257,6 +2257,8 @@ export class KitPrompt {
 
   setPromptProp = (data: { prop: { key: string; value: any } }) => {
     const { key, value }: any = data.prop;
+    log.info(`${this.pid}: setPromptProp`, { key, value });
+    log.info(`this.window[${key}](${JSON.stringify(value)})`);
     (this.window as any)[key](value);
   };
 

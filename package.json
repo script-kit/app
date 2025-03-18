@@ -69,7 +69,7 @@
     "@types/minimist": "1.2.5",
     "@types/node": "^22.13.10",
     "@types/node-schedule": "^2.1.7",
-    "@types/react": "^19.0.10",
+    "@types/react": "^19.0.11",
     "@types/react-dom": "^19.0.4",
     "@types/react-virtualized-auto-sizer": "^1.0.4",
     "@types/react-window": "1.8.8",
@@ -91,7 +91,7 @@
     "electron-builder": "26.0.1",
     "electron-mocks": "^1.6.0",
     "electron-vite": "^3.0.0",
-    "emoji-picker-react": "^4.12.0",
+    "emoji-picker-react": "^4.12.2",
     "eslint": "^9.22.0",
     "eslint-config-erb": "4.1.0",
     "framer-motion": "^12.5.0",
@@ -107,7 +107,7 @@
     "patch-package": "^8.0.0",
     "petite-vue": "^0.4.1",
     "prettier": "^3.5.3",
-    "react-chat-elements": "^12.0.17",
+    "react-chat-elements": "^12.0.18",
     "react-dom": "^19.0.0",
     "react-hotkeys-hook": "4.6.1",
     "react-icons": "^5.5.0",
@@ -121,18 +121,18 @@
     "tailwindcss": "^3.4.17",
     "tmp-promise": "^3.0.3",
     "ts-jest": "^29.2.6",
-    "vite": "^6.2.1",
+    "vite": "^6.2.2",
     "vite-plugin-commonjs-externals": "^0.1.4",
     "vite-plugin-compression": "^0.5.1",
-    "vitest": "^3.0.8"
+    "vitest": "^3.0.9"
   },
   "dependencies": {
     "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/clipboard": "^0.1.38",
-    "@johnlindquist/kit": "^3.12.16",
+    "@johnlindquist/kit": "^3.12.17",
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^28.0.3",
-    "@tailwindcss/postcss": "^4.0.13",
+    "@tailwindcss/postcss": "^4.0.14",
     "@types/express": "^5.0.0",
     "@types/lodash-es": "^4.17.12",
     "@xterm/addon-fit": "^0.10.0",
@@ -173,14 +173,14 @@
     "madge": "^8.0.0",
     "minimist": "^1.2.8",
     "monaco-editor": "^0.52.2",
-    "nanoid": "5.1.3",
+    "nanoid": "5.1.4",
     "native-keymap": "^3.3.5",
     "node-downloader-helper": "^2.1.9",
     "node-pty": "1.1.0-beta27",
     "node-schedule": "2.1.1",
     "node-stream-zip": "^1.15.0",
     "package-up": "^5.0.0",
-    "pnpm": "10.6.2",
+    "pnpm": "10.6.4",
     "prop-types": "^15.8.1",
     "quick-score": "0.2.0",
     "react": "^19.0.0",
@@ -194,7 +194,7 @@
     "timeago.js": "^4.0.2",
     "typescript": "^5.8.2",
     "untildify": "5.0.0",
-    "valtio": "^2.1.3",
+    "valtio": "^2.1.4",
     "xstate": "^5.19.2"
   },
   "optionalDependencies": {
@@ -202,7 +202,7 @@
     "@johnlindquist/mac-frontmost": "^1.0.7",
     "@johnlindquist/mac-panel-window": "1",
     "@johnlindquist/node-window-manager": "^1.0.24",
-    "node-mac-permissions": "^2.4.0",
+    "node-mac-permissions": "^2.5.0",
     "uiohook-napi": "^1.5.4"
   },
   "engines": {
@@ -221,7 +221,7 @@
     "preset": "ts-jest",
     "testEnvironment": "node"
   },
-  "packageManager": "pnpm@10.6.2",
+  "packageManager": "pnpm@10.6.4",
   "pnpm": {
     "onlyBuiltDependencies": [
       "@biomejs/biome",

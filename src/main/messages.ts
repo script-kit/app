@@ -1268,6 +1268,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     }),
 
     SET_PROMPT_PROP: (data) => {
+      log.info(`${prompt.pid}: SET_PROMPT_PROP`, { value: data.value });
       prompt?.setPromptProp(data.value);
     },
     SHOW_IMAGE,

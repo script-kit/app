@@ -315,20 +315,23 @@ export const darkAtom = atom((g) => {
   return g(appearanceAtom) === 'dark';
 });
 
+const formattedLogLinesAtom = atom('');
+
 export const logHTMLAtom = atom(
   (g) => {
-    const getConvert = g(convertAtom);
-    return g(logLinesAtom)
-      .map((line) => `<br/>${getConvert().toHtml(line)}`)
-      .join('');
+    return g(formattedLogLinesAtom);
   },
 
   (g, s, a: string) => {
     if (a === Channel.CONSOLE_CLEAR || a === '') {
       s(logLinesAtom, []);
+      s(formattedLogLinesAtom, '');
     } else {
-      const oldLog = g(logLinesAtom);
-      s(logLinesAtom, _drop(oldLog, oldLog.length > 256 ? 256 : 0).concat([a]));
+      const oldLog = [...g(logLinesAtom)]; // Create a new array copy
+      const newLog = oldLog.length > 256 ? [...oldLog.slice(-256), a] : [...oldLog, a];
+      s(logLinesAtom, newLog);
+      const getConvert = g(convertAtom);
+      s(formattedLogLinesAtom, newLog.map((line) => `<br/>${getConvert().toHtml(line)}`).join(''));
     }
   },
 );
