@@ -69,7 +69,7 @@ img:before {
 } */
 
 body {
-  @apply bg-bg-base bg-opacity-base !important;
+  /* @apply bg-bg-base bg-opacity-base !important; */
   @apply text-text-base dark:text-white;
   @apply subpixel-antialiased;
   @apply overflow-hidden;
