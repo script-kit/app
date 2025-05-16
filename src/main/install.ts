@@ -541,7 +541,7 @@ export const cleanKit = async () => {
     log.info(`Continuing with new Kit SDK at ${kitPath()}`);
   } catch (error) {
     log.error(`Error cleaning the Kit SDK at: ${kitPath()}`, error);
-    log.error(`Please close any open code editors which might be referencing ~/.kit or ~/.kenv and try again.`);
+    log.error('Please close any open code editors which might be referencing ~/.kit or ~/.kenv and try again.');
     throw new Error(`Error cleaning ${kitPath()}`);
   }
 };
@@ -1042,7 +1042,47 @@ export const cacheMainMenu = async ({
     const flushLogQueue = () => {
       if (logQueue.length > 0) {
         scriptLog.info(`📦 Added ${logQueue.length} items:`);
-        log.info(logQueue);
+
+        const groupedByDirectory = new Map<string, { type: string; name: string }[]>();
+
+        for (const logEntry of logQueue) {
+          const firstSpaceIndex = logEntry.indexOf(' ');
+          if (firstSpaceIndex === -1) {
+            log.warn(`Unexpected log entry format: ${logEntry}`);
+            const unknownDir = 'unknown_directory';
+            if (!groupedByDirectory.has(unknownDir)) {
+              groupedByDirectory.set(unknownDir, []);
+            }
+            groupedByDirectory.get(unknownDir)!.push({ type: 'Unknown', name: logEntry });
+            continue;
+          }
+
+          const type = logEntry.substring(0, firstSpaceIndex);
+          const fullItemPath = logEntry.substring(firstSpaceIndex + 1);
+
+          let directory: string;
+          let scriptName: string;
+
+          try {
+            directory = path.dirname(fullItemPath);
+            scriptName = path.basename(fullItemPath);
+          } catch (e) {
+            log.warn(`Could not parse path from log entry: ${logEntry}`, e);
+            directory = 'parse_error_directory';
+            scriptName = fullItemPath;
+          }
+
+          if (!groupedByDirectory.has(directory)) {
+            groupedByDirectory.set(directory, []);
+          }
+          groupedByDirectory.get(directory)!.push({ type, name: scriptName });
+        }
+
+        for (const [directory, scriptsInDir] of groupedByDirectory.entries()) {
+          const scriptDetails = scriptsInDir.map((script) => `${script.type}: ${script.name}`).join(', ');
+          log.info(`${directory}: ${scriptDetails}`);
+        }
+
         logQueue.length = 0;
       }
     };
@@ -1054,7 +1094,7 @@ export const cacheMainMenu = async ({
     };
 
     for (const script of scripts) {
-      log.info(`Found script: name: ${script.name}, filePath: ${script.filePath}`);
+      // log.info(`Found script: name: ${script.name}, filePath: ${script.filePath}`);
 
       if ((script as Scriptlet).scriptlet) {
         queueLog(`Scriptlet ${script.filePath}`);
@@ -1080,13 +1120,13 @@ export const cacheMainMenu = async ({
     const scriptletsDifferences = compareCollections(previousScriptletsMap, newScriptlets, ['id']);
 
     // Log scriptlets differences
-    logDifferences(scriptLog, 'scriptlets', scriptletsDifferences);
+    logDifferences(scriptLog as any, 'scriptlets', scriptletsDifferences);
 
     // Compare scripts
     const scriptsDifferences = compareCollections(previousScriptsMap, newScripts, ['id']);
 
     // Log scripts differences
-    logDifferences(scriptLog, 'scripts', scriptsDifferences);
+    logDifferences(scriptLog as any, 'scripts', scriptsDifferences);
 
     // Ensure any remaining logs are flushed
     flushLogQueue();

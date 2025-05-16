@@ -1,6 +1,7 @@
 import { isEqual } from 'lodash';
 import { createLogger } from './log-utils';
 import { MainLogger } from 'electron-log';
+import * as path from 'path'; // Import the path module
 
 const log = createLogger('compare');
 
@@ -120,6 +121,9 @@ export const logDifferences = (
  * A Map wrapper that logs differences whenever entries are added, updated, or deleted.
  */
 export class LoggedMap<K, V> extends Map<K, V> {
+  private logTimeout: NodeJS.Timeout | null = null;
+  private readonly LOG_DELAY = 2000; // 2 seconds
+
   /**
    * Overrides the set method to include logging.
    * @param key The key of the element to add to the Map object.
@@ -131,13 +135,9 @@ export class LoggedMap<K, V> extends Map<K, V> {
     const oldValue = this.get(key);
     super.set(key, value);
     if (!hasKey) {
-      log.info(`Added entry to Map: Key = ${JSON.stringify(key)}, Value = ${JSON.stringify(value)}`);
+      this.scheduleLogFlush();
     } else if (!isEqual(oldValue, value)) {
-      log.info(
-        `Updated entry in Map: Key = ${JSON.stringify(key)}, Before = ${JSON.stringify(
-          oldValue,
-        )}, After = ${JSON.stringify(value)}`,
-      );
+      this.scheduleLogFlush();
     }
     return this;
   }
@@ -152,7 +152,7 @@ export class LoggedMap<K, V> extends Map<K, V> {
       const oldValue = this.get(key);
       const result = super.delete(key);
       if (result) {
-        log.info(`Deleted entry from Map: Key = ${JSON.stringify(key)}, Value = ${JSON.stringify(oldValue)}`);
+        this.scheduleLogFlush();
       }
       return result;
     }
@@ -163,9 +163,43 @@ export class LoggedMap<K, V> extends Map<K, V> {
    * Overrides the clear method to include logging for all deletions.
    */
   clear(): void {
-    this.forEach((value, key) => {
-      log.info(`Cleared entry from Map: Key = ${JSON.stringify(key)}, Value = ${JSON.stringify(value)}`);
-    });
+    const hadItems = this.size > 0;
     super.clear();
+    if (hadItems) {
+      this.scheduleLogFlush();
+    }
+  }
+
+  private scheduleLogFlush(): void {
+    if (this.logTimeout) {
+      clearTimeout(this.logTimeout);
+    }
+    this.logTimeout = setTimeout(() => {
+      this.flushLog();
+    }, this.LOG_DELAY);
+  }
+
+  private flushLog(): void {
+    if (this.size === 0) {
+      log.info('ShortcutMap state: Map is empty');
+      this.logTimeout = null;
+      return;
+    }
+
+    const groupedMap: Record<string, Record<string, V>> = {};
+
+    this.forEach((value, key) => {
+      const filePath = String(key); // Assuming key is a string path
+      const dir = path.dirname(filePath);
+      const fileName = path.basename(filePath);
+
+      if (!groupedMap[dir]) {
+        groupedMap[dir] = {};
+      }
+      groupedMap[dir][fileName] = value;
+    });
+
+    log.info(`ShortcutMap state: ${JSON.stringify(groupedMap, null, 2)}`);
+    this.logTimeout = null;
   }
 }
