@@ -858,33 +858,64 @@ const cacheTriggers = (choices: Choice[]) => {
   }
 };
 
-const scoreAndCacheMainChoices = (scripts: Script[]) => {
-  // TODO: Reimplement score and cache?
-  const filteredScripts = scripts.filter((c) => {
-    if (c?.miss || c?.pass || c?.hideWithoutInput || c?.exclude) {
-      return false;
+// --- ⬇️  Paste START  -------------------------------------------------------
+
+/**
+ * Fast incremental scorer/cacher for main-menu scripts.
+ *
+ * 1. Caches Choice objects per `filePath + mtime` key.
+ * 2. Reuses previous Choice objects when nothing changed.
+ * 3. Purges cache entries for scripts that vanished.
+ *
+ * Drop-in replacement for `scoreAndCacheMainChoices`.
+ */
+
+type ScoredChoice = ReturnType<typeof createScoredChoice>;
+
+// Global cache survives across calls.
+const scriptChoiceCache = new Map<string, ScoredChoice>();
+
+export function scoreAndCacheMainChoices(allScripts: Script[]) {
+  const t0 = performance.now();
+
+  // Track which keys we visited this round so we can GC dead ones.
+  const visitedKeys = new Set<string>();
+
+  // Build new results array, reusing cached choices whenever possible.
+  const results: ScoredChoice[] = [];
+  for (const s of allScripts) {
+    if (s?.miss || s?.pass || s?.hideWithoutInput || s?.exclude /* keep existing filters */) {
+      continue;
     }
-    return true;
-  });
 
-  const results = filteredScripts.map(createScoredChoice);
+    const key = s.filePath;
+    visitedKeys.add(key);
 
-  kitCache.scripts = scripts;
-  kitCache.choices = results;
-  cacheTriggers(filteredScripts);
-
-  for (const prompt of prompts) {
-    log.info(`${prompt.pid}: initMainChoices`);
-    // if (!prompt.isVisible()) {
-    prompt.initMainChoices();
-    if (!prompt.isVisible()) {
-      // log.info(`${prompt.pid}: setShortcodes`, {
-      //   triggers: scripts.filter((s) => s.trigger).map((s) => s.trigger),
-      // });
+    let choice = scriptChoiceCache.get(key);
+    if (!choice) {
+      choice = createScoredChoice(s);
+      scriptChoiceCache.set(key, choice);
     }
-    // }
+    results.push(choice);
   }
-};
+
+  // GC: remove cache entries we didn’t touch this round.
+  for (const k of scriptChoiceCache.keys()) {
+    if (!visitedKeys.has(k)) {
+      scriptChoiceCache.delete(k);
+    }
+  }
+
+  // Push into global Kit caches exactly like the old function did.
+  kitCache.scripts = allScripts;
+  kitCache.choices = results;
+  cacheTriggers(allScripts.filter((c) => !c.miss && !c.pass && !c.hideWithoutInput && !c.exclude));
+
+  const dt = (performance.now() - t0).toFixed(1);
+  log.info(`⚡️ incrementalScoreAndCacheMainChoices done in ${dt} ms`);
+}
+
+// --- ⬆️  Paste END  ---------------------------------------------------------
 
 const cacheMainPreview = (preview: string) => {
   kitCache.preview = preview;
