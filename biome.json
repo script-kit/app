@@ -27,6 +27,7 @@
         "useArrowFunction": "off"
       },
       "correctness": {
+        "noUndeclaredDependencies": "off",
         "noUndeclaredVariables": "off",
         "noConstantCondition": "off",
         "noUnusedVariables": "off",
