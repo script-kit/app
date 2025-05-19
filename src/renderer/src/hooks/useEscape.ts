@@ -32,7 +32,7 @@ export default () => {
 
   useHotkeys(
     'escape',
-    (event) => {
+    (_event) => {
       log.info('Pressed escape!', {
         script: script?.filePath,
         promptData: promptData?.scriptPath,

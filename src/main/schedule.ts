@@ -4,8 +4,8 @@ import { kitPath } from '@johnlindquist/kit/core/utils';
 import type { Script } from '@johnlindquist/kit/types/core';
 import { Trigger } from '../shared/enums';
 import { runPromptProcess, runScript } from './kit';
-import { kitState, online, scheduleMap } from './state';
 import { scheduleLog } from './logs';
+import { kitState, online, scheduleMap } from './state';
 
 // ADD THIS (new function to log the entire scheduleMap)
 function logAllScheduledJobs() {

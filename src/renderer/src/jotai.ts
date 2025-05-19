@@ -2,10 +2,10 @@ import { AppDb, type UserDb } from '@johnlindquist/kit/core/db';
 import { Channel, Mode, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import type {
   Action,
+  ActionsConfig,
   AppState,
   Choice,
   FlagsObject,
-  ActionsConfig,
   FlagsWithKeys,
   ProcessInfo,
   PromptData,
@@ -14,8 +14,8 @@ import type {
 } from '@johnlindquist/kit/types/core';
 import Convert from 'ansi-to-html';
 import DOMPurify from 'dompurify';
-import { createLogger } from './log-utils';
 import { type Atom, type Getter, type Setter, atom } from 'jotai';
+import { createLogger } from './log-utils';
 
 import type {
   AppConfig,
@@ -172,7 +172,7 @@ export const uiAtom = atom(
       s(enterAtom, '');
     }
 
-    if (a !== UI.arg && g(scoredChoicesAtom)?.length) {
+    if (a !== UI.arg && g(scoredChoicesAtom)?.length > 0) {
       s(scoredChoicesAtom, []);
     }
 
@@ -181,7 +181,6 @@ export const uiAtom = atom(
       id = 'input';
     }
     const timeoutId = setTimeout(() => {
-      console.warn(`Timeout reached after 250ms for element with id: ${a}`);
       ipcRenderer.send(a);
     }, 250);
 
@@ -197,7 +196,6 @@ export const uiAtom = atom(
         requestAnimationFrame(checkElement);
       } else {
         clearTimeout(timeoutId);
-        console.warn(`Element with id: ${id} not found after ${maxAttempts} attempts.`);
       }
     });
     // s(previewHTMLAtom, g(cachedMainPreview));
@@ -281,7 +279,7 @@ export const previewHTMLAtom = atom(
 const _logLinesAtom = atom<string[]>([]);
 export const logLinesAtom = atom(
   (g) => g(_logLinesAtom),
-  (g, s, a: string[]) => {
+  (_g, s, a: string[]) => {
     // if (a.length === 0 || a.length === 1) {
     //   setTimeout(() => {
     //     resize(g, s, 'console.log');
@@ -1018,7 +1016,7 @@ export const tabIndexAtom = atom(
 const selected = atom('');
 export const selectedAtom = atom(
   (g) => g(selected),
-  (g, s, a: string) => {
+  (_g, s, a: string) => {
     s(selected, a);
     if (a === '') {
       s(focusedFlagValueAtom, '');
@@ -1285,12 +1283,10 @@ const resize = debounce(
     if (ui !== UI.arg) {
       if (flaggedValue && promptData?.height && promptData?.height < PROMPT.HEIGHT.BASE) {
         forceHeight = PROMPT.HEIGHT.BASE;
+      } else if (flaggedValue && !promptData?.height) {
+        forceHeight = PROMPT.HEIGHT.BASE;
       } else {
-        if (flaggedValue && !promptData?.height) {
-          forceHeight = PROMPT.HEIGHT.BASE;
-        } else {
-          forceHeight = promptData?.height;
-        }
+        forceHeight = promptData?.height;
       }
     }
 
@@ -1303,7 +1299,7 @@ const resize = debounce(
       forceHeight = 128;
     }
 
-    const hasInput = Boolean(g(inputAtom)?.length);
+    const hasInput = g(inputAtom)?.length > 0;
 
     // log.info({
     //   forceHeight: forceHeight || 'no forced height',
@@ -1337,7 +1333,7 @@ const resize = debounce(
     // mh = Math.ceil(mh || -3) + 3;
 
     if (mh === 0 && promptData?.preventCollapse) {
-      log.info(`🍃 Prevent collapse to zero...`);
+      log.info('🍃 Prevent collapse to zero...');
       return;
     }
 
@@ -1515,7 +1511,7 @@ const _themeAtom = atom('');
 
 export const themeAtom = atom(
   (g) => g(_themeAtom),
-  (g, s, theme: string) => {
+  (_g, s, theme: string) => {
     setAppearance(s, theme);
     s(_themeAtom, theme);
     s(_tempThemeAtom, theme);
@@ -1526,7 +1522,7 @@ export const headerHiddenAtom = atom(false);
 const footerHidden = atom(false);
 export const footerHiddenAtom = atom(
   (g) => g(footerHidden),
-  (g, s, a: boolean) => {
+  (_g, s, a: boolean) => {
     s(footerHidden, a);
   },
 );
@@ -1954,7 +1950,7 @@ export const submitValueAtom = atom(
      * Others include drag and drop arrays, forms, terminal, etc
      */
 
-    if (!flaggedValue && !flag && a?.scriptlet && a?.inputs?.length) {
+    if (!(flaggedValue || flag) && a?.scriptlet && a?.inputs?.length > 0) {
       log.info('Scriptlet requires inputs', a.inputs);
 
       return;
@@ -2299,7 +2295,7 @@ export const actionsButtonActionAtom = atom<Action>((g) => {
 
 export const createAssetAtom = (...parts: string[]) =>
   atom(() => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       ipcRenderer.once(AppChannel.GET_ASSET, (_event, { assetPath }) => {
         resolve(assetPath);
       });
@@ -2357,7 +2353,7 @@ export const valueInvalidAtom = atom(null, (g, s, a: string) => {
   channel(Channel.ON_VALIDATION_FAILED);
 });
 
-export const preventSubmitAtom = atom(null, (g, s, a: string) => {
+export const preventSubmitAtom = atom(null, (_g, s, _a: string) => {
   s(promptActiveAtom, true);
   if (placeholderTimeoutId) {
     clearTimeout(placeholderTimeoutId);
@@ -2721,7 +2717,7 @@ export const editorLogModeAtom = atom(false);
 export const lastLogLineAtom = atom<string>('');
 export const logValueAtom = atom<string>('');
 
-export const editorThemeAtom = atom<{ foreground: string; background: string }>((g) => {
+export const editorThemeAtom = atom<{ foreground: string; background: string }>((_g) => {
   const editorTheme = {
     foreground: findCssVar('--color-text'),
     background: findCssVar('--color-background'),
@@ -2743,7 +2739,7 @@ export const editorValueAtom = atom<{
 });
 export const editorAppendAtom = atom(
   (g) => g(editorValueAtom),
-  (g, s, a: string) => {
+  (_g, s, a: string) => {
     s(editorValueAtom, {
       text: a,
       date: new Date().toISOString(),
@@ -2840,9 +2836,7 @@ export const colorAtom = atom((g) => {
 
       ipcRenderer.send(channel, appMessage);
       return color;
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error) {}
     return '';
   };
 });
@@ -2882,7 +2876,6 @@ export const chatPushTokenAtom = atom(null, (g, s, a: string) => {
 
     s(chatMessagesAtom, messages);
   } catch (error) {
-    console.error(error);
     s(chatMessagesAtom, []);
   }
 });
@@ -2895,9 +2888,7 @@ export const setChatMessageAtom = atom(null, (g, s, a: { index: number; message:
   try {
     messages[messageIndex] = a.message;
     s(chatMessagesAtom, messages);
-  } catch (error) {
-    console.error(error);
-  }
+  } catch (error) {}
 });
 export const termConfigDefaults: TermConfig = {
   command: '',
@@ -2910,7 +2901,7 @@ export const termConfigDefaults: TermConfig = {
 const termConfig = atom<TermConfig>(termConfigDefaults);
 export const termConfigAtom = atom(
   (g) => g(termConfig),
-  (g, s, a: Partial<TermConfig> | null) => {
+  (_g, s, a: Partial<TermConfig> | null) => {
     const config = {
       ...termConfigDefaults,
       ...(a || {}),
@@ -2958,7 +2949,7 @@ export const deviceIdAtom = atom<string | null>(null);
 const enterPressed = atom(false);
 export const enterPressedAtom = atom(
   (g) => g(enterPressed),
-  (g, s) => {
+  (_g, s) => {
     s(enterPressed, true);
     setTimeout(() => {
       s(enterPressed, false);
@@ -2969,7 +2960,7 @@ export const enterPressedAtom = atom(
 const _micIdAtom = atom<string | null>(null);
 export const micIdAtom = atom(
   (g) => g(_micIdAtom),
-  (g, s, a: string | null) => {
+  (_g, s, a: string | null) => {
     log.info('🎙 micIdAtom', { a });
     s(_micIdAtom, a);
   },
@@ -3147,7 +3138,7 @@ export const miniShortcutsHoveredAtom = atom(false);
 export const _lastKeyDownWasModifierAtom = atom(false);
 export const lastKeyDownWasModifierAtom = atom(
   (g) => g(_lastKeyDownWasModifierAtom),
-  (g, s, a: boolean) => {
+  (_g, s, a: boolean) => {
     // log.info(`🔑 Last key down was modifier: ${a}`);
     s(_lastKeyDownWasModifierAtom, a);
   },
@@ -3238,7 +3229,7 @@ export const promptBoundsAtom = atom(
     return bounds;
   },
   (
-    g,
+    _g,
     s,
     a: {
       id: string;
@@ -3311,10 +3302,10 @@ export const previewCheckAtom = atom((g) => {
 export const shortcodesAtom = atom<string[]>([]);
 
 export const triggerKeywordAtom = atom(
-  (g) => {},
+  (_g) => {},
   (
     g,
-    s,
+    _s,
     {
       keyword,
       choice,
@@ -3343,7 +3334,7 @@ let typingId: any = null;
 export const typingAtom = atom(
   (g) => g(typing),
   // if true, toggle to false after 20ms. Cancel the previous timeout if it exists
-  (g, s, a: boolean) => {
+  (_g, s, a: boolean) => {
     if (a) {
       if (typingId) {
         clearTimeout(typingId);
@@ -3414,7 +3405,7 @@ export const resetIdAtom = atom(Math.random());
 const cachedMainScoredChoices = atom<ScoredChoice[]>([]);
 export const cachedMainScoredChoicesAtom = atom(
   (g) => g(cachedMainScoredChoices),
-  (g, s, a: ScoredChoice[]) => {
+  (_g, s, a: ScoredChoice[]) => {
     // log.info(
     //   `>>>>>>>>>>>>>>>>>>>>>>>> 📦 Cache main scored choices: ${a?.length}`
     // );
@@ -3485,7 +3476,7 @@ export const initPromptAtom = atom(null, (g, s) => {
   s(flagsAtom, g(cachedMainFlagsAtom));
 });
 
-export const clearCacheAtom = atom(null, (g, s) => {
+export const clearCacheAtom = atom(null, (_g, s) => {
   // log.info(
   //   `${window.pid}--> 📦 CLEARING renderer cache for ${g(scriptAtom).filePath}`
   // );
@@ -3512,7 +3503,7 @@ export const preventChatScrollAtom = atom(false);
 const _inputWhileSubmittedAtom = atom('');
 export const inputWhileSubmittedAtom = atom(
   (g) => g(_inputWhileSubmittedAtom),
-  (g, s, a: string) => {
+  (_g, s, a: string) => {
     log.info(`🔥 Input while submitted: ${a}`);
     s(_inputWhileSubmittedAtom, a);
   },
@@ -3569,9 +3560,7 @@ export const submitInputAtom = atom(null, (g, s) => {
 
 export const setFlagByShortcutAtom = atom(null, (g, s, a: string) => {
   const flags = g(flagsAtom);
-  console.log('🏴‍☠️ Setting flag by shortcut', { a, flags });
   const flag = Object.keys(flags).find((key) => flags[key]?.shortcut === a);
-  console.log('🏴‍☠️ Setting flag by shortcut', { flag });
   log.info(`🏴‍☠️ Setting flag by shortcut: ${flag}`);
   if (flag) {
     s(flaggedChoiceValueAtom, flag);
@@ -3582,7 +3571,7 @@ export const setFlagByShortcutAtom = atom(null, (g, s, a: string) => {
 const _choiceInputsAtom = atom<string[]>([]);
 export const choiceInputsAtom = atom(
   (g) => g(_choiceInputsAtom),
-  (g, s, a: string[]) => {
+  (_g, s, a: string[]) => {
     s(_choiceInputsAtom, a);
   },
 );
@@ -3590,13 +3579,13 @@ export const choiceInputsAtom = atom(
 const _invalidateChoiceInputsAtom = atom(false);
 export const invalidateChoiceInputsAtom = atom(
   (g) => g(_invalidateChoiceInputsAtom),
-  (g, s, a: boolean) => {
+  (_g, s, a: boolean) => {
     log.info(`🔄 Invalidate choice inputs: ${a ? 'true' : 'false'}`);
     s(_invalidateChoiceInputsAtom, a);
   },
 );
 
-export const sendActionAtom = atom(null, (g, s, action: Action) => {
+export const sendActionAtom = atom(null, (g, _s, action: Action) => {
   const channel = g(channelAtom);
   log.info(`👉 Sending action: ${action.name}`);
   channel(Channel.ACTION, {

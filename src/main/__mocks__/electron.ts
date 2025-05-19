@@ -63,13 +63,6 @@ const mockPowerMonitor = {
 
 // Export all mocks as a single object
 export default {
-  app: mockApp,
-  BrowserWindow: mockBrowserWindow,
-  ipcMain: mockIpcMain,
-  screen: mockScreen,
-  shell: mockShell,
-  powerMonitor: mockPowerMonitor,
-  nativeTheme: mockNativeTheme,
   // Also include named exports
   app: mockApp,
   BrowserWindow: mockBrowserWindow,

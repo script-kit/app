@@ -78,8 +78,14 @@ export const detectKeyboardLayout = (layoutMap: Record<string, string>): keyof t
   }
 
   // Check for Portuguese (Portugal) layout
-  if (layoutMap.KeyQ === 'q' && layoutMap.KeyW === 'w' && layoutMap.KeyE === 'e' &&
-      layoutMap.Semicolon === 'ç' && layoutMap.BracketLeft === '+' && layoutMap.Quote === 'º') {
+  if (
+    layoutMap.KeyQ === 'q' &&
+    layoutMap.KeyW === 'w' &&
+    layoutMap.KeyE === 'e' &&
+    layoutMap.Semicolon === 'ç' &&
+    layoutMap.BracketLeft === '+' &&
+    layoutMap.Quote === 'º'
+  ) {
     return 'PORTUGUESE_PT';
   }
 

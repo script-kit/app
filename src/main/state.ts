@@ -3,14 +3,14 @@
 
 import Store, { type Schema } from 'electron-store';
 
-import type { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
-import { proxy, snapshot } from 'valtio/vanilla';
 import type { ChildProcess } from 'node:child_process';
 import os from 'node:os';
+import type { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import { type Display, nativeTheme } from 'electron';
 import type { LogLevel } from 'electron-log';
 import { debounce } from 'lodash-es';
 import { subscribeKey } from 'valtio/utils';
+import { proxy, snapshot } from 'valtio/vanilla';
 
 import { readdir } from 'node:fs/promises';
 import type { Stamp, UserDb } from '@johnlindquist/kit/core/db';
@@ -42,8 +42,8 @@ import { KitEvent, emitter } from '../shared/events';
 import internetAvailable from '../shared/internet-available';
 import shims from './shims';
 
-import { createLogger } from './log-utils';
 import type { IKeyboardMapping } from 'native-keymap';
+import { createLogger } from './log-utils';
 const log = createLogger('state.ts');
 const keymapLog = createLogger('keymapLog');
 
@@ -641,7 +641,7 @@ const defaultKeyMap: {
 
 export const convertKey = (sourceKey: string): string => {
   const hasKeymap = Object.keys(kitState.keymap).length > 0;
-  log.info(`🔑 Has keymap:`, { hasKeymap });
+  log.info('🔑 Has keymap:', { hasKeymap });
   if (kitState.kenvEnv?.KIT_CONVERT_KEY === 'false' || !hasKeymap) {
     keymapLog.info(`🔑 Skipping key conversion: ${sourceKey}`);
     return sourceKey;

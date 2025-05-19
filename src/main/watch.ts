@@ -1,14 +1,14 @@
 import type { Stats } from 'node:fs';
+import { glob } from 'node:fs/promises';
 import path from 'node:path';
 import type { Script } from '@johnlindquist/kit/types/core';
 import chokidar from 'chokidar';
 import { app } from 'electron';
 import { Trigger } from '../shared/enums';
 import { runPromptProcess } from './kit';
-import { kitState } from './state';
-import { slash } from './path-utils';
 import { metadataWatcherLog as log } from './logs';
-import { glob } from 'node:fs/promises';
+import { slash } from './path-utils';
+import { kitState } from './state';
 
 export const watchMap = new Map();
 

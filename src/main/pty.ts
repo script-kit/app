@@ -1,12 +1,12 @@
-import { ipcMain, type IpcMainEvent } from 'electron';
-/* eslint-disable no-nested-ternary */
-import { termLog as log } from './logs';
+import { type IpcMainEvent, ipcMain } from 'electron';
 import { debounce } from 'lodash-es';
 import * as pty from 'node-pty';
 import { AppChannel } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
 import type { TermConfig } from '../shared/types';
 import { displayError } from './error';
+/* eslint-disable no-nested-ternary */
+import { termLog as log } from './logs';
 
 import type { KitPrompt } from './prompt';
 import {
@@ -219,7 +219,7 @@ export const createPty = (prompt: KitPrompt) => {
     }
   };
 
-  const handleTermReady = async (event, config: TermConfig) => {
+  const handleTermReady = async (_event, config: TermConfig) => {
     log.info({
       termConfig: {
         command: config?.command || '<no command>',

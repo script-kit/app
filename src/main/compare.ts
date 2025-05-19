@@ -1,7 +1,7 @@
+import * as path from 'node:path'; // Import the path module
+import type { MainLogger } from 'electron-log';
 import { isEqual } from 'lodash';
 import { createLogger } from './log-utils';
-import { MainLogger } from 'electron-log';
-import * as path from 'path'; // Import the path module
 
 const log = createLogger('compare');
 
@@ -20,7 +20,9 @@ export const getDifferences = (
   const diff: Record<string, { before: any; after: any }> = {};
 
   Object.keys(newObj).forEach((key) => {
-    if (excludeKeys.includes(key)) return; // Skip excluded keys
+    if (excludeKeys.includes(key)) {
+      return; // Skip excluded keys
+    }
     if (!isEqual(oldObj[key], newObj[key])) {
       diff[key] = { before: oldObj[key], after: newObj[key] };
     }
@@ -52,15 +54,15 @@ export const compareCollections = (
   // Identify added and modified items
   newCollection.forEach((newItem, filePath) => {
     const oldItem = previousCollection.get(filePath);
-    if (!oldItem) {
-      // Item is added
-      added.push({ filePath, item: newItem });
-    } else {
+    if (oldItem) {
       // Compare items excluding specified keys
       const differences = getDifferences(oldItem, newItem, excludeKeys);
       if (Object.keys(differences).length > 0) {
         modified.push({ filePath, differences });
       }
+    } else {
+      // Item is added
+      added.push({ filePath, item: newItem });
     }
   });
 

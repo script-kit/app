@@ -21,8 +21,8 @@ import {
   screen,
   shell,
 } from 'electron';
-import contextMenu from 'electron-context-menu';
 import type { Display } from 'electron';
+import contextMenu from 'electron-context-menu';
 import { debounce } from 'lodash-es';
 
 import type { ChildProcess } from 'node:child_process';
@@ -48,6 +48,7 @@ import {
   isBoundsWithinDisplays,
 } from './screen';
 import { invokeSearch, scorer, setChoices, setFlags } from './search';
+import shims from './shims';
 import {
   getEmojiShortcut,
   kitCache,
@@ -61,7 +62,6 @@ import {
 import { TrackEvent, trackEvent } from './track';
 import { getVersion } from './version';
 import { makeKeyPanel, makeWindow, prepForClose, setAppearance } from './window/utils';
-import shims from './shims';
 
 import { promptLog as log, themeLog } from './logs';
 
@@ -70,7 +70,7 @@ contextMenu({
   showInspectElement: true,
   showSearchWithGoogle: false,
   showLookUpSelection: false,
-  append: (defaultActions, params, browserWindow) => [
+  append: (_defaultActions, _params, browserWindow) => [
     {
       label: 'Detach Dev Tools',
       click: async () => {
@@ -169,7 +169,7 @@ export const logPromptState = () => {
     }, {} as any);
 
     // If there are any differences, log them
-    if (Object.keys(diff).length) {
+    if (Object.keys(diff).length > 0) {
       log.info(
         `
   👙 Prompt State:`,
@@ -465,7 +465,7 @@ const subEmoji = subscribeKey(
       if (emoji) {
         globalShortcut.register(emojiShortcut, () => {
           if (prompts.focused) {
-            log.info(`👆 Emoji shortcut pressed. 😘. Setting emojiActive to true on focused prompt`, {
+            log.info('👆 Emoji shortcut pressed. 😘. Setting emojiActive to true on focused prompt', {
               id: prompts.focused.id,
             });
             prompts.focused.emojiActive = true;
@@ -974,7 +974,7 @@ export class KitPrompt {
       });
       emitter.emit(KitEvent.DID_FINISH_LOAD);
 
-      const messagesReadyHandler = async (event, pid) => {
+      const messagesReadyHandler = async (_event, _pid) => {
         if (!this.window || this.window.isDestroyed()) {
           this.logError('📬 Messages ready. Prompt window is destroyed. Not initializing');
           return;
@@ -1170,7 +1170,7 @@ export class KitPrompt {
         this.modifiedByUser = true;
       });
     } else {
-      this.window.on('will-resize', (event, rect) => {
+      this.window.on('will-resize', (_event, rect) => {
         this.logSilly(`Will Resize ${rect.width} ${rect.height}`);
         this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, {
           id: this.id,
@@ -1200,7 +1200,7 @@ export class KitPrompt {
     this.window.on('resized', onResized);
     this.window.on('moved', onMoved);
     if (kitState.isWindows) {
-      const handler = (e, display, changedMetrics) => {
+      const handler = (_e, display, changedMetrics) => {
         if (changedMetrics.includes('scaleFactor')) {
           this.window.webContents.setZoomFactor(1 / display.scaleFactor);
         }
@@ -1340,7 +1340,7 @@ export class KitPrompt {
 
   moveToMouseScreen = () => {
     if (this?.window?.isDestroyed()) {
-      this.logWarn(`moveToMouseScreen. Window already destroyed`, this?.id);
+      this.logWarn('moveToMouseScreen. Window already destroyed', this?.id);
       return;
     }
 
@@ -1348,9 +1348,9 @@ export class KitPrompt {
     this.window.setPosition(mouseScreen.workArea.x, mouseScreen.workArea.y);
   };
 
-  initBounds = (forceScriptPath?: string, show = false) => {
+  initBounds = (forceScriptPath?: string, _show = false) => {
     if (this?.window?.isDestroyed()) {
-      this.logWarn(`initBounds. Window already destroyed`, this?.id);
+      this.logWarn('initBounds. Window already destroyed', this?.id);
       return;
     }
 
@@ -1726,7 +1726,7 @@ export class KitPrompt {
     // this.logInfo(`>_ ${channel}`);
     if (this.window && !this.window.isDestroyed() && this.window?.webContents) {
       ipcMain.removeAllListeners(String(channel));
-      ipcMain.once(String(channel), (event, { value }) => {
+      ipcMain.once(String(channel), (_event, { value }) => {
         this.logSilly(`getFromPrompt: ${String(channel)}`, value);
         try {
           // this.logInfo('childSend', channel, value, child, child?.connected);
@@ -1742,15 +1742,25 @@ export class KitPrompt {
   };
 
   private shouldApplyResize(resizeData: ResizeData): boolean {
-    if (kitState.isLinux) return false;
-    if (!(resizeData.forceHeight || this.allowResize || resizeData.forceResize)) return false;
-    if (this.modifiedByUser) return false;
-    if (this.window?.isDestroyed()) return false;
+    if (kitState.isLinux) {
+      return false;
+    }
+    if (!(resizeData.forceHeight || this.allowResize || resizeData.forceResize)) {
+      return false;
+    }
+    if (this.modifiedByUser) {
+      return false;
+    }
+    if (this.window?.isDestroyed()) {
+      return false;
+    }
     return true;
   }
 
   private handleSettle() {
-    if (!this?.window || this.window?.isDestroyed()) return;
+    if (!this?.window || this.window?.isDestroyed()) {
+      return;
+    }
 
     this.logInfo(`📬 ${this.pid} 📐 Resize settled. Saving bounds`);
     this.saveCurrentPromptBounds();
@@ -1775,12 +1785,14 @@ export class KitPrompt {
 
     // Get cached dimensions for main script
     const getCachedDimensions = (): Partial<Pick<Rectangle, 'width' | 'height'>> => {
-      if (!isMainScript) return {};
+      if (!isMainScript) {
+        return {};
+      }
 
       const cachedBounds = getCurrentScreenPromptCache(getMainScriptPath());
       return {
         width: cachedBounds?.width || getDefaultWidth(),
-        height: !hasInput ? cachedBounds?.height || PROMPT.HEIGHT.BASE : undefined,
+        height: hasInput ? undefined : cachedBounds?.height || PROMPT.HEIGHT.BASE,
       };
     };
 
@@ -1952,7 +1964,7 @@ export class KitPrompt {
     this.promptData = promptData;
 
     const setPromptDataHandler = debounce(
-      (x, { ui }: { ui: UI }) => {
+      (_x, { ui }: { ui: UI }) => {
         this.logInfo(`${this.pid}: Received SET_PROMPT_DATA from renderer. ${ui} Ready!`);
         this.refocusPrompt();
       },
@@ -2310,7 +2322,7 @@ export class KitPrompt {
 
   setPromptAlwaysOnTop = (onTop: boolean, manual = false) => {
     if (kitState.isMac) {
-      this.logInfo(`alwaysOnTop is disabled on mac`);
+      this.logInfo('alwaysOnTop is disabled on mac');
       return;
     }
     if (kitState?.kenvEnv?.KIT_ALWAYS_ON_TOP === 'true') {
@@ -2465,7 +2477,7 @@ export class KitPrompt {
 
   scriptSet = false;
 
-  setScript = (script: Script, pid: number, force = false): 'denied' | 'allowed' => {
+  setScript = (script: Script, pid: number, _force = false): 'denied' | 'allowed' => {
     const { preview, scriptlet, inputs, tag, ...serializableScript } = script as Scriptlet;
 
     log.info(`${this.pid}: setScript`, serializableScript, JSON.stringify(script));
@@ -2823,7 +2835,7 @@ export class KitPrompt {
     processes.removeByPid(this.pid, 'prompt close cleanup');
   };
 
-  private beforeInputHandler = (event, input: Input) => {
+  private beforeInputHandler = (_event, input: Input) => {
     if (input.type !== 'keyDown' || !input.key) {
       return;
     }

@@ -1,21 +1,21 @@
-import { execFile, exec } from 'node:child_process';
-import { promisify } from 'node:util';
-import { arch, platform } from 'node:os';
-import { join } from 'node:path';
-import { chmod, mkdtemp, rm, symlink, unlink } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import log from 'electron-log';
-import { accessSync, constants, createWriteStream } from 'node:fs';
-import { pipeline } from 'node:stream/promises';
-import { kitPath, kitPnpmPath } from '@johnlindquist/kit/core/utils';
-import os from 'node:os';
+import { exec, execFile } from 'node:child_process';
+import { constants, accessSync, createWriteStream } from 'node:fs';
 import { existsSync } from 'node:fs';
+import { chmod, mkdtemp, rm, symlink, unlink } from 'node:fs/promises';
+import { arch, platform } from 'node:os';
+import { tmpdir } from 'node:os';
+import os from 'node:os';
+import { join } from 'node:path';
 import path from 'node:path';
+import { pipeline } from 'node:stream/promises';
+import { promisify } from 'node:util';
+import { kitPath, kitPnpmPath } from '@johnlindquist/kit/core/utils';
 import { createPathResolver } from '@johnlindquist/kit/core/utils';
-import { kitState } from '../state';
-import { invoke } from '../invoke-pty';
-import { downloadAndInstallPnpm, setPnpmStoreDir } from '../install/install-pnpm';
+import log from 'electron-log';
 import { sendSplashBody } from '../install';
+import { downloadAndInstallPnpm, setPnpmStoreDir } from '../install/install-pnpm';
+import { invoke } from '../invoke-pty';
+import { kitState } from '../state';
 
 const execFileAsync = promisify(execFile);
 
@@ -118,7 +118,9 @@ export async function setupPnpm(): Promise<void> {
         shell: true,
       });
       log.info('pnpm setup stdout:', stdout);
-      if (stderr) log.warn('pnpm setup stderr:', stderr);
+      if (stderr) {
+        log.warn('pnpm setup stderr:', stderr);
+      }
 
       // Parse stdout to find potential pnpm installation paths
       const stdoutStr = stdout.toString();
@@ -165,7 +167,9 @@ export async function setupPnpm(): Promise<void> {
           shell: true,
         });
         log.info('pnpm version:', stdout.trim());
-        if (stderr) log.warn('pnpm version stderr:', stderr);
+        if (stderr) {
+          log.warn('pnpm version stderr:', stderr);
+        }
       } catch (versionError) {
         log.error('Error running pnpm directly:', versionError);
       }
@@ -184,7 +188,7 @@ export async function setupPnpm(): Promise<void> {
 }
 
 export async function symlinkPnpm(pnpmPath: string): Promise<void> {
-  log.info(`Symlinking pnpm to .kit/pnpm is currently disabled. Relying on PATH pnpm`);
+  log.info('Symlinking pnpm to .kit/pnpm is currently disabled. Relying on PATH pnpm');
 
   return;
   log.info('Creating symlink for pnpm...');

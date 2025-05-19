@@ -1,4 +1,4 @@
-import { vi, describe, it, expect } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 // Mocking the log-utils module
 vi.mock('./log-utils', () => ({

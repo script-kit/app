@@ -14,12 +14,12 @@ import { QuickScore, createConfig, quickScore } from 'quick-score';
 import { AppChannel } from '../shared/enums';
 import type { ScoredChoice } from '../shared/types';
 import { createScoredChoice } from './helpers';
+import { searchLog as log } from './logs';
 import { cacheChoices } from './messages';
 import type { KitPrompt } from './prompt';
 import { kitCache, kitState } from './state';
-import { searchLog as log } from './logs';
 
-export const invokeSearch = (prompt: KitPrompt, rawInput: string, reason = 'normal') => {
+export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'normal') => {
   // log.info(`${prompt.pid}: ${reason}: Invoke search: '${rawInput}'`);
 
   if (prompt.ui !== UI.arg) {
@@ -685,7 +685,7 @@ export const setChoices = (
     // TODO: Sync up the kitCache.choices approach with this older approach
     cacheChoices(prompt.scriptPath, choices);
     prompt.cacheScriptChoices = false;
-  } else if (prompt?.scriptPath && choices?.length) {
+  } else if (prompt?.scriptPath && choices?.length > 0) {
     log.info(`${prompt.getLogPrefix()}: Not caching script choices for ${prompt.scriptPath}: ${choices.length}`);
   }
 
@@ -741,7 +741,7 @@ export const setScoredChoices = (prompt: KitPrompt, choices: ScoredChoice[], rea
     prompt.scriptPath === getMainScriptPath() &&
     prompt.kitSearch.input === '' &&
     !prompt.kitSearch.inputRegex &&
-    choices?.length
+    choices?.length > 0
   ) {
     log.info(
       `${prompt.getLogPrefix()}: Caching main scored choices: ${choices.length}. First choice: ${choices[0]?.item?.name}`,

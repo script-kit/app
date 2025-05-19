@@ -1,18 +1,16 @@
-import { clipboard, nativeTheme, shell } from 'electron';
-import crypto from 'node:crypto';
-import { HttpsProxyAgent } from 'hpagent';
-import * as rimraf from 'rimraf';
 import { type SpawnOptions, type SpawnSyncReturns, spawn } from 'node:child_process';
+import crypto from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
 import dotenv from 'dotenv';
+import { clipboard, nativeTheme, shell } from 'electron';
+import { HttpsProxyAgent } from 'hpagent';
 import { debounce } from 'lodash-es';
 import StreamZip from 'node-stream-zip';
+import * as rimraf from 'rimraf';
 
-import * as tar from 'tar';
-import { lstat, readFile, unlink, rename } from 'node:fs/promises';
+import { lstat, readFile, rename, unlink } from 'node:fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
-import download, { type DownloadOptions } from './download';
 import {
   KIT_FIRST_PATH,
   getMainScriptPath,
@@ -25,6 +23,8 @@ import {
 } from '@johnlindquist/kit/core/utils';
 import type { Choice, FlagsObject, Script, Scriptlet, Shortcut } from '@johnlindquist/kit/types';
 import { CACHED_GROUPED_SCRIPTS_WORKER, CREATE_BIN_WORKER } from '@johnlindquist/kit/workers';
+import * as tar from 'tar';
+import download, { type DownloadOptions } from './download';
 
 import { KitPrompt, destroyPromptWindow, makeSplashWindow } from './prompt';
 
@@ -34,25 +34,25 @@ import { SPLASH_PATH } from '../shared/defaults';
 import { AppChannel } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
 import { sendToAllPrompts } from './channel';
+import { ensureDir, pathExists, readJson, readdir, writeFile, writeJson } from './cjs-exports';
 import { createScoredChoice, isInDirectory } from './helpers';
 import { mainLogPath, scriptLog, workerLog } from './logs';
 import { showError } from './main.dev.templates';
 import { prompts } from './prompts';
 import { INSTALL_ERROR, show } from './show';
 import { getThemes, kitCache, kitState, preloadChoicesMap, workers } from './state';
-import { ensureDir, writeFile, readJson, writeJson, pathExists, readdir } from './cjs-exports';
 
 import electronLog from 'electron-log';
-import { createLogger } from './log-utils';
-import { createForkOptions } from './fork.options';
-import { osTmpPath } from './tmp';
 import { getAssetPath } from '../shared/assets';
-import { getLatestAppTag, getURLFromVersion, getVersion, getVersionFromTag } from './version';
-import { getPnpmPath } from './setup/pnpm';
-import { shortcutMap } from './shortcuts';
-import { showInfo } from './info';
 import { compareCollections, logDifferences } from './compare';
 import { getAllShellEnvs } from './env-utils';
+import { createForkOptions } from './fork.options';
+import { showInfo } from './info';
+import { createLogger } from './log-utils';
+import { getPnpmPath } from './setup/pnpm';
+import { shortcutMap } from './shortcuts';
+import { osTmpPath } from './tmp';
+import { getLatestAppTag, getURLFromVersion, getVersion, getVersionFromTag } from './version';
 import { onScriptChanged } from './watcher';
 const log = createLogger('install.ts');
 
@@ -119,7 +119,7 @@ export const showSplash = async () => {
 
     splashPrompt?.sendToPrompt(Channel.SET_THEME, platformSpecificTheme);
 
-    splashPrompt?.window?.webContents?.ipc?.addListener(Channel.SET_PROMPT_DATA, (event, data) => {
+    splashPrompt?.window?.webContents?.ipc?.addListener(Channel.SET_PROMPT_DATA, (_event, _data) => {
       log.info('Showing splash screen');
       splashPrompt?.window.show();
     });
@@ -201,7 +201,7 @@ export const handleLogMessage = (message: string, result: SpawnSyncReturns<any>,
   log.info('stderr:', result?.stderr?.toString());
   const { stdout, stderr, error } = result;
 
-  if (stdout?.toString().length) {
+  if (stdout?.toString().length > 0) {
     const out = stdout.toString();
     log.info(message, out);
     sendSplashBody(out.slice(0, 200));
@@ -211,7 +211,7 @@ export const handleLogMessage = (message: string, result: SpawnSyncReturns<any>,
     throw new Error(error.message);
   }
 
-  if (stderr?.toString().length) {
+  if (stderr?.toString().length > 0) {
     sendSplashBody(stderr.toString());
     log.info({ stderr: stderr.toString() });
     // throw new Error(stderr.toString());
@@ -249,7 +249,7 @@ export const installPackage = async (installCommand: string, cwd: string) => {
   };
 
   const pnpmPath = await getPnpmPath();
-  return new Promise<string>((resolve, reject) => {
+  return new Promise<string>((resolve, _reject) => {
     log.info(`${cwd}: 👷 pnpm ${installCommand}`);
     const child = spawn(pnpmPath, [installCommand], options);
 
@@ -277,7 +277,7 @@ export const installPackage = async (installCommand: string, cwd: string) => {
 
     // Handling the different events for the child process
     if (child.stdout) {
-      child.stdout.on('data', (data) => {});
+      child.stdout.on('data', (_data) => {});
     }
 
     if (child.stderr) {
@@ -668,7 +668,7 @@ export const setupLog = async (message: string) => {
   sendSplashBody(message);
   log.info(message);
   if (process.env.KIT_SPLASH) {
-    await new Promise((resolve, reject) =>
+    await new Promise((resolve, _reject) =>
       setTimeout(() => {
         resolve(true);
       }, 500),
@@ -747,7 +747,7 @@ export const optionalSpawnSetup = (...args: string[]) => {
     log.info(`⏭️ 'process.env.MAIN_SKIP_SETUP' Skipping setup script: ${args.join(' ')}`);
     return Promise.resolve('done');
   }
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, _reject) => {
     log.info(`Running optional setup script: ${args.join(' ')}`);
     if (!kitState.KIT_NODE_PATH) {
       log.error('No exec path found, skipping setup script');
@@ -909,7 +909,7 @@ export function scoreAndCacheMainChoices(allScripts: Script[]) {
   // Push into global Kit caches exactly like the old function did.
   kitCache.scripts = allScripts;
   kitCache.choices = results;
-  cacheTriggers(allScripts.filter((c) => !c.miss && !c.pass && !c.hideWithoutInput && !c.exclude));
+  cacheTriggers(allScripts.filter((c) => !(c.miss || c.pass || c.hideWithoutInput || c.exclude)));
 
   const dt = (performance.now() - t0).toFixed(1);
   log.info(`⚡️ incrementalScoreAndCacheMainChoices done in ${dt} ms`);
@@ -1221,8 +1221,8 @@ function rejectAllPending(resolvers: Array<{ reject: (reason?: any) => void }>, 
 
 // Creates the worker if it doesn't exist, attaches event handlers
 function ensureWorker(
-  uuid: string,
-  handleResolve: () => void,
+  _uuid: string,
+  _handleResolve: () => void,
   handleReject: (error: any) => void,
   messageHandler: (message: any) => void,
   errorHandler: (error: any) => void,

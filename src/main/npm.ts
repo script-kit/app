@@ -87,6 +87,7 @@ export async function getFileImports(
           addImport(dynamicImportPath);
         }
         break;
+      default:
     }
 
     ts.forEachChild(node, visit);

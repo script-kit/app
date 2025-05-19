@@ -1,3 +1,9 @@
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { setTimeout } from 'node:timers/promises';
+import { isDir, kenvPath } from '@johnlindquist/kit/core/utils';
+import type { ShowOptions } from '@johnlindquist/kit/types/kitapp';
+import type { WidgetOptions } from '@johnlindquist/kit/types/pro';
 /* eslint-disable import/prefer-default-export */
 import {
   BrowserWindow,
@@ -9,12 +15,6 @@ import {
   screen,
 } from 'electron';
 import { ensureDir } from './cjs-exports';
-import { writeFile } from 'node:fs/promises';
-import path from 'node:path';
-import { isDir, kenvPath } from '@johnlindquist/kit/core/utils';
-import type { ShowOptions } from '@johnlindquist/kit/types/kitapp';
-import type { WidgetOptions } from '@johnlindquist/kit/types/pro';
-import { setTimeout } from 'node:timers/promises';
 
 import { fileURLToPath } from 'node:url';
 import { Channel } from '@johnlindquist/kit/core/enum';
@@ -24,8 +24,8 @@ import { forceQuit, kitState } from './state';
 
 export const INSTALL_ERROR = 'install-error';
 
-import { createLogger } from './log-utils';
 import { isUrl } from './helpers';
+import { createLogger } from './log-utils';
 
 const log = createLogger('show.ts');
 
@@ -170,7 +170,7 @@ export const showInspector = (url: string): BrowserWindow => {
   return win;
 };
 
-export const showDevTools = async (value: any, url = '') => {
+export const showDevTools = async (value: any, _url = '') => {
   const devToolsWindow = new BrowserWindow({
     // vibrancy: 'menu'
     // visualEffectState: 'active',
@@ -240,7 +240,7 @@ const loadWidgetUrl = async (widgetWindow: BrowserWindow, url: string) => {
 
 export const show = async (
   name: string,
-  html: string,
+  _html: string,
   options: ShowOptions = {},
   showOnLoad = true,
 ): Promise<BrowserWindow> => {
@@ -272,7 +272,7 @@ export const show = async (
 
   showWindow?.setMaxListeners(1);
 
-  showWindow?.webContents.on('before-input-event', (event: any, input) => {
+  showWindow?.webContents.on('before-input-event', (_event: any, input) => {
     if (input.key === 'Escape') {
       showWindow.destroy();
       if (name === INSTALL_ERROR) {
@@ -299,7 +299,7 @@ export const show = async (
     showWindow.destroy();
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, _reject) => {
     showWindow.webContents.once('did-finish-load', () => {
       if (showOnLoad && showWindow) {
         showWindow?.show();
@@ -318,7 +318,7 @@ export const showWidget = async (
   html: string,
   options: WidgetOptions = {},
 ): Promise<BrowserWindow> => {
-  log.info(`🚀 Starting showWidget`, {
+  log.info('🚀 Starting showWidget', {
     scriptPath,
     widgetId,
     htmlLength: html?.length,
@@ -326,7 +326,7 @@ export const showWidget = async (
   });
 
   options.body = options.body || html || '';
-  log.info(`📐 Calculating window position`, {
+  log.info('📐 Calculating window position', {
     center: options?.center,
     options: JSON.stringify(options),
   });
@@ -335,7 +335,7 @@ export const showWidget = async (
     ? getCenterOnCurrentScreen(options as BrowserWindowConstructorOptions)
     : getTopRightCurrentScreen(options as BrowserWindowConstructorOptions);
 
-  log.info(`📍 Calculated position`, { position });
+  log.info('📍 Calculated position', { position });
 
   const bwOptions: BrowserWindowConstructorOptions = {
     title: `${path.basename(scriptPath)} | id: ${widgetId}`,
@@ -363,7 +363,7 @@ export const showWidget = async (
     ...(options as BrowserWindowConstructorOptions),
   };
 
-  log.info(`🔧 Final BrowserWindow options`, {
+  log.info('🔧 Final BrowserWindow options', {
     bwOptions: JSON.stringify(bwOptions),
     isMac: kitState.isMac,
   });
@@ -371,30 +371,30 @@ export const showWidget = async (
   let widgetWindow: BrowserWindow;
   try {
     if (kitState.isMac) {
-      log.info(`🍎 Creating Mac BrowserWindow`);
+      log.info('🍎 Creating Mac BrowserWindow');
       widgetWindow = new BrowserWindow(bwOptions);
       if (!options.transparent) {
         log.info(`Setting vibrancy to 'popover'`);
         widgetWindow.setVibrancy('popover');
       }
     } else if (options?.transparent) {
-      log.info(`🪟 Creating transparent BrowserWindow`);
+      log.info('🪟 Creating transparent BrowserWindow');
       widgetWindow = new BrowserWindow(bwOptions);
       widgetWindow.setBackgroundColor('#00000000');
     } else {
-      log.info(`🪟 Creating standard BrowserWindow`);
+      log.info('🪟 Creating standard BrowserWindow');
       widgetWindow = new BrowserWindow({
         ...bwOptions,
         backgroundColor: '#00000000',
       });
     }
 
-    log.info(`✅ BrowserWindow created successfully`, {
+    log.info('✅ BrowserWindow created successfully', {
       windowId: widgetWindow.id,
       bounds: widgetWindow.getBounds(),
     });
   } catch (error) {
-    log.error(`❌ Failed to create BrowserWindow`, {
+    log.error('❌ Failed to create BrowserWindow', {
       error: error instanceof Error ? error.message : error,
       stack: error instanceof Error ? error.stack : undefined,
     });
@@ -402,7 +402,7 @@ export const showWidget = async (
   }
 
   if (options?.ignoreMouse) {
-    log.info(`🖱️ Setting ignore mouse events`, {
+    log.info('🖱️ Setting ignore mouse events', {
       windowId: widgetWindow.id,
       ignoreMouse: true,
     });
@@ -410,12 +410,12 @@ export const showWidget = async (
   }
 
   if (options?.ttl) {
-    log.info(`⏲️ Setting TTL timeout`, {
+    log.info('⏲️ Setting TTL timeout', {
       windowId: widgetWindow.id,
       ttl: options.ttl,
     });
     await setTimeout(options?.ttl);
-    log.info(`⌛ TTL expired, closing widget`, {
+    log.info('⌛ TTL expired, closing widget', {
       windowId: widgetWindow.id,
       ttl: options.ttl,
     });
@@ -423,14 +423,14 @@ export const showWidget = async (
   }
 
   return new Promise((resolve, reject) => {
-    log.info(`🔄 Setting up widget initialization promise`, {
+    log.info('🔄 Setting up widget initialization promise', {
       windowId: widgetWindow?.id || 'unknown',
       widgetId,
     });
 
     if (!widgetWindow?.webContents) {
       const error = new Error('Widget window or webContents is null');
-      log.error(`❌ Widget initialization failed`, {
+      log.error('❌ Widget initialization failed', {
         error: error.message,
         windowId: widgetWindow?.id,
       });
@@ -439,7 +439,7 @@ export const showWidget = async (
     }
 
     widgetWindow.webContents.ipc.once(Channel.WIDGET_GET, () => {
-      log.info(`📨 Received WIDGET_GET event`, {
+      log.info('📨 Received WIDGET_GET event', {
         windowId: widgetWindow.id,
         widgetId,
       });
@@ -449,21 +449,21 @@ export const showWidget = async (
           ...options,
           widgetId,
         };
-        log.info(`📤 Sending WIDGET_INIT`, {
+        log.info('📤 Sending WIDGET_INIT', {
           windowId: widgetWindow.id,
           widgetOptions: JSON.stringify(widgetOptions),
         });
         widgetWindow.webContents.send(Channel.WIDGET_INIT, widgetOptions);
 
         const theme = kitState.theme;
-        log.info(`🎨 Sending theme`, {
+        log.info('🎨 Sending theme', {
           windowId: widgetWindow.id,
           theme: JSON.stringify(theme),
         });
         widgetWindow.webContents.send(Channel.WIDGET_THEME, theme);
 
         const noShow = typeof options?.show === 'boolean' && options?.show === false;
-        log.info(`👁️ Widget visibility`, {
+        log.info('👁️ Widget visibility', {
           windowId: widgetWindow.id,
           noShow,
           showOption: options?.show,
@@ -471,14 +471,14 @@ export const showWidget = async (
 
         if (!noShow) {
           widgetWindow?.show();
-          log.info(`✨ Widget shown`, {
+          log.info('✨ Widget shown', {
             windowId: widgetWindow.id,
             bounds: widgetWindow.getBounds(),
           });
         }
 
         if (options?.showDevTools) {
-          log.info(`🛠️ Opening DevTools`, {
+          log.info('🛠️ Opening DevTools', {
             windowId: widgetWindow.id,
           });
           widgetWindow?.webContents.openDevTools({
@@ -489,7 +489,7 @@ export const showWidget = async (
         resolve(widgetWindow);
       } else {
         const error = new Error(`Widget ${widgetId} failed to load`);
-        log.error(`❌ Widget initialization failed`, {
+        log.error('❌ Widget initialization failed', {
           error: error.message,
           widgetId,
         });
@@ -498,13 +498,13 @@ export const showWidget = async (
     });
 
     widgetWindow.webContents.on('context-menu', (event: any) => {
-      log.info(`📋 Context menu requested`, {
+      log.info('📋 Context menu requested', {
         windowId: widgetWindow?.id,
       });
       event?.preventDefault();
 
       if (!widgetWindow) {
-        log.error(`❌ No BrowserWindow found for context menu`);
+        log.error('❌ No BrowserWindow found for context menu');
         return;
       }
 
@@ -512,7 +512,7 @@ export const showWidget = async (
         {
           label: 'Show Dev Tools',
           click: () => {
-            log.info(`🛠️ Opening DevTools from context menu`, {
+            log.info('🛠️ Opening DevTools from context menu', {
               windowId: widgetWindow.id,
             });
             widgetWindow.webContents.openDevTools({
@@ -524,7 +524,7 @@ export const showWidget = async (
           label: 'Enable Click-Through',
           checked: options.ignoreMouse,
           click: () => {
-            log.info(`🖱️ Toggling click-through`, {
+            log.info('🖱️ Toggling click-through', {
               windowId: widgetWindow.id,
               newState: !options.ignoreMouse,
             });
@@ -539,7 +539,7 @@ export const showWidget = async (
         {
           label: 'Close',
           click: () => {
-            log.info(`🚫 Closing widget from context menu`, {
+            log.info('🚫 Closing widget from context menu', {
               windowId: widgetWindow.id,
             });
             widgetWindow?.close();
@@ -551,7 +551,7 @@ export const showWidget = async (
       menu.popup(widgetWindow as PopupOptions);
     });
 
-    log.info(`🌐 Loading content`, {
+    log.info('🌐 Loading content', {
       windowId: widgetWindow.id,
       isUrl: isUrl(html),
       html: html?.substring(0, 100) + (html?.length > 100 ? '...' : ''),
@@ -559,28 +559,28 @@ export const showWidget = async (
 
     try {
       if (isUrl(html)) {
-        log.info(`🔗 Loading URL content`, {
+        log.info('🔗 Loading URL content', {
           windowId: widgetWindow.id,
           url: html,
         });
         loadWidgetUrl(widgetWindow, html);
       } else if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
         const url = `${process.env.ELECTRON_RENDERER_URL}/widget.html`;
-        log.info(`🔗 Loading development URL`, {
+        log.info('🔗 Loading development URL', {
           windowId: widgetWindow.id,
           url,
         });
         widgetWindow.loadURL(url);
       } else {
         const filePath = fileURLToPath(new URL('../renderer/widget.html', import.meta.url));
-        log.info(`📄 Loading widget HTML file`, {
+        log.info('📄 Loading widget HTML file', {
           windowId: widgetWindow.id,
           filePath,
         });
         widgetWindow.loadFile(filePath);
       }
     } catch (error) {
-      log.error(`❌ Failed to load widget content`, {
+      log.error('❌ Failed to load widget content', {
         error: error instanceof Error ? error.message : error,
         stack: error instanceof Error ? error.stack : undefined,
         windowId: widgetWindow.id,

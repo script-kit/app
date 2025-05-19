@@ -1,10 +1,10 @@
 import type { Script } from '@johnlindquist/kit/types/core';
 import { powerMonitor } from 'electron';
-import { systemLog as log } from './logs';
+import { debounce } from 'lodash-es';
 import { Trigger } from '../shared/enums';
 import { runPromptProcess } from './kit';
+import { systemLog as log } from './logs';
 import { kitState } from './state';
-import { debounce } from 'lodash-es';
 
 // Define using the original type to ensure compatibility with powerMonitor methods
 const validSystemEvents = [
@@ -134,10 +134,7 @@ export const systemEventsSelfCheck = () => {
     const registeredEvents = new Set(registeredHandlers.keys());
     const expectedEvents = shouldBeRegistered.get(filePath);
 
-    if (!expectedEvents) {
-      log.warn(`[SYSTEM_SELF_CHECK] Script "${filePath}" has listeners but shouldn't. Unlinking...`);
-      unlinkEvents(filePath);
-    } else {
+    if (expectedEvents) {
       let mismatch = false;
       if (registeredEvents.size !== expectedEvents.size) {
         mismatch = true;
@@ -164,6 +161,9 @@ export const systemEventsSelfCheck = () => {
       } else {
         log.info(`[SYSTEM_SELF_CHECK] Script "${filePath}" events correctly registered.`);
       }
+    } else {
+      log.warn(`[SYSTEM_SELF_CHECK] Script "${filePath}" has listeners but shouldn't. Unlinking...`);
+      unlinkEvents(filePath);
     }
   }
 

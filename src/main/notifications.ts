@@ -20,7 +20,7 @@ export const createNotification = async () => {
   });
 
   if (notificationWindow && !notificationWindow.isDestroyed()) {
-    notificationWindow?.webContents.on('before-input-event', (event: any, input) => {
+    notificationWindow?.webContents.on('before-input-event', (_event: any, input) => {
       if (input.key === 'Escape') {
         hidePromptWindow();
         notificationWindow?.webContents.send('escape', {});

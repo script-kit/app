@@ -1,8 +1,7 @@
 import type { ForkOptions } from 'node:child_process';
-import { KIT_FIRST_PATH, kenvPath, kitPath } from '@johnlindquist/kit/core/utils';
 import { homedir } from 'node:os';
+import { KIT_FIRST_PATH, kenvPath, kitPath } from '@johnlindquist/kit/core/utils';
 import { kitState } from './state';
-
 
 export const createForkOptions = () => {
   const forkOptions: ForkOptions = {

@@ -1,9 +1,9 @@
 import type { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import type { BrowserWindow } from 'electron';
 import { AppChannel } from '../shared/enums';
+import { createLogger } from './log-utils';
 import type { ProcessAndPrompt } from './process';
 import { prompts } from './prompts';
-import { createLogger } from './log-utils';
 
 const log = createLogger('channel.ts');
 

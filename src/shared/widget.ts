@@ -19,7 +19,7 @@ const initWidgets = {
 
 export const widgetState: typeof initWidgets = proxy(initWidgets);
 
-export const findWidget = (id: string, reason = ''): BrowserWindow & { pid: number } | null => {
+export const findWidget = (id: string, reason = ''): (BrowserWindow & { pid: number }) | null => {
   const options = widgetState.widgets.find((opts) => opts.id === id);
   if (!options) {
     log.warn(`${reason}: widget not found: ${id}`);
@@ -33,7 +33,7 @@ export const findWidget = (id: string, reason = ''): BrowserWindow & { pid: numb
 
 const subWidgets = subscribeKey(widgetState, 'widgets', (widgets) => {
   log.info(`👀 Widgets: ${JSON.stringify(widgets)}`);
-  if (widgets.length !== 0) {
+  if (widgets.length > 0) {
     emitter.emit(KitEvent.ShowDock);
   } else {
     emitter.emit(KitEvent.HideDock);

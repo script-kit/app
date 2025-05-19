@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import log from 'electron-log';
-import { kitState } from './state';
 import { disableOldAutoLaunch } from './launch';
+import { kitState } from './state';
 
 export const checkOpenAtLogin = () => {
   try {

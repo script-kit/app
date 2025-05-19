@@ -1,5 +1,5 @@
 // src/main/health-monitor.ts
-import { app, BrowserWindow } from 'electron';
+import { BrowserWindow, app } from 'electron';
 import { healthLog } from './logs';
 import { kitState } from './state';
 

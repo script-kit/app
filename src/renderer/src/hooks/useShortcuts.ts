@@ -1,7 +1,6 @@
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { createLogger } from '../log-utils';
 import {
   actionsConfigAtom,
   actionsInputFocusAtom,
@@ -24,10 +23,11 @@ import {
   submitValueAtom,
   uiAtom,
 } from '../jotai';
+import { createLogger } from '../log-utils';
 
+import { useCallback, useMemo } from 'react';
 import type { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
 import { hotkeysOptions } from './shared';
-import { useCallback, useMemo } from 'react';
 
 const log = createLogger('useShortcuts');
 
@@ -93,7 +93,7 @@ export default () => {
 
   useHotkeys(
     'mod+shift+w',
-    (event) => {
+    (_event) => {
       log.info('Shortcut triggered: mod+shift+w', { previewEnabled });
       setPreviewEnabled(!previewEnabled);
     },
@@ -103,7 +103,7 @@ export default () => {
 
   const flagsWithShortcuts = useMemo(() => {
     const flagsArray = Object.entries(flags) as [string, { shortcut: string }][];
-    return flagsArray.filter(([key, value]) => value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter');
+    return flagsArray.filter(([_key, value]) => value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter');
   }, [flags]);
 
   const flagShortcuts = useMemo(() => {
@@ -131,7 +131,7 @@ export default () => {
   );
 
   useHotkeys(
-    flagShortcuts.length ? flagShortcuts : ['f19'],
+    flagShortcuts.length > 0 ? flagShortcuts : ['f19'],
     (event, handler: HotkeysEvent) => {
       log.info('Flag shortcut triggered', { event, handler, flagShortcuts });
       event.preventDefault();
@@ -275,7 +275,7 @@ export default () => {
       if (flagValue) {
         log.info('Clearing flag value');
         setFlagValue('');
-      } else if (choices.length) {
+      } else if (choices.length > 0) {
         log.info('Setting flag value to focused choice', { name: focusedChoice?.name });
         setFlagValue(focusedChoice?.value);
       } else {

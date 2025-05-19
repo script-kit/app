@@ -21,10 +21,10 @@ import { deleteText } from './keyboard';
 
 import { addToClipboardHistory, getClipboardHistory } from './clipboard';
 import { registerIO } from './io';
-import { prompts } from './prompts';
-import shims from './shims';
 import { createLogger } from './log-utils';
 import { snippetLog } from './logs';
+import { prompts } from './prompts';
+import shims from './shims';
 const log = createLogger('tick.ts');
 
 type FrontmostApp = {
@@ -64,7 +64,9 @@ function isTransient(): boolean {
   ];
 
   for (let i = 0; i < badTypes.length; i++) {
-    if (clipboard.has(badTypes[i])) return true;
+    if (clipboard.has(badTypes[i])) {
+      return true;
+    }
   }
   return false;
 }
@@ -147,7 +149,7 @@ const ioEvent = (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
         kitState.snippet = '';
       } else {
         kitState.snippet += SPACE;
-        kitState.typedText = kitState.typedText + ' ';
+        kitState.typedText += ' ';
       }
     } else if (kc === uiohookKeyCode.Quote || key.length > 1 || key === '') {
       snippetLog.silly('Clearing snippet because of quote or empty key');

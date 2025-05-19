@@ -1,11 +1,11 @@
 #!/usr/bin/env node --loader ts-node/esm
 
 import { exec } from 'node:child_process';
-import { promisify } from 'node:util';
-import axios from 'axios';
+import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import * as fs from 'node:fs/promises';
+import { promisify } from 'node:util';
+import axios from 'axios';
 import { createLogger } from '.././log-utils';
 
 const log = createLogger('install-pnpm');

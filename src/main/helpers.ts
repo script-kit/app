@@ -122,7 +122,7 @@ const keyCodes =
 
 const infoScript = kitPath('cli', 'info.js');
 
-const conversionFail = (shortcut: string, filePath: string, otherPath = '') => `# Shortcut Conversion Failed
+const conversionFail = (shortcut: string, filePath: string, _otherPath = '') => `# Shortcut Conversion Failed
 
 Attempted to convert to a valid shortcut, but result was invalid:
 
@@ -146,7 +146,7 @@ export const shortcutInfo = (shortcut: string, targetScriptPath: string, md = co
 };
 
 export const convertShortcut = (shortcut: string, filePath: string): string => {
-  if (!shortcut?.length) {
+  if (shortcut?.length === 0) {
     return '';
   }
   const normalizedShortcut = shortcutNormalizer(shortcut);
@@ -159,11 +159,11 @@ export const convertShortcut = (shortcut: string, filePath: string): string => {
     .reverse();
   // log.info(`Shortcut main key: ${sourceKey}`);
 
-  if (!(mods.length && sourceKey?.length)) {
-    if (!mods.length) {
+  if (!(mods.length > 0 && sourceKey?.length > 0)) {
+    if (mods.length === 0) {
       log.info('No modifiers found');
     }
-    if (!sourceKey?.length) {
+    if (sourceKey?.length === 0) {
       log.info('No main key found');
     }
     // shortcutInfo(normalizedShortcut, filePath);

@@ -34,7 +34,7 @@ export const trackEvent = (event: TrackEvent, properties: any) => {
       // log.info(response.data);
       return response;
     })
-    .catch((error) => {
+    .catch((_error) => {
       // log.error(error);
     });
 };

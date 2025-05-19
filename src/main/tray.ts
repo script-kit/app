@@ -37,10 +37,10 @@ import { KitEvent, emitter } from '../shared/events';
 import { mainLogPath, updateLogPath } from './logs';
 import { processes } from './process';
 import { prompts } from './prompts';
+import { startServer, stopServer } from './server';
+import { getServerPort } from './serverTrayUtils';
 import { forceQuit, kitState, subs } from './state';
 import { getVersion } from './version';
-import { getServerPort } from './serverTrayUtils';
-import { startServer, stopServer } from './server';
 
 let tray: Tray | null = null;
 
@@ -144,7 +144,7 @@ const buildNotifySubmenu = (): MenuItemConstructorOptions[] => {
     });
   }
 
-  if (notifyItems.length) {
+  if (notifyItems.length > 0) {
     notifyItems.push({
       type: 'separator' as const,
     });
@@ -847,7 +847,7 @@ let leftClickOverride: null | ((event: any) => void) = null;
 export const setTrayMenu = async (scriptPaths: string[]) => {
   kitState.trayScripts = scriptPaths;
   tray?.setToolTip('Script Kit');
-  if (!scriptPaths?.length) {
+  if (scriptPaths?.length === 0) {
     if (leftClickOverride) {
       tray?.removeAllListeners('mouse-down');
       tray?.removeAllListeners('click');
@@ -898,7 +898,7 @@ export const setTrayMenu = async (scriptPaths: string[]) => {
     },
   });
 
-  if (scriptMenuItems.length) {
+  if (scriptMenuItems.length > 0) {
     const cMenu = Menu.buildFromTemplate(scriptMenuItems);
 
     leftClickOverride = () => {

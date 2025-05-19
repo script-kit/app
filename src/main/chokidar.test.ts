@@ -1,28 +1,22 @@
-import { vi, beforeAll, afterAll, describe, it, expect } from 'vitest';
 import path from 'node:path';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 // Constants for test timing - increased for parallel execution
 const WATCHER_SETTLE_TIME = 200;
 const KENV_GLOB_TIMEOUT = 1000;
 
 const testDir = vi.hoisted(() => {
-  console.log('[HOISTED] Setting up testDir');
   return import('tmp-promise').then(({ dir }) => {
-    console.log('[HOISTED] Got dir function');
     return dir({ unsafeCleanup: true }).then((result) => {
-      console.log('[HOISTED] Created temp dir:', result.path);
       return result;
     });
   });
 });
 
 vi.mock('node:os', async () => {
-  console.log('[OS MOCK] Starting setup');
   const tmpDir = await testDir;
-  console.log('[OS MOCK] Got tmpDir:', tmpDir.path);
   const osMock = {
     homedir: () => {
-      console.log('[OS MOCK] homedir called, returning:', tmpDir.path);
       return tmpDir.path;
     },
     path,
@@ -35,9 +29,7 @@ vi.mock('node:os', async () => {
 });
 
 vi.mock('@johnlindquist/kit/core/utils', async () => {
-  console.log('[MOCK] Starting mock setup');
   const tmpDir = await testDir;
-  console.log('[MOCK] Got tmpDir:', tmpDir.path);
   process.env.KIT = path.resolve(tmpDir.path, '.kit');
   process.env.KENV = path.resolve(tmpDir.path, '.kenv');
   return {
@@ -47,19 +39,19 @@ vi.mock('@johnlindquist/kit/core/utils', async () => {
   };
 });
 
-// Rest of imports can go here
-import { ensureDir, writeFile, remove, rename, pathExists, readFile, readdir } from 'fs-extra';
-import { startWatching, type WatchEvent, type WatchSource } from './chokidar';
-import type { FSWatcher } from 'chokidar';
 import os from 'node:os';
+import type { FSWatcher } from 'chokidar';
+// Rest of imports can go here
+import { ensureDir, pathExists, readFile, readdir, remove, rename, writeFile } from 'fs-extra';
+import { type WatchEvent, type WatchSource, startWatching } from './chokidar';
 
 const log = {
-  debug: (...args: any[]) => console.log(`[${new Date().toISOString()}] [DEBUG]`, ...args),
-  error: (...args: any[]) => console.error(`[${new Date().toISOString()}] [ERROR]`, ...args),
-  test: (testName: string, ...args: any[]) => console.log(`[${new Date().toISOString()}] [TEST:${testName}]`, ...args),
-  watcher: (...args: any[]) => console.log(`[${new Date().toISOString()}] [WATCHER]`, ...args),
-  event: (...args: any[]) => console.log(`[${new Date().toISOString()}] [EVENT]`, ...args),
-  dir: (...args: any[]) => console.log(`[${new Date().toISOString()}] [DIR]`, ...args),
+  debug: (..._args: any[]) => ,
+  error: (..._args: any[]) => ,
+  test: (_testName: string, ..._args: any[]) => ,
+  watcher: (..._args: any[]) => ,
+  event: (..._args: any[]) => ,
+  dir: (..._args: any[]) => ,
 };
 
 async function ensureFileOperation(
@@ -71,9 +63,9 @@ async function ensureFileOperation(
   for (let i = 0; i < maxAttempts; i++) {
     try {
       await operation();
-      if (await verify()) return;
+      if (await verify()) { return; }
     } catch (err) {
-      if (i === maxAttempts - 1) throw err;
+      if (i === maxAttempts - 1) { throw err; }
     }
     await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
@@ -1266,12 +1258,10 @@ it(
     await writeFile(linkedTargetFile, 'export const original = true;');
 
     // Create symlink inside /scripts => points to linkedTargetDir
-    await new Promise<void>((resolve, reject) => {
+    await new Promise<void>((resolve, _reject) => {
       import('node:fs').then(({ symlink }) => {
         symlink(linkedTargetDir, symlinkDir, (err) => {
           if (err) {
-            // Windows symlinks require privileges, so we skip if it fails
-            console.warn('[SYMLINK] Could not create symlink:', err);
             resolve();
           } else {
             resolve();

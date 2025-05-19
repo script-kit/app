@@ -1,8 +1,7 @@
+import { existsSync } from 'node:fs';
 import AutoLaunch from 'auto-launch';
 import { app } from 'electron';
 import log from 'electron-log';
-import { existsSync } from 'node:fs';
-
 
 let oldPath: string | undefined;
 const getOldAppPath = () => {
@@ -18,7 +17,6 @@ const getOldAppPath = () => {
 
 export async function disableOldAutoLaunch(): Promise<void> {
   try {
-
     if (!existsSync(getOldAppPath())) {
       log.info('Old app path does not exist, skipping auto-launch disable');
       return;

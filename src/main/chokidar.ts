@@ -1,6 +1,6 @@
-import path from 'node:path';
-import os from 'node:os';
 import { readdirSync, statSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import type { FSWatcher } from 'chokidar';
 
 import { createLogger } from './log-utils';
@@ -44,7 +44,7 @@ function createSubKenvWatchers(
   manager: WatcherManager,
   subKenvDir: string,
   callback: WatcherCallback,
-  options: WatchOptions,
+  _options: WatchOptions,
 ): FSWatcher[] {
   const watchers: FSWatcher[] = [];
   // We only watch {subKenv}/scripts, {subKenv}/snippets, {subKenv}/scriptlets
@@ -57,7 +57,9 @@ function createSubKenvWatchers(
   const watchIfExists = (dirPath: string, type: string): FSWatcher | null => {
     try {
       const stats = statSync(dirPath);
-      if (!stats.isDirectory()) return null;
+      if (!stats.isDirectory()) {
+        return null;
+      }
 
       const key = `subkenv:${subKenvDir}:${type}`;
       if (manager.getWatcher(key)) {
@@ -127,7 +129,7 @@ export const startWatching = (
     callback(event as WatchEvent, filePath);
   });
   dbWatcher.on('ready', () => {
-    log.info(`📁 DB Watcher ready`);
+    log.info('📁 DB Watcher ready');
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -142,7 +144,9 @@ export const startWatching = (
     alwaysStat: true,
     ignored: (path: string) => {
       // Don't ignore the parent directory
-      if (path === kitPath) return false;
+      if (path === kitPath) {
+        return false;
+      }
 
       // Only watch run.txt and ping.txt
       const basename = path.split('/').pop();
@@ -157,7 +161,7 @@ export const startWatching = (
     }
   });
   runPingWatcher.on('ready', () => {
-    log.info(`📁 Run/Ping Watcher ready`);
+    log.info('📁 Run/Ping Watcher ready');
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -180,7 +184,7 @@ export const startWatching = (
   });
 
   kenvRootWatcher.on('ready', () => {
-    log.info(`📁 Kenv Root Watcher ready`);
+    log.info('📁 Kenv Root Watcher ready');
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -270,7 +274,8 @@ export const startWatching = (
   function getAppDirectories(): string[] {
     if (process.platform === 'darwin') {
       return ['/Applications', path.join(os.homedir(), 'Applications')];
-    } else if (process.platform === 'win32') {
+    }
+    if (process.platform === 'win32') {
       return [
         path.join('C:', 'Program Files'),
         path.join('C:', 'Program Files (x86)'),
@@ -282,7 +287,7 @@ export const startWatching = (
   }
 
   const appDirs = getAppDirectories();
-  if (appDirs.length) {
+  if (appDirs.length > 0) {
     const appWatcher = manager.createWatcher('apps', appDirs, {
       ignoreInitial: true,
       depth: 0,
@@ -296,7 +301,7 @@ export const startWatching = (
       }
     });
     appWatcher.on('ready', () => {
-      log.info(`📁 App Watcher ready`);
+      log.info('📁 App Watcher ready');
     });
   }
 

@@ -4,9 +4,9 @@ import type { SendData } from '@johnlindquist/kit/types/kitapp';
 import { Trigger } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
 import { runPromptProcess } from './kit';
+import { backgroundLog as log } from './logs';
 import { processes } from './process';
 import { type Background, backgroundMap, kitState } from './state';
-import { backgroundLog as log } from './logs';
 
 export const removeBackground = (filePath: string) => {
   if (!filePath) {

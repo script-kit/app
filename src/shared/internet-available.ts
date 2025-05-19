@@ -22,7 +22,7 @@ export default function internetAvailable(
     ...options,
   };
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, _reject) => {
     // Create instance of the DNS resolver
     try {
       const socket = dns({

@@ -1,5 +1,5 @@
-import { Worker } from "node:worker_threads";
-import { workers } from "./state";
+import { Worker } from 'node:worker_threads';
+import { workers } from './state';
 
 import { KIT_WORKER } from '@johnlindquist/kit/workers';
 

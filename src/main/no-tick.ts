@@ -6,7 +6,7 @@ export const getClipboardHistory = () => {
   return [];
 };
 
-export const removeFromClipboardHistory = (itemId: string) => {};
+export const removeFromClipboardHistory = (_itemId: string) => {};
 
 export const clearClipboardHistory = () => {};
 
@@ -22,7 +22,7 @@ export const snippetScriptChanged = () => {
   return null as any;
 };
 
-export const removeSnippet = (filePath: string) => {};
+export const removeSnippet = (_filePath: string) => {};
 
 export const clearTickTimers = () => {};
 export const startClipboardAndKeyboardWatchers = () => {};

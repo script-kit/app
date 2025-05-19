@@ -50,9 +50,7 @@ export const getLog = (scriptPath: string): LoggerWithPath => {
       return (...args: T): void => {
         try {
           fn(...args);
-        } catch (error: unknown) {
-          console.error('Logging error:', error);
-        }
+        } catch (error: unknown) {}
       };
     };
 
@@ -72,7 +70,6 @@ export const getLog = (scriptPath: string): LoggerWithPath => {
     logMap.set(scriptPath, logger);
     return logger;
   } catch (error) {
-    console.error('Failed to create logger for scriptPath:', scriptPath, error);
     // Fallback logger using console and removing duplicate "clear" property
     const fallbackLogger: Logger & { logPath: string } = {
       info: (...args: Parameters<typeof log.info>) => console.log(...args.map(stripAnsi)),
@@ -114,9 +111,7 @@ const originalError = log.error.bind(log);
 log.error = (message: string, ...args: any[]): void => {
   try {
     trackEvent(TrackEvent.LogError, { message, args });
-  } catch (error: unknown) {
-    console.error('Error tracking log error:', error);
-  }
+  } catch (error: unknown) {}
   originalError(message, ...args);
 };
 

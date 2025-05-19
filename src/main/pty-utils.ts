@@ -68,7 +68,7 @@ export function getShellConfig(config: TermConfig, defaultShell: string) {
     }
   }
 
-  const args = config?.args?.length ? config.args : getDefaultArgs(login);
+  const args = config?.args?.length > 0 ? config.args : getDefaultArgs(login);
 
   const shell = config.shell || config.env.KIT_SHELL || defaultShell;
 

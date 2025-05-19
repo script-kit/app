@@ -1,15 +1,15 @@
-import express from 'express';
-import https from 'node:https';
-import http from 'node:http';
 import fs from 'node:fs';
+import http from 'node:http';
+import https from 'node:https';
+import { splitEnvVarIntoArray } from '@johnlindquist/kit/api/kit';
+import { kenvPath } from '@johnlindquist/kit/core/utils';
 import { Bonjour } from 'bonjour-service';
+import cors from 'cors';
+import express from 'express';
 import { handleScript } from './handleScript';
+import { serverLog as log } from './logs';
 import { getServerPort } from './serverTrayUtils';
 import { kitState } from './state';
-import { kenvPath } from '@johnlindquist/kit/core/utils';
-import { splitEnvVarIntoArray } from '@johnlindquist/kit/api/kit';
-import cors from 'cors';
-import { serverLog as log } from './logs';
 
 let serverInstance: https.Server | null = null;
 let bonjour: Bonjour | null = null;
@@ -108,7 +108,7 @@ export const startServer = () => {
   });
 
   // Error handling middleware
-  app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     const message = `😱 ${err}`;
     log.warn(message);
     res.status(500).json({ status: 500, message });

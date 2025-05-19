@@ -686,7 +686,7 @@ class Processes extends Array<ProcessAndPrompt> {
 
     ensureIdleProcess();
 
-    if (idles.length) {
+    if (idles.length > 0) {
       return idles[0];
     }
 
@@ -810,7 +810,7 @@ class Processes extends Array<ProcessAndPrompt> {
     }
 
     const activeWidgets = widgetState.widgets.filter((w) => w.pid === pid);
-    if (activeWidgets.length) {
+    if (activeWidgets.length > 0) {
       for (const w of activeWidgets) {
         log.error(`${pid}: Removing active widget ${w.id}`);
         BrowserWindow.fromId(w.wid)?.close();
@@ -850,7 +850,7 @@ export const removeAbandonnedKit = () => {
 };
 
 export const handleWidgetEvents = () => {
-  const initHandler: WidgetHandler = (event, data) => {
+  const initHandler: WidgetHandler = (_event, data) => {
     const { widgetId } = data;
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
@@ -886,7 +886,7 @@ export const handleWidgetEvents = () => {
     });
   };
 
-  const clickHandler: WidgetHandler = (event, data) => {
+  const clickHandler: WidgetHandler = (_event, data) => {
     const { widgetId } = data;
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
@@ -921,7 +921,7 @@ export const handleWidgetEvents = () => {
     });
   };
 
-  const dropHandler: WidgetHandler = (event, data) => {
+  const dropHandler: WidgetHandler = (_event, data) => {
     const { widgetId } = data;
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
@@ -949,7 +949,7 @@ export const handleWidgetEvents = () => {
     });
   };
 
-  const customHandler: WidgetHandler = (event, data) => {
+  const customHandler: WidgetHandler = (_event, data) => {
     const { widgetId } = data;
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
@@ -973,7 +973,7 @@ export const handleWidgetEvents = () => {
     });
   };
 
-  const mouseDownHandler: WidgetHandler = (event, data) => {
+  const mouseDownHandler: WidgetHandler = (_event, data) => {
     const { widgetId } = data;
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
@@ -1004,7 +1004,7 @@ export const handleWidgetEvents = () => {
     });
   };
 
-  const mouseUpHandler: WidgetHandler = (event, data) => {
+  const mouseUpHandler: WidgetHandler = (_event, data) => {
     const { widgetId } = data;
     processLog.info(`🔽 mouseUp ${widgetId}`);
 
@@ -1036,7 +1036,7 @@ export const handleWidgetEvents = () => {
     });
   };
 
-  const inputHandler: WidgetHandler = (event, data) => {
+  const inputHandler: WidgetHandler = (_event, data) => {
     const { widgetId } = data;
     const options = widgetState.widgets.find(({ id }) => id === widgetId);
     if (!options) {
@@ -1083,7 +1083,7 @@ export const handleWidgetEvents = () => {
     }
   };
 
-  const measureHandler: WidgetHandler = (event, data: any) => {
+  const measureHandler: WidgetHandler = (_event, data: any) => {
     const { widgetId } = data;
     processLog.info(`📏 ${widgetId} Widget: Fitting to inner child`);
 
@@ -1102,7 +1102,7 @@ export const handleWidgetEvents = () => {
     widget.setSize(data.width, data.height, true);
   };
 
-  const viteWidgetSendHandler: WidgetHandler = (event, data) => {
+  const viteWidgetSendHandler: WidgetHandler = (_event, data) => {
     const { widgetId } = data;
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);

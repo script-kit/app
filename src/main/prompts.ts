@@ -1,5 +1,5 @@
-import { KitPrompt } from './prompt';
 import { promptLog } from './logs';
+import { KitPrompt } from './prompt';
 
 const promptMap = new Map<number, KitPrompt>();
 
@@ -24,7 +24,7 @@ export const prompts = {
    */
   createPromptIfNoIdle: function (): boolean {
     if (this.idle === null && this.appRunning) {
-      promptLog.info(`-------------------------------> No idle... 🌅 Initializing idle prompt`);
+      promptLog.info('-------------------------------> No idle... 🌅 Initializing idle prompt');
       const prompt = new KitPrompt();
       promptLog.info(`🌅 Initializing idle prompt with window id:${prompt.window?.id}`);
 

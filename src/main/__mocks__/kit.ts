@@ -1,5 +1,5 @@
-import { vi } from 'vitest';
 import path from 'node:path';
+import { vi } from 'vitest';
 
 export const runScript = vi.fn();
 export const setupKit = vi.fn();

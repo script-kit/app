@@ -17,10 +17,10 @@ export const hideDock = debounce(() => {
   if (kitState.devToolsCount > 0) {
     return;
   }
-  if (widgetState.widgets.length) {
+  if (widgetState.widgets.length > 0) {
     return;
   }
-  if (windowsState.windows.length) {
+  if (windowsState.windows.length > 0) {
     return;
   }
   if (prompts.isAnyPromptVisible()) {

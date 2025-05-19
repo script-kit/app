@@ -1,8 +1,8 @@
 import fs from 'node:fs';
+import axios from 'axios';
 import { app } from 'electron';
 import { getAssetPath } from '../shared/assets';
 import { kitStore } from './state';
-import axios from 'axios';
 
 export const getVersionFromText = () => {
   const versionPath = getAssetPath('version.txt');
@@ -12,7 +12,7 @@ export const getVersionFromText = () => {
 export const getLatestAppTag = async () => {
   const { data } = await axios.get('https://api.github.com/repos/script-kit/app/tags');
   return data[0].name;
-}
+};
 
 export const getVersion = () => {
   const kitAppVersion = process.env?.KIT_APP_VERSION;
@@ -33,7 +33,7 @@ export async function getVersionFromTag(tag = 'latest'): Promise<string> {
 
 export const getURLFromVersion = (version: string) => {
   return `https://registry.npmjs.org/@johnlindquist/kit/-/kit-${version}.tgz`;
-}
+};
 
 export const storeVersion = (version: string) => {
   kitStore.set('version', version);

@@ -2,7 +2,7 @@
 import { useCallback, useEffect } from 'react';
 
 export default () => {
-  const mqListener = useCallback((e: MediaQueryListEvent) => {
+  const mqListener = useCallback((_e: MediaQueryListEvent) => {
     // if (isLinux) {
     //   document.documentElement.style.setProperty('--opacity', '1');
     // } else if (e.matches) {

@@ -1,9 +1,9 @@
 import path from 'node:path';
-import type { FSWatcher, WatchOptions as ChokidarWatchOptions, Stats } from 'chokidar';
-import type { EventName } from 'chokidar/types/index';
+import type { WatchOptions as ChokidarWatchOptions, FSWatcher, Stats } from 'chokidar';
 import chokidar from 'chokidar';
-import { createLogger } from './log-utils';
+import type { EventName } from 'chokidar/types/index';
 import type { WatchEvent, WatchOptions, WatchSource } from './chokidar';
+import { createLogger } from './log-utils';
 
 const log = createLogger('watcher-manager.ts');
 
@@ -150,7 +150,6 @@ export class WatcherManager {
     for (const p of pathsArray) {
       if (this.isPathWatched(p)) {
         log.warn(`Path ${p} is already being watched. Skipping duplicate watch.`);
-        continue;
       }
     }
 

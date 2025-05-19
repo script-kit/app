@@ -2,7 +2,6 @@ import path from 'node:path';
 import log from 'electron-log';
 import { shellEnv } from 'shell-env';
 
-
 /**
  * Loads environment variables from the user's shell configuration file and updates process.env
  */

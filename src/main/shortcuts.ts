@@ -9,14 +9,14 @@ import { KitEvent, emitter } from '../shared/events';
 import { runPromptProcess } from './kit';
 
 import { Trigger } from '../shared/enums';
+import { LoggedMap } from './compare';
 import { convertShortcut, shortcutInfo } from './helpers';
+import { createUiohookToName } from './io';
+import { keymapLog, shortcutsLog as log } from './logs';
+import { runMainScript } from './main-script';
 import { processes, spawnShebang } from './process';
 import { prompts } from './prompts';
 import { convertKey, kitState, subs } from './state';
-import { runMainScript } from './main-script';
-import { createUiohookToName } from './io';
-import { LoggedMap } from './compare';
-import { keymapLog, shortcutsLog as log } from './logs';
 
 const registerFail = (shortcut: string, filePath: string) =>
   `# Shortcut Registration Failed
@@ -32,7 +32,7 @@ Attempting to assign <code>${shortcut}</code> to ${filePath}...
 <code>${shortcut}</code> is already registered to ${path.basename(otherPath)}
 `;
 
-const mainFail = (shortcut: string, filePath: string) =>
+const mainFail = (shortcut: string, _filePath: string) =>
   `# Failed to Register Main Shortcut
 
 <code>${shortcut}</code> failed to register. May already be registered to another app.`;
@@ -50,7 +50,9 @@ const createProcessHandler = (fn: () => Promise<void> | void, options: ProcessHa
   let currentTimeout: NodeJS.Timeout | null = null;
 
   const waitForProcess = async (): Promise<void> => {
-    if (processes.hasAvailableProcess) return;
+    if (processes.hasAvailableProcess) {
+      return;
+    }
 
     ignoreFlag.value = true;
     const startTime = Date.now();
@@ -83,7 +85,9 @@ const createProcessHandler = (fn: () => Promise<void> | void, options: ProcessHa
 
   return debounce(
     async () => {
-      if (ignoreFlag.value) return;
+      if (ignoreFlag.value) {
+        return;
+      }
 
       try {
         await waitForProcess();
@@ -469,7 +473,9 @@ export async function shortcutsSelfCheck() {
   // Unregister shortcuts that are in shortcutMap but shouldn't be.
   for (const [filePath, { shortcut }] of shortcutMap.entries()) {
     // Always keep the main shortcut registered.
-    if (filePath === getMainScriptPath()) continue;
+    if (filePath === getMainScriptPath()) {
+      continue;
+    }
     if (!shouldBeRegistered.has(filePath)) {
       log.info(`[watchShortcuts] No longer needs shortcut for ${filePath}. Un-registering "${shortcut}"...`);
       unlinkShortcuts(filePath);

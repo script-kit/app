@@ -1,9 +1,9 @@
 import type { BrowserWindow } from 'electron';
-import { kitState } from '../state';
-import shims from '../shims';
-import { prompts } from '../prompts';
-import { createLogger } from '.././log-utils';
 import { AppChannel } from '../../shared/enums';
+import { createLogger } from '.././log-utils';
+import { prompts } from '../prompts';
+import shims from '../shims';
+import { kitState } from '../state';
 const log = createLogger('utils.ts');
 
 export const prepForClose = (window: BrowserWindow) => {

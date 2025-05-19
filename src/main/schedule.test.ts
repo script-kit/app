@@ -1,8 +1,8 @@
-import { vi, beforeEach, afterEach, describe, it, expect } from 'vitest';
 import path from 'node:path';
-import schedule from 'node-schedule';
-import { ProcessType } from '@johnlindquist/kit/core/enum';
 import type { Script } from '@johnlindquist/kit';
+import { ProcessType } from '@johnlindquist/kit/core/enum';
+import schedule from 'node-schedule';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Trigger } from '../shared/enums';
 
 // Mock modules
@@ -20,11 +20,11 @@ vi.mock('./state', () => ({
 }));
 vi.mock('@johnlindquist/kit/core/utils');
 
-// Import after mocks
-import { sleepSchedule, scheduleScriptChanged, cancelJob } from './schedule';
-import { kitState, scheduleMap } from './state';
 import { runPromptProcess } from './kit';
 import { scheduleLog as log } from './logs';
+// Import after mocks
+import { cancelJob, scheduleScriptChanged, sleepSchedule } from './schedule';
+import { kitState, scheduleMap } from './state';
 
 describe('Schedule Resume/Suspend Tests', () => {
   beforeEach(() => {

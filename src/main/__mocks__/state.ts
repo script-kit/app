@@ -1,5 +1,5 @@
-import { vi } from 'vitest';
 import Store from 'electron-store';
+import { vi } from 'vitest';
 
 export const kitState = {
   ready: true,

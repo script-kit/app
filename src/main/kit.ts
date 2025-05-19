@@ -1,9 +1,9 @@
 import path from 'node:path';
 import { app, shell } from 'electron';
 
+import { fork } from 'node:child_process';
 import minimist from 'minimist';
 import { pathExistsSync, readJson } from './cjs-exports';
-import { fork } from 'node:child_process';
 
 import type { ProcessInfo } from '@johnlindquist/kit';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
@@ -16,18 +16,18 @@ import {
 } from '@johnlindquist/kit/core/utils';
 import type { Script } from '@johnlindquist/kit/types/core';
 
+import { refreshScripts } from '@johnlindquist/kit/core/db';
 import { subscribeKey } from 'valtio/utils';
 import { Trigger } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
+import { createForkOptions } from './fork.options';
 import { pathsAreEqual } from './helpers';
+import { errorLog, kitLog as log, mainLogPath } from './logs';
 import { getIdles, processes } from './process';
 import { prompts } from './prompts';
 import { setShortcodes } from './search';
 import { getKitScript, kitCache, kitState, kitStore, sponsorCheck } from './state';
 import { TrackEvent, trackEvent } from './track';
-import { createForkOptions } from './fork.options';
-import { mainLogPath, errorLog, kitLog as log } from './logs';
-import { refreshScripts } from '@johnlindquist/kit/core/db';
 
 app.on('second-instance', (_event, argv) => {
   log.info('second-instance', argv);
@@ -52,7 +52,7 @@ app.on('second-instance', (_event, argv) => {
   });
 });
 
-app.on('activate', async (_event, hasVisibleWindows) => {
+app.on('activate', async (_event, _hasVisibleWindows) => {
   kitState.isActivated = true;
   runPromptProcess(getMainScriptPath(), [], {
     force: true,

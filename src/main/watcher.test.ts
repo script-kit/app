@@ -1,7 +1,7 @@
-import { beforeAll, afterAll, describe, it, expect, vi } from 'vitest';
 import path from 'node:path';
-import { ProcessType } from '@johnlindquist/kit/core/enum';
 import type { Script } from '@johnlindquist/kit';
+import { ProcessType } from '@johnlindquist/kit/core/enum';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 // Mock process.resourcesPath
 const originalProcess = process;

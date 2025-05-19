@@ -16,11 +16,11 @@ export default () => {
   useHotkeys(
     'tab,shift+tab',
     (event) => {
-      if (focusedChoice?.inputs?.length) {
+      if (focusedChoice?.inputs?.length > 0) {
         return;
       }
       event.preventDefault();
-      if (tabs?.length) {
+      if (tabs?.length > 0) {
         let ti = 0;
         let tab = null;
 

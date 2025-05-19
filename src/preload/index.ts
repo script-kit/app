@@ -3,8 +3,8 @@ import fsPromises from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import url from 'node:url';
-import { ipcRenderer, webFrame, webUtils } from 'electron';
 import { Channel } from '@johnlindquist/kit/core/enum';
+import { ipcRenderer, webFrame, webUtils } from 'electron';
 import log from 'electron-log';
 log.transports.console.level = false;
 

@@ -1,5 +1,5 @@
-import https from 'node:https';
 import http from 'node:http';
+import https from 'node:https';
 import { URL } from 'node:url';
 import log from 'electron-log';
 

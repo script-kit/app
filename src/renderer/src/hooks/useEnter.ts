@@ -1,5 +1,7 @@
 import { UI } from '@johnlindquist/kit/core/enum';
+import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useEffect } from 'react';
 import { HotkeyCallback, useHotkeys } from 'react-hotkeys-hook';
 import {
   choiceInputsAtom,
@@ -22,8 +24,6 @@ import {
   uiAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
-import { useCallback, useEffect } from 'react';
-import log from 'electron-log';
 
 export default () => {
   const [choices] = useAtom(choicesAtom);
@@ -80,7 +80,7 @@ export default () => {
       }
 
       if (focusedChoice?.text && !flagValue) {
-        log.info(`submitting focused choice: `, { focusedChoice });
+        log.info('submitting focused choice: ', { focusedChoice });
         submit(focusedChoice);
         return;
       }
@@ -101,7 +101,7 @@ export default () => {
       }
 
       if (promptData?.strict && panelHTML?.length === 0) {
-        if ((choices.length && hasFocusedChoice) || flagValue) {
+        if ((choices.length > 0 && hasFocusedChoice) || flagValue) {
           // log.info(`submitting focused choice: ${focusedChoice?.value}`);
           submit(focusedChoice?.value);
           return;

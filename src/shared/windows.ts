@@ -18,7 +18,7 @@ export const windowsState: typeof initWindows = proxy(initWindows);
 
 const subWindows = subscribeKey(windowsState, 'windows', (windows) => {
   log.info(`👀 Windows: ${JSON.stringify(windows)}`);
-  if (windows.length !== 0) {
+  if (windows.length > 0) {
     emitter.emit(KitEvent.ShowDock);
   } else {
     emitter.emit(KitEvent.HideDock);

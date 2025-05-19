@@ -1,6 +1,3 @@
-import { debounce } from 'lodash-es';
-import { isEqual, omit } from 'lodash-es';
-import { packageUp } from 'package-up';
 import { existsSync } from 'node:fs';
 import { lstat, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
@@ -8,7 +5,10 @@ import { getUserJson } from '@johnlindquist/kit/core/db';
 import { Channel, Env } from '@johnlindquist/kit/core/enum';
 import type { Script, Scriptlet } from '@johnlindquist/kit/types';
 import { globby } from 'globby';
+import { debounce } from 'lodash-es';
+import { isEqual, omit } from 'lodash-es';
 import madge, { type MadgeModuleDependencyGraph } from 'madge';
+import { packageUp } from 'package-up';
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 
@@ -23,13 +23,21 @@ import { debounceSetScriptTimestamp, kitState, sponsorCheck } from './state';
 import { systemScriptChanged, unlinkEvents } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 
+import { clearInterval, setInterval } from 'node:timers';
 import { AppChannel, Trigger } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
+import { compareArrays, diffArrays } from '../shared/utils';
+import { reloadApps } from './apps';
 import { sendToAllPrompts } from './channel';
 import { type WatchEvent, startWatching } from './chokidar';
+import { pathExists, pathExistsSync, writeFile } from './cjs-exports';
+import { actualHideDock, showDock } from './dock';
+import { loadKenvEnvironment } from './env-utils';
 import { isInDirectory } from './helpers';
+import { cacheMainScripts, debounceCacheMainScripts } from './install';
 import { runScript } from './kit';
 import { getFileImports } from './npm';
+import { kenvChokidarPath, kitChokidarPath, slash } from './path-utils';
 import {
   clearIdleProcesses,
   ensureIdleProcess,
@@ -40,17 +48,9 @@ import {
 } from './process';
 import { clearPromptCache, clearPromptCacheFor, setKitStateAtom } from './prompt';
 import { setCSSVariable } from './theme';
-import { snippetScriptChanged, removeSnippet, snippetMap } from './tick';
-import { cacheMainScripts, debounceCacheMainScripts } from './install';
-import { loadKenvEnvironment } from './env-utils';
-import { pathExists, pathExistsSync, writeFile } from './cjs-exports';
-import { compareArrays, diffArrays } from '../shared/utils';
-import { clearInterval, setInterval } from 'node:timers';
-import { kenvChokidarPath, kitChokidarPath, slash } from './path-utils';
-import { actualHideDock, showDock } from './dock';
-import { reloadApps } from './apps';
+import { removeSnippet, snippetMap, snippetScriptChanged } from './tick';
 
-import { scriptLog, watcherLog as log } from './logs';
+import { watcherLog as log, scriptLog } from './logs';
 import { createIdlePty } from './pty';
 import { parseSnippet } from './snippet-cache';
 
@@ -86,7 +86,9 @@ const wasRecentlyProcessed = (filePath: string): boolean => {
     }
   }
 
-  if (!timestamp) return false;
+  if (!timestamp) {
+    return false;
+  }
 
   const now = Date.now();
   const fiveSecondsAgo = now - 5000; // 5 second cooldown
@@ -187,7 +189,7 @@ const checkFileImports = debounce(async (script: Script) => {
 
   log.info({ imports });
 
-  if (imports?.length && kitState.kenvEnv?.KIT_AUTO_INSTALL !== 'false') {
+  if (imports?.length > 0 && kitState.kenvEnv?.KIT_AUTO_INSTALL !== 'false') {
     const scriptDirPath = path.dirname(script.filePath);
     const packagePath = await packageUp({
       cwd: scriptDirPath,
@@ -363,7 +365,7 @@ function watchTheme() {
     themeWatcher = chokidar.watch(slash(themePath), {
       ignoreInitial: true,
     });
-    themeWatcher.on('all', (eventName, filePath) => {
+    themeWatcher.on('all', (_eventName, filePath) => {
       log.info(`🎨 ${filePath} changed`);
       updateTheme();
     });
@@ -380,7 +382,7 @@ const settleFirstBatch = debounce(() => {
  * children about the script change based on the current kit state
  * and whether this script is a result of a rebuild, etc.
  */
-function shouldTimestampScript(event: WatchEvent, rebuilt: boolean, skipCacheMainMenu: boolean): boolean {
+function shouldTimestampScript(_event: WatchEvent, rebuilt: boolean, _skipCacheMainMenu: boolean): boolean {
   // If kitState isn't ready or we are rebuilding or still in first batch,
   // we won't timestamp the script and run the standard "change" flow.
   // The return value indicates if we proceed with timestamping.
@@ -413,9 +415,9 @@ function timestampAndNotifyChildren(event: WatchEvent, script: Script) {
  * skip the standard steps. We log a message and possibly bail out
  * early if skipCacheMainMenu is false.
  */
-function handleNotReady(script: Script, event: WatchEvent, rebuilt: boolean, skipCacheMainMenu: boolean) {
+function handleNotReady(script: Script, _event: WatchEvent, rebuilt: boolean, skipCacheMainMenu: boolean) {
   log.info(
-    `⌚️ ${script.filePath} changed, but main menu hasn't run yet. ` + `Skipping compiling TS and/or timestamping...`,
+    `⌚️ ${script.filePath} changed, but main menu hasn't run yet. ` + 'Skipping compiling TS and/or timestamping...',
     {
       ready: kitState.ready,
       rebuilt,
@@ -558,7 +560,7 @@ export const checkUserDb = debounce(async (eventName: string) => {
   // Only run set-login if login value changed
   const prevLogin = kitState.user?.login;
   const newLogin = currentUser?.login;
-  log.info(`Login status`, {
+  log.info('Login status', {
     prevLogin: prevLogin || 'undefined',
     newLogin: newLogin || 'undefined',
   });
@@ -710,31 +712,31 @@ export const parseEnvFile = debounce(async () => {
   const envData = loadKenvEnvironment();
 
   if (envData?.KIT_LOGIN) {
-    log.info(`Detected KIT_LOGIN in .env. Setting kitState.kenvEnv.KIT_LOGIN`);
+    log.info('Detected KIT_LOGIN in .env. Setting kitState.kenvEnv.KIT_LOGIN');
     kitState.kenvEnv.KIT_LOGIN = envData?.KIT_LOGIN;
   } else if (kitState.kenvEnv.KIT_LOGIN) {
-    log.info(`Removing KIT_LOGIN from kitState.kenvEnv`);
-    delete kitState.kenvEnv.KIT_LOGIN;
+    log.info('Removing KIT_LOGIN from kitState.kenvEnv');
+    kitState.kenvEnv.KIT_LOGIN = undefined;
     kitState.isSponsor = false;
   }
 
   if (envData?.GITHUB_SCRIPTKIT_TOKEN) {
-    log.info(`Detected GITHUB_SCRIPTKIT_TOKEN in .env. Setting kitState.kenvEnv.GITHUB_SCRIPTKIT_TOKEN`);
+    log.info('Detected GITHUB_SCRIPTKIT_TOKEN in .env. Setting kitState.kenvEnv.GITHUB_SCRIPTKIT_TOKEN');
     kitState.kenvEnv.GITHUB_SCRIPTKIT_TOKEN = envData?.GITHUB_SCRIPTKIT_TOKEN;
   } else if (kitState.kenvEnv.GITHUB_SCRIPTKIT_TOKEN) {
-    log.info(`Removing GITHUB_SCRIPTKIT_TOKEN from kitState.kenvEnv`);
-    delete kitState.kenvEnv.GITHUB_SCRIPTKIT_TOKEN;
+    log.info('Removing GITHUB_SCRIPTKIT_TOKEN from kitState.kenvEnv');
+    kitState.kenvEnv.GITHUB_SCRIPTKIT_TOKEN = undefined;
     kitState.isSponsor = false;
 
     checkUserDb('GITHUB_SCRIPTKIT_TOKEN removed');
   }
 
   if (envData?.KIT_API_KEY) {
-    log.info(`Detected KIT_API_KEY in .env. Setting kitState.kenvEnv.KIT_API_KEY`);
+    log.info('Detected KIT_API_KEY in .env. Setting kitState.kenvEnv.KIT_API_KEY');
     kitState.kenvEnv.KIT_API_KEY = envData?.KIT_API_KEY;
   } else if (kitState.kenvEnv.KIT_API_KEY) {
-    log.info(`Removing KIT_API_KEY from kitState.kenvEnv`);
-    delete kitState.kenvEnv.KIT_API_KEY;
+    log.info('Removing KIT_API_KEY from kitState.kenvEnv');
+    kitState.kenvEnv.KIT_API_KEY = undefined;
 
     checkUserDb('KIT_API_KEY removed');
   }
@@ -940,7 +942,9 @@ export function watchKenvDirectory() {
 // ---- Extracted Helper Functions ----
 
 function clearAllWatchers(watchers: FSWatcher[]) {
-  if (watchers.length === 0) return;
+  if (watchers.length === 0) {
+    return;
+  }
 
   for (const watcher of watchers) {
     try {
@@ -1021,7 +1025,9 @@ export const setupWatchers = debounce(
 );
 
 subscribeKey(kitState, 'suspendWatchers', (suspendWatchers) => {
-  if (suspendingWatchers === suspendWatchers) return;
+  if (suspendingWatchers === suspendWatchers) {
+    return;
+  }
   suspendingWatchers = suspendWatchers;
 
   if (suspendWatchers) {

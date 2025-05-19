@@ -1,7 +1,7 @@
-import dotenv from 'dotenv';
 import { readFileSync } from 'node:fs';
 import { kenvPath } from '@johnlindquist/kit/core/utils';
 import type { kenvEnv } from '@johnlindquist/kit/types/env';
+import dotenv from 'dotenv';
 import { pathExistsSync } from './cjs-exports';
 import { createLogger } from './log-utils';
 

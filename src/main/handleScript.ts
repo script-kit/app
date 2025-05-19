@@ -1,11 +1,11 @@
+import { Channel } from '@johnlindquist/kit/core/enum';
 import { parseScript, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
 import { Trigger } from '../shared/enums';
 import { runPromptProcess } from './kit';
-import { spawnShebang } from './process';
-import { runMainScript } from './main-script';
 import { createLogger } from './log-utils';
+import { runMainScript } from './main-script';
+import { spawnShebang } from './process';
 import { getApiKey } from './server/server-utils';
-import { Channel } from '@johnlindquist/kit/core/enum';
 
 const log = createLogger('handleScript');
 

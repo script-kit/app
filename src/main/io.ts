@@ -1,12 +1,12 @@
-import { app, Notification } from 'electron';
 import { Channel } from '@johnlindquist/kit/core/enum';
+import { Notification, app } from 'electron';
 import { createLogger } from './log-utils';
 const log = createLogger('io.ts');
 import { chars } from './chars';
+import { keymapLog } from './logs';
 import { sendToAllActiveChildren } from './process';
 import shims, { supportsDependency, target } from './shims';
 import { getAccessibilityAuthorized, kitState, kitStore } from './state';
-import { keymapLog } from './logs';
 
 export const ShiftMap = {
   '`': '~',

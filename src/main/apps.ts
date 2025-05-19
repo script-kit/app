@@ -1,8 +1,8 @@
-import { optionalSpawnSetup } from './install';
 import { kitPath } from '@johnlindquist/kit/core/utils';
+import { debounce } from 'lodash-es';
+import { optionalSpawnSetup } from './install';
 import { createLogger } from './log-utils';
 import { kitState } from './state';
-import { debounce } from 'lodash-es';
 
 const log = createLogger('apps.ts');
 

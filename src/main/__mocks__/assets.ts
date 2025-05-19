@@ -1,5 +1,5 @@
-import { vi } from 'vitest';
 import path from 'node:path';
+import { vi } from 'vitest';
 
 export const slash = (p: string) => p.replace(/\\/g, '/');
 

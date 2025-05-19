@@ -1,15 +1,14 @@
-import { getCurrentKeyboardLayout, getKeyMap, onDidChangeKeyboardLayout } from 'native-keymap';
 import { BrowserWindow, app, crashReporter, nativeTheme, powerMonitor, protocol, screen } from 'electron';
+import { getCurrentKeyboardLayout, getKeyMap, onDidChangeKeyboardLayout } from 'native-keymap';
 import './env';
-import log from 'electron-log';
-import { symlink } from 'node:fs/promises';
 import { exec } from 'node:child_process';
+import { symlink } from 'node:fs/promises';
 import { promisify } from 'node:util';
+import log from 'electron-log';
 
 process.on('SIGINT', () => {
   app.quit();
   app.exit();
-  console.log('SIGINT');
   process.exit(0);
 });
 
@@ -33,9 +32,9 @@ import { type SpawnSyncOptions, fork } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 
-import semver from 'semver';
 import { existsSync, readFileSync } from 'node:fs';
-import { readdir, lstat } from 'node:fs/promises';
+import { lstat, readdir } from 'node:fs/promises';
+import semver from 'semver';
 
 import {
   KIT_FIRST_PATH,
@@ -59,10 +58,19 @@ import { startClipboardAndKeyboardWatchers } from './tick';
 import { checkTray, setupTray } from './tray';
 import { refreshScripts, setupWatchers, teardownWatchers, watchKenvDirectory } from './watcher';
 
+import { Channel } from '@johnlindquist/kit/core/enum';
+import { rimraf } from 'rimraf';
+import { Trigger } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
+import { reloadApps } from './apps';
+import { pathExists } from './cjs-exports';
 import { syncClipboardStore } from './clipboard';
+import { WindowMonitor } from './debug/window-monitor';
 import { actualHideDock, clearStateTimers } from './dock';
+import { loadKenvEnvironment } from './env-utils';
 import { displayError } from './error';
+import { createForkOptions } from './fork.options';
+import { HealthMonitor } from './health-monitor';
 import { APP_NAME, KENV_PROTOCOL, KIT_PROTOCOL } from './helpers';
 import {
   cacheMainScripts,
@@ -72,49 +80,40 @@ import {
   extractKenv,
   extractKitTar,
   installKenvDeps,
+  installKitDeps,
+  installMacDeps,
   matchPackageJsonEngines,
   ohNo,
   sendSplashBody,
   setupDone,
   setupLog,
   showSplash,
-  installKitDeps,
   spawnP,
-  installMacDeps,
 } from './install';
+import { invoke } from './invoke-pty';
 import { startIpc } from './ipc';
 import { cliFromParams, runPromptProcess } from './kit';
-import { logMap, mainLog, errorLog } from './logs';
+import { errorLog, logMap, mainLog } from './logs';
 import { destroyAllProcesses, ensureIdleProcess, handleWidgetEvents, processes, setTheme } from './process';
 import { prompts } from './prompts';
 import { destroyPtyPool } from './pty';
-import { scheduleDownloads, sleepSchedule, rescheduleAllScripts, scheduleSelfCheck } from './schedule';
+import { rescheduleAllScripts, scheduleDownloads, scheduleSelfCheck, sleepSchedule } from './schedule';
+import { startServer } from './server';
 import { startSettings as setupSettings } from './settings';
+import { type NpmConfig, setNpmrcConfig } from './setup/npm';
+import { getPnpmPath } from './setup/pnpm';
+import { loadShellEnv } from './shell';
 import shims, { loadSupportedOptionalLibraries } from './shims';
 import { handleKeymapChange, registerKillLatestShortcut, shortcutsSelfCheck, updateMainShortcut } from './shortcuts';
 import { startSK } from './sk';
+import { snippetsSelfCheck } from './snippet-heal';
+import { optionalSetupScript } from './spawn';
 import { cacheKitScripts, getThemes, kitState, kitStore, subs } from './state';
+import { systemEventsSelfCheck } from './system-events';
 import { TrackEvent, trackEvent } from './track';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { getStoredVersion, getVersion, storeVersion } from './version';
 import { prepQuitWindow } from './window/utils';
-import { loadKenvEnvironment } from './env-utils';
-import { Channel } from '@johnlindquist/kit/core/enum';
-import { Trigger } from '../shared/enums';
-import { reloadApps } from './apps';
-import { optionalSetupScript } from './spawn';
-import { createForkOptions } from './fork.options';
-import { getPnpmPath } from './setup/pnpm';
-import { WindowMonitor } from './debug/window-monitor';
-import { rimraf } from 'rimraf';
-import { pathExists } from './cjs-exports';
-import { type NpmConfig, setNpmrcConfig } from './setup/npm';
-import { startServer } from './server';
-import { invoke } from './invoke-pty';
-import { loadShellEnv } from './shell';
-import { snippetsSelfCheck } from './snippet-heal';
-import { HealthMonitor } from './health-monitor';
-import { systemEventsSelfCheck } from './system-events';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -266,7 +265,7 @@ app?.on('accessibility-support-changed', (event, details) => {
   log.info({ event, details });
 });
 
-app.on('render-process-gone', (event, details) => {
+app.on('render-process-gone', (event, _details) => {
   log.error('🫣 Render process gone...');
   log.error({ event });
 });
@@ -613,7 +612,7 @@ const ready = async () => {
         log.warn(warning);
       });
 
-      process.on('newListener', (event, listener) => {
+      process.on('newListener', (event, _listener) => {
         log.info('newListener', event);
       });
     }
@@ -811,8 +810,8 @@ const setupScript = (...args: string[]) => {
     });
 
     child.on('error', (error: Error) => {
-      log.error(`Error in setupScript`, error);
-      errorLog.error(`Error in setupScript`, error);
+      log.error('Error in setupScript', error);
+      errorLog.error('Error in setupScript', error);
       reject(error);
       ohNo(error);
     });
@@ -1203,7 +1202,7 @@ const checkKit = async () => {
       await cacheMainScripts('Initial script parsing');
     }, 1000);
   } catch (error) {
-    log.error(`Error in verifyInstall`, error);
+    log.error('Error in verifyInstall', error);
     ohNo(error as Error);
   }
 };
@@ -1226,11 +1225,11 @@ app
   .then(checkKit)
   .then(startHealthMonitor)
   .catch((error) => {
-    log.error(`Error in app.whenReady`, error);
+    log.error('Error in app.whenReady', error);
     ohNo(error as Error);
   });
 
-app?.on('will-quit', (e) => {
+app?.on('will-quit', (_e) => {
   destroyPtyPool();
   log.info('🚪 will-quit');
 });

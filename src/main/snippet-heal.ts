@@ -1,7 +1,7 @@
+import { snippetLog } from './logs';
 import { kitState } from './state';
 import { snippetMap } from './tick'; // The in-memory snippetMap that powers expansions
-import { snippetScriptChanged, addTextSnippet } from './tick';
-import { snippetLog } from './logs';
+import { addTextSnippet, snippetScriptChanged } from './tick';
 
 export async function snippetsSelfCheck() {
   const expansionsNeeded = new Set<string>();

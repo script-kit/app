@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import net from 'node:net';
+import { kitPath } from '@johnlindquist/kit/core/utils';
 import { handleScript } from './handleScript'; // Import the shared handleScript
 import { createLogger } from './log-utils';
-import { kitPath } from '@johnlindquist/kit/core/utils';
 
 const log = createLogger('sk');
 

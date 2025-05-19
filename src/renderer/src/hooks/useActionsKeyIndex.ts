@@ -79,7 +79,7 @@ export default () => {
 
   useHotkeys(
     'left',
-    (event) => {
+    (_event) => {
       if (!(inputFocus || actionsInputFocus)) {
         return;
       }
@@ -92,7 +92,7 @@ export default () => {
 
   useHotkeys(
     'right',
-    (event) => {
+    (_event) => {
       if (!(inputFocus || actionsInputFocus)) {
         return;
       }

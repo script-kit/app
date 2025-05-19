@@ -1,4 +1,4 @@
-import { vi } from 'vitest'
+import { vi } from 'vitest';
 
 // src/mocks/electron.mock.ts
 export default {

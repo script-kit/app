@@ -1,11 +1,11 @@
 // snippet-cache.ts (for example)
 
-import { globby } from 'globby';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { kitState, type SnippetFile } from './state';
 import { kenvPath } from '@johnlindquist/kit/core/utils';
 import log from 'electron-log';
+import { globby } from 'globby';
+import { type SnippetFile, kitState } from './state';
 
 /**
  * Very similar to your existing parseSnippet,

@@ -1,14 +1,15 @@
-import stripAnsi from 'strip-ansi';
 import DOMPurify from 'dompurify';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { debounce } from 'lodash-es';
 import { useEffect, useState } from 'react';
 import { ToastOptions, toast } from 'react-toastify';
+import stripAnsi from 'strip-ansi';
 const { ipcRenderer } = window.electron;
 import { Channel } from '@johnlindquist/kit/core/enum';
 import type { Choice } from '@johnlindquist/kit/types';
 import type { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
 import {
+  actionsConfigAtom,
   addChatMessageAtom,
   appConfigAtom,
   appendInputAtom,
@@ -37,14 +38,15 @@ import {
   exitAtom,
   flaggedChoiceValueAtom,
   flagsAtom,
-  actionsConfigAtom,
   footerAtom,
   getEditorHistoryAtom,
   hintAtom,
   initPromptAtom,
   inputAtom,
+  invalidateChoiceInputsAtom,
   isHiddenAtom,
   isReadyAtom,
+  isWindowAtom,
   kitConfigAtom,
   kitStateAtom,
   lastLogLineAtom,
@@ -88,18 +90,16 @@ import {
   termConfigAtom,
   termExitAtom,
   termFontAtom,
+  termOutputAtom,
   textareaConfigAtom,
   textareaValueAtom,
   themeAtom,
   toggleAllSelectedChoicesAtom,
   triggerKeywordAtom,
+  triggerResizeAtom,
   valueInvalidAtom,
   webcamIdAtom,
   zoomAtom,
-  invalidateChoiceInputsAtom,
-  termOutputAtom,
-  isWindowAtom,
-  triggerResizeAtom,
 } from '../jotai';
 
 import { createLogger } from '../log-utils';
@@ -552,7 +552,7 @@ export default () => {
       ipcRenderer.on(AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS, handleSetCachedMainFlags);
     }
 
-    const handleInitPrompt = (_, data) => {
+    const handleInitPrompt = (_, _data) => {
       log.info(`${pid}: Received init prompt message`);
       initPrompt();
     };
@@ -586,7 +586,7 @@ export default () => {
       ipcRenderer.on(AppChannel.CSS_CHANGED, handleCssChanged);
     }
 
-    const handleClearCache = (_, data) => {
+    const handleClearCache = (_, _data) => {
       clearCache();
     };
 
@@ -594,7 +594,7 @@ export default () => {
       ipcRenderer.on(AppChannel.CLEAR_CACHE, handleClearCache);
     }
 
-    const handleInputReady = (event, data) => {
+    const handleInputReady = (_event, _data) => {
       let rafId: number;
       const timeoutId = setTimeout(() => {
         log.warn(`Timeout reached after 250ms for element with id: "input"`);
