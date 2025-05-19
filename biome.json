@@ -6,6 +6,9 @@
     "useIgnoreFile": true,
     "defaultBranch": "main"
   },
+  "files": {
+    "include": ["src/**/*.ts"]
+  },
   "organizeImports": {
     "ignore": ["assets"],
     "enabled": true
@@ -33,6 +36,8 @@
         "useImportExtensions": "off"
       },
       "style": {
+        "noNamespace": "off",
+        "noNamespaceImport": "off",
         "noDefaultExport": "off",
         "noParameterAssign": "off",
         "useNamingConvention": "off",
@@ -64,7 +69,6 @@
   },
   "formatter": {
     "enabled": true,
-    "include": ["**/*.ts", "**/*.js", "**/*.jsx", "**/*.tsx", "**/*.css", "**/*.json"],
     "indentStyle": "space",
     "indentWidth": 2,
     "lineWidth": 120,

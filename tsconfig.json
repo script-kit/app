@@ -8,4 +8,10 @@
       "path": "./tsconfig.web.json"
     }
   ],
+  "compilerOptions": {
+    "types": [
+      "vitest/globals"
+    ],
+    "module": "esnext"
+  },
 }

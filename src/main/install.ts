@@ -1,4 +1,4 @@
-import { clipboard, nativeTheme, shell, app } from 'electron';
+import { clipboard, nativeTheme, shell } from 'electron';
 import crypto from 'node:crypto';
 import { HttpsProxyAgent } from 'hpagent';
 import * as rimraf from 'rimraf';
@@ -6,11 +6,11 @@ import { type SpawnOptions, type SpawnSyncReturns, spawn } from 'node:child_proc
 import os from 'node:os';
 import path from 'node:path';
 import dotenv from 'dotenv';
-import { debounce, isEqual } from 'lodash-es';
+import { debounce } from 'lodash-es';
 import StreamZip from 'node-stream-zip';
 
 import * as tar from 'tar';
-import { lstat, readFile, rm, unlink, rename } from 'node:fs/promises';
+import { lstat, readFile, unlink, rename } from 'node:fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import download, { type DownloadOptions } from './download';
 import {
@@ -23,7 +23,7 @@ import {
   kitPnpmPath,
   processPlatformSpecificTheme,
 } from '@johnlindquist/kit/core/utils';
-import type { Choice, FlagsObject, Script, Scriptlet, Shortcut, Snippet } from '@johnlindquist/kit/types';
+import type { Choice, FlagsObject, Script, Scriptlet, Shortcut } from '@johnlindquist/kit/types';
 import { CACHED_GROUPED_SCRIPTS_WORKER, CREATE_BIN_WORKER } from '@johnlindquist/kit/workers';
 
 import { KitPrompt, destroyPromptWindow, makeSplashWindow } from './prompt';
@@ -888,7 +888,7 @@ export function scoreAndCacheMainChoices(allScripts: Script[]) {
       continue;
     }
 
-    const key = s.filePath;
+    const key = `${s.filePath}:${s.id ?? s.name}`;
     visitedKeys.add(key);
 
     let choice = scriptChoiceCache.get(key);
@@ -899,7 +899,7 @@ export function scoreAndCacheMainChoices(allScripts: Script[]) {
     results.push(choice);
   }
 
-  // GC: remove cache entries we didn’t touch this round.
+  // GC: remove cache entries we didn't touch this round.
   for (const k of scriptChoiceCache.keys()) {
     if (!visitedKeys.has(k)) {
       scriptChoiceCache.delete(k);
@@ -1058,6 +1058,10 @@ export const cacheMainMenu = async ({
     if (scriptFlags) {
       kitCache.scriptFlags = scriptFlags;
     }
+    // Broadcast updated main menu cache: scored choices, shortcuts, flags, and preview
+    sendToAllPrompts(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, kitCache.choices);
+    sendToAllPrompts(AppChannel.SET_CACHED_MAIN_SHORTCUTS, kitCache.shortcuts);
+    sendToAllPrompts(AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS, kitCache.scriptFlags);
     sendToAllPrompts(AppChannel.SET_CACHED_MAIN_PREVIEW, kitCache.preview);
     sendToAllPrompts(AppChannel.INIT_PROMPT, {});
 
@@ -1164,7 +1168,7 @@ export const cacheMainMenu = async ({
 
     log.info(`Shortcut check: ${shortcutMap.size} shortcuts cached`);
     if (shortcutMap.size === 0) {
-      log.info(`Found no shortcuts, checking scripts`);
+      log.info('Found no shortcuts, checking scripts');
       // Check if any scripts have shortcuts
       for (const script of kitState.scripts.values()) {
         if (script.shortcut) {
