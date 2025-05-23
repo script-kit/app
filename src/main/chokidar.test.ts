@@ -15,16 +15,138 @@ const testDir = vi.hoisted(() => {
 
 vi.mock('node:os', async () => {
   const tmpDir = await testDir;
-  const osMock = {
-    homedir: () => {
-      return tmpDir.path;
-    },
-    path,
-    platform: () => 'darwin',
-  };
+
   return {
-    default: osMock,
-    ...osMock,
+    default: {
+      arch: vi.fn(() => 'x64'),
+      cpus: vi.fn(() => []),
+      endianness: vi.fn(() => 'LE'),
+      freemem: vi.fn(() => 1000000),
+      getPriority: vi.fn(() => 0),
+      homedir: () => tmpDir.path,
+      hostname: vi.fn(() => 'test-host'),
+      loadavg: vi.fn(() => [0, 0, 0]),
+      machine: vi.fn(() => 'x86_64'),
+      networkInterfaces: vi.fn(() => ({})),
+      platform: vi.fn(() => 'darwin'),
+      release: vi.fn(() => '1.0.0'),
+      setPriority: vi.fn(),
+      tmpdir: vi.fn(() => '/tmp'),
+      totalmem: vi.fn(() => 2000000),
+      type: vi.fn(() => 'Darwin'),
+      uptime: vi.fn(() => 1000),
+      userInfo: vi.fn(() => ({
+        uid: 1000,
+        gid: 1000,
+        username: 'test',
+        homedir: tmpDir.path,
+        shell: '/bin/bash',
+      })),
+      version: vi.fn(() => 'v1.0.0'),
+      constants: {
+        signals: {
+          SIGHUP: 1,
+          SIGINT: 2,
+          SIGQUIT: 3,
+          SIGILL: 4,
+          SIGTRAP: 5,
+          SIGABRT: 6,
+          SIGIOT: 6,
+          SIGBUS: 7,
+          SIGFPE: 8,
+          SIGKILL: 9,
+          SIGUSR1: 10,
+          SIGSEGV: 11,
+          SIGUSR2: 12,
+          SIGPIPE: 13,
+          SIGALRM: 14,
+          SIGTERM: 15,
+          SIGCHLD: 17,
+          SIGCONT: 18,
+          SIGSTOP: 19,
+          SIGTSTP: 20,
+          SIGTTIN: 21,
+          SIGTTOU: 22,
+          SIGURG: 23,
+          SIGXCPU: 24,
+          SIGXFSZ: 25,
+          SIGVTALRM: 26,
+          SIGPROF: 27,
+          SIGWINCH: 28,
+          SIGIO: 29,
+          SIGPOLL: 29,
+          SIGPWR: 30,
+          SIGSYS: 31,
+          SIGUNUSED: 31,
+        },
+        errno: {},
+        priority: {},
+      },
+    },
+    arch: vi.fn(() => 'x64'),
+    cpus: vi.fn(() => []),
+    endianness: vi.fn(() => 'LE'),
+    freemem: vi.fn(() => 1000000),
+    getPriority: vi.fn(() => 0),
+    homedir: () => tmpDir.path,
+    hostname: vi.fn(() => 'test-host'),
+    loadavg: vi.fn(() => [0, 0, 0]),
+    machine: vi.fn(() => 'x86_64'),
+    networkInterfaces: vi.fn(() => ({})),
+    platform: vi.fn(() => 'darwin'),
+    release: vi.fn(() => '1.0.0'),
+    setPriority: vi.fn(),
+    tmpdir: vi.fn(() => '/tmp'),
+    totalmem: vi.fn(() => 2000000),
+    type: vi.fn(() => 'Darwin'),
+    uptime: vi.fn(() => 1000),
+    userInfo: vi.fn(() => ({
+      uid: 1000,
+      gid: 1000,
+      username: 'test',
+      homedir: tmpDir.path,
+      shell: '/bin/bash',
+    })),
+    version: vi.fn(() => 'v1.0.0'),
+    constants: {
+      signals: {
+        SIGHUP: 1,
+        SIGINT: 2,
+        SIGQUIT: 3,
+        SIGILL: 4,
+        SIGTRAP: 5,
+        SIGABRT: 6,
+        SIGIOT: 6,
+        SIGBUS: 7,
+        SIGFPE: 8,
+        SIGKILL: 9,
+        SIGUSR1: 10,
+        SIGSEGV: 11,
+        SIGUSR2: 12,
+        SIGPIPE: 13,
+        SIGALRM: 14,
+        SIGTERM: 15,
+        SIGCHLD: 17,
+        SIGCONT: 18,
+        SIGSTOP: 19,
+        SIGTSTP: 20,
+        SIGTTIN: 21,
+        SIGTTOU: 22,
+        SIGURG: 23,
+        SIGXCPU: 24,
+        SIGXFSZ: 25,
+        SIGVTALRM: 26,
+        SIGPROF: 27,
+        SIGWINCH: 28,
+        SIGIO: 29,
+        SIGPOLL: 29,
+        SIGPWR: 30,
+        SIGSYS: 31,
+        SIGUNUSED: 31,
+      },
+      errno: {},
+      priority: {},
+    },
   };
 });
 
@@ -46,12 +168,12 @@ import { ensureDir, pathExists, readFile, readdir, remove, rename, writeFile } f
 import { type WatchEvent, type WatchSource, startWatching } from './chokidar';
 
 const log = {
-  debug: (..._args: any[]) => ,
-  error: (..._args: any[]) => ,
-  test: (_testName: string, ..._args: any[]) => ,
-  watcher: (..._args: any[]) => ,
-  event: (..._args: any[]) => ,
-  dir: (..._args: any[]) => ,
+  debug: (..._args: any[]) => {},
+  error: (..._args: any[]) => {},
+  test: (_testName: string, ..._args: any[]) => {},
+  watcher: (..._args: any[]) => {},
+  event: (..._args: any[]) => {},
+  dir: (..._args: any[]) => {},
 };
 
 async function ensureFileOperation(
@@ -63,9 +185,13 @@ async function ensureFileOperation(
   for (let i = 0; i < maxAttempts; i++) {
     try {
       await operation();
-      if (await verify()) { return; }
+      if (await verify()) {
+        return;
+      }
     } catch (err) {
-      if (i === maxAttempts - 1) { throw err; }
+      if (i === maxAttempts - 1) {
+        throw err;
+      }
     }
     await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
@@ -1057,7 +1183,7 @@ describe.concurrent('File System Watcher', () => {
           log.test(testName, 'Against watched paths:', Array.from(allWatchedPaths));
           log.test(testName, `isWatched result: ${isWatched}`);
 
-          expect(isWatched).toBe(true, `Path ${normalizedRequired} should be watched`);
+          expect(isWatched).toBe(true);
         }
       } finally {
         await Promise.all(watchers.map((w) => w.close()));

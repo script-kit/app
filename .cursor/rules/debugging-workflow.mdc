@@ -1,0 +1,45 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Script Kit App Debugging Workflow
+
+## Log System Overview
+Script Kit app has a comprehensive logging system defined in [logs.ts](mdc:src/main/logs.ts). Logs are written to `~/Library/Logs/ScriptKit/` and organized by component type.
+
+## Available Log Files
+- `main.log` - Main application logs
+- `term.log` - Terminal/PTY related logs (useful for invoke-pty debugging)
+- `process.log` - Process management logs
+- `script.log` - Script execution logs
+- `error.log` - Error logs across all components
+- `prompt.log` - Prompt-related logs
+- `ipc.log` - Inter-process communication logs
+- And many others (see [logs.ts](mdc:src/main/logs.ts) for the full list)
+
+## Debugging Process
+1. **Ask User to Run Application**: Always ask user to run Script Kit app first
+2. **Wait for Confirmation**: User must confirm app is running and they've reproduced the issue
+3. **Check Relevant Logs**: Use appropriate log files based on issue type:
+   ```bash
+   # For terminal/PTY issues
+   tail -n 100 ~/Library/Logs/ScriptKit/term.log
+
+   # For general application issues
+   tail -n 100 ~/Library/Logs/ScriptKit/main.log
+
+   # For errors
+   tail -n 100 ~/Library/Logs/ScriptKit/error.log
+   ```
+
+## Log Analysis
+Look for:
+- Error messages and stack traces
+- Performance timing information
+- Component-specific debug output
+- PTY pool behavior (for terminal issues)
+
+## Console Statement Debugging
+- Console statements in fallback logger use stored variables to prevent Biome removal
+- Check [logs.ts](mdc:src/main/logs.ts) fallback logger section for console functionality

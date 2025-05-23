@@ -89,7 +89,7 @@ class PtyPool {
     const sameShell = shell === defaultShell;
     const sameArgs = JSON.stringify(args) === JSON.stringify(defaultArgs);
 
-    termLog.info(`🔧 [ptyPool] getIdlePty called with:`);
+    termLog.info('🔧 [ptyPool] getIdlePty called with:');
     termLog.info(`🔧 [ptyPool] - shell: ${shell} (default: ${defaultShell}, same: ${sameShell})`);
     termLog.info(
       `🔧 [ptyPool] - args: ${JSON.stringify(args)} (default: ${JSON.stringify(defaultArgs)}, same: ${sameArgs})`,

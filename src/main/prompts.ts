@@ -1,6 +1,6 @@
 import { promptLog } from './logs';
-import { KitPrompt } from './prompt';
 import { processes } from './process';
+import { KitPrompt } from './prompt';
 
 const promptMap = new Map<number, KitPrompt>();
 

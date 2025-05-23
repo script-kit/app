@@ -1,0 +1,25 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Script Kit App Development Workflow
+
+## Code Formatting
+- Use `pnpm format:fix` for fixing code format
+- Use `pnpm format:check` to check without changes
+- **Important**: Some files like [logs.ts](mdc:src/main/logs.ts) are in the formatter ignore list in [biome.json](mdc:biome.json) to preserve console statements
+
+## Console Statement Preservation
+- If console statements are being removed by Biome, store console methods in variables:
+  ```typescript
+  const consoleLog = console.log;
+  const consoleWarn = console.warn;
+  // Use consoleLog(...) instead of console.log(...)
+  ```
+- Add problematic files to `formatter.ignore` in [biome.json](mdc:biome.json)
+
+## TypeScript Best Practices
+- Avoid `any[]` types - use proper type inference like `logInfoArgs`
+- Avoid non-null assertions (`!`) - use safe existence checks instead
+- Use Biome configuration in [biome.json](mdc:biome.json) for linting rules

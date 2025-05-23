@@ -16,6 +16,7 @@ import Convert from 'ansi-to-html';
 import DOMPurify from 'dompurify';
 import { type Atom, type Getter, type Setter, atom } from 'jotai';
 import { createLogger } from './log-utils';
+import { arraysEqual, colorUtils, dataUtils, domUtils, themeUtils } from './utils/state-utils';
 
 import type {
   AppConfig,
@@ -38,18 +39,6 @@ import type { ResizeData, ScoredChoice, Survey, TermConfig } from '../../shared/
 import { formatShortcut } from './components/formatters';
 
 const log = createLogger('jotai.ts');
-
-function arraysEqual(a: string[], b: string[]): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) {
-      return false;
-    }
-  }
-  return true;
-}
 
 let placeholderTimeoutId: NodeJS.Timeout;
 
@@ -600,9 +589,15 @@ export const indexAtom = atom(
     const gridReady = g(gridReadyAtom);
 
     if (list && cs[0]?.item?.skip && calcIndex === 1 && !gridReady) {
-      s(scrollToItemAtom, { index: 0, reason: 'indexAtom - cs[0]?.item?.skip && calcIndex === 1' });
+      s(scrollToItemAtom, {
+        index: 0,
+        reason: 'indexAtom - cs[0]?.item?.skip && calcIndex === 1',
+      });
     } else if (list && requiresScroll === -1 && !gridReady) {
-      s(scrollToItemAtom, { index: calcIndex, reason: 'indexAtom - requiresScroll === -1' });
+      s(scrollToItemAtom, {
+        index: calcIndex,
+        reason: 'indexAtom - requiresScroll === -1',
+      });
     }
 
     // const clampedIndex = clamp(a, 0, cs.length - 1);
@@ -1682,24 +1677,7 @@ export const promptDataAtom = atom(
       }
 
       if (a?.html) {
-        // eslint-disable-next-line prefer-destructuring
-        const parser = new DOMParser();
-        const htmlDoc = parser.parseFromString(a.html, 'text/html');
-
-        const inputs = htmlDoc.getElementsByTagName('input');
-        const buttons = htmlDoc.getElementsByTagName('button');
-        const hasSubmit =
-          Array.from(inputs).some((input) => input.type.toLowerCase() === 'submit') ||
-          Array.from(buttons).some((button) => button.type.toLowerCase() === 'submit');
-
-        if (!hasSubmit) {
-          const hiddenSubmit = htmlDoc.createElement('input');
-          hiddenSubmit.type = 'submit';
-          hiddenSubmit.style.display = 'none';
-          htmlDoc.body.appendChild(hiddenSubmit);
-        }
-
-        s(formHTMLAtom, htmlDoc.body.innerHTML);
+        s(formHTMLAtom, domUtils.ensureFormHasSubmit(a.html));
       }
 
       if (a?.formData) {
@@ -1737,7 +1715,10 @@ export const promptDataAtom = atom(
       const channel = g(channelAtom);
       channel(Channel.ON_INIT);
 
-      ipcRenderer.send(Channel.SET_PROMPT_DATA, { messageId: a?.messageId, ui: a?.ui });
+      ipcRenderer.send(Channel.SET_PROMPT_DATA, {
+        messageId: a?.messageId,
+        ui: a?.ui,
+      });
       s(promptReadyAtom, true);
 
       s(promptActiveAtom, true);
@@ -2753,78 +2734,8 @@ export const colorAtom = atom((g) => {
       // @ts-ignore -- EyeDropper is not in the types
       const eyeDropper = new EyeDropper();
       const { sRGBHex } = await eyeDropper.open();
-      const hexToRgb = (hex: string) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result
-          ? {
-              r: Number.parseInt(result[1], 16),
-              g: Number.parseInt(result[2], 16),
-              b: Number.parseInt(result[3], 16),
-            }
-          : null;
-      };
 
-      const rgbToHsl = (r: number, g: number, b: number) => {
-        r /= 255;
-        g /= 255;
-        b /= 255;
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        let h;
-        let s;
-        const l = (max + min) / 2;
-
-        if (max === min) {
-          h = s = 0;
-        } else {
-          const d = max - min;
-          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-          switch (max) {
-            case r:
-              h = (g - b) / d + (g < b ? 6 : 0);
-              break;
-            case g:
-              h = (b - r) / d + 2;
-              break;
-            case b:
-              h = (r - g) / d + 4;
-              break;
-          }
-          h /= 6;
-        }
-
-        return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
-      };
-
-      const rgbToCmyk = (r: number, g: number, b: number) => {
-        let c = 1 - r / 255;
-        let m = 1 - g / 255;
-        let y = 1 - b / 255;
-        const k = Math.min(c, Math.min(m, y));
-
-        c = (c - k) / (1 - k);
-        m = (m - k) / (1 - k);
-        y = (y - k) / (1 - k);
-
-        return {
-          c: Math.round(c * 100),
-          m: Math.round(m * 100),
-          y: Math.round(y * 100),
-          k: Math.round(k * 100),
-        };
-      };
-
-      const rgb = hexToRgb(sRGBHex) || { r: 0, g: 0, b: 0 };
-      const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-      const cmyk = rgbToCmyk(rgb.r, rgb.g, rgb.b);
-      const color = {
-        sRGBHex,
-        rgb: `rgb(${rgb?.r}, ${rgb?.g}, ${rgb?.b})`,
-        rgba: `rgba(${rgb?.r}, ${rgb?.g}, ${rgb?.b}, 1)`,
-        hsl: `hsl(${hsl?.h}, ${hsl?.s}%, ${hsl?.l}%)`,
-        hsla: `hsla(${hsl?.h}, ${hsl?.s}%, ${hsl?.l}%, 1)`,
-        cmyk: `cmyk(${cmyk.c}%, ${cmyk.m}%, ${cmyk.y}%, ${cmyk.k}%)`,
-      };
+      const color = colorUtils.convertColor(sRGBHex);
       const channel = Channel.GET_COLOR;
 
       const pid = g(pidAtom);
@@ -3521,27 +3432,12 @@ export const shortcutStringsAtom: Atom<
   const shortcuts = g(shortcutsAtom);
   const actions = g(actionsAtom);
   const flags = g(flagsAtom);
-  function transformKeys(items, keyName, type) {
-    return items
-      .map((item) => {
-        const key = item[keyName];
-        if (key) {
-          const value = key.replaceAll(' ', '+');
-          return {
-            type,
-            value,
-          };
-        }
-        return false;
-      })
-      .filter(Boolean);
-  }
 
   const actionsThatArentShortcuts = actions.filter((a) => !shortcuts.find((s) => s.key === a.key));
 
-  const shortcutKeys = transformKeys(shortcuts, 'key', 'shortcut');
-  const actionKeys = transformKeys(actionsThatArentShortcuts, 'key', 'action');
-  const flagKeys = transformKeys(Object.values(flags), 'shortcut', 'flag');
+  const shortcutKeys = dataUtils.transformKeys(shortcuts, 'key', 'shortcut');
+  const actionKeys = dataUtils.transformKeys(actionsThatArentShortcuts, 'key', 'action');
+  const flagKeys = dataUtils.transformKeys(Object.values(flags), 'shortcut', 'flag');
 
   // log.info('shortcutStringsAtom', {
   //   shortcuts: shortcutKeys,

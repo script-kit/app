@@ -42,6 +42,8 @@ import { prompts } from './prompts';
 import { INSTALL_ERROR, show } from './show';
 import { getThemes, kitCache, kitState, preloadChoicesMap, workers } from './state';
 
+import { backupEnvFile, cleanupOldBackups, restoreEnvFile } from '@johnlindquist/kit/core/env-backup';
+import { cleanupStaleLocks } from '@johnlindquist/kit/core/env-file-lock';
 import electronLog from 'electron-log';
 import { getAssetPath } from '../shared/assets';
 import { compareCollections, logDifferences } from './compare';
@@ -470,11 +472,50 @@ export const extractKenv = async (file: string) => {
 
   const fileName = path.parse(file).base;
 
-  sendSplashBody(`Extacting ${fileName} to ${kenvPath()}`);
+  sendSplashBody(`Extracting ${fileName} to ${kenvPath()}`);
+
+  // Backup existing .env file before extraction
+  log.info('🔒 Backing up existing .env file before extraction...');
+  const backupResult = await backupEnvFile();
+
+  if (!backupResult.success) {
+    log.warn('Failed to backup .env file, but continuing with extraction:', backupResult.error);
+  }
 
   await ensureDir(kenvPath());
-  await zip.extract('kenv', kenvPath());
-  await zip.close();
+
+  try {
+    await zip.extract('kenv', kenvPath());
+    await zip.close();
+
+    // Restore user's .env file, merging with any new template variables
+    if (backupResult.success && backupResult.backupPath) {
+      log.info('🔄 Restoring user .env file with merge...');
+      const restoreResult = await restoreEnvFile(backupResult.backupPath);
+
+      if (restoreResult.success) {
+        log.info(`✅ Successfully restored .env with ${restoreResult.mergedVariables} variables`);
+        sendSplashBody(`Restored your .env settings with ${restoreResult.mergedVariables} variables`);
+      } else {
+        log.error('Failed to restore .env file:', restoreResult.error);
+        sendSplashBody('Warning: Could not restore .env settings');
+      }
+    }
+
+    // Clean up old backups and stale locks
+    await cleanupOldBackups();
+    await cleanupStaleLocks();
+  } catch (error) {
+    log.error('Error during extraction:', error);
+
+    // If extraction failed and we have a backup, try to restore it
+    if (backupResult.success && backupResult.backupPath) {
+      log.info('🔄 Attempting to restore .env file after extraction failure...');
+      await restoreEnvFile(backupResult.backupPath);
+    }
+
+    throw error;
+  }
 };
 
 export const downloadKenv = async () => {

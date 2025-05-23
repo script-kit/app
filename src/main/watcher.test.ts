@@ -28,7 +28,11 @@ vi.mock('./system-events');
 vi.mock('./background');
 vi.mock('./schedule');
 vi.mock('./watch');
-vi.mock('./tick');
+vi.mock('./tick', () => ({
+  snippetScriptChanged: vi.fn(),
+  removeSnippet: vi.fn(),
+  snippetMap: new Map(),
+}));
 vi.mock('./tray');
 vi.mock('./messages');
 vi.mock('./prompt');

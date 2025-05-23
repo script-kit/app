@@ -11,8 +11,8 @@ import type { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { differenceInHours } from 'date-fns';
 import {
   BrowserWindow,
-  Notification,
   type Input,
+  Notification,
   type Point,
   type Rectangle,
   TouchBar,
@@ -729,7 +729,7 @@ export class KitPrompt {
     this.hasShownLongRunningNotification = false;
 
     this.longRunningTimer = setTimeout(() => {
-      if (!this.hasShownLongRunningNotification && !this.window?.isDestroyed()) {
+      if (!(this.hasShownLongRunningNotification || this.window?.isDestroyed())) {
         this.showLongRunningNotification();
         this.hasShownLongRunningNotification = true;
       }
@@ -747,7 +747,9 @@ export class KitPrompt {
   };
 
   private showLongRunningNotification = () => {
-    if (!this.scriptStartTime) return;
+    if (!this.scriptStartTime) {
+      return;
+    }
 
     // Don't show notifications for idle prompts or invalid scripts
     if (!this.scriptName || this.scriptName === 'script-not-set' || !this.scriptPath || this.scriptPath === '') {
@@ -796,7 +798,7 @@ export class KitPrompt {
       urgency: 'normal',
     });
 
-    notification.on('action', (event, index) => {
+    notification.on('action', (_event, index) => {
       if (index === 0) {
         // Terminate Script
         this.logInfo(`User chose to terminate long-running script: ${scriptName}`);
@@ -924,7 +926,7 @@ export class KitPrompt {
       urgency: 'normal',
     });
 
-    notification.on('action', (event, index) => {
+    notification.on('action', (_event, index) => {
       if (index === 0) {
         // Close Prompt
         this.logInfo(`User chose to close disconnected prompt: ${this.scriptName}`);
@@ -987,7 +989,7 @@ export class KitPrompt {
 
     // Skip monitoring for idle prompts or prompts without valid scripts
     if (!this.scriptPath || this.scriptPath === '' || !this.scriptName || this.scriptName === 'script-not-set') {
-      this.logInfo(`Skipping process monitoring for idle prompt (no valid script)`);
+      this.logInfo('Skipping process monitoring for idle prompt (no valid script)');
       return;
     }
 
@@ -1021,7 +1023,7 @@ export class KitPrompt {
   };
 
   private checkProcessAlive = () => {
-    if (!this.pid || !this.boundToProcess) {
+    if (!(this.pid && this.boundToProcess)) {
       return;
     }
 
@@ -2836,7 +2838,7 @@ export class KitPrompt {
 
     // Only set as idle if we're not currently in the process of being destroyed
     // and if there isn't already an idle prompt
-    if (!this.closed && !this.window?.isDestroyed() && prompts.idle === null) {
+    if (!(this.closed || this.window?.isDestroyed()) && prompts.idle === null) {
       prompts.setIdle(this);
     }
 

@@ -79,7 +79,8 @@
       ".npm-cache",
       "node_modules",
       ".vscode",
-      "assets"
+      "assets",
+      "src/main/logs.ts"
     ]
   },
   "javascript": {

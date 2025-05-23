@@ -1,11 +1,11 @@
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { kitPnpmPath } from '@johnlindquist/kit/core/utils';
-import { ptyPool } from './pty';
-import { getCommandSeparator, getDefaultShell, getReturnCharacter, getShellArgs, getDefaultArgs } from './pty-utils';
 import type { IPty } from 'node-pty';
 import type { TermConfig } from '../shared/types';
 import { termLog } from './logs';
+import { ptyPool } from './pty';
+import { getCommandSeparator, getDefaultArgs, getDefaultShell, getReturnCharacter, getShellArgs } from './pty-utils';
 
 // Constants
 const DEFAULT_TIMEOUT_MS = 2000;
@@ -170,7 +170,7 @@ class PtyExecutor {
     if (bufferedData && bufferedData.length > 0) {
       termLog.info(`🔧 [invoke-pty] ✅ Reusing idle PTY with ${bufferedData.length} buffered data chunks`);
     } else {
-      termLog.info(`🔧 [invoke-pty] ❌ Created new PTY (no buffered data)`);
+      termLog.info('🔧 [invoke-pty] ❌ Created new PTY (no buffered data)');
     }
   }
 
