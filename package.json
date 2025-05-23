@@ -241,9 +241,6 @@
       "node-mac-permissions",
       "node-pty",
       "uiohook-napi"
-    ],
-    "overrides": {
-      "@johnlindquist/kit": "link:../../.kit"
-    }
+    ]
   }
 }

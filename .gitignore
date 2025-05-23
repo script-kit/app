@@ -67,3 +67,6 @@ assets/basic-languages
 out/
 .cache/
 plans
+
+# Local development overrides (don't commit these)
+pnpm-workspace.yaml

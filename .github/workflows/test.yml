@@ -47,8 +47,51 @@ jobs:
         with:
           node-version: 22.9.0
 
-      - name: Testing ${{ matrix.platform }} ${{ matrix.arch }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies and build tools (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          echo "Starting dependency installation..."
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libx11-dev libxkbfile-dev libxtst-dev make gcc libpng++-dev g++-10
+
+          echo "Setting g++ alternatives..."
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
+          sudo update-alternatives --set g++ /usr/bin/g++-10
+          echo "g++ version:"
+          g++ --version
+
+          # Set PKG_CONFIG_PATH based on architecture.
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            export PKG_CONFIG_PATH="/usr/lib/aarch64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH"
+            echo "PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          else
+            export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH"
+            echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          fi
+          echo "PKG_CONFIG_PATH is set to: $PKG_CONFIG_PATH"
+
+          echo "Verifying that pkg-config exists..."
+          command -v pkg-config || { echo "ERROR: pkg-config not found"; exit 1; }
+          echo "pkg-config version: $(pkg-config --version)"
+
+      - name: Install additional dependencies for Linux ARM64
+        if: matrix.platform == 'linux' && matrix.arch == 'arm64'
+        run: |
+          sudo apt-get install ruby ruby-dev rubygems build-essential
+          sudo gem install --no-document fpm
+          echo "USE_SYSTEM_FPM=true" >> $GITHUB_ENV
+
+      - name: pnpm install
         continue-on-error: true
         run: |
-            pnpm i
-            pnpm test
+          pnpm i
+
+      - name: pnpm test ${{ matrix.platform }} ${{ matrix.arch }}
+        continue-on-error: true
+        run: |
+          pnpm test
