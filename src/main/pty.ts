@@ -6,7 +6,7 @@ import { KitEvent, emitter } from '../shared/events';
 import type { TermConfig } from '../shared/types';
 import { displayError } from './error';
 /* eslint-disable no-nested-ternary */
-import { termLog as log } from './logs';
+import { termLog } from './logs';
 
 import type { KitPrompt } from './prompt';
 import {
@@ -22,11 +22,11 @@ class PtyPool {
   killPty(pid: number) {
     const p = this.ptys.find((p) => p.pid === pid);
     if (p) {
-      log.info(`🐲 Killing pty ${pid}`);
+      termLog.info(`🐲 Killing pty ${pid}`);
       try {
         p.kill();
       } catch (error) {
-        log.error(error);
+        termLog.error(error);
       }
       this.ptys = this.ptys.filter((p) => p.pid !== pid);
     }
@@ -39,11 +39,11 @@ class PtyPool {
     return new Promise((resolve) => {
       setTimeout(() => {
         this.ptys.forEach((p) => {
-          log.info(`🐲 Killing stray pty ${p.pid}. Current pty count: ${this.ptys.length}`);
+          termLog.info(`🐲 Killing stray pty ${p.pid}. Current pty count: ${this.ptys.length}`);
           try {
             p.kill();
           } catch (error) {
-            log.error(error);
+            termLog.error(error);
           }
         });
         resolve(null);
@@ -61,7 +61,7 @@ class PtyPool {
   }
 
   private createPty(shell: string, args: string[], options: any): pty.IPty {
-    log.info(`🐲 Creating pty with shell: ${shell}, args: ${args}`);
+    termLog.info(`🐲 Creating pty with shell: ${shell}, args: ${args}`);
     options.windowsHide = true;
     const p = pty.spawn(shell, args, options);
     this.ptys.push(p);
@@ -71,24 +71,33 @@ class PtyPool {
   public killIdlePty() {
     if (this.idlePty) {
       this.bufferedData = [];
-      log.info(`🐲 Killing idle pty ${this.idlePty?.pid}`);
+      termLog.info(`🐲 Killing idle pty ${this.idlePty?.pid}`);
       this.idlePty.kill();
       this.ptys = this.ptys.filter((p) => p !== this.idlePty);
       this.idlePty = null;
     }
     if (this?.disposer?.dispose) {
-      log.info(`🐲 Disposing idle pty ${this.idlePty?.pid}. Current pty count: ${this.ptys.length}`);
+      termLog.info(`🐲 Disposing idle pty ${this.idlePty?.pid}. Current pty count: ${this.ptys.length}`);
       this.disposer.dispose();
     }
   }
 
   public getIdlePty(shell: string, args: string[], options: any, config: TermConfig): pty.IPty {
     const defaultOptions = getDefaultOptions();
-    const sameShell = shell === getDefaultShell();
+    const defaultShell = getDefaultShell();
+    const defaultArgs = getDefaultArgs(true);
+    const sameShell = shell === defaultShell;
+    const sameArgs = JSON.stringify(args) === JSON.stringify(defaultArgs);
 
-    const sameArgs = JSON.stringify(args) === JSON.stringify(getDefaultArgs(true));
+    termLog.info(`🔧 [ptyPool] getIdlePty called with:`);
+    termLog.info(`🔧 [ptyPool] - shell: ${shell} (default: ${defaultShell}, same: ${sameShell})`);
+    termLog.info(
+      `🔧 [ptyPool] - args: ${JSON.stringify(args)} (default: ${JSON.stringify(defaultArgs)}, same: ${sameArgs})`,
+    );
+    termLog.info(`🔧 [ptyPool] - hasIdlePty: ${!!this.idlePty}`);
 
     const allDefaults = this.idlePty && sameShell && sameArgs;
+    termLog.info(`🔧 [ptyPool] - canReuseIdlePty: ${allDefaults}`);
 
     if (allDefaults) {
       const defaultPty = this.idlePty as pty.IPty;
@@ -139,13 +148,16 @@ class PtyPool {
     if (this.idlePty) {
       return;
     }
-    log.info('🐲 >_ Preparing next idle pty');
+    termLog.info('🐲 >_ Preparing next idle pty');
+    termLog.info('🔧 [ptyPool] Preparing next idle PTY');
     const shell = getDefaultShell();
     const args = getDefaultArgs(true);
     const options = getPtyOptions({});
+    termLog.info(`🔧 [ptyPool] Creating idle PTY with shell: ${shell}, args: ${JSON.stringify(args)}`);
     this.idlePty = this.createPty(shell, args, options);
     this.idlePty.onExit(({ exitCode, signal }) => {
-      log.info('🐲 Idle pty exited', { exitCode, signal });
+      termLog.info('🐲 Idle pty exited', { exitCode, signal });
+      termLog.info(`🔧 [ptyPool] Idle PTY exited with code: ${exitCode}, signal: ${signal}`);
     });
     this.disposer = this.idlePty.onData(this.onDataHandler);
   }
@@ -153,12 +165,15 @@ class PtyPool {
 
 const ptyPool = new PtyPool();
 export const createIdlePty = () => {
+  termLog.info(`🔧 [ptyPool] createIdlePty called, current PTY count: ${ptyPool.ptys.length}`);
   if (ptyPool.ptys.length === 0) {
-    log.info('🐲 >_ Creating idle pty. Current pty count: ', ptyPool.ptys.length);
+    termLog.info('🐲 >_ Creating idle pty. Current pty count: ', ptyPool.ptys.length);
+    termLog.info('🔧 [ptyPool] No PTYs exist, creating idle PTY');
     ptyPool.killIdlePty();
     ptyPool.prepareNextIdlePty();
   } else {
-    log.info('🐲 >_ Idle pty already exists. Current pty count: ', ptyPool.ptys.length);
+    termLog.info('🐲 >_ Idle pty already exists. Current pty count: ', ptyPool.ptys.length);
+    termLog.info('🔧 [ptyPool] PTYs already exist, not creating new idle PTY');
   }
 };
 
@@ -189,12 +204,12 @@ export const createPty = (prompt: KitPrompt) => {
     try {
       t.write(data?.data);
     } catch (error) {
-      log.error('Error writing to pty', error);
+      termLog.error('Error writing to pty', error);
     }
   };
 
   const teardown = (pid?: number) => {
-    log.info(`🐲 >_ Shell teardown. pid: ${pid ? `pid: ${pid}` : ''}`);
+    termLog.info(`🐲 >_ Shell teardown. pid: ${pid ? `pid: ${pid}` : ''}`);
     ipcMain.off(AppChannel.TERM_RESIZE, resizeHandler);
     ipcMain.off(AppChannel.TERM_INPUT, inputHandler);
     try {
@@ -206,7 +221,7 @@ export const createPty = (prompt: KitPrompt) => {
         ptyPool.killPty(pid);
       }
     } catch (error) {
-      log.error(`Error killing pty ${pid} (probably already dead)`);
+      termLog.error(`Error killing pty ${pid} (probably already dead)`);
     }
   };
 
@@ -220,7 +235,7 @@ export const createPty = (prompt: KitPrompt) => {
   };
 
   const handleTermReady = async (_event, config: TermConfig) => {
-    log.info({
+    termLog.info({
       termConfig: {
         command: config?.command || '<no command>',
         args: config?.args || '<no args>',
@@ -284,7 +299,7 @@ export const createPty = (prompt: KitPrompt) => {
     };
 
     const termKill = (pid: number) => {
-      log.verbose('TERM_KILL', {
+      termLog.verbose('TERM_KILL', {
         pid,
         configPid: prompt?.pid,
       });
@@ -300,13 +315,13 @@ export const createPty = (prompt: KitPrompt) => {
       }
       emitter.off(KitEvent.TERM_KILL, termKill);
       emitter.off(KitEvent.TermWrite, termWrite);
-      log.verbose('TERM_EXIT');
+      termLog.verbose('TERM_EXIT');
       teardown(t?.pid);
     };
 
     ipcMain.once(AppChannel.TERM_EXIT, termExit);
 
-    log.info('🐲 >_ Handling TERM_KILL');
+    termLog.info('🐲 >_ Handling TERM_KILL');
     emitter.once(KitEvent.TERM_KILL, termKill);
 
     ipcMain.on(AppChannel.TERM_RESIZE, resizeHandler);
@@ -316,7 +331,7 @@ export const createPty = (prompt: KitPrompt) => {
     const { shell, args } = getShellConfig(config, defaultShell);
     const ptyOptions = getPtyOptions(config);
 
-    log.info(
+    termLog.info(
       `🐲 >_ Starting term with config: ${JSON.stringify({
         shell: config.shell,
         command: config.command,
@@ -347,7 +362,7 @@ export const createPty = (prompt: KitPrompt) => {
     const sendData = USE_BINARY ? bufferUtf8(5) : bufferString(5);
 
     const invokeCommandWhenSettled = debounce(() => {
-      log.silly(`Invoking command: ${config.command}`);
+      termLog.silly(`Invoking command: ${config.command}`);
       if (config.command && t) {
         write(config.command);
       }
@@ -359,7 +374,7 @@ export const createPty = (prompt: KitPrompt) => {
       try {
         sendData(data);
       } catch (ex) {
-        log.error('Error sending data to pty', ex);
+        termLog.error('Error sending data to pty', ex);
       }
 
       if (config.command) {
@@ -370,19 +385,19 @@ export const createPty = (prompt: KitPrompt) => {
     t.onExit(
       debounce(
         () => {
-          log.info('🐲 Term process exited');
+          termLog.info('🐲 Term process exited');
           try {
             if (typeof config?.closeOnExit === 'boolean' && !config.closeOnExit) {
-              log.info('Process closed, but not closing pty because closeOnExit is false');
+              termLog.info('Process closed, but not closing pty because closeOnExit is false');
             } else {
               teardown(t?.pid);
 
-              log.info('🐲 >_ Emit term process exited', config.pid);
+              termLog.info('🐲 >_ Emit term process exited', config.pid);
               emitter.emit(KitEvent.TermExited, config.pid);
             }
             // t = null;
           } catch (error) {
-            log.error('Error closing pty', error);
+            termLog.error('Error closing pty', error);
           }
         },
         500,
@@ -395,7 +410,7 @@ export const createPty = (prompt: KitPrompt) => {
 };
 
 export const destroyPtyPool = async () => {
-  log.info('🐲 >_ Destroying pty pool');
+  termLog.info('🐲 >_ Destroying pty pool');
   await ptyPool.destroyPool();
 };
 

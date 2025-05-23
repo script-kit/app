@@ -96,7 +96,7 @@ import { cliFromParams, runPromptProcess } from './kit';
 import { errorLog, logMap, mainLog } from './logs';
 import { destroyAllProcesses, ensureIdleProcess, handleWidgetEvents, processes, setTheme } from './process';
 import { prompts } from './prompts';
-import { destroyPtyPool } from './pty';
+import { createIdlePty, destroyPtyPool } from './pty';
 import { rescheduleAllScripts, scheduleDownloads, scheduleSelfCheck, sleepSchedule } from './schedule';
 import { startServer } from './server';
 import { startSettings as setupSettings } from './settings';
@@ -582,6 +582,7 @@ const ready = async () => {
     await cacheKitScripts();
 
     // ensureIdleProcess();
+    createIdlePty();
 
     handleWidgetEvents();
 

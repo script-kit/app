@@ -422,6 +422,19 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
     type: 'separator' as const,
   });
 
+  toolsSubmenu.push({
+    label: 'Test Long-Running Script Notification',
+    click: runScript(kitPath('debug', 'test-long-running.js'), [], {
+      force: true,
+      trigger: Trigger.Tray,
+      sponsorCheck: false,
+    }),
+  });
+
+  toolsSubmenu.push({
+    type: 'separator' as const,
+  });
+
   return toolsSubmenu;
 };
 
@@ -808,7 +821,9 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
 
       if (kitState.isMac) {
         tray.on('mouse-down', openMenu);
+        tray.on('right-click', openMenu);
       } else {
+        tray.on('click', openMenu);
         tray.on('right-click', openMenu);
       }
     } catch (error) {
@@ -851,11 +866,14 @@ export const setTrayMenu = async (scriptPaths: string[]) => {
     if (leftClickOverride) {
       tray?.removeAllListeners('mouse-down');
       tray?.removeAllListeners('click');
+      tray?.removeAllListeners('right-click');
       tray?.removeAllListeners('mouse-enter');
 
       if (kitState.isMac) {
         tray?.on('mouse-down', openMenu);
+        tray?.on('right-click', openMenu);
       } else {
+        tray?.on('click', openMenu);
         tray?.on('right-click', openMenu);
       }
       leftClickOverride = null;
@@ -916,11 +934,14 @@ export const setTrayMenu = async (scriptPaths: string[]) => {
 
     tray?.removeAllListeners('mouse-down');
     tray?.removeAllListeners('click');
+    tray?.removeAllListeners('right-click');
 
     if (kitState.isMac) {
       tray?.on('mouse-down', leftClickOverride);
+      tray?.on('right-click', leftClickOverride);
     } else {
       tray?.on('click', leftClickOverride);
+      tray?.on('right-click', leftClickOverride);
     }
   }
 };

@@ -11,6 +11,7 @@ import type { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { differenceInHours } from 'date-fns';
 import {
   BrowserWindow,
+  Notification,
   type Input,
   type Point,
   type Rectangle,
@@ -74,12 +75,14 @@ contextMenu({
     {
       label: 'Detach Dev Tools',
       click: async () => {
-        if ((browserWindow as BrowserWindow)?.id) {
-          log.info(`Inspect prompt: ${browserWindow?.id}`, {
+        // Type check to ensure browserWindow is a BrowserWindow
+        if (browserWindow && 'id' in browserWindow && typeof (browserWindow as BrowserWindow).id === 'number') {
+          const bw = browserWindow as BrowserWindow;
+          log.info(`Inspect prompt: ${bw.id}`, {
             browserWindow,
           });
           prompts
-            .find((prompt) => prompt?.window?.id === browserWindow?.id)
+            .find((prompt) => prompt?.window?.id === bw.id)
             ?.window?.webContents?.openDevTools({
               mode: 'detach',
             });
@@ -89,11 +92,13 @@ contextMenu({
     {
       label: 'Close',
       click: async () => {
-        if ((browserWindow as BrowserWindow)?.id) {
-          log.info(`Close prompt: ${browserWindow?.id}`, {
+        // Type check to ensure browserWindow is a BrowserWindow
+        if (browserWindow && 'id' in browserWindow && typeof (browserWindow as BrowserWindow).id === 'number') {
+          const bw = browserWindow as BrowserWindow;
+          log.info(`Close prompt: ${bw.id}`, {
             browserWindow,
           });
-          prompts.find((prompt) => prompt?.window?.id === browserWindow?.id)?.close('detach dev tools');
+          prompts.find((prompt) => prompt?.window?.id === bw.id)?.close('detach dev tools');
         }
       },
     },
@@ -582,6 +587,12 @@ export class KitPrompt {
   actionsOpen = false;
   wasActionsJustOpen = false;
 
+  // Long-running script monitoring
+  private longRunningTimer?: NodeJS.Timeout;
+  private hasShownLongRunningNotification = false;
+  private longRunningThresholdMs = 60000; // 1 minute default
+  private scriptStartTime?: number;
+
   birthTime = performance.now();
 
   lifeTime = () => {
@@ -649,7 +660,7 @@ export class KitPrompt {
   };
 
   clearSearch = () => {
-    if (kitState.kenvEnv?.KIT_NO_CLEAR_SEARCH) {
+    if (kitState.kenvEnv?.KIT_NO_CLEAR_SEARCH === 'true') {
       return;
     }
 
@@ -682,14 +693,416 @@ export class KitPrompt {
     this.flagSearch.qs = null;
   };
 
+  // Long-running script monitoring methods
+  private startLongRunningMonitor = () => {
+    // Clear any existing timer first to avoid duplicates
+    this.clearLongRunningMonitor();
+
+    // Check for custom threshold from environment variables
+    const customThreshold = (kitState?.kenvEnv as any)?.KIT_LONG_RUNNING_THRESHOLD;
+    if (customThreshold) {
+      const thresholdMs = Number.parseInt(customThreshold, 10) * 1000; // Convert seconds to ms
+      if (!Number.isNaN(thresholdMs) && thresholdMs > 0) {
+        this.longRunningThresholdMs = thresholdMs;
+      }
+    }
+
+    // Skip monitoring for main script or if disabled
+    if (
+      this.scriptPath === getMainScriptPath() ||
+      (kitState?.kenvEnv as any)?.KIT_DISABLE_LONG_RUNNING_MONITOR === 'true'
+    ) {
+      this.logInfo(`Skipping long-running monitor for ${this.scriptName} (main script or disabled)`);
+      return;
+    }
+
+    // Skip monitoring for idle prompts or prompts without valid scripts
+    if (!this.scriptPath || this.scriptPath === '' || !this.scriptName || this.scriptName === 'script-not-set') {
+      this.logInfo('Skipping long-running monitor for idle prompt (no valid script)');
+      return;
+    }
+
+    // Only set start time if it hasn't been set yet (to preserve original start time)
+    if (!this.scriptStartTime) {
+      this.scriptStartTime = Date.now();
+    }
+    this.hasShownLongRunningNotification = false;
+
+    this.longRunningTimer = setTimeout(() => {
+      if (!this.hasShownLongRunningNotification && !this.window?.isDestroyed()) {
+        this.showLongRunningNotification();
+        this.hasShownLongRunningNotification = true;
+      }
+    }, this.longRunningThresholdMs);
+
+    this.logInfo(`Started long-running monitor for ${this.scriptName} (${this.longRunningThresholdMs}ms)`);
+  };
+
+  private clearLongRunningMonitor = () => {
+    if (this.longRunningTimer) {
+      clearTimeout(this.longRunningTimer);
+      this.longRunningTimer = undefined;
+      this.logInfo(`Cleared long-running monitor for ${this.scriptName}`);
+    }
+  };
+
+  private showLongRunningNotification = () => {
+    if (!this.scriptStartTime) return;
+
+    // Don't show notifications for idle prompts or invalid scripts
+    if (!this.scriptName || this.scriptName === 'script-not-set' || !this.scriptPath || this.scriptPath === '') {
+      this.logInfo(`Skipping long-running notification for idle prompt (PID: ${this.pid})`);
+      return;
+    }
+
+    const runningTimeMs = Date.now() - this.scriptStartTime;
+    const runningTimeSeconds = Math.floor(runningTimeMs / 1000);
+    const scriptName = this.scriptName || 'Unknown Script';
+
+    // Try to provide context about why the script might be running long
+    let contextHint = '';
+    if (this.ui === UI.term) {
+      contextHint = ' It appears to be running a terminal command.';
+    } else if (this.ui === UI.editor) {
+      contextHint = ' It appears to be in an editor session.';
+    } else if (this.promptData?.input?.includes('http')) {
+      contextHint = ' It might be making network requests.';
+    } else if (this.promptData?.input?.includes('file') || this.promptData?.input?.includes('path')) {
+      contextHint = ' It might be processing files.';
+    } else if (this.ui === UI.arg && (this.promptData as any)?.choices?.length === 0) {
+      contextHint = ' It might be waiting for user input.';
+    }
+
+    this.logInfo(`Showing long-running notification for ${scriptName} (running for ${runningTimeSeconds}s)`);
+
+    const notification = new Notification({
+      title: 'Long-Running Script',
+      body: `"${scriptName}" has been running for ${runningTimeSeconds} seconds.${contextHint} Would you like to terminate it or let it continue?`,
+      actions: [
+        {
+          type: 'button',
+          text: 'Terminate Script',
+        },
+        {
+          type: 'button',
+          text: 'Keep Running',
+        },
+        {
+          type: 'button',
+          text: "Don't Ask Again",
+        },
+      ],
+      timeoutType: 'never',
+      urgency: 'normal',
+    });
+
+    notification.on('action', (event, index) => {
+      if (index === 0) {
+        // Terminate Script
+        this.logInfo(`User chose to terminate long-running script: ${scriptName}`);
+        this.terminateLongRunningScript();
+      } else if (index === 1) {
+        // Keep Running
+        this.logInfo(`User chose to keep running script: ${scriptName}`);
+        this.hasShownLongRunningNotification = true;
+      } else if (index === 2) {
+        // Don't Ask Again - could implement a whitelist in the future
+        this.logInfo(`User chose "don't ask again" for script: ${scriptName}`);
+        this.hasShownLongRunningNotification = true;
+        // TODO: Implement script whitelist functionality
+      }
+    });
+
+    notification.on('click', () => {
+      // Focus the prompt when notification is clicked
+      this.logInfo(`Long-running notification clicked for: ${scriptName}`);
+      this.focusPrompt();
+    });
+
+    notification.on('close', () => {
+      // Treat close as "keep running"
+      this.logInfo(`Long-running notification closed for: ${scriptName}`);
+      this.hasShownLongRunningNotification = true;
+    });
+
+    notification.show();
+  };
+
+  private terminateLongRunningScript = () => {
+    this.logInfo(`Terminating long-running script: ${this.scriptName} (PID: ${this.pid})`);
+
+    // Clear the monitor
+    this.clearLongRunningMonitor();
+
+    // Hide the prompt
+    this.hideInstant();
+
+    // Remove and kill the process
+    processes.removeByPid(this.pid, 'long-running script terminated by user');
+    emitter.emit(KitEvent.KillProcess, this.pid);
+
+    // Show a brief confirmation
+    const confirmNotification = new Notification({
+      title: 'Script Terminated',
+      body: `"${this.scriptName}" has been terminated.`,
+      timeoutType: 'default',
+    });
+
+    confirmNotification.show();
+  };
+
   boundToProcess = false;
+  // Process monitoring
+  private processMonitorTimer?: NodeJS.Timeout;
+  private processMonitoringEnabled = true;
+  private processCheckInterval = 5000; // Check every 5 seconds
+  private processConnectionLost = false;
+  private lastProcessCheckTime = 0;
+
   bindToProcess = (pid: number) => {
     if (this.boundToProcess) {
       return;
     }
     this.pid = pid;
     this.boundToProcess = true;
+    this.processConnectionLost = false;
+    this.lastProcessCheckTime = Date.now();
     this.logInfo(`${pid} -> ${this?.window?.id}: 🔗 Binding prompt to process`);
+
+    // Start monitoring for long-running scripts
+    this.startLongRunningMonitor();
+
+    // Start process monitoring
+    this.startProcessMonitoring();
+
+    // Listen for process exit events
+    this.listenForProcessExit();
+  };
+
+  /**
+   * Check if this prompt has lost connection to its process
+   */
+  hasLostProcessConnection = (): boolean => {
+    return this.boundToProcess && this.processConnectionLost;
+  };
+
+  /**
+   * Send notification about lost process connection
+   */
+  private notifyProcessConnectionLost = () => {
+    if (!this.scriptName || this.scriptName === 'unknown' || this.scriptName === 'script-not-set') {
+      this.logWarn(`Process connection lost for unknown script (PID: ${this.pid}) - skipping notification`);
+      return;
+    }
+
+    // Don't notify for idle prompts or prompts without valid scripts
+    if (!this.scriptPath || this.scriptPath === '') {
+      this.logWarn(`Process connection lost for idle prompt (PID: ${this.pid}) - skipping notification`);
+      return;
+    }
+
+    this.logInfo(`Showing process connection lost notification for ${this.scriptName} (PID: ${this.pid})`);
+
+    const notification = new Notification({
+      title: 'Script Process Connection Lost',
+      body: `"${this.scriptName}" (PID: ${this.pid}) is no longer responding. The prompt window is still open but disconnected from the process.`,
+      actions: [
+        {
+          type: 'button',
+          text: 'Close Prompt',
+        },
+        {
+          type: 'button',
+          text: 'Keep Open',
+        },
+        {
+          type: 'button',
+          text: 'Show Debug Info',
+        },
+      ],
+      timeoutType: 'never',
+      urgency: 'normal',
+    });
+
+    notification.on('action', (event, index) => {
+      if (index === 0) {
+        // Close Prompt
+        this.logInfo(`User chose to close disconnected prompt: ${this.scriptName}`);
+        this.close('user requested close after connection lost');
+      } else if (index === 1) {
+        // Keep Open
+        this.logInfo(`User chose to keep disconnected prompt open: ${this.scriptName}`);
+      } else if (index === 2) {
+        // Show Debug Info
+        this.logInfo(`User requested debug info for disconnected prompt: ${this.scriptName}`);
+        this.showProcessDebugInfo();
+      }
+    });
+
+    notification.on('click', () => {
+      this.focusPrompt();
+    });
+
+    notification.show();
+  };
+
+  /**
+   * Show debug information about the process connection
+   */
+  private showProcessDebugInfo = () => {
+    const debugInfo = {
+      promptId: this.id,
+      windowId: this.window?.id,
+      pid: this.pid,
+      scriptPath: this.scriptPath,
+      scriptName: this.scriptName,
+      boundToProcess: this.boundToProcess,
+      processConnectionLost: this.processConnectionLost,
+      lastProcessCheckTime: new Date(this.lastProcessCheckTime).toISOString(),
+      timeSinceLastCheck: Date.now() - this.lastProcessCheckTime,
+      isVisible: this.isVisible(),
+      isFocused: this.isFocused(),
+      isDestroyed: this.isDestroyed(),
+    };
+
+    this.logInfo('Process Debug Info:', debugInfo);
+
+    // Also send to all prompts so it can be displayed in any open debug panels
+    sendToAllPrompts(AppChannel.DEBUG_INFO, {
+      type: 'process-connection-lost',
+      data: debugInfo,
+    });
+  };
+
+  private startProcessMonitoring = () => {
+    if (!this.processMonitoringEnabled || this.processMonitorTimer) {
+      return;
+    }
+
+    // Check if monitoring is disabled via environment variable
+    if ((kitState?.kenvEnv as any)?.KIT_DISABLE_PROCESS_MONITOR === 'true') {
+      this.logInfo('Process monitoring disabled via KIT_DISABLE_PROCESS_MONITOR');
+      return;
+    }
+
+    // Skip monitoring for idle prompts or prompts without valid scripts
+    if (!this.scriptPath || this.scriptPath === '' || !this.scriptName || this.scriptName === 'script-not-set') {
+      this.logInfo(`Skipping process monitoring for idle prompt (no valid script)`);
+      return;
+    }
+
+    // Get custom check interval if set
+    const customInterval = (kitState?.kenvEnv as any)?.KIT_PROCESS_MONITOR_INTERVAL;
+    if (customInterval) {
+      const intervalMs = Number.parseInt(customInterval, 10) * 1000;
+      if (!Number.isNaN(intervalMs) && intervalMs > 0) {
+        this.processCheckInterval = intervalMs;
+      }
+    }
+
+    this.logInfo(`Starting process monitoring for PID ${this.pid} (checking every ${this.processCheckInterval}ms)`);
+
+    // Wait a bit before starting to monitor to give the process time to initialize
+    setTimeout(() => {
+      if (this.boundToProcess && this.pid) {
+        this.processMonitorTimer = setInterval(() => {
+          this.checkProcessAlive();
+        }, this.processCheckInterval);
+      }
+    }, 3000); // Wait 3 seconds before starting monitoring
+  };
+
+  private stopProcessMonitoring = () => {
+    if (this.processMonitorTimer) {
+      clearInterval(this.processMonitorTimer);
+      this.processMonitorTimer = undefined;
+      this.logInfo(`Stopped process monitoring for PID ${this.pid}`);
+    }
+  };
+
+  private checkProcessAlive = () => {
+    if (!this.pid || !this.boundToProcess) {
+      return;
+    }
+
+    // Don't check processes that were just bound (give them time to initialize)
+    if (this.scriptStartTime && Date.now() - this.scriptStartTime < 2000) {
+      return;
+    }
+
+    this.lastProcessCheckTime = Date.now();
+
+    try {
+      // Use process.kill(pid, 0) to check if process exists without actually killing it
+      // This will throw an error if the process doesn't exist
+      process.kill(this.pid, 0);
+
+      // If we get here, the process is still alive
+      // Reset connection lost flag if it was previously set
+      if (this.processConnectionLost) {
+        this.logInfo(`Process ${this.pid} reconnected or was temporarily unavailable`);
+        this.processConnectionLost = false;
+      }
+    } catch (error) {
+      // Process doesn't exist anymore
+      if (!this.processConnectionLost) {
+        this.logInfo(`Process ${this.pid} is no longer running. Setting connection lost flag.`);
+        this.processConnectionLost = true;
+
+        // Notify user about the lost connection
+        this.notifyProcessConnectionLost();
+      }
+
+      // Don't immediately clean up - let user decide via notification
+      // But after a timeout, clean up automatically
+      setTimeout(() => {
+        if (this.processConnectionLost && this.boundToProcess) {
+          this.logInfo(`Auto-cleaning up disconnected prompt after timeout: PID ${this.pid}`);
+          this.handleProcessGone();
+        }
+      }, 30000); // 30 seconds timeout
+    }
+  };
+
+  private listenForProcessExit = () => {
+    // Listen for the ProcessGone event from the process manager
+    const processGoneHandler = (pid: number) => {
+      if (pid === this.pid) {
+        this.logInfo(`Received ProcessGone event for PID ${this.pid}`);
+        this.handleProcessGone();
+      }
+    };
+
+    emitter.on(KitEvent.ProcessGone, processGoneHandler);
+
+    // Clean up listener when prompt is destroyed
+    this.window.once('closed', () => {
+      emitter.off(KitEvent.ProcessGone, processGoneHandler);
+    });
+  };
+
+  private handleProcessGone = () => {
+    if (!this.boundToProcess) {
+      return; // Already handled
+    }
+
+    this.logInfo(`Process ${this.pid} is gone. Cleaning up prompt.`);
+
+    // Stop monitoring
+    this.stopProcessMonitoring();
+    this.clearLongRunningMonitor();
+
+    // Mark as no longer bound
+    this.boundToProcess = false;
+
+    // Close/hide the prompt
+    this.hideInstant();
+
+    // Remove from processes if it's still there (defensive cleanup)
+    processes.removeByPid(this.pid, 'process gone - prompt cleanup');
+
+    // Reset the prompt state
+    this.resetState();
   };
 
   promptBounds = {
@@ -1184,7 +1597,7 @@ export class KitPrompt {
     const willMoveHandler = debounce(
       () => {
         this.logSilly('event: will-move');
-        kitState.modifiedByUser = true;
+        (kitState as any).modifiedByUser = true;
       },
       250,
       { leading: true },
@@ -1267,7 +1680,7 @@ export class KitPrompt {
   initShowPrompt = () => {
     this.logInfo(`${this.pid}:🎪 initShowPrompt: ${this.id} ${this.scriptPath}`);
     if (!kitState.isMac) {
-      if (kitState?.kenvEnv?.KIT_PROMPT_RESTORE === 'true') {
+      if ((kitState?.kenvEnv as any)?.KIT_PROMPT_RESTORE === 'true') {
         this.window?.restore();
       }
     }
@@ -2024,7 +2437,7 @@ export class KitPrompt {
       });
     }
 
-    if (promptData.flags) {
+    if (promptData.flags && typeof promptData.flags === 'object' && promptData.flags !== true) {
       this.logInfo(`🏳️‍🌈 Setting flags from setPromptData: ${Object.keys(promptData.flags)}`);
       setFlags(this, promptData.flags);
     }
@@ -2386,12 +2799,15 @@ export class KitPrompt {
 
   getCurrentScreenFromMouse = (): Display => {
     if (this.window?.isVisible() && !this.firstPrompt) {
-      const [x, y] = this.window?.getPosition();
-      const currentScreen = screen.getDisplayNearestPoint({ x, y });
-      this.logInfo(`Current screen from mouse: ${currentScreen.id}`, {
-        visible: this.isVisible,
-        firstPrompt: this.firstPrompt,
-      });
+      const position = this.window?.getPosition();
+      if (position) {
+        const [x, y] = position;
+        const currentScreen = screen.getDisplayNearestPoint({ x, y });
+        this.logInfo(`Current screen from mouse: ${currentScreen.id}`, {
+          visible: this.isVisible,
+          firstPrompt: this.firstPrompt,
+        });
+      }
     }
     const currentScreen = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
     this.logInfo(`Current screen from mouse: ${currentScreen.id}`, {
@@ -2411,7 +2827,18 @@ export class KitPrompt {
     this.ui = UI.arg;
     this.count = 0;
     this.id = '';
-    prompts.setIdle(this);
+
+    // Clear long-running monitor when resetting
+    this.clearLongRunningMonitor();
+
+    // Stop process monitoring when resetting
+    this.stopProcessMonitoring();
+
+    // Only set as idle if we're not currently in the process of being destroyed
+    // and if there isn't already an idle prompt
+    if (!this.closed && !this.window?.isDestroyed() && prompts.idle === null) {
+      prompts.setIdle(this);
+    }
 
     this.logInfo(`${this.pid}: 🚀 Prompt re-initialized`);
     const idles = getIdles();
@@ -2434,45 +2861,6 @@ export class KitPrompt {
     this.initMainChoices();
     this.initMainFlags();
     return;
-    // this.initMain = true;
-    // this.script = noScript;
-    // this.scriptPath = '';
-    // this.allowResize = true;
-    // this.resizing = false;
-    // this.isScripts = true;
-    // this.promptData = null as null | PromptData;
-    // this.firstPrompt = true;
-    // this.justFocused = true;
-    // this.ready = false;
-    // this.shown = false;
-    // this.alwaysOnTop = true;
-    // this.hideOnEscape = false;
-    // this.cacheScriptChoices = false;
-    // this.cacheScriptPromptData = false;
-    // this.cacheScriptPreview = false;
-    // this.actionsOpen = false;
-    // this.wasActionsJustOpen = false;
-
-    // this.logInfo(`${this.pid}: 🚀 Prompt re-initialized`);
-    // const idles = getIdles();
-    // this.logInfo(`${this.pid}: 🚀 Idles: ${idles.length}. Prompts: ${prompts.getPromptMap().size}`);
-    // // Logs all idle pids and prompts ids in a nice table format
-    // this.logInfo(
-    //   `Idles: ${idles.map((idle) => `${idle.pid}: ${prompts.get(idle.pid)?.window?.id || 'none'}`).join(',')}`,
-    // );
-
-    // const browserWindows = BrowserWindow.getAllWindows();
-    // this.logInfo(`Browser windows: ${browserWindows.map((window) => window.id).join(',')}`);
-
-    // const allPrompts = [...prompts];
-    // this.logInfo(`Prompts: ${allPrompts.map((prompt) => `${prompt.pid}: ${prompt.window?.id}`).join('\n')}`);
-
-    // this.logInfo(`Prompt map: ${allPrompts.map((prompt) => `${prompt.pid}: ${prompt.window?.id}`).join('\n')}`);
-
-    // // const idleProcess = idles[0];
-    // prompts.setIdle(this);
-    // // prompts.attachIdlePromptToProcess('♻️ prompt reset state', idleProcess.pid, this);
-    // // this.initPrompt();
   };
 
   scriptSet = false;
@@ -2523,6 +2911,12 @@ export class KitPrompt {
     // this.logInfo(`${this.pid}: sendToPrompt: ${Channel.SET_SCRIPT}`, serializableScript);
     this.sendToPrompt(Channel.SET_SCRIPT, serializableScript);
 
+    // Now that we have the script name and path, start long-running monitoring if bound to a process
+    if (this.boundToProcess && this.pid) {
+      this.logInfo(`Starting long-running monitor after script set: ${this.scriptName}`);
+      this.startLongRunningMonitor();
+    }
+
     if (serializableScript.filePath === getMainScriptPath()) {
       emitter.emit(KitEvent.MainScript, serializableScript);
     }
@@ -2569,6 +2963,13 @@ export class KitPrompt {
   closeCoolingDown = false;
   close = (reason = 'unknown') => {
     this.logInfo(`${this.pid}: "close" because ${reason}`);
+
+    // Clear long-running monitor when closing
+    this.clearLongRunningMonitor();
+
+    // Stop process monitoring when closing
+    this.stopProcessMonitoring();
+
     if (!kitState.allowQuit) {
       if (this.boundToProcess) {
         this.logInfo(`${this.pid}: "close" bound to process`);
@@ -2710,7 +3111,7 @@ export class KitPrompt {
       }
     }
     this.updateShortcodes();
-    if (promptData.flags) {
+    if (promptData.flags && typeof promptData.flags === 'object' && promptData.flags !== true) {
       this.logInfo(`🏴‍☠️ Setting flags from preloadPromptData: ${Object.keys(promptData.flags)}`);
       setFlags(this, promptData.flags);
     }

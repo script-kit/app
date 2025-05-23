@@ -1,5 +1,6 @@
 import { promptLog } from './logs';
 import { KitPrompt } from './prompt';
+import { processes } from './process';
 
 const promptMap = new Map<number, KitPrompt>();
 
@@ -28,24 +29,42 @@ export const prompts = {
       const prompt = new KitPrompt();
       promptLog.info(`🌅 Initializing idle prompt with window id:${prompt.window?.id}`);
 
-      prompt.window?.on('focus', () => {
-        this.focused = prompt;
-        this.prevFocused = null;
-        promptLog.info(`${prompt.pid}: Focusing on prompt from prompts handler ${prompt.id}`);
-      });
-      prompt.window?.on('blur', () => {
-        this.prevFocused = prompt;
-        promptLog.info(`${prompt.pid}: Blurred prompt from prompts handler ${prompt.id}`);
-      });
+      // Set up window event handlers with error handling
+      if (prompt.window) {
+        prompt.window.on('focus', () => {
+          try {
+            this.focused = prompt;
+            this.prevFocused = null;
+            promptLog.info(`${prompt.pid}: Focusing on prompt from prompts handler ${prompt.id}`);
+          } catch (error) {
+            promptLog.error(`Error handling focus event for prompt ${prompt.pid}:`, error);
+          }
+        });
 
-      prompt.window?.on('hide', () => {
-        if (this.focused === prompt) {
-          this.focused = null;
-        }
-        if (this.prevFocused === prompt) {
-          this.prevFocused = null;
-        }
-      });
+        prompt.window.on('blur', () => {
+          try {
+            this.prevFocused = prompt;
+            promptLog.info(`${prompt.pid}: Blurred prompt from prompts handler ${prompt.id}`);
+          } catch (error) {
+            promptLog.error(`Error handling blur event for prompt ${prompt.pid}:`, error);
+          }
+        });
+
+        prompt.window.on('hide', () => {
+          try {
+            if (this.focused === prompt) {
+              this.focused = null;
+            }
+            if (this.prevFocused === prompt) {
+              this.prevFocused = null;
+            }
+          } catch (error) {
+            promptLog.error(`Error handling hide event for prompt ${prompt.pid}:`, error);
+          }
+        });
+      } else {
+        promptLog.warn(`No window available for prompt ${prompt.pid}, skipping event handlers`);
+      }
 
       this.idle = prompt;
 
@@ -60,14 +79,25 @@ export const prompts = {
    * @returns The newly created prompt.
    */
   createDebuggedPrompt: async function (): Promise<KitPrompt> {
-    this.createPromptIfNoIdle();
+    const created = this.createPromptIfNoIdle();
     const idlePrompt = this.idle;
-    if (idlePrompt && !idlePrompt.ready) {
-      promptLog.info('🐞 Waiting for prompt to be ready...');
-      await idlePrompt.waitForReady();
+
+    if (!idlePrompt) {
+      throw new Error('Failed to create idle prompt for debugging');
     }
-    promptLog.info(`${idlePrompt?.pid}: 🌅 Idle prompt ready with window id:${idlePrompt?.window?.id}`);
-    return idlePrompt!;
+
+    if (!idlePrompt.ready) {
+      promptLog.info('🐞 Waiting for prompt to be ready...');
+      try {
+        await idlePrompt.waitForReady();
+      } catch (error) {
+        promptLog.error('Failed to wait for prompt to be ready:', error);
+        throw new Error(`Failed to initialize idle prompt: ${error}`);
+      }
+    }
+
+    promptLog.info(`${idlePrompt.pid}: 🌅 Idle prompt ready with window id:${idlePrompt.window?.id}`);
+    return idlePrompt;
   },
 
   /**
@@ -82,6 +112,34 @@ export const prompts = {
    * @returns The attached prompt.
    */
   timeout: null as NodeJS.Timeout | null,
+
+  /**
+   * Safely clears the current timeout if it exists
+   */
+  _clearTimeout: function () {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
+    }
+  },
+
+  /**
+   * Schedules idle prompt creation with proper timeout management
+   */
+  _scheduleIdleCreation: function (runId: string, delay = 100) {
+    this._clearTimeout();
+
+    promptLog.info(`${runId}: 🔗 Scheduling new idle prompt creation in ${delay}ms`);
+    this.timeout = setTimeout(() => {
+      promptLog.info(`${runId}: 🔗 Creating new idle prompt after timeout`);
+      this.timeout = null;
+      try {
+        this.createPromptIfNoIdle();
+      } catch (error) {
+        promptLog.error(`${runId}: Failed to create idle prompt after timeout:`, error);
+      }
+    }, delay);
+  },
   setIdle: function (idlePrompt: KitPrompt) {
     promptLog.info(`-------------------------------> Setting idle prompt to ${idlePrompt.pid}`);
     promptMap.delete(idlePrompt.pid);
@@ -105,7 +163,22 @@ export const prompts = {
     promptLog.info(
       `🔗 Attaching created prompt ${this.idle?.window?.id} to process ${pid}. Created? ${created ? 'yes' : 'no'}`,
     );
-    const prompt = this.idle as KitPrompt;
+
+    if (!this.idle) {
+      promptLog.error(`${runId}: Failed to create or get idle prompt for process ${pid}. Attempting recovery...`);
+
+      // Try one more time to create an idle prompt
+      const retryCreated = this.createPromptIfNoIdle();
+      promptLog.info(
+        `${runId}: Retry attempt: Created? ${retryCreated ? 'yes' : 'no'}, idle exists? ${this.idle ? 'yes' : 'no'}`,
+      );
+
+      if (!this.idle) {
+        throw new Error(`Failed to create or get idle prompt for process ${pid} after retry`);
+      }
+    }
+
+    const prompt = this.idle;
     this.idle = null;
     prompt.bindToProcess(pid);
 
@@ -115,21 +188,9 @@ export const prompts = {
       prompt.initMainPrompt('attachIdlePromptToProcess');
     }
 
-    if (!(created || idleSet)) {
-      if (this.timeout) {
-        clearTimeout(this.timeout);
-        this.timeout = null;
-        promptLog.info(`${runId}: 🔗 Cleared timeout`);
-      }
-      promptLog.info(`${runId}: 🔗 Starting a timeout to create a new idle prompt because`, {
-        created: created ? 'yes' : 'no',
-      });
-      this.timeout = setTimeout(() => {
-        promptLog.info(`${runId}: 🔗 Creating new idle prompt after timeout`);
-        this.timeout = null;
-        this.createPromptIfNoIdle();
-      }, 100);
-    }
+    // Always schedule creation of a new idle prompt to ensure we have one ready
+    this._scheduleIdleCreation(runId);
+
     return prompt;
   },
 
@@ -143,20 +204,31 @@ export const prompts = {
       promptLog.info(`${pid}: 🤷‍♂️ Attempted "delete". Prompt not found...`);
       return;
     }
-    promptLog.info(`${pid}: 🥱 promptMap delete`);
+
+    promptLog.info(`${pid}: 🥱 Deleting prompt from map`);
     promptMap.delete(pid);
-    if (prompt.isDestroyed()) {
-      return;
-    }
+
+    // Clean up references
     if (this.focused === prompt) {
       this.focused = null;
     }
     if (this.prevFocused === prompt) {
       this.prevFocused = null;
     }
-    prompt.actualHide();
-    promptLog.info(`${pid}: 🥱 Closing prompt`);
-    prompt.close('prompts.delete');
+
+    // Only close if not already destroyed
+    if (!prompt.isDestroyed()) {
+      try {
+        if (prompt.window && typeof prompt.actualHide === 'function') {
+          prompt.actualHide();
+        }
+        promptLog.info(`${pid}: 🥱 Closing prompt`);
+        prompt.close('prompts.delete');
+      } catch (error) {
+        promptLog.warn(`${pid}: Error closing prompt:`, error);
+      }
+    }
+
     promptLog.info(`${pid}: 🚮 Deleted prompt. ${promptMap.size} prompts remaining.`);
   },
 
@@ -198,34 +270,47 @@ export const prompts = {
    * @returns The last focused prompt, or null if no prompt is focused or the last focused prompt is destroyed.
    */
   getPrevFocusedPrompt: (): KitPrompt | null => {
-    for (const prompt of prompts) {
+    for (const prompt of promptMap.values()) {
       if (prompt.isFocused()) {
         promptLog.info(`🔍 Found focused prompt: ${prompt.id}.`);
         return null;
       }
     }
-    const prevFocused = prompts.focused && !prompts.focused.isDestroyed() && !prompts.focused ? prompts.focused : null;
+    const prevFocused = prompts.prevFocused && !prompts.prevFocused.isDestroyed() ? prompts.prevFocused : null;
 
     promptLog.info(`🔍 Found prev-focused prompt that's not focused: ${prevFocused?.id}`);
     return prevFocused;
   },
 
   bringAllPromptsToFront: () => {
-    const sortedPrompts = Array.from(promptMap.values()).sort((a, b) => {
-      const posA = a.window?.getPosition() || [0, 0];
-      const posB = b.window?.getPosition() || [0, 0];
-      if (posA[1] !== posB[1]) {
-        return posA[1] - posB[1]; // Sort by y-coordinate first
-      }
-      return posA[0] - posB[0]; // Then sort by x-coordinate
-    });
+    try {
+      const sortedPrompts = Array.from(promptMap.values())
+        .filter((prompt) => prompt !== prompts.idle && prompt.window && !prompt.isDestroyed())
+        .sort((a, b) => {
+          try {
+            const posA = a.window?.getPosition() || [0, 0];
+            const posB = b.window?.getPosition() || [0, 0];
+            if (posA[1] !== posB[1]) {
+              return posA[1] - posB[1]; // Sort by y-coordinate first
+            }
+            return posA[0] - posB[0]; // Then sort by x-coordinate
+          } catch (error) {
+            promptLog.warn('Error getting window position for sorting:', error);
+            return 0;
+          }
+        });
 
-    for (const prompt of sortedPrompts) {
-      // ignore this
-      if (prompt === prompts.idle) {
-        continue;
+      for (const prompt of sortedPrompts) {
+        try {
+          if (prompt.window && !prompt.isDestroyed()) {
+            prompt.window.focus();
+          }
+        } catch (error) {
+          promptLog.warn(`Failed to focus prompt ${prompt.pid}:`, error);
+        }
       }
-      prompt.window?.focus();
+    } catch (error) {
+      promptLog.error('Error bringing prompts to front:', error);
     }
   },
 
@@ -234,5 +319,100 @@ export const prompts = {
    */
   *[Symbol.iterator]() {
     yield* promptMap.values();
+  },
+
+  /**
+   * Cleanup all orphaned prompts that aren't attached to running processes
+   */
+  cleanupOrphanedPrompts: function (): number {
+    let cleanedCount = 0;
+    const allProcessPids = new Set(processes.getAllProcessInfo().map((p) => p.pid));
+
+    // Check all prompts in the map
+    for (const [pid, prompt] of promptMap.entries()) {
+      if (!allProcessPids.has(pid)) {
+        promptLog.warn(`Found orphaned prompt ${prompt.window?.id} for PID ${pid}, cleaning up`);
+        prompt.close('orphaned prompt cleanup');
+        promptMap.delete(pid);
+        cleanedCount++;
+      }
+    }
+
+    // Check for prompts bound to processes that no longer exist
+    // Note: This only iterates over promptMap.values(), so idle prompts are safe
+    for (const prompt of this) {
+      // Extra safety: never reset the current idle prompt
+      if (prompt === this.idle) {
+        promptLog.info(`Skipping cleanup for current idle prompt ${prompt.window?.id}`);
+        continue;
+      }
+
+      if (prompt.boundToProcess && prompt.pid && !allProcessPids.has(prompt.pid)) {
+        promptLog.warn(`Found prompt ${prompt.window?.id} bound to non-existent process ${prompt.pid}, resetting`);
+        prompt.resetState();
+        cleanedCount++;
+      }
+    }
+
+    if (cleanedCount > 0) {
+      promptLog.info(`Cleaned up ${cleanedCount} orphaned prompts`);
+    }
+
+    return cleanedCount;
+  },
+
+  /**
+   * Get detailed status of all prompts for debugging
+   */
+  getPromptStatus: function (): Array<{
+    windowId: number;
+    pid: number;
+    boundToProcess: boolean;
+    scriptPath: string;
+    isVisible: boolean;
+    isFocused: boolean;
+    isDestroyed: boolean;
+    isIdle: boolean;
+  }> {
+    const status: Array<{
+      windowId: number;
+      pid: number;
+      boundToProcess: boolean;
+      scriptPath: string;
+      isVisible: boolean;
+      isFocused: boolean;
+      isDestroyed: boolean;
+      isIdle: boolean;
+    }> = [];
+
+    // Add idle prompt status
+    if (this.idle) {
+      status.push({
+        windowId: this.idle.window?.id || -1,
+        pid: this.idle.pid,
+        boundToProcess: this.idle.boundToProcess,
+        scriptPath: this.idle.scriptPath || '(idle)',
+        isVisible: this.idle.isVisible(),
+        isFocused: this.idle.isFocused(),
+        isDestroyed: this.idle.isDestroyed(),
+        isIdle: true,
+      });
+    }
+
+    // Add all mapped prompts
+    for (const [pid, prompt] of promptMap.entries()) {
+      status.push({
+        windowId: prompt.window?.id || -1,
+        pid,
+        boundToProcess: prompt.boundToProcess,
+        scriptPath: prompt.scriptPath || '(unknown)',
+        isVisible: prompt.isVisible(),
+        isFocused: prompt.isFocused(),
+        isDestroyed: prompt.isDestroyed(),
+        isIdle: false,
+      });
+    }
+
+    return status;
   },
 };

@@ -1,0 +1,75 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Debugging with Script Kit Logs
+
+## Log System Overview
+
+Script Kit has a comprehensive logging system defined in [./src/main/logs.ts](./src/main/logs.ts). Logs are written to `~/Library/Logs/ScriptKit/` and are organized by component type.
+
+## Available Log Files
+
+The system creates separate log files for different components:
+- `main.log` - Main application logs
+- `term.log` - Terminal/PTY related logs (useful for invoke-pty debugging)
+- `process.log` - Process management logs
+- `script.log` - Script execution logs
+- `error.log` - Error logs across all components
+- `prompt.log` - Prompt-related logs
+- `ipc.log` - Inter-process communication logs
+- `debug.log` - Debug-specific logs
+- And many others (see [./src/main/logs.ts](./src/main/logs.ts) for the full list)
+
+## Debugging Workflow
+
+When debugging issues, follow this process:
+
+### 1. Ask User to Run the Application
+Before checking logs, always ask the user to:
+1. Run the Script Kit application
+2. Confirm when the app is running
+3. Perform the specific actions that are causing issues
+
+### 2. Wait for User Confirmation
+Wait for the user to explicitly tell you:
+- "The app is running"
+- That they have performed the problematic actions
+- Any specific error messages they see in the UI
+
+### 3. Check Relevant Logs
+Once the user confirms they've reproduced the issue, check the appropriate log files:
+
+```bash
+# For terminal/PTY issues (like invoke-pty problems)
+tail -n 100 ~/Library/Logs/ScriptKit/term.log
+
+# For general application issues
+tail -n 100 ~/Library/Logs/ScriptKit/main.log
+
+# For errors
+tail -n 100 ~/Library/Logs/ScriptKit/error.log
+
+# For process-related issues
+tail -n 100 ~/Library/Logs/ScriptKit/process.log
+```
+
+### 4. Log Analysis
+Look for:
+- Error messages and stack traces
+- Performance timing information (console.log messages with timing)
+- Component-specific debug output
+- PTY pool behavior (for terminal issues)
+
+## Example Debug Session
+
+```
+Assistant: "Please run the Script Kit application and let me know when it's running."
+User: "The app is running"
+Assistant: "Great! Now please try the action that's causing the issue."
+User: "I tried running a script and it's slow"
+Assistant: "Perfect. Let me check the logs to see what's happening."
+```
+
+Then check relevant logs based on the issue type.
