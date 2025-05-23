@@ -37,7 +37,8 @@ import { KitEvent, emitter } from '../shared/events';
 import { mainLogPath, updateLogPath } from './logs';
 import { processes } from './process';
 import { prompts } from './prompts';
-import { startServer, stopServer } from './server';
+// Removed top-level import to prevent early initialization issues
+// import { startServer, stopServer } from './server';
 import { getServerPort } from './serverTrayUtils';
 import { forceQuit, kitState, subs } from './state';
 import { getVersion } from './version';
@@ -443,7 +444,9 @@ const buildServerSubmenu = (): MenuItemConstructorOptions[] => {
     return [
       {
         label: 'Stop Server',
-        click: () => {
+        click: async () => {
+          // Dynamic import to prevent early initialization issues
+          const { stopServer } = await import('./server');
           stopServer();
         },
       },
@@ -452,7 +455,9 @@ const buildServerSubmenu = (): MenuItemConstructorOptions[] => {
   return [
     {
       label: 'Start Server',
-      click: () => {
+      click: async () => {
+        // Dynamic import to prevent early initialization issues
+        const { startServer } = await import('./server');
         startServer();
       },
     },

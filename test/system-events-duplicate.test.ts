@@ -170,6 +170,7 @@ describe('system-events duplicate registration', () => {
       type: ProcessType.System,
       command: 'node',
       id: 'test-script',
+      name: 'test-script',
     };
 
     // Register first time
@@ -200,10 +201,11 @@ describe('system-events duplicate registration', () => {
     const testScript = {
       filePath: '/test/path/multi-event-script.ts',
       kenv: '',
-      system: 'suspend lock-screen' as const, // Multiple events
+      system: 'suspend lock-screen' as any,
       type: ProcessType.System,
       command: 'node',
       id: 'test-multi-event-script',
+      name: 'test-multi-event-script',
     };
 
     // Register the script with multiple system events

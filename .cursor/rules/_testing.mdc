@@ -1,0 +1,389 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Testing Guide for Script Kit App
+
+## Avoid Running the App
+
+Never, ever run the app. Ask me to start it, then you can check the logs.
+
+## Test Configuration
+
+### Performance Optimizations
+- Use `bail: 1` for fast failure (stop on first test failure)
+- Enable parallel execution with `singleThread: false` and `isolate: true` for speed
+- Set reasonable thread limits: `maxThreads: 4`, `minThreads: 2`
+- Use `vitest run` instead of `vitest` for single test runs
+
+### Environment Setup
+- **Main process tests**: Use `node` environment
+- **Renderer tests**: Use `jsdom` environment
+- Configure separate vitest workspace configs for different environments
+
+### Test Script Configuration
+```json
+{
+  "scripts": {
+    "test": "vitest run"  // Single run, not watch mode
+  }
+}
+```
+
+## Test Execution Strategy
+
+### Concurrent vs Sequential Testing
+Choose the right execution strategy based on test complexity:
+
+#### ✅ Parallel Tests (Use `describe.concurrent()`)
+- Simple file operations (create, read, delete)
+- Basic validation tests
+- Mock-heavy tests with no external dependencies
+- Tests that don't require complex timing
+
+#### ✅ Sequential Tests (Use regular `describe()`)
+- File system operations that require exclusive access
+- Directory renames and complex file operations
+- Tests with intricate timing dependencies
+- Resource-intensive operations
+
+### Load-Resilient Test Design
+Tests must work under both isolated and concurrent execution:
+
+```typescript
+// ❌ Fragile - only works in isolation
+const events = await collectEvents(500, async () => {
+  await writeFile(path, content);
+});
+
+// ✅ Robust - works under system load
+const events = await collectEventsIsolated(1500, async (events, dirs) => {
+  await writeFile(path, content);
+  // Wait for file system under load
+  await new Promise(resolve => setTimeout(resolve, 300));
+});
+```
+
+### Test Environment Differences
+Be aware that `pnpm test` creates different conditions than individual file execution:
+
+- **Individual files**: Lower resource contention, faster execution
+- **Full test suite**: Higher system load, requires longer timeouts
+- **Solution**: Design tests to be resilient to both conditions
+
+## Mocking Strategies
+
+### ✅ What Works
+
+#### Inline Mocks in Test Files
+Prefer inline mocks over shared mock utilities to avoid circular dependencies:
+
+```typescript
+vi.mock('electron', () => ({
+  app: {
+    getPath: vi.fn((name: string) => {
+      switch (name) {
+        case 'userData': return '/Users/test/Library/Application Support/ScriptKit';
+        default: return '/Users/test';
+      }
+    }),
+    // ... other app methods
+  },
+  powerMonitor: {
+    on: vi.fn(),
+    addListener: vi.fn(),  // Important: Include both on AND addListener
+    listeners: vi.fn(() => []),
+  }
+}));
+```
+
+#### Essential Electron APIs to Mock
+- `app.getPath()` - Critical for path resolution
+- `powerMonitor.addListener()` - Not just `on()`, include both
+- `nativeTheme` - Often required by components
+- `BrowserWindow` - With full webContents mock
+- `crashReporter.start()` - Often called during initialization
+
+#### Electron-log Mock Structure
+```typescript
+vi.mock('electron-log', () => ({
+  default: {
+    transports: {
+      file: { level: 'info' },
+      console: { level: false },
+      ipc: { level: false },  // Essential - prevents "Cannot set properties of undefined"
+    },
+    info: vi.fn(),
+    error: vi.fn(),
+    // ... other log methods
+  }
+}));
+```
+
+#### Node.js Module Mocking
+For `node:os` and other Node modules, provide complete API surface:
+```typescript
+vi.mock('node:os', () => ({
+  default: {
+    homedir: vi.fn(() => '/Users/test'),
+    platform: vi.fn(() => 'darwin'),
+    // ... all other os methods
+    constants: {
+      signals: { /* full signal definitions */ }
+    }
+  }
+}));
+```
+
+### ❌ What Doesn't Work
+
+#### Shared Mock Utilities
+Avoid creating shared mock files that are imported across tests:
+```typescript
+// ❌ Don't do this - causes circular dependencies
+import { setupCommonMocks } from './src/test-utils/mocks';
+```
+
+#### Incomplete Mock Objects
+Missing required properties cause runtime errors:
+```typescript
+// ❌ Incomplete - missing required properties
+const testScript = {
+  filePath: '/test/path/script.ts',
+  system: 'resume'
+  // Missing: command, id, name
+};
+```
+
+#### Complex Debounce/Timing Tests
+Tests that rely on complex timing with fake timers and lodash debounce are fragile:
+```typescript
+// ❌ Fragile - timing-dependent
+vi.advanceTimersByTime(250);
+expect(debouncedFunction).toHaveBeenCalledTimes(2);
+```
+
+## Test Object Requirements
+
+### Script Objects
+When creating test script objects, include all required properties:
+```typescript
+const testScript = {
+  filePath: '/test/path/script.ts',
+  kenv: '',
+  system: 'resume' as const,
+  type: ProcessType.System,
+  command: 'node',      // Required
+  id: 'test-script',    // Required
+  name: 'test-script'   // Required for Choice interface
+};
+```
+
+### System Event Strings
+Use proper system event syntax:
+```typescript
+system: 'suspend lock-screen' as const  // Multiple events
+system: 'resume' as const               // Single event
+```
+
+## Mock State Management
+
+### Between Tests
+```typescript
+beforeEach(() => {
+  vi.useFakeTimers();
+  // Don't clear mocks if they're used by debounced functions
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.clearAllMocks(); // Clear after tests complete
+});
+```
+
+### PowerMonitor Event Handling
+For tests that need to simulate events:
+```typescript
+const mockElectronBase = vi.hoisted(() => {
+  const handlers = new Map();
+  return {
+    powerMonitor: {
+      addListener: vi.fn((event: string, handler: Function) => {
+        if (!handlers.has(event)) handlers.set(event, []);
+        handlers.get(event).push(handler);
+      }),
+      listeners: vi.fn((event: string) => handlers.get(event) || [])
+    }
+  };
+});
+```
+
+## Integration vs Unit Tests
+
+### Skip Integration Tests
+Integration tests that require external dependencies should be skipped in the main test suite:
+```typescript
+it.skip('should run external command', async () => {
+  // Test requires pnpm, specific file paths, etc.
+});
+```
+
+### Focus on Unit Logic
+Test the core business logic rather than external integrations:
+- File watching logic (mocked file operations)
+- Event registration/deregistration
+- State management
+- Component rendering
+
+## Performance Testing
+
+### File System Tests
+Use temporary directories and proper cleanup:
+```typescript
+const testDir = vi.hoisted(() =>
+  import('tmp-promise').then(({ dir }) => dir({ unsafeCleanup: true }))
+);
+```
+
+### Isolated Directory Pattern
+For file system tests that need complete isolation from each other:
+
+```typescript
+/**
+ * Create isolated test directories for parallel-safe testing
+ */
+async function createIsolatedTestDirs(testName: string) {
+  const { dir } = await import('tmp-promise');
+  const tmpDir = await dir({
+    unsafeCleanup: true,
+    prefix: `test-${testName}-`,
+  });
+
+  const isolatedDirs = {
+    root: tmpDir.path,
+    kit: path.join(tmpDir.path, '.kit'),
+    kenv: path.join(tmpDir.path, '.kenv'),
+    scripts: path.join(tmpDir.path, '.kenv', 'scripts'),
+    // ... other directories
+    cleanup: tmpDir.cleanup,
+  };
+
+  // Create directory structure
+  await Promise.all([
+    ensureDir(isolatedDirs.kit),
+    ensureDir(isolatedDirs.kenv),
+    ensureDir(isolatedDirs.scripts),
+  ]);
+
+  return isolatedDirs;
+}
+
+/**
+ * Isolated test execution with environment variable override
+ */
+async function collectEventsIsolated(
+  duration: number,
+  action: (events: TestEvent[], dirs: any) => Promise<void>,
+  testName: string,
+): Promise<TestEvent[]> {
+  const isolatedDirs = await createIsolatedTestDirs(testName);
+
+  // Override environment variables for this test
+  const originalKIT = process.env.KIT;
+  const originalKENV = process.env.KENV;
+  process.env.KIT = isolatedDirs.kit;
+  process.env.KENV = isolatedDirs.kenv;
+
+  try {
+    // Execute test logic...
+    return events;
+  } finally {
+    // Restore environment variables
+    process.env.KIT = originalKIT;
+    process.env.KENV = originalKENV;
+    await isolatedDirs.cleanup();
+  }
+}
+```
+
+### Test Isolation Strategy
+Choose isolation level based on test requirements:
+
+- **Shared test directory**: Fast, but potential cross-test interference
+- **Isolated directories**: Slower setup, but complete isolation
+- **Environment variable override**: Essential for file system tests
+
+### Timing Guidelines
+Adjust timeouts based on execution context:
+
+```typescript
+// ❌ Fixed timing - breaks under load
+it('should detect file changes', async () => {
+  // Always fails when system is busy
+  const events = await collectEvents(500, ...);
+}, 3000);
+
+// ✅ Load-aware timing
+it('should detect file changes', async () => {
+  const events = await collectEventsIsolated(
+    1500, // Longer collection time for concurrent environment
+    async (events, dirs) => {
+      await writeFile(filePath, content);
+      // Extra wait for file system under load
+      await new Promise(resolve => setTimeout(resolve, 300));
+    },
+    'test-name'
+  );
+}, 8000); // Longer overall timeout
+```
+
+## Common Pitfalls
+
+1. **Missing `addListener` in powerMonitor** - Electron uses both `on` and `addListener`
+2. **Incomplete electron-log transports** - Must include `ipc` transport
+3. **Type mismatches in test objects** - Include all required Script properties
+4. **Mock state bleeding between tests** - Timing of `vi.clearAllMocks()`
+5. **Integration test failures** - Skip tests requiring external setup
+6. **Resource contention in parallel tests** - Move complex operations to sequential execution
+7. **Fixed timing assumptions** - Tests fail under system load, use load-aware timeouts
+8. **Ignoring test environment differences** - `pnpm test` vs individual files require different strategies
+9. **Over-engineering solutions** - Sometimes moving tests is better than complex timing fixes
+10. **Insufficient isolation** - File system tests interfere without proper directory isolation
+
+## Problem-Solving Strategy
+
+When tests fail intermittently:
+
+1. **First, try the obvious solution** - Move timing-sensitive tests to sequential execution
+2. **Increase timeouts progressively** - 500ms → 1500ms → 2000ms until stable
+3. **Add load-aware waits** - Extra delays between file operations under concurrent load
+4. **Use isolated directories** - Prevent cross-test contamination
+5. **Check execution context** - Individual vs full test suite may need different approaches
+
+## Performance Optimization Results
+
+### Actual Optimization Case Study (Chokidar Tests)
+- **Original**: 30.9 seconds, multiple failures
+- **After timing optimization**: 17.0 seconds, 100% passing
+- **After strategic test placement**: 18.1 seconds, 100% reliable
+- **Total improvement**: 42% faster + 100% reliability
+
+### Key Strategies That Worked
+1. **Strategic test categorization** - Parallel vs sequential based on complexity
+2. **Load-resilient timing** - Timeouts that work under system load
+3. **Isolated directory pattern** - Complete test isolation
+4. **Pragmatic problem solving** - Move problematic tests rather than fix timing
+
+## Success Metrics
+
+A well-optimized test suite should achieve:
+- ✅ 75+ tests passing (expanded coverage)
+- ✅ ~21 second execution time (full suite)
+- ✅ 100% reliability under both individual and concurrent execution
+- ✅ Clean exit code (0) in all environments
+- ✅ Strategic test placement (parallel vs sequential)
+- ✅ Load-resilient timing patterns
+- ✅ Comprehensive file system coverage with proper isolation
+
+Focus on **reliability over speed** - better to have slightly slower tests that always pass than fast tests that fail intermittently.

@@ -22,42 +22,181 @@ export const startServer = () => {
     return;
   }
 
-  // Initialize Express app
-  app = express();
+  log.info('🚀 Starting server initialization...');
+
+  try {
+    // Initialize Express app
+    log.info('🚀 Creating Express app...');
+    app = express();
+    log.info('🚀 Express app created successfully');
+  } catch (error) {
+    log.error('🚀 Error creating Express app:', error);
+    throw error;
+  }
 
   // Middleware
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // CORS middleware
-  app.use((req, res, next) => {
-    const headersOrigin = [req.headers?.origin as string | ''].filter(Boolean);
-    const allowedOrigins = splitEnvVarIntoArray(kitState.kenvEnv?.KIT_ALLOWED_ORIGINS, ['*']).concat(headersOrigin);
+  // CORS middleware - using simple cors() to avoid path-to-regexp issues
+  app.use(cors());
 
-    cors({
-      origin: function (origin, callback) {
-        if (!origin) {
-          return callback(null, true);
+  // Route handlers - using specific patterns instead of wildcards to avoid path-to-regexp issues
+
+  // Handle root path separately
+  app.all('/', async (req, res, next) => {
+    const script = '';
+    let apiKey = '';
+
+    if (req.method === 'POST') {
+      const authHeader = req.headers.authorization || '';
+      apiKey = authHeader.startsWith('Bearer ')
+        ? authHeader.slice(7)
+        : authHeader.includes(' ')
+          ? authHeader.split(' ')[1]
+          : authHeader;
+
+      const bodyScript = req.body?.script || script;
+      const args = req.body?.args || [];
+      const cwd = req.body?.cwd || kenvPath();
+      const headers = req.headers as Record<string, string>;
+      log.info({ script: bodyScript, args, cwd });
+
+      try {
+        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers);
+        if (typeof result.data === 'string') {
+          res.send(result.data);
+        } else if (typeof result.data === 'object') {
+          res.json(result.data);
+        } else {
+          res.send(result?.message || 'No response from script');
         }
+      } catch (error) {
+        next(error);
+      }
+    } else {
+      const args = (req.query.arg as string[]) || [];
+      const cwd = (req.query.cwd as string) || process.cwd();
 
-        if (allowedOrigins.includes('*')) {
-          return callback(null, true);
+      log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
+
+      try {
+        const result = await handleScript(script, args, cwd, true, apiKey);
+        if (typeof result.data === 'string') {
+          res.send(result.data);
+        } else {
+          res.json(result);
         }
-
-        if (allowedOrigins.includes(origin)) {
-          return callback(null, true);
-        }
-
-        return callback(new Error('Not allowed by CORS'));
-      },
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-      credentials: true,
-    })(req, res, next);
+      } catch (error) {
+        next(error);
+      }
+    }
   });
 
-  // Route handler
-  app.all('*', async (req, res, next) => {
+  // Handle single-level paths like /script-name
+  app.all('/:script', async (req, res, next) => {
+    const scriptPathParts = req.path.split('/').filter(Boolean);
+    const script = scriptPathParts.join('/');
+    let apiKey = '';
+
+    if (req.method === 'POST') {
+      const authHeader = req.headers.authorization || '';
+      apiKey = authHeader.startsWith('Bearer ')
+        ? authHeader.slice(7)
+        : authHeader.includes(' ')
+          ? authHeader.split(' ')[1]
+          : authHeader;
+
+      const bodyScript = req.body?.script || script;
+      const args = req.body?.args || [];
+      const cwd = req.body?.cwd || kenvPath();
+      const headers = req.headers as Record<string, string>;
+      log.info({ script: bodyScript, args, cwd });
+
+      try {
+        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers);
+        if (typeof result.data === 'string') {
+          res.send(result.data);
+        } else if (typeof result.data === 'object') {
+          res.json(result.data);
+        } else {
+          res.send(result?.message || 'No response from script');
+        }
+      } catch (error) {
+        next(error);
+      }
+    } else {
+      const args = (req.query.arg as string[]) || [];
+      const cwd = (req.query.cwd as string) || process.cwd();
+
+      log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
+
+      try {
+        const result = await handleScript(script, args, cwd, true, apiKey);
+        if (typeof result.data === 'string') {
+          res.send(result.data);
+        } else {
+          res.json(result);
+        }
+      } catch (error) {
+        next(error);
+      }
+    }
+  });
+
+  // Handle two-level paths like /folder/script-name
+  app.all('/:folder/:script', async (req, res, next) => {
+    const scriptPathParts = req.path.split('/').filter(Boolean);
+    const script = scriptPathParts.join('/');
+    let apiKey = '';
+
+    if (req.method === 'POST') {
+      const authHeader = req.headers.authorization || '';
+      apiKey = authHeader.startsWith('Bearer ')
+        ? authHeader.slice(7)
+        : authHeader.includes(' ')
+          ? authHeader.split(' ')[1]
+          : authHeader;
+
+      const bodyScript = req.body?.script || script;
+      const args = req.body?.args || [];
+      const cwd = req.body?.cwd || kenvPath();
+      const headers = req.headers as Record<string, string>;
+      log.info({ script: bodyScript, args, cwd });
+
+      try {
+        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers);
+        if (typeof result.data === 'string') {
+          res.send(result.data);
+        } else if (typeof result.data === 'object') {
+          res.json(result.data);
+        } else {
+          res.send(result?.message || 'No response from script');
+        }
+      } catch (error) {
+        next(error);
+      }
+    } else {
+      const args = (req.query.arg as string[]) || [];
+      const cwd = (req.query.cwd as string) || process.cwd();
+
+      log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
+
+      try {
+        const result = await handleScript(script, args, cwd, true, apiKey);
+        if (typeof result.data === 'string') {
+          res.send(result.data);
+        } else {
+          res.json(result);
+        }
+      } catch (error) {
+        next(error);
+      }
+    }
+  });
+
+  // Handle three-level paths like /folder/subfolder/script-name
+  app.all('/:folder/:subfolder/:script', async (req, res, next) => {
     const scriptPathParts = req.path.split('/').filter(Boolean);
     const script = scriptPathParts.join('/');
     let apiKey = '';

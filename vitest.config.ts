@@ -11,8 +11,10 @@ export default defineConfig({
     pool: 'threads',
     poolOptions: {
       threads: {
-        singleThread: true, // Faster for smaller test suites
-        isolate: false, // Faster execution
+        singleThread: false, // Enable parallel execution
+        isolate: true, // Better isolation for file system tests
+        maxThreads: 4, // Limit to prevent resource exhaustion
+        minThreads: 2,
       },
     },
     // Fail fast - stop on first failure
