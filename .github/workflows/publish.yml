@@ -10,7 +10,6 @@ on:
     # Remove the branches section as it's not valid
     # workflow_dispatch allows manual triggering without branch restrictions
 
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -170,7 +169,6 @@ jobs:
         run: |
           echo "RELEASE_CHANNEL=$(git rev-parse --abbrev-ref HEAD)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -244,7 +242,6 @@ jobs:
           echo "Listing available pkg-config packages for x11 and xkbfile:"
           pkg-config --list-all | grep -E 'x11|xkbfile' || echo "No matching pkg-config packages found."
 
-
       - name: Set Optional Dependencies Based on Platform and Architecture
         if: needs.tag.outputs.kit_tag == 'latest'
         uses: johnlindquist/kit-action@main
@@ -252,7 +249,6 @@ jobs:
           script: set-optional-dependencies ${{ matrix.platform }} ${{ matrix.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 
       - name: Publish windows x64
         if: matrix.platform == 'win32' && matrix.arch == 'x64'
@@ -264,18 +260,18 @@ jobs:
           ELECTRON_BUILD_ARCH: x64
           ELECTRON_BUILD_PLATFORM: win32
         run: |
-            pnpm i
-            cat ./package.json
-            pnpm vite-prebuild
-            pnpm exec kit ./build.ts win x64 always
+          pnpm i
+          cat ./package.json
+          pnpm vite-prebuild
+          pnpm exec kit ./build.ts win x64 always
 
       - name: Publish windows arm64
         if: matrix.platform == 'win32' && matrix.arch == 'arm64'
         run: |
-            pnpm i
-            pnpm exec kit remove-tick
-            pnpm vite-prebuild
-            pnpm exec kit ./build.ts win arm64 always
+          pnpm i
+          pnpm exec kit remove-tick
+          pnpm vite-prebuild
+          pnpm exec kit ./build.ts win arm64 always
         env:
           # These values are used for auto updates signing
           CSC_LINK: ${{ secrets.CSC_LINK }}
@@ -284,7 +280,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ELECTRON_BUILD_ARCH: arm64
           ELECTRON_BUILD_PLATFORM: win32
-
 
       - name: Publish linux x64
         if: matrix.platform == 'linux' && matrix.arch == 'x64'
@@ -298,12 +293,19 @@ jobs:
           ELECTRON_BUILD_PLATFORM: linux
 
         run: |
-            node --version
-            pnpm --version
-            pnpm i
-            cat ./package.json
-            pnpm vite-prebuild
-            pnpm exec kit ./build.ts linux x64 always
+          echo "=== LINUX X64 BUILD START ==="
+          node --version
+          pnpm --version
+          pnpm i
+
+          echo "=== QUICK KIT CHECK ==="
+          test -d "node_modules/@johnlindquist/kit/bin" && echo "✅ Kit bin exists" || echo "❌ Kit bin missing"
+          test -x "node_modules/@johnlindquist/kit/bin/kit" && echo "✅ Kit executable" || echo "❌ Kit not executable"
+          ls -la node_modules/@johnlindquist/kit/bin/kit || echo "❌ Kit binary details unavailable"
+
+          cat ./package.json
+          pnpm vite-prebuild
+          pnpm exec kit ./build.ts linux x64 always
 
       - name: Publish linux arm64
         if: matrix.platform == 'linux' && matrix.arch == 'arm64'
@@ -317,18 +319,86 @@ jobs:
           ELECTRON_BUILD_PLATFORM: linux
 
         run: |
-            sudo apt-get install ruby ruby-dev rubygems build-essential
-            sudo gem install --no-document fpm
-            export USE_SYSTEM_FPM=true
-            node --version
-            pnpm --version
-            pnpm i
-            pnpm exec kit remove-tick
-            cat ./package.json
-            pnpm vite-prebuild
-            which npm
-            pnpm --version
-            pnpm exec kit ./build.ts linux arm64 always
+          echo "=== LINUX ARM64 BUILD DIAGNOSTICS ==="
+          echo "Platform: ${{ matrix.platform }}"
+          echo "Architecture: ${{ matrix.arch }}"
+          echo "OS: ${{ matrix.os }}"
+
+          sudo apt-get install ruby ruby-dev rubygems build-essential
+          sudo gem install --no-document fpm
+          export USE_SYSTEM_FPM=true
+
+          echo "Node version: $(node --version)"
+          echo "pnpm version: $(pnpm --version)"
+          echo "Current directory: $(pwd)"
+
+          echo "=== INSTALLING DEPENDENCIES ==="
+          pnpm i
+
+          echo "=== POST-INSTALL KIT DIAGNOSTICS ==="
+          echo "Checking for @johnlindquist/kit installation..."
+          if [ -d "node_modules/@johnlindquist/kit" ]; then
+            echo "✅ @johnlindquist/kit directory found"
+            echo "Kit package contents:"
+            ls -la node_modules/@johnlindquist/kit/ | head -20
+
+            echo "Kit bin directory:"
+            if [ -d "node_modules/@johnlindquist/kit/bin" ]; then
+              echo "✅ Kit bin directory exists"
+              ls -la node_modules/@johnlindquist/kit/bin/
+
+              echo "Kit binary file details:"
+              for file in node_modules/@johnlindquist/kit/bin/*; do
+                if [ -f "$file" ]; then
+                  echo "File: $file"
+                  echo "  Exists: $(test -f "$file" && echo "yes" || echo "no")"
+                  echo "  Executable: $(test -x "$file" && echo "yes" || echo "no")"
+                  echo "  Size: $(stat -c%s "$file")"
+                  echo "  Permissions: $(stat -c%a "$file")"
+                  echo "  Detailed permissions: $(ls -la "$file")"
+                fi
+              done
+            else
+              echo "❌ Kit bin directory missing!"
+            fi
+
+            echo "Kit package.json check:"
+            if [ -f "node_modules/@johnlindquist/kit/package.json" ]; then
+              echo "✅ package.json exists"
+              echo "Package name: $(grep '"name"' node_modules/@johnlindquist/kit/package.json)"
+              echo "Package version: $(grep '"version"' node_modules/@johnlindquist/kit/package.json)"
+              echo "Bin section:"
+              grep -A 5 '"bin"' node_modules/@johnlindquist/kit/package.json || echo "No bin section found"
+            else
+              echo "❌ package.json missing!"
+            fi
+          else
+            echo "❌ @johnlindquist/kit directory not found!"
+            echo "Available packages in node_modules:"
+            ls -la node_modules/ | grep johnlindquist || echo "No @johnlindquist packages found"
+            echo "All node_modules contents:"
+            ls -la node_modules/ | head -20
+          fi
+
+          echo "=== PNPM EXEC ENVIRONMENT ==="
+          echo "PATH: $PATH"
+          echo "Which pnpm: $(which pnpm)"
+          echo "pnpm root: $(pnpm root)"
+          echo "pnpm bin location: $(pnpm bin)"
+
+          echo "Checking if kit is available via pnpm exec..."
+          pnpm exec which kit || echo "❌ 'which kit' via pnpm exec failed"
+          pnpm exec kit --help > /dev/null 2>&1 && echo "✅ kit --help succeeded" || echo "❌ kit --help failed with exit code $?"
+
+          echo "=== ATTEMPTING REMOVE-TICK ==="
+          pnpm exec kit remove-tick
+
+          echo "=== CONTINUING WITH BUILD ==="
+          cat ./package.json
+          pnpm vite-prebuild
+          which npm
+          pnpm --version
+          pnpm exec kit ./build.ts linux arm64 always
 
       - name: Write Apple API Key to ~/.private_keys
         run: |
@@ -356,10 +426,10 @@ jobs:
 
         # Wait 10 minutes to start to avoid signing overlap issues
         run: |
-            sleep 600
-            pnpm i
-            pnpm vite-prebuild
-            pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
+          sleep 600
+          pnpm i
+          pnpm vite-prebuild
+          pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
 
       - name: Publish mac arm64
         if: matrix.platform == 'mac' && matrix.arch == 'arm64'
@@ -380,9 +450,9 @@ jobs:
           ELECTRON_BUILD_PLATFORM: darwin
           DEBUG: electron-notarize
         run: |
-            pnpm i
-            pnpm vite-prebuild
-            pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
+          pnpm i
+          pnpm vite-prebuild
+          pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml
         if: matrix.platform == 'mac'

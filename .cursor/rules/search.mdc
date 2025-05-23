@@ -1,0 +1,160 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Search Functionality Guide
+
+This guide explains how the search system works in Script Kit based on comprehensive test coverage analysis.
+
+## Core Files
+
+- **Main Implementation**: [src/main/search.ts](mdc:src/main/search.ts)
+- **Test Coverage**: [src/main/search.test.ts](mdc:src/main/search.test.ts)
+- **Helper Functions**: [src/main/helpers.ts](mdc:src/main/helpers.ts)
+
+## Main Search Functions
+
+### `invokeSearch(prompt, input, reason?)`
+
+The primary search function that handles choice filtering, searching, and grouping.
+
+**Key Behaviors:**
+- Returns early if UI is not `arg` type or choices array is empty
+- Transforms input using `inputRegex` if set (extracts match groups)
+- For empty input: shows non-filtered choices (excludes `miss`, `pass`, `hideWithoutInput`)
+- For non-empty input: uses QuickScore for fuzzy search with fallback to manual string matching
+
+**Choice Type Handling:**
+- **Info choices**: Treated as regular choices, always shown for empty input
+- **Miss choices**: Only shown in fallback when no regular choices exist
+- **Pass choices**: Excluded from regular results, shown in fallback
+- **hideWithoutInput choices**: Only shown when input is not empty
+
+**Grouping Logic:**
+- Uses complex grouping when `hasGroup` is true
+- Creates "Exact Match" group headers for grouped results
+- Handles `lastGroup` choices separately at the end
+- Supports alias and trigger matching with special group headers
+
+### `invokeFlagSearch(prompt, input)`
+
+Handles flag-specific search functionality.
+
+**Behaviors:**
+- For empty input: filters out `pass`, `hideWithoutInput`, `miss` flags
+- Supports grouped flag search with match headers
+- Falls back to miss flags when no results found
+
+### `setFlags(prompt, flags)`
+
+Configures flag choices and sets up flag search.
+
+**Process:**
+1. Converts flag object to choice array format
+2. Applies grouping if any flags have groups
+3. Formats choices and sets up QuickScore instance
+4. Triggers initial flag search
+
+### `setShortcodes(prompt, choices)`
+
+Manages shortcodes, keywords, triggers, and postfixes.
+
+**Important Implementation Details:**
+- **Bug**: Keywords map is NOT cleared (only shortcodes, triggers, postfixes are cleared)
+- **Keywords**: Only processes `choice.keyword` property, not `tag`
+- **Triggers**: Extracts from `choice.trigger` or parses `[trigger]` from choice name
+- **Postfixes**: Only string `pass` values that don't start with `/` (not regex)
+- **Shortcodes**: Case-insensitive storage
+
+### `setChoices(prompt, choices, options)`
+
+Main function for setting up search choices.
+
+**Process:**
+1. Filters out choices with `exclude: true`
+2. Handles caching for main script choices
+3. Sets up QuickScore instance with configurable scoring
+4. Calls `setShortcodes` to process special choice properties
+5. Triggers initial search unless `skipInitialSearch` is true
+
+## Search Algorithm Details
+
+### Empty Input Logic
+```
+1. Filter choices: exclude miss, pass, hideWithoutInput
+2. Include info choices as regular choices
+3. If no regular choices found → show miss and info choices as fallback
+```
+
+### Non-Empty Input Logic
+```
+1. Use QuickScore for fuzzy search
+2. If grouped: complex grouping with exact match headers
+3. If no results: manual string matching across search keys
+4. Apply filtering based on choice types (miss, pass, info)
+```
+
+### Grouping Behavior
+- **startsWithGroup**: Choices whose names start with the search input
+- **includesGroup**: Choices whose names include the search input (but don't start with it)
+- **matchLastGroup**: Choices with `lastGroup: true`, sorted by keyword presence
+- **Exact Match header**: Added when grouped results exist
+
+## Important Edge Cases
+
+### Regex Pass Patterns
+- Choices with `pass: '/regex/i'` are tested against input
+- Invalid regex patterns are handled gracefully without throwing
+
+### Manual String Matching
+- When QuickScore returns no results, fallback to manual searching
+- Searches across all keys defined in `prompt.kitSearch.keys`
+- Creates scored choices with match positions
+
+### Choice Filtering Priority
+```
+miss choices: only in fallback scenarios
+pass choices: included in fallback
+info choices: treated as regular choices
+hideWithoutInput: only shown when input exists
+```
+
+## Performance Considerations
+
+- Uses QuickScore with configurable max iterations (env: `KIT_SEARCH_MAX_ITERATIONS`)
+- Configurable minimum score threshold (env: `KIT_SEARCH_MIN_SCORE`)
+- Debounced search with 100ms delay (`debounceInvokeSearch`)
+- Caches main script choices for performance
+
+## Testing Coverage
+
+The search functionality has **39 comprehensive tests** covering all aspects with a focus on realistic testing:
+
+### Real Implementations Used
+- **QuickScore**: Actual search and scoring algorithms for realistic behavior
+- **Pure utility functions**: formatChoices, groupChoices, createScoredChoice use real implementations
+- **Kit utils**: Most @johnlindquist/kit/core/utils functions run unmodified
+
+### Strategic Mocking
+- **lodash debounce**: Mocked for immediate execution (testing search logic, not timing)
+- **State management**: Mocked kitCache and kitState for test isolation
+- **External dependencies**: Logging and messages mocked to avoid test noise
+
+### Test Coverage Areas
+- All main functions and their edge cases
+- Choice type handling and filtering logic (miss, pass, info, hideWithoutInput)
+- Grouping and sorting behaviors (including complex lastGroup logic)
+- Configuration functions (setChoices, setFlags, setShortcodes)
+- Caching and performance optimizations
+- Error handling and fallback scenarios
+
+This approach provides realistic test behavior while maintaining fast, deterministic tests. Tests assume current implementation is correct and capture actual behavior for safe refactoring.
+
+## Known Issues
+
+1. **Keywords map not cleared**: `setShortcodes` doesn't clear the keywords map (potential memory leak)
+2. **Tag property ignored**: Only `keyword` property is processed for keywords, not `tag`
+3. **Complex grouping logic**: The grouping algorithm is quite complex and could benefit from simplification
+
+This documentation serves as a foundation for understanding the search system before refactoring for cleanliness and reliability.
