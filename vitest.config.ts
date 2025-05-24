@@ -20,7 +20,7 @@ export default defineConfig({
     // Fail fast - stop on first failure
     bail: 1,
     // Faster test discovery
-    include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    include: ['**/*.{test,spec,bench}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     // Timeout settings for faster feedback
     testTimeout: 5000, // Reduce from default 10s
     hookTimeout: 5000,

@@ -387,3 +387,337 @@ A well-optimized test suite should achieve:
 - ✅ Comprehensive file system coverage with proper isolation
 
 Focus on **reliability over speed** - better to have slightly slower tests that always pass than fast tests that fail intermittently.
+
+## Benchmark Testing and Naming Conventions
+
+### File Naming Standards
+
+#### ✅ `.bench.ts` - Pure Performance Benchmarks
+- Industry standard for dedicated benchmark files
+- Uses `bench()` functions for performance measurement
+- Separate from regular test suite
+- Run with: `pnpm vitest bench file.bench.ts --run`
+- Requires vitest config to include `bench` in file patterns
+
+#### ✅ `.test.ts` - Performance Tests with Assertions
+- Performance validation using `it()` + `expect()`
+- Part of regular test suite with performance assertions
+- Includes detailed console output + validation
+- Run with: `pnpm vitest run file.test.ts`
+
+### Vitest Configuration for Benchmarks
+Update [vitest.config.ts](mdc:vitest.config.ts) to include benchmark files:
+```typescript
+test: {
+  include: ['**/*.{test,spec,bench}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+  benchmark: {
+    // Add tinybench options here if needed
+  }
+}
+```
+
+### Benchmark Execution Commands
+```bash
+# Pure benchmarks (single-run, not watch mode)
+pnpm vitest bench src/main/file.bench.ts --run
+
+# Performance tests with assertions
+pnpm vitest run src/main/file.test.ts
+
+# Both together via script
+node scripts/bench-search.js
+```
+
+## Search Performance Testing
+
+### Large Dataset Testing (10,000+ Choices)
+For testing search performance with realistic datasets:
+
+```typescript
+// Generate realistic mock choices
+function generateMockChoices(count: number): Choice[] {
+  const categories = ['File Operations', 'Git Tools', 'Development'];
+  const prefixes = ['Quick', 'Advanced', 'Simple', 'Super'];
+  const actions = ['Manager', 'Tool', 'Helper', 'Runner'];
+
+  return Array.from({ length: count }, (_, i) => ({
+    id: `choice-${i}`,
+    name: `${prefixes[i % prefixes.length]} ${actions[i % actions.length]} ${i}`,
+    keyword: `keyword${i}`,
+    group: categories[i % categories.length],
+    // Add variety: 10% shortcodes, 1% info choices, 2% hidden
+    info: i % 100 === 0,
+    hideWithoutInput: i % 50 === 0,
+  }));
+}
+
+// Performance measurement utility
+class PerformanceTracker {
+  private measurements: Map<string, number[]> = new Map();
+
+  startTimer(operation: string): () => number {
+    const start = performance.now();
+    return () => {
+      const duration = performance.now() - start;
+      if (!this.measurements.has(operation)) {
+        this.measurements.set(operation, []);
+      }
+      this.measurements.get(operation)!.push(duration);
+      return duration;
+    };
+  }
+
+  getStats(operation: string) {
+    const times = this.measurements.get(operation) || [];
+    if (times.length === 0) return null;
+
+    const sorted = times.slice().sort((a, b) => a - b);
+    return {
+      avg: times.reduce((a, b) => a + b, 0) / times.length,
+      min: sorted[0],
+      max: sorted[sorted.length - 1],
+      p95: sorted[Math.floor(sorted.length * 0.95)],
+    };
+  }
+}
+```
+
+### Search Performance Benchmarks
+Essential benchmarks to include:
+
+```typescript
+// Progressive typing simulation
+bench('Progressive typing simulation', () => {
+  const progressiveTerms = ['f', 'fi', 'fil', 'file', 'file m'];
+  progressiveTerms.forEach(term => measureSearch(term));
+});
+
+// Real-world usage patterns
+bench('Real-world usage pattern', () => {
+  const searchTerms = ['quick', 'file', 'git', '', ' ', 'nonexistent'];
+  searchTerms.forEach(term => measureSearch(term));
+});
+
+// Scaling tests
+it('should benchmark different choice set sizes', () => {
+  const sizes = [1000, 2500, 5000, 7500, 10000];
+  sizes.forEach(size => {
+    const subset = choices.slice(0, size);
+    setChoices(mockPrompt, subset, { preload: false });
+    const result = measureSearch('file manager');
+    expect(result.duration).toBeLessThan(size * 0.02); // Max 0.02ms per choice
+  });
+});
+```
+
+### Performance Assertions and Targets
+Set realistic performance targets:
+
+```typescript
+// Individual search performance
+expect(result.duration).toBeLessThan(100); // Should be under 100ms
+
+// Average performance across many searches
+expect(avgDuration).toBeLessThan(50); // Average under 50ms
+
+// Memory usage validation
+expect(memoryDiff.heapUsed).toBeLessThan(200 * 1024 * 1024); // Under 200MB growth
+
+// Scaling requirements
+expect(slowSearches.length).toBeLessThan(results.length * 0.1); // <10% slow searches
+```
+
+## Integration Testing Patterns
+
+### UI Input → IPC → Search Flow Testing
+Test the complete user interaction flow:
+
+```typescript
+describe('UI Input Integration', () => {
+  // Test Channel.INPUT message handling
+  it('should handle user typing via Channel.INPUT', () => {
+    const inputMessage: InputMessage = {
+      input: 'file manager',
+      from: 'user-typing'
+    };
+
+    // Simulate IPC message
+    handleInputMessage(mockPrompt, inputMessage);
+
+    // Verify search was invoked
+    expect(mockInvokeSearch).toHaveBeenCalledWith(
+      mockPrompt,
+      'file manager',
+      'user-typing'
+    );
+
+    // Verify results sent back
+    expect(mockSendToPrompt).toHaveBeenCalledWith(
+      Channel.SET_SCORED_CHOICES,
+      expect.any(Array)
+    );
+  });
+
+  // Test search state management
+  it('should update search state correctly', () => {
+    const choices = generateMockChoices(1000);
+    setChoices(mockPrompt, choices, { preload: false });
+
+    // Test hasGroup setting for info choices
+    mockPrompt.kitSearch.hasGroup = true;
+
+    invokeSearch(mockPrompt, 'test', 'integration');
+
+    expect(mockPrompt.kitSearch.input).toBe('test');
+    expect(mockPrompt.kitSearch.choices).toHaveLength(1000);
+  });
+});
+```
+
+### End-to-End Search Integration
+Simulate complete user workflows:
+
+```typescript
+// Helper to simulate complete UI → IPC → Search flow
+const simulateUserTyping = (
+  input: string,
+  choices: Choice[],
+  options: { mode?: Mode; ui?: UI; expectSearch?: boolean } = {}
+) => {
+  // Setup choices
+  mockPrompt.kitSearch.choices = choices;
+  mockPrompt.kitSearch.hasGroup = choices.some(c => !!c.group);
+
+  // Mock QuickScore for realistic search
+  const mockQs = {
+    search: vi.fn((searchInput: string) => {
+      return choices
+        .filter(choice => {
+          if (choice.hideWithoutInput && (!searchInput || searchInput.trim() === '')) {
+            return false;
+          }
+          return choice.name?.toLowerCase().includes(searchInput.toLowerCase()) ||
+                 choice.keyword?.toLowerCase().includes(searchInput.toLowerCase()) ||
+                 choice.info === true;
+        })
+        .map(choice => ({
+          item: choice,
+          score: 0.8,
+          matches: { name: [[0, searchInput.length]] },
+          _: ''
+        }));
+    })
+  };
+  mockPrompt.kitSearch.qs = mockQs as any;
+
+  // Execute search
+  invokeSearch(mockPrompt, input, 'test');
+
+  // Return results for analysis
+  const scoredChoicesMessage = sentMessages.find(m => m.channel === Channel.SET_SCORED_CHOICES);
+  return (scoredChoicesMessage?.data as ScoredChoice[]) || [];
+};
+```
+
+### Search-Specific Mock Requirements
+Essential mocks for search testing:
+
+```typescript
+// Required search mocks
+vi.mock('./search', () => ({
+  invokeSearch: vi.fn(),
+  setChoices: vi.fn(),
+  setShortcodes: vi.fn(),
+}));
+
+vi.mock('./messages', () => ({
+  cacheChoices: vi.fn()
+}));
+
+vi.mock('./state', () => ({
+  kitCache: {
+    choices: [],
+    scripts: [],
+    triggers: new Map(),
+    keywords: new Map(),
+    shortcodes: new Map(),
+  },
+  kitState: {
+    kenvEnv: {
+      KIT_SEARCH_MAX_ITERATIONS: '3',
+      KIT_SEARCH_MIN_SCORE: '0.6',
+    },
+  },
+}));
+
+// Fix lodash debounce mock for search
+vi.mock('lodash-es', () => ({
+  debounce: vi.fn((fn) => {
+    const mockDebounced = vi.fn(fn) as any;
+    mockDebounced.cancel = vi.fn();
+    return mockDebounced;
+  }),
+}));
+```
+
+### Search Test Object Requirements
+Ensure complete test objects for search functionality:
+
+```typescript
+// Complete KitPrompt mock for search testing
+const mockPrompt: KitPrompt = {
+  ui: UI.arg,
+  pid: 12345,
+  scriptPath: '/test/script.ts',
+  sendToPrompt: mockSendToPrompt,
+  kitSearch: {
+    input: '',
+    inputRegex: undefined,
+    keyword: '',
+    keywordCleared: false,
+    generated: false,
+    flaggedValue: '',
+    choices: [],
+    scripts: [],
+    qs: null,
+    hasGroup: false, // Critical for info choice handling
+    keys: ['name', 'keyword', 'tag'],
+    keywords: new Map(),
+    triggers: new Map(),
+    postfixes: new Map(),
+    shortcodes: new Map(),
+  },
+  flagSearch: {
+    input: '',
+    choices: [],
+    hasGroup: false,
+    qs: null,
+  },
+  updateShortcodes: vi.fn(),
+} as unknown as KitPrompt;
+```
+
+## Performance Testing Success Metrics
+
+### Search Performance Targets
+- ✅ Average search time < 50ms (10,000 choices)
+- ✅ Individual searches < 100ms
+- ✅ Progressive typing responsive (< 75ms average)
+- ✅ Memory growth < 200MB during intensive testing
+- ✅ <10% of searches should be considered "slow" (>100ms)
+- ✅ Scaling: Max 0.02ms per choice
+
+### Integration Testing Coverage
+- ✅ UI input → IPC → Search → Results flow
+- ✅ Search state management (hasGroup, choices, etc.)
+- ✅ Info choice prioritization
+- ✅ Hide-without-input behavior
+- ✅ Empty/whitespace input handling
+- ✅ Progressive typing simulation
+- ✅ Memory leak prevention
+
+### Example Performance Test Files
+- [search-performance.bench.ts](mdc:src/main/search-performance.bench.ts) - Pure benchmarks
+- [search-performance.test.ts](mdc:src/main/search-performance.test.ts) - Performance tests with assertions
+- [search-integration.test.ts](mdc:src/main/search-integration.test.ts) - End-to-end integration
+- [ipc-input.test.ts](mdc:src/main/ipc-input.test.ts) - IPC message handling
