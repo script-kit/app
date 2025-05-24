@@ -44,7 +44,7 @@ import { invokeSearch, setShortcodes } from './search';
 
 // Type for QuickScore mock
 interface MockQuickScore {
-  search: Mock<[string], ScoredChoice[]>;
+  search: Mock;
 }
 
 describe('Search Ordering and Complex Choices', () => {
