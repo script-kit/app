@@ -164,29 +164,25 @@ vi.mock('@johnlindquist/kit/core/utils', async () => {
 describe.concurrent('File System Watcher - Parallel Tests', () => {
   // Basic file operations that can run in parallel
 
-  it(
-    'should detect new script files',
-    async () => {
-      const events = await collectEventsIsolated(
-        500,
-        async (events, dirs) => {
-          const scriptName = 'test-script.ts';
-          const scriptPath = path.join(dirs.scripts, scriptName);
-          log.debug('Creating test script:', scriptPath);
-          await writeFile(scriptPath, 'export {}');
-        },
-        'should detect new script files',
-      );
+  it('should detect new script files', async () => {
+    const events = await collectEventsIsolated(
+      500,
+      async (events, dirs) => {
+        const scriptName = 'test-script.ts';
+        const scriptPath = path.join(dirs.scripts, scriptName);
+        log.debug('Creating test script:', scriptPath);
+        await writeFile(scriptPath, 'export {}');
+      },
+      'should detect new script files',
+    );
 
-      expect(events).toContainEqual(
-        expect.objectContaining({
-          event: 'add',
-          path: expect.stringContaining('test-script.ts'),
-        }),
-      );
-    },
-    { timeout: 5000 },
-  );
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        event: 'add',
+        path: expect.stringContaining('test-script.ts'),
+      }),
+    );
+  }, 5000);
 
   it('should handle file deletions', async () => {
     const events = await collectEventsIsolated(

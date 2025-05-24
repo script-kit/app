@@ -268,7 +268,7 @@ describe('File System Watcher - Sequential Tests', () => {
         }),
       );
     },
-    { timeout: 3000 },
+    3000,
   );
 
   it.sequential(
@@ -320,7 +320,7 @@ describe('File System Watcher - Sequential Tests', () => {
 
       expect(addEvent || changeEvent).toBe(true);
     },
-    { timeout: 5000 }, // Reduced from 15000ms
+    5000, // Reduced from 15000ms
   );
 
   it.sequential(
@@ -348,7 +348,7 @@ describe('File System Watcher - Sequential Tests', () => {
       const foundRunTxt = events.some((e) => e.path === testDirs.runTxtPath && e.event === 'change');
       expect(foundRunTxt).toBe(true);
     },
-    { timeout: 5000 },
+    5000,
   );
 
   it.sequential(
@@ -378,7 +378,7 @@ describe('File System Watcher - Sequential Tests', () => {
         }),
       );
     },
-    { timeout: 3000 },
+    3000,
   );
 
   it.sequential(
@@ -406,7 +406,7 @@ describe('File System Watcher - Sequential Tests', () => {
       const foundEnvEvent = events.some((e) => e.path === testDirs.envFilePath && e.event === 'change');
       expect(foundEnvEvent).toBe(true);
     },
-    { timeout: 3000 },
+    3000,
   );
 
   it.sequential(
@@ -441,7 +441,7 @@ describe('File System Watcher - Sequential Tests', () => {
       expect(unlinkEvent).toBeDefined();
       expect(addEvent).toBeDefined();
     },
-    { timeout: 5000 },
+    5000,
   );
 
   it.sequential(
@@ -470,7 +470,7 @@ describe('File System Watcher - Sequential Tests', () => {
         }),
       );
     },
-    { timeout: 5000 },
+    5000,
   );
 
   it.sequential(
@@ -496,7 +496,7 @@ describe('File System Watcher - Sequential Tests', () => {
       const changeEvents = events.filter((e) => e.path === testDirs.runTxtPath && e.event === 'change');
       expect(changeEvents.length).toBeGreaterThanOrEqual(1);
     },
-    { timeout: 10000 },
+    10000,
   );
 
   it.sequential(
@@ -549,7 +549,7 @@ describe('File System Watcher - Sequential Tests', () => {
       log.debug('Found user.json event:', userJsonEvent);
       expect(userJsonEvent).toBeDefined();
     },
-    { timeout: 8000 },
+    8000,
   );
 
   it.sequential(
@@ -578,7 +578,7 @@ describe('File System Watcher - Sequential Tests', () => {
       );
       expect(pingEvent).toBeDefined();
     },
-    { timeout: 5000 },
+    5000,
   );
 
   it.sequential(
@@ -711,7 +711,7 @@ describe('File System Watcher - Sequential Tests', () => {
         await Promise.all(watchers.map((w) => w.close()));
       }
     },
-    { timeout: 8000 }, // Reduced from 10000ms
+    8000, // Reduced from 10000ms
   );
 
   it.sequential(
@@ -764,7 +764,7 @@ describe('File System Watcher - Sequential Tests', () => {
       expect(addDirEvent).toBeDefined();
       expect(addNewScriptEvent).toBeDefined();
     },
-    { timeout: 8000 }, // Reduced from 15000ms
+    8000, // Reduced from 15000ms
   );
 
   it.sequential(
@@ -808,7 +808,7 @@ describe('File System Watcher - Sequential Tests', () => {
       expect(kenv1Removed.length).toBeGreaterThan(0);
       expect(kenv2Removed.length).toBeGreaterThan(0);
     },
-    { timeout: 8000 }, // Reduced from 20000ms
+    8000, // Reduced from 20000ms
   );
 
   it.sequential(
@@ -858,7 +858,7 @@ describe('File System Watcher - Sequential Tests', () => {
         await Promise.all(watchers.map((w) => w.close()));
       }
     },
-    { timeout: 8000 },
+    8000,
   );
 
   // Additional tests for edge cases requiring shared state
@@ -889,6 +889,6 @@ describe('File System Watcher - Sequential Tests', () => {
       const foundRandomFileEvent = events.find((e) => e.path === randomFile);
       expect(foundRandomFileEvent).toBeUndefined();
     },
-    { timeout: 5000 },
+    5000,
   );
 });

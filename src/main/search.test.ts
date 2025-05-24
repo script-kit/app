@@ -4,7 +4,7 @@ import { ProcessType } from '@johnlindquist/kit/core/enum';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import type { ScoredChoice } from '../shared/types';
 import { AppChannel } from '../shared/enums';
-import type { KitPrompt } from '../shared/types';
+import type { KitPrompt } from './prompt';
 
 // Mock debounce for immediate execution in tests while using real QuickScore
 vi.mock('lodash-es', () => ({
@@ -83,7 +83,12 @@ describe('Search Functionality', () => {
       kitSearch: {
         input: '',
         inputRegex: undefined,
+        keyword: '',
+        keywordCleared: false,
+        generated: false,
+        flaggedValue: '',
         choices: [],
+        scripts: [],
         qs: null,
         hasGroup: false,
         keys: ['name', 'keyword', 'tag'],
@@ -99,7 +104,7 @@ describe('Search Functionality', () => {
         qs: null,
       },
       updateShortcodes: vi.fn(),
-    };
+    } as any;
   });
 
   afterEach(() => {
