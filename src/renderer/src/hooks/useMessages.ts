@@ -2,8 +2,8 @@ import DOMPurify from 'dompurify';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { debounce } from 'lodash-es';
 import { useEffect, useState } from 'react';
-import { ToastOptions, toast } from 'react-toastify';
-import stripAnsi from 'strip-ansi';
+import { toast } from 'react-toastify';
+import { flushSync } from 'react-dom';
 const { ipcRenderer } = window.electron;
 import { Channel } from '@johnlindquist/kit/core/enum';
 import type { Choice } from '@johnlindquist/kit/types';
@@ -255,7 +255,9 @@ export default () => {
     [Channel.SET_DESCRIPTION]: setDescription,
     [Channel.SET_EDITOR_CONFIG]: setEditorConfig,
     [Channel.SET_EDITOR_SUGGESTIONS]: setEditorSuggestions,
-    [Channel.APPEND_EDITOR_VALUE]: setEditorAppendValue,
+    [Channel.APPEND_EDITOR_VALUE]: (value) => {
+      flushSync(() => setEditorAppendValue(value));
+    },
     [Channel.SET_TEXTAREA_CONFIG]: setTextareaConfig,
     [Channel.SET_FLAGS]: setFlags,
     [Channel.SET_ACTIONS_CONFIG]: setActionsConfig,
