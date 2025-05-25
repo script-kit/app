@@ -394,7 +394,7 @@ export default function Editor() {
 
   let prevAppendDate;
   useEffect(() => {
-    if (editor && editorAppend?.text && prevAppendDate !== editorAppend?.date) {
+    if (editor && editorAppend?.text !== undefined && prevAppendDate !== editorAppend?.date) {
       // set position to the end of the file
       const lineNumber = editor.getModel()?.getLineCount() || 0;
       const column = editor.getModel()?.getLineMaxColumn(lineNumber) || 0;
