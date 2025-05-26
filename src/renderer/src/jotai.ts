@@ -2755,7 +2755,11 @@ export const colorAtom = atom((g) => {
 const _chatMessagesAtom = atom<Partial<MessageType>[]>([]);
 export const chatMessagesAtom = atom(
   (g) => g(_chatMessagesAtom),
-  (g, s, a: Partial<MessageType>[]) => {
+  (g, s, a: Partial<MessageTypeWithIndex>[]) => {
+    for (let i = 0; i < a.length; i++) {
+      a[i].index = i;
+    }
+
     s(_chatMessagesAtom, a);
 
     const appMessage = {
@@ -2767,24 +2771,23 @@ export const chatMessagesAtom = atom(
   },
 );
 
-export const chatMessageSubmitAtom = atom(
-  null,
-  (g, _s, a: { text: string; index: number }) => {
-    const channel = g(channelAtom);
-    channel(Channel.ON_SUBMIT, { text: a.text, index: a.index });
-  },
-);
+export const chatMessageSubmitAtom = atom(null, (g, _s, a: { text: string; index: number }) => {
+  const channel = g(channelAtom);
+  channel(Channel.ON_SUBMIT, { text: a.text, index: a.index });
+});
+
+type MessageTypeWithIndex = MessageType & { index: number };
 
 export const addChatMessageAtom = atom(null, (g, s, a: MessageType) => {
   const prev = g(chatMessagesAtom);
   const updated = [...prev, a];
   const index = updated.length - 1;
+  (a as MessageTypeWithIndex).index = index;
   s(chatMessagesAtom, updated);
 
   const appMessage = {
     channel: Channel.CHAT_ADD_MESSAGE,
     value: a,
-    index,
     pid: g(pidAtom),
   };
   ipcRenderer.send(Channel.CHAT_ADD_MESSAGE, appMessage);
@@ -2796,14 +2799,15 @@ export const chatPushTokenAtom = atom(null, (g, s, a: string) => {
   const index = messages.length - 1;
   // append the text from a to the text of the last message
   try {
-    messages[index].text = (messages[index].text + a).trim();
+    const lastMessage = messages[index] as MessageTypeWithIndex;
+    lastMessage.text = (lastMessage.text + a).trim();
+    lastMessage.index = index;
 
     s(chatMessagesAtom, messages);
 
     const appMessage = {
       channel: Channel.CHAT_PUSH_TOKEN,
-      value: a,
-      index,
+      value: lastMessage,
       pid: g(pidAtom),
     };
     ipcRenderer.send(Channel.CHAT_PUSH_TOKEN, appMessage);
@@ -2821,10 +2825,11 @@ export const setChatMessageAtom = atom(null, (g, s, a: { index: number; message:
     messages[messageIndex] = a.message;
     s(chatMessagesAtom, messages);
 
+    (a.message as MessageTypeWithIndex).index = messageIndex;
+
     const appMessage = {
       channel: Channel.CHAT_SET_MESSAGE,
       value: a.message,
-      index: messageIndex,
       pid: g(pidAtom),
     };
     ipcRenderer.send(Channel.CHAT_SET_MESSAGE, appMessage);

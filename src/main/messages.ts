@@ -2242,16 +2242,16 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     CHAT_GET_MESSAGES: onChildChannelOverride((_, { channel, value }) => {
       prompt?.getFromPrompt(processInfo.child, channel, value);
     }),
-    CHAT_SET_MESSAGES: onChildChannel(({ child }, { channel, value }) => {
+    CHAT_SET_MESSAGES: onChildChannelOverride(({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
     }),
-    CHAT_ADD_MESSAGE: onChildChannel(({ child }, { channel, value }) => {
+    CHAT_ADD_MESSAGE: onChildChannelOverride(({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
     }),
-    CHAT_PUSH_TOKEN: onChildChannel(({ child }, { channel, value }) => {
+    CHAT_PUSH_TOKEN: onChildChannelOverride(({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
     }),
-    CHAT_SET_MESSAGE: onChildChannel(({ child }, { channel, value }) => {
+    CHAT_SET_MESSAGE: onChildChannelOverride(({ child }, { channel, value }) => {
       sendToPrompt(channel, value);
     }),
     TOAST: onChildChannel(({ child }, { channel, value }) => {

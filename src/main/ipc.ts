@@ -456,6 +456,9 @@ ${data.error}
     Channel.ACTION,
     Channel.MIC_STREAM,
     Channel.STOP_MIC,
+    Channel.CHAT_ADD_MESSAGE,
+    Channel.CHAT_PUSH_TOKEN,
+    Channel.CHAT_SET_MESSAGE,
   ]) {
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(
