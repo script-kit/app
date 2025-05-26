@@ -624,7 +624,8 @@ export function Chat() {
       ] as MessageType[];
 
       setMessages(updatedMessages);
-      submitMessage(text);
+      const index = updatedMessages.length - 1;
+      submitMessage({ text, index });
       setCurrentMessage('');
       if (clearRef.current) {
         clearRef.current();
