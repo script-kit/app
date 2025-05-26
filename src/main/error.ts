@@ -1,11 +1,12 @@
 import os from 'node:os';
 import { kitPath } from '@johnlindquist/kit/core/utils';
-import { app } from 'electron';
+import { app, Notification, shell } from 'electron';
 import log from 'electron-log';
 import { debounce } from 'lodash-es';
 import { Trigger } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
 import { TrackEvent, trackEvent } from './track';
+import { mainLogPath } from './logs';
 
 const electronVersion = process.versions.electron ?? '0.0.0';
 export const debugInfo = () =>
@@ -43,4 +44,20 @@ ${error?.stack || 'Unknown error stack'}
       trigger: Trigger.Info,
     },
   });
+
+  try {
+    const notification = new Notification({
+      title: error?.name || 'Unknown error',
+      body: `${error?.message || 'Unknown error message'}\nClick to open logs`,
+      silent: true,
+    });
+
+    notification.on('click', () => {
+      shell.openPath(mainLogPath);
+    });
+
+    notification.show();
+  } catch (notifyError) {
+    log.warn('Failed to show error notification', notifyError);
+  }
 }, 500);
