@@ -195,6 +195,7 @@ export const startWatching = (
   const mainKenvScriptlets = kenvChokidarPath('scriptlets');
 
   function watchDir(dirPath: string, label: string) {
+    log.info(`🔍 Watching ${label} in main kenv: ${dirPath}`);
     const key = `main-kenv-${label.toLowerCase()}`;
     if (manager.getWatcher(key)) {
       log.info(`Watcher already exists for ${dirPath}, skipping`);
