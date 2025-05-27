@@ -744,7 +744,8 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     }),
 
     GET_PROCESSES: onChildChannelOverride(({ child }, { channel }) => {
-      childSend({ channel, processes });
+      const processInfo = processes.getAllProcessInfo();
+      childSend({ channel, processes: processInfo });
     }),
 
     GET_PROMPTS: onChildChannelOverride(({ child }, { channel }) => {

@@ -1254,6 +1254,11 @@ export class KitPrompt {
     this.sendToPrompt = (channel: Channel | AppChannel, data) => {
       log.silly(`sendToPrompt: ${String(channel)}`, data);
 
+      if (!this?.window || this?.window?.isDestroyed()) {
+        this.logError('sendToPrompt: Window is destroyed. Skipping sendToPrompt.');
+        return;
+      }
+
       if (this?.window?.webContents?.send) {
         if (channel) {
           this.window?.webContents.send(String(channel), data);
@@ -3056,11 +3061,17 @@ export class KitPrompt {
       kitCache.choices.slice(1, 4).map((c) => c?.item?.name),
     );
 
-    this.sendToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, kitCache.choices);
+    if (this.window && !this.window.isDestroyed()) {
+      this.sendToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, kitCache.choices);
+    }
     // this.sendToPrompt(Channel.SET_SCORED_CHOICES, kitCache.choices);
   };
 
   initMainPreview = () => {
+    if (!this.window || this.window.isDestroyed()) {
+      this.logWarn('initMainPreview: Window is destroyed. Skipping sendToPrompt.');
+      return;
+    }
     // this.logInfo({
     //   preview: kitCache.preview,
     // });
@@ -3069,12 +3080,16 @@ export class KitPrompt {
   };
 
   initMainShortcuts = () => {
-    this.sendToPrompt(AppChannel.SET_CACHED_MAIN_SHORTCUTS, kitCache.shortcuts);
+    if (this.window && !this.window.isDestroyed()) {
+      this.sendToPrompt(AppChannel.SET_CACHED_MAIN_SHORTCUTS, kitCache.shortcuts);
+    }
     // this.sendToPrompt(Channel.SET_SHORTCUTS, kitCache.shortcuts);
   };
 
   initMainFlags = () => {
-    this.sendToPrompt(AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS, kitCache.scriptFlags);
+    if (this.window && !this.window.isDestroyed()) {
+      this.sendToPrompt(AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS, kitCache.scriptFlags);
+    }
     // this.sendToPrompt(Channel.SET_FLAGS, kitCache.flags);
   };
 

@@ -690,7 +690,7 @@ code::after {
 }
 
 .Toastify__toast {
-  @apply p-1;
+  @apply px-4;
   @apply mb-1 !important;
 }
 

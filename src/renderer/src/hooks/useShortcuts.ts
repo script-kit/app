@@ -26,10 +26,40 @@ import {
 import { createLogger } from '../log-utils';
 
 import { useCallback, useMemo } from 'react';
-import type { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
+import type { HotkeysEvent } from 'react-hotkeys-hook';
 import { hotkeysOptions } from './shared';
 
 const log = createLogger('useShortcuts');
+
+// Map of characters to react-hotkeys-hook keywords
+const KEY_REPLACEMENT_MAP: Record<string, string> = {
+  '.': 'period',
+  '/': 'slash',
+  ',': 'comma',
+  // Add more character mappings here as needed
+  // '?': 'question',
+  // '!': 'exclamation',
+  // ';': 'semicolon',
+};
+
+// Reverse map for converting keywords back to characters
+const KEYWORD_TO_CHAR_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries(KEY_REPLACEMENT_MAP).map(([char, keyword]) => [keyword, char]),
+);
+
+function convertShortcutToHotkeysFormat(shortcut: string): string {
+  // Replace cmd with mod first
+  const converted = shortcut.replace('cmd', 'mod');
+
+  // Replace characters with react-hotkeys-hook keywords
+  const parts = converted.split('+');
+  const lastPart = parts.pop();
+
+  // Use the replacement map to convert characters to keywords
+  const newLastPart = lastPart && KEY_REPLACEMENT_MAP[lastPart] ? KEY_REPLACEMENT_MAP[lastPart] : lastPart;
+
+  return parts.length > 0 ? `${parts.join('+')}+${newLastPart}` : newLastPart || '';
+}
 
 function getKey(event: HotkeysEvent) {
   const key = event?.keys?.[0];
@@ -47,26 +77,25 @@ function getKey(event: HotkeysEvent) {
   return key;
 }
 
-function isEventShortcut(event: HotkeysEvent, shortcut: string): boolean {
-  const shortcutEvent = {
-    mod: shortcut.includes('mod') || shortcut.includes('cmd'),
-    shift: shortcut.includes('shift'),
-    alt: shortcut.includes('alt'),
-    ctrl: shortcut.includes('ctrl'),
-    meta: shortcut.includes('meta'),
-    keys: [shortcut.split('+').pop() as string],
-  } as HotkeysEvent;
+function isEventShortcut(event: HotkeysEvent, originalShortcutString: string): boolean {
+  const eventKeyChar = getKey(event); // This will be '.', ',', '/', or other chars
 
-  const eventKey = getKey(event);
-  // compare the event with the shortcut
-  return (
-    event.mod === shortcutEvent.mod &&
-    event.shift === shortcutEvent.shift &&
-    event.alt === shortcutEvent.alt &&
-    event.ctrl === shortcutEvent.ctrl &&
-    event.meta === shortcutEvent.meta &&
-    eventKey === shortcutEvent?.keys?.[0]
-  );
+  const shortcutParts = originalShortcutString.split('+');
+  const shortcutKeyDefinitionPart = shortcutParts.pop() as string; // This could be 'period', 'comma', 'slash', or a char like 'o'
+
+  // Normalize the shortcut key part to the expected character using the reverse map
+  const expectedCharFromShortcut =
+    KEYWORD_TO_CHAR_MAP[shortcutKeyDefinitionPart.toLowerCase()] || shortcutKeyDefinitionPart;
+
+  const modifiersMatch =
+    event.mod === (originalShortcutString.includes('mod') || originalShortcutString.includes('cmd')) &&
+    event.shift === originalShortcutString.includes('shift') &&
+    event.alt === originalShortcutString.includes('alt') &&
+    event.ctrl === originalShortcutString.includes('ctrl') &&
+    event.meta === originalShortcutString.includes('meta');
+
+  // log.debug(`isEventShortcut: eventKeyChar='${eventKeyChar}', expectedCharFromShortcut='${expectedCharFromShortcut}', modMatch=${modifiersMatch}`);
+  return modifiersMatch && eventKeyChar === expectedCharFromShortcut;
 }
 
 export default () => {
@@ -110,9 +139,10 @@ export default () => {
     const shortcuts: string[] = [];
     for (const [, value] of flagsWithShortcuts) {
       if (value?.shortcut) {
-        shortcuts.push(value.shortcut.replace('cmd', 'mod').replace(',', 'comma'));
+        shortcuts.push(convertShortcutToHotkeysFormat(value.shortcut));
       }
     }
+    log.info('Flag shortcuts', { shortcuts });
     return shortcuts;
   }, [flagsWithShortcuts]);
 
@@ -160,18 +190,16 @@ export default () => {
   const onShortcuts = useMemo(() => {
     let onShortcuts = 'f19';
     if (promptShortcuts.length > 0) {
-      const moddedPromptShortcuts = promptShortcuts.map((ps) => ({
-        ...ps,
-        key: ps?.key?.replace('cmd', 'mod') || undefined,
-      }));
       let keys = '';
-      for (const ps of moddedPromptShortcuts) {
+      for (const ps of promptShortcuts) {
         if (ps?.key) {
+          const k = convertShortcutToHotkeysFormat(ps.key);
+
           // log.info(`Comparing ${ps.key} to ${flagShortcuts}`);
-          if (flagShortcuts.includes(ps.key)) {
+          if (flagShortcuts.includes(k)) {
             // log.warn('Prompt shortcut is a duplicated of a flag shortcut. Ignoring flag shortcut', { ps });
           } else {
-            keys += `${ps.key.replace('+,', '+comma')},`;
+            keys += `${k},`;
           }
         }
       }
@@ -181,6 +209,7 @@ export default () => {
         // log.info('All flags and shortcuts', { flagShortcuts, onShortcuts });
       }
     }
+    log.info('On shortcuts', { onShortcuts, promptShortcuts, flagShortcuts });
     return onShortcuts;
   }, [promptShortcuts, flagShortcuts]);
 
@@ -239,11 +268,11 @@ export default () => {
         log.info('Has right shortcut, ignoring arrow key');
         return;
       }
-      if (selectionStart === input.length && event.key !== 'ArrowLeft') {
+      if (selectionStart === input.length && (event as KeyboardEvent).key !== 'ArrowLeft') {
         log.info('Cursor at end, moving forward');
         event.preventDefault();
         channel(Channel.FORWARD);
-      } else if (selectionStart === 0 && event.key !== 'ArrowRight') {
+      } else if (selectionStart === 0 && (event as KeyboardEvent).key !== 'ArrowRight') {
         log.info('Cursor at start, moving backward');
         event.preventDefault();
         channel(Channel.BACK);
