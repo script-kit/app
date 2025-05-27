@@ -1323,6 +1323,8 @@ export async function handleFileChangeEvent(eventName: WatchEvent, filePath: str
     log.info(`🔄 Changed: ${eventName} ${filePath} from ${source}`);
 
     restartWatchers(`${filePath}: ${eventName}`);
+
+    cacheMainScripts('restartWatchers');
     return;
   }
 
