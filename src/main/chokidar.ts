@@ -72,6 +72,7 @@ function createSubKenvWatchers(
         ignoreInitial: true,
         ignored,
         alwaysStat: true,
+        followSymlinks: true,
       });
 
       w.on('all', (event, changedPath) => {
@@ -108,6 +109,11 @@ function createSubKenvWatchers(
   return watchers;
 }
 
+// Export the manager instance for health monitoring
+let globalManager: WatcherManager | null = null;
+
+export const getWatcherManager = (): WatcherManager | null => globalManager;
+
 export const startWatching = (
   callback: WatcherCallback,
   options: WatchOptions = { ignoreInitial: true },
@@ -115,6 +121,7 @@ export const startWatching = (
   log.info(`🚀 Starting watchers (specific) with ignoreInitial=${options.ignoreInitial ?? false}`);
 
   const manager = new WatcherManager(callback, options);
+  globalManager = manager;
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 1) Watch kit/db (only top level => depth=0)
@@ -239,7 +246,18 @@ export const startWatching = (
     try {
       const entries = readdirSync(kenvsRoot, { withFileTypes: true });
       for (const dirent of entries) {
-        if (dirent.isDirectory()) {
+        let isDir = dirent.isDirectory();
+        if (dirent.isSymbolicLink()) {
+          // Resolve the symlink and check if it points to a directory
+          const fullPath = path.join(kenvsRoot, dirent.name);
+          try {
+            const stat = statSync(fullPath); // Follows symlink
+            isDir = stat.isDirectory();
+          } catch {
+            isDir = false;
+          }
+        }
+        if (isDir) {
           const subKenvDir = path.join(kenvsRoot, dirent.name);
           // create watchers now
           log.info(`🚀 Found existing sub-kenv: ${subKenvDir}`);

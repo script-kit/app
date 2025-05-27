@@ -1661,14 +1661,11 @@ it('should detect changes to a symlinked file in main /scripts when followSymlin
   await writeFile(linkedTargetFile, 'export const original = true;');
 
   // Create symlink inside /scripts => points to linkedTargetDir
-  await new Promise<void>((resolve, _reject) => {
+  await new Promise<void>((resolve, reject) => {
     import('node:fs').then(({ symlink }) => {
       symlink(linkedTargetDir, symlinkDir, (err) => {
-        if (err) {
-          resolve();
-        } else {
-          resolve();
-        }
+        if (err) reject(err);
+        else resolve();
       });
     });
   });
@@ -1812,3 +1809,87 @@ it('should handle consecutive sub-kenv deletions', async () => {
   expect(kenv1Removed.length).toBeGreaterThan(0);
   expect(kenv2Removed.length).toBeGreaterThan(0);
 }, 5000);
+
+// --- Symlinked Sub-Kenvs Coverage ---
+it('should detect a symlinked sub-kenv and watch its scripts', async () => {
+  const events = await collectEventsIsolated(
+    2000,
+    async (events, dirs) => {
+      const realKenvName = 'real-kenv';
+      const symlinkKenvName = 'symlink-kenv';
+      const realKenvPath = path.join(dirs.kenvs, realKenvName);
+      const symlinkKenvPath = path.join(dirs.kenvs, symlinkKenvName);
+      const realScriptsDir = path.join(realKenvPath, 'scripts');
+      const symlinkScriptsDir = path.join(symlinkKenvPath, 'scripts');
+      const scriptFile = path.join(realScriptsDir, 'symlinked-script.ts');
+
+      // 1. Create the real sub-kenv and its scripts dir
+      await ensureDir(realScriptsDir);
+      // 2. Symlink the real sub-kenv to a new name
+      await new Promise<void>((resolve, reject) => {
+        import('node:fs').then(({ symlink }) => {
+          symlink(realKenvPath, symlinkKenvPath, 'dir', (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+      });
+      // 3. Wait for watcher to pick up the symlinked kenv
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      // 4. Add a script to the real kenv (should be detected via symlink)
+      await writeFile(scriptFile, '// symlinked script content');
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      // 5. Change the script
+      await writeFile(scriptFile, '// updated content');
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      // 6. Delete the script
+      await remove(scriptFile);
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    },
+    'should detect a symlinked sub-kenv and watch its scripts',
+  );
+
+  // We expect to see add, change, and unlink events for the script
+  const addEvent = events.find((e) => e.event === 'add' && e.path.endsWith('symlinked-script.ts'));
+  const changeEvent = events.find((e) => e.event === 'change' && e.path.endsWith('symlinked-script.ts'));
+  const unlinkEvent = events.find((e) => e.event === 'unlink' && e.path.endsWith('symlinked-script.ts'));
+  expect(addEvent).toBeDefined();
+  expect(changeEvent).toBeDefined();
+  expect(unlinkEvent).toBeDefined();
+}, 8000);
+
+it('should detect a symlinked sub-kenv even if the symlink is created before the real directory', async () => {
+  const events = await collectEventsIsolated(
+    2500,
+    async (events, dirs) => {
+      const realKenvName = 'late-real-kenv';
+      const symlinkKenvName = 'late-symlink-kenv';
+      const realKenvPath = path.join(dirs.kenvs, realKenvName);
+      const symlinkKenvPath = path.join(dirs.kenvs, symlinkKenvName);
+      const realScriptsDir = path.join(realKenvPath, 'scripts');
+      const scriptFile = path.join(realScriptsDir, 'late-symlinked-script.ts');
+
+      // 1. Symlink the real kenv path before it exists
+      await new Promise<void>((resolve, reject) => {
+        import('node:fs').then(({ symlink }) => {
+          symlink(realKenvPath, symlinkKenvPath, 'dir', (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+      });
+      // 2. Wait for watcher to pick up the symlink (should not error)
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      // 3. Now create the real kenv and scripts dir
+      await ensureDir(realScriptsDir);
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      // 4. Add a script
+      await writeFile(scriptFile, '// late symlinked script content');
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    },
+    'should detect a symlinked sub-kenv even if the symlink is created before the real directory',
+  );
+  // We expect to see an add event for the script
+  const addEvent = events.find((e) => e.event === 'add' && e.path.endsWith('late-symlinked-script.ts'));
+  expect(addEvent).toBeDefined();
+}, 8000);

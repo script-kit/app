@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { lstat, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { getUserJson } from '@johnlindquist/kit/core/db';
@@ -29,7 +29,7 @@ import { KitEvent, emitter } from '../shared/events';
 import { compareArrays, diffArrays } from '../shared/utils';
 import { reloadApps } from './apps';
 import { sendToAllPrompts } from './channel';
-import { type WatchEvent, startWatching } from './chokidar';
+import { type WatchEvent, getWatcherManager, startWatching } from './chokidar';
 import { pathExists, pathExistsSync, writeFile } from './cjs-exports';
 import { actualHideDock, showDock } from './dock';
 import { loadKenvEnvironment } from './env-utils';
@@ -125,7 +125,7 @@ const logAllEvents = () => {
   const changes: string[] = [];
   const removes: string[] = [];
 
-  logEvents.forEach(({ event, filePath }) => {
+  for (const { event, filePath } of logEvents) {
     if (event === 'add') {
       adds.push(filePath);
     }
@@ -135,7 +135,7 @@ const logAllEvents = () => {
     if (event === 'unlink') {
       removes.push(filePath);
     }
-  });
+  }
 
   if (adds.length > 0) {
     log.info('adds', adds);
@@ -289,7 +289,9 @@ function findEntryScripts(
       if (more.size === 0) {
         entries.add(script);
       } else {
-        more.forEach((entry) => entries.add(entry));
+        for (const entry of more) {
+          entries.add(entry);
+        }
       }
     }
   }
@@ -417,7 +419,7 @@ function timestampAndNotifyChildren(event: WatchEvent, script: Script) {
  */
 function handleNotReady(script: Script, _event: WatchEvent, rebuilt: boolean, skipCacheMainMenu: boolean) {
   log.info(
-    `⌚️ ${script.filePath} changed, but main menu hasn't run yet. ` + 'Skipping compiling TS and/or timestamping...',
+    `⌚️ ${script.filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`,
     {
       ready: kitState.ready,
       rebuilt,
@@ -539,7 +541,7 @@ export const onScriptChanged = async (
 export const checkUserDb = debounce(async (eventName: string) => {
   log.info(`checkUserDb ${eventName}`);
 
-  let currentUser;
+  let currentUser: any;
 
   try {
     log.info('🔍 Getting user.json');
@@ -886,6 +888,12 @@ export const parseEnvFile = debounce(async () => {
 
 export const restartWatchers = debounce(
   (reason: string) => {
+    // Check circuit breaker before doing full system restart
+    if (isSystemOverloaded()) {
+      log.error(`🚨 System overloaded, skipping full watcher restart for: ${reason}`);
+      return;
+    }
+
     log.info(`
 
     🔄 Restarting watchers because: ${reason} ----------------------------------------------------------------------
@@ -893,7 +901,13 @@ export const restartWatchers = debounce(
 `);
     teardownWatchers.cancel();
     setupWatchers.cancel();
-    setupWatchers('restartWatchers');
+
+    try {
+      setupWatchers('restartWatchers');
+    } catch (error) {
+      log.error('❌ Failed to restart watchers:', error);
+      recordSystemFailure();
+    }
   },
   500,
   { leading: false },
@@ -1002,11 +1016,217 @@ let pingInterval: NodeJS.Timeout | null = null;
 let watchers: FSWatcher[] = [];
 let suspendingWatchers: boolean;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Granular watcher-health heartbeat with infinite loop protection
+// ─────────────────────────────────────────────────────────────────────────────
+const HEALTH_INTERVAL = 30_000; // ms
+const HEALTH_GRACE = 7_500; // ms after any restart
+const MAX_RESTART_ATTEMPTS = 3; // max restarts per watcher per hour
+const RESTART_WINDOW = 60 * 60 * 1000; // 1 hour window
+const EXPONENTIAL_BACKOFF_BASE = 2; // backoff multiplier
+
+let lastRestart = Date.now();
+
+// Track restart attempts per watcher key to prevent infinite loops
+const restartAttempts = new Map<string, { count: number; firstAttempt: number; lastBackoff: number }>();
+
+// Circuit breaker for system-wide failures
+const SYSTEM_FAILURE_THRESHOLD = 5; // max system-wide failures per hour
+const SYSTEM_FAILURE_WINDOW = 60 * 60 * 1000; // 1 hour
+let systemFailures: number[] = []; // timestamps of recent failures
+
+const countWatchedFiles = (w: FSWatcher) => Object.values(w.getWatched()).reduce((n, arr) => n + arr.length, 0);
+
+/**
+ * Check if we can safely restart a watcher without hitting rate limits
+ */
+function canRestartWatcher(key: string): { canRestart: boolean; waitTime?: number } {
+  const now = Date.now();
+  const attempts = restartAttempts.get(key);
+
+  if (!attempts) {
+    // First restart attempt for this watcher
+    restartAttempts.set(key, { count: 1, firstAttempt: now, lastBackoff: 0 });
+    return { canRestart: true };
+  }
+
+  // Clean up old attempts outside the window
+  if (now - attempts.firstAttempt > RESTART_WINDOW) {
+    restartAttempts.set(key, { count: 1, firstAttempt: now, lastBackoff: 0 });
+    return { canRestart: true };
+  }
+
+  // Check if we've hit the max attempts
+  if (attempts.count >= MAX_RESTART_ATTEMPTS) {
+    const timeUntilReset = RESTART_WINDOW - (now - attempts.firstAttempt);
+    log.warn(
+      `🛑 Watcher ${key} has hit max restart attempts (${MAX_RESTART_ATTEMPTS}). Backing off for ${Math.round(timeUntilReset / 1000 / 60)} minutes.`,
+    );
+    return { canRestart: false, waitTime: timeUntilReset };
+  }
+
+  // Calculate exponential backoff
+  const backoffTime = Math.min(
+    HEALTH_GRACE * EXPONENTIAL_BACKOFF_BASE ** (attempts.count - 1),
+    5 * 60 * 1000, // Max 5 minutes
+  );
+
+  if (now - attempts.lastBackoff < backoffTime) {
+    const waitTime = backoffTime - (now - attempts.lastBackoff);
+    return { canRestart: false, waitTime };
+  }
+
+  // Update attempt count and allow restart
+  attempts.count++;
+  attempts.lastBackoff = now;
+  return { canRestart: true };
+}
+
+/**
+ * Check if the system is experiencing too many failures (circuit breaker)
+ */
+function isSystemOverloaded(): boolean {
+  const now = Date.now();
+
+  // Clean up old failures
+  systemFailures = systemFailures.filter((timestamp) => now - timestamp < SYSTEM_FAILURE_WINDOW);
+
+  if (systemFailures.length >= SYSTEM_FAILURE_THRESHOLD) {
+    log.error(
+      `🚨 System circuit breaker activated: ${systemFailures.length} failures in the last hour. Suspending watcher restarts.`,
+    );
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Record a system failure for circuit breaker tracking
+ */
+function recordSystemFailure() {
+  systemFailures.push(Date.now());
+}
+
+/**
+ * Safely restart a watcher with rate limiting and backoff
+ */
+function safeRestartWatcher(manager: any, key: string, reason: string): boolean {
+  // Check circuit breaker first
+  if (isSystemOverloaded()) {
+    log.warn(`🚨 System overloaded, skipping restart of watcher ${key}`);
+    return false;
+  }
+
+  const { canRestart, waitTime } = canRestartWatcher(key);
+
+  if (!canRestart) {
+    if (waitTime) {
+      log.info(`⏳ Delaying restart of watcher ${key} for ${Math.round(waitTime / 1000)}s (${reason})`);
+    }
+    return false;
+  }
+
+  try {
+    log.warn(`🔄 Restarting watcher ${key}: ${reason}`);
+    manager.restartWatcher(key);
+    lastRestart = Date.now();
+    return true;
+  } catch (error) {
+    log.error(`❌ Failed to restart watcher ${key}:`, error);
+    recordSystemFailure();
+    return false;
+  }
+}
+
+/**
+ * Clean up old restart attempt records to prevent memory leaks
+ */
+function cleanupRestartAttempts() {
+  const now = Date.now();
+  for (const [key, attempts] of restartAttempts.entries()) {
+    if (now - attempts.firstAttempt > RESTART_WINDOW) {
+      restartAttempts.delete(key);
+    }
+  }
+}
+
+/**
+ * Reset circuit breaker when system appears healthy
+ */
+function checkSystemHealth() {
+  const now = Date.now();
+
+  // If we haven't had any failures in the last 30 minutes, reset the circuit breaker
+  const recentFailures = systemFailures.filter((timestamp) => now - timestamp < 30 * 60 * 1000);
+
+  if (recentFailures.length === 0 && systemFailures.length > 0) {
+    log.info('🟢 System appears healthy, resetting circuit breaker');
+    systemFailures = [];
+  }
+}
+
+// Clean up restart attempts every hour to prevent memory leaks
+setInterval(cleanupRestartAttempts, RESTART_WINDOW);
+
+// Check system health every 10 minutes
+setInterval(checkSystemHealth, 10 * 60 * 1000);
+
+setInterval(() => {
+  // give new setups a few seconds to settle
+  if (Date.now() - lastRestart < HEALTH_GRACE) {
+    return;
+  }
+
+  const manager = getWatcherManager();
+  if (!manager) {
+    return;
+  }
+
+  // We don't have the WatcherManager here, but we can introspect each FSWatcher
+  for (const w of watchers) {
+    const key = manager.keyFor(w);
+    if (!key) {
+      continue; // Skip if we can't identify the watcher
+    }
+
+    // CASE 1 – Closed flag flipped
+    if ((w as any).closed) {
+      if (safeRestartWatcher(manager, key, 'watcher closed unexpectedly')) {
+        return; // Exit early after successful restart
+      }
+      // Continue checking other watchers if restart was rate-limited
+    }
+
+    // CASE 2 – zero watched files but directory isn't empty (stuck handle)
+    const watchedCount = countWatchedFiles(w);
+    if (watchedCount === 0) {
+      // Acceptable if the root dir truly has no files
+      const roots = Object.keys(w.getWatched());
+      const rootExists = roots.some((root) => {
+        try {
+          return readdirSync(root).length > 0;
+        } catch {
+          return false;
+        }
+      });
+
+      if (rootExists) {
+        if (safeRestartWatcher(manager, key, 'watcher saw 0 items but directory has files')) {
+          return; // Exit early after successful restart
+        }
+        // Continue checking other watchers if restart was rate-limited
+      }
+    }
+  }
+}, HEALTH_INTERVAL);
+
 export const teardownWatchers = debounce(
   (reason: string) => {
     logActionReason('Teardown', reason);
     stopPingInterval();
     clearAllWatchers(watchers);
+    lastRestart = Date.now(); // Update restart timestamp
   },
   250,
   { leading: true },
@@ -1019,6 +1239,7 @@ export const setupWatchers = debounce(
     teardownWatchers('setupWatchers');
     startPingInterval();
     watchers = startCoreWatchers();
+    lastRestart = Date.now(); // Update restart timestamp
   },
   1000,
   { leading: true },
@@ -1132,16 +1353,6 @@ export async function handleFileChangeEvent(eventName: WatchEvent, filePath: str
 
   if (base === 'scripts.json') {
     log.silly('scripts.json changed. Is this a bug?');
-
-    return;
-
-    try {
-      for (const info of processes) {
-        info?.child?.send({ channel: Channel.SCRIPTS_CHANGED });
-      }
-    } catch (error) {
-      log.warn(error);
-    }
     return;
   }
 

@@ -13,6 +13,7 @@ interface WatcherInfo {
   watcher: FSWatcher;
   paths: Set<string>;
   rootPaths: Set<string>; // Track root paths for better filtering
+  options: ChokidarWatchOptions; // Store options for resurrection
 }
 
 // Default ignored patterns
@@ -59,10 +60,10 @@ export class WatcherManager {
     return false;
   }
 
-  addWatcher(key: string, watcher: FSWatcher, paths: string | string[]) {
+  addWatcher(key: string, watcher: FSWatcher, paths: string | string[], options: ChokidarWatchOptions = {}) {
     const pathSet = new Set(Array.isArray(paths) ? paths : [paths]);
     const rootPaths = new Set(Array.from(pathSet).map((p) => this.normalizePath(p)));
-    this.watchers.set(key, { watcher, paths: pathSet, rootPaths });
+    this.watchers.set(key, { watcher, paths: pathSet, rootPaths, options });
   }
 
   getWatcher(key: string): FSWatcher | undefined {
@@ -193,7 +194,7 @@ export class WatcherManager {
       });
     });
 
-    this.addWatcher(key, watcher, paths);
+    this.addWatcher(key, watcher, paths, options);
     return watcher;
   }
 
@@ -215,5 +216,34 @@ export class WatcherManager {
       }
     }
     return Array.from(paths);
+  }
+
+  /** Kill + recreate one watcher in place */
+  restartWatcher(key: string): FSWatcher | undefined {
+    const rec = this.watchers.get(key);
+    if (!rec) {
+      return undefined;
+    }
+
+    try {
+      rec.watcher.removeAllListeners();
+      rec.watcher.close();
+    } catch (err) {
+      log.warn(`Error closing watcher ${key}:`, err);
+    }
+
+    const pathsArray = Array.from(rec.paths);
+    const newWatcher = this.createWatcher(key, pathsArray, rec.options);
+    return newWatcher;
+  }
+
+  /** Find the key for a given FSWatcher instance */
+  keyFor(target: FSWatcher): string | undefined {
+    for (const [k, v] of this.watchers) {
+      if (v.watcher === target) {
+        return k;
+      }
+    }
+    return undefined;
   }
 }
