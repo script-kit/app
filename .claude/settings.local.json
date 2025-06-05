@@ -4,7 +4,11 @@
       "Bash(pnpm test:*)",
       "Bash(rm:*)",
       "Bash(rg:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git:*)",
+      "Bash(pnpm:*)",
+      "Bash(sleep:*)",
+      "Bash(gh:*)",
     ],
     "deny": []
   }
