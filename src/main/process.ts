@@ -191,6 +191,55 @@ export const sendToAllActiveChildren = (data: {
   }
 };
 
+const handleCustomWindowChannels = (promptInfo: ProcessAndPrompt, data: any): boolean => {
+  const { channel, value } = data;
+  
+  switch (channel) {
+    case 'WINDOW_CLOSE': {
+      const { id } = value;
+      const window = BrowserWindow.fromId(Number.parseInt(id, 10));
+      processLog.info(`Closing window ${id}: ${window?.getTitle()}`);
+      if (window && !window.isDestroyed()) {
+        window.close();
+      }
+      return true;
+    }
+    
+    case 'WINDOW_HIDE': {
+      const { id } = value;
+      const window = BrowserWindow.fromId(Number.parseInt(id, 10));
+      processLog.info(`Hiding window ${id}: ${window?.getTitle()}`);
+      if (window && !window.isDestroyed()) {
+        window.hide();
+      }
+      return true;
+    }
+    
+    case 'WINDOW_SHOW': {
+      const { id } = value;
+      const window = BrowserWindow.fromId(Number.parseInt(id, 10));
+      processLog.info(`Showing window ${id}: ${window?.getTitle()}`);
+      if (window && !window.isDestroyed()) {
+        window.show();
+      }
+      return true;
+    }
+    
+    case 'WINDOW_MINIMIZE': {
+      const { id } = value;
+      const window = BrowserWindow.fromId(Number.parseInt(id, 10));
+      processLog.info(`Minimizing window ${id}: ${window?.getTitle()}`);
+      if (window && !window.isDestroyed()) {
+        window.minimize();
+      }
+      return true;
+    }
+    
+    default:
+      return false;
+  }
+};
+
 export const createMessageHandler = (processInfo: ProcessInfo) => {
   const { type } = processInfo;
   const kitMessageMap = createMessageMap(processInfo as ProcessAndPrompt);
@@ -218,7 +267,11 @@ export const createMessageHandler = (processInfo: ProcessInfo) => {
         processLog.error(`Error in channel ${data.channel}`, error);
       }
     } else {
-      processLog.info(`Channel ${data?.channel} not found on ${type}.`);
+      // Handle custom window channels not in SDK ChannelMap
+      const handled = handleCustomWindowChannels(processInfo as ProcessAndPrompt, data);
+      if (!handled) {
+        processLog.info(`Channel ${data?.channel} not found on ${type}.`);
+      }
     }
   };
 };

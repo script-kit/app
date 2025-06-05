@@ -3,7 +3,8 @@
     "allow": [
       "Bash(pnpm test:*)",
       "Bash(rm:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

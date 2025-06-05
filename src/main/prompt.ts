@@ -1025,8 +1025,8 @@ export class KitPrompt {
     // Start monitoring immediately for better process exit detection
     if (this.boundToProcess && this.pid) {
       // Do an immediate check first
-      this.checkProcessAlive();
-      
+      this.checkProcessAlive(true);
+
       // Then start regular interval monitoring
       this.processMonitorTimer = setInterval(() => {
         this.checkProcessAlive();
@@ -1042,13 +1042,13 @@ export class KitPrompt {
     }
   };
 
-  private checkProcessAlive = () => {
+  private checkProcessAlive = (force = false) => {
     if (!(this.pid && this.boundToProcess)) {
       return;
     }
 
     // Don't check processes that were just bound (give them time to initialize)
-    if (this.scriptStartTime && Date.now() - this.scriptStartTime < 2000) {
+    if (!force && this.scriptStartTime && Date.now() - this.scriptStartTime < 2000) {
       return;
     }
 
@@ -1121,7 +1121,7 @@ export class KitPrompt {
     // This bypasses all the normal checks that might prevent closing
     if (!this.isDestroyed()) {
       this.close('ProcessGone - force close');
-      
+
       // If close didn't work (due to cooldowns or other checks), force hide
       if (!this.closed && !this.isDestroyed()) {
         this.hideInstant();
@@ -3014,9 +3014,12 @@ export class KitPrompt {
     this.stopProcessMonitoring();
 
     // Skip focus checks if closing due to process exit
-    const isProcessExit = reason.includes('process-exit') || reason.includes('TERM_KILL') || 
-                         reason.includes('removeByPid') || reason.includes('ProcessGone');
-    
+    const isProcessExit =
+      reason.includes('process-exit') ||
+      reason.includes('TERM_KILL') ||
+      reason.includes('removeByPid') ||
+      reason.includes('ProcessGone');
+
     if (!kitState.allowQuit && !isProcessExit) {
       if (this.boundToProcess) {
         this.logInfo(`${this.pid}: "close" bound to process`);
