@@ -467,7 +467,15 @@ class Processes extends Array<ProcessAndPrompt> {
   }
 
   get hasAvailableProcess(): boolean {
-    return this.some((processInfo) => processInfo.type === ProcessType.Prompt && processInfo?.scriptPath === '');
+    const available = this.some((processInfo) => processInfo.type === ProcessType.Prompt && processInfo?.scriptPath === '');
+    if (!available) {
+      processLog.info('No available process found. Current processes:', this.map(p => ({
+        pid: p.pid,
+        type: p.type,
+        scriptPath: p.scriptPath || 'empty',
+      })));
+    }
+    return available;
   }
 
   public getAllProcessInfo() {
@@ -732,7 +740,9 @@ class Processes extends Array<ProcessAndPrompt> {
     }
 
     // Check if this pid is currently being debounced
-    if (this.pidDebounceMap.has(pid)) {
+    // Exception: Terminal kills should always proceed immediately
+    const isTerminalKill = reason.includes('TERM_KILL') || reason.includes('terminal');
+    if (!isTerminalKill && this.pidDebounceMap.has(pid)) {
       processLog.info(`🕐 Debounced removeByPid: ${pid} - ${reason}`);
       return;
     }
@@ -742,12 +752,13 @@ class Processes extends Array<ProcessAndPrompt> {
     // Clear any existing timeout for this pid (safety cleanup)
     this.clearDebounceTimeout(pid);
 
-    // Set new debounce timeout for this pid
+    // Set new debounce timeout for this pid (shorter for terminal kills)
+    const debounceDelay = isTerminalKill ? 100 : 1000;
     this.pidDebounceMap.set(
       pid,
       setTimeout(() => {
         this.clearDebounceTimeout(pid);
-      }, 1000),
+      }, debounceDelay),
     );
 
     const index = this.findIndex((info) => info.pid === pid);

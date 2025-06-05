@@ -57,10 +57,25 @@ const createProcessHandler = (fn: () => Promise<void> | void, options: ProcessHa
     ignoreFlag.value = true;
     const startTime = Date.now();
 
+    // Log current process state when waiting starts
+    log.info('Waiting for available process. Current processes:', processes.getAllProcessInfo());
+
     try {
       await new Promise((resolve, reject) => {
+        let checkCount = 0;
         const interval = setInterval(() => {
-          if (processes.hasAvailableProcess) {
+          checkCount++;
+          const hasAvailable = processes.hasAvailableProcess;
+          
+          if (checkCount % 10 === 0) {
+            // Log every second
+            log.info(`Still waiting for process. Check #${checkCount}, hasAvailable: ${hasAvailable}`, {
+              processes: processes.getAllProcessInfo(),
+              elapsed: Date.now() - startTime,
+            });
+          }
+
+          if (hasAvailable) {
             clearInterval(interval);
             resolve(true);
             return;
@@ -68,6 +83,11 @@ const createProcessHandler = (fn: () => Promise<void> | void, options: ProcessHa
 
           if (Date.now() - startTime > maxWaitMs) {
             clearInterval(interval);
+            log.error('Timeout waiting for process. Final state:', {
+              processes: processes.getAllProcessInfo(),
+              hasAvailable,
+              elapsed: Date.now() - startTime,
+            });
             reject(new Error('Timeout waiting for available process'));
           }
         }, pollIntervalMs);

@@ -64,7 +64,25 @@ import { TrackEvent, trackEvent } from './track';
 import { getVersion } from './version';
 import { makeKeyPanel, makeWindow, prepForClose, setAppearance } from './window/utils';
 
-import { promptLog as log, themeLog } from './logs';
+import { themeLog } from './logs';
+
+const log = {
+  info: (...args: any[]) => {
+    console.log(...args);
+  },
+  verbose: (...args: any[]) => {
+    console.log(...args);
+  },
+  error: (...args: any[]) => {
+    console.error(...args);
+  },
+  warn: (...args: any[]) => {
+    console.warn(...args);
+  },
+  silly: (...args: any[]) => {
+    console.log(...args);
+  },
+};
 
 // TODO: Hack context menu to avoid "object destroyed" errors
 contextMenu({
@@ -1004,14 +1022,16 @@ export class KitPrompt {
 
     this.logInfo(`Starting process monitoring for PID ${this.pid} (checking every ${this.processCheckInterval}ms)`);
 
-    // Wait a bit before starting to monitor to give the process time to initialize
-    setTimeout(() => {
-      if (this.boundToProcess && this.pid) {
-        this.processMonitorTimer = setInterval(() => {
-          this.checkProcessAlive();
-        }, this.processCheckInterval);
-      }
-    }, 3000); // Wait 3 seconds before starting monitoring
+    // Start monitoring immediately for better process exit detection
+    if (this.boundToProcess && this.pid) {
+      // Do an immediate check first
+      this.checkProcessAlive();
+      
+      // Then start regular interval monitoring
+      this.processMonitorTimer = setInterval(() => {
+        this.checkProcessAlive();
+      }, this.processCheckInterval);
+    }
   };
 
   private stopProcessMonitoring = () => {
@@ -1097,8 +1117,22 @@ export class KitPrompt {
     // Mark as no longer bound
     this.boundToProcess = false;
 
-    // Close/hide the prompt
-    this.hideInstant();
+    // Force close the prompt for process exit scenarios
+    // This bypasses all the normal checks that might prevent closing
+    if (!this.isDestroyed()) {
+      this.close('ProcessGone - force close');
+      
+      // If close didn't work (due to cooldowns or other checks), force hide
+      if (!this.closed && !this.isDestroyed()) {
+        this.hideInstant();
+        // Set a short timeout to try closing again
+        setTimeout(() => {
+          if (!this.closed && !this.isDestroyed()) {
+            this.close('ProcessGone - retry force close');
+          }
+        }, 100);
+      }
+    }
 
     // Remove from processes if it's still there (defensive cleanup)
     processes.removeByPid(this.pid, 'process gone - prompt cleanup');
@@ -2935,18 +2969,20 @@ export class KitPrompt {
 
   private hideInstantCoolingDown = false;
 
-  hideInstant = () => {
-    // If we're currently cooling down, just ignore this call
-    if (this.hideInstantCoolingDown) {
+  hideInstant = (forceHide = false) => {
+    // If we're currently cooling down, just ignore this call unless forced
+    if (this.hideInstantCoolingDown && !forceHide) {
       this.logInfo(`${this.pid}: "hideInstant" still cooling down`);
       return;
     }
 
-    // Start cooling down for 100ms
-    this.hideInstantCoolingDown = true;
-    setTimeout(() => {
-      this.hideInstantCoolingDown = false;
-    }, 100);
+    // Start cooling down for 100ms (skip if forced)
+    if (!forceHide) {
+      this.hideInstantCoolingDown = true;
+      setTimeout(() => {
+        this.hideInstantCoolingDown = false;
+      }, 100);
+    }
 
     // --- Original hide logic below ---
     if (!this.window || this.window.isDestroyed() || !this.window.isVisible()) {
@@ -2977,7 +3013,11 @@ export class KitPrompt {
     // Stop process monitoring when closing
     this.stopProcessMonitoring();
 
-    if (!kitState.allowQuit) {
+    // Skip focus checks if closing due to process exit
+    const isProcessExit = reason.includes('process-exit') || reason.includes('TERM_KILL') || 
+                         reason.includes('removeByPid') || reason.includes('ProcessGone');
+    
+    if (!kitState.allowQuit && !isProcessExit) {
       if (this.boundToProcess) {
         this.logInfo(`${this.pid}: "close" bound to process`);
         if (this.hasBeenFocused) {
@@ -2992,7 +3032,8 @@ export class KitPrompt {
       }
     }
 
-    if (this.closeCoolingDown) {
+    // Skip cooldown for process exit scenarios
+    if (this.closeCoolingDown && !isProcessExit) {
       this.logInfo(`${this.pid}: "close" still cooling down`);
       return;
     }
@@ -3011,7 +3052,7 @@ export class KitPrompt {
     this.logInfo(`${this.pid} ${this.window.id} 👋 Close prompt`);
     try {
       if (kitState.isMac) {
-        this.hideInstant();
+        this.hideInstant(isProcessExit);
       }
 
       this.sendToPrompt = () => {};

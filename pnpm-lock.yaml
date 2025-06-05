@@ -17,6 +17,9 @@ importers:
       '@johnlindquist/kit':
         specifier: ^3.16.0
         version: 3.17.0
+      '@johnlindquist/mac-panel-window':
+        specifier: ^1.8.1
+        version: 1.8.1
       '@pnpm/exec':
         specifier: ^2.0.0
         version: 2.0.0
@@ -454,9 +457,6 @@ importers:
       '@johnlindquist/mac-frontmost':
         specifier: ^1.0.7
         version: 1.0.7
-      '@johnlindquist/mac-panel-window':
-        specifier: '1'
-        version: 1.8.1
       '@johnlindquist/node-window-manager':
         specifier: ^1.0.24
         version: 1.0.24
@@ -9088,7 +9088,6 @@ snapshots:
     dependencies:
       bindings: 1.5.0
       node-addon-api: 8.3.1
-    optional: true
 
   '@johnlindquist/mac-windows@1.0.2':
     optional: true
