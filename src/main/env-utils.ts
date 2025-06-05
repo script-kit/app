@@ -14,7 +14,8 @@ const log = createLogger('env-utils.ts');
  */
 export const loadKenvEnvironment = (): kenvEnv => {
   let envData: kenvEnv = {};
-  const envFiles = ['.env.local', '.env.development', '.env.production', '.env', '.env.kit'];
+  // Left to right priority
+  const envFiles = ['.env.local', '.env.development', '.env.production', '.env', '.env.kit'].reverse();
 
   for (const file of envFiles) {
     const filePath = kenvPath(file);
