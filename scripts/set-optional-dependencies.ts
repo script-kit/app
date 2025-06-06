@@ -48,33 +48,52 @@ if (!optionalDependenciesToRemove.length) {
   process.exit(0);
 }
 
-const command = `pnpm remove ${optionalDependenciesToRemove.join(' ')}`;
+// Check which packages actually exist in node_modules
+const packagesToActuallyRemove = [];
+console.log('\n=== Checking which packages to remove ===');
+for (const dep of optionalDependenciesToRemove) {
+  const exists = await pathExists(`node_modules/${dep}`);
+  console.log(`- ${dep}: ${exists ? 'EXISTS (will remove)' : 'NOT FOUND (skipping)'}`);
+  if (exists) {
+    packagesToActuallyRemove.push(dep);
+  }
+}
+
+if (packagesToActuallyRemove.length === 0) {
+  console.log('No packages need to be removed from node_modules');
+  process.exit(0);
+}
+
+const command = `pnpm remove ${packagesToActuallyRemove.join(' ')}`;
 
 console.log(
-  `PREPARE TO UNINSTALL`,
+  `\nPREPARE TO UNINSTALL`,
   JSON.stringify({
     pkg: pkg.optionalDependencies,
     optionalDependenciesToKeep,
     optionalDependenciesToRemove,
+    packagesToActuallyRemove,
   }, null, 2),
 );
 
-console.log(`UNINSTALL COMMAND`, command);
+console.log(`\nUNINSTALL COMMAND`, command);
 
-if (optionalDependenciesToRemove.length > 0) {
+if (packagesToActuallyRemove.length > 0) {
   try {
-    console.log(`Starting pnpm remove at ${new Date().toISOString()}`);
+    console.log(`\nStarting pnpm remove at ${new Date().toISOString()}`);
 
     // Log environment info for debugging
-    console.log('Environment info:');
+    console.log('\nEnvironment info:');
     console.log(`- Node version: ${process.version}`);
     console.log(`- Platform: ${process.platform}`);
     console.log(`- Arch: ${process.arch}`);
     console.log(`- CWD: ${process.cwd()}`);
-    const pnpmVersionResult = await $`pnpm --version`;
-    console.log(`- pnpm version stdout: ${pnpmVersionResult.stdout}`);
-    console.log(`- pnpm version stderr: ${pnpmVersionResult.stderr}`);
-    console.log(`- pnpm version exitCode: ${pnpmVersionResult.code}`);
+    try {
+      const pnpmVersionResult = await $`pnpm --version`;
+      console.log(`- pnpm version: ${pnpmVersionResult.stdout.trim()}`);
+    } catch (e) {
+      console.log(`- pnpm version: Failed to get version - ${e.message}`);
+    }
 
     const { stdout, stderr, exitCode } = await exec(command, {
       reject: false, // Don't throw on non-zero exit code
@@ -93,8 +112,12 @@ if (optionalDependenciesToRemove.length > 0) {
 
       // Log the current state of node_modules
       console.log('\n=== Current node_modules state ===');
-      const nodeModulesContent = await $`ls -la node_modules | head -20`;
-      console.log(nodeModulesContent);
+      try {
+        const nodeModulesContent = await $`ls -la node_modules`.pipe`head -20`;
+        console.log(nodeModulesContent.stdout);
+      } catch (lsError) {
+        console.log('Failed to list node_modules:', lsError.message);
+      }
 
       // Check if specific problematic packages exist
       console.log('\n=== Checking for problematic packages ===');
