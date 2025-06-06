@@ -112,7 +112,6 @@ jobs:
     needs: [tag, semantic]
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
         include:
           - os: windows-2022
@@ -145,67 +144,6 @@ jobs:
 
       - name: Checkout git repo
         uses: actions/checkout@v4
-
-      - name: Pre-process platform dependencies
-        shell: bash
-        run: |
-          echo "Platform: ${{ matrix.platform }}, Arch: ${{ matrix.arch }}"
-          
-          # For linux-arm64, remove uiohook-napi from optionalDependencies before install
-          if [[ "${{ matrix.platform }}" == "linux" && "${{ matrix.arch }}" == "arm64" ]]; then
-            echo "Removing uiohook-napi from optionalDependencies for linux-arm64"
-            # Use node to modify package.json
-            node -e "
-              const fs = require('fs');
-              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-              if (pkg.optionalDependencies && pkg.optionalDependencies['uiohook-napi']) {
-                delete pkg.optionalDependencies['uiohook-napi'];
-                fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\\n');
-                console.log('Removed uiohook-napi from optionalDependencies');
-              }
-            "
-          fi
-          
-          # For non-macOS platforms, remove all mac-specific packages
-          if [[ "${{ matrix.platform }}" != "mac" ]]; then
-            echo "Removing mac-specific packages for ${{ matrix.platform }}"
-            node -e "
-              const fs = require('fs');
-              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-              const macPackages = [
-                '@johnlindquist/mac-clipboard-listener',
-                '@johnlindquist/mac-frontmost', 
-                '@johnlindquist/mac-panel-window',
-                'node-mac-permissions'
-              ];
-              if (pkg.optionalDependencies) {
-                macPackages.forEach(p => {
-                  if (pkg.optionalDependencies[p]) {
-                    delete pkg.optionalDependencies[p];
-                    console.log('Removed', p);
-                  }
-                });
-                fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\\n');
-              }
-            "
-          fi
-          
-          # For non-Windows/Mac platforms, remove node-window-manager
-          if [[ "${{ matrix.platform }}" != "win32" && "${{ matrix.platform }}" != "mac" ]]; then
-            echo "Removing node-window-manager for linux"
-            node -e "
-              const fs = require('fs');
-              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-              if (pkg.optionalDependencies && pkg.optionalDependencies['@johnlindquist/node-window-manager']) {
-                delete pkg.optionalDependencies['@johnlindquist/node-window-manager'];
-                fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\\n');
-                console.log('Removed @johnlindquist/node-window-manager');
-              }
-            "
-          fi
-          
-          echo "Updated package.json optionalDependencies:"
-          node -e "console.log(JSON.stringify(require('./package.json').optionalDependencies, null, 2))"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -257,7 +195,7 @@ jobs:
         run: |
           echo "Starting dependency installation..."
           sudo apt-get update
-          sudo apt-get install -y pkg-config libx11-dev libxkbfile-dev libxtst-dev libxrandr-dev make gcc libpng++-dev g++-10
+          sudo apt-get install -y pkg-config libx11-dev libxkbfile-dev libxtst-dev make gcc libpng++-dev g++-10
 
           echo "Setting g++ alternatives..."
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
@@ -304,6 +242,13 @@ jobs:
           echo "Listing available pkg-config packages for x11 and xkbfile:"
           pkg-config --list-all | grep -E 'x11|xkbfile' || echo "No matching pkg-config packages found."
 
+      - name: Set Optional Dependencies Based on Platform and Architecture
+        if: needs.tag.outputs.kit_tag == 'latest'
+        uses: johnlindquist/kit-action@main
+        with:
+          script: set-optional-dependencies ${{ matrix.platform }} ${{ matrix.arch }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish windows x64
         if: matrix.platform == 'win32' && matrix.arch == 'x64'
