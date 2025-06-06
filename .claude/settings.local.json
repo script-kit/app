@@ -9,7 +9,9 @@
       "Bash(pnpm:*)",
       "Bash(sleep:*)",
       "Bash(gh:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(jq:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

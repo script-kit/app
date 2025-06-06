@@ -195,7 +195,7 @@ jobs:
         run: |
           echo "Starting dependency installation..."
           sudo apt-get update
-          sudo apt-get install -y pkg-config libx11-dev libxkbfile-dev libxtst-dev make gcc libpng++-dev g++-10
+          sudo apt-get install -y pkg-config libx11-dev libxkbfile-dev libxtst-dev libxrandr-dev make gcc libpng++-dev g++-10
 
           echo "Setting g++ alternatives..."
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
@@ -333,7 +333,8 @@ jobs:
           echo "Current directory: $(pwd)"
 
           echo "=== INSTALLING DEPENDENCIES ==="
-          pnpm i
+          # Skip rebuilding removed optional dependencies
+          pnpm i --config.onlyBuiltDependencies=[]
 
           echo "=== POST-INSTALL KIT DIAGNOSTICS ==="
           echo "Checking for @johnlindquist/kit installation..."
