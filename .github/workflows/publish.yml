@@ -242,6 +242,9 @@ jobs:
           echo "Listing available pkg-config packages for x11 and xkbfile:"
           pkg-config --list-all | grep -E 'x11|xkbfile' || echo "No matching pkg-config packages found."
 
+      - name: Install npm dependencies
+        run: pnpm i
+
       - name: Set Optional Dependencies Based on Platform and Architecture
         if: needs.tag.outputs.kit_tag == 'latest'
         uses: johnlindquist/kit-action@main
@@ -260,7 +263,6 @@ jobs:
           ELECTRON_BUILD_ARCH: x64
           ELECTRON_BUILD_PLATFORM: win32
         run: |
-          pnpm i
           cat ./package.json
           pnpm vite-prebuild
           pnpm exec kit ./build.ts win x64 always
@@ -268,7 +270,6 @@ jobs:
       - name: Publish windows arm64
         if: matrix.platform == 'win32' && matrix.arch == 'arm64'
         run: |
-          pnpm i
           pnpm exec kit remove-tick
           pnpm vite-prebuild
           pnpm exec kit ./build.ts win arm64 always
@@ -296,8 +297,6 @@ jobs:
           echo "=== LINUX X64 BUILD START ==="
           node --version
           pnpm --version
-          pnpm i
-
           echo "=== QUICK KIT CHECK ==="
           test -d "node_modules/@johnlindquist/kit/bin" && echo "✅ Kit bin exists" || echo "❌ Kit bin missing"
           test -x "node_modules/@johnlindquist/kit/bin/kit" && echo "✅ Kit executable" || echo "❌ Kit not executable"
@@ -332,9 +331,7 @@ jobs:
           echo "pnpm version: $(pnpm --version)"
           echo "Current directory: $(pwd)"
 
-          echo "=== INSTALLING DEPENDENCIES ==="
-          # Skip rebuilding removed optional dependencies
-          pnpm i --config.onlyBuiltDependencies=[]
+          echo "=== DEPENDENCIES ALREADY INSTALLED ==="
 
           echo "=== POST-INSTALL KIT DIAGNOSTICS ==="
           echo "Checking for @johnlindquist/kit installation..."
@@ -428,7 +425,6 @@ jobs:
         # Wait 10 minutes to start to avoid signing overlap issues
         run: |
           sleep 600
-          pnpm i
           pnpm vite-prebuild
           pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
 
@@ -451,7 +447,6 @@ jobs:
           ELECTRON_BUILD_PLATFORM: darwin
           DEBUG: electron-notarize
         run: |
-          pnpm i
           pnpm vite-prebuild
           pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
 
