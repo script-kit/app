@@ -146,6 +146,67 @@ jobs:
       - name: Checkout git repo
         uses: actions/checkout@v4
 
+      - name: Pre-process platform dependencies
+        shell: bash
+        run: |
+          echo "Platform: ${{ matrix.platform }}, Arch: ${{ matrix.arch }}"
+          
+          # For linux-arm64, remove uiohook-napi from optionalDependencies before install
+          if [[ "${{ matrix.platform }}" == "linux" && "${{ matrix.arch }}" == "arm64" ]]; then
+            echo "Removing uiohook-napi from optionalDependencies for linux-arm64"
+            # Use node to modify package.json
+            node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              if (pkg.optionalDependencies && pkg.optionalDependencies['uiohook-napi']) {
+                delete pkg.optionalDependencies['uiohook-napi'];
+                fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\\n');
+                console.log('Removed uiohook-napi from optionalDependencies');
+              }
+            "
+          fi
+          
+          # For non-macOS platforms, remove all mac-specific packages
+          if [[ "${{ matrix.platform }}" != "mac" ]]; then
+            echo "Removing mac-specific packages for ${{ matrix.platform }}"
+            node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              const macPackages = [
+                '@johnlindquist/mac-clipboard-listener',
+                '@johnlindquist/mac-frontmost', 
+                '@johnlindquist/mac-panel-window',
+                'node-mac-permissions'
+              ];
+              if (pkg.optionalDependencies) {
+                macPackages.forEach(p => {
+                  if (pkg.optionalDependencies[p]) {
+                    delete pkg.optionalDependencies[p];
+                    console.log('Removed', p);
+                  }
+                });
+                fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\\n');
+              }
+            "
+          fi
+          
+          # For non-Windows/Mac platforms, remove node-window-manager
+          if [[ "${{ matrix.platform }}" != "win32" && "${{ matrix.platform }}" != "mac" ]]; then
+            echo "Removing node-window-manager for linux"
+            node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              if (pkg.optionalDependencies && pkg.optionalDependencies['@johnlindquist/node-window-manager']) {
+                delete pkg.optionalDependencies['@johnlindquist/node-window-manager'];
+                fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\\n');
+                console.log('Removed @johnlindquist/node-window-manager');
+              }
+            "
+          fi
+          
+          echo "Updated package.json optionalDependencies:"
+          node -e "console.log(JSON.stringify(require('./package.json').optionalDependencies, null, 2))"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
@@ -243,63 +304,6 @@ jobs:
           echo "Listing available pkg-config packages for x11 and xkbfile:"
           pkg-config --list-all | grep -E 'x11|xkbfile' || echo "No matching pkg-config packages found."
 
-      - name: Debug - Pre-dependency removal state
-        if: needs.tag.outputs.kit_tag == 'latest'
-        shell: bash
-        run: |
-          echo "=== Debug: Pre-removal state ==="
-          echo "Current directory: $(pwd)"
-          echo "Node version: $(node --version)"
-          echo "pnpm version: $(pnpm --version)"
-          echo "package.json optionalDependencies:"
-          if command -v jq &> /dev/null; then
-            cat package.json | jq '.optionalDependencies'
-          else
-            node -e "console.log(JSON.stringify(require('./package.json').optionalDependencies, null, 2))"
-          fi
-          echo "node_modules directory (first 30 entries):"
-          if [ -d node_modules ]; then
-            ls -la node_modules 2>/dev/null | head -30 || echo "Failed to list node_modules"
-          else
-            echo "node_modules directory not found"
-          fi
-          echo "=== End pre-removal state ==="
-
-      - name: Set Optional Dependencies Based on Platform and Architecture
-        id: set-optional-dependencies
-        if: needs.tag.outputs.kit_tag == 'latest'
-        uses: johnlindquist/kit-action@main
-        with:
-          script: set-optional-dependencies ${{ matrix.platform }} ${{ matrix.arch }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Debug - Post-dependency removal state
-        if: always() && needs.tag.outputs.kit_tag == 'latest'
-        shell: bash
-        run: |
-          echo "=== Debug: Post-removal state ==="
-          echo "Step outcome: ${{ steps.set-optional-dependencies.outcome }}"
-          echo "package.json optionalDependencies:"
-          if command -v jq &> /dev/null; then
-            cat package.json | jq '.optionalDependencies' || echo "Failed to read package.json"
-          else
-            node -e "console.log(JSON.stringify(require('./package.json').optionalDependencies, null, 2))" || echo "Failed to read package.json"
-          fi
-          echo "node_modules directory (first 30 entries):"
-          if [ -d node_modules ]; then
-            ls -la node_modules 2>/dev/null | head -30 || echo "Failed to list node_modules"
-          else
-            echo "node_modules directory not found"
-          fi
-          echo "pnpm info:"
-          echo "- pnpm version: $(pnpm --version)"
-          echo "- pnpm root: $(pnpm root || echo 'Failed to get pnpm root')"
-          echo "- pnpm bin: $(pnpm bin || echo 'Failed to get pnpm bin')"
-          echo "- pnpm store path: $(pnpm store path || echo 'Failed to get store path')"
-          echo "pnpm store status:"
-          pnpm store status || echo "Failed to get pnpm store status"
-          echo "=== End post-removal state ==="
 
       - name: Publish windows x64
         if: matrix.platform == 'win32' && matrix.arch == 'x64'
