@@ -245,18 +245,28 @@ jobs:
 
       - name: Debug - Pre-dependency removal state
         if: needs.tag.outputs.kit_tag == 'latest'
+        shell: bash
         run: |
           echo "=== Debug: Pre-removal state ==="
           echo "Current directory: $(pwd)"
           echo "Node version: $(node --version)"
           echo "pnpm version: $(pnpm --version)"
           echo "package.json optionalDependencies:"
-          cat package.json | jq '.optionalDependencies'
+          if command -v jq &> /dev/null; then
+            cat package.json | jq '.optionalDependencies'
+          else
+            node -e "console.log(JSON.stringify(require('./package.json').optionalDependencies, null, 2))"
+          fi
           echo "node_modules directory (first 30 entries):"
-          ls -la node_modules 2>/dev/null | head -30 || echo "node_modules not found"
+          if [ -d node_modules ]; then
+            ls -la node_modules 2>/dev/null | head -30 || echo "Failed to list node_modules"
+          else
+            echo "node_modules directory not found"
+          fi
           echo "=== End pre-removal state ==="
 
       - name: Set Optional Dependencies Based on Platform and Architecture
+        id: set-optional-dependencies
         if: needs.tag.outputs.kit_tag == 'latest'
         uses: johnlindquist/kit-action@main
         with:
@@ -266,13 +276,22 @@ jobs:
           
       - name: Debug - Post-dependency removal state
         if: always() && needs.tag.outputs.kit_tag == 'latest'
+        shell: bash
         run: |
           echo "=== Debug: Post-removal state ==="
           echo "Step outcome: ${{ steps.set-optional-dependencies.outcome }}"
           echo "package.json optionalDependencies:"
-          cat package.json | jq '.optionalDependencies' || echo "Failed to read package.json"
+          if command -v jq &> /dev/null; then
+            cat package.json | jq '.optionalDependencies' || echo "Failed to read package.json"
+          else
+            node -e "console.log(JSON.stringify(require('./package.json').optionalDependencies, null, 2))" || echo "Failed to read package.json"
+          fi
           echo "node_modules directory (first 30 entries):"
-          ls -la node_modules 2>/dev/null | head -30 || echo "node_modules not found"
+          if [ -d node_modules ]; then
+            ls -la node_modules 2>/dev/null | head -30 || echo "Failed to list node_modules"
+          else
+            echo "node_modules directory not found"
+          fi
           echo "pnpm store status:"
           pnpm store status || echo "Failed to get pnpm store status"
           echo "=== End post-removal state ==="
