@@ -112,6 +112,7 @@ jobs:
     needs: [tag, semantic]
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-2022
@@ -242,6 +243,19 @@ jobs:
           echo "Listing available pkg-config packages for x11 and xkbfile:"
           pkg-config --list-all | grep -E 'x11|xkbfile' || echo "No matching pkg-config packages found."
 
+      - name: Debug - Pre-dependency removal state
+        if: needs.tag.outputs.kit_tag == 'latest'
+        run: |
+          echo "=== Debug: Pre-removal state ==="
+          echo "Current directory: $(pwd)"
+          echo "Node version: $(node --version)"
+          echo "pnpm version: $(pnpm --version)"
+          echo "package.json optionalDependencies:"
+          cat package.json | jq '.optionalDependencies'
+          echo "node_modules directory (first 30 entries):"
+          ls -la node_modules 2>/dev/null | head -30 || echo "node_modules not found"
+          echo "=== End pre-removal state ==="
+
       - name: Set Optional Dependencies Based on Platform and Architecture
         if: needs.tag.outputs.kit_tag == 'latest'
         uses: johnlindquist/kit-action@main
@@ -249,6 +263,19 @@ jobs:
           script: set-optional-dependencies ${{ matrix.platform }} ${{ matrix.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Debug - Post-dependency removal state
+        if: always() && needs.tag.outputs.kit_tag == 'latest'
+        run: |
+          echo "=== Debug: Post-removal state ==="
+          echo "Step outcome: ${{ steps.set-optional-dependencies.outcome }}"
+          echo "package.json optionalDependencies:"
+          cat package.json | jq '.optionalDependencies' || echo "Failed to read package.json"
+          echo "node_modules directory (first 30 entries):"
+          ls -la node_modules 2>/dev/null | head -30 || echo "node_modules not found"
+          echo "pnpm store status:"
+          pnpm store status || echo "Failed to get pnpm store status"
+          echo "=== End post-removal state ==="
 
       - name: Publish windows x64
         if: matrix.platform == 'win32' && matrix.arch == 'x64'

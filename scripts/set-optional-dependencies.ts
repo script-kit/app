@@ -56,15 +56,73 @@ console.log(
     pkg: pkg.optionalDependencies,
     optionalDependenciesToKeep,
     optionalDependenciesToRemove,
-  }),
+  }, null, 2),
 );
 
 console.log(`UNINSTALL COMMAND`, command);
 
 if (optionalDependenciesToRemove.length > 0) {
-  const { stdout, stderr } = await exec(command);
-  console.log({
-    stdout,
-    stderr,
-  });
+  try {
+    console.log(`Starting pnpm remove at ${new Date().toISOString()}`);
+    
+    // Log environment info for debugging
+    console.log('Environment info:');
+    console.log(`- Node version: ${process.version}`);
+    console.log(`- Platform: ${process.platform}`);
+    console.log(`- Arch: ${process.arch}`);
+    console.log(`- CWD: ${process.cwd()}`);
+    console.log(`- pnpm version: ${await $`pnpm --version`.text()}`);
+    
+    const { stdout, stderr, exitCode } = await exec(command, {
+      reject: false, // Don't throw on non-zero exit code
+    });
+    
+    console.log(`pnpm remove completed at ${new Date().toISOString()}`);
+    console.log(`Exit code: ${exitCode}`);
+    console.log('=== STDOUT ===');
+    console.log(stdout);
+    console.log('=== STDERR ===');
+    console.log(stderr);
+    console.log('=== END OUTPUT ===');
+    
+    if (exitCode !== 0) {
+      console.error(`pnpm remove failed with exit code ${exitCode}`);
+      
+      // Log the current state of node_modules
+      console.log('\n=== Current node_modules state ===');
+      const nodeModulesContent = await $`ls -la node_modules | head -20`.text();
+      console.log(nodeModulesContent);
+      
+      // Check if specific problematic packages exist
+      console.log('\n=== Checking for problematic packages ===');
+      for (const dep of optionalDependenciesToRemove) {
+        const exists = await pathExists(`node_modules/${dep}`);
+        console.log(`- ${dep}: ${exists ? 'EXISTS' : 'NOT FOUND'}`);
+      }
+      
+      // Log package.json state
+      console.log('\n=== Current package.json optionalDependencies ===');
+      const currentPkg = await readJson('package.json');
+      console.log(JSON.stringify(currentPkg.optionalDependencies, null, 2));
+      
+      process.exit(exitCode);
+    }
+    
+    // Verify removal was successful
+    console.log('\n=== Verifying removal ===');
+    const updatedPkg = await readJson('package.json');
+    const remainingOptional = Object.keys(updatedPkg.optionalDependencies || {});
+    console.log('Remaining optional dependencies:', remainingOptional);
+    
+    // Check if all expected dependencies were removed
+    const notRemoved = optionalDependenciesToRemove.filter(dep => remainingOptional.includes(dep));
+    if (notRemoved.length > 0) {
+      console.error('WARNING: The following dependencies were not removed:', notRemoved);
+    }
+    
+  } catch (error) {
+    console.error('Error during pnpm remove:', error);
+    console.error('Error stack:', error.stack);
+    process.exit(1);
+  }
 }
