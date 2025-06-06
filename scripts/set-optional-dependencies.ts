@@ -71,7 +71,10 @@ if (optionalDependenciesToRemove.length > 0) {
     console.log(`- Platform: ${process.platform}`);
     console.log(`- Arch: ${process.arch}`);
     console.log(`- CWD: ${process.cwd()}`);
-    console.log(`- pnpm version: ${await $`pnpm --version`}`);
+    const pnpmVersionResult = await $`pnpm --version`;
+    console.log(`- pnpm version stdout: ${pnpmVersionResult.stdout}`);
+    console.log(`- pnpm version stderr: ${pnpmVersionResult.stderr}`);
+    console.log(`- pnpm version exitCode: ${pnpmVersionResult.code}`);
 
     const { stdout, stderr, exitCode } = await exec(command, {
       reject: false, // Don't throw on non-zero exit code
