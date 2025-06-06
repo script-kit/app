@@ -292,6 +292,11 @@ jobs:
           else
             echo "node_modules directory not found"
           fi
+          echo "pnpm info:"
+          echo "- pnpm version: $(pnpm --version)"
+          echo "- pnpm root: $(pnpm root || echo 'Failed to get pnpm root')"
+          echo "- pnpm bin: $(pnpm bin || echo 'Failed to get pnpm bin')"
+          echo "- pnpm store path: $(pnpm store path || echo 'Failed to get store path')"
           echo "pnpm store status:"
           pnpm store status || echo "Failed to get pnpm store status"
           echo "=== End post-removal state ==="

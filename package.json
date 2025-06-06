@@ -132,7 +132,6 @@
     "@jitsi/robotjs": "^0.6.16",
     "@johnlindquist/clipboard": "^0.1.38",
     "@johnlindquist/kit": "^3.16.0",
-    "@johnlindquist/mac-panel-window": "^1.8.1",
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^28.0.3",
     "@tailwindcss/postcss": "^4.1.7",
@@ -202,6 +201,7 @@
   "optionalDependencies": {
     "@johnlindquist/mac-clipboard-listener": "^1.0.3",
     "@johnlindquist/mac-frontmost": "^1.0.7",
+    "@johnlindquist/mac-panel-window": "^1.8.1",
     "@johnlindquist/node-window-manager": "^1.0.24",
     "node-mac-permissions": "^2.5.0",
     "uiohook-napi": "^1.5.4"
