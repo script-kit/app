@@ -30,10 +30,22 @@ vi.mock('node-schedule', () => ({
   }
 }));
 
+vi.mock('./logs', () => ({
+  processLog: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn()
+  }
+}));
+
 vi.mock('electron-log', () => ({
   default: {
     info: vi.fn(),
-    error: vi.fn()
+    error: vi.fn(),
+    transports: {
+      console: { level: false },
+      ipc: null
+    }
   }
 }));
 

@@ -12,7 +12,8 @@
       "Bash(git:*)",
       "Bash(jq:*)",
       "Bash(find:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

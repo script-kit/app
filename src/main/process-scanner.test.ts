@@ -15,6 +15,9 @@ vi.mock('electron', () => ({
   shell: {
     openPath: vi.fn(),
   },
+  app: {
+    isPackaged: true,
+  },
 }));
 vi.mock('./logs', () => ({
   processLog: {

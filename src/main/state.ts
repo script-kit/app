@@ -368,6 +368,7 @@ const initState = {
   PNPM_KIT_NODE_PATH: '',
   serverRunning: false,
   firstBatch: true,
+  sleepClearKeys: null as Set<string> | null,
 };
 
 const initConfig: Config = {

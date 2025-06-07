@@ -77,6 +77,7 @@
     "@types/tail": "^2.2.3",
     "@types/tar": "^6.1.13",
     "@vitejs/plugin-react": "^4.5.0",
+    "@vitest/coverage-v8": "^3.2.2",
     "@vitest/ui": "^3.1.4",
     "@vscode/codicons": "^0.0.36",
     "animate.css": "^4.1.1",

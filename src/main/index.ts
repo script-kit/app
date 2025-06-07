@@ -445,6 +445,16 @@ const systemEvents = () => {
       log.error(error);
     }
 
+    // Clear environment variables marked for sleep-clear
+    if (kitState.sleepClearKeys && kitState.sleepClearKeys.size > 0) {
+      log.info(`🔐 Clearing ${kitState.sleepClearKeys.size} cached environment variables on sleep`);
+      for (const key of kitState.sleepClearKeys) {
+        delete process.env[key];
+        delete kitState.kenvEnv[key];
+      }
+      kitState.sleepClearKeys.clear();
+    }
+
     kitState.suspended = true;
     processMonitor.handleSystemSuspend();
   });
