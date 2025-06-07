@@ -2549,6 +2549,16 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // For 'session' duration, it's only in kitState.kenvEnv and will be cleared when the script ends
       
       log.info(`✅ Cached ${key} in environment`);
+      
+      // Note: The cached value will be available to:
+      // 1. The current process that requested it (via its next op() call)
+      // 2. Any new processes spawned after this point (via createEnv())
+      // 3. Existing idle processes when they're reused for new scripts
+      //
+      // To update existing running processes would require:
+      // - Adding UPDATE_ENV channel to Kit SDK
+      // - Having scripts listen for and handle environment updates
+      // This could be added in a future enhancement.
     }),
   };
 

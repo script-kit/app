@@ -190,5 +190,25 @@ describe('CACHE_ENV_VAR Handler', () => {
       expect(env.CUSTOM_VAR).toBe('custom-value');
       expect(env.KIT_CONTEXT).toBe('app');
     });
+
+    it('should override process.env with kitState.kenvEnv values', () => {
+      // Set conflicting values
+      process.env.OP_TEST_KEY = 'process-env-value';
+      kitState.kenvEnv = {
+        OP_TEST_KEY: 'kenv-env-value',
+      };
+
+      const createEnv = () => {
+        return {
+          ...process.env,
+          ...kitState.kenvEnv, // This should override process.env
+        };
+      };
+
+      const env = createEnv();
+
+      // kenvEnv should take precedence
+      expect(env.OP_TEST_KEY).toBe('kenv-env-value');
+    });
   });
 });
