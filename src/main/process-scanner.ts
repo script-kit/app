@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 import { appendFile } from 'node:fs/promises';
-import { Notification, shell } from 'electron';
+import { Notification, shell, app } from 'electron';
 import { processLog as log, processLogPath } from './logs';
 
 interface ProcessInfo {
@@ -28,17 +28,20 @@ export class ProcessScanner {
   scanProcesses(): ProcessInfo[] {
     try {
       let command: string;
+      const isDev = !app.isPackaged;
 
       if (process.platform === 'darwin') {
         // macOS: Use ps to find processes containing "Script Kit" or "ScriptKit"
-        command = 'ps aux | grep -E "(Script Kit|ScriptKit)" | grep -v grep';
+        const searchTerm = isDev ? 'Electron' : '(Script Kit|ScriptKit)';
+        command = `ps aux | grep -E "${searchTerm}" | grep -v grep`;
       } else if (process.platform === 'win32') {
         // Windows: Use wmic or Get-Process
-        command =
-          "wmic process where \"name like '%Script Kit%' or name like '%ScriptKit%'\" get processid,name,commandline /format:csv";
+        const searchTerm = isDev ? `"name like '%Electron%'"` : `"name like '%Script Kit%' or name like '%ScriptKit%'"`;
+        command = `wmic process where ${searchTerm} get processid,name,commandline /format:csv`;
       } else {
         // Linux: Similar to macOS
-        command = 'ps aux | grep -E "(Script Kit|ScriptKit)" | grep -v grep';
+        const searchTerm = isDev ? 'Electron' : '(Script Kit|ScriptKit)';
+        command = `ps aux | grep -E "${searchTerm}" | grep -v grep`;
       }
 
       const output = execSync(command, { encoding: 'utf8' });
@@ -67,7 +70,7 @@ export class ProcessScanner {
         if (parts.length >= 11) {
           processes.push({
             pid: Number.parseInt(parts[1], 10),
-            name: 'Script Kit',
+            name: app.isPackaged ? 'Script Kit' : 'Electron',
             command: parts.slice(10).join(' '),
           });
         }
