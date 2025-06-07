@@ -71,6 +71,7 @@ import { loadKenvEnvironment } from './env-utils';
 import { displayError } from './error';
 import { createForkOptions } from './fork.options';
 import { HealthMonitor } from './health-monitor';
+import { processMonitor } from './process-monitor';
 import { APP_NAME, KENV_PROTOCOL, KIT_PROTOCOL } from './helpers';
 import {
   cacheMainScripts,
@@ -431,7 +432,7 @@ const systemEvents = () => {
     log.info('🔌  on ac');
   });
 
-  powerMonitor.addListener('suspend', () => {
+  powerMonitor.addListener('suspend', async () => {
     log.info('😴 System suspending. Removing watchers.');
     // if (kitState.scriptPath === getMainScriptPath())
     // TODO: Hide main prompts when sleep?
@@ -445,6 +446,7 @@ const systemEvents = () => {
     }
 
     kitState.suspended = true;
+    processMonitor.handleSystemSuspend();
   });
 
   function resumeHandler() {
@@ -470,6 +472,8 @@ const systemEvents = () => {
         setupWatchers('resumeHandler');
         await rescheduleAllScripts();
       }
+
+      processMonitor.handleSystemResume();
 
       if (!kitState.updateDownloaded) {
         await new Promise((resolve) => setTimeout(resolve, 10000));
@@ -1216,8 +1220,11 @@ emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
   });
 });
 
-const startHealthMonitor = () => {
+const startHealthMonitor = async () => {
   new HealthMonitor().startMonitoring();
+  
+  // Start process monitor after health monitor
+  await processMonitor.start();
 };
 
 app
@@ -1231,8 +1238,9 @@ app
     ohNo(error as Error);
   });
 
-app?.on('will-quit', (_e) => {
+app?.on('will-quit', async (_e) => {
   destroyPtyPool();
+  processMonitor.stop();
   log.info('🚪 will-quit');
 });
 

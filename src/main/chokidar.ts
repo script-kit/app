@@ -34,7 +34,7 @@ const ignored = [
 // so we do NOT watch node_modules/.git/etc at all
 
 function getConfigFiles(): string[] {
-  return ['globals.ts', 'package.json'];
+  return ['globals.ts', 'package.json', 'kit.css'];
 }
 
 /**
@@ -176,7 +176,8 @@ export const startWatching = (
   // ─────────────────────────────────────────────────────────────────────────────
   const configFiles = getConfigFiles();
   const envPattern = '.env';
-  log.info(`🔍 Watching kenv root for config files: ${configFiles.join(', ')}`);
+
+  log.info(`🔍 Watching kenv root for files: ${configFiles.join(', ')}, ${envPattern}`);
   const kenvRootWatcher = manager.createWatcher('kenv-root', kenvChokidarPath(), {
     depth: 0,
     alwaysStat: true,

@@ -88,7 +88,8 @@ export const getAppearance = (themeObj: Record<string, string>): 'light' | 'dark
 
 export const setTheme = (value: string, reason = '') => {
   const platformSpecificTheme = processPlatformSpecificTheme(value);
-  processLog.info(`🎨 Setting theme because ${reason}`, platformSpecificTheme);
+  processLog.info(`🎨 Setting theme because ${reason}`);
+  processLog.verbose(platformSpecificTheme);
   kitState.theme = platformSpecificTheme;
   kitState.themeName = platformSpecificTheme.match(/--name:\s*"([^"]+)"/)?.[1] || '';
 
@@ -193,7 +194,7 @@ export const sendToAllActiveChildren = (data: {
 
 const handleCustomWindowChannels = (promptInfo: ProcessAndPrompt, data: any): boolean => {
   const { channel, value } = data;
-  
+
   switch (channel) {
     case 'WINDOW_CLOSE': {
       const { id } = value;
@@ -204,7 +205,7 @@ const handleCustomWindowChannels = (promptInfo: ProcessAndPrompt, data: any): bo
       }
       return true;
     }
-    
+
     case 'WINDOW_HIDE': {
       const { id } = value;
       const window = BrowserWindow.fromId(Number.parseInt(id, 10));
@@ -214,7 +215,7 @@ const handleCustomWindowChannels = (promptInfo: ProcessAndPrompt, data: any): bo
       }
       return true;
     }
-    
+
     case 'WINDOW_SHOW': {
       const { id } = value;
       const window = BrowserWindow.fromId(Number.parseInt(id, 10));
@@ -224,7 +225,7 @@ const handleCustomWindowChannels = (promptInfo: ProcessAndPrompt, data: any): bo
       }
       return true;
     }
-    
+
     case 'WINDOW_MINIMIZE': {
       const { id } = value;
       const window = BrowserWindow.fromId(Number.parseInt(id, 10));
@@ -234,7 +235,7 @@ const handleCustomWindowChannels = (promptInfo: ProcessAndPrompt, data: any): bo
       }
       return true;
     }
-    
+
     default:
       return false;
   }
@@ -520,13 +521,18 @@ class Processes extends Array<ProcessAndPrompt> {
   }
 
   get hasAvailableProcess(): boolean {
-    const available = this.some((processInfo) => processInfo.type === ProcessType.Prompt && processInfo?.scriptPath === '');
+    const available = this.some(
+      (processInfo) => processInfo.type === ProcessType.Prompt && processInfo?.scriptPath === '',
+    );
     if (!available) {
-      processLog.info('No available process found. Current processes:', this.map(p => ({
-        pid: p.pid,
-        type: p.type,
-        scriptPath: p.scriptPath || 'empty',
-      })));
+      processLog.info(
+        'No available process found. Current processes:',
+        this.map((p) => ({
+          pid: p.pid,
+          type: p.type,
+          scriptPath: p.scriptPath || 'empty',
+        })),
+      );
     }
     return available;
   }

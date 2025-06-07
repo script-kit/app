@@ -279,6 +279,7 @@ const initState = {
   suspended: false,
   screenLocked: false,
   installing: false,
+  processMonitorEnabled: false,
   // checkingForUpdate: false,
   updateInstalling: false,
   // updateDownloading: false,

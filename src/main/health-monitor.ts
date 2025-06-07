@@ -41,6 +41,7 @@ interface WindowMetrics {
 interface FullMetrics {
   app: AppMetrics;
   windows: WindowMetrics[];
+  processCount?: number;
 }
 
 interface HealthReport {
@@ -177,6 +178,7 @@ export class HealthMonitor {
   private minSnapshot: FullMetrics | null = null;
   private sumSnapshot: FullMetrics | null = null;
   private snapshotCount = 0;
+  public customMetrics: Record<string, any> = {};
 
   constructor(intervalInSeconds = 120) {
     try {
@@ -283,7 +285,11 @@ export class HealthMonitor {
       };
     });
 
-    return { app: appMetrics, windows };
+    return { 
+      app: appMetrics, 
+      windows,
+      processCount: this.customMetrics.processCount
+    };
   }
 
   /**

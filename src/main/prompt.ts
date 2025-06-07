@@ -64,25 +64,7 @@ import { TrackEvent, trackEvent } from './track';
 import { getVersion } from './version';
 import { makeKeyPanel, makeWindow, prepForClose, setAppearance } from './window/utils';
 
-import { themeLog } from './logs';
-
-const log = {
-  info: (...args: any[]) => {
-    console.log(...args);
-  },
-  verbose: (...args: any[]) => {
-    console.log(...args);
-  },
-  error: (...args: any[]) => {
-    console.error(...args);
-  },
-  warn: (...args: any[]) => {
-    console.warn(...args);
-  },
-  silly: (...args: any[]) => {
-    console.log(...args);
-  },
-};
+import { themeLog, promptLog as log } from './logs';
 
 // TODO: Hack context menu to avoid "object destroyed" errors
 contextMenu({
@@ -1174,6 +1156,10 @@ export class KitPrompt {
     log.info(this.getLogPrefix(), ...args);
   };
 
+  themeLogInfo = (...args: Parameters<typeof themeLog.info>) => {
+    themeLog.info(this.getLogPrefix(), ...args);
+  };
+
   logWarn = (...args: Parameters<typeof this.logWarn>) => {
     log.warn(this.getLogPrefix(), ...args);
   };
@@ -1271,6 +1257,23 @@ export class KitPrompt {
     this.initPrompt();
   };
 
+  attemptReadTheme = async () => {
+    this.themeLogInfo('attemptReadTheme...');
+    const cssPath = kenvPath('kit.css');
+    try {
+      const css = await readFile(cssPath, 'utf8');
+      if (css) {
+        this.themeLogInfo(`👍 Found ${cssPath}. Sending to prompt ${this.pid}`);
+        this.sendToPrompt(AppChannel.CSS_CHANGED, css);
+        this.themeLogInfo(css);
+      }
+    } catch (error) {
+      this.themeLogInfo(`👍 No ${cssPath}. Sending empty css to prompt ${this.pid}`);
+      this.sendToPrompt(AppChannel.CSS_CHANGED, '');
+    }
+    updateTheme();
+  };
+
   constructor() {
     const getKitConfig = (event) => {
       event.returnValue = {
@@ -1360,14 +1363,13 @@ export class KitPrompt {
     });
 
     this.window.once('ready-to-show', async () => {
+      this.logInfo('👍 ready-to-show');
       if (!this.window || this.window.isDestroyed()) {
-        return;
-      }
-      if (!kitState.isWindows) {
+        this.logInfo('👍 ready-to-show: window is destroyed');
         return;
       }
 
-      if (kitState.kenvEnv?.KIT_WINDOWS_OPACITY !== 'false') {
+      if (kitState.isWindows && kitState.kenvEnv?.KIT_WINDOWS_OPACITY !== 'false') {
         this.setIgnoreMouseEvents(true);
         this.setOpacity(0.0);
         this.window.showInactive();
@@ -1380,17 +1382,8 @@ export class KitPrompt {
       this.window.webContents.ipc.on(AppChannel.INPUT_READY, handler);
       this.window.webContents.ipc.emit(AppChannel.INPUT_READY);
 
-      this.logInfo('👍 Ready to show');
-      try {
-        const css = await readFile(kenvPath('kit.css'), 'utf8');
-        if (css) {
-          this.sendToPrompt(AppChannel.CSS_CHANGED, css);
-        }
-      } catch (error) {
-        // this.logWarn(error);
-        this.sendToPrompt(AppChannel.CSS_CHANGED, '');
-      }
-      updateTheme();
+      this.themeLogInfo('👍 Ready to show');
+      await this.attemptReadTheme();
     });
 
     this.window.webContents?.on('dom-ready', () => {

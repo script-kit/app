@@ -53,6 +53,7 @@ import { removeSnippet, snippetMap, snippetScriptChanged } from './tick';
 import { watcherLog as log, scriptLog } from './logs';
 import { createIdlePty } from './pty';
 import { parseSnippet } from './snippet-cache';
+import { prompts } from './prompts';
 
 // Add a map to track recently processed files
 const recentlyProcessedFiles = new Map<string, number>();
@@ -1325,6 +1326,14 @@ export async function handleFileChangeEvent(eventName: WatchEvent, filePath: str
     restartWatchers(`${filePath}: ${eventName}`);
 
     cacheMainScripts('restartWatchers');
+    return;
+  }
+
+  if (base === 'kit.css') {
+    log.info('🔄 kit.css changed');
+    for (const prompt of prompts) {
+      prompt.attemptReadTheme();
+    }
     return;
   }
 

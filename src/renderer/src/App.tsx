@@ -547,8 +547,9 @@ text-text-base
         >
           <span className="font-mono text-xxs font-bold absolute top-[-100px] left-[-100px]">.</span>
           {promptData?.css && <style>{promptData?.css}</style>}
-          <style>{css}</style>
+
           <style>{tempTheme || theme}</style>
+          <style>{css}</style>
           {/* {lighten && (
           <style
             dangerouslySetInnerHTML={{
