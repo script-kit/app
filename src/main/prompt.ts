@@ -710,9 +710,10 @@ export class KitPrompt {
     // Skip monitoring for main script or if disabled
     if (
       this.scriptPath === getMainScriptPath() ||
-      (kitState?.kenvEnv as any)?.KIT_DISABLE_LONG_RUNNING_MONITOR === 'true'
+      (kitState?.kenvEnv as any)?.KIT_DISABLE_LONG_RUNNING_MONITOR === 'true' ||
+      this.script?.longrunning === true
     ) {
-      this.logInfo(`Skipping long-running monitor for ${this.scriptName} (main script or disabled)`);
+      this.logInfo(`Skipping long-running monitor for ${this.scriptName} (main script, disabled, or longrunning metadata)`);
       return;
     }
 
@@ -777,7 +778,7 @@ export class KitPrompt {
 
     this.logInfo(`Showing long-running notification for ${scriptName} (running for ${runningTimeSeconds}s)`);
 
-    const notification = new Notification({
+    const notificationOptions: Electron.NotificationConstructorOptions = {
       title: 'Long-Running Script',
       body: `"${scriptName}" has been running for ${runningTimeSeconds} seconds.${contextHint} Would you like to terminate it or let it continue?`,
       actions: [
@@ -796,7 +797,27 @@ export class KitPrompt {
       ],
       timeoutType: 'never',
       urgency: 'normal',
-    });
+    };
+
+    // Add Windows-specific toast XML for better formatting
+    if (process.platform === 'win32') {
+      notificationOptions.toastXml = `
+<toast>
+  <visual>
+    <binding template="ToastGeneric">
+      <text>Long-Running Script</text>
+      <text>"${scriptName}" has been running for ${runningTimeSeconds} seconds.${contextHint} Would you like to terminate it or let it continue?</text>
+    </binding>
+  </visual>
+  <actions>
+    <action content="Terminate Script" arguments="action=terminate" />
+    <action content="Keep Running" arguments="action=keep" />
+    <action content="Don't Ask Again" arguments="action=never" />
+  </actions>
+</toast>`;
+    }
+
+    const notification = new Notification(notificationOptions);
 
     notification.on('action', (_event, index) => {
       if (index === 0) {
@@ -905,7 +926,7 @@ export class KitPrompt {
 
     this.logInfo(`Showing process connection lost notification for ${this.scriptName} (PID: ${this.pid})`);
 
-    const notification = new Notification({
+    const connectionLostOptions: Electron.NotificationConstructorOptions = {
       title: 'Script Process Connection Lost',
       body: `"${this.scriptName}" (PID: ${this.pid}) is no longer responding. The prompt window is still open but disconnected from the process.`,
       actions: [
@@ -924,7 +945,27 @@ export class KitPrompt {
       ],
       timeoutType: 'never',
       urgency: 'normal',
-    });
+    };
+
+    // Add Windows-specific toast XML for better formatting
+    if (process.platform === 'win32') {
+      connectionLostOptions.toastXml = `
+<toast>
+  <visual>
+    <binding template="ToastGeneric">
+      <text>Script Process Connection Lost</text>
+      <text>"${this.scriptName}" (PID: ${this.pid}) is no longer responding. The prompt window is still open but disconnected from the process.</text>
+    </binding>
+  </visual>
+  <actions>
+    <action content="Close Prompt" arguments="action=close" />
+    <action content="Keep Open" arguments="action=keep" />
+    <action content="Show Debug Info" arguments="action=debug" />
+  </actions>
+</toast>`;
+    }
+
+    const notification = new Notification(connectionLostOptions);
 
     notification.on('action', (_event, index) => {
       if (index === 0) {
