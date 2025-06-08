@@ -199,6 +199,23 @@ const ChoiceButtonContent = React.memo(
                         `}
             />
           )}
+          {/* Emoji */}
+          {choice?.emoji && (
+            <div
+              className={`
+                        mr-2
+                        flex
+                        h-8
+                        w-8
+                        items-center
+                        justify-center
+                        text-2xl
+                        ${index === buttonIndex ? 'opacity-100' : 'opacity-80'}
+                        `}
+            >
+              {choice.emoji}
+            </div>
+          )}
           <div className="flex max-h-full max-w-full flex-col overflow-x-hidden min-w-0">
             <ChoiceName
               scoredChoice={scoredChoice}
