@@ -711,9 +711,9 @@ export class KitPrompt {
     if (
       this.scriptPath === getMainScriptPath() ||
       (kitState?.kenvEnv as any)?.KIT_DISABLE_LONG_RUNNING_MONITOR === 'true' ||
-      this.script?.longrunning === true
+      this.script?.longRunning === true
     ) {
-      this.logInfo(`Skipping long-running monitor for ${this.scriptName} (main script, disabled, or longrunning metadata)`);
+      this.logInfo(`Skipping long-running monitor for ${this.scriptName} (main script, disabled, or longRunning metadata)`);
       return;
     }
 
@@ -1635,8 +1635,8 @@ export class KitPrompt {
 
     this.window.webContents?.on('render-process-gone', (event, details) => {
       processes.removeByPid(this.pid, 'prompt exit cleanup');
-      this.sendToPrompt = () => {};
-      this.window.webContents.send = () => {};
+      this.sendToPrompt = () => { };
+      this.window.webContents.send = () => { };
       this.logError('🫣 Render process gone...');
       this.logError({ event, details });
     });
@@ -3092,7 +3092,7 @@ export class KitPrompt {
         this.hideInstant(isProcessExit);
       }
 
-      this.sendToPrompt = () => {};
+      this.sendToPrompt = () => { };
 
       try {
         if (!kitState.isMac) {
