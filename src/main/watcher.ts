@@ -11,6 +11,7 @@ import madge, { type MadgeModuleDependencyGraph } from 'madge';
 import { packageUp } from 'package-up';
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
+import { Notification, shell } from 'electron';
 
 import { getKenvFromPath, kenvPath, kitPath, parseScript, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
 
@@ -711,6 +712,22 @@ export async function handleSnippetFileChange(eventName: WatchEvent, snippetPath
   }
 }
 
+const showThemeConflictNotification = () => {
+  const notification = new Notification({
+    title: 'Theme Configuration Notice',
+    body: 'You have both kit.css and theme environment variables set. Your kit.css changes are being applied on top of the selected theme. Click to learn more.',
+    silent: true,
+  });
+
+  notification.on('click', () => {
+    // Open the .env file to show the user where the theme variables are set
+    const envPath = kenvPath('.env');
+    shell.openPath(envPath);
+  });
+
+  notification.show();
+};
+
 export const parseEnvFile = debounce(async () => {
   const envData = loadKenvEnvironment();
 
@@ -757,8 +774,13 @@ export const parseEnvFile = debounce(async () => {
     showDock();
   }
 
+  let themeVarsChanged = false;
+  
   if (envData?.KIT_THEME_LIGHT) {
     log.info('Setting light theme', envData?.KIT_THEME_LIGHT);
+    if (kitState.kenvEnv.KIT_THEME_LIGHT !== envData?.KIT_THEME_LIGHT) {
+      themeVarsChanged = true;
+    }
     kitState.kenvEnv.KIT_THEME_LIGHT = envData?.KIT_THEME_LIGHT;
   } else if (kitState.kenvEnv.KIT_THEME_LIGHT) {
     kitState.kenvEnv.KIT_THEME_LIGHT = undefined;
@@ -767,10 +789,21 @@ export const parseEnvFile = debounce(async () => {
 
   if (envData?.KIT_THEME_DARK) {
     log.info('Setting dark theme', envData?.KIT_THEME_DARK);
+    if (kitState.kenvEnv.KIT_THEME_DARK !== envData?.KIT_THEME_DARK) {
+      themeVarsChanged = true;
+    }
     kitState.kenvEnv.KIT_THEME_DARK = envData?.KIT_THEME_DARK;
   } else if (kitState.kenvEnv.KIT_THEME_DARK) {
     kitState.kenvEnv.KIT_THEME_DARK = undefined;
     log.info('Removing dark theme');
+  }
+
+  // Check if kit.css exists and theme vars were just set
+  if (themeVarsChanged && (envData?.KIT_THEME_LIGHT || envData?.KIT_THEME_DARK)) {
+    const kitCssPath = kenvPath('kit.css');
+    if (await pathExists(kitCssPath)) {
+      showThemeConflictNotification();
+    }
   }
 
   kitState.tempTheme = '';
@@ -1331,6 +1364,16 @@ export async function handleFileChangeEvent(eventName: WatchEvent, filePath: str
 
   if (base === 'kit.css') {
     log.info('🔄 kit.css changed');
+    
+    // Check if KIT_THEME_* variables are set
+    const hasThemeEnvVars = kitState.kenvEnv?.KIT_THEME_LIGHT || kitState.kenvEnv?.KIT_THEME_DARK;
+    const kitCssPath = kenvPath('kit.css');
+    
+    if (hasThemeEnvVars && await pathExists(kitCssPath)) {
+      // Show notification about the conflict
+      showThemeConflictNotification();
+    }
+    
     for (const prompt of prompts) {
       prompt.attemptReadTheme();
     }
