@@ -103,7 +103,7 @@ pnpm rebuild
 When rebuilding the Kit SDK, also run:
 
 ```
-npm run clear-cache
+pnpm clear-cache
 ```
 
 This is due to Vite not picking up on some changes to a linked SDK.
