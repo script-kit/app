@@ -223,25 +223,5 @@
     "preset": "ts-jest",
     "testEnvironment": "node"
   },
-  "packageManager": "pnpm@10.11.0",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@biomejs/biome",
-      "@jitsi/robotjs",
-      "@johnlindquist/kit",
-      "@johnlindquist/mac-clipboard-listener",
-      "@johnlindquist/mac-frontmost",
-      "@johnlindquist/mac-panel-window",
-      "@johnlindquist/mac-windows",
-      "@johnlindquist/node-window-manager",
-      "core-js",
-      "electron",
-      "electron-nightly",
-      "esbuild",
-      "native-keymap",
-      "node-mac-permissions",
-      "node-pty",
-      "uiohook-napi"
-    ]
-  }
+  "packageManager": "pnpm@10.11.0"
 }
