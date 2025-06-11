@@ -1,7 +1,7 @@
 import { Channel, Mode, PROMPT, UI } from '@johnlindquist/kit/core/enum';
-import type { Choice, Script } from '@johnlindquist/kit/types/core';
 import { ProcessType } from '@johnlindquist/kit/core/enum';
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import type { Choice, Script } from '@johnlindquist/kit/types/core';
+import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ScoredChoice } from '../shared/types';
 import type { KitPrompt } from './prompt';
 
@@ -49,7 +49,7 @@ vi.mock('@johnlindquist/kit/core/utils', async () => {
 import { invokeSearch, setShortcodes } from './search';
 
 // Helper function to simulate checkShortcodesAndKeywords behavior
-const simulateShortcodeCheck = (prompt: KitPrompt, input: string): boolean => {
+const simulateShortcodeCheck = (_prompt: KitPrompt, input: string): boolean => {
   // Simple implementation that returns true for most cases
   // In real implementation this would check for keywords, shortcodes, etc.
   return input.length > 0 || input === '';
@@ -333,7 +333,7 @@ describe('End-to-End Search Integration', () => {
       // Simulate progressive typing: g -> gi -> git -> git st
       const progressiveInputs = ['g', 'gi', 'git', 'git st'];
 
-      progressiveInputs.forEach((input, index) => {
+      progressiveInputs.forEach((input, _index) => {
         sentMessages.length = 0; // Clear previous messages
 
         const result = simulateUserTyping(input, choices);

@@ -1,21 +1,21 @@
 import { Channel, PROMPT, UI } from "@johnlindquist/kit/core/enum";
+import { ProcessType } from "@johnlindquist/kit/core/enum";
 import type {
 	Choice,
 	FlagsWithKeys,
 	Script,
 } from "@johnlindquist/kit/types/core";
-import { ProcessType } from "@johnlindquist/kit/core/enum";
 import {
+	type Mock,
 	afterEach,
 	beforeEach,
 	describe,
 	expect,
 	it,
 	vi,
-	type Mock,
 } from "vitest";
-import type { ScoredChoice } from "../shared/types";
 import { AppChannel } from "../shared/enums";
+import type { ScoredChoice } from "../shared/types";
 import type { KitPrompt } from "./prompt";
 
 // Mock debounce for immediate execution in tests
@@ -62,14 +62,14 @@ vi.mock("@johnlindquist/kit/core/utils", async () => {
 });
 
 import {
-	invokeSearch,
-	invokeFlagSearch,
-	setFlags,
-	setShortcodes,
 	appendChoices,
+	invokeFlagSearch,
+	invokeSearch,
 	setChoices,
+	setFlags,
 	setScoredChoices,
 	setScoredFlags,
+	setShortcodes,
 } from "./search";
 
 describe("Search Edge Cases and Stress Tests", () => {
@@ -676,7 +676,7 @@ describe("Search Edge Cases and Stress Tests", () => {
 				{
 					id: "1",
 					name: "Choice with function",
-					callback: () => console.log("test"),
+					callback: () => ,
 					asyncCallback: async () => Promise.resolve("test"),
 				},
 			] as any[];

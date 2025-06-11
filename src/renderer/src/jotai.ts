@@ -30,8 +30,8 @@ import type { editor } from 'monaco-editor';
 import { drop as _drop, debounce, isEqual, throttle } from 'lodash-es';
 const { ipcRenderer } = window.electron;
 import type { Rectangle } from 'electron';
-import { unstable_batchedUpdates } from 'react-dom';
 import type { MessageType } from 'react-chat-elements';
+import { unstable_batchedUpdates } from 'react-dom';
 import type { VariableSizeList } from 'react-window';
 import { findCssVar, toHex } from '../../shared/color-utils';
 import { DEFAULT_HEIGHT, SPLASH_PATH, closedDiv, noChoice, noScript } from '../../shared/defaults';
@@ -3199,7 +3199,7 @@ export const audioDotAtom = atom(false);
 export const isScrollingAtom = atom(false);
 export const isFlagsScrollingAtom = atom(false);
 
-const scoredFlags = atom([] as ScoredChoice[]);
+export const scoredFlags = atom([] as ScoredChoice[]);
 export const scoredFlagsAtom = atom(
   (g) => {
     if (!g(hasActionsAtom)) {
@@ -3209,7 +3209,7 @@ export const scoredFlagsAtom = atom(
   },
   (g, s, a: ScoredChoice[]) => {
     // log.info(`🇺🇸 Setting scored flags: ${Object.keys(a?.map((c) => c?.item?.name))}`);
-    
+
     // Batch all atom updates to prevent multiple re-renders
     unstable_batchedUpdates(() => {
       s(scoredFlags, a);

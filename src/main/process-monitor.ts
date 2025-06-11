@@ -1,7 +1,7 @@
 import schedule from 'node-schedule';
+import { processLog as log } from './logs';
 import { processScanner } from './process-scanner';
 import { kitState } from './state';
-import { processLog as log } from './logs';
 
 export class ProcessMonitor {
   private job: schedule.Job | null = null;

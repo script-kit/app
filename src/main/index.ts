@@ -48,6 +48,7 @@ import {
 } from '@johnlindquist/kit/core/utils';
 
 import { setEnvVar } from '@johnlindquist/kit/api/kit';
+import { startMcpHttpServer } from './mcp-http-server';
 
 import { getPrefsDb } from '@johnlindquist/kit/core/db';
 import { debounce, throttle } from 'lodash-es';
@@ -71,7 +72,6 @@ import { loadKenvEnvironment } from './env-utils';
 import { displayError } from './error';
 import { createForkOptions } from './fork.options';
 import { HealthMonitor } from './health-monitor';
-import { processMonitor } from './process-monitor';
 import { APP_NAME, KENV_PROTOCOL, KIT_PROTOCOL } from './helpers';
 import {
   cacheMainScripts,
@@ -96,6 +96,7 @@ import { startIpc } from './ipc';
 import { cliFromParams, runPromptProcess } from './kit';
 import { errorLog, logMap, mainLog } from './logs';
 import { destroyAllProcesses, ensureIdleProcess, handleWidgetEvents, processes, setTheme } from './process';
+import { processMonitor } from './process-monitor';
 import { prompts } from './prompts';
 import { createIdlePty, destroyPtyPool } from './pty';
 import { rescheduleAllScripts, scheduleDownloads, scheduleSelfCheck, sleepSchedule } from './schedule';
@@ -1232,7 +1233,7 @@ emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
 
 const startHealthMonitor = async () => {
   new HealthMonitor().startMonitoring();
-  
+
   // Start process monitor after health monitor
   await processMonitor.start();
 };
@@ -1241,8 +1242,17 @@ app
   .whenReady()
   .then(loadShellEnv)
   .then(loadSupportedOptionalLibraries)
-  .then(checkKit)
-  .then(startHealthMonitor)
+  .then(async () => {
+    // Start MCP HTTP server immediately (always on)
+    try {
+      await startMcpHttpServer();
+    } catch (error) {
+      log.error('Failed to start MCP HTTP server', error);
+    }
+
+    await checkKit();
+    await startHealthMonitor();
+  })
   .catch((error) => {
     log.error('Error in app.whenReady', error);
     ohNo(error as Error);

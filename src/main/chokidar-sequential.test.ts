@@ -1,19 +1,19 @@
-import path from 'node:path';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import os from 'node:os';
+import path from 'node:path';
 import type { FSWatcher } from 'chokidar';
 import { ensureDir, pathExists, readFile, remove, rename, writeFile } from 'fs-extra';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { type WatchSource, startWatching } from './chokidar';
 import {
+  KENV_GLOB_TIMEOUT,
   type TestDirs,
   type TestEvent,
+  WATCHER_SETTLE_TIME,
   collectEvents,
   collectEventsWithEarlyExit,
   log,
   logDirectoryState,
   waitForWatchersReady,
-  KENV_GLOB_TIMEOUT,
-  WATCHER_SETTLE_TIME,
 } from './chokidar-test-utils';
 
 // Mock setup for sequential tests - shared state

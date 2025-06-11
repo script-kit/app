@@ -1,6 +1,6 @@
 import path from 'node:path';
+import { remove, writeFile } from 'fs-extra';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { writeFile, remove } from 'fs-extra';
 import { loadKenvEnvironment } from './env-utils';
 
 const testDir = vi.hoisted(() => {

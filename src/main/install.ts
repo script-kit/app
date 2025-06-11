@@ -279,7 +279,7 @@ export const installPackage = async (installCommand: string, cwd: string) => {
 
     // Handling the different events for the child process
     if (child.stdout) {
-      child.stdout.on('data', (_data) => { });
+      child.stdout.on('data', (_data) => {});
     }
 
     if (child.stderr) {
@@ -1354,9 +1354,9 @@ export const cacheMainScripts: CacheMainScripts = async (
     channel: Channel;
     value: any;
   } = {
-      channel: Channel.CACHE_MAIN_SCRIPTS,
-      value: null,
-    },
+    channel: Channel.CACHE_MAIN_SCRIPTS,
+    value: null,
+  },
 ): Promise<boolean> => {
   log.info(`🎁 cacheMainScripts: ${reason}`);
   return new Promise<boolean>((resolve, reject) => {

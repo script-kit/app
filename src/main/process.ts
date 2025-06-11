@@ -192,7 +192,7 @@ export const sendToAllActiveChildren = (data: {
   }
 };
 
-const handleCustomWindowChannels = (promptInfo: ProcessAndPrompt, data: any): boolean => {
+const handleCustomWindowChannels = (_promptInfo: ProcessAndPrompt, data: any): boolean => {
   const { channel, value } = data;
 
   switch (channel) {

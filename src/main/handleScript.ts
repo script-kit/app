@@ -2,12 +2,10 @@ import { Channel } from '@johnlindquist/kit/core/enum';
 import { parseScript, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
 import { Trigger } from '../shared/enums';
 import { runPromptProcess } from './kit';
-import { createLogger } from './log-utils';
+import { mcpLog as log } from './logs';
 import { runMainScript } from './main-script';
 import { spawnShebang } from './process';
 import { getApiKey } from './server/server-utils';
-
-const log = createLogger('handleScript');
 
 /**
  * Handles the execution of a script based on the provided parameters.
@@ -23,6 +21,7 @@ export async function handleScript(
   checkAccess = false,
   apiKey = '',
   headers: Record<string, string> = {},
+  mcpResponse = false,
 ): Promise<{ status: number; data?: any; message?: string; headers?: Record<string, string> }> {
   if (script === '') {
     await runMainScript();
@@ -67,12 +66,13 @@ export async function handleScript(
   }
   const processInfo = await runPromptProcess(
     scriptPath,
-    args.map((s: string) => s.replaceAll('$newline$', '\n')),
+    args.map((s: string) => s.replaceAll('$newline$', '\n')).filter(Boolean),
     { force: true, trigger: Trigger.Kar, sponsorCheck: false, headers: headers || {} },
   );
 
-  if (response) {
-    log.info('🚗💨 Response metadata detected, listening for response...');
+  // If mcpResponse is true OR response metadata is set, wait for the response
+  if (mcpResponse || response) {
+    log.info('🚗💨 Response mode detected, listening for response...');
     return await new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         reject({ status: 500, message: `🕒 Timed out after ${timeout}ms` });
@@ -86,11 +86,15 @@ export async function handleScript(
           // Handle the response from the child process
           const { body, statusCode, headers } = payload.value;
 
+
+
           const message = {
             status: statusCode,
             data: body,
             headers: headers,
           };
+
+          log.info({ message })
           processInfo.child.send({ channel: Channel.RESPONSE, value: message });
           resolve(message);
         }

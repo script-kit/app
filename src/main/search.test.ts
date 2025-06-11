@@ -1,9 +1,9 @@
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
-import type { Choice, FlagsWithKeys, Script } from '@johnlindquist/kit/types/core';
 import { ProcessType } from '@johnlindquist/kit/core/enum';
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
-import type { ScoredChoice } from '../shared/types';
+import type { Choice, FlagsWithKeys, Script } from '@johnlindquist/kit/types/core';
+import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppChannel } from '../shared/enums';
+import type { ScoredChoice } from '../shared/types';
 import type { KitPrompt } from './prompt';
 
 // Mock debounce for immediate execution in tests while using real QuickScore
@@ -54,15 +54,15 @@ vi.mock('@johnlindquist/kit/core/utils', async () => {
 
 // Import after mocks - now using real implementations for pure functions
 import {
-  invokeSearch,
-  invokeFlagSearch,
-  setFlags,
-  setShortcodes,
   appendChoices,
+  debounceInvokeSearch,
+  invokeFlagSearch,
+  invokeSearch,
   setChoices,
+  setFlags,
   setScoredChoices,
   setScoredFlags,
-  debounceInvokeSearch,
+  setShortcodes,
 } from './search';
 
 describe('Search Functionality', () => {

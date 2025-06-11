@@ -1,13 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach, type MockedFunction } from 'vitest';
+import type { ChildProcess } from 'node:child_process';
+import { readdir } from 'node:fs/promises';
+import os from 'node:os';
+import axios from 'axios';
 import { type Display, nativeTheme } from 'electron';
 import Store from 'electron-store';
+import schedule from 'node-schedule';
 import { subscribeKey } from 'valtio/utils';
 import { proxy, snapshot } from 'valtio/vanilla';
-import schedule from 'node-schedule';
-import axios from 'axios';
-import type { ChildProcess } from 'node:child_process';
-import os from 'node:os';
-import { readdir } from 'node:fs/promises';
+import { type MockedFunction, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock all dependencies
 vi.mock('electron', () => ({
@@ -63,7 +63,7 @@ vi.mock('axios', () => ({
 }));
 vi.mock('node:fs/promises');
 vi.mock('lodash-es', () => ({
-  debounce: vi.fn((fn, delay, options) => {
+  debounce: vi.fn((fn, _delay, _options) => {
     // Return the function directly without debouncing for tests
     return fn;
   }),
@@ -74,7 +74,9 @@ vi.mock('@johnlindquist/kit/core/utils', () => ({
   isParentOfDir: vi.fn(() => false),
   kenvPath: vi.fn(() => '/test/kenv'),
   kitPath: vi.fn((...args: string[]) => {
-    if (args.length === 0) return '/test/kit';
+    if (args.length === 0) {
+      return '/test/kit';
+    }
     return `/test/kit/${args.join('/')}`;
   }),
   parseScript: vi.fn(async (filePath: string) => ({
@@ -121,34 +123,34 @@ vi.mock('./log-utils', () => ({
 
 // Import the module after mocks are set up
 import {
-  kitStore,
-  serverState,
+  type Background,
   backgroundMap,
-  getBackgroundTasks,
-  scheduleMap,
-  getSchedule,
-  workers,
-  debounceSetScriptTimestamp,
   cacheKitScripts,
+  convertKey,
+  debounceSetScriptTimestamp,
+  forceQuit,
+  getAccessibilityAuthorized,
+  getBackgroundTasks,
+  getEmojiShortcut,
   getKitScript,
-  kitCache,
+  getSchedule,
   getThemes,
-  theme,
+  kitCache,
+  kitClipboard,
   kitConfig,
   kitState,
-  promptState,
+  kitStore,
   online,
-  forceQuit,
-  sponsorCheck,
-  subs,
-  convertKey,
-  getEmojiShortcut,
   preloadChoicesMap,
   preloadPreviewMap,
   preloadPromptDataMap,
-  kitClipboard,
-  getAccessibilityAuthorized,
-  type Background,
+  promptState,
+  scheduleMap,
+  serverState,
+  sponsorCheck,
+  subs,
+  theme,
+  workers,
 } from './state';
 
 describe('State Management', () => {
@@ -268,7 +270,7 @@ describe('State Management', () => {
       vi.mocked(schedule).scheduledJobs = {
         '/test/kit/internal.js': mockJob,
       } as any;
-      
+
       const { isParentOfDir } = await import('@johnlindquist/kit/core/utils');
       vi.mocked(isParentOfDir).mockReturnValue(true);
 
@@ -298,11 +300,14 @@ describe('State Management', () => {
       });
 
       const { parseScript } = await import('@johnlindquist/kit/core/utils');
-      vi.mocked(parseScript).mockImplementation(async (filePath: string) => ({
-        filePath,
-        command: filePath.includes('main') ? 'main-command' : 'cli-command',
-        name: filePath.includes('main') ? 'Main Script' : 'CLI Script',
-      } as any));
+      vi.mocked(parseScript).mockImplementation(
+        async (filePath: string) =>
+          ({
+            filePath,
+            command: filePath.includes('main') ? 'main-command' : 'cli-command',
+            name: filePath.includes('main') ? 'Main Script' : 'CLI Script',
+          }) as any,
+      );
 
       await cacheKitScripts();
 
@@ -415,7 +420,7 @@ describe('State Management', () => {
       // Ensure we're online
       const internetAvailable = (await import('../shared/internet-available')).default;
       vi.mocked(internetAvailable).mockResolvedValue(true);
-      
+
       kitState.isSponsor = false;
       kitState.user = { login: 'testuser', node_id: 'test-node-id' } as any;
       kitState.url = 'https://test.com';
@@ -446,14 +451,14 @@ describe('State Management', () => {
 
       const { emitter } = await import('../shared/events');
       const result = await sponsorCheck('pro-feature', true);
-      
+
       expect(result).toBe(false);
       expect(kitState.isSponsor).toBe(false);
       expect(emitter.emit).toHaveBeenCalledWith(
         'run-prompt-process',
         expect.objectContaining({
           scriptPath: '/test/kit/pro/sponsor.js',
-        })
+        }),
       );
     });
 
@@ -502,12 +507,12 @@ describe('State Management', () => {
   });
 
   describe('Emoji Shortcut', () => {
-    it.skip('should return custom emoji shortcut from env', () => {
+    it('should return custom emoji shortcut from env', () => {
       // TODO: This test is failing due to how kitState is initialized
       // The function checks kitState?.kenvEnv?.KIT_EMOJI_SHORTCUT
       // Let's ensure kitState is properly set
       Object.assign(kitState, {
-        kenvEnv: { KIT_EMOJI_SHORTCUT: 'Ctrl+E' }
+        kenvEnv: { KIT_EMOJI_SHORTCUT: 'Ctrl+E' },
       });
       const result = getEmojiShortcut();
       expect(result).toBe('Ctrl+E');

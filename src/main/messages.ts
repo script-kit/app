@@ -2522,22 +2522,26 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     }),
 
     CACHE_ENV_VAR: onChildChannel(({ child }, { channel, value }) => {
-      const { key, value: envValue, duration = 'session' } = value as {
+      const {
+        key,
+        value: envValue,
+        duration = 'session',
+      } = value as {
         key: string;
         value: string;
         duration?: 'session' | 'until-quit' | 'until-sleep';
       };
 
       log.info(`🔐 Caching environment variable: ${key} with duration: ${duration}`);
-      
+
       // Store in kitState.kenvEnv for immediate use
       kitState.kenvEnv[key] = envValue;
-      
+
       // Handle different cache durations
       if (duration === 'until-quit' || duration === 'until-sleep') {
         // Store persistently in process.env for until-quit and until-sleep
         process.env[key] = envValue;
-        
+
         if (duration === 'until-sleep') {
           // Track keys that should be cleared on sleep
           if (!kitState.sleepClearKeys) {
@@ -2547,9 +2551,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         }
       }
       // For 'session' duration, it's only in kitState.kenvEnv and will be cleared when the script ends
-      
+
       log.info(`✅ Cached ${key} in environment`);
-      
+
       // Note: The cached value will be available to:
       // 1. The current process that requested it (via its next op() call)
       // 2. Any new processes spawned after this point (via createEnv())

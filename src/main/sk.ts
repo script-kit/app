@@ -19,11 +19,20 @@ export const startSK = () => {
         log.info('Kar value', value);
 
         const json = value.match(/^{.*}$/gm)?.[0] ?? '{}';
-        const { script = '', args = [], cwd } = JSON.parse(json);
+        const { script = '', args = [], cwd, mcpResponse } = JSON.parse(json);
 
         try {
-          const result = await handleScript(script, args, cwd);
-          sendResponse(stream, result);
+          const result = await handleScript(script, args, cwd, false, '', {}, mcpResponse);
+
+          // Check if this is an MCP response request
+          if (mcpResponse && result.data) {
+            // For MCP, send just the data as JSON
+            stream.write(JSON.stringify(result.data));
+            stream.end();
+          } else {
+            // For regular requests, send HTTP-formatted response
+            sendResponse(stream, result);
+          }
         } catch (error) {
           handleError(stream, error);
         }

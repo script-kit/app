@@ -319,10 +319,16 @@ async function collectEventsIsolated(
     }
   } finally {
     // Restore original environment variables
-    if (originalKIT) process.env.KIT = originalKIT;
-    else process.env.KIT = undefined;
-    if (originalKENV) process.env.KENV = originalKENV;
-    else process.env.KENV = undefined;
+    if (originalKIT) {
+      process.env.KIT = originalKIT;
+    } else {
+      process.env.KIT = undefined;
+    }
+    if (originalKENV) {
+      process.env.KENV = originalKENV;
+    } else {
+      process.env.KENV = undefined;
+    }
 
     // Cleanup isolated directories
     await isolatedDirs.cleanup();
@@ -598,7 +604,7 @@ describe.concurrent('File System Watcher', () => {
   it('should detect new script files', async () => {
     const events = await collectEventsIsolated(
       1500, // Increased timeout for concurrent test environment
-      async (events, dirs) => {
+      async (_events, dirs) => {
         const scriptName = 'test-script.ts';
         const scriptPath = path.join(dirs.scripts, scriptName);
         log.debug('Creating test script:', scriptPath);
@@ -668,7 +674,7 @@ describe.concurrent('File System Watcher', () => {
   it('should handle file deletions', async () => {
     const events = await collectEventsIsolated(
       1500, // Increased timeout for concurrent test environment
-      async (events, dirs) => {
+      async (_events, dirs) => {
         // Create file first, then delete it within the same test action
         const filePath = path.join(dirs.scripts, 'to-delete.ts');
         log.debug('Creating file to delete:', filePath);
@@ -715,7 +721,7 @@ describe.concurrent('File System Watcher', () => {
   it('should detect new snippet file', async () => {
     const events = await collectEventsIsolated(
       1500, // Increased for concurrent test environment
-      async (events, dirs) => {
+      async (_events, dirs) => {
         const snippetPath = path.join(dirs.snippets, 'my-snippet.txt');
         log.debug('Creating snippet:', snippetPath);
         await writeFile(snippetPath, 'Hello Snippet!');
@@ -733,7 +739,7 @@ describe.concurrent('File System Watcher', () => {
   it('should detect snippet removal', async () => {
     const events = await collectEventsIsolated(
       1500, // Increased for concurrent test environment
-      async (events, dirs) => {
+      async (_events, dirs) => {
         // Create and delete snippet within the same test action
         const snippetPath = path.join(dirs.snippets, 'removable-snippet.txt');
         await writeFile(snippetPath, 'Temporary snippet');
@@ -758,7 +764,7 @@ describe.concurrent('File System Watcher', () => {
   it('should detect new scriptlet file', async () => {
     const events = await collectEventsIsolated(
       1500, // Increased for concurrent test environment
-      async (events, dirs) => {
+      async (_events, dirs) => {
         const scriptletPath = path.join(dirs.scriptlets, 'my-scriptlet.js');
         log.debug('Creating scriptlet:', scriptletPath);
         await writeFile(scriptletPath, '// scriptlet content');
@@ -776,7 +782,7 @@ describe.concurrent('File System Watcher', () => {
   it('should detect scriptlet deletion', async () => {
     const events = await collectEventsIsolated(
       1500, // Increased for concurrent test environment
-      async (events, dirs) => {
+      async (_events, dirs) => {
         // Create and delete scriptlet within the same test action
         const scriptletPath = path.join(dirs.scriptlets, 'deleted-scriptlet.js');
         await writeFile(scriptletPath, '// deleted scriptlet');
@@ -798,7 +804,7 @@ describe.concurrent('File System Watcher', () => {
     expect(unlinkEvent).toBeDefined();
   }, 8000);
 
-  it.skip('should detect changes to run.txt', async () => {
+  it('should detect changes to run.txt', async () => {
     // First create run.txt and let the watchers ignore it
     await writeFile(testDirs.runTxtPath, 'initial content');
 
@@ -821,7 +827,7 @@ describe.concurrent('File System Watcher', () => {
     expect(foundRunTxt).toBe(true);
   });
 
-  it.skip('should detect removals of run.txt', async () => {
+  it('should detect removals of run.txt', async () => {
     // Create run.txt so we can remove it
     if (!(await pathExists(testDirs.runTxtPath))) {
       await writeFile(testDirs.runTxtPath, 'initial content');
@@ -846,7 +852,7 @@ describe.concurrent('File System Watcher', () => {
     );
   });
 
-  it.skip('should detect changes to .env file', async () => {
+  it('should detect changes to .env file', async () => {
     // First create .env and let the watchers ignore it
     await writeFile(testDirs.envFilePath, 'KIT_DOCK=false');
 
@@ -869,7 +875,7 @@ describe.concurrent('File System Watcher', () => {
     expect(foundEnvEvent).toBe(true);
   });
 
-  it.skip('should detect renamed scripts within /scripts directory', async () => {
+  it('should detect renamed scripts within /scripts directory', async () => {
     const originalPath = path.join(testDirs.scripts, 'rename-me.ts');
     const renamedPath = path.join(testDirs.scripts, 'renamed.ts');
 
@@ -899,7 +905,7 @@ describe.concurrent('File System Watcher', () => {
     expect(addEvent).toBeDefined();
   });
 
-  it.skip('should NOT watch nested script files in sub-kenvs', async () => {
+  it('should NOT watch nested script files in sub-kenvs', async () => {
     const testName = 'watcher-behavior';
     log.test(testName, 'Starting test - verifying watcher behavior');
 
@@ -1019,7 +1025,7 @@ describe.concurrent('File System Watcher', () => {
   it('should detect rename of snippet file', async () => {
     const events = await collectEventsIsolated(
       800,
-      async (events, dirs) => {
+      async (_events, dirs) => {
         // Create a snippet to rename
         const snippetOriginal = path.join(dirs.snippets, 'rename-snippet.txt');
         const snippetRenamed = path.join(dirs.snippets, 'renamed-snippet.txt');
@@ -1046,7 +1052,7 @@ describe.concurrent('File System Watcher', () => {
   it('should detect rename of scriptlet file', async () => {
     const events = await collectEventsIsolated(
       1200,
-      async (events, dirs) => {
+      async (_events, dirs) => {
         // Create a scriptlet to rename
         const scriptletOriginal = path.join(dirs.scriptlets, 'rename-scriptlet.js');
         const scriptletRenamed = path.join(dirs.scriptlets, 'renamed-scriptlet.js');
@@ -1076,7 +1082,7 @@ describe.concurrent('File System Watcher', () => {
   it('should detect parallel rename of snippet file', async () => {
     const events = await collectEventsIsolated(
       1200,
-      async (events, dirs) => {
+      async (_events, dirs) => {
         // Create a snippet to rename
         const snippetOriginal = path.join(dirs.snippets, 'parallel-rename-snippet.txt');
         const snippetRenamed = path.join(dirs.snippets, 'parallel-renamed-snippet.txt');
@@ -1109,7 +1115,7 @@ describe.concurrent('File System Watcher', () => {
   it('should detect script extension change (.ts -> .js) - from parallel', async () => {
     const events = await collectEventsIsolated(
       1200,
-      async (events, dirs) => {
+      async (_events, dirs) => {
         const originalPath = path.join(dirs.scripts, 'parallel-extension-change.ts');
         const newPath = path.join(dirs.scripts, 'parallel-extension-change.js');
 
@@ -1139,7 +1145,7 @@ describe.concurrent('File System Watcher', () => {
   it('should handle rapid consecutive changes to snippet files - from parallel', async () => {
     const events = await collectEventsIsolated(
       1500,
-      async (events, dirs) => {
+      async (_events, dirs) => {
         const snippetPath = path.join(dirs.snippets, 'parallel-rapid-snippet.txt');
 
         // Create and modify file rapidly
@@ -1163,7 +1169,7 @@ describe.concurrent('File System Watcher', () => {
   it('should handle removal of .env', async () => {
     const events = await collectEventsIsolated(
       600,
-      async (events, dirs) => {
+      async (_events, dirs) => {
         // Create .env file first, then remove it
         await writeFile(dirs.envFilePath, 'KIT_DOCK=false');
 
@@ -1186,7 +1192,7 @@ describe.concurrent('File System Watcher', () => {
   it('should detect multiple rapid changes to run.txt', async () => {
     const events = await collectEventsIsolated(
       1000,
-      async (events, dirs) => {
+      async (_events, dirs) => {
         // Create run.txt first
         await writeFile(dirs.runTxtPath, 'initial content');
 
@@ -1209,7 +1215,7 @@ describe.concurrent('File System Watcher', () => {
   it('should detect re-creation of user.json after removal', async () => {
     const events = await collectEventsIsolated(
       1000,
-      async (events, dirs) => {
+      async (_events, dirs) => {
         log.debug('Starting user.json recreation test');
         log.debug('User DB Path:', dirs.userJsonPath);
 
@@ -1664,8 +1670,11 @@ it('should detect changes to a symlinked file in main /scripts when followSymlin
   await new Promise<void>((resolve, reject) => {
     import('node:fs').then(({ symlink }) => {
       symlink(linkedTargetDir, symlinkDir, (err) => {
-        if (err) reject(err);
-        else resolve();
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
       });
     });
   });
@@ -1691,7 +1700,7 @@ it('should detect changes to a symlinked file in main /scripts when followSymlin
 it('should detect sub-kenv rename and re-watch its scripts', async () => {
   const events = await collectEventsIsolated(
     2500, // Increased from 1500ms for complex operations
-    async (events, dirs) => {
+    async (_events, dirs) => {
       const originalName = 'my-temp-kenv';
       const renamedName = 'renamed-kenv';
 
@@ -1738,7 +1747,7 @@ it('should detect sub-kenv rename and re-watch its scripts', async () => {
 it('should detect changes to ping.txt', async () => {
   const events = await collectEventsIsolated(
     800,
-    async (events, dirs) => {
+    async (_events, dirs) => {
       // Create ping.txt in the isolated environment
       await writeFile(dirs.pingTxtPath, 'PING TEST');
     },
@@ -1753,7 +1762,7 @@ it('should detect changes to ping.txt', async () => {
 it('should NOT detect changes to random untracked file in kitPath root', async () => {
   const events = await collectEventsIsolated(
     1000,
-    async (events, dirs) => {
+    async (_events, dirs) => {
       // We only watch run.txt, ping.txt, and db/ in kitPath
       // So let's create random-file.txt in kitPath root and ensure it triggers no events
       const randomFile = path.join(dirs.kit, 'random-file.txt');
@@ -1774,7 +1783,7 @@ it('should NOT detect changes to random untracked file in kitPath root', async (
 it('should handle consecutive sub-kenv deletions', async () => {
   const events = await collectEventsIsolated(
     1500,
-    async (events, dirs) => {
+    async (_events, dirs) => {
       const kenv1 = path.join(dirs.kenvs, 'kenv-1');
       const kenv2 = path.join(dirs.kenvs, 'kenv-2');
       const kenv1Scripts = path.join(kenv1, 'scripts');
@@ -1814,7 +1823,7 @@ it('should handle consecutive sub-kenv deletions', async () => {
 it('should detect a symlinked sub-kenv and watch its scripts', async () => {
   const events = await collectEventsIsolated(
     2000,
-    async (events, dirs) => {
+    async (_events, dirs) => {
       const realKenvName = 'real-kenv';
       const symlinkKenvName = 'symlink-kenv';
       const realKenvPath = path.join(dirs.kenvs, realKenvName);
@@ -1829,8 +1838,11 @@ it('should detect a symlinked sub-kenv and watch its scripts', async () => {
       await new Promise<void>((resolve, reject) => {
         import('node:fs').then(({ symlink }) => {
           symlink(realKenvPath, symlinkKenvPath, 'dir', (err) => {
-            if (err) reject(err);
-            else resolve();
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
           });
         });
       });
@@ -1861,7 +1873,7 @@ it('should detect a symlinked sub-kenv and watch its scripts', async () => {
 it('should detect a symlinked sub-kenv even if the symlink is created before the real directory', async () => {
   const events = await collectEventsIsolated(
     2500,
-    async (events, dirs) => {
+    async (_events, dirs) => {
       const realKenvName = 'late-real-kenv';
       const symlinkKenvName = 'late-symlink-kenv';
       const realKenvPath = path.join(dirs.kenvs, realKenvName);
@@ -1873,8 +1885,11 @@ it('should detect a symlinked sub-kenv even if the symlink is created before the
       await new Promise<void>((resolve, reject) => {
         import('node:fs').then(({ symlink }) => {
           symlink(realKenvPath, symlinkKenvPath, 'dir', (err) => {
-            if (err) reject(err);
-            else resolve();
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
           });
         });
       });

@@ -8,6 +8,7 @@ import cors from 'cors';
 import express from 'express';
 import { handleScript } from './handleScript';
 import { serverLog as log } from './logs';
+import { mcpService } from './mcp-service';
 import { getServerPort } from './serverTrayUtils';
 import { kitState } from './state';
 
@@ -41,6 +42,58 @@ export const startServer = () => {
   // CORS middleware - using simple cors() to avoid path-to-regexp issues
   app.use(cors());
 
+  // MCP API Routes
+  app.get('/api/mcp/scripts', async (req, res, next) => {
+    try {
+      // Check for force refresh query parameter
+      const forceRefresh = req.query.force === 'true';
+      const scripts = await mcpService.getMCPScripts(forceRefresh);
+      res.json({ scripts });
+    } catch (error) {
+      log.error('Failed to get MCP scripts:', error);
+      next(error);
+    }
+  });
+
+  app.post('/api/mcp/execute', async (req, res, next) => {
+    try {
+      const { script, args = [] } = req.body;
+
+      if (!script) {
+        return res.status(400).json({ error: 'Script name is required' });
+      }
+
+      // Get MCP script metadata
+      const mcpScript = await mcpService.getMCPScript(script);
+      if (!mcpScript) {
+        return res.status(404).json({ error: `MCP script '${script}' not found` });
+      }
+
+      // Execute the script with mcpResponse flag
+      const result = await handleScript(
+        mcpScript.filePath,
+        args,
+        process.cwd(),
+        false, // checkAccess - MCP scripts are always accessible
+        '', // apiKey - not needed for MCP
+        {}, // headers
+        true, // mcpResponse - always true for MCP
+      );
+
+      // Return the raw data for MCP
+      if (result.data) {
+        res.json(result.data);
+      } else if (result.message) {
+        res.status(result.status || 500).json({ error: result.message });
+      } else {
+        res.status(500).json({ error: 'No response from script' });
+      }
+    } catch (error) {
+      log.error('Failed to execute MCP script:', error);
+      next(error);
+    }
+  });
+
   // Route handlers - using specific patterns instead of wildcards to avoid path-to-regexp issues
 
   // Handle root path separately
@@ -59,11 +112,12 @@ export const startServer = () => {
       const bodyScript = req.body?.script || script;
       const args = req.body?.args || [];
       const cwd = req.body?.cwd || kenvPath();
+      const mcpResponse = req.body?.mcpResponse;
       const headers = req.headers as Record<string, string>;
       log.info({ script: bodyScript, args, cwd });
 
       try {
-        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers);
+        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers, mcpResponse);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else if (typeof result.data === 'object') {
@@ -81,7 +135,7 @@ export const startServer = () => {
       log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
 
       try {
-        const result = await handleScript(script, args, cwd, true, apiKey);
+        const result = await handleScript(script, args, cwd, true, apiKey, {}, false);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else {
@@ -110,11 +164,12 @@ export const startServer = () => {
       const bodyScript = req.body?.script || script;
       const args = req.body?.args || [];
       const cwd = req.body?.cwd || kenvPath();
+      const mcpResponse = req.body?.mcpResponse;
       const headers = req.headers as Record<string, string>;
       log.info({ script: bodyScript, args, cwd });
 
       try {
-        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers);
+        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers, mcpResponse);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else if (typeof result.data === 'object') {
@@ -132,7 +187,7 @@ export const startServer = () => {
       log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
 
       try {
-        const result = await handleScript(script, args, cwd, true, apiKey);
+        const result = await handleScript(script, args, cwd, true, apiKey, {}, false);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else {
@@ -161,11 +216,12 @@ export const startServer = () => {
       const bodyScript = req.body?.script || script;
       const args = req.body?.args || [];
       const cwd = req.body?.cwd || kenvPath();
+      const mcpResponse = req.body?.mcpResponse;
       const headers = req.headers as Record<string, string>;
       log.info({ script: bodyScript, args, cwd });
 
       try {
-        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers);
+        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers, mcpResponse);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else if (typeof result.data === 'object') {
@@ -183,7 +239,7 @@ export const startServer = () => {
       log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
 
       try {
-        const result = await handleScript(script, args, cwd, true, apiKey);
+        const result = await handleScript(script, args, cwd, true, apiKey, {}, false);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else {
@@ -212,11 +268,12 @@ export const startServer = () => {
       const bodyScript = req.body?.script || script;
       const args = req.body?.args || [];
       const cwd = req.body?.cwd || kenvPath();
+      const mcpResponse = req.body?.mcpResponse;
       const headers = req.headers as Record<string, string>;
       log.info({ script: bodyScript, args, cwd });
 
       try {
-        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers);
+        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers, mcpResponse);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else if (typeof result.data === 'object') {
@@ -234,7 +291,7 @@ export const startServer = () => {
       log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
 
       try {
-        const result = await handleScript(script, args, cwd, true, apiKey);
+        const result = await handleScript(script, args, cwd, true, apiKey, {}, false);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else {

@@ -1,7 +1,7 @@
 import { Channel, Mode, UI } from '@johnlindquist/kit/core/enum';
-import type { Choice, Script } from '@johnlindquist/kit/types/core';
 import { ProcessType } from '@johnlindquist/kit/core/enum';
-import { afterEach, beforeEach, bench, describe, expect, vi, type Mock } from 'vitest';
+import type { Choice, Script } from '@johnlindquist/kit/types/core';
+import { type Mock, afterEach, beforeEach, bench, describe, expect, vi } from 'vitest';
 import type { ScoredChoice } from '../shared/types';
 import type { KitPrompt } from './prompt';
 
@@ -46,7 +46,7 @@ vi.mock('@johnlindquist/kit/core/utils', async () => {
   };
 });
 
-import { invokeSearch, setShortcodes, setChoices } from './search';
+import { invokeSearch, setChoices, setShortcodes } from './search';
 
 // Performance measurement utilities
 class PerformanceTracker {
@@ -66,7 +66,9 @@ class PerformanceTracker {
 
   getStats(operation: string) {
     const times = this.measurements.get(operation) || [];
-    if (times.length === 0) return null;
+    if (times.length === 0) {
+      return null;
+    }
 
     const sorted = times.slice().sort((a, b) => a - b);
     return {
@@ -229,17 +231,12 @@ describe('Search Performance Benchmarks', () => {
       },
       updateShortcodes: vi.fn(),
     } as unknown as KitPrompt;
-
-    // Generate 10,000 realistic choices
-    console.time('Generate 10k choices');
     choices = generateMockChoices(10000);
-    console.timeEnd('Generate 10k choices');
 
     // Set up choices with timing
     const setupTimer = performanceTracker.startTimer('setup-choices');
     setChoices(mockPrompt, choices, { preload: false });
     const setupTime = setupTimer();
-    console.log(`Setup 10k choices took: ${setupTime.toFixed(2)}ms`);
   });
 
   afterEach(() => {
@@ -300,16 +297,12 @@ describe('Search Performance Benchmarks', () => {
       const searchTerms = generateSearchTerms();
       const results: Array<{ term: string; duration: number; resultCount: number }> = [];
 
-      console.log('\n=== SEARCH PERFORMANCE ANALYSIS ===');
-      console.log(`Testing ${searchTerms.length} search terms against ${choices.length} choices\n`);
-
       for (const term of searchTerms) {
         const result = measureSearch(term);
         results.push({ term, ...result });
 
         // Log individual results for terms that take longer
         if (result.duration > 50) {
-          console.log(`⚠️  Slow search: "${term}" took ${result.duration.toFixed(2)}ms (${result.resultCount} results)`);
         }
       }
 
@@ -320,25 +313,14 @@ describe('Search Performance Benchmarks', () => {
       const minDuration = Math.min(...durations);
       const slowSearches = results.filter((r) => r.duration > 100);
 
-      console.log('\n=== PERFORMANCE SUMMARY ===');
-      console.log(`Average search time: ${avgDuration.toFixed(2)}ms`);
-      console.log(`Fastest search: ${minDuration.toFixed(2)}ms`);
-      console.log(`Slowest search: ${maxDuration.toFixed(2)}ms`);
-      console.log(`Searches > 100ms: ${slowSearches.length}/${results.length}`);
-
       if (slowSearches.length > 0) {
-        console.log('\nSlow searches:');
-        slowSearches.forEach((s) => {
-          console.log(`  "${s.term}": ${s.duration.toFixed(2)}ms (${s.resultCount} results)`);
-        });
+        slowSearches.forEach((_s) => {});
       }
 
       // Performance assertions
       expect(avgDuration).toBeLessThan(50); // Average should be under 50ms
       expect(maxDuration).toBeLessThan(200); // No search should take more than 200ms
       expect(slowSearches.length).toBeLessThan(results.length * 0.1); // Less than 10% should be slow
-
-      console.log('\n✅ All performance targets met!\n');
     });
 
     it('should measure memory usage during search', () => {
@@ -359,11 +341,6 @@ describe('Search Performance Benchmarks', () => {
         heapTotal: finalMemory.heapTotal - initialMemory.heapTotal,
       };
 
-      console.log('\n=== MEMORY USAGE ===');
-      console.log(`RSS difference: ${(memoryDiff.rss / 1024 / 1024).toFixed(2)} MB`);
-      console.log(`Heap used difference: ${(memoryDiff.heapUsed / 1024 / 1024).toFixed(2)} MB`);
-      console.log(`Heap total difference: ${(memoryDiff.heapTotal / 1024 / 1024).toFixed(2)} MB`);
-
       // Memory should not grow excessively
       expect(memoryDiff.heapUsed).toBeLessThan(100 * 1024 * 1024); // Less than 100MB growth
     });
@@ -371,8 +348,6 @@ describe('Search Performance Benchmarks', () => {
     it('should test concurrent search performance', async () => {
       const concurrentSearches = 10;
       const searchTerm = 'file manager';
-
-      console.log(`\n=== CONCURRENT SEARCH TEST (${concurrentSearches} simultaneous) ===`);
 
       const startTime = performance.now();
 
@@ -387,18 +362,12 @@ describe('Search Performance Benchmarks', () => {
 
       const avgConcurrentTime = results.reduce((sum, r) => sum + r.duration, 0) / results.length;
 
-      console.log(`Total concurrent time: ${totalTime.toFixed(2)}ms`);
-      console.log(`Average individual search time: ${avgConcurrentTime.toFixed(2)}ms`);
-      console.log(`Throughput: ${((concurrentSearches / totalTime) * 1000).toFixed(2)} searches/second`);
-
       expect(avgConcurrentTime).toBeLessThan(100); // Should handle concurrency well
     });
 
     it('should benchmark different choice set sizes', () => {
       const sizes = [1000, 2500, 5000, 7500, 10000];
       const searchTerm = 'file manager';
-
-      console.log('\n=== CHOICE SET SIZE PERFORMANCE ===');
 
       sizes.forEach((size) => {
         const subset = choices.slice(0, size);
@@ -411,7 +380,6 @@ describe('Search Performance Benchmarks', () => {
         }
 
         const avgTime = measurements.reduce((a, b) => a + b, 0) / measurements.length;
-        console.log(`${size.toLocaleString()} choices: ${avgTime.toFixed(2)}ms average`);
 
         // Performance should scale reasonably
         expect(avgTime).toBeLessThan(size * 0.02); // Max 0.02ms per choice

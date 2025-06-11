@@ -176,10 +176,16 @@ export async function collectEventsIsolated(
     }
   } finally {
     // Restore original environment variables
-    if (originalKIT) process.env.KIT = originalKIT;
-    else process.env.KIT = undefined;
-    if (originalKENV) process.env.KENV = originalKENV;
-    else process.env.KENV = undefined;
+    if (originalKIT) {
+      process.env.KIT = originalKIT;
+    } else {
+      process.env.KIT = undefined;
+    }
+    if (originalKENV) {
+      process.env.KENV = originalKENV;
+    } else {
+      process.env.KENV = undefined;
+    }
 
     // Cleanup isolated directories
     if (isolatedDirs.cleanup) {

@@ -182,7 +182,7 @@ export default () => {
       log.info('Submitting flagged value', { flag, submitValue });
       setFlag(flag);
       submit(submitValue);
-      setFlag('')
+      setFlag('');
     },
     hotkeysOptions,
     [flags, input, inputFocus, choices, index, flagValue, flagShortcuts],

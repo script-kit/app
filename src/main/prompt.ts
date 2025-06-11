@@ -64,7 +64,7 @@ import { TrackEvent, trackEvent } from './track';
 import { getVersion } from './version';
 import { makeKeyPanel, makeWindow, prepForClose, setAppearance } from './window/utils';
 
-import { themeLog, promptLog as log } from './logs';
+import { promptLog as log, themeLog } from './logs';
 
 // TODO: Hack context menu to avoid "object destroyed" errors
 contextMenu({
@@ -713,7 +713,9 @@ export class KitPrompt {
       (kitState?.kenvEnv as any)?.KIT_DISABLE_LONG_RUNNING_MONITOR === 'true' ||
       this.script?.longRunning === true
     ) {
-      this.logInfo(`Skipping long-running monitor for ${this.scriptName} (main script, disabled, or longRunning metadata)`);
+      this.logInfo(
+        `Skipping long-running monitor for ${this.scriptName} (main script, disabled, or longRunning metadata)`,
+      );
       return;
     }
 
@@ -1146,11 +1148,11 @@ export class KitPrompt {
       this.close('ProcessGone - force close');
 
       // If close didn't work (due to cooldowns or other checks), force hide
-      if (!this.closed && !this.isDestroyed()) {
+      if (!(this.closed || this.isDestroyed())) {
         this.hideInstant();
         // Set a short timeout to try closing again
         setTimeout(() => {
-          if (!this.closed && !this.isDestroyed()) {
+          if (!(this.closed || this.isDestroyed())) {
             this.close('ProcessGone - retry force close');
           }
         }, 100);
@@ -1635,8 +1637,8 @@ export class KitPrompt {
 
     this.window.webContents?.on('render-process-gone', (event, details) => {
       processes.removeByPid(this.pid, 'prompt exit cleanup');
-      this.sendToPrompt = () => { };
-      this.window.webContents.send = () => { };
+      this.sendToPrompt = () => {};
+      this.window.webContents.send = () => {};
       this.logError('🫣 Render process gone...');
       this.logError({ event, details });
     });
@@ -3054,7 +3056,7 @@ export class KitPrompt {
       reason.includes('removeByPid') ||
       reason.includes('ProcessGone');
 
-    if (!kitState.allowQuit && !isProcessExit) {
+    if (!(kitState.allowQuit || isProcessExit)) {
       if (this.boundToProcess) {
         this.logInfo(`${this.pid}: "close" bound to process`);
         if (this.hasBeenFocused) {
@@ -3092,7 +3094,7 @@ export class KitPrompt {
         this.hideInstant(isProcessExit);
       }
 
-      this.sendToPrompt = () => { };
+      this.sendToPrompt = () => {};
 
       try {
         if (!kitState.isMac) {

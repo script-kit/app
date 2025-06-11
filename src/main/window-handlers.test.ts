@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BrowserWindow } from 'electron';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock electron
 vi.mock('electron', () => ({
@@ -51,12 +51,12 @@ describe('Window Channel Handlers', () => {
     // We need to extract it from the module
     const getHandleCustomWindowChannels = () => {
       // This is the implementation copied from process.ts
-      const handleCustomWindowChannels = (promptInfo: any, data: any): boolean => {
+      const handleCustomWindowChannels = (_promptInfo: any, data: any): boolean => {
         const { channel, value } = data;
         const processLog = {
           info: vi.fn(),
         };
-        
+
         switch (channel) {
           case 'WINDOW_CLOSE': {
             const { id } = value;
@@ -67,7 +67,7 @@ describe('Window Channel Handlers', () => {
             }
             return true;
           }
-          
+
           case 'WINDOW_HIDE': {
             const { id } = value;
             const window = BrowserWindow.fromId(Number.parseInt(id, 10));
@@ -77,7 +77,7 @@ describe('Window Channel Handlers', () => {
             }
             return true;
           }
-          
+
           case 'WINDOW_SHOW': {
             const { id } = value;
             const window = BrowserWindow.fromId(Number.parseInt(id, 10));
@@ -87,7 +87,7 @@ describe('Window Channel Handlers', () => {
             }
             return true;
           }
-          
+
           case 'WINDOW_MINIMIZE': {
             const { id } = value;
             const window = BrowserWindow.fromId(Number.parseInt(id, 10));
@@ -97,21 +97,24 @@ describe('Window Channel Handlers', () => {
             }
             return true;
           }
-          
+
           default:
             return false;
         }
       };
-      
+
       return handleCustomWindowChannels;
     };
 
     it('should close window on WINDOW_CLOSE', () => {
       const handleCustomWindowChannels = getHandleCustomWindowChannels();
-      const result = handleCustomWindowChannels({}, {
-        channel: 'WINDOW_CLOSE',
-        value: { id: '123' },
-      });
+      const result = handleCustomWindowChannels(
+        {},
+        {
+          channel: 'WINDOW_CLOSE',
+          value: { id: '123' },
+        },
+      );
 
       expect(result).toBe(true);
       expect(BrowserWindow.fromId).toHaveBeenCalledWith(123);
@@ -120,10 +123,13 @@ describe('Window Channel Handlers', () => {
 
     it('should hide window on WINDOW_HIDE', () => {
       const handleCustomWindowChannels = getHandleCustomWindowChannels();
-      const result = handleCustomWindowChannels({}, {
-        channel: 'WINDOW_HIDE',
-        value: { id: '123' },
-      });
+      const result = handleCustomWindowChannels(
+        {},
+        {
+          channel: 'WINDOW_HIDE',
+          value: { id: '123' },
+        },
+      );
 
       expect(result).toBe(true);
       expect(BrowserWindow.fromId).toHaveBeenCalledWith(123);
@@ -132,10 +138,13 @@ describe('Window Channel Handlers', () => {
 
     it('should show window on WINDOW_SHOW', () => {
       const handleCustomWindowChannels = getHandleCustomWindowChannels();
-      const result = handleCustomWindowChannels({}, {
-        channel: 'WINDOW_SHOW',
-        value: { id: '123' },
-      });
+      const result = handleCustomWindowChannels(
+        {},
+        {
+          channel: 'WINDOW_SHOW',
+          value: { id: '123' },
+        },
+      );
 
       expect(result).toBe(true);
       expect(BrowserWindow.fromId).toHaveBeenCalledWith(123);
@@ -144,10 +153,13 @@ describe('Window Channel Handlers', () => {
 
     it('should minimize window on WINDOW_MINIMIZE', () => {
       const handleCustomWindowChannels = getHandleCustomWindowChannels();
-      const result = handleCustomWindowChannels({}, {
-        channel: 'WINDOW_MINIMIZE',
-        value: { id: '123' },
-      });
+      const result = handleCustomWindowChannels(
+        {},
+        {
+          channel: 'WINDOW_MINIMIZE',
+          value: { id: '123' },
+        },
+      );
 
       expect(result).toBe(true);
       expect(BrowserWindow.fromId).toHaveBeenCalledWith(123);
@@ -156,12 +168,15 @@ describe('Window Channel Handlers', () => {
 
     it('should not perform operation on destroyed window', () => {
       mockWindow.isDestroyed.mockReturnValue(true);
-      
+
       const handleCustomWindowChannels = getHandleCustomWindowChannels();
-      const result = handleCustomWindowChannels({}, {
-        channel: 'WINDOW_CLOSE',
-        value: { id: '123' },
-      });
+      const result = handleCustomWindowChannels(
+        {},
+        {
+          channel: 'WINDOW_CLOSE',
+          value: { id: '123' },
+        },
+      );
 
       expect(result).toBe(true);
       expect(mockWindow.close).not.toHaveBeenCalled();
@@ -169,12 +184,15 @@ describe('Window Channel Handlers', () => {
 
     it('should handle non-existent window gracefully', () => {
       vi.mocked(BrowserWindow.fromId).mockReturnValue(null);
-      
+
       const handleCustomWindowChannels = getHandleCustomWindowChannels();
-      const result = handleCustomWindowChannels({}, {
-        channel: 'WINDOW_CLOSE',
-        value: { id: '999' },
-      });
+      const result = handleCustomWindowChannels(
+        {},
+        {
+          channel: 'WINDOW_CLOSE',
+          value: { id: '999' },
+        },
+      );
 
       expect(result).toBe(true);
       expect(() => result).not.toThrow();
@@ -182,10 +200,13 @@ describe('Window Channel Handlers', () => {
 
     it('should return false for unknown channels', () => {
       const handleCustomWindowChannels = getHandleCustomWindowChannels();
-      const result = handleCustomWindowChannels({}, {
-        channel: 'UNKNOWN_CHANNEL',
-        value: {},
-      });
+      const result = handleCustomWindowChannels(
+        {},
+        {
+          channel: 'UNKNOWN_CHANNEL',
+          value: {},
+        },
+      );
 
       expect(result).toBe(false);
     });
@@ -264,7 +285,7 @@ describe('Window Channel Handlers', () => {
   describe('FOCUS_KIT_WINDOW handler', () => {
     it('should focus the specified window', async () => {
       const { app } = await import('electron');
-      
+
       // Test the logic that would be in FOCUS_KIT_WINDOW handler
       const { id } = { id: '123' };
       const window = BrowserWindow.fromId(Number.parseInt(id, 10));
@@ -280,7 +301,7 @@ describe('Window Channel Handlers', () => {
 
     it('should handle non-existent window gracefully', () => {
       vi.mocked(BrowserWindow.fromId).mockReturnValue(null);
-      
+
       // Should not throw
       expect(() => {
         const { id } = { id: '999' };

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { getUserJson } from '@johnlindquist/kit/core/db';
 import { Channel, Env } from '@johnlindquist/kit/core/enum';
 import type { Script, Scriptlet } from '@johnlindquist/kit/types';
+import { Notification, shell } from 'electron';
 import { globby } from 'globby';
 import { debounce } from 'lodash-es';
 import { isEqual, omit } from 'lodash-es';
@@ -11,7 +12,6 @@ import madge, { type MadgeModuleDependencyGraph } from 'madge';
 import { packageUp } from 'package-up';
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
-import { Notification, shell } from 'electron';
 
 import { getKenvFromPath, kenvPath, kitPath, parseScript, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
 
@@ -52,9 +52,9 @@ import { setCSSVariable } from './theme';
 import { removeSnippet, snippetMap, snippetScriptChanged } from './tick';
 
 import { watcherLog as log, scriptLog } from './logs';
+import { prompts } from './prompts';
 import { createIdlePty } from './pty';
 import { parseSnippet } from './snippet-cache';
-import { prompts } from './prompts';
 
 // Add a map to track recently processed files
 const recentlyProcessedFiles = new Map<string, number>();
@@ -775,7 +775,7 @@ export const parseEnvFile = debounce(async () => {
   }
 
   let themeVarsChanged = false;
-  
+
   if (envData?.KIT_THEME_LIGHT) {
     log.info('Setting light theme', envData?.KIT_THEME_LIGHT);
     if (kitState.kenvEnv.KIT_THEME_LIGHT !== envData?.KIT_THEME_LIGHT) {
@@ -1364,16 +1364,16 @@ export async function handleFileChangeEvent(eventName: WatchEvent, filePath: str
 
   if (base === 'kit.css') {
     log.info('🔄 kit.css changed');
-    
+
     // Check if KIT_THEME_* variables are set
     const hasThemeEnvVars = kitState.kenvEnv?.KIT_THEME_LIGHT || kitState.kenvEnv?.KIT_THEME_DARK;
     const kitCssPath = kenvPath('kit.css');
-    
-    if (hasThemeEnvVars && await pathExists(kitCssPath)) {
+
+    if (hasThemeEnvVars && (await pathExists(kitCssPath))) {
       // Show notification about the conflict
       showThemeConflictNotification();
     }
-    
+
     for (const prompt of prompts) {
       prompt.attemptReadTheme();
     }

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('CACHE_ENV_VAR Handler', () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -7,7 +7,7 @@ describe('CACHE_ENV_VAR Handler', () => {
   beforeEach(() => {
     // Save original env
     originalEnv = { ...process.env };
-    
+
     // Create mock kitState
     kitState = {
       kenvEnv: {},
@@ -24,15 +24,15 @@ describe('CACHE_ENV_VAR Handler', () => {
     it('should handle session duration', () => {
       const handler = ({ channel, value }: any) => {
         const { key, value: envValue, duration = 'session' } = value;
-        
+
         // Store in kitState.kenvEnv for immediate use
         kitState.kenvEnv[key] = envValue;
-        
+
         // Handle different cache durations
         if (duration === 'until-quit' || duration === 'until-sleep') {
           // Store persistently in process.env for until-quit and until-sleep
           process.env[key] = envValue;
-          
+
           if (duration === 'until-sleep') {
             // Track keys that should be cleared on sleep
             if (!kitState.sleepClearKeys) {
@@ -61,12 +61,12 @@ describe('CACHE_ENV_VAR Handler', () => {
     it('should handle until-quit duration', () => {
       const handler = ({ channel, value }: any) => {
         const { key, value: envValue, duration = 'session' } = value;
-        
+
         kitState.kenvEnv[key] = envValue;
-        
+
         if (duration === 'until-quit' || duration === 'until-sleep') {
           process.env[key] = envValue;
-          
+
           if (duration === 'until-sleep') {
             if (!kitState.sleepClearKeys) {
               kitState.sleepClearKeys = new Set<string>();
@@ -93,12 +93,12 @@ describe('CACHE_ENV_VAR Handler', () => {
     it('should handle until-sleep duration', () => {
       const handler = ({ channel, value }: any) => {
         const { key, value: envValue, duration = 'session' } = value;
-        
+
         kitState.kenvEnv[key] = envValue;
-        
+
         if (duration === 'until-quit' || duration === 'until-sleep') {
           process.env[key] = envValue;
-          
+
           if (duration === 'until-sleep') {
             if (!kitState.sleepClearKeys) {
               kitState.sleepClearKeys = new Set<string>();
@@ -133,11 +133,11 @@ describe('CACHE_ENV_VAR Handler', () => {
         OP_SLEEP_KEY_2: 'sleep-value-2',
         OP_QUIT_KEY: 'quit-value',
       };
-      
+
       process.env.OP_SLEEP_KEY_1 = 'sleep-value-1';
       process.env.OP_SLEEP_KEY_2 = 'sleep-value-2';
       process.env.OP_QUIT_KEY = 'quit-value';
-      
+
       kitState.sleepClearKeys = new Set(['OP_SLEEP_KEY_1', 'OP_SLEEP_KEY_2']);
 
       // Simulate sleep clearing logic
@@ -154,11 +154,11 @@ describe('CACHE_ENV_VAR Handler', () => {
       expect(process.env.OP_SLEEP_KEY_2).toBeUndefined();
       expect(kitState.kenvEnv.OP_SLEEP_KEY_1).toBeUndefined();
       expect(kitState.kenvEnv.OP_SLEEP_KEY_2).toBeUndefined();
-      
+
       expect(process.env.OP_QUIT_KEY).toBe('quit-value');
       expect(kitState.kenvEnv.OP_SESSION_KEY).toBe('session-value');
       expect(kitState.kenvEnv.OP_QUIT_KEY).toBe('quit-value');
-      
+
       expect(kitState.sleepClearKeys.size).toBe(0);
     });
   });

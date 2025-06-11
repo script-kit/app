@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ProcessScanner } from './process-scanner';
 import * as child_process from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import { Notification } from 'electron';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ProcessScanner } from './process-scanner';
 
 // Mock modules
 vi.mock('node:child_process');

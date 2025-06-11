@@ -66,7 +66,7 @@ const createProcessHandler = (fn: () => Promise<void> | void, options: ProcessHa
         const interval = setInterval(() => {
           checkCount++;
           const hasAvailable = processes.hasAvailableProcess;
-          
+
           if (checkCount % 10 === 0) {
             // Log every second
             log.info(`Still waiting for process. Check #${checkCount}, hasAvailable: ${hasAvailable}`, {

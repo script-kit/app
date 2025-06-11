@@ -1,7 +1,7 @@
 import { Channel, Mode, UI } from '@johnlindquist/kit/core/enum';
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
-import type { KitPrompt } from './prompt';
+import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ScoredChoice } from '../shared/types';
+import type { KitPrompt } from './prompt';
 
 // Mock dependencies
 vi.mock('lodash-es', () => ({
@@ -25,7 +25,7 @@ vi.mock('./search', () => ({
   checkShortcodesAndKeywords: vi.fn(() => true),
 }));
 
-import { invokeSearch, checkShortcodesAndKeywords } from './search';
+import { checkShortcodesAndKeywords, invokeSearch } from './search';
 
 // Type for message structure
 interface InputMessage {

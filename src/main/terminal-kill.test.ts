@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { KitEvent } from '../shared/events';
 
 // Mock dependencies
@@ -66,7 +66,7 @@ class KitPrompt {
     this.pid = pid;
     this.boundToProcess = true;
     this.startProcessMonitoring();
-    
+
     this.processGoneHandler = (gonePid: number) => {
       if (gonePid === this.pid) {
         this.handleProcessGone();
@@ -93,7 +93,9 @@ class KitPrompt {
   }
 
   handleProcessGone() {
-    if (!this.boundToProcess) return;
+    if (!this.boundToProcess) {
+      return;
+    }
 
     this.boundToProcess = false;
     this.stopProcessMonitoring();
@@ -120,8 +122,11 @@ class KitPrompt {
     mockProcessLog.info(`Closing prompt: ${reason}`);
 
     // Fixed: Skip checks for process exit scenarios
-    const isProcessExit = reason.includes('process-exit') || reason.includes('TERM_KILL') || 
-                         reason.includes('removeByPid') || reason.includes('ProcessGone');
+    const isProcessExit =
+      reason.includes('process-exit') ||
+      reason.includes('TERM_KILL') ||
+      reason.includes('removeByPid') ||
+      reason.includes('ProcessGone');
 
     if (!isProcessExit) {
       if (this.boundToProcess && !this.hasBeenFocused) {
@@ -143,7 +148,7 @@ class KitPrompt {
 
     this.closed = true;
     this.stopProcessMonitoring();
-    
+
     // Clean up event listeners
     if (this.processGoneHandler) {
       mockEmitter.off(KitEvent.ProcessGone, this.processGoneHandler);
@@ -174,7 +179,7 @@ describe('Terminal Kill Bug Fix', () => {
 
       // First removal attempt
       processManager.removeByPid(pid, 'first attempt');
-      
+
       // Second attempt with TERM_KILL should bypass debounce
       processManager.removeByPid(pid, 'TERM_KILL from terminal');
 
@@ -190,7 +195,7 @@ describe('Terminal Kill Bug Fix', () => {
 
       // First removal attempt
       processManager.removeByPid(pid, 'first attempt');
-      
+
       // Second attempt without TERM_KILL should be debounced
       processManager.removeByPid(pid, 'second attempt');
 
@@ -247,7 +252,7 @@ describe('Terminal Kill Bug Fix', () => {
       processManager.removeByPid(pid, 'TERM_KILL');
 
       // Wait for event propagation
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(prompt.closed).toBe(true);
       expect(prompt.boundToProcess).toBe(false);
@@ -256,7 +261,7 @@ describe('Terminal Kill Bug Fix', () => {
     it('should retry close if first attempt fails', async () => {
       const pid = 1234;
       prompt.bindToProcess(pid);
-      
+
       // Mock the close method to fail on first attempt
       let closeAttempts = 0;
       const originalClose = prompt.close.bind(prompt);
@@ -269,12 +274,12 @@ describe('Terminal Kill Bug Fix', () => {
         }
         originalClose(reason);
       });
-      
+
       processManager.addProcess(pid, { name: 'test' });
       processManager.removeByPid(pid, 'TERM_KILL');
 
       // Wait for retry
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 150));
 
       expect(prompt.close).toHaveBeenCalledWith('ProcessGone - retry force close');
       expect(closeAttempts).toBeGreaterThanOrEqual(2);
@@ -304,7 +309,7 @@ describe('Terminal Kill Bug Fix', () => {
   describe('Full Terminal Kill Flow', () => {
     it('should properly clean up prompt when process is killed from terminal', async () => {
       const pid = 1234;
-      
+
       // Setup: Prompt bound to process, not focused
       prompt.bindToProcess(pid);
       prompt.hasBeenFocused = false;
@@ -314,7 +319,7 @@ describe('Terminal Kill Bug Fix', () => {
       processManager.removeByPid(pid, 'TERM_KILL from PTY');
 
       // Wait for async operations
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Verify cleanup
       expect(prompt.closed).toBe(true);

@@ -285,10 +285,10 @@ export class HealthMonitor {
       };
     });
 
-    return { 
-      app: appMetrics, 
+    return {
+      app: appMetrics,
       windows,
-      processCount: this.customMetrics.processCount
+      processCount: this.customMetrics.processCount,
     };
   }
 

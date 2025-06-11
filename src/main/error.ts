@@ -1,12 +1,12 @@
 import os from 'node:os';
 import { kitPath } from '@johnlindquist/kit/core/utils';
-import { app, Notification, shell } from 'electron';
+import { Notification, app, shell } from 'electron';
 import log from 'electron-log';
 import { debounce } from 'lodash-es';
 import { Trigger } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
-import { TrackEvent, trackEvent } from './track';
 import { mainLogPath } from './logs';
+import { TrackEvent, trackEvent } from './track';
 
 const electronVersion = process.versions.electron ?? '0.0.0';
 export const debugInfo = () =>

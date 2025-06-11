@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import schedule from 'node-schedule';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProcessMonitor } from './process-monitor';
 import { processScanner } from './process-scanner';
 import { kitState } from './state';
-import schedule from 'node-schedule';
 
 // Mock dependencies
 vi.mock('./process-scanner', () => ({
@@ -12,30 +12,30 @@ vi.mock('./process-scanner', () => ({
       totalCount: 5,
       processes: [],
       threshold: 20,
-      exceededThreshold: false
-    })
-  }
+      exceededThreshold: false,
+    }),
+  },
 }));
 
 vi.mock('./state', () => ({
   kitState: {
     suspended: false,
-    processMonitorEnabled: false
-  }
+    processMonitorEnabled: false,
+  },
 }));
 
 vi.mock('node-schedule', () => ({
   default: {
-    scheduleJob: vi.fn().mockReturnValue({ cancel: vi.fn() })
-  }
+    scheduleJob: vi.fn().mockReturnValue({ cancel: vi.fn() }),
+  },
 }));
 
 vi.mock('./logs', () => ({
   processLog: {
     info: vi.fn(),
     error: vi.fn(),
-    warn: vi.fn()
-  }
+    warn: vi.fn(),
+  },
 }));
 
 vi.mock('electron-log', () => ({
@@ -44,9 +44,9 @@ vi.mock('electron-log', () => ({
     error: vi.fn(),
     transports: {
       console: { level: false },
-      ipc: null
-    }
-  }
+      ipc: null,
+    },
+  },
 }));
 
 describe('ProcessMonitor', () => {
@@ -75,21 +75,21 @@ describe('ProcessMonitor', () => {
     it('should not start if already monitoring', async () => {
       await monitor.start();
       vi.clearAllMocks();
-      
+
       await monitor.start();
-      
+
       expect(processScanner.performScan).not.toHaveBeenCalled();
     });
 
     it('should not start if disabled via environment variable', async () => {
       process.env.KIT_PROCESS_MONITOR_ENABLED = 'false';
-      
+
       await monitor.start();
-      
+
       expect(processScanner.performScan).not.toHaveBeenCalled();
       expect(schedule.scheduleJob).not.toHaveBeenCalled();
-      
-      delete process.env.KIT_PROCESS_MONITOR_ENABLED;
+
+      process.env.KIT_PROCESS_MONITOR_ENABLED = undefined;
     });
   });
 
@@ -97,22 +97,22 @@ describe('ProcessMonitor', () => {
     it('should skip scan when system is suspended', async () => {
       await monitor.start();
       vi.clearAllMocks();
-      
+
       kitState.suspended = true;
       // Access private method through prototype
       await (monitor as any).performScan();
-      
+
       expect(processScanner.performScan).not.toHaveBeenCalled();
     });
 
     it('should update health monitor with process count', async () => {
       global.healthMonitor = { customMetrics: {} };
-      
+
       await monitor.start();
-      
+
       expect(global.healthMonitor.customMetrics.processCount).toBe(5);
-      
-      delete global.healthMonitor;
+
+      global.healthMonitor = undefined;
     });
   });
 
@@ -121,9 +121,9 @@ describe('ProcessMonitor', () => {
       await monitor.start();
       const job = { cancel: vi.fn() };
       (monitor as any).job = job;
-      
+
       await monitor.stop();
-      
+
       expect(job.cancel).toHaveBeenCalled();
       expect(kitState.processMonitorEnabled).toBe(false);
       expect(monitor.isRunning()).toBe(false);
@@ -133,12 +133,12 @@ describe('ProcessMonitor', () => {
   describe('handleSystemResume', () => {
     it('should log resume message', async () => {
       const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      
+
       await monitor.handleSystemResume();
-      
+
       // Just verify the method doesn't throw
       expect(monitor.handleSystemResume).not.toThrow();
-      
+
       logSpy.mockRestore();
     });
   });

@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ipcMain } from 'electron';
-import { debounce } from 'lodash-es';
 import axios from 'axios';
 import detect from 'detect-file-type';
+import { ipcMain } from 'electron';
+import { debounce } from 'lodash-es';
 import { DownloaderHelper } from 'node-downloader-helper';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock all dependencies
 vi.mock('electron', () => ({
@@ -107,11 +107,11 @@ vi.mock('./state', () => ({
   },
 }));
 
+import { Channel, Mode, UI } from '@johnlindquist/kit/core/enum';
+import type { AppMessage } from '@johnlindquist/kit/types/kitapp';
+import { AppChannel, HideReason, Trigger } from '../shared/enums';
 // Import the module after mocks
 import { startIpc } from './ipc';
-import type { AppMessage } from '@johnlindquist/kit/types/kitapp';
-import { Channel, Mode, UI } from '@johnlindquist/kit/core/enum';
-import { AppChannel, HideReason, Trigger } from '../shared/enums';
 
 describe('IPC Communication', () => {
   let mockPrompt: any;
@@ -119,7 +119,7 @@ describe('IPC Communication', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Setup mock prompt
     mockPrompt = {
       pid: 1234,
@@ -153,14 +153,14 @@ describe('IPC Communication', () => {
   describe('startIpc', () => {
     it('should register IPC handlers', () => {
       startIpc();
-      
+
       // Check that handlers are registered
       expect(ipcMain.on).toHaveBeenCalled();
-      
+
       // Check for specific channels being registered
       const onCalls = vi.mocked(ipcMain.on).mock.calls;
       const registeredChannels = onCalls.map(([channel]) => channel);
-      
+
       // Verify at least some key channels are registered
       expect(registeredChannels).toContain(AppChannel.ERROR_RELOAD);
     });
@@ -180,7 +180,7 @@ describe('IPC Communication', () => {
       // Simulate a channel handler being called
       const handlers = vi.mocked(ipcMain.on).mock.calls;
       const inputHandler = handlers.find(([channel]) => channel === Channel.INPUT)?.[1];
-      
+
       if (inputHandler) {
         inputHandler({}, message);
         expect(processes.getByPid).toHaveBeenCalledWith(1234);
@@ -199,11 +199,11 @@ describe('IPC Communication', () => {
 
       // The handleMessageFail is debounced
       const { ipcLog } = vi.mocked(await import('./logs'));
-      
+
       // Simulate handling a message with no process
       processes.removeByPid(1234, 'ipc handleMessageFail');
       ensureIdleProcess();
-      
+
       expect(processes.removeByPid).toHaveBeenCalledWith(1234, 'ipc handleMessageFail');
       expect(ensureIdleProcess).toHaveBeenCalled();
     });
@@ -213,15 +213,15 @@ describe('IPC Communication', () => {
     describe('checkShortcodesAndKeywords', () => {
       it('should handle trigger matches', () => {
         mockPrompt.kitSearch.triggers.set('test', { value: 'triggered' });
-        
+
         // We can't directly test checkShortcodesAndKeywords as it's not exported
         // but we can verify the behavior through integration
       });
 
       it('should handle postfix matches', () => {
-        mockPrompt.kitSearch.postfixes.set('.js', { 
-          name: 'JavaScript', 
-          value: 'js-handler' 
+        mockPrompt.kitSearch.postfixes.set('.js', {
+          name: 'JavaScript',
+          value: 'js-handler',
         });
       });
 
@@ -247,9 +247,9 @@ describe('IPC Communication', () => {
         on: vi.fn().mockReturnThis(),
         start: vi.fn().mockReturnThis(),
       };
-      
+
       vi.mocked(DownloaderHelper).mockImplementation(() => mockDownloader as any);
-      
+
       // Test download functionality when properly integrated
     });
 
@@ -258,7 +258,7 @@ describe('IPC Communication', () => {
         ext: 'png',
         mime: 'image/png',
       });
-      
+
       // Test file type detection
     });
   });
@@ -266,7 +266,7 @@ describe('IPC Communication', () => {
   describe('Search Functionality', () => {
     it('should invoke search with debouncing', async () => {
       const { debounceInvokeSearch, invokeSearch } = vi.mocked(await import('./search'));
-      
+
       // Test search invocation
       debounceInvokeSearch({} as any, 'test query', {} as any);
       expect(debounceInvokeSearch).toHaveBeenCalled();
@@ -274,7 +274,7 @@ describe('IPC Communication', () => {
 
     it('should handle flag search', async () => {
       const { invokeFlagSearch } = vi.mocked(await import('./search'));
-      
+
       // Test flag search
       invokeFlagSearch({} as any, 'flag', {} as any);
       expect(invokeFlagSearch).toHaveBeenCalled();
@@ -288,7 +288,7 @@ describe('IPC Communication', () => {
         width: 800,
         height: 600,
       };
-      
+
       // Test resize handling when integrated
     });
   });
@@ -296,7 +296,7 @@ describe('IPC Communication', () => {
   describe('Script Execution', () => {
     it('should run prompt process', async () => {
       const { runPromptProcess } = vi.mocked(await import('./kit'));
-      
+
       await runPromptProcess({
         scriptPath: '/test/script.js',
         args: ['arg1', 'arg2'],
@@ -305,7 +305,7 @@ describe('IPC Communication', () => {
           trigger: Trigger.Ipc,
         },
       });
-      
+
       expect(runPromptProcess).toHaveBeenCalled();
     });
   });
@@ -320,11 +320,11 @@ describe('IPC Communication', () => {
   describe('Error Handling', () => {
     it('should handle IPC errors gracefully', async () => {
       const { ipcLog } = vi.mocked(await import('./logs'));
-      
+
       // Simulate an error
       const error = new Error('IPC Error');
       ipcLog.error('IPC Error', error);
-      
+
       expect(ipcLog.error).toHaveBeenCalledWith('IPC Error', error);
     });
   });

@@ -1,7 +1,7 @@
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
-import type { Choice, Script } from '@johnlindquist/kit/types/core';
 import { ProcessType } from '@johnlindquist/kit/core/enum';
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import type { Choice, Script } from '@johnlindquist/kit/types/core';
+import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ScoredChoice } from '../shared/types';
 import type { KitPrompt } from './prompt';
 
@@ -800,7 +800,7 @@ describe('Search Ordering and Complex Choices', () => {
         keyword: `keyword${i}`,
         group: i % 3 === 0 ? 'Group A' : i % 3 === 1 ? 'Group B' : 'Group C',
       }));
-      const searchResults = choices.slice(0, 10).map((choice, i) => ({
+      const searchResults = choices.slice(0, 10).map((choice, _i) => ({
         item: choice,
         score: 0.8, // Same score for tie-breaking
         matches: { name: [[0, 4]] },

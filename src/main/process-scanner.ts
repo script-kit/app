@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 import { appendFile } from 'node:fs/promises';
-import { Notification, shell, app } from 'electron';
+import { Notification, app, shell } from 'electron';
 import { processLog as log, processLogPath } from './logs';
 
 interface ProcessInfo {
