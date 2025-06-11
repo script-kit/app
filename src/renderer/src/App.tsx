@@ -23,11 +23,6 @@ import Panel from './components/panel';
 import Tabs from './components/tabs';
 import TextArea from './components/textarea';
 import {
-  activeThemeEffectAtom,
-  activeResizeEffectAtom,
-  activeChatEffectAtom,
-} from './jotai-effects';
-import {
   appBoundsAtom,
   audioDotAtom,
   channelAtom,
@@ -165,11 +160,6 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function App() {
-  // Initialize effects
-  useAtomValue(activeThemeEffectAtom);
-  useAtomValue(activeResizeEffectAtom);
-  useAtomValue(activeChatEffectAtom);
-
   const [pid] = useAtom(pidAtom);
   const [input] = useAtom(inputAtom);
   const [open] = useAtom(openAtom);
