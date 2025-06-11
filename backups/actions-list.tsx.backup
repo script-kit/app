@@ -88,19 +88,10 @@ function InnerList({ height }: { height: number }) {
     setScrollTimeout(newTimeout);
   }, [index, scrollTimeout, setIsScrolling]);
 
-  const itemSize = useMemo(
-    () => {
-      // Pre-calculate all item sizes to avoid repeated calculations
-      const sizes = new Map<number, number>();
-      return (i: number) => {
-        if (sizes.has(i)) {
-          return sizes.get(i)!;
-        }
-        const maybeHeight = choices?.[i]?.item?.height;
-        const height = typeof maybeHeight === 'number' ? maybeHeight : itemHeight;
-        sizes.set(i, height);
-        return height;
-      };
+  const itemSize = useCallback(
+    (i: number) => {
+      const maybeHeight = choices?.[i]?.item?.height;
+      return typeof maybeHeight === 'number' ? maybeHeight : itemHeight;
     },
     [choices, itemHeight],
   );

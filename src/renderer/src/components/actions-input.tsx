@@ -1,7 +1,7 @@
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { type ChangeEvent, type KeyboardEvent, type LegacyRef, useCallback, useEffect, useRef, useState } from 'react';
+import { type ChangeEvent, type KeyboardEvent, type LegacyRef, useCallback, useEffect, useRef, useState, useDeferredValue } from 'react';
 
 import { useActionsKeyIndex, useFocus, useTab } from '../hooks';
 import {

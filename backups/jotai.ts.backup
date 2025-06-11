@@ -30,7 +30,6 @@ import type { editor } from 'monaco-editor';
 import { drop as _drop, debounce, isEqual, throttle } from 'lodash-es';
 const { ipcRenderer } = window.electron;
 import type { Rectangle } from 'electron';
-import { unstable_batchedUpdates } from 'react-dom';
 import type { MessageType } from 'react-chat-elements';
 import type { VariableSizeList } from 'react-window';
 import { findCssVar, toHex } from '../../shared/color-utils';
@@ -3209,41 +3208,32 @@ export const scoredFlagsAtom = atom(
   },
   (g, s, a: ScoredChoice[]) => {
     // log.info(`🇺🇸 Setting scored flags: ${Object.keys(a?.map((c) => c?.item?.name))}`);
-    
-    // Batch all atom updates to prevent multiple re-renders
-    unstable_batchedUpdates(() => {
-      s(scoredFlags, a);
-      s(flagsIndexAtom, 0);
+    s(scoredFlags, a);
+    s(flagsIndexAtom, 0);
 
-      // if the first cs has a `border-t-1`, remove it
-      if (a?.[0]?.item?.className) {
-        a[0].item.className = a?.[0]?.item?.className.replace('border-t-1', '');
+    let choicesHeight = 0;
+
+    for (const {
+      item: { height },
+    } of a) {
+      choicesHeight += height || g(actionsItemHeightAtom);
+      if (choicesHeight > 1920) {
+        break;
       }
+    }
 
-      const defaultActionId = g(defaultActionsIdAtom);
-      if (defaultActionId) {
-        const defaultActionIndex = a.findIndex((c) => c?.item?.id === defaultActionId);
-        s(flagsIndexAtom, defaultActionIndex || 0);
-      }
+    // if the first cs has a `border-t-1`, remove it
+    if (a?.[0]?.item?.className) {
+      a[0].item.className = a?.[0]?.item?.className.replace('border-t-1', '');
+    }
 
-      // Defer height calculation to avoid blocking the UI
-      requestAnimationFrame(() => {
-        let choicesHeight = 0;
-        const itemHeight = g(actionsItemHeightAtom);
+    s(flagsHeightAtom, choicesHeight);
 
-        for (const {
-          item: { height },
-        } of a) {
-          choicesHeight += height || itemHeight;
-          if (choicesHeight > 1920) {
-            choicesHeight = 1920;
-            break;
-          }
-        }
-
-        s(flagsHeightAtom, choicesHeight);
-      });
-    });
+    const defaultActionId = g(defaultActionsIdAtom);
+    if (defaultActionId) {
+      const defaultActionIndex = a.findIndex((c) => c?.item?.id === defaultActionId);
+      s(flagsIndexAtom, defaultActionIndex || 0);
+    }
   },
 );
 
