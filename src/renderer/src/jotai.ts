@@ -30,25 +30,14 @@ import type { editor } from 'monaco-editor';
 import { drop as _drop, debounce, isEqual, throttle } from 'lodash-es';
 const { ipcRenderer } = window.electron;
 import type { Rectangle } from 'electron';
-import type { MessageType } from 'react-chat-elements';
 import { unstable_batchedUpdates } from 'react-dom';
+import type { MessageType } from 'react-chat-elements';
 import type { VariableSizeList } from 'react-window';
 import { findCssVar, toHex } from '../../shared/color-utils';
 import { DEFAULT_HEIGHT, SPLASH_PATH, closedDiv, noChoice, noScript } from '../../shared/defaults';
 import { AppChannel } from '../../shared/enums';
 import type { ResizeData, ScoredChoice, Survey, TermConfig } from '../../shared/types';
 import { formatShortcut } from './components/formatters';
-import {
-  activeChatEffectAtom,
-  activeResizeEffectAtom,
-  activeThemeEffectAtom,
-  chatMessagesEffect,
-  requestResize,
-  resizeEffect,
-  resizeRequestAtom,
-  themeAppearanceEffect,
-  themeUpdateTriggerAtom,
-} from './jotai-effects';
 
 const log = createLogger('jotai.ts');
 
@@ -1124,21 +1113,7 @@ const resizeSettle = debounce((g: Getter, s: Setter) => {
 
 export const promptResizedByHumanAtom = atom(false);
 
-// New resize function using effects
-const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
-  // Check if effects are initialized
-  const resizeRequests = g(resizeRequestAtom);
-  if (resizeRequests !== undefined) {
-    // Trigger resize through effect
-    requestResize(s, reason);
-  } else {
-    // Fallback to legacy resize if effect not initialized
-    legacyResize(g, s, reason);
-  }
-};
-
-// Legacy resize function - will be replaced by effect-based approach
-const legacyResize = debounce(
+const resize = debounce(
   (g: Getter, s: Setter, reason = 'UNSET') => {
     const human = g(promptResizedByHumanAtom);
     if (human) {
@@ -1533,11 +1508,9 @@ const _themeAtom = atom('');
 export const themeAtom = atom(
   (g) => g(_themeAtom),
   (_g, s, theme: string) => {
-    // Use the new effect-based approach
+    setAppearance(s, theme);
     s(_themeAtom, theme);
     s(_tempThemeAtom, theme);
-    // Trigger the theme effect
-    s(themeUpdateTriggerAtom, theme);
   },
 );
 
@@ -2163,37 +2136,34 @@ const emptyFilePathBounds: FilePathBounds = {
 };
 export const filePathBoundsAtom = atom<FilePathBounds>(emptyFilePathBounds);
 
-// DEPRECATED: This function has been replaced by themeAppearanceEffect in jotai-effects.ts
-// The old implementation is kept here for reference but is no longer used
-// const setAppearance = debounce((s: Setter, theme: string) => {
-//   // Parse the theme string to extract CSS variables
-//   const themeObj: Record<string, string> = {};
-//   const lines = theme.split('}')[0].split('{')[1].trim().split(';');
-//
-//   for (const line of lines) {
-//     const [key, value] = line.split(':').map((s) => s.trim());
-//     if (key && value) {
-//       themeObj[key.replace('--', '')] = value.replace(/;$/, '');
-//     }
-//   }
-//
-//   // log.info(`🎨 Parsed theme: `, themeObj?.appearance);
-//
-//   // Read the --appearance CSS variable
-//   const appearance = themeObj?.appearance;
-//
-//   log.info(`Appearance set to: ${appearance}`);
-//   s(appearanceAtom, (appearance as Appearance) || 'dark');
-// }, 10);
+const setAppearance = debounce((s: Setter, theme: string) => {
+  // Parse the theme string to extract CSS variables
+  const themeObj: Record<string, string> = {};
+  const lines = theme.split('}')[0].split('{')[1].trim().split(';');
+
+  for (const line of lines) {
+    const [key, value] = line.split(':').map((s) => s.trim());
+    if (key && value) {
+      themeObj[key.replace('--', '')] = value.replace(/;$/, '');
+    }
+  }
+
+  // log.info(`🎨 Parsed theme: `, themeObj?.appearance);
+
+  // Read the --appearance CSS variable
+  const appearance = themeObj?.appearance;
+
+  log.info(`Appearance set to: ${appearance}`);
+  s(appearanceAtom, (appearance as Appearance) || 'dark');
+}, 10);
 
 const _tempThemeAtom = atom('');
 export const tempThemeAtom = atom(
   (g) => g(_tempThemeAtom),
-  (_g, s, theme: string) => {
+  debounce((_g, s, theme: string) => {
+    setAppearance(s, theme);
     s(_tempThemeAtom, theme);
-    // Trigger the theme effect
-    s(themeUpdateTriggerAtom, theme);
-  },
+  }, 10),
 );
 
 export const modifiers = [
@@ -2793,7 +2763,6 @@ export const chatMessagesAtom = atom(
 
     s(_chatMessagesAtom, a);
 
-    // Trigger the chat messages effect
     const appMessage = {
       channel: Channel.CHAT_MESSAGES_CHANGE,
       value: a,
@@ -2817,7 +2786,6 @@ export const addChatMessageAtom = atom(null, (g, s, a: MessageType) => {
   (a as MessageTypeWithIndex).index = index;
   s(chatMessagesAtom, updated);
 
-  // Trigger the chat messages effect through the main atom update
   const appMessage = {
     channel: Channel.CHAT_ADD_MESSAGE,
     value: a,
@@ -2838,7 +2806,6 @@ export const chatPushTokenAtom = atom(null, (g, s, a: string) => {
 
     s(chatMessagesAtom, messages);
 
-    // Trigger the chat messages effect through the main atom update
     const appMessage = {
       channel: Channel.CHAT_PUSH_TOKEN,
       value: lastMessage,
@@ -2861,7 +2828,6 @@ export const setChatMessageAtom = atom(null, (g, s, a: { index: number; message:
 
     (a.message as MessageTypeWithIndex).index = messageIndex;
 
-    // Trigger the chat messages effect through the main atom update
     const appMessage = {
       channel: Channel.CHAT_SET_MESSAGE,
       value: a.message,
@@ -3243,7 +3209,7 @@ export const scoredFlagsAtom = atom(
   },
   (g, s, a: ScoredChoice[]) => {
     // log.info(`🇺🇸 Setting scored flags: ${Object.keys(a?.map((c) => c?.item?.name))}`);
-
+    
     // Batch all atom updates to prevent multiple re-renders
     unstable_batchedUpdates(() => {
       s(scoredFlags, a);
@@ -3611,19 +3577,3 @@ export const isWindowAtom = atom(
     s(_isWindowAtom, a);
   },
 );
-
-// Initialize effects atoms
-export const activeThemeEffectAtom = atom((get) => {
-  get(themeAppearanceEffect);
-  return null;
-});
-
-export const activeResizeEffectAtom = atom((get) => {
-  get(resizeEffect);
-  return null;
-});
-
-export const activeChatEffectAtom = atom((get) => {
-  get(chatMessagesEffect);
-  return null;
-});
