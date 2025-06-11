@@ -230,8 +230,10 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
           return;
         }
 
-        // biome-ignore lint/suspicious/noExplicitAny
-        await transport.handlePostMessage(req as unknown as any, res as unknown as any);
+        await transport.handlePostMessage(
+          req as unknown as IncomingMessage,
+          res as unknown as ServerResponse,
+        );
       } catch (err) {
         log.error('Error handling /messages request', err);
         if (!res.headersSent) {
@@ -343,8 +345,7 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
         req.headers.accept = 'application/json, text/event-stream';
 
         log.debug('Passing request to transport.handleRequest');
-        // biome-ignore lint/suspicious/noExplicitAny
-        await transport.handleRequest(req, res, bodyJson as any);
+        await transport.handleRequest(req, res, bodyJson as Record<string, unknown> | undefined);
       } catch (err) {
         log.error('Transport error', err);
         res.writeHead(500).end('Internal Server Error');
