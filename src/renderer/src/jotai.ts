@@ -2758,8 +2758,7 @@ export const addChatMessageAtom = atom(null, (g, s, a: MessageType) => {
   const index = updated.length - 1;
   (a as MessageTypeWithIndex).index = index;
   s(chatMessagesAtom, updated);
-
-  // IPC moved to chatMessagesWithEffect
+  ipcRenderer.send(Channel.CHAT_ADD_MESSAGE, { channel: Channel.CHAT_ADD_MESSAGE, value: a, pid: g(pidAtom) });
 });
 
 export const chatPushTokenAtom = atom(null, (g, s, a: string) => {
@@ -2773,8 +2772,7 @@ export const chatPushTokenAtom = atom(null, (g, s, a: string) => {
     lastMessage.index = index;
 
     s(chatMessagesAtom, messages);
-
-    // IPC moved to chatMessagesWithEffect
+    ipcRenderer.send(Channel.CHAT_PUSH_TOKEN, { channel: Channel.CHAT_PUSH_TOKEN, value: lastMessage, pid: g(pidAtom) });
   } catch (error) {
     s(chatMessagesAtom, []);
   }
@@ -2790,8 +2788,7 @@ export const setChatMessageAtom = atom(null, (g, s, a: { index: number; message:
     s(chatMessagesAtom, messages);
 
     (a.message as MessageTypeWithIndex).index = messageIndex;
-
-    // IPC moved to chatMessagesWithEffect
+    ipcRenderer.send(Channel.CHAT_SET_MESSAGE, { channel: Channel.CHAT_SET_MESSAGE, value: a.message, pid: g(pidAtom) });
   } catch (error) { }
 });
 export const termConfigDefaults: TermConfig = {
