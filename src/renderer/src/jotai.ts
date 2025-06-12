@@ -2146,17 +2146,7 @@ export const modifiers = [
   'SymbolLock',
 ];
 export const _modifiers = atom<string[]>([]);
-const inputFocus = atom<number>(Math.random());
-export const inputFocusAtom = atom(
-  (g) => g(inputFocus),
-  (g, s, a: any) => {
-    if (g(inputFocus) === a) {
-      return;
-    }
-    ipcRenderer.send(AppChannel.FOCUS_PROMPT);
-    s(inputFocus, a);
-  },
-);
+export const inputFocusAtom = atom<number>(Math.random());
 
 const actionsInputFocus = atom<number>(0);
 export const actionsInputFocusAtom = atom(

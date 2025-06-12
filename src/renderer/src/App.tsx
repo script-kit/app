@@ -109,6 +109,7 @@ import { chatMessagesWithEffect } from "./effects/chat";
 import { logFormatterEffect } from "./effects/logFormatter";
 import { typingEffect } from "./effects/typing";
 import { audioPlaybackEffect } from "./effects/audioPlayback";
+import { focusPromptEffect } from "./effects/focusPrompt";
 
 self.MonacoEnvironment = {
 	getWorker(_, label) {
@@ -247,6 +248,7 @@ export default function App() {
 	const [_logFormatter] = useAtom(logFormatterEffect);
 	const [_typingEffect] = useAtom(typingEffect);
 	const [_audioEffect] = useAtom(audioPlaybackEffect);
+	const [_focusPrompt] = useAtom(focusPromptEffect);
 
 	const [chatMessages] = useAtom(chatMessagesWithEffect);
 
