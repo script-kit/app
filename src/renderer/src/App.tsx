@@ -112,6 +112,7 @@ import { audioPlaybackEffect } from "./effects/audioPlayback";
 import { focusPromptEffect } from "./effects/focusPrompt";
 import { micStreamEffect } from "./effects/micStream";
 import { speechEffect } from "./effects/speech";
+import { webcamEffect } from "./effects/webcam";
 
 self.MonacoEnvironment = {
 	getWorker(_, label) {
@@ -253,6 +254,7 @@ export default function App() {
 	const [_focusPrompt] = useAtom(focusPromptEffect);
 	const [_micStream] = useAtom(micStreamEffect);
 	const [_speechEffect] = useAtom(speechEffect);
+	const [_webcamEffect] = useAtom(webcamEffect);
 
 	const [chatMessages] = useAtom(chatMessagesWithEffect);
 
