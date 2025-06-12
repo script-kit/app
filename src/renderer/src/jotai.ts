@@ -1359,7 +1359,7 @@ export const resize = debounce(
       mode: promptData?.mode || Mode.FILTER,
       hasPanel,
       hasInput,
-      previewEnabled: g(previewEnabled),
+      previewEnabled: g(previewEnabledAtom),
       open: g(_open),
       tabIndex: g(_tabIndex),
       isSplash: g(isSplashAtom),
@@ -2159,14 +2159,7 @@ export const actionsInputFocusAtom = atom(
   },
 );
 
-const previewEnabled = atom<boolean>(true);
-export const previewEnabledAtom = atom(
-  (g) => g(previewEnabled) && !(g(uiAtom) === UI.splash),
-  (g, s, a: boolean) => {
-    s(previewEnabled, a);
-    resize(g, s, 'PREVIEW_ENABLED');
-  },
-);
+export const previewEnabledAtom = atom<boolean>(true);
 
 export const topRefAtom = atom<null | HTMLDivElement>(null);
 export const descriptionAtom = atom<string>('');

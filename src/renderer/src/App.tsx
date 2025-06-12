@@ -115,6 +115,7 @@ import { speechEffect } from "./effects/speech";
 import { webcamEffect } from "./effects/webcam";
 import { termExitEffect } from "./effects/termExit";
 import { windowModeEffect } from "./effects/windowMode";
+import { previewEnabledEffect } from "./effects/previewEnabled";
 
 self.MonacoEnvironment = {
 	getWorker(_, label) {
@@ -259,6 +260,7 @@ export default function App() {
 	const [_webcamEffect] = useAtom(webcamEffect);
 	const [_termExitEffect] = useAtom(termExitEffect);
 	const [_windowModeEffect] = useAtom(windowModeEffect);
+	const [_previewEnabledEffect] = useAtom(previewEnabledEffect);
 
 	const [chatMessages] = useAtom(chatMessagesWithEffect);
 
