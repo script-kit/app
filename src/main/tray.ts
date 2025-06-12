@@ -39,7 +39,7 @@ import { processes } from './process';
 import { prompts } from './prompts';
 // Removed top-level import to prevent early initialization issues
 // import { startServer, stopServer } from './server';
-import { getServerPort } from './serverTrayUtils';
+import { getServerPort, getMcpPort } from './serverTrayUtils';
 import { forceQuit, kitState, subs } from './state';
 import { getVersion } from './version';
 
@@ -464,6 +464,83 @@ const buildServerSubmenu = (): MenuItemConstructorOptions[] => {
   ];
 };
 
+const buildMCPSubmenu = async (): Promise<MenuItemConstructorOptions[]> => {
+  const mcpItems: MenuItemConstructorOptions[] = [];
+  
+  if (kitState.serverRunning) {
+    try {
+      // Dynamic import to prevent early initialization issues
+      const { mcpService } = await import('./mcp-service');
+      const mcpScripts = await mcpService.getMCPScripts();
+      
+      mcpItems.push({
+        label: `${mcpScripts.length} MCP-enabled scripts`,
+        enabled: false,
+      });
+      
+      if (mcpScripts.length > 0) {
+        mcpItems.push({
+          type: 'separator' as const,
+        });
+        
+        // Show first 10 MCP scripts
+        const scriptsToShow = mcpScripts.slice(0, 10);
+        for (const script of scriptsToShow) {
+          mcpItems.push({
+            label: script.name,
+            submenu: [
+              {
+                label: script.description || 'No description',
+                enabled: false,
+              },
+              {
+                label: `Path: ${script.filePath}`,
+                enabled: false,
+              },
+              {
+                label: `Args: ${script.args.length}`,
+                enabled: false,
+              },
+            ],
+          });
+        }
+        
+        if (mcpScripts.length > 10) {
+          mcpItems.push({
+            label: `... and ${mcpScripts.length - 10} more`,
+            enabled: false,
+          });
+        }
+      }
+      
+      mcpItems.push({
+        type: 'separator' as const,
+      });
+      mcpItems.push({
+        label: 'Refresh MCP Scripts',
+        click: async () => {
+          mcpService.clearCache();
+          // Trigger tray rebuild
+          emitter.emit(KitEvent.TrayClick);
+        },
+      });
+    } catch (error) {
+      log.error('Failed to load MCP scripts for tray:', error);
+      mcpItems.push({
+        label: 'Failed to load MCP scripts',
+        enabled: false,
+      });
+    }
+  } else {
+    mcpItems.push({
+      label: 'Server not running',
+      enabled: false,
+    });
+  }
+  
+  return mcpItems;
+};
+
 export const openMenu = debounce(
   async (event?: KeyboardEvent) => {
     log.info('🎨 openMenu', event);
@@ -610,11 +687,19 @@ export const openMenu = debounce(
           label: 'Server Controls',
           submenu: buildServerSubmenu(),
         },
+        {
+          label: 'MCP Server',
+          submenu: await buildMCPSubmenu(),
+        },
         // {{ Conditionally display server running status }}
         ...(kitState.serverRunning
           ? [
               {
                 label: `Server running on port ${getServerPort()}`,
+                enabled: false,
+              },
+              {
+                label: `MCP server on port ${getMcpPort()}`,
                 enabled: false,
               },
               {
