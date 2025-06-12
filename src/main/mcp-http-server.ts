@@ -184,34 +184,56 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
       return;
     }
     
+    // Handle /endpoints to help clients understand available endpoints
+    if (req.url === '/endpoints') {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+        .end(JSON.stringify({
+          endpoints: {
+            '/mcp': 'StreamableHTTP transport (POST for initialize, GET/DELETE for sessions)',
+            '/sse': 'Server-Sent Events transport (GET only)',
+            '/messages': 'SSE message endpoint (POST with sessionId)',
+            '/health': 'Health check',
+            '/ready': 'Check if scripts are loaded'
+          }
+        }));
+      return;
+    }
+    
     // Inspector CLI defaults to /sse for SSE transport
     if (req.url?.startsWith('/sse')) {
-      try {
-        // Establish Event-Source stream for the new client. The second argument MUST be the
-        // Response object that will remain open for streaming events.
-        const transport = new SSEServerTransport('/messages', res as unknown as ServerResponse);
+      // SSE requires GET method for event stream
+      if (req.method === 'GET') {
+        try {
+          // Establish Event-Source stream for the new client. The second argument MUST be the
+          // Response object that will remain open for streaming events.
+          const transport = new SSEServerTransport('/messages', res as unknown as ServerResponse);
 
-        // When the HTTP connection closes, make sure to remove the transport.
-        const sid = transport.sessionId;
-        sseTransports[sid] = transport;
-        res.on('close', () => {
-          delete sseTransports[sid];
-          delete mcpServers[sid];
-          log.info(`SSE connection closed – session ${sid}`);
-        });
+          // When the HTTP connection closes, make sure to remove the transport.
+          const sid = transport.sessionId;
+          sseTransports[sid] = transport;
+          res.on('close', () => {
+            delete sseTransports[sid];
+            delete mcpServers[sid];
+            log.info(`SSE connection closed – session ${sid}`);
+          });
 
-        // Create a new MCP server instance for this SSE session
-        const server = await createMcpServerForSession();
-        mcpServers[sid] = server;
+          // Create a new MCP server instance for this SSE session
+          const server = await createMcpServerForSession();
+          mcpServers[sid] = server;
 
-        await server.connect(transport);
+          await server.connect(transport);
 
-        log.info(`SSE transport connected. sessionId=${sid}`);
-      } catch (err) {
-        log.error('Error initializing SSE transport:', err);
-        if (!res.headersSent) {
-          res.writeHead(500).end('Internal Server Error');
+          log.info(`SSE transport connected. sessionId=${sid}`);
+        } catch (err) {
+          log.error('Error initializing SSE transport:', err);
+          if (!res.headersSent) {
+            res.writeHead(500).end('Internal Server Error');
+          }
         }
+      } else {
+        // POST to /sse should initialize SSE differently
+        log.warn(`Unexpected ${req.method} to /sse endpoint`);
+        res.writeHead(405, { 'Content-Type': 'text/plain' }).end('Method Not Allowed');
       }
 
       // Connection handled; do not continue processing
