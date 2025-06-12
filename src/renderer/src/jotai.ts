@@ -3102,9 +3102,6 @@ export const toggleSelectedChoiceAtom = atom(null, (g, s, id: string) => {
   }
 
   s(selectedChoicesAtom, [...selectedChoices]);
-
-  const channel = g(channelAtom);
-  channel(Channel.SELECTED);
 });
 export const toggleAllSelectedChoicesAtom = atom(null, (g, s) => {
   const selectedChoices = g(selectedChoicesAtom);
@@ -3114,9 +3111,6 @@ export const toggleAllSelectedChoicesAtom = atom(null, (g, s) => {
   } else {
     s(selectedChoicesAtom, [...cs]);
   }
-
-  const channel = g(channelAtom);
-  channel(Channel.SELECTED);
 });
 
 export const shouldHighlightDescriptionAtom = atom((g) => {
