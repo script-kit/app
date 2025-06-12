@@ -336,6 +336,8 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
         // ignore parse if not needed
       }
 
+      let newSessionId: string | undefined;
+      
       if (!transport) {
         log.debug('No existing transport, will attempt to create new one');
         // Only POST with initialize can create new session
@@ -345,9 +347,11 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
         }
 
         // create transport
+        newSessionId = randomUUID();
         transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: () => randomUUID(),
+          sessionIdGenerator: () => newSessionId!,
           onsessioninitialized: (sid) => {
+            log.info(`StreamableHTTP session initialized: ${sid}`);
             if (transport) {
               transports[sid] = transport;
             }
@@ -363,11 +367,11 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
           }
         };
 
-        log.info(`Transport created for session ${transport.sessionId}`);
+        log.info(`Transport created with pre-assigned session ID: ${newSessionId}`);
 
         // Create a new MCP server instance for this session
         const server = await createMcpServerForSession();
-        const sessId = transport.sessionId;
+        const sessId = transport.sessionId || newSessionId;
         if (sessId) {
           mcpServers[sessId] = server;
         }
@@ -377,11 +381,30 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
       try {
         req.headers.accept = 'application/json, text/event-stream';
 
+        // For initialization requests, ensure we add the session ID header
+        if (bodyJson && isInitializeRequest(bodyJson)) {
+          // Override the response to add the Mcp-Session-Id header
+          const originalWriteHead = res.writeHead.bind(res);
+          res.writeHead = function(statusCode: number, headers?: any) {
+            const sessionIdToUse = transport?.sessionId || newSessionId;
+            const finalHeaders = {
+              ...headers,
+              'Mcp-Session-Id': sessionIdToUse
+            };
+            log.info(`Returning Mcp-Session-Id: ${sessionIdToUse} for initialization`);
+            return originalWriteHead.call(this, statusCode, finalHeaders);
+          };
+        }
+
         log.debug('Passing request to transport.handleRequest');
+        log.debug(`Transport session: ${transport.sessionId}, method: ${req.method}`);
         await transport.handleRequest(req, res, bodyJson as Record<string, unknown> | undefined);
+        log.debug(`Request handled for session ${transport.sessionId}`);
       } catch (err) {
         log.error('Transport error', err);
-        res.writeHead(500).end('Internal Server Error');
+        if (!res.headersSent) {
+          res.writeHead(500).end('Internal Server Error');
+        }
       }
     });
 }
