@@ -70,3 +70,11 @@ plans
 
 # Local development overrides (don't commit these)
 pnpm-workspace.yaml
+
+# Temporary and generated files
+repomix-output.xml
+.specstory/
+backups/
+test-*.js
+src/main/*-summary.md
+src/main/*-tests.md
