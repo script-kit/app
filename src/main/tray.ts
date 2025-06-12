@@ -467,8 +467,7 @@ const buildServerSubmenu = (): MenuItemConstructorOptions[] => {
 const buildMCPSubmenu = async (): Promise<MenuItemConstructorOptions[]> => {
   const mcpItems: MenuItemConstructorOptions[] = [];
   
-  if (kitState.serverRunning) {
-    try {
+  try {
       // Dynamic import to prevent early initialization issues
       const { mcpService } = await import('./mcp-service');
       const mcpScripts = await mcpService.getMCPScripts();
@@ -524,16 +523,10 @@ const buildMCPSubmenu = async (): Promise<MenuItemConstructorOptions[]> => {
           emitter.emit(KitEvent.TrayClick);
         },
       });
-    } catch (error) {
-      log.error('Failed to load MCP scripts for tray:', error);
-      mcpItems.push({
-        label: 'Failed to load MCP scripts',
-        enabled: false,
-      });
-    }
-  } else {
+  } catch (error) {
+    log.error('Failed to load MCP scripts for tray:', error);
     mcpItems.push({
-      label: 'Server not running',
+      label: 'Failed to load MCP scripts',
       enabled: false,
     });
   }
@@ -699,14 +692,17 @@ export const openMenu = debounce(
                 enabled: false,
               },
               {
-                label: `MCP server on port ${getMcpPort()}`,
-                enabled: false,
-              },
-              {
                 type: 'separator' as const,
               },
             ]
           : []),
+        {
+          label: `MCP server on port ${getMcpPort()}`,
+          enabled: false,
+        },
+        {
+          type: 'separator' as const,
+        },
         {
           label: 'Quit',
           click: () => {
