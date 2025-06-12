@@ -3231,18 +3231,8 @@ export const shouldActionButtonShowOnInputAtom = atom((g) => {
 const _micStreamEnabledAtom = atom(false);
 export const micStreamEnabledAtom = atom(
   (g) => g(_micStreamEnabledAtom),
-  (g, s, a: boolean) => {
-    if (g(_micStreamEnabledAtom) === a) {
-      return;
-    }
-
+  (_g, s, a: boolean) => {
     s(_micStreamEnabledAtom, a);
-    // log.info(`🎤 Mic stream enabled: ${a ? 'true' : 'false'}`);
-    if (!a) {
-      ipcRenderer.send(Channel.MIC_STREAM, {
-        event: 'end',
-      });
-    }
   },
 );
 
