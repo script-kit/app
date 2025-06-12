@@ -1,556 +1,591 @@
-import { debounce } from 'lodash-es';
-import React, { type ErrorInfo, type RefObject, useCallback, useEffect, useRef } from 'react';
-import { ToastContainer, cssTransition } from 'react-toastify';
+import { debounce } from "lodash-es";
+import React, {
+	type ErrorInfo,
+	type RefObject,
+	useCallback,
+	useEffect,
+	useRef,
+} from "react";
+import { ToastContainer, cssTransition } from "react-toastify";
 
-import useResizeObserver from '@react-hook/resize-observer';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { type ImperativePanelHandle, Panel as PanelChild, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import AutoSizer from 'react-virtualized-auto-sizer';
-const { ipcRenderer, webFrame } = window.electron;
-import { Channel, UI } from '@johnlindquist/kit/core/enum';
-import ActionBar from './components/actionbar';
-import Console from './components/console';
-import Drop from './components/drop';
-import Editor from './components/editor';
-import Form from './components/form';
-import Header from './components/header';
-import Hint from './components/hint';
-import Hotkey from './components/hotkey';
-import Input from './components/input';
-import List from './components/list';
-import Log from './components/log';
-import Panel from './components/panel';
-import Tabs from './components/tabs';
-import TextArea from './components/textarea';
+import useResizeObserver from "@react-hook/resize-observer";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
-  appBoundsAtom,
-  audioDotAtom,
-  channelAtom,
-  chatMessagesAtom,
-  cssAtom,
-  domUpdatedAtom,
-  flaggedChoiceValueAtom,
-  focusedElementAtom,
-  footerHiddenAtom,
-  headerHiddenAtom,
-  hintAtom,
-  inputAtom,
-  inputWhileSubmittedAtom,
-  isMainScriptAtom,
-  isMouseDownAtom,
-  isWindowAtom,
-  kitStateAtom,
-  loadingAtom,
-  logHTMLAtom,
-  mainHeightAtom,
-  micIdAtom,
-  micMediaRecorderAtom,
-  mouseEnabledAtom,
-  onDropAtom,
-  onPasteAtom,
-  openAtom,
-  panelHTMLAtom,
-  pidAtom,
-  previewCheckAtom,
-  processesAtom,
-  progressAtom,
-  promptDataAtom,
-  scoredChoicesAtom,
-  scriptAtom,
-  showTabsAtom,
-  submitValueAtom,
-  submittedAtom,
-  tempThemeAtom,
-  termConfigAtom,
-  themeAtom,
-  topRefAtom,
-  triggerResizeAtom,
-  uiAtom,
-  userAtom,
-  zoomAtom,
-} from './jotai';
+	type ImperativePanelHandle,
+	Panel as PanelChild,
+	PanelGroup,
+	PanelResizeHandle,
+} from "react-resizable-panels";
+import AutoSizer from "react-virtualized-auto-sizer";
+const { ipcRenderer, webFrame } = window.electron;
+import { Channel, UI } from "@johnlindquist/kit/core/enum";
+import ActionBar from "./components/actionbar";
+import Console from "./components/console";
+import Drop from "./components/drop";
+import Editor from "./components/editor";
+import Form from "./components/form";
+import Header from "./components/header";
+import Hint from "./components/hint";
+import Hotkey from "./components/hotkey";
+import Input from "./components/input";
+import List from "./components/list";
+import Log from "./components/log";
+import Panel from "./components/panel";
+import Tabs from "./components/tabs";
+import TextArea from "./components/textarea";
+import {
+	appBoundsAtom,
+	audioDotAtom,
+	channelAtom,
+	chatMessagesAtom,
+	cssAtom,
+	domUpdatedAtom,
+	flaggedChoiceValueAtom,
+	focusedElementAtom,
+	footerHiddenAtom,
+	headerHiddenAtom,
+	hintAtom,
+	inputAtom,
+	inputWhileSubmittedAtom,
+	isMainScriptAtom,
+	isMouseDownAtom,
+	isWindowAtom,
+	kitStateAtom,
+	loadingAtom,
+	logHTMLAtom,
+	mainHeightAtom,
+	micIdAtom,
+	micMediaRecorderAtom,
+	mouseEnabledAtom,
+	onDropAtom,
+	onPasteAtom,
+	openAtom,
+	panelHTMLAtom,
+	pidAtom,
+	previewCheckAtom,
+	processesAtom,
+	progressAtom,
+	promptDataAtom,
+	scoredChoicesAtom,
+	scriptAtom,
+	showTabsAtom,
+	submitValueAtom,
+	submittedAtom,
+	tempThemeAtom,
+	termConfigAtom,
+	themeAtom,
+	topRefAtom,
+	triggerResizeAtom,
+	uiAtom,
+	userAtom,
+	zoomAtom,
+} from "./jotai";
 
-import { loader } from '@monaco-editor/react';
-import * as monaco from 'monaco-editor';
-import { AppChannel } from '../../shared/enums';
-import AudioDot from './audio-dot';
-import AudioRecorder from './audio-recorder';
-import ActionsList from './components/actions-list';
-import { Chat } from './components/chat';
-import Emoji from './components/emoji';
-import Inspector from './components/inspector';
-import Preview from './components/preview';
-import Splash from './components/splash';
-import { useEnter, useEscape, useMessages, useShortcuts } from './hooks';
-import LoadingDot from './loading-dot';
-import ProcessesDot from './processes-dot';
-import ProgressBar from './progress-bar';
-import Terminal from './term';
-import Webcam from './webcam';
+import { loader } from "@monaco-editor/react";
+import * as monaco from "monaco-editor";
+import { AppChannel } from "../../shared/enums";
+import AudioDot from "./audio-dot";
+import AudioRecorder from "./audio-recorder";
+import ActionsList from "./components/actions-list";
+import { Chat } from "./components/chat";
+import Emoji from "./components/emoji";
+import Inspector from "./components/inspector";
+import Preview from "./components/preview";
+import Splash from "./components/splash";
+import { useEnter, useEscape, useMessages, useShortcuts } from "./hooks";
+import LoadingDot from "./loading-dot";
+import ProcessesDot from "./processes-dot";
+import ProgressBar from "./progress-bar";
+import Terminal from "./term";
+import Webcam from "./webcam";
 
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
-import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
-import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
+import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
+import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
+import cssWorker from "monaco-editor/esm/vs/language/css/css.worker?worker";
+import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
+import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
+import { themeAppearanceEffect } from "./effects/theme";
+import { unobserveResize } from "./effects/resize";
 
 self.MonacoEnvironment = {
-  getWorker(_, label) {
-    if (label === 'json') {
-      return new jsonWorker();
-    }
-    if (label === 'css' || label === 'scss' || label === 'less') {
-      return new cssWorker();
-    }
-    if (label === 'html' || label === 'handlebars' || label === 'razor') {
-      return new htmlWorker();
-    }
-    if (label === 'typescript' || label === 'javascript') {
-      return new tsWorker();
-    }
-    return new editorWorker();
-  },
+	getWorker(_, label) {
+		if (label === "json") {
+			return new jsonWorker();
+		}
+		if (label === "css" || label === "scss" || label === "less") {
+			return new cssWorker();
+		}
+		if (label === "html" || label === "handlebars" || label === "razor") {
+			return new htmlWorker();
+		}
+		if (label === "typescript" || label === "javascript") {
+			return new tsWorker();
+		}
+		return new editorWorker();
+	},
 };
 
 loader.config({ monaco });
 
-import { createLogger } from './log-utils';
-const log = createLogger('App.tsx');
-const windowPadding = '24';
+import { createLogger } from "./log-utils";
+const log = createLogger("App.tsx");
+const windowPadding = "24";
 
 class ErrorBoundary extends React.Component {
-  // eslint-disable-next-line react/state-in-constructor
-  public state: { hasError: boolean; info: ErrorInfo } = {
-    hasError: false,
-    info: { componentStack: '' },
-  };
+	// eslint-disable-next-line react/state-in-constructor
+	public state: { hasError: boolean; info: ErrorInfo } = {
+		hasError: false,
+		info: { componentStack: "" },
+	};
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    log.warn('ErrorBoundary:', error, info);
-    // Display fallback UI
-    this.setState({ hasError: true, info });
-    // You can also log the error to an error reporting service
-    ipcRenderer.send(Channel.PROMPT_ERROR, { error });
-  }
+	componentDidCatch(error: Error, info: ErrorInfo) {
+		log.warn("ErrorBoundary:", error, info);
+		// Display fallback UI
+		this.setState({ hasError: true, info });
+		// You can also log the error to an error reporting service
+		ipcRenderer.send(Channel.PROMPT_ERROR, { error });
+	}
 
-  render() {
-    const { hasError, info } = this.state;
-    const { children } = this.props;
-    if (hasError) {
-      return (
-        <div className="p-2 font-mono">
-          {/* Add a button to reload the window */}
-          <button
-            type="button"
-            className="rounded bg-red-500 p-2 text-white"
-            onClick={() => {
-              ipcRenderer.send(AppChannel.RELOAD);
-            }}
-          >
-            Reload Prompt
-          </button>
-          <div className="text-base text-red-500">Rendering Error. Opening logs.</div>
-          <div className="text-xs">{info.componentStack}</div>
-        </div>
-      );
-    }
+	render() {
+		const { hasError, info } = this.state;
+		const { children } = this.props;
+		if (hasError) {
+			return (
+				<div className="p-2 font-mono">
+					{/* Add a button to reload the window */}
+					<button
+						type="button"
+						className="rounded bg-red-500 p-2 text-white"
+						onClick={() => {
+							ipcRenderer.send(AppChannel.RELOAD);
+						}}
+					>
+						Reload Prompt
+					</button>
+					<div className="text-base text-red-500">
+						Rendering Error. Opening logs.
+					</div>
+					<div className="text-xs">{info.componentStack}</div>
+				</div>
+			);
+		}
 
-    return children;
-  }
+		return children;
+	}
 }
 
 export default function App() {
-  const [pid] = useAtom(pidAtom);
-  const [input] = useAtom(inputAtom);
-  const [open] = useAtom(openAtom);
-  const [script] = useAtom(scriptAtom);
-  const [hint] = useAtom(hintAtom);
-  const [panelHTML] = useAtom(panelHTMLAtom);
-  const [chatMessages] = useAtom(chatMessagesAtom);
+	const [pid] = useAtom(pidAtom);
+	const [input] = useAtom(inputAtom);
+	const [open] = useAtom(openAtom);
+	const [script] = useAtom(scriptAtom);
+	const [hint] = useAtom(hintAtom);
+	const [panelHTML] = useAtom(panelHTMLAtom);
+	const [chatMessages] = useAtom(chatMessagesAtom);
 
-  const [ui] = useAtom(uiAtom);
-  const loading = useAtomValue(loadingAtom);
-  const progress = useAtomValue(progressAtom);
-  const choices = useAtomValue(scoredChoicesAtom);
-  const showTabs = useAtomValue(showTabsAtom);
-  const onPaste = useAtomValue(onPasteAtom);
-  const onDrop = useAtomValue(onDropAtom);
-  const logHTML = useAtomValue(logHTMLAtom);
+	const [ui] = useAtom(uiAtom);
+	const loading = useAtomValue(loadingAtom);
+	const progress = useAtomValue(progressAtom);
+	const choices = useAtomValue(scoredChoicesAtom);
+	const showTabs = useAtomValue(showTabsAtom);
+	const onPaste = useAtomValue(onPasteAtom);
+	const onDrop = useAtomValue(onDropAtom);
+	const logHTML = useAtomValue(logHTMLAtom);
 
-  const [promptData] = useAtom(promptDataAtom);
+	const [promptData] = useAtom(promptDataAtom);
 
-  const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
-  const triggerResize = useSetAtom(triggerResizeAtom);
-  const setSubmitValue = useSetAtom(submitValueAtom);
-  const setMouseEnabled = useSetAtom(mouseEnabledAtom);
-  const setTopRef = useSetAtom(topRefAtom);
-  const setProcesses = useSetAtom(processesAtom);
-  const [user, setUser] = useAtom(userAtom);
-  const setIsMouseDown = useSetAtom(isMouseDownAtom);
+	const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
+	const triggerResize = useSetAtom(triggerResizeAtom);
+	const setSubmitValue = useSetAtom(submitValueAtom);
+	const setMouseEnabled = useSetAtom(mouseEnabledAtom);
+	const setTopRef = useSetAtom(topRefAtom);
+	const setProcesses = useSetAtom(processesAtom);
+	const [user, setUser] = useAtom(userAtom);
+	const setIsMouseDown = useSetAtom(isMouseDownAtom);
 
-  const [kitState] = useAtom(kitStateAtom);
-  const [flagValue] = useAtom(flaggedChoiceValueAtom);
-  const [termConfig] = useAtom(termConfigAtom);
-  const [headerHidden] = useAtom(headerHiddenAtom);
-  const [footerHidden] = useAtom(footerHiddenAtom);
-  const processes = useAtomValue(processesAtom);
-  const isMainScript = useAtomValue(isMainScriptAtom);
-  const css = useAtomValue(cssAtom);
-  const theme = useAtomValue(themeAtom);
-  const tempTheme = useAtomValue(tempThemeAtom);
-  const [submitted, setSubmitted] = useAtom(submittedAtom);
-  const [inputWhileSubmitted, setInputWhileSubmitted] = useAtom(inputWhileSubmittedAtom);
+	const [kitState] = useAtom(kitStateAtom);
+	const [flagValue] = useAtom(flaggedChoiceValueAtom);
+	const [termConfig] = useAtom(termConfigAtom);
+	const [headerHidden] = useAtom(headerHiddenAtom);
+	const [footerHidden] = useAtom(footerHiddenAtom);
+	const processes = useAtomValue(processesAtom);
+	const isMainScript = useAtomValue(isMainScriptAtom);
+	const css = useAtomValue(cssAtom);
+	const theme = useAtomValue(themeAtom);
+	const tempTheme = useAtomValue(tempThemeAtom);
+	const [submitted, setSubmitted] = useAtom(submittedAtom);
+	const [inputWhileSubmitted, setInputWhileSubmitted] = useAtom(
+		inputWhileSubmittedAtom,
+	);
 
-  const submittedInputRef = useRef<HTMLInputElement>(null);
+	const submittedInputRef = useRef<HTMLInputElement>(null);
 
-  const previewCheck = useAtomValue(previewCheckAtom);
-  const showRightPanel = previewCheck && !kitState.noPreview;
-  // log({
-  //   previewCheck: previewCheck ? '✅' : '🚫',
-  //   previewHTML: previewHTML?.length,
-  //   panelHTML: panelHTML?.length,
-  //   previewEnabled,
-  //   hidden,
-  // });
+	const previewCheck = useAtomValue(previewCheckAtom);
+	const showRightPanel = previewCheck && !kitState.noPreview;
+	// log({
+	//   previewCheck: previewCheck ? '✅' : '🚫',
+	//   previewHTML: previewHTML?.length,
+	//   panelHTML: panelHTML?.length,
+	//   previewEnabled,
+	//   hidden,
+	// });
 
-  const [zoomLevel, setZoom] = useAtom(zoomAtom);
+	const [zoomLevel, setZoom] = useAtom(zoomAtom);
 
-  const channel = useAtomValue(channelAtom);
+	const channel = useAtomValue(channelAtom);
 
-  const domUpdated = useSetAtom(domUpdatedAtom);
-  const setAppBounds = useSetAtom(appBoundsAtom);
+	const domUpdated = useSetAtom(domUpdatedAtom);
+	const setAppBounds = useSetAtom(appBoundsAtom);
 
-  const audioDot = useAtomValue(audioDotAtom);
+	const audioDot = useAtomValue(audioDotAtom);
 
-  const [focusedElement, setFocusedElement] = useAtom(focusedElementAtom);
+	const [focusedElement, setFocusedElement] = useAtom(focusedElementAtom);
 
-  useMessages();
+	const [ignoredEffect] = useAtom(themeAppearanceEffect);
 
-  const micId = useAtomValue(micIdAtom);
-  const [micMediaRecorder, setMicMediaRecorder] = useAtom(micMediaRecorderAtom);
-  const isWindow = useAtomValue(isWindowAtom);
+	useMessages();
 
-  // TODO: Can I have access to the mic "instantly"? I don't like the delay, but this makes it looks like it's always recording
-  // useEffect(() => {
-  //   log.info(`🎙 Mic ID changed...`, { micId });
+	const micId = useAtomValue(micIdAtom);
+	const [micMediaRecorder, setMicMediaRecorder] = useAtom(micMediaRecorderAtom);
+	const isWindow = useAtomValue(isWindowAtom);
 
-  //   if (!micId) {
-  //     return;
-  //   }
+	// TODO: Can I have access to the mic "instantly"? I don't like the delay, but this makes it looks like it's always recording
+	// useEffect(() => {
+	//   log.info(`🎙 Mic ID changed...`, { micId });
 
-  //   const constraints = {
-  //     audio: micId ? { deviceId: micId } : true,
-  //   };
+	//   if (!micId) {
+	//     return;
+	//   }
 
-  //   navigator.mediaDevices
-  //     .getUserMedia(constraints)
-  //     // eslint-disable-next-line promise/always-return
-  //     .then((stream) => {
-  //       log.info(`🎙 Connected to mic...`);
-  //       const mediaRecorder = new MediaRecorder(stream);
+	//   const constraints = {
+	//     audio: micId ? { deviceId: micId } : true,
+	//   };
 
-  //       setMicMediaRecorder(mediaRecorder);
-  //     })
-  //     .catch((err) => {
-  //       log.info(`Error connecting to mic... ${err}`);
-  //     });
-  // }, [micId]);
+	//   navigator.mediaDevices
+	//     .getUserMedia(constraints)
+	//     // eslint-disable-next-line promise/always-return
+	//     .then((stream) => {
+	//       log.info(`🎙 Connected to mic...`);
+	//       const mediaRecorder = new MediaRecorder(stream);
 
-  useEffect(() => {
-    const handleFocusIn = (event: FocusEvent) => {
-      // id isn't "actions-input"
-      const target = event.target as HTMLElement;
-      const tag = target.tagName;
-      if (
-        target.id !== 'actions-input' &&
-        (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable)
-      ) {
-        log.info(`🔍 Focused element: ${target.id || target.nodeName}`);
-        setFocusedElement(event.target as HTMLElement);
-      }
-    };
+	//       setMicMediaRecorder(mediaRecorder);
+	//     })
+	//     .catch((err) => {
+	//       log.info(`Error connecting to mic... ${err}`);
+	//     });
+	// }, [micId]);
 
-    document.addEventListener('focusin', handleFocusIn);
+	useEffect(() => {
+		const handleFocusIn = (event: FocusEvent) => {
+			// id isn't "actions-input"
+			const target = event.target as HTMLElement;
+			const tag = target.tagName;
+			if (
+				target.id !== "actions-input" &&
+				(tag === "INPUT" ||
+					tag === "TEXTAREA" ||
+					tag === "SELECT" ||
+					target.isContentEditable)
+			) {
+				log.info(`🔍 Focused element: ${target.id || target.nodeName}`);
+				setFocusedElement(event.target as HTMLElement);
+			}
+		};
 
-    return () => {
-      document.removeEventListener('focusin', handleFocusIn);
-    };
-  }, []);
+		document.addEventListener("focusin", handleFocusIn);
 
-  useEffect(() => {
-    log.info(`${pid}: 👩‍💻 UI changed to: ${ui}`);
-  }, [ui, pid]);
+		return () => {
+			document.removeEventListener("focusin", handleFocusIn);
+		};
+	}, []);
 
-  useEffect(() => {
-    if (submitted) {
-      submittedInputRef.current?.focus();
-    }
-  }, [submitted]);
+	useEffect(() => {
+		log.info(`${pid}: 👩‍💻 UI changed to: ${ui}`);
+	}, [ui, pid]);
 
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      log.info(`${pid}: 👁️‍🗨️ visibilitychange: ${document.visibilityState}`);
-    };
+	useEffect(() => {
+		if (submitted) {
+			submittedInputRef.current?.focus();
+		}
+	}, [submitted]);
 
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+	useEffect(() => {
+		const handleVisibilityChange = () => {
+			log.info(`${pid}: 👁️‍🗨️ visibilitychange: ${document.visibilityState}`);
+		};
 
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [pid]);
+		document.removeEventListener("visibilitychange", handleVisibilityChange);
+		document.addEventListener("visibilitychange", handleVisibilityChange);
 
-  // useEffect(() => {
-  //   (window as any)._resetPrompt = async () => {
-  //     log.info(`Resetting prompt...`);
-  //     return resetPrompt();
-  //   };
+		return () => {
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+		};
+	}, [pid]);
 
-  //   (window as any).log = log;
-  // }, []);
+	// useEffect(() => {
+	//   (window as any)._resetPrompt = async () => {
+	//     log.info(`Resetting prompt...`);
+	//     return resetPrompt();
+	//   };
 
-  useEffect(() => {
-    // catch all window errors
-    const errorHandler = async (event: ErrorEvent) => {
-      const { message, filename, lineno, colno, error } = event;
-      log.info({
-        type: 'error',
-        message,
-        filename,
-        lineno,
-        colno,
-        error,
-        pid,
-        scriptPath: promptData?.scriptPath,
-      });
+	//   (window as any).log = log;
+	// }, []);
 
-      ipcRenderer.send(AppChannel.ERROR_RELOAD, {
-        message,
-        filename,
-        lineno,
-        colno,
-        error,
-        pid,
-        scriptPath: promptData?.scriptPath,
-      });
-    };
+	useEffect(() => {
+		// catch all window errors
+		const errorHandler = async (event: ErrorEvent) => {
+			const { message, filename, lineno, colno, error } = event;
+			log.info({
+				type: "error",
+				message,
+				filename,
+				lineno,
+				colno,
+				error,
+				pid,
+				scriptPath: promptData?.scriptPath,
+			});
 
-    window.addEventListener('error', errorHandler);
+			ipcRenderer.send(AppChannel.ERROR_RELOAD, {
+				message,
+				filename,
+				lineno,
+				colno,
+				error,
+				pid,
+				scriptPath: promptData?.scriptPath,
+			});
+		};
 
-    return () => {
-      window.removeEventListener('error', errorHandler);
-    };
-  }, []);
+		window.addEventListener("error", errorHandler);
 
-  useEffect(() => {
-    const idsToWatch = [
-      'log',
-      'preview',
-      UI.term,
-      UI.chat,
-      UI.editor,
-      UI.drop,
-      UI.textarea,
-      UI.mic,
-      UI.webcam,
-      UI.form,
-    ];
-    const mutationCallback = (mutationsList: MutationRecord[]) => {
-      for (const mutation of mutationsList) {
-        if (mutation.type === 'childList') {
-          for (const addedNode of Array.from(mutation.addedNodes)) {
-            const addedElement = addedNode as Element;
-            if (idsToWatch.includes(addedElement.id)) {
-              domUpdated()(`${addedElement.id} added to DOM`);
-            }
-          }
+		return () => {
+			window.removeEventListener("error", errorHandler);
+		};
+	}, []);
 
-          for (const removedNode of Array.from(mutation.removedNodes)) {
-            const removedElement = removedNode as Element;
-            if (removedElement.id === 'panel-simplebar') {
-              domUpdated()(`${removedElement.id} removed from DOM`);
-            }
-          }
-        }
-      }
-    };
+	useEffect(() => {
+		const idsToWatch = [
+			"log",
+			"preview",
+			UI.term,
+			UI.chat,
+			UI.editor,
+			UI.drop,
+			UI.textarea,
+			UI.mic,
+			UI.webcam,
+			UI.form,
+		];
+		const mutationCallback = (mutationsList: MutationRecord[]) => {
+			for (const mutation of mutationsList) {
+				if (mutation.type === "childList") {
+					for (const addedNode of Array.from(mutation.addedNodes)) {
+						const addedElement = addedNode as Element;
+						if (idsToWatch.includes(addedElement.id)) {
+							domUpdated()(`${addedElement.id} added to DOM`);
+						}
+					}
 
-    const observer = new MutationObserver(mutationCallback);
-    const targetNode: HTMLElement | null = document.querySelector('body');
-    if (targetNode) {
-      const config = { childList: true, subtree: true };
-      observer.observe(targetNode, config);
-    }
+					for (const removedNode of Array.from(mutation.removedNodes)) {
+						const removedElement = removedNode as Element;
+						if (removedElement.id === "panel-simplebar") {
+							domUpdated()(`${removedElement.id} removed from DOM`);
+						}
+					}
+				}
+			}
+		};
 
-    // Clean up when the component is unmounted or the effect dependencies change
-    return () => {
-      observer.disconnect();
-    };
-  }, []); // Add the dependency array to ensure the effect runs when the idsToWatch array changes
+		const observer = new MutationObserver(mutationCallback);
+		const targetNode: HTMLElement | null = document.querySelector("body");
+		if (targetNode) {
+			const config = { childList: true, subtree: true };
+			observer.observe(targetNode, config);
+		}
 
-  useEffect(() => {
-    const handleResize = debounce(() => {
-      const zl = webFrame.getZoomLevel();
-      setZoom(zl);
-    }, 250);
+		// Clean up when the component is unmounted or the effect dependencies change
+		return () => {
+			observer.disconnect();
+		};
+	}, []); // Add the dependency array to ensure the effect runs when the idsToWatch array changes
 
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [setZoom]);
+	useEffect(() => {
+		const handleResize = debounce(() => {
+			const zl = webFrame.getZoomLevel();
+			setZoom(zl);
+		}, 250);
 
-  useEscape();
-  useShortcuts();
-  useEnter();
-  // useThemeDetector();
+		window.addEventListener("resize", handleResize);
+		return () => {
+			window.removeEventListener("resize", handleResize);
+		};
+	}, [setZoom]);
 
-  const appRef: RefObject<HTMLDivElement> = useRef(null);
-  const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
-  const headerRef: RefObject<HTMLDivElement> = useRef(null);
+	useEscape();
+	useShortcuts();
+	useEnter();
+	// useThemeDetector();
 
-  useResizeObserver(headerRef, (entry) => {
-    triggerResize(`headerRef: ${entry.contentRect.height}`);
-  });
+	const appRef: RefObject<HTMLDivElement> = useRef(null);
+	const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
+	const headerRef: RefObject<HTMLDivElement> = useRef(null);
 
-  useResizeObserver(appRef, (entry) => {
-    setAppBounds({
-      width: entry.contentRect.width,
-      height: entry.contentRect.height,
-    });
-  });
+	useResizeObserver(headerRef, (entry) => {
+		triggerResize(`headerRef: ${entry.contentRect.height}`);
+	});
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+	useResizeObserver(appRef, (entry) => {
+		setAppBounds({
+			width: entry.contentRect.width,
+			height: entry.contentRect.height,
+		});
+	});
 
-  const ipcGet = useCallback(
-    (channel: string, value: any) => {
-      const handler = async () => {
-        ipcRenderer.send(channel, {
-          channel,
-          pid: pid || 0,
-          value,
-        });
-      };
-      ipcRenderer.on(channel, handler);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 
-      return () => {
-        ipcRenderer.off(channel, handler);
-      };
-    },
-    [pid],
-  );
+	const ipcGet = useCallback(
+		(channel: string, value: any) => {
+			const handler = async () => {
+				ipcRenderer.send(channel, {
+					channel,
+					pid: pid || 0,
+					value,
+				});
+			};
+			ipcRenderer.on(channel, handler);
 
-  useEffect(() => {
-    const removeChatMessages = ipcGet(Channel.CHAT_GET_MESSAGES, chatMessages);
+			return () => {
+				ipcRenderer.off(channel, handler);
+			};
+		},
+		[pid],
+	);
 
-    return () => {
-      removeChatMessages();
-    };
-  }, [chatMessages, ipcGet]);
+	useEffect(() => {
+		const removeChatMessages = ipcGet(Channel.CHAT_GET_MESSAGES, chatMessages);
 
-  useEffect(() => {
-    const processesHandler = (_, data) => {
-      setProcesses(data);
-    };
-    ipcRenderer.on(AppChannel.PROCESSES, processesHandler);
+		return () => {
+			removeChatMessages();
+		};
+	}, [chatMessages, ipcGet]);
 
-    const userChangedHandler = (_, data) => {
-      // log.info(`${window.pid}: 👩‍💻 User changed`, data?.username);
-      setUser(data);
-    };
-    ipcRenderer.on(AppChannel.USER_CHANGED, userChangedHandler);
+	useEffect(() => {
+		const processesHandler = (_, data) => {
+			setProcesses(data);
+		};
+		ipcRenderer.on(AppChannel.PROCESSES, processesHandler);
 
-    return () => {
-      ipcRenderer.removeListener(AppChannel.PROCESSES, processesHandler);
-      ipcRenderer.removeListener(AppChannel.USER_CHANGED, userChangedHandler);
-    };
-  }, [setProcesses, setUser]);
+		const userChangedHandler = (_, data) => {
+			// log.info(`${window.pid}: 👩‍💻 User changed`, data?.username);
+			setUser(data);
+		};
+		ipcRenderer.on(AppChannel.USER_CHANGED, userChangedHandler);
 
-  const onMouseDown = useCallback(() => {
-    setIsMouseDown(true);
-  }, [setIsMouseDown]);
-  const onMouseUp = useCallback(() => {
-    setIsMouseDown(false);
-  }, [setIsMouseDown]);
-  const onMouseLeave = useCallback(() => {
-    setIsMouseDown(false);
-  }, [setIsMouseDown]);
+		return () => {
+			ipcRenderer.removeListener(AppChannel.PROCESSES, processesHandler);
+			ipcRenderer.removeListener(AppChannel.USER_CHANGED, userChangedHandler);
+		};
+	}, [setProcesses, setUser]);
 
-  const onMouseMove = useCallback(() => {
-    setMouseEnabled(1);
-  }, [setMouseEnabled]);
+	const onMouseDown = useCallback(() => {
+		setIsMouseDown(true);
+	}, [setIsMouseDown]);
+	const onMouseUp = useCallback(() => {
+		setIsMouseDown(false);
+	}, [setIsMouseDown]);
+	const onMouseLeave = useCallback(() => {
+		setIsMouseDown(false);
+	}, [setIsMouseDown]);
 
-  useEffect(() => {
-    if (headerRef?.current) {
-      setTopRef(headerRef?.current);
-    }
-  }, [headerRef, setTopRef]);
+	const onMouseMove = useCallback(() => {
+		setMouseEnabled(1);
+	}, [setMouseEnabled]);
 
-  useEffect(() => {
-    document.addEventListener('paste', onPaste);
+	useEffect(() => {
+		if (headerRef?.current) {
+			setTopRef(headerRef?.current);
+		}
+	}, [headerRef, setTopRef]);
 
-    return () => {
-      document.removeEventListener('paste', onPaste);
-    };
-  }, [onPaste]);
+	useEffect(() => {
+		document.addEventListener("paste", onPaste);
 
-  const panelChildRef = useRef<ImperativePanelHandle>(null);
+		return () => {
+			document.removeEventListener("paste", onPaste);
+		};
+	}, [onPaste]);
 
-  const onResizeHandleDragging = useCallback(
-    debounce(() => {
-      const size = panelChildRef.current?.getSize();
-      // if size is within 10 of promptData?.previewWidthPercent, then set it to promptData?.previewWidthPercent
-      if (size && promptData?.previewWidthPercent && Math.abs(size - promptData?.previewWidthPercent) < 10) {
-        panelChildRef.current?.resize(promptData?.previewWidthPercent);
-      }
-    }, 250),
-    [promptData?.previewWidthPercent, panelChildRef?.current],
-  );
+	const panelChildRef = useRef<ImperativePanelHandle>(null);
 
-  // useEffect(() => {
-  //   if (promptData?.previewWidthPercent) {
-  //     panelChildRef.current?.resize(promptData.previewWidthPercent);
-  //   }
-  // }, [promptData?.previewWidthPercent]);
+	const onResizeHandleDragging = useCallback(
+		debounce(() => {
+			const size = panelChildRef.current?.getSize();
+			// if size is within 10 of promptData?.previewWidthPercent, then set it to promptData?.previewWidthPercent
+			if (
+				size &&
+				promptData?.previewWidthPercent &&
+				Math.abs(size - promptData?.previewWidthPercent) < 10
+			) {
+				panelChildRef.current?.resize(promptData?.previewWidthPercent);
+			}
+		}, 250),
+		[promptData?.previewWidthPercent, panelChildRef?.current],
+	);
 
-  const defaultRightPanelWidth = 60;
-  // const panelLeftStyle = useMemo(
-  //   () => ({
-  //     flexGrow:
-  //       100 - (promptData?.previewWidthPercent || defaultRightPanelWidth),
-  //   }),
-  //   [promptData?.previewWidthPercent],
-  // );
+	// useEffect(() => {
+	//   if (promptData?.previewWidthPercent) {
+	//     panelChildRef.current?.resize(promptData.previewWidthPercent);
+	//   }
+	// }, [promptData?.previewWidthPercent]);
 
-  // const panelRightStyle = useMemo(
-  //   () => ({
-  //     flexGrow: promptData?.previewWidthPercent || defaultRightPanelWidth,
-  //   }),
-  //   [promptData?.previewWidthPercent],
-  // );
+	const defaultRightPanelWidth = 60;
+	// const panelLeftStyle = useMemo(
+	//   () => ({
+	//     flexGrow:
+	//       100 - (promptData?.previewWidthPercent || defaultRightPanelWidth),
+	//   }),
+	//   [promptData?.previewWidthPercent],
+	// );
 
-  const logVisible = logHTML?.length > 0 && scriptAtom?.log !== 'false';
+	// const panelRightStyle = useMemo(
+	//   () => ({
+	//     flexGrow: promptData?.previewWidthPercent || defaultRightPanelWidth,
+	//   }),
+	//   [promptData?.previewWidthPercent],
+	// );
 
-  return (
-    <ErrorBoundary>
-      {
-        <div
-          id="main-container"
-          ref={appRef}
-          className={`
+	const logVisible = logHTML?.length > 0 && scriptAtom?.log !== "false";
+
+	useEffect(() => {
+		const cleanup = unobserveResize();
+		return () => {
+			if (typeof cleanup === "function") cleanup();
+		};
+	}, []);
+
+	return (
+		<ErrorBoundary>
+			{
+				<div
+					id="main-container"
+					ref={appRef}
+					className={`
 min-w-screen relative
 h-screen min-h-screen
 w-screen
 overflow-hidden
 text-text-base
       `}
-        >
-          <span className="font-mono text-xxs font-bold absolute top-[-100px] left-[-100px]">.</span>
-          {promptData?.css && <style>{promptData?.css}</style>}
+				>
+					<span className="font-mono text-xxs font-bold absolute top-[-100px] left-[-100px]">
+						.
+					</span>
+					{promptData?.css && <style>{promptData?.css}</style>}
 
-          <style>{tempTheme || theme}</style>
-          <style>{css}</style>
-          {/* {lighten && (
+					<style>{tempTheme || theme}</style>
+					<style>{css}</style>
+					{/* {lighten && (
           <style
             dangerouslySetInnerHTML={{
               __html: `
@@ -569,171 +604,199 @@ text-text-base
             }}
           />
         )} */}
-          {audioDot && <AudioDot />}
-          {loading && <LoadingDot />}
-          {progress > 0 && <ProgressBar />}
-          {processes.length > 1 && isMainScript && <ProcessesDot />}
-          {/* {ui} {choices.length} {promptData?.scriptPath} */}
-          <div
-            onDrop={(event) => {
-              if (ui !== UI.drop) {
-                channel(Channel.ON_DROP);
-              }
-              // console.log(`🎉 drop`)n;
-              onDrop(event);
-            }}
-            onDragEnter={() => {
-              channel(Channel.ON_DRAG_ENTER);
-              // console.log(`drag enter`);
-            }}
-            onDragOver={(event) => {
-              channel(Channel.ON_DRAG_OVER);
-              event.stopPropagation();
-              event.preventDefault();
-            }}
-            onDragLeave={() => {
-              channel(Channel.ON_DRAG_LEAVE);
-            }}
-            ref={windowContainerRef}
-            style={
-              {
-                WebkitUserSelect: 'none',
-              } as any
-            }
-            className={`flex w-full flex-col relative ${isWindow ? `h-[calc(100%-24px)]` : 'h-full'}`}
-            onMouseDown={onMouseDown}
-            onMouseUp={onMouseUp}
-            onMouseLeave={onMouseLeave}
-            onMouseMove={onMouseMove}
-            onMouseEnter={onMouseMove}
-          >
-            {ui !== UI.log && (
-              // header id using in resize measuring
-              <header id="header" ref={headerRef} className="relative z-10 draggable">
-                {headerHidden === false && <Header />}
+					{audioDot && <AudioDot />}
+					{loading && <LoadingDot />}
+					{progress > 0 && <ProgressBar />}
+					{processes.length > 1 && isMainScript && <ProcessesDot />}
+					{/* {ui} {choices.length} {promptData?.scriptPath} */}
+					<div
+						onDrop={(event) => {
+							if (ui !== UI.drop) {
+								channel(Channel.ON_DROP);
+							}
+							// console.log(`🎉 drop`)n;
+							onDrop(event);
+						}}
+						onDragEnter={() => {
+							channel(Channel.ON_DRAG_ENTER);
+							// console.log(`drag enter`);
+						}}
+						onDragOver={(event) => {
+							channel(Channel.ON_DRAG_OVER);
+							event.stopPropagation();
+							event.preventDefault();
+						}}
+						onDragLeave={() => {
+							channel(Channel.ON_DRAG_LEAVE);
+						}}
+						ref={windowContainerRef}
+						style={
+							{
+								WebkitUserSelect: "none",
+							} as any
+						}
+						className={`flex w-full flex-col relative ${isWindow ? `h-[calc(100%-24px)]` : "h-full"}`}
+						onMouseDown={onMouseDown}
+						onMouseUp={onMouseUp}
+						onMouseLeave={onMouseLeave}
+						onMouseMove={onMouseMove}
+						onMouseEnter={onMouseMove}
+					>
+						{ui !== UI.log && (
+							// header id using in resize measuring
+							<header
+								id="header"
+								ref={headerRef}
+								className="relative z-10 draggable"
+							>
+								{headerHidden === false && <Header />}
 
-                {ui === UI.hotkey && (
-                  <Hotkey key="AppHotkey" submit={setSubmitValue} onHotkeyHeightChanged={setMainHeight} />
-                )}
+								{ui === UI.hotkey && (
+									<Hotkey
+										key="AppHotkey"
+										submit={setSubmitValue}
+										onHotkeyHeightChanged={setMainHeight}
+									/>
+								)}
 
-                {ui === UI.arg && (
-                  <>
-                    {submitted && (
-                      <input
-                        style={{
-                          position: 'absolute',
-                          top: -1000,
-                          left: -1000,
-                        }}
-                        ref={submittedInputRef}
-                        onChange={(e) => {
-                          log.info(`Change while submitted: ${e.target.value}`);
-                          setInputWhileSubmitted(e.target.value);
-                        }}
-                      />
-                    )}
-                    <Input key="AppInput" />
-                    {!showTabs && <div className={`${mainHeight > 10 ? 'border-b border-ui-border' : ''}`} />}
-                  </>
-                )}
+								{ui === UI.arg && (
+									<>
+										{submitted && (
+											<input
+												style={{
+													position: "absolute",
+													top: -1000,
+													left: -1000,
+												}}
+												ref={submittedInputRef}
+												onChange={(e) => {
+													log.info(`Change while submitted: ${e.target.value}`);
+													setInputWhileSubmitted(e.target.value);
+												}}
+											/>
+										)}
+										<Input key="AppInput" />
+										{!showTabs && (
+											<div
+												className={`${mainHeight > 10 ? "border-b border-ui-border" : ""}`}
+											/>
+										)}
+									</>
+								)}
 
-                {hint && <Hint key="AppHint" />}
+								{hint && <Hint key="AppHint" />}
 
-                {showTabs && <div>{showTabs && <Tabs key="AppTabs" />}</div>}
-              </header>
-            )}
-            {logVisible && <Console key="AppLog" />}
-            {/* <span className="text-xxs">
+								{showTabs && <div>{showTabs && <Tabs key="AppTabs" />}</div>}
+							</header>
+						)}
+						{logVisible && <Console key="AppLog" />}
+						{/* <span className="text-xxs">
               {pid}
               {shortcodes}
             </span> */}
-            <main id="main" className="min-h-[1px] w-full flex-1 overflow-y-hidden">
-              {flagValue && <ActionsList key="ActionsList" />}
-              <PanelGroup
-                direction="horizontal"
-                autoSaveId={script.filePath}
-                className={`flex h-full w-full flex-row
-${showTabs ? 'border-t border-ui-border' : ''}
+						<main
+							id="main"
+							className="min-h-[1px] w-full flex-1 overflow-y-hidden"
+						>
+							{flagValue && <ActionsList key="ActionsList" />}
+							<PanelGroup
+								direction="horizontal"
+								autoSaveId={script.filePath}
+								className={`flex h-full w-full flex-row
+${showTabs ? "border-t border-ui-border" : ""}
 
             `}
-              >
-                <PanelChild
-                  minSize={25}
-                  id="panel-left"
-                  // style={panelLeftStyle}
-                  order={1}
-                >
-                  <div className="h-full min-h-1 overflow-x-hidden">
-                    <ToastContainer
-                      pauseOnFocusLoss={false}
-                      position="bottom-right"
-                      toastStyle={{
-                        maxHeight: document.body.clientHeight,
-                      }}
-                      transition={cssTransition({
-                        // don't fade in/out
-                        enter: 'toast-fade-in',
-                        exit: 'toast-fade-out',
-                        collapseDuration: 0,
-                        collapse: true,
-                      })}
-                    />
+							>
+								<PanelChild
+									minSize={25}
+									id="panel-left"
+									// style={panelLeftStyle}
+									order={1}
+								>
+									<div className="h-full min-h-1 overflow-x-hidden">
+										<ToastContainer
+											pauseOnFocusLoss={false}
+											position="bottom-right"
+											toastStyle={{
+												maxHeight: document.body.clientHeight,
+											}}
+											transition={cssTransition({
+												// don't fade in/out
+												enter: "toast-fade-in",
+												exit: "toast-fade-out",
+												collapseDuration: 0,
+												collapse: true,
+											})}
+										/>
 
-                    {ui === UI.splash && <Splash />}
-                    {ui === UI.drop && <Drop />}
-                    {ui === UI.textarea && <TextArea />}
-                    {ui === UI.editor && <Editor />}
-                    {ui === UI.log && <Log />}
-                    {ui === UI.emoji && <Emoji />}
-                    {ui === UI.debugger && <Inspector />}
-                    {ui === UI.chat && <Chat />}
-                    {/* TODO: These UI setup logic "onMount", so open is here in case they were the ui on previous close, then immediately re-opened */}
+										{ui === UI.splash && <Splash />}
+										{ui === UI.drop && <Drop />}
+										{ui === UI.textarea && <TextArea />}
+										{ui === UI.editor && <Editor />}
+										{ui === UI.log && <Log />}
+										{ui === UI.emoji && <Emoji />}
+										{ui === UI.debugger && <Inspector />}
+										{ui === UI.chat && <Chat />}
+										{/* TODO: These UI setup logic "onMount", so open is here in case they were the ui on previous close, then immediately re-opened */}
 
-                    {ui === UI.term && open && termConfig?.promptId === promptData?.id && <Terminal />}
-                    {ui === UI.mic && open && <AudioRecorder />}
-                    {ui === UI.webcam && open && <Webcam />}
+										{ui === UI.term &&
+											open &&
+											termConfig?.promptId === promptData?.id && <Terminal />}
+										{ui === UI.mic && open && <AudioRecorder />}
+										{ui === UI.webcam && open && <Webcam />}
 
-                    {((ui === UI.arg && !panelHTML) || ui === UI.hotkey) && (
-                      <div className="w-full h-full" style={{ padding: promptData?.gridPadding || '0' }}>
-                        <AutoSizer>{({ width, height }) => <List width={width} height={height} />}</AutoSizer>
-                      </div>
-                    )}
-                    {(!!(ui === UI.arg || ui === UI.div) && panelHTML.length > 0 && <Panel />) ||
-                      (ui === UI.form && <Form />)}
-                  </div>
-                </PanelChild>
+										{((ui === UI.arg && !panelHTML) || ui === UI.hotkey) && (
+											<div
+												className="w-full h-full"
+												style={{ padding: promptData?.gridPadding || "0" }}
+											>
+												<AutoSizer>
+													{({ width, height }) => (
+														<List width={width} height={height} />
+													)}
+												</AutoSizer>
+											</div>
+										)}
+										{(!!(ui === UI.arg || ui === UI.div) &&
+											panelHTML.length > 0 && <Panel />) ||
+											(ui === UI.form && <Form />)}
+									</div>
+								</PanelChild>
 
-                {showRightPanel && (
-                  <>
-                    <PanelResizeHandle
-                      id="panel-resize-handle"
-                      className="w-0.5 border-l-1 border-ui-border hover:-ml-0.5 hover:w-3 hover:border-r-1 hover:border-white/10 hover:bg-white/5"
-                      onDragging={onResizeHandleDragging}
-                    />
+								{showRightPanel && (
+									<>
+										<PanelResizeHandle
+											id="panel-resize-handle"
+											className="w-0.5 border-l-1 border-ui-border hover:-ml-0.5 hover:w-3 hover:border-r-1 hover:border-white/10 hover:bg-white/5"
+											onDragging={onResizeHandleDragging}
+										/>
 
-                    <PanelChild
-                      id="panel-right"
-                      ref={panelChildRef}
-                      // style={panelRightStyle}
-                      order={2}
-                    >
-                      <Preview />
-                    </PanelChild>
-                  </>
-                )}
-              </PanelGroup>
-            </main>
-            {!footerHidden && (
-              <footer id="footer" className={`draggable ${promptData?.footerClassName || ''} z-50`}>
-                <ActionBar />
-              </footer>
-            )}
-          </div>
-        </div>
-      }
+										<PanelChild
+											id="panel-right"
+											ref={panelChildRef}
+											// style={panelRightStyle}
+											order={2}
+										>
+											<Preview />
+										</PanelChild>
+									</>
+								)}
+							</PanelGroup>
+						</main>
+						{!footerHidden && (
+							<footer
+								id="footer"
+								className={`draggable ${promptData?.footerClassName || ""} z-50`}
+							>
+								<ActionBar />
+							</footer>
+						)}
+					</div>
+				</div>
+			}
 
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-      <audio id="audio" />
-    </ErrorBoundary>
-  );
+			{/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+			<audio id="audio" />
+		</ErrorBoundary>
+	);
 }

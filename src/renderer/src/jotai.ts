@@ -1113,7 +1113,7 @@ const resizeSettle = debounce((g: Getter, s: Setter) => {
 
 export const promptResizedByHumanAtom = atom(false);
 
-const resize = debounce(
+export const resize = debounce(
   (g: Getter, s: Setter, reason = 'UNSET') => {
     const human = g(promptResizedByHumanAtom);
     if (human) {
@@ -1508,7 +1508,6 @@ const _themeAtom = atom('');
 export const themeAtom = atom(
   (g) => g(_themeAtom),
   (_g, s, theme: string) => {
-    setAppearance(s, theme);
     s(_themeAtom, theme);
     s(_tempThemeAtom, theme);
   },
@@ -1550,8 +1549,7 @@ export const promptDataAtom = atom(
 
     wasPromptDataPreloaded = Boolean(prevPromptData?.preload && !a?.preload);
     log.info(
-      `${g(pidAtom)}: 👀 Preloaded: ${a?.scriptPath} ${
-        wasPromptDataPreloaded ? 'true' : 'false'
+      `${g(pidAtom)}: 👀 Preloaded: ${a?.scriptPath} ${wasPromptDataPreloaded ? 'true' : 'false'
       } and keyword: ${a?.keyword}
       prevPromptData: ${prevPromptData?.preload ? 'yup' : 'nope'}
       currentPromptData: ${a?.preload ? 'yup' : 'nope'}
@@ -1838,7 +1836,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
 
 export const channelAtom = atom((g) => {
   if (g(pauseChannelAtom)) {
-    return () => {};
+    return () => { };
   }
   return (channel: Channel, override?: any) => {
     const state = g(appStateAtom);
@@ -2136,34 +2134,14 @@ const emptyFilePathBounds: FilePathBounds = {
 };
 export const filePathBoundsAtom = atom<FilePathBounds>(emptyFilePathBounds);
 
-const setAppearance = debounce((s: Setter, theme: string) => {
-  // Parse the theme string to extract CSS variables
-  const themeObj: Record<string, string> = {};
-  const lines = theme.split('}')[0].split('{')[1].trim().split(';');
-
-  for (const line of lines) {
-    const [key, value] = line.split(':').map((s) => s.trim());
-    if (key && value) {
-      themeObj[key.replace('--', '')] = value.replace(/;$/, '');
-    }
-  }
-
-  // log.info(`🎨 Parsed theme: `, themeObj?.appearance);
-
-  // Read the --appearance CSS variable
-  const appearance = themeObj?.appearance;
-
-  log.info(`Appearance set to: ${appearance}`);
-  s(appearanceAtom, (appearance as Appearance) || 'dark');
-}, 10);
+const setAppearance = () => { };
 
 const _tempThemeAtom = atom('');
 export const tempThemeAtom = atom(
   (g) => g(_tempThemeAtom),
-  debounce((_g, s, theme: string) => {
-    setAppearance(s, theme);
+  (_g, s, theme: string) => {
     s(_tempThemeAtom, theme);
-  }, 10),
+  },
 );
 
 export const modifiers = [
@@ -2748,7 +2726,7 @@ export const colorAtom = atom((g) => {
 
       ipcRenderer.send(channel, appMessage);
       return color;
-    } catch (error) {}
+    } catch (error) { }
     return '';
   };
 });
@@ -2834,7 +2812,7 @@ export const setChatMessageAtom = atom(null, (g, s, a: { index: number; message:
       pid: g(pidAtom),
     };
     ipcRenderer.send(Channel.CHAT_SET_MESSAGE, appMessage);
-  } catch (error) {}
+  } catch (error) { }
 });
 export const termConfigDefaults: TermConfig = {
   command: '',
@@ -3257,7 +3235,7 @@ export const previewCheckAtom = atom((g) => {
 export const shortcodesAtom = atom<string[]>([]);
 
 export const triggerKeywordAtom = atom(
-  (_g) => {},
+  (_g) => { },
   (
     g,
     _s,
