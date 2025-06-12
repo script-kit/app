@@ -2498,34 +2498,8 @@ export const _speechAtom = atom<SpeakOptions | null>(null);
 
 export const speechAtom = atom(
   (g) => g(_speechAtom),
-  (g, _s, a: SpeakOptions) => {
-    const pid = g(pidAtom);
-    log.info(`${pid}: 🔊 Speak`, { a });
-    if (a) {
-      // If SpeechSynthesis is playing, cancel
-      const synth = window.speechSynthesis;
-      if (synth.speaking) {
-        log.info(`${pid}: 🔊 Cancelling speak`);
-        synth.cancel();
-      }
-
-      const utterThis = new SpeechSynthesisUtterance(a?.text);
-      utterThis.rate = a?.rate || 1.3;
-      utterThis.pitch = a?.pitch || 1;
-      utterThis.lang = a?.lang || 'en-US';
-      const voices = synth.getVoices();
-      utterThis.voice = voices.find((v) => v.name === a?.name) || synth.getVoices()[0];
-
-      // on speak complete
-      const handler = () => {
-        log.info(`${pid}: 🔊 Speak complete`);
-        g(channelAtom)(Channel.SPEAK_TEXT);
-        utterThis.removeEventListener('end', handler);
-      };
-      utterThis.addEventListener('end', handler);
-
-      synth.speak(utterThis);
-    }
+  (_g, s, a: SpeakOptions | null) => {
+    s(_speechAtom, a);
   },
 );
 
