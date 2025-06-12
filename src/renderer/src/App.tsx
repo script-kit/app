@@ -114,6 +114,7 @@ import { micStreamEffect } from "./effects/micStream";
 import { speechEffect } from "./effects/speech";
 import { webcamEffect } from "./effects/webcam";
 import { termExitEffect } from "./effects/termExit";
+import { windowModeEffect } from "./effects/windowMode";
 
 self.MonacoEnvironment = {
 	getWorker(_, label) {
@@ -257,6 +258,7 @@ export default function App() {
 	const [_speechEffect] = useAtom(speechEffect);
 	const [_webcamEffect] = useAtom(webcamEffect);
 	const [_termExitEffect] = useAtom(termExitEffect);
+	const [_windowModeEffect] = useAtom(windowModeEffect);
 
 	const [chatMessages] = useAtom(chatMessagesWithEffect);
 
