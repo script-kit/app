@@ -87,7 +87,7 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
         const schema = createToolSchema(script.args);
 
         // Register tool with this specific MCP server instance
-        server.tool(script.name, schema, async (params: Record<string, string>) => {
+        server.tool(script.name, script.description || "No description metadata provided", schema, async (params: Record<string, string>) => {
           log.info(`Executing MCP tool ${script.name}`);
           log.info(`Raw params: ${dump(params)}`);
 
@@ -179,7 +179,7 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
         // Create a new MCP server instance for this SSE session
         const server = await createMcpServerForSession();
         mcpServers[sid] = server;
-        
+
         await server.connect(transport);
 
         log.info(`SSE transport connected. sessionId=${sid}`);
@@ -348,7 +348,7 @@ export async function startMcpHttpServer(): Promise<void> {
   }
 
   log.info(`[${new Date().toISOString()}] Starting MCP HTTP server...`);
-  
+
   // Pre-load MCP scripts to speed up first connection
   const preloadStart = Date.now();
   await mcpService.getMCPScripts();

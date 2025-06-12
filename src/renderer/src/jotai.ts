@@ -2509,17 +2509,6 @@ export const _kitStateAtom = atom({
 export const kitStateAtom = atom(
   (g) => g(_kitStateAtom),
   (g, s, a: any) => {
-    // log.info({
-    //   type: 'kitStateAtom',
-    //   a,
-    // });
-    if (a?.escapePressed) {
-      const audio = g(audioAtom);
-      if (audio) {
-        log.info(`${window?.pid}: Escape pressed. Nulling audio`);
-        s(audioAtom, null);
-      }
-    }
     s(_kitStateAtom, {
       ...g(_kitStateAtom),
       ...a,
