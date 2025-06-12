@@ -2741,12 +2741,7 @@ export const chatMessagesAtom = atom(
 
     s(_chatMessagesAtom, a);
 
-    const appMessage = {
-      channel: Channel.CHAT_MESSAGES_CHANGE,
-      value: a,
-      pid: g(pidAtom),
-    };
-    ipcRenderer.send(Channel.CHAT_MESSAGES_CHANGE, appMessage);
+    // Broadcast now handled by jotai-effect in chat/effect.
   },
 );
 
@@ -2764,12 +2759,7 @@ export const addChatMessageAtom = atom(null, (g, s, a: MessageType) => {
   (a as MessageTypeWithIndex).index = index;
   s(chatMessagesAtom, updated);
 
-  const appMessage = {
-    channel: Channel.CHAT_ADD_MESSAGE,
-    value: a,
-    pid: g(pidAtom),
-  };
-  ipcRenderer.send(Channel.CHAT_ADD_MESSAGE, appMessage);
+  // IPC moved to chatMessagesWithEffect
 });
 
 export const chatPushTokenAtom = atom(null, (g, s, a: string) => {
@@ -2784,12 +2774,7 @@ export const chatPushTokenAtom = atom(null, (g, s, a: string) => {
 
     s(chatMessagesAtom, messages);
 
-    const appMessage = {
-      channel: Channel.CHAT_PUSH_TOKEN,
-      value: lastMessage,
-      pid: g(pidAtom),
-    };
-    ipcRenderer.send(Channel.CHAT_PUSH_TOKEN, appMessage);
+    // IPC moved to chatMessagesWithEffect
   } catch (error) {
     s(chatMessagesAtom, []);
   }
@@ -2806,12 +2791,7 @@ export const setChatMessageAtom = atom(null, (g, s, a: { index: number; message:
 
     (a.message as MessageTypeWithIndex).index = messageIndex;
 
-    const appMessage = {
-      channel: Channel.CHAT_SET_MESSAGE,
-      value: a.message,
-      pid: g(pidAtom),
-    };
-    ipcRenderer.send(Channel.CHAT_SET_MESSAGE, appMessage);
+    // IPC moved to chatMessagesWithEffect
   } catch (error) { }
 });
 export const termConfigDefaults: TermConfig = {

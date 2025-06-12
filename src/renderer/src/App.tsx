@@ -37,7 +37,6 @@ import {
 	appBoundsAtom,
 	audioDotAtom,
 	channelAtom,
-	chatMessagesAtom,
 	cssAtom,
 	domUpdatedAtom,
 	flaggedChoiceValueAtom,
@@ -106,6 +105,7 @@ import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import { themeAppearanceEffect } from "./effects/theme";
 import { unobserveResize } from "./effects/resize";
+import { chatMessagesWithEffect } from "./effects/chat";
 
 self.MonacoEnvironment = {
 	getWorker(_, label) {
@@ -181,7 +181,6 @@ export default function App() {
 	const [script] = useAtom(scriptAtom);
 	const [hint] = useAtom(hintAtom);
 	const [panelHTML] = useAtom(panelHTMLAtom);
-	const [chatMessages] = useAtom(chatMessagesAtom);
 
 	const [ui] = useAtom(uiAtom);
 	const loading = useAtomValue(loadingAtom);
@@ -242,6 +241,8 @@ export default function App() {
 	const [focusedElement, setFocusedElement] = useAtom(focusedElementAtom);
 
 	const [ignoredEffect] = useAtom(themeAppearanceEffect);
+
+	const [chatMessages] = useAtom(chatMessagesWithEffect);
 
 	useMessages();
 
