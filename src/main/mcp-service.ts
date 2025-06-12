@@ -22,33 +22,32 @@ class MCPService {
 
   async getMCPScripts(force = false): Promise<MCPScript[]> {
     const startTime = Date.now();
-    log.info(`[${new Date().toISOString()}] [getMCPScripts] force? ${force}`);
+    log.info(`[getMCPScripts] force? ${force}`);
     const now = Date.now();
 
     // Return cached scripts if fresh
     if (!force && this.mcpScripts.length > 0 && now - this.lastRefresh < this.refreshInterval) {
-      log.info(`[${new Date().toISOString()}] [getMCPScripts] returning cached list (${this.mcpScripts.length})`);
+      log.info(`[getMCPScripts] returning cached list (${this.mcpScripts.length})`);
       return this.mcpScripts;
     }
 
     try {
-      log.info(`[${new Date().toISOString()}] [getMCPScripts] fetching scripts from kit db…`);
+      log.info('[getMCPScripts] fetching scripts from kit db…');
       // Get all scripts
       const dbStart = Date.now();
       const allScripts = await getScripts(false);
       const dbDuration = Date.now() - dbStart;
-      log.info(`[${new Date().toISOString()}] [getMCPScripts] loaded ${allScripts.length} total scripts from db in ${dbDuration}ms`);
+      log.info(`[getMCPScripts] loaded ${allScripts.length} total scripts from db in ${dbDuration}ms`);
 
       // Filter MCP-enabled scripts
       const mcpScripts = allScripts.filter((script: Script) => script.mcp);
-      log.info(`[${new Date().toISOString()}] [getMCPScripts] found ${mcpScripts.length} mcp-enabled scripts`);
+      log.info(`[getMCPScripts] found ${mcpScripts.length} mcp-enabled scripts`);
 
       // Process each script to extract args
       const processStart = Date.now();
       const processedScripts = await Promise.all(
         mcpScripts.map(async (script) => {
-          const scriptStart = Date.now();
-          log.info(`[${new Date().toISOString()}] [getMCPScripts] processing script ${script.filePath}`);
+          log.info(`[getMCPScripts] processing script ${script.filePath}`);
           try {
             // Read script content
             const content = await readFile(script.filePath, 'utf-8');
@@ -81,11 +80,11 @@ class MCPService {
 
       const processDuration = Date.now() - processStart;
       const totalDuration = Date.now() - startTime;
-      log.info(`[${new Date().toISOString()}] Found ${this.mcpScripts.length} MCP-enabled scripts after processing (process: ${processDuration}ms, total: ${totalDuration}ms)`);
+      log.info(`Found ${this.mcpScripts.length} MCP-enabled scripts after processing (process: ${processDuration}ms, total: ${totalDuration}ms`);
 
       return this.mcpScripts;
     } catch (error) {
-      log.error(`[${new Date().toISOString()}] Failed to get MCP scripts:`, error);
+      log.error('Failed to get MCP scripts:', error);
       throw error;
     }
   }

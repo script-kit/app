@@ -57,7 +57,7 @@ function dump(obj: unknown) {
 
 async function createMcpServerForSession(): Promise<McpServer> {
   const startTime = Date.now();
-  log.info(`[${new Date().toISOString()}] Creating new MCP server instance for session…`);
+  log.info('Creating new MCP server instance for session…');
   log.debug(`Process PID: ${process.pid}`);
 
   const server = new McpServer({
@@ -67,22 +67,22 @@ async function createMcpServerForSession(): Promise<McpServer> {
 
   await registerToolsForServer(server);
   const duration = Date.now() - startTime;
-  log.info(`[${new Date().toISOString()}] MCP server instance created in ${duration}ms`);
+  log.info(`MCP server instance created in ${duration}ms`);
   return server;
 }
 
 async function registerToolsForServer(server: McpServer, forceRefresh = false) {
   const startTime = Date.now();
-  log.info(`[${new Date().toISOString()}] [registerTools] start for server instance`);
+  log.info('[registerTools] start for server instance');
   try {
-    log.info(`[${new Date().toISOString()}] Loading MCP scripts${forceRefresh ? ' (force refresh)' : ''}`);
+    log.info(`Loading MCP scripts${forceRefresh ? ' (force refresh)' : ''}`);
     const scripts = await mcpService.getMCPScripts(forceRefresh);
     const loadDuration = Date.now() - startTime;
 
-    log.info(`[${new Date().toISOString()}] [registerTools] loaded ${scripts.length} scripts in ${loadDuration}ms`);
+    log.info(`[registerTools] loaded ${scripts.length} scripts in ${loadDuration}ms`);
 
     for (const script of scripts) {
-      log.info(`[${new Date().toISOString()}] [registerTools] registering script: ${script.name}`);
+      log.info(`[registerTools] registering script: ${script.name}`);
       try {
         const schema = createToolSchema(script.args);
 
@@ -130,7 +130,7 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
           }
         });
 
-        log.info(`[${new Date().toISOString()}] Registered MCP tool: ${script.name}`);
+        log.info(`Registered MCP tool: ${script.name}`);
         // Log schema keys instead of full objects to avoid verbose output
         log.debug(`Schema keys for ${script.name}: ${Object.keys(schema).join(', ')}`);
       } catch (err) {
@@ -139,9 +139,9 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
       }
     }
     const totalDuration = Date.now() - startTime;
-    log.info(`[${new Date().toISOString()}] [registerTools] completed registration in ${totalDuration}ms`);
+    log.info(`[registerTools] completed registration in ${totalDuration}ms`);
   } catch (err) {
-    log.error(`[${new Date().toISOString()}] Failed to register MCP tools`, err);
+    log.error('Failed to register MCP tools', err);
   }
 }
 
@@ -149,7 +149,7 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
 // HTTP Handlers
 // -----------------------------
 async function onRequest(req: IncomingMessage, res: ServerResponse) {
-  log.info(`[${new Date().toISOString()}] HTTP ${req.method} ${req.url}`);
+  log.info(`HTTP ${req.method} ${req.url}`);
   log.debug(`Headers: ${dump(req.headers)}`);
 
   // Simple health check
@@ -343,17 +343,17 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
 export async function startMcpHttpServer(): Promise<void> {
   const startTime = Date.now();
   if (httpServer) {
-    log.warn(`[${new Date().toISOString()}] MCP HTTP server already running`);
+    log.warn('MCP HTTP server already running');
     return;
   }
 
-  log.info(`[${new Date().toISOString()}] Starting MCP HTTP server...`);
+  log.info('Starting MCP HTTP server...');
 
   // Pre-load MCP scripts to speed up first connection
   const preloadStart = Date.now();
   await mcpService.getMCPScripts();
   const preloadDuration = Date.now() - preloadStart;
-  log.info(`[${new Date().toISOString()}] Pre-loaded MCP scripts in ${preloadDuration}ms`);
+  log.info(`Pre-loaded MCP scripts in ${preloadDuration}ms`);
 
   const port = getMcpPort();
 
@@ -361,7 +361,7 @@ export async function startMcpHttpServer(): Promise<void> {
 
   httpServer.listen(port, () => {
     const totalDuration = Date.now() - startTime;
-    log.info(`[${new Date().toISOString()}] MCP HTTP server listening on http://localhost:${port}/mcp (startup took ${totalDuration}ms)`);
+    log.info(`MCP HTTP server listening on http://localhost:${port}/mcp (startup took ${totalDuration}ms)`);
     log.debug(`Environment KIT_MCP_PORT=${process.env.KIT_MCP_PORT}`);
   });
 }

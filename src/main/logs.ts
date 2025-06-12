@@ -115,6 +115,10 @@ if (log.transports.ipc) {
   log.transports.ipc.level = false;
 }
 
+// Add timestamp to all log entries
+log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}';
+log.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}';
+
 if (process.env.VITE_LOG_LEVEL) {
   log.info("🪵 Setting log level", process.env.VITE_LOG_LEVEL);
   log.transports.file.level = process.env.VITE_LOG_LEVEL as LevelOption;
@@ -148,10 +152,15 @@ function createLogInstance(logId: string): {
   const logInstance = log.create({ logId });
   const fileTransport = logInstance.transports.file as FileTransport;
   fileTransport.resolvePathFn = () => logPath;
+  fileTransport.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}';
+  
   logInstance.info("🟢 Script Kit Starting Up...");
   logInstance.info(`${logId} log path: ${logPath}`);
 
   logInstance.transports.console.level = false;
+  if (logInstance.transports.console) {
+    logInstance.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}';
+  }
   logInstance.transports.ipc.level = false;
   logInstance.transports.file.level = kitState.logLevel;
 
