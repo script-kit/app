@@ -12,7 +12,7 @@ import { UI } from '@johnlindquist/kit/core/enum';
 
 export const termExitEffect = atomEffect((get, set) => {
   const exitFlag = get(termExitAtom);
-  if (!exitFlag) return;
+  if (exitFlag === null) return;
 
   const ui = get(uiAtom);
   if (ui !== UI.term) return;
