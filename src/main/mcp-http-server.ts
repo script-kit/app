@@ -46,6 +46,8 @@ const sseTransports: Record<string, SSEServerTransport> = {};
 
 // Cache for script metadata to speed up server creation
 let cachedScripts: MCPScript[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 30000; // 30 seconds cache TTL
 
 // =====================
 // Verbose logging helper
@@ -58,7 +60,7 @@ function dump(obj: unknown) {
   }
 }
 
-async function createMcpServerForSession(): Promise<McpServer> {
+async function createMcpServerForSession(forceRefresh = false): Promise<McpServer> {
   const startTime = Date.now();
   log.info('Creating new MCP server instance for session…');
   log.debug(`Process PID: ${process.pid}`);
@@ -68,7 +70,7 @@ async function createMcpServerForSession(): Promise<McpServer> {
     version: '1.0.0',
   });
 
-  await registerToolsForServer(server);
+  await registerToolsForServer(server, forceRefresh);
   const duration = Date.now() - startTime;
   log.info(`MCP server instance created in ${duration}ms`);
   return server;
@@ -78,15 +80,22 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
   const startTime = Date.now();
   log.info('[registerTools] start for server instance');
   try {
-    // Use cached scripts if available and not forcing refresh
+    // Use cached scripts if available, not forcing refresh, and cache is fresh
     let scripts: MCPScript[];
-    if (!forceRefresh && cachedScripts) {
+    const now = Date.now();
+    const cacheExpired = now - cacheTimestamp > CACHE_TTL;
+    
+    if (!forceRefresh && cachedScripts && !cacheExpired) {
       scripts = cachedScripts;
-      log.info(`Using cached MCP scripts (${scripts.length} scripts)`);
+      log.info(`Using cached MCP scripts (${scripts.length} scripts, age: ${Math.round((now - cacheTimestamp) / 1000)}s)`);
     } else {
+      if (cacheExpired) {
+        log.info('Cache expired, refreshing scripts');
+      }
       log.info(`Loading MCP scripts${forceRefresh ? ' (force refresh)' : ''}`);
       scripts = await mcpService.getMCPScripts(forceRefresh);
       cachedScripts = scripts; // Update cache
+      cacheTimestamp = now;
     }
     const loadDuration = Date.now() - startTime;
 
@@ -218,7 +227,8 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
           });
 
           // Create a new MCP server instance for this SSE session
-          const server = await createMcpServerForSession();
+          // Force refresh scripts for new sessions to pick up any changes
+          const server = await createMcpServerForSession(true);
           mcpServers[sid] = server;
 
           await server.connect(transport);
@@ -370,7 +380,8 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
         log.info(`Transport created with pre-assigned session ID: ${newSessionId}`);
 
         // Create a new MCP server instance for this session
-        const server = await createMcpServerForSession();
+        // Force refresh scripts for new sessions to pick up any changes
+        const server = await createMcpServerForSession(true);
         const sessId = transport.sessionId || newSessionId;
         if (sessId) {
           mcpServers[sessId] = server;
@@ -438,6 +449,7 @@ export async function startMcpHttpServer(): Promise<void> {
       try {
         const scripts = await mcpService.getMCPScripts();
         cachedScripts = scripts; // Populate cache
+        cacheTimestamp = Date.now(); // Set cache timestamp
         const preloadDuration = Date.now() - preloadStart;
         log.info(`Pre-loaded ${scripts.length} MCP scripts in ${preloadDuration}ms`);
       } catch (error) {
