@@ -38,12 +38,8 @@ let httpServer: http.Server | null = null;
 
 const transports: Record<string, StreamableHTTPServerTransport> = {};
 
-// Track names of tools we've already registered to avoid duplicates
-const registeredToolNames = new Set<string>();
-
-// Shared MCP server instance (lazy)
-let mcpServer: McpServer | null = null;
-let mcpServerInit: Promise<McpServer> | null = null;
+// Map of MCP server instances per session
+const mcpServers: Record<string, McpServer> = {};
 
 // Active SSE transports keyed by sessionId (supports multiple concurrent SSE clients)
 const sseTransports: Record<string, SSEServerTransport> = {};
@@ -59,53 +55,34 @@ function dump(obj: unknown) {
   }
 }
 
-async function ensureMcpServer(): Promise<McpServer> {
-  if (mcpServer) {
-    return mcpServer;
-  }
-  if (mcpServerInit) {
-    return mcpServerInit;
-  }
+async function createMcpServerForSession(): Promise<McpServer> {
+  log.info('Creating new MCP server instance for session…');
+  log.debug(`Process PID: ${process.pid}`);
 
-  mcpServerInit = (async () => {
-    log.info('Creating MCP server instance (HTTP)…');
-    log.debug(`Process PID: ${process.pid}`);
+  const server = new McpServer({
+    name: 'script-kit',
+    version: '1.0.0',
+  });
 
-    mcpServer = new McpServer({
-      name: 'script-kit',
-      version: '1.0.0',
-    });
-
-    await registerTools(false);
-    return mcpServer;
-  })();
-
-  return mcpServerInit;
+  await registerToolsForServer(server);
+  return server;
 }
 
-async function registerTools(forceRefresh = false) {
-  log.info(`[registerTools] start (forceRefresh=${forceRefresh})`);
+async function registerToolsForServer(server: McpServer, forceRefresh = false) {
+  log.info(`[registerTools] start for server instance`);
   try {
     log.info(`Loading MCP scripts${forceRefresh ? ' (force refresh)' : ''}`);
-    log.debug(`Existing registered tools: ${Array.from(registeredToolNames).join(', ')}`);
     const scripts = await mcpService.getMCPScripts(forceRefresh);
 
     log.info(`[registerTools] scripts to consider: ${scripts.length}`);
 
-    log.debug(`Scripts returned from mcpService: ${dump(scripts.map((s) => ({ name: s.name, args: s.args.length })))}`);
-
     for (const script of scripts) {
-      log.info(`[registerTools] evaluating script: ${script.name}`);
+      log.info(`[registerTools] registering script: ${script.name}`);
       try {
-        // avoid duplicate registration
-        if (registeredToolNames.has(script.name)) {
-          continue;
-        }
-
         const schema = createToolSchema(script.args);
 
-        // Register tool with MCP server (name, inputSchema, handler)
-        (mcpServer as McpServer).tool(script.name, schema, async (params: Record<string, string>) => {
+        // Register tool with this specific MCP server instance
+        server.tool(script.name, schema, async (params: Record<string, string>) => {
           log.info(`Executing MCP tool ${script.name}`);
           log.info(`Raw params: ${dump(params)}`);
 
@@ -151,14 +128,11 @@ async function registerTools(forceRefresh = false) {
         log.info(`Registered MCP tool: ${script.name}`);
         // Log schema keys instead of full objects to avoid verbose output
         log.debug(`Schema keys for ${script.name}: ${Object.keys(schema).join(', ')}`);
-        log.info(`[registerTools] registered OK: ${script.name}`);
-        registeredToolNames.add(script.name);
       } catch (err) {
         log.error(`Failed to register tool ${script.name}`, err);
         log.error(`[registerTools] stack for ${script.name}:`, (err as Error)?.stack || err);
       }
     }
-    log.info(`[registerTools] total registered tools: ${registeredToolNames.size}`);
   } catch (err) {
     log.error('Failed to register MCP tools', err);
   }
@@ -191,16 +165,15 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
         sseTransports[sid] = transport;
         res.on('close', () => {
           delete sseTransports[sid];
+          delete mcpServers[sid];
           log.info(`SSE connection closed – session ${sid}`);
         });
 
-        if (!mcpServer) {
-          log.error('MCP server not initialized');
-          res.writeHead(500).end('MCP server not ready');
-          return;
-        }
-
-        await mcpServer.connect(transport);
+        // Create a new MCP server instance for this SSE session
+        const server = await createMcpServerForSession();
+        mcpServers[sid] = server;
+        
+        await server.connect(transport);
 
         log.info(`SSE transport connected. sessionId=${sid}`);
       } catch (err) {
@@ -333,12 +306,18 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
           log.info(`Transport closed for session ${sessId}`);
           if (sessId) {
             delete transports[sessId];
+            delete mcpServers[sessId];
           }
         };
 
         log.info(`Transport created for session ${transport.sessionId}`);
 
-        const server = await ensureMcpServer();
+        // Create a new MCP server instance for this session
+        const server = await createMcpServerForSession();
+        const sessId = transport.sessionId;
+        if (sessId) {
+          mcpServers[sessId] = server;
+        }
         await server.connect(transport);
       }
 
@@ -360,8 +339,8 @@ export async function startMcpHttpServer(): Promise<void> {
     return;
   }
 
-  // Ensure MCP server and tools are fully initialized *before* accepting any connections.
-  await ensureMcpServer();
+  // Pre-load MCP scripts to speed up first connection
+  await mcpService.getMCPScripts();
 
   const port = getMcpPort();
 
