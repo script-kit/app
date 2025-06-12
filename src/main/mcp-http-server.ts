@@ -6,7 +6,7 @@ import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
-import { handleScript } from './handleScript';
+import { handleScript, UNDEFINED_VALUE } from './handleScript';
 import { mcpLog as log } from './logs';
 import { mcpService } from './mcp-service';
 import { getMcpPort } from './serverTrayUtils';
@@ -24,6 +24,7 @@ function createToolSchema(args: Array<{ name: string; placeholder: string | null
     shape[key] = z
       .string()
       .describe(arg.placeholder || arg.name || `Parameter ${index + 1}`)
+      .default(UNDEFINED_VALUE)
       .optional();
   }
 
@@ -113,7 +114,7 @@ async function registerTools(forceRefresh = false) {
           for (let i = 0; i < script.args.length; i++) {
             const meta = script.args[i];
             const key = meta.name?.trim() ? meta.name : `arg${i + 1}`;
-            ordered.push(params[key] ?? '');
+            ordered.push(params[key] ?? UNDEFINED_VALUE);
           }
 
           try {

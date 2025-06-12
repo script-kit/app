@@ -4,11 +4,8 @@ import { Channel } from '@johnlindquist/kit/core/enum';
 
 export const micStreamEffect = atomEffect((get) => {
   const enabled = get(micStreamEnabledAtom);
-  const channel = get(channelAtom);
+  if (enabled) return; // streaming handled elsewhere
 
-  if (enabled) {
-    channel(Channel.MIC_STREAM, { event: 'start' });
-  } else {
-    channel(Channel.MIC_STREAM, { event: 'end' });
-  }
+  const channel = get(channelAtom);
+  channel(Channel.MIC_STREAM, { event: 'end' });
 });

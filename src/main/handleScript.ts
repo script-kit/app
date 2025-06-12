@@ -7,6 +7,9 @@ import { runMainScript } from './main-script';
 import { spawnShebang } from './process';
 import { getApiKey } from './server/server-utils';
 
+
+export const UNDEFINED_VALUE = '__undefined__';
+
 /**
  * Handles the execution of a script based on the provided parameters.
  * @param script - The script to execute.

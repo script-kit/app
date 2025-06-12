@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import http from 'node:http';
 import https from 'node:https';
-import { splitEnvVarIntoArray } from '@johnlindquist/kit/api/kit';
 import { kenvPath } from '@johnlindquist/kit/core/utils';
 import { Bonjour } from 'bonjour-service';
 import cors from 'cors';
