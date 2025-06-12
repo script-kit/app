@@ -19,7 +19,6 @@ import {
   shortcodesAtom,
   shortcutsAtom,
   submittedAtom,
-  typingAtom,
   uiAtom,
   scoredFlagsAtom,
   enterButtonDisabledAtom,
@@ -57,7 +56,6 @@ export default function ActionsInput() {
 
   const inputHeight = useAtomValue(actionsInputHeightAtom);
 
-  const setTyping = useSetAtom(typingAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
 
   const channel = useAtomValue(channelAtom);
@@ -126,13 +124,6 @@ export default function ActionsInput() {
         });
       }
 
-      // if the key is a modifier that isn't shift, return
-
-      // If not Enter, Tab, or a modifier, setTyping to true
-      if (event.key !== 'Enter' && event.key !== 'Tab' && !modifiers.length) {
-        setTyping(true);
-      }
-
       // If key was delete and the value is empty, clear setInput
       if (event.key === 'Backspace' && target.value === '') {
         log.info('Clearing input');
@@ -141,7 +132,7 @@ export default function ActionsInput() {
         });
       }
     },
-    [setTyping, shortcuts, flags, setInput, shortcodes],
+    [shortcuts, flags, setInput, shortcodes],
   );
 
   const cached = useAtomValue(cachedAtom);

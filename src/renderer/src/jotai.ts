@@ -279,7 +279,7 @@ export const logLinesAtom = atom(
   },
 );
 
-const convertAtom = atom<(inverse?: boolean) => Convert>((g) => {
+export const convertAtom = atom<(inverse?: boolean) => Convert>((g) => {
   return (inverse = false) => {
     const isDark = g(darkAtom);
 
@@ -303,28 +303,14 @@ export const darkAtom = atom((g) => {
   return g(appearanceAtom) === 'dark';
 });
 
-const formattedLogLinesAtom = atom('');
-
-export const logHTMLAtom = atom(
-  (g) => {
-    return g(formattedLogLinesAtom);
-  },
-
-  (g, s, a: string) => {
-    if (a === Channel.CONSOLE_CLEAR || a === '') {
-      s(logLinesAtom, []);
-      s(formattedLogLinesAtom, '');
-    } else {
-      const oldLog = [...g(logLinesAtom)]; // Create a new array copy
-      const newLog = oldLog.length > 256 ? [...oldLog.slice(-256), a] : [...oldLog, a];
-      s(logLinesAtom, newLog);
-      const getConvert = g(convertAtom);
-      s(formattedLogLinesAtom, newLog.map((line) => `<br/>${getConvert().toHtml(line)}`).join(''));
-    }
-  },
-);
+export const logHTMLAtom = atom<string>('');
 
 export const appendToLogHTMLAtom = atom(null, (g, s, a: string) => {
+  if (a === Channel.CONSOLE_CLEAR || a === '') {
+    s(logLinesAtom, []);
+    s(logHTMLAtom, '');
+    return;
+  }
   const oldLog = g(logLinesAtom);
   s(logLinesAtom, _drop(oldLog, oldLog.length > 256 ? 256 : 0).concat([a]));
 });
@@ -1549,7 +1535,8 @@ export const promptDataAtom = atom(
 
     wasPromptDataPreloaded = Boolean(prevPromptData?.preload && !a?.preload);
     log.info(
-      `${g(pidAtom)}: 👀 Preloaded: ${a?.scriptPath} ${wasPromptDataPreloaded ? 'true' : 'false'
+      `${g(pidAtom)}: 👀 Preloaded: ${a?.scriptPath} ${
+        wasPromptDataPreloaded ? 'true' : 'false'
       } and keyword: ${a?.keyword}
       prevPromptData: ${prevPromptData?.preload ? 'yup' : 'nope'}
       currentPromptData: ${a?.preload ? 'yup' : 'nope'}
@@ -1836,7 +1823,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
 
 export const channelAtom = atom((g) => {
   if (g(pauseChannelAtom)) {
-    return () => { };
+    return () => {};
   }
   return (channel: Channel, override?: any) => {
     const state = g(appStateAtom);
@@ -2134,7 +2121,7 @@ const emptyFilePathBounds: FilePathBounds = {
 };
 export const filePathBoundsAtom = atom<FilePathBounds>(emptyFilePathBounds);
 
-const setAppearance = () => { };
+const setAppearance = () => {};
 
 const _tempThemeAtom = atom('');
 export const tempThemeAtom = atom(
@@ -2507,92 +2494,9 @@ export const _audioAtom = atom<AudioOptions | null>(null);
 
 export const audioAtom = atom(
   (g) => g(_audioAtom),
-  (g, s, a: AudioOptions | null) => {
-    let audio: null | HTMLAudioElement = document.querySelector('#audio') as HTMLAudioElement;
-
-    // create audio element
-    if (!audio) {
-      audio = document.createElement('audio');
-      audio.id = 'audio';
-      document.body.appendChild(audio);
-    }
-
-    const endHandler = () => {
-      log.info('Audio ended');
-      s(_audioAtom, null);
-      g(channelAtom)(Channel.PLAY_AUDIO);
-    };
-
-    const playHandler = () => {
-      log.info('Audio playing');
-      audio.removeEventListener('play', playHandler);
-    };
-
-    const pauseHandler = () => {
-      log.info('Audio paused');
-      audio.removeEventListener('pause', pauseHandler);
-    };
-
-    const errorHandler = (e) => {
-      // Handle the error based on the error code
-      switch (e.target.error.code) {
-        case e.target.error.MEDIA_ERR_ABORTED:
-          log.info('Audio playback aborted by the user.');
-          break;
-        case e.target.error.MEDIA_ERR_NETWORK:
-          log.info('A network error caused the audio download to fail.');
-          break;
-        case e.target.error.MEDIA_ERR_DECODE:
-          log.info(
-            'The audio playback was aborted due to a corruption problem or because the audio used features your browser did not support.',
-          );
-          break;
-        case e.target.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-          log.info(
-            'The audio could not be loaded, either because the server or network failed or because the format is not supported.',
-          );
-          break;
-        default:
-          log.info('An unknown error occurred.');
-          break;
-      }
-
-      audio.removeEventListener('error', errorHandler);
-    };
-
-    if (a?.filePath) {
-      s(_audioAtom, a);
-      const { filePath, ...options } = a;
-      audio.defaultPlaybackRate = options?.playbackRate || 1;
-      audio.playbackRate = options?.playbackRate || 1;
-      // allow all from cross origin
-      audio.crossOrigin = 'anonymous';
-      // allow all file types
-      // if filePath is a file on the system, use the `file://` protocol
-      audio.setAttribute('src', filePath);
-      log.info('Playing audio', {
-        audio: typeof audio,
-        filePath,
-      });
-
-      // listen for when the audio ends
-
-      audio.addEventListener('play', playHandler);
-      audio.addEventListener('pause', pauseHandler);
-      audio.addEventListener('error', errorHandler, true);
-      audio.addEventListener('ended', endHandler);
-
-      audio.play();
-    } else {
-      audio?.pause();
-      audio?.removeEventListener('ended', endHandler);
-      audio?.removeEventListener('play', playHandler);
-      audio?.removeEventListener('pause', pauseHandler);
-      audio?.removeEventListener('error', errorHandler);
-      if (audio) {
-        s(_audioAtom, null);
-      }
-    }
+  (_g, s, a: AudioOptions | null) => {
+    // Pure assignment only. Side-effects handled by audioPlaybackEffect.
+    s(_audioAtom, a);
   },
 );
 
@@ -2726,7 +2630,7 @@ export const colorAtom = atom((g) => {
 
       ipcRenderer.send(channel, appMessage);
       return color;
-    } catch (error) { }
+    } catch (error) {}
     return '';
   };
 });
@@ -2772,7 +2676,11 @@ export const chatPushTokenAtom = atom(null, (g, s, a: string) => {
     lastMessage.index = index;
 
     s(chatMessagesAtom, messages);
-    ipcRenderer.send(Channel.CHAT_PUSH_TOKEN, { channel: Channel.CHAT_PUSH_TOKEN, value: lastMessage, pid: g(pidAtom) });
+    ipcRenderer.send(Channel.CHAT_PUSH_TOKEN, {
+      channel: Channel.CHAT_PUSH_TOKEN,
+      value: lastMessage,
+      pid: g(pidAtom),
+    });
   } catch (error) {
     s(chatMessagesAtom, []);
   }
@@ -2788,8 +2696,12 @@ export const setChatMessageAtom = atom(null, (g, s, a: { index: number; message:
     s(chatMessagesAtom, messages);
 
     (a.message as MessageTypeWithIndex).index = messageIndex;
-    ipcRenderer.send(Channel.CHAT_SET_MESSAGE, { channel: Channel.CHAT_SET_MESSAGE, value: a.message, pid: g(pidAtom) });
-  } catch (error) { }
+    ipcRenderer.send(Channel.CHAT_SET_MESSAGE, {
+      channel: Channel.CHAT_SET_MESSAGE,
+      value: a.message,
+      pid: g(pidAtom),
+    });
+  } catch (error) {}
 });
 export const termConfigDefaults: TermConfig = {
   command: '',
@@ -3212,7 +3124,7 @@ export const previewCheckAtom = atom((g) => {
 export const shortcodesAtom = atom<string[]>([]);
 
 export const triggerKeywordAtom = atom(
-  (_g) => { },
+  (_g) => {},
   (
     g,
     _s,
@@ -3239,23 +3151,7 @@ export const hasRightShortcutAtom = atom((g) => {
   return hasRight;
 });
 
-const typing = atom(false);
-let typingId: any = null;
-export const typingAtom = atom(
-  (g) => g(typing),
-  // if true, toggle to false after 20ms. Cancel the previous timeout if it exists
-  (_g, s, a: boolean) => {
-    if (a) {
-      if (typingId) {
-        clearTimeout(typingId);
-      }
-      typingId = setTimeout(() => {
-        s(typing, false);
-      }, 50);
-    }
-    s(typing, a);
-  },
-);
+export const typingAtom = atom<boolean>(false);
 
 export const selectedChoicesAtom = atom<Choice[]>([]);
 export const toggleSelectedChoiceAtom = atom(null, (g, s, id: string) => {

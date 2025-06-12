@@ -106,6 +106,9 @@ import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker"
 import { themeAppearanceEffect } from "./effects/theme";
 import { unobserveResize } from "./effects/resize";
 import { chatMessagesWithEffect } from "./effects/chat";
+import { logFormatterEffect } from "./effects/logFormatter";
+import { typingEffect } from "./effects/typing";
+import { audioPlaybackEffect } from "./effects/audioPlayback";
 
 self.MonacoEnvironment = {
 	getWorker(_, label) {
@@ -241,6 +244,9 @@ export default function App() {
 	const [focusedElement, setFocusedElement] = useAtom(focusedElementAtom);
 
 	const [ignoredEffect] = useAtom(themeAppearanceEffect);
+	const [_logFormatter] = useAtom(logFormatterEffect);
+	const [_typingEffect] = useAtom(typingEffect);
+	const [_audioEffect] = useAtom(audioPlaybackEffect);
 
 	const [chatMessages] = useAtom(chatMessagesWithEffect);
 

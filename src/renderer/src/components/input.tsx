@@ -51,7 +51,6 @@ import {
   signInActionAtom,
   submitValueAtom,
   submittedAtom,
-  typingAtom,
   userAtom,
 } from '../jotai';
 import { ActionButton } from './actionbutton';
@@ -225,7 +224,6 @@ function MainInput() {
   const [, setSubmitValue] = useAtom(submitValueAtom);
   const setLastKeyDownWasModifier = debounce(useSetAtom(lastKeyDownWasModifierAtom), 300);
   const _setLastKeyDownWasModifier = useSetAtom(_lastKeyDownWasModifierAtom);
-  const setTyping = useSetAtom(typingAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
   const channel = useAtomValue(channelAtom);
   const shortcodes = useAtomValue(shortcodesAtom);
@@ -360,7 +358,7 @@ function MainInput() {
 
       // If not Enter, Tab, or a modifier, setTyping to true
       if (event.key !== 'Enter' && event.key !== 'Tab' && !modifiers.length) {
-        setTyping(true);
+        // typingEffect now handles typing state automatically.
       }
 
       // If key was delete and the value is empty, clear setInput
@@ -371,7 +369,7 @@ function MainInput() {
         });
       }
     },
-    [setSelectionStart, setModifiers, setLastKeyDownWasModifier, setTyping, shortcuts, flags, setInput, shortcodes],
+    [setSelectionStart, setModifiers, setLastKeyDownWasModifier, shortcuts, flags, setInput, shortcodes],
   );
 
   const onKeyUp = useCallback(

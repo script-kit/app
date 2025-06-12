@@ -13,6 +13,7 @@ import {
   addChatMessageAtom,
   appConfigAtom,
   appendInputAtom,
+  appendToLogHTMLAtom,
   audioAtom,
   audioDotAtom,
   beforeInputAtom,
@@ -51,7 +52,6 @@ import {
   kitStateAtom,
   lastLogLineAtom,
   loadingAtom,
-  logHTMLAtom,
   logValueAtom,
   logoAtom,
   micConfigAtom,
@@ -123,7 +123,7 @@ export default () => {
   const [script, setScript] = useAtom(scriptAtom);
   const [, setHint] = useAtom(hintAtom);
   const [, setPanelHTML] = useAtom(panelHTMLAtom);
-  const [, setLogHtml] = useAtom(logHTMLAtom);
+  const appendLogLine = useSetAtom(appendToLogHTMLAtom);
   const [, setHidden] = useAtom(isHiddenAtom);
   const [, setChatMessages] = useAtom(chatMessagesAtom);
 
@@ -279,7 +279,7 @@ export default () => {
     [Channel.SET_TEXTAREA_VALUE]: setTextareaValue,
     [Channel.SET_OPEN]: setOpen,
     [Channel.SET_PROMPT_BLURRED]: setBlur,
-    [Channel.SET_LOG]: setLogHtml,
+    [Channel.SET_LOG]: appendLogLine,
     [Channel.SET_LOGO]: setLogo,
     [Channel.SET_PLACEHOLDER]: setPlaceholder,
     [Channel.SET_ENTER]: setEnter,
