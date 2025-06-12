@@ -8,7 +8,7 @@ import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { handleScript, UNDEFINED_VALUE } from './handleScript';
 import { mcpLog as log } from './logs';
-import { mcpService } from './mcp-service';
+import { mcpService, type MCPScript } from './mcp-service';
 import { getMcpPort } from './serverTrayUtils';
 
 // -----------------------------
@@ -44,6 +44,9 @@ const mcpServers: Record<string, McpServer> = {};
 // Active SSE transports keyed by sessionId (supports multiple concurrent SSE clients)
 const sseTransports: Record<string, SSEServerTransport> = {};
 
+// Cache for script metadata to speed up server creation
+let cachedScripts: MCPScript[] | null = null;
+
 // =====================
 // Verbose logging helper
 // =====================
@@ -75,8 +78,16 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
   const startTime = Date.now();
   log.info('[registerTools] start for server instance');
   try {
-    log.info(`Loading MCP scripts${forceRefresh ? ' (force refresh)' : ''}`);
-    const scripts = await mcpService.getMCPScripts(forceRefresh);
+    // Use cached scripts if available and not forcing refresh
+    let scripts: MCPScript[];
+    if (!forceRefresh && cachedScripts) {
+      scripts = cachedScripts;
+      log.info(`Using cached MCP scripts (${scripts.length} scripts)`);
+    } else {
+      log.info(`Loading MCP scripts${forceRefresh ? ' (force refresh)' : ''}`);
+      scripts = await mcpService.getMCPScripts(forceRefresh);
+      cachedScripts = scripts; // Update cache
+    }
     const loadDuration = Date.now() - startTime;
 
     log.info(`[registerTools] loaded ${scripts.length} scripts in ${loadDuration}ms`);
@@ -149,17 +160,30 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
 // HTTP Handlers
 // -----------------------------
 async function onRequest(req: IncomingMessage, res: ServerResponse) {
-  log.info(`HTTP ${req.method} ${req.url}`);
-  log.debug(`Headers: ${dump(req.headers)}`);
-
-  // Simple health check
+  // Handle health check immediately without logging
   if (req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'text/plain' }).end('ok');
     return;
   }
+  
+  log.info(`HTTP ${req.method} ${req.url}`);
+  log.debug(`Headers: ${dump(req.headers)}`);
 
   // Only handle /mcp endpoint
   if (!req.url?.startsWith('/mcp')) {
+    // Handle /ready endpoint to check if scripts are loaded
+    if (req.url === '/ready') {
+      const isReady = cachedScripts !== null;
+      if (isReady) {
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+          .end(JSON.stringify({ ready: true, scripts: cachedScripts?.length || 0 }));
+      } else {
+        res.writeHead(503, { 'Content-Type': 'application/json' })
+          .end(JSON.stringify({ ready: false, message: 'Scripts still loading' }));
+      }
+      return;
+    }
+    
     // Inspector CLI defaults to /sse for SSE transport
     if (req.url?.startsWith('/sse')) {
       try {
@@ -348,21 +372,44 @@ export async function startMcpHttpServer(): Promise<void> {
   }
 
   log.info('Starting MCP HTTP server...');
-
-  // Pre-load MCP scripts to speed up first connection
-  const preloadStart = Date.now();
-  await mcpService.getMCPScripts();
-  const preloadDuration = Date.now() - preloadStart;
-  log.info(`Pre-loaded MCP scripts in ${preloadDuration}ms`);
-
+  
   const port = getMcpPort();
 
   httpServer = http.createServer(onRequest);
 
-  httpServer.listen(port, () => {
+  // Add error handling for server startup
+  httpServer.on('error', (err) => {
+    log.error('MCP HTTP server error:', err);
+  });
+
+  httpServer.listen(port, '127.0.0.1', () => {
     const totalDuration = Date.now() - startTime;
     log.info(`MCP HTTP server listening on http://localhost:${port}/mcp (startup took ${totalDuration}ms)`);
     log.debug(`Environment KIT_MCP_PORT=${process.env.KIT_MCP_PORT}`);
+    
+    // Pre-load MCP scripts asynchronously after server is ready
+    setImmediate(async () => {
+      const preloadStart = Date.now();
+      try {
+        const scripts = await mcpService.getMCPScripts();
+        cachedScripts = scripts; // Populate cache
+        const preloadDuration = Date.now() - preloadStart;
+        log.info(`Pre-loaded ${scripts.length} MCP scripts in ${preloadDuration}ms`);
+      } catch (error) {
+        log.error('Failed to pre-load MCP scripts:', error);
+      }
+    });
+    
+    // Verify server is actually accepting connections
+    const testReq = http.get(`http://127.0.0.1:${port}/health`, (res) => {
+      if (res.statusCode === 200) {
+        log.info('MCP HTTP server health check passed - ready for connections');
+      }
+    });
+    testReq.on('error', (err) => {
+      log.error('MCP HTTP server health check failed:', err);
+    });
+    testReq.end();
   });
 }
 
