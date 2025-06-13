@@ -32,6 +32,76 @@ function createToolSchema(args: Array<{ name: string; placeholder: string | null
 }
 
 // -----------------------------
+// Create tool schema from tool() config
+// -----------------------------
+function createToolSchemaFromConfig(parameters: Record<string, any>): Record<string, z.ZodTypeAny> {
+  const shape: Record<string, z.ZodTypeAny> = {};
+
+  for (const [key, param] of Object.entries(parameters)) {
+    let schema: z.ZodTypeAny;
+    
+    // Map parameter types to Zod schemas
+    switch (param.type) {
+      case 'string':
+        schema = z.string();
+        if (param.enum) {
+          schema = z.enum(param.enum as [string, ...string[]]);
+        }
+        if (param.pattern) {
+          schema = (schema as z.ZodString).regex(new RegExp(param.pattern));
+        }
+        break;
+      
+      case 'number':
+        schema = z.number();
+        if (param.minimum !== undefined) {
+          schema = (schema as z.ZodNumber).min(param.minimum);
+        }
+        if (param.maximum !== undefined) {
+          schema = (schema as z.ZodNumber).max(param.maximum);
+        }
+        break;
+      
+      case 'boolean':
+        schema = z.boolean();
+        break;
+      
+      case 'array':
+        // Simple array support for now
+        schema = z.array(z.string());
+        break;
+      
+      case 'object':
+        // Simple object support for now
+        schema = z.object({});
+        break;
+      
+      default:
+        schema = z.string();
+    }
+    
+    // Add description
+    if (param.description) {
+      schema = schema.describe(param.description);
+    }
+    
+    // Handle required/optional
+    if (!param.required) {
+      schema = schema.optional();
+    }
+    
+    // Handle default values
+    if (param.default !== undefined) {
+      schema = schema.default(param.default);
+    }
+    
+    shape[key] = schema;
+  }
+
+  return shape;
+}
+
+// -----------------------------
 // Server state
 // -----------------------------
 let httpServer: http.Server | null = null;
@@ -104,23 +174,51 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
     for (const script of scripts) {
       log.info(`[registerTools] registering script: ${script.name}`);
       try {
-        const schema = createToolSchema(script.args);
+        // Create schema based on script type
+        let schema: Record<string, z.ZodTypeAny>;
+        if (script.toolConfig && script.toolConfig.parameters) {
+          // For tool() based scripts, convert parameters to Zod schema
+          schema = createToolSchemaFromConfig(script.toolConfig.parameters);
+          log.info(`Using tool config schema for ${script.name}`);
+        } else {
+          // For traditional arg() based scripts
+          schema = createToolSchema(script.args);
+          log.info(`Using arg-based schema for ${script.name}`);
+        }
 
         // Register tool with this specific MCP server instance
-        server.tool(script.name, script.description || "No description metadata provided", schema, async (params: Record<string, string>) => {
+        server.tool(script.name, script.description || "No description metadata provided", schema, async (params: Record<string, any>) => {
           log.info(`Executing MCP tool ${script.name}`);
           log.info(`Raw params: ${dump(params)}`);
 
-          // Assemble ordered args
-          const ordered: string[] = [];
-          for (let i = 0; i < script.args.length; i++) {
-            const meta = script.args[i];
-            const key = meta.name?.trim() ? meta.name : `arg${i + 1}`;
-            ordered.push(params[key] ?? UNDEFINED_VALUE);
+          let ordered: string[] = [];
+          let toolParams: Record<string, any> | null = null;
+
+          if (script.toolConfig && script.toolConfig.parameters) {
+            // For tool() based scripts, pass parameters as-is
+            toolParams = params;
+            log.info(`Using tool params for ${script.name}: ${dump(toolParams)}`);
+          } else {
+            // For traditional arg() scripts, assemble ordered args
+            for (let i = 0; i < script.args.length; i++) {
+              const meta = script.args[i];
+              const key = meta.name?.trim() ? meta.name : `arg${i + 1}`;
+              ordered.push(params[key] ?? UNDEFINED_VALUE);
+            }
+            log.info(`Using ordered args for ${script.name}: ${dump(ordered)}`);
           }
 
           try {
-            const result = await handleScript(script.filePath, ordered, process.cwd(), false, '', {}, true);
+            // Pass toolParams if available, otherwise use ordered args
+            const result = await handleScript(
+              script.filePath, 
+              toolParams ? [] : ordered, 
+              process.cwd(), 
+              false, 
+              '', 
+              toolParams || {}, 
+              true
+            );
 
             // handleScript returns { data, status, message }
             log.info(`handleScript result keys: ${Object.keys(result || {})}`);

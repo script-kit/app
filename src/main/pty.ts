@@ -184,10 +184,27 @@ export const createPty = (prompt: KitPrompt) => {
   const promptData = prompt?.promptData as any || {};
   const capture = promptData?.capture;
   
+  // Log initial capture configuration
+  termLog.info('🔍 [CAPTURE] createPty called with promptData:', {
+    hasPromptData: !!promptData,
+    captureValue: capture,
+    captureType: typeof capture,
+    pid: prompt?.pid
+  });
+  
   const capOpts: TermCapture =
     (capture === true) ? { mode:"full" } :
     (capture as any)   ? (capture as TermCapture) :
                          { mode:"none" }  // Default to none if not specified
+  
+  termLog.info('🔍 [CAPTURE] Resolved capture options:', {
+    mode: capOpts.mode,
+    tailLines: capOpts.tailLines,
+    stripAnsi: capOpts.stripAnsi,
+    sentinelStart: capOpts.sentinelStart,
+    sentinelEnd: capOpts.sentinelEnd
+  });
+  
   const tb = new TranscriptBuilder({
     mode: capOpts.mode ?? "full",
     tailLines: capOpts.tailLines ?? 1000,
@@ -333,9 +350,17 @@ export const createPty = (prompt: KitPrompt) => {
       emitter.off(KitEvent.TermWrite, termWrite);
       termLog.verbose('TERM_EXIT');
       
+      const captureResult = tb.result();
+      termLog.info('🔍 [CAPTURE] termExit - sending capture:', {
+        pid: prompt.pid,
+        captureMode: capOpts.mode,
+        resultLength: captureResult.length,
+        first100Chars: captureResult.substring(0, 100).replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+      });
+      
       prompt?.sendToPrompt(AppChannel.TERM_CAPTURE_READY, {
         pid: prompt.pid,
-        text: tb.result(),
+        text: captureResult,
         exitCode: 0
       });
       
@@ -396,7 +421,17 @@ export const createPty = (prompt: KitPrompt) => {
     t.onData((data: any) => {
       try {
         sendData(data);
-        tb.push(typeof data === 'string' ? data : data.toString('utf8'));
+        const dataStr = typeof data === 'string' ? data : data.toString('utf8');
+        
+        // Log data capture
+        termLog.info('🔍 [CAPTURE] onData event:', {
+          pid: prompt?.pid,
+          dataLength: dataStr.length,
+          captureMode: capOpts.mode,
+          first50Chars: dataStr.substring(0, 50).replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+        });
+        
+        tb.push(dataStr);
       } catch (ex) {
         termLog.error('Error sending data to pty', ex);
       }
@@ -414,9 +449,18 @@ export const createPty = (prompt: KitPrompt) => {
             if (typeof config?.closeOnExit === 'boolean' && !config.closeOnExit) {
               termLog.info('Process closed, but not closing pty because closeOnExit is false');
             } else {
+              const captureResult = tb.result();
+              termLog.info('🔍 [CAPTURE] onExit - sending capture:', {
+                pid: prompt.pid,
+                captureMode: capOpts.mode,
+                resultLength: captureResult.length,
+                exitCode,
+                first100Chars: captureResult.substring(0, 100).replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+              });
+              
               prompt?.sendToPrompt(AppChannel.TERM_CAPTURE_READY, {
                 pid: prompt.pid,
-                text: tb.result(),
+                text: captureResult,
                 exitCode
               });
               

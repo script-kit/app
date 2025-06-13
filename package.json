@@ -24,6 +24,7 @@
     "kit-setup": "KIT=~/.kit-setup KENV=~/.kenv-setup KNODE=~/.knode-setup electron-vite dev",
     "build-and-install:mac": "electron-vite build && pnpm exec kit ./build.ts mac arm64 never && rm -rf '/Applications/Script Kit.app' && mv 'release/mac-arm64/Script Kit.app' '/Applications/' && echo 'Script Kit.app installed. Remember to set KIT_APP_VERSION to the tagged app release version (e.g. 2.28.9) then: open /Applications/Script Kit.app'",
     "build-and-install:windows:x64": "electron-vite build && pnpm exec kit ./build.ts windows x64 never",
+    "build-and-install:linux:arm64": "electron-vite build && pnpm exec kit ./build.ts linux arm64 never",
     "test": "vitest run",
     "bench": "vitest bench",
     "coverage": "vitest run --coverage --config electron.vite.config.ts"

@@ -25,18 +25,37 @@ export class TranscriptBuilder {
   private lines: string[] = []
   private tail?: RingBuffer<string>
   private inBlock = false
+  private totalPushed = 0
 
   constructor(private opts: Required<TermCapture>) {
     if (opts.mode === "tail") {
       this.tail = new RingBuffer(opts.tailLines)
     }
+    console.log('[TranscriptBuilder] Initialized with options:', {
+      mode: opts.mode,
+      tailLines: opts.tailLines,
+      stripAnsi: opts.stripAnsi,
+      sentinelStart: opts.sentinelStart,
+      sentinelEnd: opts.sentinelEnd
+    });
   }
 
   push(chunk: string) {
     // Guard against null/undefined input
     if (!chunk) return
     
+    this.totalPushed++;
     const txt = this.opts.stripAnsi ? chunk.replace(ansiRegex(), '') : chunk
+    
+    if (this.totalPushed <= 5) {
+      console.log(`[TranscriptBuilder] push #${this.totalPushed}:`, {
+        mode: this.opts.mode,
+        chunkLength: chunk.length,
+        processedLength: txt.length,
+        first50: txt.substring(0, 50).replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+      });
+    }
+    
     switch (this.opts.mode) {
       case "none":
         return
@@ -72,7 +91,21 @@ export class TranscriptBuilder {
   }
 
   result(): string {
-    if (this.opts.mode === "tail") return this.tail!.contents()
-    return this.lines.join('')
+    let result: string;
+    if (this.opts.mode === "tail") {
+      result = this.tail!.contents()
+    } else {
+      result = this.lines.join('')
+    }
+    
+    console.log('[TranscriptBuilder] result() called:', {
+      mode: this.opts.mode,
+      totalPushed: this.totalPushed,
+      linesCount: this.lines.length,
+      resultLength: result.length,
+      first100: result.substring(0, 100).replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+    });
+    
+    return result
   }
 }

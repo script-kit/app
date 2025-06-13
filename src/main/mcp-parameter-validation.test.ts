@@ -65,21 +65,21 @@ await sendResponse({ content: [{ type: 'text', text: 'done' }] })
       // Validate extracted args
       expect(script.args).toHaveLength(3);
 
-      // arg1 - username with placeholder
+      // username with placeholder
       expect(script.args[0]).toEqual({
-        name: 'arg1',
+        name: 'username',
         placeholder: 'Enter your username',
       });
 
-      // arg2 - password with prompt text
+      // password with prompt text
       expect(script.args[1]).toEqual({
-        name: 'arg2',
+        name: 'password',
         placeholder: 'Enter your password',
       });
 
-      // arg3 - action with placeholder
+      // action with placeholder
       expect(script.args[2]).toEqual({
-        name: 'arg3',
+        name: 'action',
         placeholder: 'Select an action',
       });
     });
@@ -332,9 +332,9 @@ await sendResponse({
       const properties = toolSchema.inputSchema.properties;
 
       // Each parameter should have meaningful descriptions
-      expect(properties.arg1.description).toBe('What task should I help with?');
-      expect(properties.arg2.description).toBe('Provide context or details for the task');
-      expect(properties.arg3.description).toBe('Select output format');
+      expect(properties.task.description).toBe('What task should I help with?');
+      expect(properties.context.description).toBe('Provide context or details for the task');
+      expect(properties.format.description).toBe('Select output format');
     });
   });
 });

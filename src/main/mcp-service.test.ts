@@ -75,7 +75,10 @@ describe('MCP Service', () => {
       ];
 
       vi.mocked(getScripts).mockResolvedValue(mockScripts as any);
-      vi.mocked(readFile).mockResolvedValue('script content');
+      vi.mocked(readFile).mockResolvedValue(`
+        import "@johnlindquist/kit"
+        const name = await arg("Enter your name");
+      `);
 
       // First call
       await mcpService.getMCPScripts();
@@ -99,7 +102,10 @@ describe('MCP Service', () => {
       ];
 
       vi.mocked(getScripts).mockResolvedValue(mockScripts as any);
-      vi.mocked(readFile).mockResolvedValue('script content');
+      vi.mocked(readFile).mockResolvedValue(`
+        import "@johnlindquist/kit"
+        const name = await arg("Enter your name");
+      `);
 
       // First call
       await mcpService.getMCPScripts();
@@ -129,7 +135,10 @@ describe('MCP Service', () => {
       ];
 
       vi.mocked(getScripts).mockResolvedValue(mockScripts as any);
-      vi.mocked(readFile).mockResolvedValueOnce('good content').mockRejectedValueOnce(new Error('File not found'));
+      vi.mocked(readFile).mockResolvedValueOnce(`
+        import "@johnlindquist/kit"
+        const name = await arg("Enter your name");
+      `).mockRejectedValueOnce(new Error('File not found'));
 
       const result = await mcpService.getMCPScripts();
 
@@ -158,7 +167,10 @@ describe('MCP Service', () => {
       ];
 
       vi.mocked(getScripts).mockResolvedValue(mockScripts as any);
-      vi.mocked(readFile).mockResolvedValue('script content');
+      vi.mocked(readFile).mockResolvedValue(`
+        import "@johnlindquist/kit"
+        const name = await arg("Enter your name");
+      `);
 
       const result = await mcpService.getMCPScript('tool2');
 

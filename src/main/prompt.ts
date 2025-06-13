@@ -1333,6 +1333,17 @@ export class KitPrompt {
 
     this.sendToPrompt = (channel: Channel | AppChannel, data) => {
       log.silly(`sendToPrompt: ${String(channel)}`, data);
+      
+      // Special logging for TERM_CAPTURE_READY
+      if (channel === AppChannel.TERM_CAPTURE_READY) {
+        this.logInfo('🔍 [CAPTURE] sendToPrompt TERM_CAPTURE_READY:', {
+          hasData: !!data,
+          dataKeys: data ? Object.keys(data) : [],
+          textLength: data?.text?.length || 0,
+          pid: data?.pid,
+          exitCode: data?.exitCode
+        });
+      }
 
       if (!this?.window || this?.window?.isDestroyed()) {
         this.logError('sendToPrompt: Window is destroyed. Skipping sendToPrompt.');
