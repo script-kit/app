@@ -13,6 +13,7 @@ export interface MCPScript {
     name: string;
     placeholder: string | null;
   }>;
+  toolConfig?: any; // Tool configuration from tool() function
 }
 
 class MCPService {
@@ -52,9 +53,29 @@ class MCPService {
             // Read script content
             const content = await readFile(script.filePath, 'utf-8');
 
-            // Extract arg placeholders using AST parser
-            const placeholders = await extractMCPToolParameters(content);
+            // Extract parameters using AST parser
+            const result = await extractMCPToolParameters(content);
 
+            // Check if this is a tool() based script
+            if (result && typeof result === 'object' && 'toolConfig' in result) {
+              const toolConfig = result.toolConfig;
+              log.info(`[getMCPScripts] found tool() config: ${JSON.stringify(toolConfig)}`);
+              
+              // Convert tool config to MCP format
+              const toolName = toolConfig.name || (typeof script.mcp === 'string' ? script.mcp : script.command);
+              
+              return {
+                name: toolName,
+                filePath: script.filePath,
+                description: toolConfig.description || script.description || `Run the ${script.name} script`,
+                mcp: script.mcp,
+                args: [], // tool() scripts don't use positional args
+                toolConfig: toolConfig // Store the full config for later use
+              };
+            }
+
+            // Traditional arg() based script
+            const placeholders = result as MCPToolParameter[];
             log.info(`[getMCPScripts] placeholders: ${JSON.stringify(placeholders)}`);
 
             // Determine tool name

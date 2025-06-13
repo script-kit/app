@@ -27,6 +27,74 @@ function createToolSchema(args: Array<{ name: string; placeholder: string | null
   return z.object(properties);
 }
 
+// Create tool schema from tool() config
+function createToolSchemaFromConfig(parameters: Record<string, any>) {
+  const properties: Record<string, any> = {};
+
+  for (const [key, param] of Object.entries(parameters)) {
+    let schema;
+    
+    // Map parameter types to Zod schemas
+    switch (param.type) {
+      case 'string':
+        schema = z.string();
+        if (param.enum) {
+          schema = z.enum(param.enum as [string, ...string[]]);
+        }
+        if (param.pattern) {
+          schema = schema.regex(new RegExp(param.pattern));
+        }
+        break;
+      
+      case 'number':
+        schema = z.number();
+        if (param.minimum !== undefined) {
+          schema = schema.min(param.minimum);
+        }
+        if (param.maximum !== undefined) {
+          schema = schema.max(param.maximum);
+        }
+        break;
+      
+      case 'boolean':
+        schema = z.boolean();
+        break;
+      
+      case 'array':
+        // Simple array support for now
+        schema = z.array(z.string());
+        break;
+      
+      case 'object':
+        // Simple object support for now
+        schema = z.object({});
+        break;
+      
+      default:
+        schema = z.string();
+    }
+    
+    // Add description
+    if (param.description) {
+      schema = schema.describe(param.description);
+    }
+    
+    // Handle required/optional
+    if (!param.required) {
+      schema = schema.optional();
+    }
+    
+    // Handle default values
+    if (param.default !== undefined) {
+      schema = schema.default(param.default);
+    }
+    
+    properties[key] = schema;
+  }
+
+  return z.object(properties);
+}
+
 export async function startMCPServer() {
   try {
     log.info('Starting MCP server within Script Kit app...');
@@ -66,31 +134,46 @@ export async function startMCPServer() {
           try {
             registeredTools.add(script.name);
 
-            // Create schema based on script args
-            const schema = createToolSchema(script.args);
+            // Create schema based on script type
+            let schema;
+            if (script.toolConfig && script.toolConfig.parameters) {
+              // For tool() based scripts, convert parameters to Zod schema
+              schema = createToolSchemaFromConfig(script.toolConfig.parameters);
+            } else {
+              // For traditional arg() based scripts
+              schema = createToolSchema(script.args);
+            }
 
             // Register tool with MCP
             mcpServer.tool(script.name, script.description, schema, async (params) => {
               log.info(`Executing MCP tool: ${script.name}`, params);
 
-              // Convert params object to args array
-              const args: string[] = [];
-              for (let i = 0; i < script.args.length; i++) {
-                const argName = `arg${i + 1}`;
-                args.push(params[argName] || '');
+              let args: string[] = [];
+              let toolParams: Record<string, any> | null = null;
+
+              if (script.toolConfig && script.toolConfig.parameters) {
+                // For tool() based scripts, pass parameters as JSON
+                toolParams = params;
+              } else {
+                // For traditional arg() scripts, convert params to array
+                for (let i = 0; i < script.args.length; i++) {
+                  const argName = `arg${i + 1}`;
+                  args.push(params[argName] || '');
+                }
               }
 
               try {
                 // Execute the script using the HTTP API
+                const body = toolParams 
+                  ? { script: script.name, toolParams }
+                  : { script: script.name, args };
+                
                 const result = await fetch(`http://localhost:${getServerPort()}/api/mcp/execute`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
                   },
-                  body: JSON.stringify({
-                    script: script.name,
-                    args,
-                  }),
+                  body: JSON.stringify(body),
                 }).then((res) => res.json());
 
                 // Return MCP-formatted response

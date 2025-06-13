@@ -56,7 +56,7 @@ export const startServer = () => {
 
   app.post('/api/mcp/execute', async (req, res, next) => {
     try {
-      const { script, args = [] } = req.body;
+      const { script, args = [], toolParams } = req.body;
 
       if (!script) {
         return res.status(400).json({ error: 'Script name is required' });
@@ -68,14 +68,27 @@ export const startServer = () => {
         return res.status(404).json({ error: `MCP script '${script}' not found` });
       }
 
+      // Prepare execution context
+      let scriptArgs = args;
+      let headers = {};
+      
+      // For tool() based scripts, pass parameters via headers
+      if (toolParams && mcpScript.toolConfig) {
+        headers = {
+          'X-MCP-Tool': mcpScript.name,
+          'X-MCP-Parameters': JSON.stringify(toolParams)
+        };
+        scriptArgs = []; // No positional args for tool() scripts
+      }
+
       // Execute the script with mcpResponse flag
       const result = await handleScript(
         mcpScript.filePath,
-        args,
+        scriptArgs,
         process.cwd(),
         false, // checkAccess - MCP scripts are always accessible
         '', // apiKey - not needed for MCP
-        {}, // headers
+        headers, // Pass MCP data via headers
         true, // mcpResponse - always true for MCP
       );
 

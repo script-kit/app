@@ -11,10 +11,13 @@ export interface MCPToolParameter {
  * For each `await arg(...)` call it attempts to resolve:
  * 1. variable name assigned (e.g., `const name = await arg(...)` -> name="name")
  * 2. placeholder text (from config placeholder or first string literal argument)
+ * 
+ * Also extracts parameters from `await tool(...)` calls with full schema support.
  */
-export async function extractMCPToolParameters(code: string): Promise<MCPToolParameter[]> {
+export async function extractMCPToolParameters(code: string): Promise<MCPToolParameter[] | { toolConfig: any }> {
     const params: MCPToolParameter[] = [];
     let argIndex = 0;
+    let toolConfig: any = null;
 
     const Parser = (acorn.Parser as any).extend(tsPlugin() as any);
     const ast = Parser.parse(code, {
@@ -26,6 +29,15 @@ export async function extractMCPToolParameters(code: string): Promise<MCPToolPar
 
     function walk(node: any, parent: any = null) {
         if (!node || typeof node !== 'object') return;
+
+        // Check for tool() calls
+        if (node.type === 'CallExpression' && node.callee?.name === 'tool' && node.arguments?.length > 0) {
+            const configArg = node.arguments[0];
+            if (configArg?.type === 'ObjectExpression') {
+                toolConfig = extractObjectLiteral(configArg);
+                return; // If we find a tool() call, we don't need to look for arg() calls
+            }
+        }
 
         if (node.type === 'CallExpression' && node.callee?.name === 'arg') {
             argIndex += 1;
@@ -80,5 +92,40 @@ export async function extractMCPToolParameters(code: string): Promise<MCPToolPar
     }
 
     walk(ast, null);
+    
+    // If we found a tool() call, return the tool config
+    if (toolConfig) {
+        return { toolConfig };
+    }
+    
     return params;
+}
+
+function extractObjectLiteral(node: any): any {
+    if (node.type !== 'ObjectExpression') return null;
+    
+    const obj: any = {};
+    
+    for (const prop of node.properties) {
+        if (prop.type !== 'Property') continue;
+        
+        const key = prop.key.name || prop.key.value;
+        
+        if (prop.value.type === 'Literal') {
+            obj[key] = prop.value.value;
+        } else if (prop.value.type === 'ObjectExpression') {
+            obj[key] = extractObjectLiteral(prop.value);
+        } else if (prop.value.type === 'ArrayExpression') {
+            obj[key] = prop.value.elements.map((el: any) => {
+                if (el.type === 'Literal') return el.value;
+                if (el.type === 'ObjectExpression') return extractObjectLiteral(el);
+                return null;
+            }).filter((v: any) => v !== null);
+        } else {
+            // For complex expressions, we'll need to evaluate them later
+            obj[key] = null;
+        }
+    }
+    
+    return obj;
 }
