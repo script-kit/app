@@ -209,16 +209,31 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
           }
 
           try {
-            // Pass toolParams if available, otherwise use ordered args
+            // ========= NEW CODE (start) =========
+            /**
+             * When we call a script that uses `tool()`, add two headers so the helper
+             * can bypass the interactive prompts:
+             *
+             *   X-MCP-Tool        – the tool's public name
+             *   X-MCP-Parameters  – JSON-string of the argument object
+             */
+            const mcpHeaders: Record<string, string> = {};
+
+            if (toolParams) {
+              mcpHeaders['X-MCP-Tool']       = script.name;
+              mcpHeaders['X-MCP-Parameters'] = JSON.stringify(toolParams);
+            }
+
             const result = await handleScript(
-              script.filePath, 
-              toolParams ? [] : ordered, 
-              process.cwd(), 
-              false, 
-              '', 
-              toolParams || {}, 
-              true
+              script.filePath,
+              toolParams ? [] : ordered,     // still pass positional args for arg()
+              process.cwd(),
+              false,                         // checkAccess
+              '',                            // apiKey
+              mcpHeaders,                    // <-- now has the sentinel keys
+              true                           // mcpResponse
             );
+            // ========= NEW CODE (end) =========
 
             // handleScript returns { data, status, message }
             log.info(`handleScript result keys: ${Object.keys(result || {})}`);
