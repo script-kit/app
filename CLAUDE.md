@@ -605,3 +605,7 @@ When adding new features:
 2. Ensure all tests pass before submitting PR
 3. Maintain or improve code coverage
 4. Update this guide if you discover new patterns worth sharing
+
+## Orientation
+
+Check the sdk/orientation directory for orientation documents.
