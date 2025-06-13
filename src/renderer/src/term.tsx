@@ -252,6 +252,17 @@ export default function Terminal() {
           }}
           ref={xtermRef}
           addons={[]}
+          onSelectionChange={() => {
+            if (xtermRef?.current?.terminal) {
+              const selection = xtermRef.current.terminal.getSelection();
+              if (selection && promptData?.pid) {
+                ipcRenderer.send(AppChannel.TERM_SELECTION, {
+                  pid: promptData.pid,
+                  text: selection
+                });
+              }
+            }
+          }}
         />
       </div>
     </div>

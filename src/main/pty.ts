@@ -17,6 +17,7 @@ import {
   getPtyOptions,
   getShellConfig,
 } from './pty-utils';
+import { TranscriptBuilder, TermCapture } from './transcript-builder';
 
 class PtyPool {
   killPty(pid: number) {
@@ -179,6 +180,21 @@ export const createIdlePty = () => {
 
 export const createPty = (prompt: KitPrompt) => {
   let t: pty.IPty | null = null;
+  // Get the capture configuration from promptData
+  const promptData = prompt?.promptData as any || {};
+  const capture = promptData?.capture;
+  
+  const capOpts: TermCapture =
+    (capture === true) ? { mode:"full" } :
+    (capture as any)   ? (capture as TermCapture) :
+                         { mode:"none" }  // Default to none if not specified
+  const tb = new TranscriptBuilder({
+    mode: capOpts.mode ?? "full",
+    tailLines: capOpts.tailLines ?? 1000,
+    stripAnsi: capOpts.stripAnsi ?? true,
+    sentinelStart: capOpts.sentinelStart ?? "<<START>>",
+    sentinelEnd: capOpts.sentinelEnd ?? "<<END>>",
+  })
 
   type TermSize = {
     cols: number;
@@ -316,6 +332,13 @@ export const createPty = (prompt: KitPrompt) => {
       emitter.off(KitEvent.TERM_KILL, termKill);
       emitter.off(KitEvent.TermWrite, termWrite);
       termLog.verbose('TERM_EXIT');
+      
+      prompt?.sendToPrompt(AppChannel.TERM_CAPTURE_READY, {
+        pid: prompt.pid,
+        text: tb.result(),
+        exitCode: 0
+      });
+      
       teardown(t?.pid);
     };
 
@@ -373,6 +396,7 @@ export const createPty = (prompt: KitPrompt) => {
     t.onData((data: any) => {
       try {
         sendData(data);
+        tb.push(typeof data === 'string' ? data : data.toString('utf8'));
       } catch (ex) {
         termLog.error('Error sending data to pty', ex);
       }
@@ -384,12 +408,18 @@ export const createPty = (prompt: KitPrompt) => {
 
     t.onExit(
       debounce(
-        () => {
+        ({ exitCode }) => {
           termLog.info('🐲 Term process exited');
           try {
             if (typeof config?.closeOnExit === 'boolean' && !config.closeOnExit) {
               termLog.info('Process closed, but not closing pty because closeOnExit is false');
             } else {
+              prompt?.sendToPrompt(AppChannel.TERM_CAPTURE_READY, {
+                pid: prompt.pid,
+                text: tb.result(),
+                exitCode
+              });
+              
               teardown(t?.pid);
 
               termLog.info('🐲 >_ Emit term process exited', config.pid);
