@@ -107,3 +107,8 @@ pnpm clear-cache
 ```
 
 This is due to Vite not picking up on some changes to a linked SDK.
+
+
+### Orientation
+
+See the sdk/orientation to better understand the app architecture.
