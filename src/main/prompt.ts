@@ -48,7 +48,7 @@ import {
   isBoundsWithinDisplayById,
   isBoundsWithinDisplays,
 } from './screen';
-import { invokeSearch, scorer, setChoices, setFlags } from './search';
+import { invokeSearch, setChoices, setFlags } from './search';
 import shims from './shims';
 import {
   getEmojiShortcut,
@@ -649,7 +649,7 @@ export class KitPrompt {
     qs: new QuickScore(kitCache.choices, {
       keys: kitCache.keys.map((name) => ({
         name,
-        scorer,
+        // scorer,
       })),
       minimumScore: kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE
         ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
@@ -1333,7 +1333,7 @@ export class KitPrompt {
 
     this.sendToPrompt = (channel: Channel | AppChannel, data) => {
       log.silly(`sendToPrompt: ${String(channel)}`, data);
-      
+
       // Special logging for TERM_CAPTURE_READY
       if (channel === AppChannel.TERM_CAPTURE_READY) {
         this.logInfo('🔍 [CAPTURE] sendToPrompt TERM_CAPTURE_READY:', {
@@ -1648,8 +1648,8 @@ export class KitPrompt {
 
     this.window.webContents?.on('render-process-gone', (event, details) => {
       processes.removeByPid(this.pid, 'prompt exit cleanup');
-      this.sendToPrompt = () => {};
-      this.window.webContents.send = () => {};
+      this.sendToPrompt = () => { };
+      this.window.webContents.send = () => { };
       this.logError('🫣 Render process gone...');
       this.logError({ event, details });
     });
@@ -3105,7 +3105,7 @@ export class KitPrompt {
         this.hideInstant(isProcessExit);
       }
 
-      this.sendToPrompt = () => {};
+      this.sendToPrompt = () => { };
 
       try {
         if (!kitState.isMac) {

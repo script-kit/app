@@ -10,7 +10,7 @@ import {
 } from '@johnlindquist/kit/core/utils';
 import { debounce } from 'lodash-es';
 
-import { QuickScore, createConfig, quickScore } from 'quick-score';
+import { QuickScore, createConfig } from 'quick-score';
 import { AppChannel } from '../shared/enums';
 import type { ScoredChoice } from '../shared/types';
 import { createScoredChoice } from './helpers';
@@ -18,6 +18,20 @@ import { searchLog as log } from './logs';
 import { cacheChoices } from './messages';
 import type { KitPrompt } from './prompt';
 import { kitCache, kitState } from './state';
+import { normalizeWithMap, remapRange } from './utils/normalize-map';
+
+/** Fix every RangeTuple inside a QuickScore result */
+function fixHighlightRanges<T extends ScoredChoice>(sc: T): T {
+  // QuickScore could have matches on multiple keys; walk them all.
+  for (const key in sc.matches) {
+    const raw = (sc.item as any)[key] as string;
+    if (!raw) continue;
+    // Trigger the cache in case we never normalised this exact raw string (rare)
+    normalizeWithMap(raw);
+    sc.matches[key] = sc.matches[key].map(r => remapRange(raw, r));
+  }
+  return sc;
+}
 
 export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'normal') => {
   // log.info(`${prompt.pid}: ${reason}: Invoke search: '${rawInput}'`);
@@ -73,7 +87,8 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     log.warn(`No qs for ${prompt.scriptPath}`);
     return;
   }
-  const result = (prompt.kitSearch?.qs as QuickScore<Choice>)?.search(transformedInput) as ScoredChoice[];
+  const rawResult = (prompt.kitSearch?.qs as QuickScore<Choice>)?.search(transformedInput);
+  const result = rawResult?.map((sc) => fixHighlightRanges(sc as ScoredChoice)) as ScoredChoice[];
 
   // Get result length, but filter out info and miss choices
   const resultLength = result.filter((r) => !(r?.item?.info || r?.item?.miss)).length;
@@ -463,7 +478,8 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
     return;
   }
 
-  const result = prompt.flagSearch?.qs?.search(input) as ScoredChoice[];
+  const rawResult = prompt.flagSearch?.qs?.search(input);
+  const result = rawResult?.map((sc) => fixHighlightRanges(sc as ScoredChoice)) as ScoredChoice[];
 
   if (prompt.flagSearch.hasGroup) {
     // Build a map for constant time access
@@ -569,29 +585,14 @@ export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys & Partial<Choice>) 
 
   prompt.flagSearch.choices = choices;
   prompt.flagSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
-  function scorer(string: string, query: string, matches: number[][]) {
-    return quickScore(
-      string,
-      query,
-      matches as any,
-      undefined,
-      undefined,
-      createConfig({
-        maxIterations: kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS
-          ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 32)
-          : 3,
-      }),
-    );
-  }
 
   prompt.flagSearch.qs = new QuickScore(choices, {
-    keys: prompt.kitSearch.keys.map((name) => ({
-      name,
-      scorer,
-    })),
+    keys: prompt.kitSearch.keys,
     minimumScore: kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE
       ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
       : 0.6,
+    transformString: normalizeWithMap,
+    config: createConfig({ wordSeparators: '-_' }),
   } as any);
 
   // setFlagShortcodes(choices);
@@ -646,21 +647,6 @@ export const appendChoices = (prompt: KitPrompt, choices: Choice[]) => {
   });
 };
 
-export function scorer(string: string, query: string, matches: [number, number][] | undefined) {
-  return quickScore(
-    string,
-    query,
-    matches,
-    undefined,
-    undefined,
-    createConfig({
-      maxIterations: kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS
-        ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 32)
-        : 3,
-    }),
-  );
-}
-
 export const setChoices = (
   prompt: KitPrompt,
   choices: Choice[],
@@ -712,13 +698,12 @@ export const setChoices = (
   prompt.kitSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
 
   prompt.kitSearch.qs = new QuickScore(choices, {
-    keys: prompt.kitSearch.keys.map((name) => ({
-      name,
-      scorer,
-    })),
+    keys: prompt.kitSearch.keys,
     minimumScore: kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE
       ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
       : 0.6,
+    transformString: normalizeWithMap,
+    config: createConfig({ wordSeparators: '-_' }),
   } as any);
   sendToPrompt(Channel.SET_CHOICES_CONFIG, { preload });
 

@@ -52,6 +52,12 @@ vi.mock('@johnlindquist/kit/core/utils', async () => {
   };
 });
 
+// Mock normalize-map module to track its usage
+vi.mock('./utils/normalize-map', () => ({
+  normalizeWithMap: vi.fn((str: string) => str.replace(/[-\s]/g, '').toLowerCase()),
+  remapRange: vi.fn((raw: string, range: [number, number]): [number, number] => range),
+}));
+
 // Import after mocks - now using real implementations for pure functions
 import {
   appendChoices,
@@ -64,6 +70,8 @@ import {
   setScoredFlags,
   setShortcodes,
 } from './search';
+
+import { normalizeWithMap, remapRange } from './utils/normalize-map';
 
 describe('Search Functionality', () => {
   let mockPrompt: KitPrompt;
@@ -596,6 +604,218 @@ describe('Search Functionality', () => {
       debounceInvokeSearch(mockPrompt, 'test');
 
       expect(mockSendToPrompt).toHaveBeenCalledWith(Channel.SET_SCORED_CHOICES, []);
+    });
+  });
+
+  describe('Highlight Range Remapping', () => {
+    it('should remap highlight ranges for hyphenated words', () => {
+      const choices = [
+        { id: '1', name: 'kit-container', keyword: 'kit' },
+        { id: '2', name: 'test-script', keyword: 'test' },
+      ];
+
+      // Mock the normalize and remap functions to simulate real behavior
+      vi.mocked(normalizeWithMap).mockImplementation((str: string) => {
+        return str.replace(/[-\s]/g, '').toLowerCase();
+      });
+      
+      vi.mocked(remapRange).mockImplementation((raw: string, range: [number, number]): [number, number] => {
+        // Simulate remapping for 'kit-container' -> 'kitcontainer'
+        if (raw === 'kit-container' && range[0] === 0 && range[1] === 3) return [0, 3];
+        if (raw === 'kit-container' && range[0] === 3 && range[1] === 12) return [4, 13];
+        // Simulate remapping for 'test-script' -> 'testscript'
+        if (raw === 'test-script' && range[0] === 0 && range[1] === 4) return [0, 4];
+        if (raw === 'test-script' && range[0] === 4 && range[1] === 10) return [5, 11];
+        return range;
+      });
+
+      const searchResults = [
+        { 
+          item: choices[0], 
+          score: 0.9, 
+          matches: { 
+            name: [[0, 3], [3, 12]] // Original ranges on normalized string
+          }, 
+          _: '' 
+        },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = false;
+      mockPrompt.kitSearch.qs = { search: vi.fn(() => searchResults) };
+
+      invokeSearch(mockPrompt, 'kitcontainer');
+
+      // Verify normalizeWithMap was called to trigger cache
+      expect(normalizeWithMap).toHaveBeenCalledWith('kit-container');
+      
+      // Verify remapRange was called for each range
+      expect(remapRange).toHaveBeenCalledWith('kit-container', [0, 3]);
+      expect(remapRange).toHaveBeenCalledWith('kit-container', [3, 12]);
+
+      // Verify the remapped ranges were sent to the prompt
+      expect(mockSendToPrompt).toHaveBeenCalledWith(
+        Channel.SET_SCORED_CHOICES,
+        expect.arrayContaining([
+          expect.objectContaining({
+            matches: {
+              name: [[0, 3], [4, 13]] // Remapped ranges
+            },
+          }),
+        ]),
+      );
+    });
+
+    it('should handle spaces in choice names', () => {
+      const choices = [
+        { id: '1', name: 'kit container', keyword: 'kit' },
+      ];
+
+      vi.mocked(normalizeWithMap).mockImplementation((str: string) => {
+        return str.replace(/[-\s]/g, '').toLowerCase();
+      });
+      
+      vi.mocked(remapRange).mockImplementation((raw: string, range: [number, number]): [number, number] => {
+        // Simulate remapping for 'kit container' -> 'kitcontainer'
+        if (raw === 'kit container' && range[0] === 0 && range[1] === 3) return [0, 3];
+        if (raw === 'kit container' && range[0] === 3 && range[1] === 12) return [4, 13];
+        return range;
+      });
+
+      const searchResults = [
+        { 
+          item: choices[0], 
+          score: 0.9, 
+          matches: { 
+            name: [[0, 3], [3, 12]] // Original ranges on normalized string
+          }, 
+          _: '' 
+        },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = false;
+      mockPrompt.kitSearch.qs = { search: vi.fn(() => searchResults) };
+
+      invokeSearch(mockPrompt, 'kit container');
+
+      expect(normalizeWithMap).toHaveBeenCalledWith('kit container');
+      expect(remapRange).toHaveBeenCalledWith('kit container', [0, 3]);
+      expect(remapRange).toHaveBeenCalledWith('kit container', [3, 12]);
+    });
+
+    it('should remap flag search highlight ranges', () => {
+      const flagChoices = [
+        { id: 'flag1', name: 'test-flag', group: 'Group1' },
+      ];
+      
+      vi.mocked(normalizeWithMap).mockImplementation((str: string) => {
+        return str.replace(/[-\s]/g, '').toLowerCase();
+      });
+      
+      vi.mocked(remapRange).mockImplementation((raw: string, range: [number, number]): [number, number] => {
+        if (raw === 'test-flag' && range[0] === 0 && range[1] === 4) return [0, 4];
+        return range;
+      });
+
+      const searchResults = [
+        { 
+          item: flagChoices[0], 
+          score: 0.8, 
+          matches: { name: [[0, 4]] }, 
+          _: '' 
+        }
+      ];
+
+      mockPrompt.flagSearch.choices = flagChoices;
+      mockPrompt.flagSearch.hasGroup = true;
+      mockPrompt.flagSearch.qs = { search: vi.fn(() => searchResults) };
+
+      invokeFlagSearch(mockPrompt, 'test');
+
+      expect(normalizeWithMap).toHaveBeenCalledWith('test-flag');
+      expect(remapRange).toHaveBeenCalledWith('test-flag', [0, 4]);
+
+      expect(mockSendToPrompt).toHaveBeenCalledWith(
+        Channel.SET_SCORED_FLAGS,
+        expect.arrayContaining([
+          expect.objectContaining({
+            matches: {
+              name: [[0, 4]] // Should be remapped correctly
+            },
+          }),
+        ]),
+      );
+    });
+
+    it('should handle choices with no matches gracefully', () => {
+      const choices = [
+        { id: '1', name: 'kit-container' },
+      ];
+
+      const searchResults = [
+        { 
+          item: choices[0], 
+          score: 0.9, 
+          matches: {}, // No matches
+          _: '' 
+        },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = false;
+      mockPrompt.kitSearch.qs = { search: vi.fn(() => searchResults) };
+
+      invokeSearch(mockPrompt, 'test');
+
+      // Should not throw and should pass through empty matches
+      expect(mockSendToPrompt).toHaveBeenCalledWith(
+        Channel.SET_SCORED_CHOICES,
+        expect.arrayContaining([
+          expect.objectContaining({
+            matches: {},
+          }),
+        ]),
+      );
+    });
+
+    it('should handle multiple keys with matches', () => {
+      const choices = [
+        { id: '1', name: 'kit-container', keyword: 'kit-key' },
+      ];
+
+      vi.mocked(normalizeWithMap).mockImplementation((str: string) => {
+        return str.replace(/[-\s]/g, '').toLowerCase();
+      });
+      
+      vi.mocked(remapRange).mockImplementation((raw: string, range: [number, number]): [number, number] => {
+        if (raw === 'kit-container' && range[0] === 0 && range[1] === 3) return [0, 3];
+        if (raw === 'kit-key' && range[0] === 0 && range[1] === 3) return [0, 3];
+        return range;
+      });
+
+      const searchResults = [
+        { 
+          item: choices[0], 
+          score: 0.9, 
+          matches: { 
+            name: [[0, 3]],
+            keyword: [[0, 3]]
+          }, 
+          _: '' 
+        },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = false;
+      mockPrompt.kitSearch.qs = { search: vi.fn(() => searchResults) };
+
+      invokeSearch(mockPrompt, 'kit');
+
+      expect(normalizeWithMap).toHaveBeenCalledWith('kit-container');
+      expect(normalizeWithMap).toHaveBeenCalledWith('kit-key');
+      expect(remapRange).toHaveBeenCalledWith('kit-container', [0, 3]);
+      expect(remapRange).toHaveBeenCalledWith('kit-key', [0, 3]);
     });
   });
 
