@@ -186,7 +186,7 @@ jobs:
         if: needs.tag.outputs.kit_tag == 'latest'
         uses: johnlindquist/kit-action@main
         with:
-          script: create-assets ${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ matrix.arch }} ${{ needs.semantic.outputs.release_id }}
+          script: create-assets ${{ needs.semantic.outputs.semantic_version }} ${{ matrix.os }} ${{ matrix.arch }} ${{ needs.semantic.outputs.release_id }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
