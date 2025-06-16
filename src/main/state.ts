@@ -672,7 +672,7 @@ export const convertKey = (sourceKey: string): string => {
 };
 
 export const getEmojiShortcut = () => {
-  return kitState?.kenvEnv?.KIT_EMOJI_SHORTCUT || kitState.isMac ? 'Command+Control+Space' : 'Super+.';
+  return kitState?.kenvEnv?.KIT_EMOJI_SHORTCUT || (kitState.isMac ? 'Command+Control+Space' : 'Super+.');
 };
 
 export const preloadChoicesMap = new Map<string, Choice[]>();

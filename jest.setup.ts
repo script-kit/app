@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 
 // Mock electron
 vi.mock('electron', () => ({
+  default: {},
   app: {
     getPath: vi.fn((name: string) => {
       switch (name) {
@@ -22,8 +23,9 @@ vi.mock('electron', () => ({
     once: vi.fn(),
     removeListener: vi.fn(),
     removeAllListeners: vi.fn(),
+    isPackaged: false,
   },
-  BrowserWindow: vi.fn().mockImplementation(() => ({
+  BrowserWindow: Object.assign(vi.fn().mockImplementation(() => ({
     loadURL: vi.fn(),
     on: vi.fn(),
     once: vi.fn(),
@@ -43,7 +45,9 @@ vi.mock('electron', () => ({
       send: vi.fn(),
       executeJavaScript: vi.fn(),
     },
-  })),
+  })), {
+    getAllWindows: vi.fn(() => []),
+  }),
   crashReporter: {
     start: vi.fn(),
   },
@@ -262,4 +266,28 @@ vi.mock('node:os', () => ({
     errno: {},
     priority: {}
   }
+}));
+
+// Mock node-pty
+vi.mock('node-pty', () => ({
+  spawn: vi.fn((shell, args, options) => ({
+    onData: vi.fn(),
+    onExit: vi.fn(),
+    write: vi.fn(),
+    resize: vi.fn(),
+    kill: vi.fn(),
+    pid: 12345,
+    process: shell,
+  })),
+  IPtyForkOptions: {},
+}));
+
+// Mock electron-is-dev
+vi.mock('electron-is-dev', () => ({
+  default: false,
+}));
+
+// Mock valtio to prevent subscribeKey errors
+vi.mock('valtio/utils', () => ({
+  subscribeKey: vi.fn(() => () => {}), // Return unsubscribe function
 }));

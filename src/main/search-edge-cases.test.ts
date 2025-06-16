@@ -676,7 +676,7 @@ describe("Search Edge Cases and Stress Tests", () => {
 				{
 					id: "1",
 					name: "Choice with function",
-					callback: () => ,
+					callback: () => {},
 					asyncCallback: async () => Promise.resolve("test"),
 				},
 			] as any[];
