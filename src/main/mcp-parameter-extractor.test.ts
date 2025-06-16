@@ -17,4 +17,77 @@ describe('extractMCPToolParameters', () => {
             { name: 'favoriteColor', placeholder: "What's your favorite color?" },
         ]);
     });
+
+    describe('tool() function parsing', () => {
+        it('should extract tool config from plain tool() call', async () => {
+            const code = `
+import "@johnlindquist/kit"
+
+const result = await tool({
+    name: "plain-tool",
+    description: "A plain tool",
+    parameters: {
+        input: {
+            type: "string",
+            description: "Input string",
+        },
+    },
+});
+`;
+
+            const result = await extractMCPToolParameters(code);
+            
+            expect(result).toHaveProperty('toolConfig');
+            expect((result as any).toolConfig).toMatchObject({
+                name: 'plain-tool',
+                description: 'A plain tool',
+            });
+        });
+
+        it('should extract tool config from tool() with as MCPTool type assertion', async () => {
+            const code = `
+// Name: Testing MCP Tool
+// mcp: testing-mcp-tool
+
+import "@johnlindquist/kit"
+
+const result = await tool({
+    name: "testing-mcp-tool",
+    description: "A tool for testing MCP",
+    parameters: {
+        text: {
+            type: "string",
+            description: "Just give me any string",
+            default: "Hello, world!",
+        },
+        number: {
+            type: "number",
+            description: "Just give me any number",
+            default: 100,
+        },
+    },
+} as MCPTool);
+`;
+
+            const result = await extractMCPToolParameters(code);
+            
+            expect(result).toHaveProperty('toolConfig');
+            expect((result as any).toolConfig).toMatchObject({
+                name: 'testing-mcp-tool',
+                description: 'A tool for testing MCP',
+                parameters: {
+                    text: {
+                        type: 'string',
+                        description: 'Just give me any string',
+                        default: 'Hello, world!',
+                    },
+                    number: {
+                        type: 'number',
+                        description: 'Just give me any number',
+                        default: 100,
+                    },
+                },
+            });
+        });
+    });
 });

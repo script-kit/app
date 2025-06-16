@@ -20,6 +20,21 @@ import type { KitPrompt } from './prompt';
 import { kitCache, kitState } from './state';
 import { normalizeWithMap, remapRange } from './utils/normalize-map';
 
+// ────────────────────────────────────────────────────────────────────────────
+//  QuickScore global config
+//  honour env var  KIT_SEARCH_MAX_ITERATIONS   (fallback = 3)
+//  and keep our custom word‑separators.
+//  Re‑use this everywhere we `new QuickScore()` so the behaviour is identical.
+// ────────────────────────────────────────────────────────────────────────────
+
+const QS_CONFIG = createConfig({
+  wordSeparators: '-_',
+  maxIterations:
+    kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS
+      ? Number.parseInt(kitState.kenvEnv.KIT_SEARCH_MAX_ITERATIONS, 10)
+      : 3,
+});
+
 /** Fix every RangeTuple inside a QuickScore result */
 function fixHighlightRanges<T extends ScoredChoice>(sc: T): T {
   // QuickScore could have matches on multiple keys; walk them all.
@@ -592,7 +607,7 @@ export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys & Partial<Choice>) 
       ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
       : 0.6,
     transformString: normalizeWithMap,
-    config: createConfig({ wordSeparators: '-_' }),
+    config: QS_CONFIG,
   } as any);
 
   // setFlagShortcodes(choices);
@@ -703,7 +718,7 @@ export const setChoices = (
       ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
       : 0.6,
     transformString: normalizeWithMap,
-    config: createConfig({ wordSeparators: '-_' }),
+    config: QS_CONFIG,
   } as any);
   sendToPrompt(Channel.SET_CHOICES_CONFIG, { preload });
 

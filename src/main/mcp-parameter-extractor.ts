@@ -18,6 +18,7 @@ export async function extractMCPToolParameters(code: string): Promise<MCPToolPar
     const params: MCPToolParameter[] = [];
     let argIndex = 0;
     let toolConfig: any = null;
+    let foundToolCall = false;
 
     const Parser = (acorn.Parser as any).extend(tsPlugin() as any);
     const ast = Parser.parse(code, {
@@ -30,16 +31,46 @@ export async function extractMCPToolParameters(code: string): Promise<MCPToolPar
     function walk(node: any, parent: any = null) {
         if (!node || typeof node !== 'object') return;
 
+        // Check if this is an await expression with tool()
+        if (node.type === 'AwaitExpression' && node.argument?.type === 'TSAsExpression') {
+            const tsAsExpr = node.argument;
+            if (tsAsExpr.expression?.type === 'CallExpression' && 
+                tsAsExpr.expression.callee?.name === 'tool') {
+                const configArg = tsAsExpr.expression.arguments?.[0];
+                if (configArg?.type === 'ObjectExpression') {
+                    toolConfig = extractObjectLiteral(configArg);
+                    foundToolCall = true;
+                }
+            }
+        }
+
         // Check for tool() calls
         if (node.type === 'CallExpression' && node.callee?.name === 'tool' && node.arguments?.length > 0) {
             const configArg = node.arguments[0];
             if (configArg?.type === 'ObjectExpression') {
                 toolConfig = extractObjectLiteral(configArg);
-                return; // If we find a tool() call, we don't need to look for arg() calls
+                foundToolCall = true;
+            }
+            // Handle case where the argument is a type assertion (e.g., {...} as MCPTool)
+            else if (configArg?.type === 'TSAsExpression' && configArg.expression?.type === 'ObjectExpression') {
+                toolConfig = extractObjectLiteral(configArg.expression);
+                foundToolCall = true;
             }
         }
 
-        if (node.type === 'CallExpression' && node.callee?.name === 'arg') {
+        // Check for type assertions with tool() calls (e.g., tool({...} as MCPTool))
+        if (node.type === 'TSAsExpression' && node.expression?.type === 'CallExpression' && 
+            node.expression.callee?.name === 'tool' && node.expression.arguments?.length > 0) {
+            const configArg = node.expression.arguments[0];
+            if (configArg?.type === 'ObjectExpression') {
+                console.log('Processing TSAsExpression tool call');
+                toolConfig = extractObjectLiteral(configArg);
+                foundToolCall = true;
+            }
+        }
+
+        // Only process arg() calls if we haven't found a tool() call
+        if (!foundToolCall && node.type === 'CallExpression' && node.callee?.name === 'arg') {
             argIndex += 1;
             let varName: string | null = null;
             // Traverse up parents to find variable name (handles AwaitExpression wrapper)

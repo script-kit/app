@@ -186,4 +186,81 @@ describe('MCP Service', () => {
       expect(result).toBeUndefined();
     });
   });
+
+  describe('tool() with as MCPTool pattern', () => {
+    it('should parse tool() calls with type assertion (as MCPTool)', async () => {
+      const mockScript = {
+        name: 'testing-mcp-tool',
+        command: 'testing-mcp-tool',
+        filePath: '/path/to/testing-mcp-tool.js',
+        description: 'A tool for testing MCP',
+        mcp: 'testing-mcp-tool',
+      };
+
+      vi.mocked(getScripts).mockResolvedValue([mockScript] as any);
+      vi.mocked(readFile).mockResolvedValue(`
+// Name: Testing MCP Tool
+// mcp: testing-mcp-tool
+
+import "@johnlindquist/kit"
+
+const result = await tool({
+    name: "testing-mcp-tool",
+    description: "A tool for testing MCP",
+    parameters: {
+        text: {
+            type: "string",
+            description: "Just give me any string",
+            default: "Hello, world!",
+        },
+        number: {
+            type: "number",
+            description: "Just give me any number",
+            default: 100,
+        },
+    },
+} as MCPTool);
+
+const response: MCPToolResult = {
+    content: [
+        {
+            type: "text",
+            text: \`\${result.text} is a great string!\`,
+        },
+    ],
+};
+
+await sendResponse(response);
+
+await editor(JSON.stringify(result, null, 2));
+      `);
+
+      const result = await mcpService.getMCPScripts();
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        name: 'testing-mcp-tool',
+        filePath: '/path/to/testing-mcp-tool.js',
+        description: 'A tool for testing MCP',
+        mcp: 'testing-mcp-tool',
+        args: [],
+        toolConfig: {
+          name: 'testing-mcp-tool',
+          description: 'A tool for testing MCP',
+          parameters: {
+            text: {
+              type: 'string',
+              description: 'Just give me any string',
+              default: 'Hello, world!',
+            },
+            number: {
+              type: 'number',
+              description: 'Just give me any number',
+              default: 100,
+            },
+          },
+        },
+      });
+    });
+  });
 });
