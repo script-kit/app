@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { VariableSizeList as List, VariableSizeGrid as Grid, type GridOnItemsRenderedProps } from 'react-window';
 import type { ChoiceButtonProps, ListProps } from '../../../shared/types';
 import {
+  containerClassNameAtom,
   directionAtom,
   gridReadyAtom,
   indexAtom,
@@ -42,6 +43,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [isScrolling, setIsScrolling] = useAtom(isScrollingAtom);
   const setMouseEnabled = useSetAtom(mouseEnabledAtom);
   const gridReady = useAtomValue(gridReadyAtom);
+  const containerClassName = useAtomValue(containerClassNameAtom);
 
   const handleListRef = useCallback(
     (node) => {
@@ -100,13 +102,14 @@ export default function ChoiceList({ width, height }: ListProps) {
       className: `
       ${gridReady ? 'grid' : 'list'}
       ${isScrolling ? 'scrollbar' : ''}
-      wrapper
-      bg-opacity-20
-      px-0
-      text-text-base outline-none focus:border-none focus:outline-none
+wrapper
+bg-opacity-20
+px-0
+text-text-base outline-none focus:border-none focus:outline-none
+${containerClassName}
     `,
     }),
-    [width, height, itemData, gridReady, isScrolling],
+    [width, height, itemData, gridReady, isScrolling, containerClassName],
   );
 
   const CELL_GAP = promptData?.gridGap ? promptData.gridGap / 2 : 0;

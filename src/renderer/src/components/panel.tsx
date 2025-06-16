@@ -8,6 +8,7 @@ import useResizeObserver from '@react-hook/resize-observer';
 import { darkTheme, lightTheme } from '../../../shared/themes';
 import { useKeyDirection } from '../hooks';
 import {
+  containerClassNameAtom,
   darkAtom,
   domUpdatedAtom,
   flagsAtom,
@@ -50,6 +51,7 @@ export default function Panel() {
   const [ui] = useAtom(uiAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
   const [flags] = useAtom(flagsAtom);
+  const containerClassName = useAtomValue(containerClassNameAtom);
 
   const domUpdated = useSetAtom(domUpdatedAtom);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -113,6 +115,7 @@ export default function Panel() {
         className={`
         ${containerClasses}
         wrapper
+        ${containerClassName}
        `}
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{

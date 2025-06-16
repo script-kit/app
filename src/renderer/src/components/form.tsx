@@ -9,7 +9,7 @@ import { useAtom, useAtomValue } from 'jotai';
 /* eslint-disable no-nested-ternary */
 import React, { useCallback, type KeyboardEvent, useEffect, useRef } from 'react';
 
-import { changeAtom, formDataAtom, formHTMLAtom, logAtom, previewHTMLAtom, submitValueAtom } from '../jotai';
+import { changeAtom, containerClassNameAtom, formDataAtom, formHTMLAtom, logAtom, previewHTMLAtom, submitValueAtom } from '../jotai';
 
 export default function Form() {
   // useEscape();
@@ -20,6 +20,7 @@ export default function Form() {
   const [, submit] = useAtom(submitValueAtom);
   const [previewHTML] = useAtom(previewHTMLAtom);
   const log = useAtomValue(logAtom);
+  const containerClassName = useAtomValue(containerClassNameAtom);
 
   const onChange = useAtomValue(changeAtom);
 
@@ -190,7 +191,7 @@ export default function Form() {
   );
 
   return (
-    <div className="flex h-full min-h-full min-w-full flex-row overflow-x-scroll">
+    <div className={`flex h-full min-h-full min-w-full flex-row overflow-x-scroll ${containerClassName}`}>
       {/* <SimpleBar
         className="w-full h-full"
         id={UI.form}

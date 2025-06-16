@@ -1474,6 +1474,7 @@ const checkSubmitFormat = (g: Getter, checkValue: any) => {
 };
 
 export const footerAtom = atom('');
+export const containerClassNameAtom = atom('');
 
 // Create an itemHeightAtom
 export const actionsItemHeightAtom = atom(PROMPT.ITEM.HEIGHT.SM);
@@ -1486,6 +1487,7 @@ const promptData = atom<null | Partial<PromptData>>({
   input: '',
   footerClassName: 'hidden',
   headerClassName: 'hidden',
+  containerClassName: '',
   placeholder: 'Script Kit',
 });
 
@@ -1634,6 +1636,7 @@ export const promptDataAtom = atom(
 
       s(headerHiddenAtom, !!a?.headerClassName?.includes('hidden'));
       s(footerHiddenAtom, !!a?.footerClassName?.includes('hidden'));
+      s(containerClassNameAtom, a?.containerClassName || '');
 
       const headerHidden = g(headerHiddenAtom);
 
@@ -3144,6 +3147,7 @@ export const cachedMainPromptDataAtom = atom<Partial<PromptData>>({
   input: '',
   footerClassName: 'hidden',
   headerClassName: 'hidden',
+  containerClassName: '',
   placeholder: 'Script Kit',
   enter: 'Run',
 });

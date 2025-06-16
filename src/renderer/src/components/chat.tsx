@@ -7,7 +7,7 @@ import { Channel, UI } from "@johnlindquist/kit/core/enum";
 /* eslint-disable react/no-danger */
 import log from "electron-log";
 import parse, { domToReact } from "html-react-parser";
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { debounce } from "lodash-es";
 import React, {
 	useEffect,
@@ -30,6 +30,7 @@ import { FaChevronDown } from "react-icons/fa";
 import {
 	channelAtom,
 	chatMessageSubmitAtom,
+	containerClassNameAtom,
 	inputAtom,
 	placeholderAtom,
 	preventChatScrollAtom,
@@ -643,6 +644,7 @@ export function Chat() {
 	const [placeholder] = useAtom(placeholderAtom);
 	const [channel] = useAtom(channelAtom);
 	const [ui] = useAtom(uiAtom);
+	const containerClassName = useAtomValue(containerClassNameAtom);
 
 	// Track isComposing state
 	const [isComposing, setIsComposing] = useState(false);
@@ -859,7 +861,7 @@ export function Chat() {
 	return (
 		// eslint-disable-next-line jsx-a11y/no-static-element-interactions
 		<div
-			className="chat-container flex h-full w-full flex-col"
+			className={`chat-container flex h-full w-full flex-col ${containerClassName}`}
 			onKeyDown={onChatKeyDown}
 			id={UI.chat}
 		>

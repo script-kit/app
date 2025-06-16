@@ -161,7 +161,7 @@ export class WatcherManager {
     ];
 
     const watcher = chokidar.watch(paths, {
-      ignoreInitial: true,
+      ignoreInitial: true, // Always true?
       followSymlinks: true,
       ignored,
       ...options,
