@@ -12,13 +12,15 @@ export interface MCPToolParameter {
  * 1. variable name assigned (e.g., `const name = await arg(...)` -> name="name")
  * 2. placeholder text (from config placeholder or first string literal argument)
  * 
- * Also extracts parameters from `await tool(...)` calls with full schema support.
+ * Also extracts inputSchema from `await params(...)` calls.
  */
-export async function extractMCPToolParameters(code: string): Promise<MCPToolParameter[] | { toolConfig: any }> {
+export async function extractMCPToolParameters(code: string): Promise<MCPToolParameter[] | { toolConfig: any } | { inputSchema: any }> {
     const params: MCPToolParameter[] = [];
     let argIndex = 0;
     let toolConfig: any = null;
+    let inputSchema: any = null;
     let foundToolCall = false;
+    let foundParamsCall = false;
 
     const Parser = (acorn.Parser as any).extend(tsPlugin() as any);
     const ast = Parser.parse(code, {
@@ -69,8 +71,17 @@ export async function extractMCPToolParameters(code: string): Promise<MCPToolPar
             }
         }
 
-        // Only process arg() calls if we haven't found a tool() call
-        if (!foundToolCall && node.type === 'CallExpression' && node.callee?.name === 'arg') {
+        // Check for params() calls
+        if (node.type === 'CallExpression' && node.callee?.name === 'params' && node.arguments?.length > 0) {
+            const schemaArg = node.arguments[0];
+            if (schemaArg?.type === 'ObjectExpression') {
+                inputSchema = extractObjectLiteral(schemaArg);
+                foundParamsCall = true;
+            }
+        }
+
+        // Only process arg() calls if we haven't found a tool() or params() call
+        if (!foundToolCall && !foundParamsCall && node.type === 'CallExpression' && node.callee?.name === 'arg') {
             argIndex += 1;
             let varName: string | null = null;
             // Traverse up parents to find variable name (handles AwaitExpression wrapper)
@@ -123,6 +134,11 @@ export async function extractMCPToolParameters(code: string): Promise<MCPToolPar
     }
 
     walk(ast, null);
+    
+    // If we found a params() call, return the inputSchema
+    if (inputSchema) {
+        return { inputSchema };
+    }
     
     // If we found a tool() call, return the tool config
     if (toolConfig) {

@@ -27,8 +27,8 @@ function createToolSchema(args: Array<{ name: string; placeholder: string | null
   return z.object(properties);
 }
 
-// Create tool schema from tool() config
-function createToolSchemaFromConfig(parameters: Record<string, any>) {
+// Create tool schema from tool() config or params() inputSchema
+function createToolSchemaFromConfig(parameters: Record<string, any>, required?: string[]) {
   const properties: Record<string, any> = {};
 
   for (const [key, param] of Object.entries(parameters)) {
@@ -80,7 +80,10 @@ function createToolSchemaFromConfig(parameters: Record<string, any>) {
     }
     
     // Handle required/optional
-    if (!param.required) {
+    // Check if this parameter is in the required array (for inputSchema)
+    // or if param.required is false (for toolConfig)
+    const isRequired = required ? required.includes(key) : param.required !== false;
+    if (!isRequired) {
       schema = schema.optional();
     }
     
@@ -136,7 +139,10 @@ export async function startMCPServer() {
 
             // Create schema based on script type
             let schema;
-            if (script.toolConfig && script.toolConfig.parameters) {
+            if (script.inputSchema && script.inputSchema.properties) {
+              // For params() based scripts, convert inputSchema to Zod schema
+              schema = createToolSchemaFromConfig(script.inputSchema.properties, script.inputSchema.required);
+            } else if (script.toolConfig && script.toolConfig.parameters) {
               // For tool() based scripts, convert parameters to Zod schema
               schema = createToolSchemaFromConfig(script.toolConfig.parameters);
             } else {
@@ -151,7 +157,10 @@ export async function startMCPServer() {
               let args: string[] = [];
               let toolParams: Record<string, any> | null = null;
 
-              if (script.toolConfig && script.toolConfig.parameters) {
+              if (script.inputSchema && script.inputSchema.properties) {
+                // For params() based scripts, pass parameters as JSON
+                toolParams = params;
+              } else if (script.toolConfig && script.toolConfig.parameters) {
                 // For tool() based scripts, pass parameters as JSON
                 toolParams = params;
               } else {

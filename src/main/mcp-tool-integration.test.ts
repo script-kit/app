@@ -84,8 +84,8 @@ describe('MCP Tool Integration', () => {
     mcpService.clearCache();
   });
 
-  describe('tool() parameter extraction', () => {
-    it('should extract parameters from tool() function calls', async () => {
+  describe('params() parameter extraction', () => {
+    it('should extract parameters from params() function calls', async () => {
       const scriptContent = `
 // Name: testing-mcp-tool
 // Description: Test tool
@@ -93,21 +93,20 @@ describe('MCP Tool Integration', () => {
 
 import "@johnlindquist/kit"
 
-const result = await tool({
-  name: "testing-mcp-tool",
-  description: "A test tool",
-  parameters: {
+const result = await params({
+  type: "object",
+  properties: {
     message: {
       type: "string",
-      description: "The message to display",
-      required: true
+      description: "The message to display"
     },
     count: {
       type: "number",
       description: "Number of times to repeat",
       default: 1
     }
-  }
+  },
+  required: ["message"]
 })
 
 console.log(\`Message: \${result.message}, Count: \${result.count}\`)
@@ -115,15 +114,13 @@ console.log(\`Message: \${result.message}, Count: \${result.count}\`)
 
       const result = await extractMCPToolParameters(scriptContent);
       
-      expect(result).toHaveProperty('toolConfig');
-      expect((result as any).toolConfig).toEqual({
-        name: 'testing-mcp-tool',
-        description: 'A test tool',
-        parameters: {
+      expect(result).toHaveProperty('inputSchema');
+      expect((result as any).inputSchema).toEqual({
+        type: 'object',
+        properties: {
           message: {
             type: 'string',
             description: 'The message to display',
-            required: true,
           },
           count: {
             type: 'number',
@@ -131,6 +128,7 @@ console.log(\`Message: \${result.message}, Count: \${result.count}\`)
             default: 1,
           },
         },
+        required: ['message'],
       });
     });
 
@@ -142,10 +140,9 @@ console.log(\`Message: \${result.message}, Count: \${result.count}\`)
 
 import "@johnlindquist/kit"
 
-const result = await tool({
-  name: "complex-tool",
-  description: "Test complex parameters",
-  parameters: {
+const result = await params({
+  type: "object",
+  properties: {
     simpleString: {
       type: "string",
       description: "A simple string"
@@ -185,27 +182,27 @@ const result = await tool({
 
       const result = await extractMCPToolParameters(scriptContent);
       
-      expect(result).toHaveProperty('toolConfig');
-      const toolConfig = (result as any).toolConfig;
+      expect(result).toHaveProperty('inputSchema');
+      const inputSchema = (result as any).inputSchema;
       
-      expect(toolConfig.parameters).toHaveProperty('simpleString');
-      expect(toolConfig.parameters).toHaveProperty('enumString');
-      expect(toolConfig.parameters).toHaveProperty('patternString');
-      expect(toolConfig.parameters).toHaveProperty('numberWithBounds');
-      expect(toolConfig.parameters).toHaveProperty('booleanFlag');
-      expect(toolConfig.parameters).toHaveProperty('arrayParam');
-      expect(toolConfig.parameters).toHaveProperty('objectParam');
+      expect(inputSchema.properties).toHaveProperty('simpleString');
+      expect(inputSchema.properties).toHaveProperty('enumString');
+      expect(inputSchema.properties).toHaveProperty('patternString');
+      expect(inputSchema.properties).toHaveProperty('numberWithBounds');
+      expect(inputSchema.properties).toHaveProperty('booleanFlag');
+      expect(inputSchema.properties).toHaveProperty('arrayParam');
+      expect(inputSchema.properties).toHaveProperty('objectParam');
       
-      expect(toolConfig.parameters.enumString.enum).toEqual(['option1', 'option2', 'option3']);
-      expect(toolConfig.parameters.numberWithBounds.minimum).toBe(0);
-      expect(toolConfig.parameters.numberWithBounds.maximum).toBe(100);
-      expect(toolConfig.parameters.booleanFlag.default).toBe(false);
+      expect(inputSchema.properties.enumString.enum).toEqual(['option1', 'option2', 'option3']);
+      expect(inputSchema.properties.numberWithBounds.minimum).toBe(0);
+      expect(inputSchema.properties.numberWithBounds.maximum).toBe(100);
+      expect(inputSchema.properties.booleanFlag.default).toBe(false);
     });
 
-    it('should fallback to arg() extraction when no tool() is found', async () => {
+    it('should fallback to arg() extraction when no params() is found', async () => {
       const scriptContent = `
 // Name: arg-based-tool
-// Description: Tool using arg() instead of tool()
+// Description: Tool using arg() instead of params()
 // mcp: arg-based-tool
 
 import "@johnlindquist/kit"
@@ -256,14 +253,12 @@ console.log(\`User: \${username}, Age: \${age}\`)
 
 import "@johnlindquist/kit"
 
-const result = await tool({
-  name: "test-tool",
-  description: "Test tool with parameters",
-  parameters: {
+const result = await params({
+  type: "object",
+  properties: {
     message: {
       type: "string",
-      description: "The message to display",
-      required: true
+      description: "The message to display"
     },
     count: {
       type: "number",
@@ -275,7 +270,8 @@ const result = await tool({
       description: "Enable feature",
       default: false
     }
-  }
+  },
+  required: ["message"]
 })
 `;
 
@@ -286,24 +282,23 @@ const result = await tool({
       expect(scripts).toHaveLength(1);
       
       const script = scripts[0];
-      expect(script.toolConfig).toBeDefined();
+      expect(script.inputSchema).toBeDefined();
       
-      // Verify the toolConfig structure
-      const toolConfig = script.toolConfig;
-      expect(toolConfig.name).toBe('test-tool');
-      expect(toolConfig.description).toBe('Test tool with parameters');
-      expect(toolConfig.parameters).toHaveProperty('message');
-      expect(toolConfig.parameters).toHaveProperty('count');
-      expect(toolConfig.parameters).toHaveProperty('enabled');
+      // Verify the inputSchema structure
+      const inputSchema = script.inputSchema;
+      expect(inputSchema.type).toBe('object');
+      expect(inputSchema.properties).toHaveProperty('message');
+      expect(inputSchema.properties).toHaveProperty('count');
+      expect(inputSchema.properties).toHaveProperty('enabled');
+      expect(inputSchema.required).toEqual(['message']);
     });
 
-    it('should generate Zod schema from tool parameters', async () => {
+    it('should generate Zod schema from params inputSchema', async () => {
       // Mock the internal createToolSchemaFromConfig function behavior
-      const parameters = {
+      const properties = {
         message: {
           type: 'string',
           description: 'The message to display',
-          required: true,
         },
         count: {
           type: 'number',
@@ -311,6 +306,7 @@ const result = await tool({
           default: 1,
         },
       };
+      const required = ['message'];
 
       // This simulates what createToolSchemaFromConfig would do
       const shape: Record<string, z.ZodTypeAny> = {};
@@ -338,7 +334,7 @@ const result = await tool({
   });
 
   describe('MCP server registration', () => {
-    it('should register tool-based scripts with MCP server', async () => {
+    it('should register params-based scripts with MCP server', async () => {
       const mockScript = {
         name: 'test-mcp-tool',
         command: 'test-mcp-tool',
@@ -354,22 +350,20 @@ const result = await tool({
 
 import "@johnlindquist/kit"
 
-const result = await tool({
-  name: "test-mcp-tool",
-  description: "Test MCP tool",
-  parameters: {
+const result = await params({
+  type: "object",
+  properties: {
     action: {
       type: "string",
       description: "Action to perform",
-      enum: ["create", "update", "delete"],
-      required: true
+      enum: ["create", "update", "delete"]
     },
     target: {
       type: "string",
-      description: "Target resource",
-      required: true
+      description: "Target resource"
     }
-  }
+  },
+  required: ["action", "target"]
 })
 
 await sendResponse({
@@ -391,28 +385,28 @@ await sendResponse({
       const scripts = await mcpService.getMCPScripts();
       const script = scripts[0];
       
-      expect(script.toolConfig).toBeDefined();
-      expect(script.toolConfig.parameters.action.enum).toEqual(['create', 'update', 'delete']);
+      expect(script.inputSchema).toBeDefined();
+      expect(script.inputSchema.properties.action.enum).toEqual(['create', 'update', 'delete']);
       
       // Simulate MCP tool registration (what happens in createMcpHttpServer)
       const toolName = script.name;
       const toolDescription = script.description;
-      const toolParameters = script.toolConfig.parameters;
+      const toolProperties = script.inputSchema.properties;
       
       expect(toolName).toBe('test-mcp-tool');
       expect(toolDescription).toBe('Test MCP tool');
-      expect(toolParameters).toHaveProperty('action');
-      expect(toolParameters).toHaveProperty('target');
+      expect(toolProperties).toHaveProperty('action');
+      expect(toolProperties).toHaveProperty('target');
     });
 
-    it('should handle both tool() and arg() based scripts in the same MCP server', async () => {
+    it('should handle both params() and arg() based scripts in the same MCP server', async () => {
       const mockScripts = [
         {
-          name: 'tool-based',
-          command: 'tool-based',
-          filePath: '/test/tool-based.js',
-          description: 'Tool-based script',
-          mcp: 'tool-based',
+          name: 'params-based',
+          command: 'params-based',
+          filePath: '/test/params-based.js',
+          description: 'Params-based script',
+          mcp: 'params-based',
         },
         {
           name: 'arg-based',
@@ -423,23 +417,22 @@ await sendResponse({
         },
       ];
 
-      const toolBasedContent = `
-// Name: tool-based
-// Description: Tool-based script
-// mcp: tool-based
+      const paramsBasedContent = `
+// Name: params-based
+// Description: Params-based script
+// mcp: params-based
 
 import "@johnlindquist/kit"
 
-const result = await tool({
-  name: "tool-based",
-  description: "Tool-based script",
-  parameters: {
+const result = await params({
+  type: "object",
+  properties: {
     input: {
       type: "string",
-      description: "Input value",
-      required: true
+      description: "Input value"
     }
-  }
+  },
+  required: ["input"]
 })
 `;
 
@@ -459,19 +452,19 @@ const confirm = await arg({
 
       vi.mocked(getScripts).mockResolvedValue(mockScripts as any);
       vi.mocked(readFile)
-        .mockResolvedValueOnce(toolBasedContent)
+        .mockResolvedValueOnce(paramsBasedContent)
         .mockResolvedValueOnce(argBasedContent);
 
       const scripts = await mcpService.getMCPScripts();
       expect(scripts).toHaveLength(2);
       
-      // First script should have toolConfig
-      expect(scripts[0].toolConfig).toBeDefined();
-      expect(scripts[0].toolConfig.parameters).toHaveProperty('input');
-      expect(scripts[0].args).toEqual([]); // tool() scripts have empty args array
+      // First script should have inputSchema
+      expect(scripts[0].inputSchema).toBeDefined();
+      expect(scripts[0].inputSchema.properties).toHaveProperty('input');
+      expect(scripts[0].args).toEqual([]); // params() scripts have empty args array
       
       // Second script should have args array
-      expect(scripts[1].toolConfig).toBeUndefined();
+      expect(scripts[1].inputSchema).toBeUndefined();
       expect(scripts[1].args).toHaveLength(2);
       expect(scripts[1].args[0].name).toBe('input');
       expect(scripts[1].args[0].placeholder).toBe('Enter input value');
@@ -497,14 +490,12 @@ const confirm = await arg({
 
 import "@johnlindquist/kit"
 
-const result = await tool({
-  name: "ui-test-tool",
-  description: "UI test tool",
-  parameters: {
+const result = await params({
+  type: "object",
+  properties: {
     title: {
       type: "string",
-      description: "Title of the item",
-      required: true
+      description: "Title of the item"
     },
     priority: {
       type: "string",
@@ -525,7 +516,8 @@ const result = await tool({
       description: "Make item public",
       default: false
     }
-  }
+  },
+  required: ["title"]
 })
 `;
 
@@ -536,11 +528,11 @@ const result = await tool({
       const script = scripts[0];
       
       // Simulate what the MCP UI would receive
-      const uiParameters = Object.entries(script.toolConfig.parameters).map(([key, param]: [string, any]) => ({
+      const uiParameters = Object.entries(script.inputSchema.properties).map(([key, param]: [string, any]) => ({
         name: key,
         type: param.type,
         description: param.description,
-        required: param.required || false,
+        required: script.inputSchema.required?.includes(key) || false,
         default: param.default,
         enum: param.enum,
       }));
@@ -587,26 +579,24 @@ const result = await tool({
 
 import "@johnlindquist/kit"
 
-const result = await tool({
-  name: "e2e-test",
-  description: "End-to-end test",
-  parameters: {
+const result = await params({
+  type: "object",
+  properties: {
     operation: {
       type: "string",
       description: "Operation to perform",
-      enum: ["read", "write", "delete"],
-      required: true
+      enum: ["read", "write", "delete"]
     },
     path: {
       type: "string",
-      description: "File path",
-      required: true
+      description: "File path"
     },
     content: {
       type: "string",
       description: "Content for write operations"
     }
-  }
+  },
+  required: ["operation", "path"]
 })
 
 // Simulate processing
@@ -656,8 +646,8 @@ await sendResponse({
       const script = scripts[0];
       
       // Verify tool configuration
-      expect(script.toolConfig).toBeDefined();
-      expect(script.toolConfig.parameters.operation.enum).toEqual(['read', 'write', 'delete']);
+      expect(script.inputSchema).toBeDefined();
+      expect(script.inputSchema.properties.operation.enum).toEqual(['read', 'write', 'delete']);
       
       // Simulate MCP tool invocation
       const toolArgs = {
@@ -711,7 +701,7 @@ await sendResponse({
   });
 
   describe('error handling', () => {
-    it('should handle malformed tool() configurations gracefully', async () => {
+    it('should handle malformed params() configurations gracefully', async () => {
       const malformedScript = `
 // Name: malformed-tool
 // Description: Malformed tool
@@ -719,17 +709,16 @@ await sendResponse({
 
 import "@johnlindquist/kit"
 
-// Missing parameters property
-const result = await tool({
-  name: "malformed-tool",
-  description: "Malformed tool"
+// Missing properties
+const result = await params({
+  type: "object"
 })
 `;
 
       const result = await extractMCPToolParameters(malformedScript);
-      expect(result).toHaveProperty('toolConfig');
-      const toolConfig = (result as any).toolConfig;
-      expect(toolConfig.parameters).toBeUndefined();
+      expect(result).toHaveProperty('inputSchema');
+      const inputSchema = (result as any).inputSchema;
+      expect(inputSchema.properties).toBeUndefined();
     });
 
     it('should handle scripts with syntax errors', async () => {
@@ -740,10 +729,9 @@ const result = await tool({
 
 import "@johnlindquist/kit"
 
-const result = await tool({
-  name: "syntax-error",
-  description: "Syntax error test",
-  parameters: {
+const result = await params({
+  type: "object",
+  properties: {
     test: {
       type: "string",
       description: "Test parameter"

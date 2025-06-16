@@ -18,43 +18,63 @@ describe('extractMCPToolParameters', () => {
         ]);
     });
 
-    describe('tool() function parsing', () => {
-        it('should extract tool config from plain tool() call', async () => {
+    describe('params() function parsing', () => {
+        it('should extract inputSchema from params() call', async () => {
             const code = `
 import "@johnlindquist/kit"
 
-const result = await tool({
-    name: "plain-tool",
-    description: "A plain tool",
-    parameters: {
+const result = await params({
+    type: "object",
+    properties: {
         input: {
             type: "string",
             description: "Input string",
         },
+        count: {
+            type: "number",
+            description: "Count value",
+            default: 10,
+        },
     },
+    required: ["input"]
 });
 `;
 
             const result = await extractMCPToolParameters(code);
             
-            expect(result).toHaveProperty('toolConfig');
-            expect((result as any).toolConfig).toMatchObject({
-                name: 'plain-tool',
-                description: 'A plain tool',
+            expect(result).toHaveProperty('inputSchema');
+            expect((result as any).inputSchema).toMatchObject({
+                type: 'object',
+                properties: {
+                    input: {
+                        type: 'string',
+                        description: 'Input string',
+                    },
+                    count: {
+                        type: 'number',
+                        description: 'Count value',
+                        default: 10,
+                    },
+                },
+                required: ['input']
             });
         });
 
-        it('should extract tool config from tool() with as MCPTool type assertion', async () => {
+        it('should extract inputSchema from params() with TypeScript generics', async () => {
             const code = `
-// Name: Testing MCP Tool
-// mcp: testing-mcp-tool
+// Name: Testing MCP Params
+// mcp: testing-mcp-params
 
 import "@johnlindquist/kit"
 
-const result = await tool({
-    name: "testing-mcp-tool",
-    description: "A tool for testing MCP",
-    parameters: {
+interface MyParams {
+    text: string
+    number: number
+}
+
+const result = await params<MyParams>({
+    type: "object",
+    properties: {
         text: {
             type: "string",
             description: "Just give me any string",
@@ -66,16 +86,15 @@ const result = await tool({
             default: 100,
         },
     },
-} as MCPTool);
+});
 `;
 
             const result = await extractMCPToolParameters(code);
             
-            expect(result).toHaveProperty('toolConfig');
-            expect((result as any).toolConfig).toMatchObject({
-                name: 'testing-mcp-tool',
-                description: 'A tool for testing MCP',
-                parameters: {
+            expect(result).toHaveProperty('inputSchema');
+            expect((result as any).inputSchema).toMatchObject({
+                type: 'object',
+                properties: {
                     text: {
                         type: 'string',
                         description: 'Just give me any string',

@@ -32,9 +32,9 @@ function createToolSchema(args: Array<{ name: string; placeholder: string | null
 }
 
 // -----------------------------
-// Create tool schema from tool() config
+// Create tool schema from tool() config or params() inputSchema
 // -----------------------------
-function createToolSchemaFromConfig(parameters: Record<string, any>): Record<string, z.ZodTypeAny> {
+function createToolSchemaFromConfig(parameters: Record<string, any>, required?: string[]): Record<string, z.ZodTypeAny> {
   const shape: Record<string, z.ZodTypeAny> = {};
 
   for (const [key, param] of Object.entries(parameters)) {
@@ -86,7 +86,10 @@ function createToolSchemaFromConfig(parameters: Record<string, any>): Record<str
     }
     
     // Handle required/optional
-    if (!param.required) {
+    // Check if this parameter is in the required array (for inputSchema)
+    // or if param.required is false (for toolConfig)
+    const isRequired = required ? required.includes(key) : param.required !== false;
+    if (!isRequired) {
       schema = schema.optional();
     }
     
@@ -176,7 +179,11 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
       try {
         // Create schema based on script type
         let schema: Record<string, z.ZodTypeAny>;
-        if (script.toolConfig && script.toolConfig.parameters) {
+        if (script.inputSchema && script.inputSchema.properties) {
+          // For params() based scripts, convert inputSchema to Zod schema
+          schema = createToolSchemaFromConfig(script.inputSchema.properties, script.inputSchema.required);
+          log.info(`Using inputSchema for ${script.name}`);
+        } else if (script.toolConfig && script.toolConfig.parameters) {
           // For tool() based scripts, convert parameters to Zod schema
           schema = createToolSchemaFromConfig(script.toolConfig.parameters);
           log.info(`Using tool config schema for ${script.name}`);
@@ -194,7 +201,11 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
           let ordered: string[] = [];
           let toolParams: Record<string, any> | null = null;
 
-          if (script.toolConfig && script.toolConfig.parameters) {
+          if (script.inputSchema && script.inputSchema.properties) {
+            // For params() based scripts, pass parameters as-is
+            toolParams = params;
+            log.info(`Using params() parameters for ${script.name}: ${dump(toolParams)}`);
+          } else if (script.toolConfig && script.toolConfig.parameters) {
             // For tool() based scripts, pass parameters as-is
             toolParams = params;
             log.info(`Using tool params for ${script.name}: ${dump(toolParams)}`);

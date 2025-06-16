@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { getScripts } from '@johnlindquist/kit/core/db';
 import type { Script } from '@johnlindquist/kit/types/core';
-import { extractMCPToolParameters } from './mcp-parameter-extractor';
+import { extractMCPToolParameters, type MCPToolParameter } from './mcp-parameter-extractor';
 import { mcpLog as log } from './logs';
 
 export interface MCPScript {
@@ -14,6 +14,7 @@ export interface MCPScript {
     placeholder: string | null;
   }>;
   toolConfig?: any; // Tool configuration from tool() function
+  inputSchema?: any; // Input schema from params() function
 }
 
 class MCPService {
@@ -56,7 +57,25 @@ class MCPService {
             // Extract parameters using AST parser
             const result = await extractMCPToolParameters(content);
 
-            // Check if this is a tool() based script
+            // Check if this is a params() based script
+            if (result && typeof result === 'object' && 'inputSchema' in result) {
+              const inputSchema = result.inputSchema;
+              log.info(`[getMCPScripts] found params() inputSchema: ${JSON.stringify(inputSchema)}`);
+              
+              // Convert to MCP format
+              const toolName = typeof script.mcp === 'string' ? script.mcp : script.command;
+              
+              return {
+                name: toolName,
+                filePath: script.filePath,
+                description: script.description || `Run the ${script.name} script`,
+                mcp: script.mcp,
+                args: [], // params() scripts don't use positional args
+                inputSchema: inputSchema // Store the schema for later use
+              };
+            }
+
+            // Check if this is a tool() based script (for backward compatibility)
             if (result && typeof result === 'object' && 'toolConfig' in result) {
               const toolConfig = result.toolConfig;
               log.info(`[getMCPScripts] found tool() config: ${JSON.stringify(toolConfig)}`);

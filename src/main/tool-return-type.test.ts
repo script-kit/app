@@ -1,11 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-// Mock the kit module's tool function
-vi.mock('@johnlindquist/kit/api/tool', () => {
+// Mock the kit module's params function
+vi.mock('@johnlindquist/kit/api/params', () => {
   return {
-    tool: vi.fn(async (config) => {
+    params: vi.fn(async (inputSchema) => {
       // Check if we're being called via MCP headers
-      if (global.headers && global.headers['X-MCP-Tool'] === config.name && global.headers['X-MCP-Parameters']) {
+      if (global.headers && global.headers['X-MCP-Parameters']) {
         try {
           const parameters = JSON.parse(global.headers['X-MCP-Parameters']);
           return parameters;
@@ -15,10 +15,9 @@ vi.mock('@johnlindquist/kit/api/tool', () => {
       }
 
       // Fallback: if all declared parameters are already present in global.headers
-      const parameterNames = config.inputSchema?.properties ? Object.keys(config.inputSchema.properties) : [];
+      const parameterNames = inputSchema?.properties ? Object.keys(inputSchema.properties) : [];
       if (
         global.headers &&
-        !global.headers['X-MCP-Tool'] &&
         parameterNames.length > 0 &&
         parameterNames.every(k => k in global.headers)
       ) {
@@ -29,9 +28,7 @@ vi.mock('@johnlindquist/kit/api/tool', () => {
       if (process.env.KIT_MCP_CALL) {
         try {
           const mcpCall = JSON.parse(process.env.KIT_MCP_CALL);
-          if (mcpCall.tool === config.name) {
-            return mcpCall.parameters;
-          }
+          return mcpCall.parameters;
         } catch (error) {
           // Ignore JSON parse errors
         }
@@ -43,7 +40,7 @@ vi.mock('@johnlindquist/kit/api/tool', () => {
   };
 });
 
-describe('tool() function return type verification', () => {
+describe('params() function return type verification', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset global state
@@ -54,31 +51,26 @@ describe('tool() function return type verification', () => {
   it('should return an object with keys matching the parameters when called via MCP headers', async () => {
     // Mock the global headers that would be set by MCP
     (global as any).headers = {
-      'X-MCP-Tool': 'testing-mcp-tool',
       'X-MCP-Parameters': JSON.stringify({
         text: 'Hello from MCP',
         number: 42,
       }),
     };
 
-    const { tool } = await import('@johnlindquist/kit/api/tool');
+    const { params } = await import('@johnlindquist/kit/api/params');
 
-    const result = await tool({
-      name: 'testing-mcp-tool',
-      description: 'A tool for testing MCP',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          text: {
-            type: 'string',
-            description: 'Just give me any string',
-            default: 'Hello, world!',
-          },
-          number: {
-            type: 'number',
-            description: 'Just give me any number',
-            default: 100,
-          },
+    const result = await params({
+      type: 'object',
+      properties: {
+        text: {
+          type: 'string',
+          description: 'Just give me any string',
+          default: 'Hello, world!',
+        },
+        number: {
+          type: 'number',
+          description: 'Just give me any number',
+          default: 100,
         },
       },
     });
@@ -102,22 +94,18 @@ describe('tool() function return type verification', () => {
       number: 99,
     };
 
-    const { tool } = await import('@johnlindquist/kit/api/tool');
+    const { params } = await import('@johnlindquist/kit/api/params');
 
-    const result = await tool({
-      name: 'fallback-tool',
-      description: 'A tool testing fallback',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          text: {
-            type: 'string',
-            description: 'Text parameter',
-          },
-          number: {
-            type: 'number',
-            description: 'Number parameter',
-          },
+    const result = await params({
+      type: 'object',
+      properties: {
+        text: {
+          type: 'string',
+          description: 'Text parameter',
+        },
+        number: {
+          type: 'number',
+          description: 'Number parameter',
         },
       },
     });
@@ -130,7 +118,6 @@ describe('tool() function return type verification', () => {
 
   it('should return typed object when called via environment variable', async () => {
     process.env.KIT_MCP_CALL = JSON.stringify({
-      tool: 'env-test-tool',
       parameters: {
         enabled: true,
         items: ['apple', 'banana'],
@@ -138,7 +125,7 @@ describe('tool() function return type verification', () => {
       },
     });
 
-    const { tool } = await import('@johnlindquist/kit/api/tool');
+    const { params } = await import('@johnlindquist/kit/api/params');
 
     interface ToolParams {
       enabled: boolean;
@@ -146,16 +133,12 @@ describe('tool() function return type verification', () => {
       count: number;
     }
 
-    const result = await tool<ToolParams>({
-      name: 'env-test-tool',
-      description: 'Testing env-based MCP call',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          enabled: { type: 'boolean' },
-          items: { type: 'array' },
-          count: { type: 'number' },
-        },
+    const result = await params<ToolParams>({
+      type: 'object',
+      properties: {
+        enabled: { type: 'boolean' },
+        items: { type: 'array' },
+        count: { type: 'number' },
       },
     });
 
@@ -167,7 +150,6 @@ describe('tool() function return type verification', () => {
 
   it('should handle complex nested parameter structures', async () => {
     (global as any).headers = {
-      'X-MCP-Tool': 'complex-tool',
       'X-MCP-Parameters': JSON.stringify({
         user: {
           name: 'John Doe',
@@ -184,7 +166,7 @@ describe('tool() function return type verification', () => {
       }),
     };
 
-    const { tool } = await import('@johnlindquist/kit/api/tool');
+    const { params } = await import('@johnlindquist/kit/api/params');
 
     interface ComplexParams {
       user: {
@@ -201,32 +183,28 @@ describe('tool() function return type verification', () => {
       };
     }
 
-    const result = await tool<ComplexParams>({
-      name: 'complex-tool',
-      description: 'Tool with nested parameters',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          user: {
-            type: 'object',
-            properties: {
-              name: { type: 'string' },
-              age: { type: 'number' },
-              preferences: {
-                type: 'object',
-                properties: {
-                  theme: { type: 'string' },
-                  notifications: { type: 'boolean' },
-                },
+    const result = await params<ComplexParams>({
+      type: 'object',
+      properties: {
+        user: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            age: { type: 'number' },
+            preferences: {
+              type: 'object',
+              properties: {
+                theme: { type: 'string' },
+                notifications: { type: 'boolean' },
               },
             },
           },
-          settings: {
-            type: 'object',
-            properties: {
-              advanced: { type: 'boolean' },
-              timeout: { type: 'number' },
-            },
+        },
+        settings: {
+          type: 'object',
+          properties: {
+            advanced: { type: 'boolean' },
+            timeout: { type: 'number' },
           },
         },
       },
@@ -242,7 +220,6 @@ describe('tool() function return type verification', () => {
 
   it('should preserve parameter types correctly', async () => {
     (global as any).headers = {
-      'X-MCP-Tool': 'type-test-tool',
       'X-MCP-Parameters': JSON.stringify({
         stringParam: 'hello',
         numberParam: 123.45,
@@ -253,21 +230,17 @@ describe('tool() function return type verification', () => {
       }),
     };
 
-    const { tool } = await import('@johnlindquist/kit/api/tool');
+    const { params } = await import('@johnlindquist/kit/api/params');
 
-    const result = await tool({
-      name: 'type-test-tool',
-      description: 'Testing type preservation',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          stringParam: { type: 'string' },
-          numberParam: { type: 'number' },
-          booleanParam: { type: 'boolean' },
-          arrayParam: { type: 'array' },
-          nullParam: { type: 'null' },
-          objectParam: { type: 'object' },
-        },
+    const result = await params({
+      type: 'object',
+      properties: {
+        stringParam: { type: 'string' },
+        numberParam: { type: 'number' },
+        booleanParam: { type: 'boolean' },
+        arrayParam: { type: 'array' },
+        nullParam: { type: 'null' },
+        objectParam: { type: 'object' },
       },
     });
 

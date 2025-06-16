@@ -101,7 +101,6 @@ await editor(JSON.stringify(result, null, 2));`;
     const env = {
       ...process.env,
       KIT_MCP_CALL: JSON.stringify({
-        tool: 'testing-mcp-tool',
         parameters: mcpParameters,
       }),
     };
@@ -133,7 +132,6 @@ await editor(JSON.stringify(result, null, 2));`;
       expect.objectContaining({
         env: expect.objectContaining({
           KIT_MCP_CALL: JSON.stringify({
-            tool: 'testing-mcp-tool',
             parameters: mcpParameters,
           }),
         }),
