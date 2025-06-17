@@ -118,7 +118,16 @@ import "@johnlindquist/kit"
 const result = await params({
     name: "Your full name",
     age: 21,
-    agree: true
+    agree: true,
+    isStudent: {
+        type: "boolean",
+        description: "Are you a student?"
+    },
+    dates: {
+        type: "array",
+        description: "Enter your dates",
+        items: { type: "string" }
+    }
 })
 `;
             const result = await extractMCPToolParameters(code);
@@ -130,8 +139,50 @@ const result = await params({
                     name: { type: 'string', description: 'Your full name' },
                     age: { type: 'number', description: '21', default: 21 },
                     agree: { type: 'boolean', description: '', default: true },
+                    isStudent: { type: 'boolean', description: 'Are you a student?' },
+                    dates: { type: 'array', description: 'Enter your dates', items: { type: 'string' } }
                 },
-                required: ['name', 'age', 'agree']
+                required: ['name', 'age', 'agree', 'isStudent', 'dates']
+            });
+        });
+    });
+
+    describe('simple schema extraction with as const', () => {
+        it('should extract and expand simple params schema with as const', async () => {
+            const code = `
+import "@johnlindquist/kit"
+
+const result = await params({
+    name: "Enter your name",
+    age: {
+        type: "number",
+        description: "Enter your age"
+    },
+    isStudent: {
+        type: "boolean",
+        description: "Are you a student?"
+    },
+    dates: {
+        type: "array",
+        description: "Enter your dates",
+        items: {
+            type: "string",
+        }
+    }
+} as const)
+`;
+            const result = await extractMCPToolParameters(code);
+            expect(result).toHaveProperty('inputSchema');
+            const { inputSchema } = result as any;
+            expect(inputSchema).toMatchObject({
+                type: 'object',
+                properties: {
+                    name: { type: 'string', description: 'Enter your name' },
+                    age: { type: 'number', description: 'Enter your age' },
+                    isStudent: { type: 'boolean', description: 'Are you a student?' },
+                    dates: { type: 'array', description: 'Enter your dates', items: { type: 'string' } }
+                },
+                required: ['name', 'age', 'isStudent', 'dates']
             });
         });
     });

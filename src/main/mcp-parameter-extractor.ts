@@ -78,6 +78,10 @@ export async function extractMCPToolParameters(code: string): Promise<MCPToolPar
                 const extracted = extractObjectLiteral(schemaArg);
                 inputSchema = expandSimpleSchema(extracted);
                 foundParamsCall = true;
+            } else if (schemaArg?.type === 'TSAsExpression' && schemaArg.expression?.type === 'ObjectExpression') {
+                const extracted = extractObjectLiteral(schemaArg.expression);
+                inputSchema = expandSimpleSchema(extracted);
+                foundParamsCall = true;
             }
         }
 
