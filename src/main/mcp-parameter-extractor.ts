@@ -200,22 +200,22 @@ function expandSimpleSchema(simple: Record<string, any>): any {
 
         if (typeof val === 'string') {
             propSchema = { type: 'string', description: val };
-            required.push(key);
+            // In simple syntax, everything is optional by default
         } else if (typeof val === 'number') {
             propSchema = { type: 'number', description: String(val), default: val };
-            required.push(key);
+            // In simple syntax, everything is optional by default
         } else if (typeof val === 'boolean') {
             propSchema = { type: 'boolean', description: '', default: val };
-            required.push(key);
+            // In simple syntax, everything is optional by default
         } else if (Array.isArray(val)) {
             propSchema = { type: 'array', description: '', default: val };
-            required.push(key);
+            // In simple syntax, everything is optional by default
         } else if (typeof val === 'object' && val !== null) {
             propSchema = val; // assume detailed schema
-            required.push(key);
+            // In simple syntax, everything is optional by default
         } else {
             propSchema = { type: 'string' };
-            required.push(key);
+            // In simple syntax, everything is optional by default
         }
 
         properties[key] = propSchema;

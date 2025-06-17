@@ -141,9 +141,10 @@ const result = await params({
                     agree: { type: 'boolean', description: '', default: true },
                     isStudent: { type: 'boolean', description: 'Are you a student?' },
                     dates: { type: 'array', description: 'Enter your dates', items: { type: 'string' } }
-                },
-                required: ['name', 'age', 'agree', 'isStudent', 'dates']
+                }
+                // No required array - everything is optional in simple syntax
             });
+            expect(inputSchema).not.toHaveProperty('required');
         });
     });
 
@@ -181,9 +182,10 @@ const result = await params({
                     age: { type: 'number', description: 'Enter your age' },
                     isStudent: { type: 'boolean', description: 'Are you a student?' },
                     dates: { type: 'array', description: 'Enter your dates', items: { type: 'string' } }
-                },
-                required: ['name', 'age', 'isStudent', 'dates']
+                }
+                // No required array - everything is optional in simple syntax
             });
+            expect(inputSchema).not.toHaveProperty('required');
         });
     });
 });

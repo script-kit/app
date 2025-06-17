@@ -1,3 +1,4 @@
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { readFile } from 'node:fs/promises';
 import { getScripts } from '@johnlindquist/kit/core/db';
 import type { Script } from '@johnlindquist/kit/types/core';
@@ -13,14 +14,14 @@ export interface MCPScript {
     name: string;
     placeholder: string | null;
   }>;
-  toolConfig?: any; // Tool configuration from tool() function
-  inputSchema?: any; // Input schema from params() function
+  toolConfig?: any; // import type from kit sdk
+  inputSchema?: Tool['inputSchema']; // Input schema from params() function
 }
 
 class MCPService {
   private mcpScripts: MCPScript[] = [];
   private lastRefresh = 0;
-  private refreshInterval = 60000; // 1 minute cache
+  private refreshInterval = 5000; // 5 seconds cache
 
   async getMCPScripts(force = false): Promise<MCPScript[]> {
     const startTime = Date.now();
@@ -61,10 +62,9 @@ class MCPService {
             if (result && typeof result === 'object' && 'inputSchema' in result) {
               const inputSchema = result.inputSchema;
               log.info(`[getMCPScripts] found params() inputSchema: ${JSON.stringify(inputSchema)}`);
-              
               // Convert to MCP format
               const toolName = typeof script.mcp === 'string' ? script.mcp : script.command;
-              
+
               return {
                 name: toolName,
                 filePath: script.filePath,
@@ -79,10 +79,10 @@ class MCPService {
             if (result && typeof result === 'object' && 'toolConfig' in result) {
               const toolConfig = result.toolConfig;
               log.info(`[getMCPScripts] found tool() config: ${JSON.stringify(toolConfig)}`);
-              
+
               // Convert tool config to MCP format
               const toolName = toolConfig.name || (typeof script.mcp === 'string' ? script.mcp : script.command);
-              
+
               return {
                 name: toolName,
                 filePath: script.filePath,

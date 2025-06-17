@@ -4,16 +4,16 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { z } from 'zod';
-import { createLogger } from './log-utils';
-import { mcpService } from './mcp-service';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { type ZodObject, type ZodRawShape, z } from 'zod';
+import { mcpService, type MCPScript } from './mcp-service';
 import { getServerPort } from './serverTrayUtils';
+import { mcpLog as log } from "./logs"
 
-const log = createLogger('mcp-server');
 
 // Create tool schema based on script args
-function createToolSchema(args: Array<{ name: string; placeholder: string | null }>) {
-  const properties: Record<string, any> = {};
+function createToolSchema(args: Array<{ name: string; placeholder: string | null }>): ZodObject<ZodRawShape> {
+  const properties: ZodRawShape = {};
 
   // Create properties for each arg
   args.forEach((arg, index) => {
@@ -27,58 +27,75 @@ function createToolSchema(args: Array<{ name: string; placeholder: string | null
   return z.object(properties);
 }
 
+interface ParameterSchema {
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object';
+  description?: string;
+  enum?: string[];
+  pattern?: string;
+  minimum?: number;
+  maximum?: number;
+  required?: boolean;
+  default?: unknown;
+}
+
+
 // Create tool schema from tool() config or params() inputSchema
-function createToolSchemaFromConfig(parameters: Record<string, any>, required?: string[]) {
-  const properties: Record<string, any> = {};
+function createToolSchemaFromConfig(
+  parameters: Record<string, ParameterSchema>,
+  required?: string[],
+): ZodObject<ZodRawShape> {
+  const properties: ZodRawShape = {};
 
   for (const [key, param] of Object.entries(parameters)) {
-    let schema;
-    
+    let schema: z.ZodTypeAny;
+
     // Map parameter types to Zod schemas
     switch (param.type) {
-      case 'string':
+      case 'string': {
         schema = z.string();
         if (param.enum) {
           schema = z.enum(param.enum as [string, ...string[]]);
         }
         if (param.pattern) {
-          schema = schema.regex(new RegExp(param.pattern));
+          schema = (schema as z.ZodString).regex(new RegExp(param.pattern));
         }
         break;
-      
-      case 'number':
+      }
+
+      case 'number': {
         schema = z.number();
         if (param.minimum !== undefined) {
-          schema = schema.min(param.minimum);
+          schema = (schema as z.ZodNumber).min(param.minimum);
         }
         if (param.maximum !== undefined) {
-          schema = schema.max(param.maximum);
+          schema = (schema as z.ZodNumber).max(param.maximum);
         }
         break;
-      
+      }
+
       case 'boolean':
         schema = z.boolean();
         break;
-      
+
       case 'array':
         // Simple array support for now
         schema = z.array(z.string());
         break;
-      
+
       case 'object':
         // Simple object support for now
         schema = z.object({});
         break;
-      
+
       default:
         schema = z.string();
     }
-    
+
     // Add description
     if (param.description) {
       schema = schema.describe(param.description);
     }
-    
+
     // Handle required/optional
     // Check if this parameter is in the required array (for inputSchema)
     // or if param.required is false (for toolConfig)
@@ -86,12 +103,12 @@ function createToolSchemaFromConfig(parameters: Record<string, any>, required?: 
     if (!isRequired) {
       schema = schema.optional();
     }
-    
+
     // Handle default values
     if (param.default !== undefined) {
       schema = schema.default(param.default);
     }
-    
+
     properties[key] = schema;
   }
 
@@ -107,16 +124,18 @@ export async function startMCPServer() {
     await startServer();
 
     // Give the server a moment to fully initialize
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
 
     // Create MCP server with oninitialized callback
     const server = new McpServer({
       name: 'script-kit',
       version: '1.0.0',
-      oninitialized: async () => {
+      oninitialized: () => {
         log.info('MCP client initialized, rescanning scripts...');
         // Force refresh on each client initialization
-        await registerTools(server, true);
+        registerTools(server, true).catch((error) => {
+          log.error('Failed to register tools on client initialization:', error);
+        });
       },
     });
 
@@ -138,11 +157,11 @@ export async function startMCPServer() {
             registeredTools.add(script.name);
 
             // Create schema based on script type
-            let schema;
-            if (script.inputSchema && script.inputSchema.properties) {
+            let schema: ZodObject<ZodRawShape>;
+            if (script.inputSchema?.properties) {
               // For params() based scripts, convert inputSchema to Zod schema
               schema = createToolSchemaFromConfig(script.inputSchema.properties, script.inputSchema.required);
-            } else if (script.toolConfig && script.toolConfig.parameters) {
+            } else if (script.toolConfig?.parameters) {
               // For tool() based scripts, convert parameters to Zod schema
               schema = createToolSchemaFromConfig(script.toolConfig.parameters);
             } else {
@@ -150,33 +169,32 @@ export async function startMCPServer() {
               schema = createToolSchema(script.args);
             }
 
-            // Register tool with MCP
-            mcpServer.tool(script.name, script.description, schema, async (params) => {
+            // Register tool with MCP - use raw properties object instead of ZodObject
+            const schemaShape = schema._def.shape();
+            mcpServer.tool(script.name, script.description, schemaShape, async (params, _extra) => {
               log.info(`Executing MCP tool: ${script.name}`, params);
 
-              let args: string[] = [];
-              let toolParams: Record<string, any> | null = null;
+              const args: string[] = [];
+              let toolParams: Record<string, unknown> | null = null;
 
-              if (script.inputSchema && script.inputSchema.properties) {
+              if (script.inputSchema?.properties) {
                 // For params() based scripts, pass parameters as JSON
                 toolParams = params;
-              } else if (script.toolConfig && script.toolConfig.parameters) {
+              } else if (script.toolConfig?.parameters) {
                 // For tool() based scripts, pass parameters as JSON
                 toolParams = params;
               } else {
                 // For traditional arg() scripts, convert params to array
                 for (let i = 0; i < script.args.length; i++) {
                   const argName = `arg${i + 1}`;
-                  args.push(params[argName] || '');
+                  args.push((params[argName] as string) || '');
                 }
               }
 
               try {
                 // Execute the script using the HTTP API
-                const body = toolParams 
-                  ? { script: script.name, toolParams }
-                  : { script: script.name, args };
-                
+                const body = toolParams ? { script: script.name, toolParams } : { script: script.name, args };
+
                 const result = await fetch(`http://localhost:${getServerPort()}/api/mcp/execute`, {
                   method: 'POST',
                   headers: {
@@ -187,28 +205,31 @@ export async function startMCPServer() {
 
                 // Return MCP-formatted response
                 if (result && typeof result === 'object' && 'content' in result) {
-                  return result;
+                  return result as CallToolResult;
                 }
 
                 // Fallback formatting
-                return {
+                const response: CallToolResult = {
                   content: [
                     {
-                      type: 'text',
+                      type: 'text' as const,
                       text: typeof result === 'string' ? result : JSON.stringify(result, null, 2),
                     },
                   ],
                 };
-              } catch (error: any) {
+                return response;
+              } catch (error) {
                 log.error(`Error executing script ${script.name}:`, error);
-                return {
+                const errorResponse: CallToolResult = {
                   content: [
                     {
-                      type: 'text',
-                      text: `Error: ${error.message}`,
+                      type: 'text' as const,
+                      text: `Error: ${error instanceof Error ? error.message : String(error)}`,
                     },
                   ],
+                  isError: true,
                 };
+                return errorResponse;
               }
             });
 

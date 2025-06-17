@@ -39,11 +39,12 @@ function createToolSchemaFromConfig(parameters: Record<string, any>, required?: 
 
   for (const [key, param] of Object.entries(parameters)) {
     let schema: z.ZodTypeAny;
-    
+
     // Map parameter types to Zod schemas
     switch (param.type) {
       case 'string':
         schema = z.string();
+
         if (param.enum) {
           schema = z.enum(param.enum as [string, ...string[]]);
         }
@@ -51,7 +52,7 @@ function createToolSchemaFromConfig(parameters: Record<string, any>, required?: 
           schema = (schema as z.ZodString).regex(new RegExp(param.pattern));
         }
         break;
-      
+
       case 'number':
         schema = z.number();
         if (param.minimum !== undefined) {
@@ -61,43 +62,47 @@ function createToolSchemaFromConfig(parameters: Record<string, any>, required?: 
           schema = (schema as z.ZodNumber).max(param.maximum);
         }
         break;
-      
+
       case 'boolean':
         schema = z.boolean();
         break;
-      
+
       case 'array':
         // Simple array support for now
         schema = z.array(z.string());
         break;
-      
+
       case 'object':
         // Simple object support for now
         schema = z.object({});
         break;
-      
+
       default:
         schema = z.string();
     }
-    
+
+    if (!param.required) {
+      schema = schema.optional();
+    }
+
     // Add description
     if (param.description) {
       schema = schema.describe(param.description);
     }
-    
+
     // Handle required/optional
     // Check if this parameter is in the required array (for inputSchema)
     // or if param.required is false (for toolConfig)
-    const isRequired = required ? required.includes(key) : param.required !== false;
-    if (!isRequired) {
-      schema = schema.optional();
-    }
-    
+    // const isRequired = required ? required.includes(key) : param.required !== false;
+    // if (!isRequired) {
+    //   schema = schema.optional();
+    // }
+
     // Handle default values
     if (param.default !== undefined) {
       schema = schema.default(param.default);
     }
-    
+
     shape[key] = schema;
   }
 
@@ -125,7 +130,7 @@ const sseTransports: Record<string, SSEServerTransport> = {};
 // Cache for script metadata to speed up server creation
 let cachedScripts: MCPScript[] | null = null;
 let cacheTimestamp = 0;
-const CACHE_TTL = 30000; // 30 seconds cache TTL
+const CACHE_TTL = 5000; // 5 seconds cache TTL
 
 // =====================
 // Verbose logging helper
@@ -162,7 +167,7 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
     let scripts: MCPScript[];
     const now = Date.now();
     const cacheExpired = now - cacheTimestamp > CACHE_TTL;
-    
+
     if (!forceRefresh && cachedScripts && !cacheExpired) {
       scripts = cachedScripts;
       log.info(`Using cached MCP scripts (${scripts.length} scripts, age: ${Math.round((now - cacheTimestamp) / 1000)}s)`);
@@ -184,11 +189,11 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
       try {
         // Create schema based on script type
         let schema: Record<string, z.ZodTypeAny>;
-        if (script.inputSchema && script.inputSchema.properties) {
+        if (script.inputSchema?.properties) {
           // For params() based scripts, convert inputSchema to Zod schema
           schema = createToolSchemaFromConfig(script.inputSchema.properties, script.inputSchema.required);
           log.info(`Using inputSchema for ${script.name}`);
-        } else if (script.toolConfig && script.toolConfig.parameters) {
+        } else if (script.toolConfig?.parameters) {
           // For tool() based scripts, convert parameters to Zod schema
           schema = createToolSchemaFromConfig(script.toolConfig.parameters);
           log.info(`Using tool config schema for ${script.name}`);
@@ -236,7 +241,7 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
             const mcpHeaders: Record<string, string> = {};
 
             if (toolParams) {
-              mcpHeaders['X-MCP-Tool']       = script.name;
+              mcpHeaders['X-MCP-Tool'] = script.name;
               mcpHeaders['X-MCP-Parameters'] = JSON.stringify(toolParams);
             }
 
@@ -312,7 +317,7 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
     res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(health));
     return;
   }
-  
+
   log.info(`HTTP ${req.method} ${req.url}`);
   log.debug(`Headers: ${dump(req.headers)}`);
 
@@ -330,7 +335,7 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
       }
       return;
     }
-    
+
     // Handle /endpoints to help clients understand available endpoints
     if (req.url === '/endpoints') {
       res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -345,7 +350,7 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
         }));
       return;
     }
-    
+
     // Inspector CLI defaults to /sse for SSE transport
     if (req.url?.startsWith('/sse')) {
       // SSE requires GET method for event stream
@@ -485,7 +490,7 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
       }
 
       let newSessionId: string | undefined;
-      
+
       if (!transport) {
         log.debug('No existing transport, will attempt to create new one');
         // Only POST with initialize can create new session
@@ -534,7 +539,7 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
         if (bodyJson && isInitializeRequest(bodyJson)) {
           // Override the response to add the Mcp-Session-Id header
           const originalWriteHead = res.writeHead.bind(res);
-          res.writeHead = function(statusCode: number, headers?: any) {
+          res.writeHead = function (statusCode: number, headers?: any) {
             const sessionIdToUse = transport?.sessionId || newSessionId;
             const finalHeaders = {
               ...headers,
@@ -566,7 +571,7 @@ export async function startMcpHttpServer(): Promise<void> {
   }
 
   log.info('Starting MCP HTTP server...');
-  
+
   const port = getMcpPort();
 
   httpServer = http.createServer(onRequest);
@@ -581,7 +586,7 @@ export async function startMcpHttpServer(): Promise<void> {
     mcpStartTime = new Date();
     log.info(`MCP HTTP server listening on http://localhost:${port}/mcp (startup took ${totalDuration}ms)`);
     log.debug(`Environment KIT_MCP_PORT=${process.env.KIT_MCP_PORT}`);
-    
+
     // Pre-load MCP scripts asynchronously after server is ready
     setImmediate(async () => {
       const preloadStart = Date.now();
@@ -595,7 +600,7 @@ export async function startMcpHttpServer(): Promise<void> {
         log.error('Failed to pre-load MCP scripts:', error);
       }
     });
-    
+
     // Verify server is actually accepting connections
     const testReq = http.get(`http://127.0.0.1:${port}/health`, (res) => {
       if (res.statusCode === 200) {
@@ -638,7 +643,7 @@ export function getMcpHealth() {
   const uptimeSeconds = Math.floor(uptimeMs / 1000);
   const uptimeMinutes = Math.floor(uptimeSeconds / 60);
   const uptimeHours = Math.floor(uptimeMinutes / 60);
-  
+
   const activeSessions = Object.keys(mcpServers).length + Object.keys(sseTransports).length;
 
   return {
@@ -648,9 +653,9 @@ export function getMcpHealth() {
       seconds: uptimeSeconds,
       minutes: uptimeMinutes,
       hours: uptimeHours,
-      formatted: uptimeHours > 0 
-        ? `${uptimeHours}h ${uptimeMinutes % 60}m` 
-        : uptimeMinutes > 0 
+      formatted: uptimeHours > 0
+        ? `${uptimeHours}h ${uptimeMinutes % 60}m`
+        : uptimeMinutes > 0
           ? `${uptimeMinutes}m ${uptimeSeconds % 60}s`
           : `${uptimeSeconds}s`,
     },
