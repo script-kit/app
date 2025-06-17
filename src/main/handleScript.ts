@@ -97,7 +97,28 @@ export async function handleScript(
             headers: headers,
           };
 
-          log.info({ message })
+          // Log response info without the full data payload to avoid stack overflow with large images
+          let dataInfo = 'no data';
+          if (body) {
+            if (typeof body === 'string') {
+              dataInfo = `string (${body.length} chars)`;
+            } else if (Buffer.isBuffer(body)) {
+              dataInfo = `Buffer (${body.length} bytes)`;
+            } else if (typeof body === 'object') {
+              // For objects, just count properties without stringifying
+              const keys = Object.keys(body);
+              dataInfo = `object (${keys.length} keys)`;
+              // Check if it contains image data
+              if (body.content && Array.isArray(body.content)) {
+                const imageCount = body.content.filter((item: any) => item?.type === 'image').length;
+                if (imageCount > 0) {
+                  dataInfo += ` with ${imageCount} image(s)`;
+                }
+              }
+            }
+          }
+          
+          log.info(`Response received: status=${statusCode}, data=${dataInfo}`);
           processInfo.child.send({ channel: Channel.RESPONSE, value: message });
           resolve(message);
         }
