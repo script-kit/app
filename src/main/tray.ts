@@ -442,7 +442,7 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
 
 const buildServerSubmenu = (): MenuItemConstructorOptions[] => {
   const items: MenuItemConstructorOptions[] = [];
-  
+
   if (kitState.serverRunning) {
     // Add health status
     import('./server').then(({ getServerHealth }) => {
@@ -452,7 +452,7 @@ const buildServerSubmenu = (): MenuItemConstructorOptions[] => {
         log.info(`Server health: ${health.uptime.formatted}, ${health.requests} requests`);
       }
     });
-    
+
     items.push({
       label: 'Stop Server',
       click: async () => {
@@ -460,11 +460,11 @@ const buildServerSubmenu = (): MenuItemConstructorOptions[] => {
         stopServer();
       },
     });
-    
+
     items.push({
       type: 'separator' as const,
     });
-    
+
     items.push({
       label: `Copy URL (http://localhost:${getServerPort()})`,
       click: () => {
@@ -475,14 +475,14 @@ const buildServerSubmenu = (): MenuItemConstructorOptions[] => {
         }).show();
       },
     });
-    
+
     items.push({
       label: 'Open in Browser',
       click: () => {
         shell.openExternal(`http://localhost:${getServerPort()}`);
       },
     });
-    
+
     items.push({
       label: 'View Health Status',
       click: async () => {
@@ -500,111 +500,124 @@ const buildServerSubmenu = (): MenuItemConstructorOptions[] => {
       },
     });
   }
-  
+
   return items;
 };
 
 const buildMCPSubmenu = async (): Promise<MenuItemConstructorOptions[]> => {
   const mcpItems: MenuItemConstructorOptions[] = [];
-  
+
   try {
-      // Add copy URL and health items first
-      mcpItems.push({
-        label: `Copy URL (http://localhost:${getMcpPort()}/mcp)`,
-        click: () => {
-          clipboard.writeText(`http://localhost:${getMcpPort()}/mcp`);
-          new Notification({
-            title: 'Script Kit MCP Server',
-            body: `MCP URL copied to clipboard`,
-          }).show();
-        },
-      });
-      
-      mcpItems.push({
-        label: 'Open in Browser',
-        click: () => {
-          shell.openExternal(`http://localhost:${getMcpPort()}/endpoints`);
-        },
-      });
-      
-      mcpItems.push({
-        label: 'View Health Status',
-        click: async () => {
-          shell.openExternal(`http://localhost:${getMcpPort()}/health`);
-        },
-      });
-      
+    // Add copy URL and health items first
+    // mcp
+    mcpItems.push({
+      label: `Copy /mcp URL (http://localhost:${getMcpPort()}/mcp)`,
+      click: () => {
+        clipboard.writeText(`http://localhost:${getMcpPort()}/mcp`);
+        new Notification({
+          title: 'Script Kit MCP Server',
+          body: `MCP URL copied to clipboard`,
+        }).show();
+      },
+    });
+
+    // sse
+    mcpItems.push({
+      label: `Copy /sse URL (http://localhost:${getMcpPort()}/sse)`,
+      click: () => {
+        clipboard.writeText(`http://localhost:${getMcpPort()}/sse`);
+        new Notification({
+          title: 'Script Kit SSE Server',
+          body: `SSE URL copied to clipboard`,
+        }).show();
+      },
+    });
+
+    mcpItems.push({
+      label: 'Open in Browser',
+      click: () => {
+        shell.openExternal(`http://localhost:${getMcpPort()}/endpoints`);
+      },
+    });
+
+    mcpItems.push({
+      label: 'View Health Status',
+      click: async () => {
+        shell.openExternal(`http://localhost:${getMcpPort()}/health`);
+      },
+    });
+
+    mcpItems.push({
+      type: 'separator' as const,
+    });
+
+    // Dynamic import to prevent early initialization issues
+    const { mcpService } = await import('./mcp-service');
+    const mcpScripts = await mcpService.getMCPScripts();
+
+    // Get health status
+    const { getMcpHealth } = await import('./mcp-http-server');
+    const health = getMcpHealth();
+
+    let statusLabel = `${mcpScripts.length} MCP scripts`;
+    if (health.status === 'running' && typeof health.uptime !== 'number') {
+      statusLabel += ` | Up ${health.uptime.formatted} | ${health.requests} reqs`;
+      if (health.sessions > 0) {
+        statusLabel += ` | ${health.sessions} sessions`;
+      }
+    }
+
+    mcpItems.push({
+      label: statusLabel,
+      enabled: false,
+    });
+
+    if (mcpScripts.length > 0) {
       mcpItems.push({
         type: 'separator' as const,
       });
-      
-      // Dynamic import to prevent early initialization issues
-      const { mcpService } = await import('./mcp-service');
-      const mcpScripts = await mcpService.getMCPScripts();
-      
-      // Get health status
-      const { getMcpHealth } = await import('./mcp-http-server');
-      const health = getMcpHealth();
-      
-      let statusLabel = `${mcpScripts.length} MCP scripts`;
-      if (health.status === 'running' && typeof health.uptime !== 'number') {
-        statusLabel += ` | Up ${health.uptime.formatted} | ${health.requests} reqs`;
-        if (health.sessions > 0) {
-          statusLabel += ` | ${health.sessions} sessions`;
-        }
-      }
-      
-      mcpItems.push({
-        label: statusLabel,
-        enabled: false,
-      });
-      
-      if (mcpScripts.length > 0) {
+
+      // Show first 10 MCP scripts
+      const scriptsToShow = mcpScripts.slice(0, 10);
+      for (const script of scriptsToShow) {
         mcpItems.push({
-          type: 'separator' as const,
+          label: script.name,
+          submenu: [
+            {
+              label: script.description || 'No description',
+              enabled: false,
+            },
+            {
+              label: `Path: ${script.filePath}`,
+              enabled: false,
+            },
+            {
+              label: `Args: ${script.args.length}`,
+              enabled: false,
+            },
+          ],
         });
-        
-        // Show first 10 MCP scripts
-        const scriptsToShow = mcpScripts.slice(0, 10);
-        for (const script of scriptsToShow) {
-          mcpItems.push({
-            label: script.name,
-            submenu: [
-              {
-                label: script.description || 'No description',
-                enabled: false,
-              },
-              {
-                label: `Path: ${script.filePath}`,
-                enabled: false,
-              },
-              {
-                label: `Args: ${script.args.length}`,
-                enabled: false,
-              },
-            ],
-          });
-        }
-        
-        if (mcpScripts.length > 10) {
-          mcpItems.push({
-            label: `... and ${mcpScripts.length - 10} more`,
-            enabled: false,
-          });
-        }
       }
-      
-      mcpItems.push({
-        type: 'separator' as const,
-      });
-      mcpItems.push({
-        label: 'Refresh MCP Scripts',
-        click: async () => {
-          mcpService.clearCache();
-          // Trigger tray rebuild
-          emitter.emit(KitEvent.TrayClick);
-        },
-      });
+
+      if (mcpScripts.length > 10) {
+        mcpItems.push({
+          label: `... and ${mcpScripts.length - 10} more`,
+          enabled: false,
+        });
+      }
+    }
+
+    mcpItems.push({
+      type: 'separator' as const,
+    });
+    mcpItems.push({
+      label: 'Refresh MCP Scripts',
+      click: async () => {
+        mcpService.clearCache();
+        // Trigger tray rebuild
+        emitter.emit(KitEvent.TrayClick);
+      },
+    });
   } catch (error) {
     log.error('Failed to load MCP scripts for tray:', error);
     mcpItems.push({
@@ -612,7 +625,7 @@ const buildMCPSubmenu = async (): Promise<MenuItemConstructorOptions[]> => {
       enabled: false,
     });
   }
-  
+
   return mcpItems;
 };
 
@@ -834,14 +847,14 @@ export const getTrayIcon = () => trayIcon('default');
 
 const runScript =
   (scriptPath: string, args: string[] = [], options = { force: false, trigger: Trigger.App, sponsorCheck: false }) =>
-  () => {
-    log.info(`🎨 Running script: ${scriptPath}`);
-    emitter.emit(KitEvent.RunPromptProcess, {
-      scriptPath,
-      args,
-      options,
-    });
-  };
+    () => {
+      log.info(`🎨 Running script: ${scriptPath}`);
+      emitter.emit(KitEvent.RunPromptProcess, {
+        scriptPath,
+        args,
+        options,
+      });
+    };
 
 const createOpenMain = () => {
   return {
