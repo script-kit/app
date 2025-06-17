@@ -6,7 +6,9 @@ The SDK is here: [https://github.com/johnlindquist/kit](https://github.com/johnl
 
 [https://scriptkit.com](https://scriptkit.com)
 
-## Getting Started
+---
+
+## Development
 
 Install pnpm:
 
