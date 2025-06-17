@@ -109,6 +109,11 @@ function createToolSchemaFromConfig(parameters: Record<string, any>, required?: 
 // -----------------------------
 let httpServer: http.Server | null = null;
 
+// Health tracking
+let mcpStartTime: Date | null = null;
+let mcpRequestCount = 0;
+let mcpErrorCount = 0;
+
 const transports: Record<string, StreamableHTTPServerTransport> = {};
 
 // Map of MCP server instances per session
@@ -293,9 +298,18 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
 // HTTP Handlers
 // -----------------------------
 async function onRequest(req: IncomingMessage, res: ServerResponse) {
+  // Track requests
+  mcpRequestCount++;
+  res.on('finish', () => {
+    if (res.statusCode >= 400) {
+      mcpErrorCount++;
+    }
+  });
+
   // Handle health check immediately without logging
   if (req.url === '/health') {
-    res.writeHead(200, { 'Content-Type': 'text/plain' }).end('ok');
+    const health = getMcpHealth();
+    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(health));
     return;
   }
   
@@ -564,6 +578,7 @@ export async function startMcpHttpServer(): Promise<void> {
 
   httpServer.listen(port, '127.0.0.1', () => {
     const totalDuration = Date.now() - startTime;
+    mcpStartTime = new Date();
     log.info(`MCP HTTP server listening on http://localhost:${port}/mcp (startup took ${totalDuration}ms)`);
     log.debug(`Environment KIT_MCP_PORT=${process.env.KIT_MCP_PORT}`);
     
@@ -600,5 +615,50 @@ export function stopMcpHttpServer() {
       log.info('MCP HTTP server stopped');
     });
     httpServer = null;
+    mcpStartTime = null;
+    mcpRequestCount = 0;
+    mcpErrorCount = 0;
   }
+}
+
+// Get MCP server health information
+export function getMcpHealth() {
+  if (!httpServer || !mcpStartTime) {
+    return {
+      status: 'stopped',
+      uptime: 0,
+      requests: 0,
+      errors: 0,
+      sessions: 0,
+      scripts: 0,
+    };
+  }
+
+  const uptimeMs = Date.now() - mcpStartTime.getTime();
+  const uptimeSeconds = Math.floor(uptimeMs / 1000);
+  const uptimeMinutes = Math.floor(uptimeSeconds / 60);
+  const uptimeHours = Math.floor(uptimeMinutes / 60);
+  
+  const activeSessions = Object.keys(mcpServers).length + Object.keys(sseTransports).length;
+
+  return {
+    status: 'running',
+    uptime: {
+      ms: uptimeMs,
+      seconds: uptimeSeconds,
+      minutes: uptimeMinutes,
+      hours: uptimeHours,
+      formatted: uptimeHours > 0 
+        ? `${uptimeHours}h ${uptimeMinutes % 60}m` 
+        : uptimeMinutes > 0 
+          ? `${uptimeMinutes}m ${uptimeSeconds % 60}s`
+          : `${uptimeSeconds}s`,
+    },
+    requests: mcpRequestCount,
+    errors: mcpErrorCount,
+    sessions: activeSessions,
+    scripts: cachedScripts?.length || 0,
+    port: getMcpPort(),
+    url: `http://localhost:${getMcpPort()}/mcp`,
+  };
 }

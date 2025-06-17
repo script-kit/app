@@ -15,6 +15,11 @@ let serverInstance: https.Server | null = null;
 let bonjour: Bonjour | null = null;
 let app: express.Application | null = null;
 
+// Server health tracking
+let serverStartTime: Date | null = null;
+let requestCount = 0;
+let errorCount = 0;
+
 // Server start function
 export const startServer = () => {
   if (serverInstance) {
@@ -40,6 +45,23 @@ export const startServer = () => {
 
   // CORS middleware - using simple cors() to avoid path-to-regexp issues
   app.use(cors());
+
+  // Request tracking middleware
+  app.use((req, res, next) => {
+    requestCount++;
+    res.on('finish', () => {
+      if (res.statusCode >= 400) {
+        errorCount++;
+      }
+    });
+    next();
+  });
+
+  // Health check endpoint
+  app.get('/health', (req, res) => {
+    const health = getServerHealth();
+    res.json(health);
+  });
 
   // MCP API Routes
   app.get('/api/mcp/scripts', async (req, res, next) => {
@@ -349,6 +371,7 @@ export const startServer = () => {
   server.listen(getServerPort(), () => {
     serverInstance = server;
     kitState.serverRunning = true;
+    serverStartTime = new Date();
     log.info(`Server listening on port ${getServerPort()}`);
 
     bonjour = new Bonjour();
@@ -392,6 +415,9 @@ export const stopServer = () => {
       serverInstance = null;
       app = null;
       kitState.serverRunning = false;
+      serverStartTime = null;
+      requestCount = 0;
+      errorCount = 0;
       if (bonjour) {
         bonjour.unpublishAll();
         bonjour.destroy();
@@ -401,4 +427,40 @@ export const stopServer = () => {
   } else {
     log.warn('Server is not running');
   }
+};
+
+// Get server health information
+export const getServerHealth = () => {
+  if (!serverInstance || !serverStartTime) {
+    return {
+      status: 'stopped',
+      uptime: 0,
+      requests: 0,
+      errors: 0,
+    };
+  }
+
+  const uptimeMs = Date.now() - serverStartTime.getTime();
+  const uptimeSeconds = Math.floor(uptimeMs / 1000);
+  const uptimeMinutes = Math.floor(uptimeSeconds / 60);
+  const uptimeHours = Math.floor(uptimeMinutes / 60);
+
+  return {
+    status: 'running',
+    uptime: {
+      ms: uptimeMs,
+      seconds: uptimeSeconds,
+      minutes: uptimeMinutes,
+      hours: uptimeHours,
+      formatted: uptimeHours > 0 
+        ? `${uptimeHours}h ${uptimeMinutes % 60}m` 
+        : uptimeMinutes > 0 
+          ? `${uptimeMinutes}m ${uptimeSeconds % 60}s`
+          : `${uptimeSeconds}s`,
+    },
+    requests: requestCount,
+    errors: errorCount,
+    port: getServerPort(),
+    url: `http://localhost:${getServerPort()}`,
+  };
 };

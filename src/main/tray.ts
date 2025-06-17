@@ -6,6 +6,7 @@ import {
   Notification,
   Tray,
   app,
+  clipboard,
   globalShortcut,
   ipcMain,
   shell,
@@ -440,40 +441,121 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
 };
 
 const buildServerSubmenu = (): MenuItemConstructorOptions[] => {
+  const items: MenuItemConstructorOptions[] = [];
+  
   if (kitState.serverRunning) {
-    return [
-      {
-        label: 'Stop Server',
-        click: async () => {
-          // Dynamic import to prevent early initialization issues
-          const { stopServer } = await import('./server');
-          stopServer();
-        },
+    // Add health status
+    import('./server').then(({ getServerHealth }) => {
+      const health = getServerHealth();
+      if (health.status === 'running' && typeof health.uptime !== 'number') {
+        // This will be displayed on next tray open
+        log.info(`Server health: ${health.uptime.formatted}, ${health.requests} requests`);
+      }
+    });
+    
+    items.push({
+      label: 'Stop Server',
+      click: async () => {
+        const { stopServer } = await import('./server');
+        stopServer();
       },
-    ];
-  }
-  return [
-    {
+    });
+    
+    items.push({
+      type: 'separator' as const,
+    });
+    
+    items.push({
+      label: `Copy URL (http://localhost:${getServerPort()})`,
+      click: () => {
+        clipboard.writeText(`http://localhost:${getServerPort()}`);
+        new Notification({
+          title: 'Script Kit Server',
+          body: `Server URL copied to clipboard`,
+        }).show();
+      },
+    });
+    
+    items.push({
+      label: 'Open in Browser',
+      click: () => {
+        shell.openExternal(`http://localhost:${getServerPort()}`);
+      },
+    });
+    
+    items.push({
+      label: 'View Health Status',
+      click: async () => {
+        const { getServerHealth } = await import('./server');
+        const health = getServerHealth();
+        shell.openExternal(`http://localhost:${getServerPort()}/health`);
+      },
+    });
+  } else {
+    items.push({
       label: 'Start Server',
       click: async () => {
-        // Dynamic import to prevent early initialization issues
         const { startServer } = await import('./server');
         startServer();
       },
-    },
-  ];
+    });
+  }
+  
+  return items;
 };
 
 const buildMCPSubmenu = async (): Promise<MenuItemConstructorOptions[]> => {
   const mcpItems: MenuItemConstructorOptions[] = [];
   
   try {
+      // Add copy URL and health items first
+      mcpItems.push({
+        label: `Copy URL (http://localhost:${getMcpPort()}/mcp)`,
+        click: () => {
+          clipboard.writeText(`http://localhost:${getMcpPort()}/mcp`);
+          new Notification({
+            title: 'Script Kit MCP Server',
+            body: `MCP URL copied to clipboard`,
+          }).show();
+        },
+      });
+      
+      mcpItems.push({
+        label: 'Open in Browser',
+        click: () => {
+          shell.openExternal(`http://localhost:${getMcpPort()}/endpoints`);
+        },
+      });
+      
+      mcpItems.push({
+        label: 'View Health Status',
+        click: async () => {
+          shell.openExternal(`http://localhost:${getMcpPort()}/health`);
+        },
+      });
+      
+      mcpItems.push({
+        type: 'separator' as const,
+      });
+      
       // Dynamic import to prevent early initialization issues
       const { mcpService } = await import('./mcp-service');
       const mcpScripts = await mcpService.getMCPScripts();
       
+      // Get health status
+      const { getMcpHealth } = await import('./mcp-http-server');
+      const health = getMcpHealth();
+      
+      let statusLabel = `${mcpScripts.length} MCP scripts`;
+      if (health.status === 'running' && typeof health.uptime !== 'number') {
+        statusLabel += ` | Up ${health.uptime.formatted} | ${health.requests} reqs`;
+        if (health.sessions > 0) {
+          statusLabel += ` | ${health.sessions} sessions`;
+        }
+      }
+      
       mcpItems.push({
-        label: `${mcpScripts.length} MCP-enabled scripts`,
+        label: statusLabel,
         enabled: false,
       });
       
@@ -683,22 +765,6 @@ export const openMenu = debounce(
         {
           label: 'MCP Server',
           submenu: await buildMCPSubmenu(),
-        },
-        // {{ Conditionally display server running status }}
-        ...(kitState.serverRunning
-          ? [
-              {
-                label: `Server running on port ${getServerPort()}`,
-                enabled: false,
-              },
-              {
-                type: 'separator' as const,
-              },
-            ]
-          : []),
-        {
-          label: `MCP server on port ${getMcpPort()}`,
-          enabled: false,
         },
         {
           type: 'separator' as const,
