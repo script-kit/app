@@ -1,5 +1,4 @@
 import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 import { getScripts } from '@johnlindquist/kit/core/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mcpService } from './mcp-service';

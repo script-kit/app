@@ -36,7 +36,7 @@ export async function extractMCPToolParameters(code: string): Promise<MCPToolPar
         // Check if this is an await expression with tool()
         if (node.type === 'AwaitExpression' && node.argument?.type === 'TSAsExpression') {
             const tsAsExpr = node.argument;
-            if (tsAsExpr.expression?.type === 'CallExpression' && 
+            if (tsAsExpr.expression?.type === 'CallExpression' &&
                 tsAsExpr.expression.callee?.name === 'tool') {
                 const configArg = tsAsExpr.expression.arguments?.[0];
                 if (configArg?.type === 'ObjectExpression') {
@@ -61,7 +61,7 @@ export async function extractMCPToolParameters(code: string): Promise<MCPToolPar
         }
 
         // Check for type assertions with tool() calls (e.g., tool({...} as MCPTool))
-        if (node.type === 'TSAsExpression' && node.expression?.type === 'CallExpression' && 
+        if (node.type === 'TSAsExpression' && node.expression?.type === 'CallExpression' &&
             node.expression.callee?.name === 'tool' && node.expression.arguments?.length > 0) {
             const configArg = node.expression.arguments[0];
             if (configArg?.type === 'ObjectExpression') {
@@ -75,7 +75,8 @@ export async function extractMCPToolParameters(code: string): Promise<MCPToolPar
         if (node.type === 'CallExpression' && node.callee?.name === 'params' && node.arguments?.length > 0) {
             const schemaArg = node.arguments[0];
             if (schemaArg?.type === 'ObjectExpression') {
-                inputSchema = extractObjectLiteral(schemaArg);
+                const extracted = extractObjectLiteral(schemaArg);
+                inputSchema = expandSimpleSchema(extracted);
                 foundParamsCall = true;
             }
         }
@@ -134,30 +135,30 @@ export async function extractMCPToolParameters(code: string): Promise<MCPToolPar
     }
 
     walk(ast, null);
-    
+
     // If we found a params() call, return the inputSchema
     if (inputSchema) {
         return { inputSchema };
     }
-    
+
     // If we found a tool() call, return the tool config
     if (toolConfig) {
         return { toolConfig };
     }
-    
+
     return params;
 }
 
 function extractObjectLiteral(node: any): any {
     if (node.type !== 'ObjectExpression') return null;
-    
+
     const obj: any = {};
-    
+
     for (const prop of node.properties) {
         if (prop.type !== 'Property') continue;
-        
+
         const key = prop.key.name || prop.key.value;
-        
+
         if (prop.value.type === 'Literal') {
             obj[key] = prop.value.value;
         } else if (prop.value.type === 'ObjectExpression') {
@@ -173,6 +174,53 @@ function extractObjectLiteral(node: any): any {
             obj[key] = null;
         }
     }
-    
+
     return obj;
+}
+
+// Helper: expand shorthand schema (no `properties`) into full JSON Schema
+function expandSimpleSchema(simple: Record<string, any>): any {
+    // If object already has properties key, assume full schema
+    if (simple && typeof simple === 'object' && 'properties' in simple) {
+        return simple;
+    }
+
+    const properties: Record<string, any> = {};
+    const required: string[] = [];
+
+    for (const [key, val] of Object.entries(simple)) {
+        // Skip reserved keys that would belong to full schema
+        if (key === 'type' || key === 'properties' || key === 'required') continue;
+
+        let propSchema: any;
+
+        if (typeof val === 'string') {
+            propSchema = { type: 'string', description: val };
+            required.push(key);
+        } else if (typeof val === 'number') {
+            propSchema = { type: 'number', description: String(val), default: val };
+            required.push(key);
+        } else if (typeof val === 'boolean') {
+            propSchema = { type: 'boolean', description: '', default: val };
+            required.push(key);
+        } else if (Array.isArray(val)) {
+            propSchema = { type: 'array', description: '', default: val };
+            required.push(key);
+        } else if (typeof val === 'object' && val !== null) {
+            propSchema = val; // assume detailed schema
+            required.push(key);
+        } else {
+            propSchema = { type: 'string' };
+            required.push(key);
+        }
+
+        properties[key] = propSchema;
+    }
+
+    const fullSchema: any = { type: 'object' };
+    if (Object.keys(properties).length > 0) {
+        fullSchema.properties = properties;
+    }
+    if (required.length) fullSchema.required = required;
+    return fullSchema;
 }

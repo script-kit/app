@@ -41,7 +41,7 @@ const result = await params({
 `;
 
             const result = await extractMCPToolParameters(code);
-            
+
             expect(result).toHaveProperty('inputSchema');
             expect((result as any).inputSchema).toMatchObject({
                 type: 'object',
@@ -90,7 +90,7 @@ const result = await params<MyParams>({
 `;
 
             const result = await extractMCPToolParameters(code);
-            
+
             expect(result).toHaveProperty('inputSchema');
             expect((result as any).inputSchema).toMatchObject({
                 type: 'object',
@@ -106,6 +106,32 @@ const result = await params<MyParams>({
                         default: 100,
                     },
                 },
+            });
+        });
+    });
+
+    describe('simple schema extraction', () => {
+        it('should extract and expand simple params schema', async () => {
+            const code = `
+import "@johnlindquist/kit"
+
+const result = await params({
+    name: "Your full name",
+    age: 21,
+    agree: true
+})
+`;
+            const result = await extractMCPToolParameters(code);
+            expect(result).toHaveProperty('inputSchema');
+            const { inputSchema } = result as any;
+            expect(inputSchema).toMatchObject({
+                type: 'object',
+                properties: {
+                    name: { type: 'string', description: 'Your full name' },
+                    age: { type: 'number', description: '21', default: 21 },
+                    agree: { type: 'boolean', description: '', default: true },
+                },
+                required: ['name', 'age', 'agree']
             });
         });
     });
