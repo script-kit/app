@@ -1,9 +1,9 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { readFile } from 'node:fs/promises';
-import { getScripts } from '@johnlindquist/kit/core/db';
 import type { Script } from '@johnlindquist/kit/types/core';
 import { extractMCPToolParameters, type MCPToolParameter } from './mcp-parameter-extractor';
 import { mcpLog as log } from './logs';
+import { kitState } from './state';
 
 export interface MCPScript {
   name: string;
@@ -38,7 +38,7 @@ class MCPService {
       log.info('[getMCPScripts] fetching scripts from kit db…');
       // Get all scripts
       const dbStart = Date.now();
-      const allScripts = await getScripts(false);
+      const allScripts = Array.from(kitState.scripts.values());
       const dbDuration = Date.now() - dbStart;
       log.info(`[getMCPScripts] loaded ${allScripts.length} total scripts from db in ${dbDuration}ms`);
 

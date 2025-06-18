@@ -301,7 +301,7 @@ function findEntryScripts(
   return entries;
 }
 
-const madgeAllScripts = debounce(async () => {
+const madgeAllScripts = debounce(async (originalFilePath?: string) => {
   const kenvs = await readdir(kenvPath('kenvs'), {
     withFileTypes: true,
   });
@@ -314,8 +314,12 @@ const madgeAllScripts = debounce(async () => {
   log.info(`🔍 ${allScriptPaths.length} scripts found`);
 
   // Mark all scripts as being processed - using normalized paths
+  // EXCEPT the original file that triggered this scan
   for (const scriptPath of allScriptPaths) {
-    markFileAsProcessed(scriptPath);
+    // Don't mark the original file that triggered this scan
+    if (!originalFilePath || normalizePath(scriptPath) !== normalizePath(originalFilePath)) {
+      markFileAsProcessed(scriptPath);
+    }
   }
 
   const fileMadge = await madge(allScriptPaths, {
@@ -518,7 +522,8 @@ export const onScriptChanged = async (
   }
 
   // Re-run any dependency checks across scripts
-  madgeAllScripts();
+  // Pass the original file path so it won't be marked as processed
+  madgeAllScripts(script.filePath);
 
   log.info(`👀 ${event} ${script.filePath}`);
 
