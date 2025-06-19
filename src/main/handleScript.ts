@@ -11,6 +11,29 @@ import { getApiKey } from './server/server-utils';
 export const UNDEFINED_VALUE = '__undefined__';
 
 /**
+ * Determines the launch context based on headers and flags
+ */
+function determineLaunchContext(headers: Record<string, string>, mcpResponse: boolean): string {
+  // Check for MCP context
+  if (mcpResponse || headers['X-MCP-Tool'] || headers['X-MCP-Resource'] || headers['X-MCP-Prompt'] || headers['X-MCP-Parameters']) {
+    return 'mcp';
+  }
+  
+  // Check for socket context
+  if (headers['X-Kit-Socket']) {
+    return 'socket';
+  }
+  
+  // Check for HTTP server context
+  if (headers['X-Kit-Server'] || headers['kit-api-key']) {
+    return 'http';
+  }
+  
+  // Default to direct call
+  return 'direct';
+}
+
+/**
  * Handles the execution of a script based on the provided parameters.
  * @param script - The script to execute.
  * @param args - Arguments for the script.
@@ -67,10 +90,21 @@ export async function handleScript(
     spawnShebang({ command: shebang, args, shell: true, cwd, filePath: scriptPath });
     return { status: 200, data: `🚗💨 ~/.kit/kar ${script} ${args.join(' ')}` };
   }
+  // Determine the launch context for the script
+  const launchContext = determineLaunchContext(headers, mcpResponse);
+  
   const processInfo = await runPromptProcess(
     scriptPath,
     args.map((s: string) => s.replaceAll('$newline$', '\n')).filter(Boolean),
-    { force: true, trigger: Trigger.Kar, sponsorCheck: false, headers: headers || {} },
+    { 
+      force: true, 
+      trigger: Trigger.Kar, 
+      sponsorCheck: false, 
+      headers: {
+        ...headers,
+        'X-Kit-Launch-Context': launchContext
+      }
+    },
   );
 
   // If mcpResponse is true OR response metadata is set, wait for the response

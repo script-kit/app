@@ -22,7 +22,7 @@ export const startSK = () => {
         const { script = '', args = [], cwd, mcpResponse } = JSON.parse(json);
 
         try {
-          const result = await handleScript(script, args, cwd, false, '', {}, mcpResponse);
+          const result = await handleScript(script, args, cwd, false, '', { 'X-Kit-Socket': 'true' }, mcpResponse);
 
           // Check if this is an MCP response request
           if (mcpResponse && result.data) {

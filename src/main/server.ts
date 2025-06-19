@@ -151,7 +151,7 @@ export const startServer = () => {
       log.info({ script: bodyScript, args, cwd });
 
       try {
-        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers, mcpResponse);
+        const result = await handleScript(bodyScript, args, cwd, true, apiKey, { ...headers, 'X-Kit-Server': 'true' }, mcpResponse);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else if (typeof result.data === 'object') {
@@ -169,7 +169,7 @@ export const startServer = () => {
       log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
 
       try {
-        const result = await handleScript(script, args, cwd, true, apiKey, {}, false);
+        const result = await handleScript(script, args, cwd, true, apiKey, { 'X-Kit-Server': 'true' }, false);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else {
@@ -203,7 +203,7 @@ export const startServer = () => {
       log.info({ script: bodyScript, args, cwd });
 
       try {
-        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers, mcpResponse);
+        const result = await handleScript(bodyScript, args, cwd, true, apiKey, { ...headers, 'X-Kit-Server': 'true' }, mcpResponse);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else if (typeof result.data === 'object') {
@@ -221,7 +221,7 @@ export const startServer = () => {
       log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
 
       try {
-        const result = await handleScript(script, args, cwd, true, apiKey, {}, false);
+        const result = await handleScript(script, args, cwd, true, apiKey, { 'X-Kit-Server': 'true' }, false);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else {
@@ -255,7 +255,7 @@ export const startServer = () => {
       log.info({ script: bodyScript, args, cwd });
 
       try {
-        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers, mcpResponse);
+        const result = await handleScript(bodyScript, args, cwd, true, apiKey, { ...headers, 'X-Kit-Server': 'true' }, mcpResponse);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else if (typeof result.data === 'object') {
@@ -273,7 +273,7 @@ export const startServer = () => {
       log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
 
       try {
-        const result = await handleScript(script, args, cwd, true, apiKey, {}, false);
+        const result = await handleScript(script, args, cwd, true, apiKey, { 'X-Kit-Server': 'true' }, false);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else {
@@ -307,7 +307,7 @@ export const startServer = () => {
       log.info({ script: bodyScript, args, cwd });
 
       try {
-        const result = await handleScript(bodyScript, args, cwd, true, apiKey, headers, mcpResponse);
+        const result = await handleScript(bodyScript, args, cwd, true, apiKey, { ...headers, 'X-Kit-Server': 'true' }, mcpResponse);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else if (typeof result.data === 'object') {
@@ -325,7 +325,7 @@ export const startServer = () => {
       log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
 
       try {
-        const result = await handleScript(script, args, cwd, true, apiKey, {}, false);
+        const result = await handleScript(script, args, cwd, true, apiKey, { 'X-Kit-Server': 'true' }, false);
         if (typeof result.data === 'string') {
           res.send(result.data);
         } else {
