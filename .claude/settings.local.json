@@ -13,7 +13,11 @@
       "Bash(jq:*)",
       "Bash(find:*)",
       "WebFetch(domain:github.com)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(repomix:*)",
+      "Bash(ls:*)",
+      "Bash(chmod:*)",
+      "Bash(./run-repomix.sh)"
     ],
     "deny": []
   }

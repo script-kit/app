@@ -56,7 +56,7 @@ export const addToClipboardHistory = async (clipboardItem: ClipboardItem) => {
   clipboardHistory.unshift(clipboardItem);
   const maxHistory = kitState?.kenvEnv?.KIT_CLIPBOARD_HISTORY_LIMIT
     ? Number.parseInt(kitState?.kenvEnv?.KIT_CLIPBOARD_HISTORY_LIMIT, 10)
-    : 128;
+    : 256;
 
   if (clipboardHistory.length > maxHistory) {
     clipboardHistory.pop();

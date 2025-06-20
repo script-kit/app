@@ -1099,7 +1099,23 @@ export const cacheMainMenu = async ({
     if (scriptFlags) {
       kitCache.scriptFlags = scriptFlags;
     }
-    // Broadcast updated main menu cache: scored choices, shortcuts, flags, and preview
+    // Broadcast updated main menu cache: atomic state update
+    const timestamp = Date.now();
+    const atomicState = {
+      choices: kitCache.choices,
+      shortcuts: kitCache.shortcuts,
+      scriptFlags: kitCache.scriptFlags,
+      preview: kitCache.preview,
+      timestamp
+    };
+    
+    // Log the atomic update
+    log.info(`[SCRIPTS RENDER] Sending atomic state update to all prompts at ${timestamp}`);
+    
+    // Send as single atomic update
+    sendToAllPrompts(AppChannel.SET_CACHED_MAIN_STATE, atomicState);
+    
+    // Keep legacy channels for backward compatibility (can be removed later)
     sendToAllPrompts(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, kitCache.choices);
     sendToAllPrompts(AppChannel.SET_CACHED_MAIN_SHORTCUTS, kitCache.shortcuts);
     sendToAllPrompts(AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS, kitCache.scriptFlags);
@@ -1290,7 +1306,7 @@ function ensureWorker(
 function createMessageHandler(uuid: string, handleResolve: () => void, handleReject: (error: any) => void) {
   return (message: any) => {
     try {
-      scriptLog.info('Worker message:', message.channel);
+      scriptLog.info(`[SCRIPTS RENDER] Worker message received: ${message.channel} with ID: ${message.id}`);
 
       if (message.channel === 'LOG_TO_PARENT') {
         // Just log to the parent's logger if needed
@@ -1358,7 +1374,7 @@ export const cacheMainScripts: CacheMainScripts = async (
       value: null,
     },
 ): Promise<boolean> => {
-  log.info(`🎁 cacheMainScripts: ${reason}`);
+  log.info(`[SCRIPTS RENDER] cacheMainScripts called: ${reason}`);
   return new Promise<boolean>((resolve, reject) => {
     // Ensure we have a pendingResolvers array ready
     if (!cacheMainScripts.pendingResolvers) {
@@ -1369,7 +1385,7 @@ export const cacheMainScripts: CacheMainScripts = async (
     cacheMainScripts.pendingResolvers.push({ resolve, reject });
 
     const uuid = crypto.randomUUID();
-    log.info(`🏆 ${uuid} Caching main scripts: ${reason}`);
+    log.info(`[SCRIPTS RENDER] ${uuid} Starting cache operation: ${reason}`);
     // We'll only stamp if the channel is for caching main scripts
     let stamp: Stamp | null = null;
     if (channel === Channel.CACHE_MAIN_SCRIPTS) {

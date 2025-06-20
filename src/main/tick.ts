@@ -357,8 +357,8 @@ export const startClipboardMonitor = async () => {
         try {
           const txt = clipboard.readText();
           const txtLen = txt.length;
-          if (txtLen > 1280) {
-            log.info('Ignoring clipboard value > 1280 characters');
+          if (txtLen > (kitState?.kenvEnv?.KIT_CLIPBOARD_MAX_LENGTH || 12800)) {
+            log.info('Ignoring clipboard value > 12800 characters. Increase KIT_CLIPBOARD_MAX_LENGTH to allow larger values.');
             return;
           }
           const ignoreRegex = kitState?.kenvEnv?.KIT_CLIPBOARD_IGNORE_REGEX;
@@ -377,8 +377,8 @@ export const startClipboardMonitor = async () => {
 
         maybeSecret = Boolean(
           (!value.match(/\n/g) && value.match(maybeSecretRegex)) ||
-            (kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX &&
-              value.match(new RegExp(kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX))),
+          (kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX &&
+            value.match(new RegExp(kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX))),
         );
       }
 

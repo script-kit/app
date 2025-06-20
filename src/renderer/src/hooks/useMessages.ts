@@ -522,7 +522,29 @@ export default () => {
       ipcRenderer.on(AppChannel.FORCE_RENDER, handleForceRender);
     }
 
+    const handleSetCachedMainState = (_, data: {
+      choices: any[];
+      shortcuts: any[];
+      scriptFlags: any;
+      preview: string;
+      timestamp: number;
+    }) => {
+      log.info(`[SCRIPTS RENDER] Renderer ${window.pid} received atomic state update at ${data.timestamp}`);
+      // Update all state atomically
+      setCachedMainScoredChoices(data.choices);
+      setCachedMainShortcuts(data.shortcuts);
+      setCachedMainFlags(data.scriptFlags);
+      setCachedMainPreview(data.preview);
+      log.info(`[SCRIPTS RENDER] Renderer ${window.pid} completed atomic state update`);
+    };
+
+    if (ipcRenderer.listenerCount(AppChannel.SET_CACHED_MAIN_STATE) === 0) {
+      ipcRenderer.on(AppChannel.SET_CACHED_MAIN_STATE, handleSetCachedMainState);
+    }
+
+    // Keep legacy handlers for backward compatibility
     const handleSetCachedMainScoredChoices = (_, data) => {
+      log.info(`[SCRIPTS RENDER] Renderer ${window.pid} received legacy SET_CACHED_MAIN_SCORED_CHOICES`);
       setCachedMainScoredChoices(data);
     };
 
@@ -531,6 +553,7 @@ export default () => {
     }
 
     const handleSetCachedMainShortcuts = (_, data) => {
+      log.info(`[SCRIPTS RENDER] Renderer ${window.pid} received legacy SET_CACHED_MAIN_SHORTCUTS`);
       setCachedMainShortcuts(data);
     };
 
@@ -539,6 +562,7 @@ export default () => {
     }
 
     const handleSetCachedMainPreview = (_, data) => {
+      log.info(`[SCRIPTS RENDER] Renderer ${window.pid} received legacy SET_CACHED_MAIN_PREVIEW`);
       setCachedMainPreview(data);
     };
 
@@ -547,6 +571,7 @@ export default () => {
     }
 
     const handleSetCachedMainFlags = (_, data) => {
+      log.info(`[SCRIPTS RENDER] Renderer ${window.pid} received legacy SET_CACHED_MAIN_SCRIPT_FLAGS`);
       setCachedMainFlags(data);
     };
 
@@ -653,6 +678,7 @@ export default () => {
       ipcRenderer.off(AppChannel.SCROLL_TO_INDEX, handleScrollToIndex);
       ipcRenderer.off(AppChannel.SET_PRELOADED, handleSetPreloaded);
       ipcRenderer.off(AppChannel.TRIGGER_KEYWORD, handleTriggerKeyword);
+      ipcRenderer.off(AppChannel.SET_CACHED_MAIN_STATE, handleSetCachedMainState);
       ipcRenderer.off(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, handleSetCachedMainScoredChoices);
       ipcRenderer.off(AppChannel.SET_CACHED_MAIN_SHORTCUTS, handleSetCachedMainShortcuts);
       ipcRenderer.off(AppChannel.SET_CACHED_MAIN_PREVIEW, handleSetCachedMainPreview);

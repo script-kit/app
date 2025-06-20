@@ -3189,8 +3189,9 @@ export const initPromptAtom = atom(null, (g, s) => {
     `${window.pid}: scoredChoices`,
     scoredChoices.slice(0, 2).map((c) => c.item.name),
   );
+  
+  // Set all cached values atomically to prevent flicker
   s(scoredChoicesAtom, scoredChoices);
-
   s(previewHTMLAtom, g(cachedMainPreviewAtom));
   s(shortcutsAtom, g(cachedMainShortcutsAtom));
   s(flagsAtom, g(cachedMainFlagsAtom));

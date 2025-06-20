@@ -28,6 +28,15 @@ export const sendToAllPrompts = <K extends keyof ChannelMap>(channel: K | AppCha
   // log.info(`sendToAllPrompts: ${String(channel)}`, data);
   // log.info(`>_ ${channel}`);
 
+  // Log [SCRIPTS RENDER] events
+  if (channel === AppChannel.SET_CACHED_MAIN_STATE || 
+      channel === AppChannel.SET_CACHED_MAIN_SCORED_CHOICES ||
+      channel === AppChannel.SET_CACHED_MAIN_SHORTCUTS ||
+      channel === AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS ||
+      channel === AppChannel.SET_CACHED_MAIN_PREVIEW) {
+    log.info(`[SCRIPTS RENDER] Broadcasting ${String(channel)} to ${prompts.length} prompts`);
+  }
+
   for (const prompt of prompts) {
     if (prompt && !prompt.isDestroyed() && prompt?.window?.webContents) {
       const ignoreChannelsWhenOpen =
@@ -37,6 +46,14 @@ export const sendToAllPrompts = <K extends keyof ChannelMap>(channel: K | AppCha
         continue;
       }
       if (channel) {
+        // Log [SCRIPTS RENDER] per prompt
+        if (channel === AppChannel.SET_CACHED_MAIN_STATE || 
+            channel === AppChannel.SET_CACHED_MAIN_SCORED_CHOICES ||
+            channel === AppChannel.SET_CACHED_MAIN_SHORTCUTS ||
+            channel === AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS ||
+            channel === AppChannel.SET_CACHED_MAIN_PREVIEW) {
+          log.info(`[SCRIPTS RENDER] Sending ${String(channel)} to prompt ${prompt.pid}:${prompt.id}`);
+        }
         // log.info(`${prompt.pid}: ${prompt.id}: ALL -> ${channel}`);
         prompt.sendToPrompt(channel, data);
       } else {

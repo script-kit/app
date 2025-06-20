@@ -1334,6 +1334,15 @@ export class KitPrompt {
     this.sendToPrompt = (channel: Channel | AppChannel, data) => {
       log.silly(`sendToPrompt: ${String(channel)}`, data);
 
+      // Log [SCRIPTS RENDER] events
+      if (channel === AppChannel.SET_CACHED_MAIN_STATE || 
+          channel === AppChannel.SET_CACHED_MAIN_SCORED_CHOICES ||
+          channel === AppChannel.SET_CACHED_MAIN_SHORTCUTS ||
+          channel === AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS ||
+          channel === AppChannel.SET_CACHED_MAIN_PREVIEW) {
+        this.logInfo(`[SCRIPTS RENDER] Prompt ${this.pid}:${this.id} sending ${String(channel)} to renderer`);
+      }
+
       // Special logging for TERM_CAPTURE_READY
       if (channel === AppChannel.TERM_CAPTURE_READY) {
         this.logInfo('🔍 [CAPTURE] sendToPrompt TERM_CAPTURE_READY:', {
