@@ -202,6 +202,23 @@ export const createScoredChoice = (item: Choice): ScoredChoice => {
   };
 };
 
+export function createAsTypedChoice(rawInput: string, originalChoice?: Choice): Choice {
+  return {
+    id: `typed-${rawInput}-${Date.now()}`,
+    name: originalChoice?.name || '{input}',
+    keyword: '',      // we don't compete on keyword
+    value: originalChoice?.value !== undefined ? originalChoice.value : rawInput,  // Use original value if provided
+    group: originalChoice?.group || 'As Typed',
+    asTyped: true,
+    pass: false,
+    skip: false,
+    info: false,
+    miss: false,
+    enter: originalChoice?.enter,
+    description: originalChoice?.description,
+  };
+}
+
 export const isLocalPath = (input: string) => {
   try {
     const parsedUrl = new URL(input);

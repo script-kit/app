@@ -13,7 +13,7 @@ import { debounce } from 'lodash-es';
 import { QuickScore, createConfig } from 'quick-score';
 import { AppChannel } from '../shared/enums';
 import type { ScoredChoice } from '../shared/types';
-import { createScoredChoice } from './helpers';
+import { createScoredChoice, createAsTypedChoice } from './helpers';
 import { searchLog as log } from './logs';
 import { cacheChoices } from './messages';
 import type { KitPrompt } from './prompt';
@@ -74,6 +74,35 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
   prompt.flagSearch.input = '';
   // log.info({ transformedInput });
   const lowerCaseInput = transformedInput?.toLowerCase();
+
+  // -------------------------------------------------------------
+  //  OPTIONAL "AS TYPED" CANDIDATE
+  //  Show only when we already have some results but none of them
+  //  matches the input EXACTLY on any key we care about.
+  //  AND only when there's an asTyped choice in the choices array.
+  // -------------------------------------------------------------
+  const generateAsTyped = (searchResult: ScoredChoice[] | undefined) => {
+    if (!transformedInput || transformedInput === '') return null;
+
+    // Check if there's an asTyped choice in the original choices
+    const asTypedChoice = prompt.kitSearch.choices.find(choice => choice?.asTyped === true);
+    if (!asTypedChoice) return null;
+
+    // If no search results, show the "As Typed" option
+    if (!searchResult || searchResult.length === 0) {
+      return createScoredChoice(createAsTypedChoice(transformedInput, asTypedChoice));
+    }
+
+    const hasExact = searchResult.some(r => {
+      const { name = '', keyword = '' } = r.item;
+      return (
+        name.toLowerCase() === lowerCaseInput ||
+        keyword.toLowerCase() === lowerCaseInput
+      );
+    });
+
+    return hasExact ? null : createScoredChoice(createAsTypedChoice(transformedInput, asTypedChoice));
+  };
 
   if (transformedInput === '') {
     const results: ScoredChoice[] = [];
@@ -355,7 +384,11 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
 
     groupedResults.unshift(...infoGroup);
 
-    setScoredChoices(prompt, groupedResults, 'prompt.kitSearch.hasGroup');
+    {
+      const asTypedSc = generateAsTyped(result);
+      if (asTypedSc) groupedResults.push(asTypedSc);
+      setScoredChoices(prompt, groupedResults, 'prompt.kitSearch.hasGroup');
+    }
   } else if (resultLength === 0) {
     const filteredResults: ScoredChoice[] = [];
     let hasChoice = false;
@@ -396,7 +429,11 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
 
     const scoredChoices = filterAndSortOtherChoices(filteredResults, transformedInput, lowerCaseInput, hasChoice);
 
-    setScoredChoices(prompt, scoredChoices, 'resultLength === 0');
+    {
+      const asTypedSc = generateAsTyped(filteredResults);
+      if (asTypedSc) scoredChoices.push(asTypedSc);
+      setScoredChoices(prompt, scoredChoices, 'resultLength === 0');
+    }
   } else {
     const allMisses = result.every((r) => r?.item?.miss && r?.item?.info);
     if (allMisses) {
@@ -425,7 +462,11 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
 
       const scoredChoices = filterAndSortOtherChoices(filteredResults, transformedInput, lowerCaseInput, hasChoice);
 
-      setScoredChoices(prompt, scoredChoices, 'resultLength > 0');
+      {
+        const asTypedSc = generateAsTyped(result);
+        if (asTypedSc) scoredChoices.push(asTypedSc);
+        setScoredChoices(prompt, scoredChoices, 'resultLength > 0');
+      }
     }
   }
 };

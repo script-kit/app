@@ -153,7 +153,7 @@ function createLogInstance(logId: string): {
   const fileTransport = logInstance.transports.file as FileTransport;
   fileTransport.resolvePathFn = () => logPath;
   fileTransport.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}';
-  
+
   logInstance.info("🟢 Script Kit Starting Up...");
   logInstance.info(`${logId} log path: ${logPath}`);
 
@@ -196,7 +196,8 @@ const logTypes = [
   "term",
   "metadataWatcher",
   "messages",
-  "mcp"
+  "mcp",
+  "io"
 ] as const;
 
 type LogType = (typeof logTypes)[number];
@@ -295,6 +296,8 @@ export const {
   messagesLogPath,
   mcpLog,
   mcpLogPath,
+  ioLog,
+  ioLogPath,
   ...rest
 } = logExports;
 

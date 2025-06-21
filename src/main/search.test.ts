@@ -962,5 +962,249 @@ describe('Search Functionality', () => {
         ]),
       );
     });
+
+    describe('asTyped functionality', () => {
+      it('should not show "As Typed" option when no asTyped choice exists', () => {
+        const choices = [
+          { id: '1', name: 'Git', value: 'git' },
+          { id: '2', name: 'Node', value: 'node' },
+        ];
+
+        mockPrompt.kitSearch.choices = choices;
+        mockPrompt.kitSearch.hasGroup = false;
+        mockPrompt.kitSearch.qs = {
+          search: vi.fn(() => [
+            { item: choices[0], score: 0.7, matches: { name: [[0, 2]] }, _: '' },
+          ]),
+        };
+
+        invokeSearch(mockPrompt, 'gi');
+
+        expect(mockSendToPrompt).toHaveBeenCalledWith(
+          Channel.SET_SCORED_CHOICES,
+          expect.not.arrayContaining([
+            expect.objectContaining({
+              item: expect.objectContaining({ group: 'As Typed' }),
+            }),
+          ]),
+        );
+      });
+
+      it('should not show "As Typed" option when input is empty', () => {
+        const choices = [
+          { id: '1', name: 'Git', value: 'git' },
+          { id: '2', name: 'Create {input}', asTyped: true },
+        ];
+
+        mockPrompt.kitSearch.choices = choices;
+        mockPrompt.kitSearch.hasGroup = false;
+
+        invokeSearch(mockPrompt, '');
+
+        expect(mockSendToPrompt).toHaveBeenCalledWith(
+          Channel.SET_SCORED_CHOICES,
+          expect.not.arrayContaining([
+            expect.objectContaining({
+              item: expect.objectContaining({ group: 'As Typed' }),
+            }),
+          ]),
+        );
+      });
+
+      it('should show "As Typed" option when asTyped choice exists and no exact match', () => {
+        const choices = [
+          { id: '1', name: 'Git', value: 'git' },
+          { id: '2', name: 'Create {input}', asTyped: true },
+        ];
+
+        mockPrompt.kitSearch.choices = choices;
+        mockPrompt.kitSearch.hasGroup = false;
+        mockPrompt.kitSearch.qs = {
+          search: vi.fn(() => [
+            { item: choices[0], score: 0.7, matches: { name: [[0, 2]] }, _: '' },
+          ]),
+        };
+
+        invokeSearch(mockPrompt, 'git foo');
+
+        expect(mockSendToPrompt).toHaveBeenCalledWith(
+          Channel.SET_SCORED_CHOICES,
+          expect.arrayContaining([
+            expect.objectContaining({
+              item: expect.objectContaining({
+                group: 'As Typed',
+                asTyped: true,
+                name: '{input}',
+                value: 'git foo',
+              }),
+            }),
+          ]),
+        );
+      });
+
+      it('should not show "As Typed" option when exact match exists on name', () => {
+        const choices = [
+          { id: '1', name: 'git', value: 'git' },
+          { id: '2', name: 'Create {input}', asTyped: true },
+        ];
+
+        mockPrompt.kitSearch.choices = choices;
+        mockPrompt.kitSearch.hasGroup = false;
+        mockPrompt.kitSearch.qs = {
+          search: vi.fn(() => [
+            { item: choices[0], score: 1.0, matches: { name: [[0, 3]] }, _: '' },
+          ]),
+        };
+
+        invokeSearch(mockPrompt, 'git');
+
+        expect(mockSendToPrompt).toHaveBeenCalledWith(
+          Channel.SET_SCORED_CHOICES,
+          expect.not.arrayContaining([
+            expect.objectContaining({
+              item: expect.objectContaining({ group: 'As Typed' }),
+            }),
+          ]),
+        );
+      });
+
+      it('should not show "As Typed" option when exact match exists on keyword', () => {
+        const choices = [
+          { id: '1', name: 'GitHub CLI', keyword: 'git', value: 'gh' },
+          { id: '2', name: 'Create {input}', asTyped: true },
+        ];
+
+        mockPrompt.kitSearch.choices = choices;
+        mockPrompt.kitSearch.hasGroup = false;
+        mockPrompt.kitSearch.qs = {
+          search: vi.fn(() => [
+            { item: choices[0], score: 1.0, matches: { keyword: [[0, 3]] }, _: '' },
+          ]),
+        };
+
+        invokeSearch(mockPrompt, 'git');
+
+        expect(mockSendToPrompt).toHaveBeenCalledWith(
+          Channel.SET_SCORED_CHOICES,
+          expect.not.arrayContaining([
+            expect.objectContaining({
+              item: expect.objectContaining({ group: 'As Typed' }),
+            }),
+          ]),
+        );
+      });
+
+      it('should preserve value in "As Typed" option', () => {
+        const choices = [
+          { id: '1', name: 'Git', value: 'git' },
+          { id: '2', name: 'Select {input} as path', asTyped: true },
+        ];
+
+        mockPrompt.kitSearch.choices = choices;
+        mockPrompt.kitSearch.hasGroup = false;
+        mockPrompt.kitSearch.qs = {
+          search: vi.fn(() => [
+            { item: choices[0], score: 0.5, matches: { name: [[0, 1]] }, _: '' },
+          ]),
+        };
+
+        invokeSearch(mockPrompt, '/Users/john/Documents');
+
+        expect(mockSendToPrompt).toHaveBeenCalledWith(
+          Channel.SET_SCORED_CHOICES,
+          expect.arrayContaining([
+            expect.objectContaining({
+              item: expect.objectContaining({
+                value: '/Users/john/Documents',
+                name: '{input}',
+              }),
+            }),
+          ]),
+        );
+      });
+
+      it('should handle multiple asTyped choices', () => {
+        const choices = [
+          { id: '1', name: 'Git', value: 'git' },
+          { id: '2', name: 'Create file: {input}', asTyped: true },
+          { id: '3', name: 'Create folder: {input}', asTyped: true },
+        ];
+
+        mockPrompt.kitSearch.choices = choices;
+        mockPrompt.kitSearch.hasGroup = false;
+        mockPrompt.kitSearch.qs = {
+          search: vi.fn(() => []),
+        };
+
+        invokeSearch(mockPrompt, 'newproject');
+
+        // Should only show one "As Typed" option, not multiple
+        const calls = mockSendToPrompt.mock.calls;
+        const setScoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+        const scoredChoices = setScoredChoicesCall?.[1] || [];
+        const asTypedChoices = scoredChoices.filter((sc: ScoredChoice) => sc.item.asTyped === true);
+        
+        expect(asTypedChoices).toHaveLength(1);
+        expect(asTypedChoices[0].item.value).toBe('newproject');
+      });
+
+      it('should work with grouped search results', () => {
+        const choices = [
+          { id: '1', name: 'Git', value: 'git', group: 'Version Control' },
+          { id: '2', name: 'Node', value: 'node', group: 'Runtime' },
+          { id: '3', name: 'Create {input}', asTyped: true },
+        ];
+
+        mockPrompt.kitSearch.choices = choices;
+        mockPrompt.kitSearch.hasGroup = true;
+        mockPrompt.kitSearch.qs = {
+          search: vi.fn(() => [
+            { item: choices[0], score: 0.7, matches: { name: [[0, 2]] }, _: '' },
+          ]),
+        };
+
+        invokeSearch(mockPrompt, 'git new-feature');
+
+        expect(mockSendToPrompt).toHaveBeenCalledWith(
+          Channel.SET_SCORED_CHOICES,
+          expect.arrayContaining([
+            expect.objectContaining({
+              item: expect.objectContaining({
+                group: 'As Typed',
+                asTyped: true,
+                value: 'git new-feature',
+              }),
+            }),
+          ]),
+        );
+      });
+
+      it('should handle case-insensitive exact matching', () => {
+        const choices = [
+          { id: '1', name: 'GIT', value: 'git' },
+          { id: '2', name: 'Create {input}', asTyped: true },
+        ];
+
+        mockPrompt.kitSearch.choices = choices;
+        mockPrompt.kitSearch.hasGroup = false;
+        mockPrompt.kitSearch.qs = {
+          search: vi.fn(() => [
+            { item: choices[0], score: 1.0, matches: { name: [[0, 3]] }, _: '' },
+          ]),
+        };
+
+        invokeSearch(mockPrompt, 'git');
+
+        // Should not show "As Typed" because "git" matches "GIT" case-insensitively
+        expect(mockSendToPrompt).toHaveBeenCalledWith(
+          Channel.SET_SCORED_CHOICES,
+          expect.not.arrayContaining([
+            expect.objectContaining({
+              item: expect.objectContaining({ group: 'As Typed' }),
+            }),
+          ]),
+        );
+      });
+    });
   });
 });
