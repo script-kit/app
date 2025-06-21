@@ -36,6 +36,7 @@ export enum KitEvent {
   CloseSplash = 'SplashMightBeOpen',
   ProcessGone = 'ProcessGone',
   SetScriptTimestamp = 'SetScriptTimestamp',
+  MCPToolChanged = 'MCPToolChanged',
 }
 
 interface KitEmitter {

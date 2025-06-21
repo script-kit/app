@@ -543,6 +543,14 @@ export const onScriptChanged = async (
   if ((event === 'add' || event === 'unlink') && !skipCacheMainMenu) {
     debounceCacheMainScripts('Script added or unlinked');
   }
+
+  // 4. Notify MCP clients if this is an MCP-enabled script
+  if (script.mcp && (event === 'change' || event === 'add' || event === 'unlink')) {
+    emitter.emit(KitEvent.MCPToolChanged, {
+      script,
+      action: event === 'unlink' ? 'removed' : event === 'add' ? 'added' : 'updated'
+    });
+  }
 };
 
 export const checkUserDb = debounce(async (eventName: string) => {

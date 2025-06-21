@@ -5,7 +5,9 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
+import { Notification } from 'electron';
 import { z } from 'zod';
+import { KitEvent, emitter } from '../shared/events';
 import { handleScript, UNDEFINED_VALUE } from './handleScript';
 import { mcpLog as log } from './logs';
 import { mcpService, type MCPScript } from './mcp-service';
@@ -170,6 +172,12 @@ async function createMcpServerForSession(forceRefresh = false): Promise<McpServe
   const server = new McpServer({
     name: 'script-kit',
     version: '1.0.0',
+  }, {
+    capabilities: {
+      tools: {
+        listChanged: true  // Enable tools/list_changed notifications
+      }
+    }
   });
 
   await registerToolsForServer(server, forceRefresh);
@@ -723,6 +731,64 @@ export async function startMcpHttpServer(): Promise<void> {
     });
     testReq.end();
   });
+
+  // Listen for tool changes and notify connected MCP clients
+  emitter.on(KitEvent.MCPToolChanged, async ({ script, action }) => {
+    log.info(`MCP tool ${action}: ${script.name}`);
+    
+    // Clear the cache to force refresh
+    mcpService.clearCache();
+    cachedScripts = null; // Clear local cache too
+    
+    // Check how many sessions we have
+    const sessionCount = Object.keys(mcpServers).length;
+    const sseCount = Object.keys(sseTransports).length;
+    log.info(`Active MCP sessions: ${sessionCount} HTTP, ${sseCount} SSE`);
+    
+    // Notify all connected MCP clients
+    const notifications = [];
+    
+    // Notify StreamableHTTP sessions
+    for (const [sessionId, server] of Object.entries(mcpServers)) {
+      if (server && typeof server.sendToolListChanged === 'function') {
+        try {
+          // McpServer.sendToolListChanged() returns void, not a Promise
+          // It internally handles errors, so we just call it
+          server.sendToolListChanged();
+          notifications.push(Promise.resolve()); // Add a resolved promise for counting
+        } catch (err) {
+          log.error(`Error calling sendToolListChanged for session ${sessionId}:`, err);
+        }
+      }
+    }
+    
+    // Also notify SSE sessions
+    for (const sessionId of Object.keys(sseTransports)) {
+      const server = mcpServers[sessionId];
+      if (server && typeof server.sendToolListChanged === 'function') {
+        try {
+          // McpServer.sendToolListChanged() returns void, not a Promise
+          // It internally handles errors, so we just call it
+          server.sendToolListChanged();
+          notifications.push(Promise.resolve()); // Add a resolved promise for counting
+        } catch (err) {
+          log.error(`Error calling sendToolListChanged for SSE session ${sessionId}:`, err);
+        }
+      }
+    }
+    
+    await Promise.all(notifications);
+    
+    // Optional: Show system notification
+    if (notifications.length > 0) {
+      new Notification({
+        title: 'Script Kit MCP',
+        body: `Tool "${script.name}" ${action} (${notifications.length} clients notified)`
+      }).show();
+    }
+    
+    log.info(`Notified ${notifications.length} MCP clients of tool change`);
+  });
 }
 
 export function stopMcpHttpServer() {
@@ -734,6 +800,9 @@ export function stopMcpHttpServer() {
     mcpStartTime = null;
     mcpRequestCount = 0;
     mcpErrorCount = 0;
+    
+    // Remove event listener
+    emitter.removeAllListeners(KitEvent.MCPToolChanged);
   }
 }
 
