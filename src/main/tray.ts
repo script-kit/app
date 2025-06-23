@@ -40,7 +40,7 @@ import { processes } from './process';
 import { prompts } from './prompts';
 // Removed top-level import to prevent early initialization issues
 // import { startServer, stopServer } from './server';
-import { getServerPort, getMcpPort } from './serverTrayUtils';
+import { getMcpPort, getServerPort } from './serverTrayUtils';
 import { forceQuit, kitState, subs } from './state';
 import { getVersion } from './version';
 
@@ -840,21 +840,52 @@ type iconType =
   | Status;
 
 const menuIcon = (name: iconType) => {
-  return getAssetPath('menu', `${name}-Template.png`);
+  // Valid icon types from iconType definition
+  const validIcons = [
+    'alarm',
+    'browse',
+    'bug',
+    'cogwheel',
+    'discord',
+    'github',
+    'help-alt',
+    'help',
+    'newsletter',
+    'open',
+    'open_in_new',
+    'twitter',
+    // Valid Status values
+    'default',
+    'success',
+    'warn',
+    'busy',
+    'error',
+    'pause',
+    'update',
+  ];
+
+  // Use 'default' as fallback for unknown icon types
+  const iconName = validIcons.includes(name) ? name : 'default';
+
+  if (iconName !== name) {
+    log.warn(`Invalid menu icon type: ${name}, falling back to: ${iconName}`);
+  }
+
+  return getAssetPath('menu', `${iconName}-Template.png`);
 };
 
 export const getTrayIcon = () => trayIcon('default');
 
 const runScript =
   (scriptPath: string, args: string[] = [], options = { force: false, trigger: Trigger.App, sponsorCheck: false }) =>
-    () => {
-      log.info(`🎨 Running script: ${scriptPath}`);
-      emitter.emit(KitEvent.RunPromptProcess, {
-        scriptPath,
-        args,
-        options,
-      });
-    };
+  () => {
+    log.info(`🎨 Running script: ${scriptPath}`);
+    emitter.emit(KitEvent.RunPromptProcess, {
+      scriptPath,
+      args,
+      options,
+    });
+  };
 
 const createOpenMain = () => {
   return {
