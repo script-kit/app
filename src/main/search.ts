@@ -20,7 +20,7 @@ import type { KitPrompt } from './prompt';
 import { kitCache, kitState } from './state';
 import { normalizeWithMap, remapRange } from './utils/normalize-map';
 
-import { getQuickScoreConfig } from './quickscore-config';
+import { getQuickScoreConfig, getQuickScoreMinScore } from './quickscore-config';
 
 /** Fix every RangeTuple inside a QuickScore result */
 function fixHighlightRanges<T extends ScoredChoice>(sc: T): T {
@@ -631,9 +631,7 @@ export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys & Partial<Choice>) 
 
   prompt.flagSearch.qs = new QuickScore(choices, {
     keys: prompt.kitSearch.keys,
-    minimumScore: kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE
-      ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
-      : 0.6,
+    minimumScore: getQuickScoreMinScore(),
     transformString: normalizeWithMap,
     config: getQuickScoreConfig(),
   } as any);
@@ -742,9 +740,7 @@ export const setChoices = (
 
   prompt.kitSearch.qs = new QuickScore(choices, {
     keys: prompt.kitSearch.keys,
-    minimumScore: kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE
-      ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
-      : 0.6,
+    minimumScore: getQuickScoreMinScore(),
     transformString: normalizeWithMap,
     config: getQuickScoreConfig(),
   } as any);

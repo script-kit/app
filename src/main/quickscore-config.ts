@@ -10,6 +10,10 @@ let QS_CONFIG = createConfig({
       : 3,
 });
 
+let QS_MIN_SCORE = kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE
+  ? Number.parseFloat(kitState.kenvEnv.KIT_SEARCH_MIN_SCORE)
+  : 0.6;
+
 export const updateQuickScoreConfig = () => {
   QS_CONFIG = createConfig({
     wordSeparators: '-_',
@@ -18,7 +22,13 @@ export const updateQuickScoreConfig = () => {
         ? Number.parseInt(kitState.kenvEnv.KIT_SEARCH_MAX_ITERATIONS, 10)
         : 3,
   });
-  log.info(`Updated QuickScore config with maxIterations: ${QS_CONFIG.maxIterations}`);
+  
+  QS_MIN_SCORE = kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE
+    ? Number.parseFloat(kitState.kenvEnv.KIT_SEARCH_MIN_SCORE)
+    : 0.6;
+    
+  log.info(`Updated QuickScore config - maxIterations: ${QS_CONFIG.maxIterations}, minScore: ${QS_MIN_SCORE}`);
 };
 
 export const getQuickScoreConfig = () => QS_CONFIG;
+export const getQuickScoreMinScore = () => QS_MIN_SCORE;

@@ -1114,12 +1114,6 @@ export const cacheMainMenu = async ({
     
     // Send as single atomic update
     sendToAllPrompts(AppChannel.SET_CACHED_MAIN_STATE, atomicState);
-    
-    // Keep legacy channels for backward compatibility (can be removed later)
-    sendToAllPrompts(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, kitCache.choices);
-    sendToAllPrompts(AppChannel.SET_CACHED_MAIN_SHORTCUTS, kitCache.shortcuts);
-    sendToAllPrompts(AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS, kitCache.scriptFlags);
-    sendToAllPrompts(AppChannel.SET_CACHED_MAIN_PREVIEW, kitCache.preview);
     sendToAllPrompts(AppChannel.INIT_PROMPT, {});
 
     log.info('🧹 Clearing scriptlets and scripts...');

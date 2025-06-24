@@ -825,7 +825,11 @@ export const parseEnvFile = debounce(async () => {
   watchTheme();
 
   if (envData?.KIT_TERM_FONT) {
+    kitState.kenvEnv.KIT_TERM_FONT = envData?.KIT_TERM_FONT;
     sendToAllPrompts(AppChannel.SET_TERM_FONT, envData?.KIT_TERM_FONT);
+  } else if (kitState.kenvEnv.KIT_TERM_FONT) {
+    kitState.kenvEnv.KIT_TERM_FONT = undefined;
+    // Could send a default font here if needed
   }
 
   const defaultKitMono = 'JetBrains Mono';
@@ -938,6 +942,16 @@ export const parseEnvFile = debounce(async () => {
   } else if (kitState.kenvEnv.KIT_SEARCH_MAX_ITERATIONS) {
     kitState.kenvEnv.KIT_SEARCH_MAX_ITERATIONS = undefined;
     // Update QuickScore config when KIT_SEARCH_MAX_ITERATIONS is removed
+    updateQuickScoreConfig();
+  }
+
+  if (envData?.KIT_SEARCH_MIN_SCORE) {
+    kitState.kenvEnv.KIT_SEARCH_MIN_SCORE = envData?.KIT_SEARCH_MIN_SCORE;
+    // Update QuickScore config when KIT_SEARCH_MIN_SCORE changes
+    updateQuickScoreConfig();
+  } else if (kitState.kenvEnv.KIT_SEARCH_MIN_SCORE) {
+    kitState.kenvEnv.KIT_SEARCH_MIN_SCORE = undefined;
+    // Update QuickScore config when KIT_SEARCH_MIN_SCORE is removed
     updateQuickScoreConfig();
   }
 
