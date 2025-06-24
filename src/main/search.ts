@@ -10,7 +10,7 @@ import {
 } from '@johnlindquist/kit/core/utils';
 import { debounce } from 'lodash-es';
 
-import { QuickScore, createConfig } from 'quick-score';
+import { QuickScore } from 'quick-score';
 import { AppChannel } from '../shared/enums';
 import type { ScoredChoice } from '../shared/types';
 import { createScoredChoice, createAsTypedChoice } from './helpers';
@@ -20,20 +20,7 @@ import type { KitPrompt } from './prompt';
 import { kitCache, kitState } from './state';
 import { normalizeWithMap, remapRange } from './utils/normalize-map';
 
-// ────────────────────────────────────────────────────────────────────────────
-//  QuickScore global config
-//  honour env var  KIT_SEARCH_MAX_ITERATIONS   (fallback = 3)
-//  and keep our custom word‑separators.
-//  Re‑use this everywhere we `new QuickScore()` so the behaviour is identical.
-// ────────────────────────────────────────────────────────────────────────────
-
-const QS_CONFIG = createConfig({
-  wordSeparators: '-_',
-  maxIterations:
-    kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS
-      ? Number.parseInt(kitState.kenvEnv.KIT_SEARCH_MAX_ITERATIONS, 10)
-      : 3,
-});
+import { getQuickScoreConfig } from './quickscore-config';
 
 /** Fix every RangeTuple inside a QuickScore result */
 function fixHighlightRanges<T extends ScoredChoice>(sc: T): T {
@@ -648,7 +635,7 @@ export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys & Partial<Choice>) 
       ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
       : 0.6,
     transformString: normalizeWithMap,
-    config: QS_CONFIG,
+    config: getQuickScoreConfig(),
   } as any);
 
   // setFlagShortcodes(choices);
@@ -759,7 +746,7 @@ export const setChoices = (
       ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
       : 0.6,
     transformString: normalizeWithMap,
-    config: QS_CONFIG,
+    config: getQuickScoreConfig(),
   } as any);
   sendToPrompt(Channel.SET_CHOICES_CONFIG, { preload });
 
