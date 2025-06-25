@@ -34,6 +34,7 @@ import type { KitPrompt } from './prompt';
 import { prompts } from './prompts';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
 import { kitState } from './state';
+import { visibilityController } from './visibility';
 
 let actionsOpenTimeout: NodeJS.Timeout;
 let prevTransformedInput = '';
@@ -539,10 +540,14 @@ ${data.error}
         }
 
         if (channel === Channel.ESCAPE) {
-          log.info(`␛ hideOnEscape ${prompt.hideOnEscape ? 'true' : 'false'}`);
-          if (prompt.hideOnEscape) {
-            prompt.maybeHide(HideReason.Escape);
-            sendToPrompt(Channel.SET_INPUT, '');
+          log.info(`␛ Escape received in IPC handler`);
+
+          const hasChild = !!child && child.connected;
+          const handled = visibilityController.handleEscape(prompt, hasChild);
+
+          // If visibility controller didn't handle it, let it propagate to child process
+          if (!handled) {
+            log.info(`␛ Escape not handled by visibility controller, propagating to child process`);
           }
         }
 

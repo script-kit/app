@@ -65,6 +65,7 @@ import { getVersion } from './version';
 import { makeKeyPanel, makeWindow, prepForClose, setAppearance } from './window/utils';
 
 import { promptLog as log, themeLog } from './logs';
+import { visibilityController } from './visibility';
 
 // TODO: Hack context menu to avoid "object destroyed" errors
 contextMenu({
@@ -576,7 +577,6 @@ export class KitPrompt {
   isScripts = true;
   promptData = null as null | PromptData;
   firstPrompt = true;
-  justFocused = true;
   ready = false;
   shown = false;
   alwaysOnTop = true;
@@ -1236,14 +1236,9 @@ export class KitPrompt {
       emojiActive: this.emojiActive,
       focusedEmojiActive: prompts?.focused?.emojiActive,
     });
-    if (this.emojiActive) {
-      this.logInfo('Emoji active. Ignore blur');
-      return;
-    }
-    if (this.window.webContents.isDevToolsOpened()) {
-      this.logInfo('Dev tools are open. Ignore blur');
-      return;
-    }
+    
+    // Use visibility controller to handle blur
+    visibilityController.handleBlur(this);
 
     const isMainScript = getMainScriptPath() === this.scriptPath;
     if (isMainScript && !this.mainMenuPreventCloseOnBlur) {
@@ -1254,11 +1249,6 @@ export class KitPrompt {
 
     this.makeWindow();
 
-    if (this.justFocused && this.isVisible()) {
-      this.logInfo('Prompt window was just focused. Ignore blur');
-      return;
-    }
-
     if (!kitState.isLinux) {
       kitState.emojiActive = false;
     }
@@ -1268,13 +1258,6 @@ export class KitPrompt {
     }
 
     if (this.window.isDestroyed()) {
-      return;
-    }
-    if (kitState.isActivated) {
-      kitState.isActivated = false;
-      return;
-    }
-    if (this.window.webContents?.isDevToolsOpened()) {
       return;
     }
 
@@ -1613,20 +1596,15 @@ export class KitPrompt {
     });
 
     this.window.on('focus', () => {
-      this.emojiActive = false;
       this.logInfo('👓 Focus bounds:');
+
+      // Use visibility controller to handle focus
+      visibilityController.handleFocus(this);
 
       if (!kitState.isLinux) {
         this.logVerbose('👓 Registering emoji shortcut');
         kitState.emojiActive = true;
       }
-
-      this.justFocused = true;
-      setTimeout(() => {
-        if (!this?.window?.isDestroyed()) {
-          this.justFocused = false;
-        }
-      }, 100);
     });
 
     this.window.on('hide', () => {
