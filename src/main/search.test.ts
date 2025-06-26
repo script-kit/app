@@ -1177,6 +1177,208 @@ describe('Search Functionality', () => {
       });
     });
 
+    it('should not include group separators when the group has no matches', () => {
+      const choices = [
+        { id: '1', name: 'exact match', group: 'Group1' },
+        { id: '2', name: 'another item', group: 'Group1' },
+        { id: '3', name: 'different group', group: 'Group2' },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = true;
+      
+      // Only return a match from Group2, nothing from Group1
+      vi.mocked(searchChoices).mockReturnValue([
+        { item: choices[2], score: 0.8, matches: { name: [[0, 9]] }, _: '' }
+      ]);
+      vi.mocked(isExactMatch).mockReturnValue(false);
+      vi.mocked(startsWithQuery).mockReturnValue(false);
+
+      invokeSearch(mockPrompt, 'different');
+
+      const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoices = call?.[1] || [];
+      
+      // Should not have any "Exact Match" separator since no exact matches were found
+      const exactMatchSeparator = scoredChoices.find((sc: ScoredChoice) => 
+        sc.item.name === 'Exact Match' && sc.item.skip === true
+      );
+      expect(exactMatchSeparator).toBeUndefined();
+      
+      // Should only have the one matched item
+      const nonSeparatorItems = scoredChoices.filter((sc: ScoredChoice) => !sc.item.skip);
+      expect(nonSeparatorItems).toHaveLength(1);
+      expect(nonSeparatorItems[0].item.name).toBe('different group');
+    });
+
+    it('should not include "Best Matches" separator when no starts-with matches exist', () => {
+      const choices = [
+        { id: '1', name: 'test item', group: 'Group1' },
+        { id: '2', name: 'another test', group: 'Group1' },
+        { id: '3', name: 'completely different', group: 'Group2' },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = true;
+      
+      // Return matches but none are exact or starts-with
+      vi.mocked(searchChoices).mockReturnValue([
+        { item: choices[0], score: 0.6, matches: { name: [[5, 9]] }, _: '' },
+        { item: choices[1], score: 0.5, matches: { name: [[8, 12]] }, _: '' }
+      ]);
+      vi.mocked(isExactMatch).mockReturnValue(false);
+      vi.mocked(startsWithQuery).mockReturnValue(false);
+
+      invokeSearch(mockPrompt, 'test');
+
+      const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoices = call?.[1] || [];
+      
+      // Should not have any group separators
+      const separators = scoredChoices.filter((sc: ScoredChoice) => sc.item.skip === true);
+      expect(separators).toHaveLength(0);
+      
+      // Should have both matched items
+      const nonSeparatorItems = scoredChoices.filter((sc: ScoredChoice) => !sc.item.skip);
+      expect(nonSeparatorItems).toHaveLength(2);
+    });
+
+    it('should include appropriate separator when exact matches exist', () => {
+      const choices = [
+        { id: '1', name: 'test', group: 'Group1' },
+        { id: '2', name: 'test item', group: 'Group1' },
+        { id: '3', name: 'another test', group: 'Group2' },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = true;
+      
+      // First choice is exact match
+      vi.mocked(searchChoices).mockReturnValue([
+        { item: choices[0], score: 1.0, matches: { name: [[0, 4]] }, _: '' },
+        { item: choices[1], score: 0.8, matches: { name: [[0, 4]] }, _: '' }
+      ]);
+      vi.mocked(isExactMatch).mockImplementation((choice) => choice.id === '1');
+      vi.mocked(startsWithQuery).mockImplementation((choice) => choice.id === '2');
+
+      invokeSearch(mockPrompt, 'test');
+
+      const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoices = call?.[1] || [];
+      
+      // Should have "Exact Match" separator
+      const exactMatchSeparator = scoredChoices.find((sc: ScoredChoice) => 
+        sc.item.name === 'Exact Match' && sc.item.skip === true
+      );
+      expect(exactMatchSeparator).toBeDefined();
+      
+      // Verify order: separator, exact match, starts-with match
+      expect(scoredChoices[0].item.name).toBe('Exact Match');
+      expect(scoredChoices[0].item.skip).toBe(true);
+      expect(scoredChoices[1].item.id).toBe('1');
+      expect(scoredChoices[2].item.id).toBe('2');
+    });
+
+    it('should not include original group separators when group name matches query but no items from that group match', () => {
+      // This simulates the actual "Cursor Snippets" issue where formatChoices/groupChoices adds group separators
+      const choices = [
+        // Group separator that would be added by formatChoices/groupChoices
+        {
+          id: 'group-cursor-snippets',
+          name: 'Cursor Snippets',
+          group: 'Cursor Snippets', 
+          skip: true,
+          pass: false,
+          className: 'defaultGroupClassName',
+          nameClassName: 'defaultGroupNameClassName',
+          height: 48 // PROMPT.ITEM.HEIGHT.XXXS
+        },
+        // Real items from "Cursor Snippets" group
+        { 
+          id: 'open-scriptlets',
+          name: 'Open Scriptlets',
+          command: 'open-scriptlets',
+          group: 'Cursor Snippets',
+          type: 'Prompt',
+          tag: 'opt+s'
+        },
+        { 
+          id: 'step-by-step',
+          name: 'Step by Step',
+          command: 'step-by-step', 
+          group: 'Cursor Snippets',
+          type: 'Prompt',
+          tag: 'expand: ,sbs'
+        },
+        { 
+          id: 'create-a-branch',
+          name: 'Create a Branch',
+          command: 'create-a-branch',
+          group: 'Cursor Snippets',
+          type: 'Prompt',
+          tag: 'expand: ,cb'
+        },
+        // Another group separator
+        {
+          id: 'group-editor-tools',
+          name: 'Editor Tools',
+          group: 'Editor Tools',
+          skip: true,
+          pass: false,
+          className: 'defaultGroupClassName',
+          nameClassName: 'defaultGroupNameClassName',
+          height: 48
+        },
+        // Item from different group that matches "Cursor"
+        { 
+          id: 'cursor-position',
+          name: 'Cursor Position Helper',
+          command: 'cursor-position',
+          group: 'Editor Tools',
+          type: 'Prompt'
+        },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = true;
+      
+      // The search returns the group separator AND the "Cursor Position Helper"
+      // This simulates what happens when the group name itself matches the search
+      vi.mocked(searchChoices).mockReturnValue([
+        { item: choices[0], score: 0.95, matches: { name: [[0, 6]] }, _: '' }, // "Cursor Snippets" separator
+        { item: choices[5], score: 0.9, matches: { name: [[0, 6]] }, _: '' }   // "Cursor Position Helper"
+      ]);
+      vi.mocked(isExactMatch).mockReturnValue(false);
+      vi.mocked(startsWithQuery).mockImplementation((choice) => {
+        return choice.name === 'Cursor Snippets' || choice.name === 'Cursor Position Helper';
+      });
+
+      invokeSearch(mockPrompt, 'Cursor');
+
+      const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoices = call?.[1] || [];
+      
+      // Log for debugging
+      console.log('Scored choices:', scoredChoices.map((sc: ScoredChoice) => ({ 
+        name: sc.item.name, 
+        group: sc.item.group,
+        skip: sc.item.skip 
+      })));
+      
+      // The bug: "Cursor Snippets" separator appears even though no actual items from that group matched
+      const cursorSnippetsSeparator = scoredChoices.find((sc: ScoredChoice) => 
+        sc.item.name === 'Cursor Snippets' && sc.item.skip === true
+      );
+      
+      // This test should FAIL with the current implementation, showing the bug
+      expect(cursorSnippetsSeparator).toBeUndefined();
+      
+      // Should only have items that actually matched (not group separators)
+      const nonSeparatorItems = scoredChoices.filter((sc: ScoredChoice) => !sc.item.skip && sc.item.group !== 'Match');
+      expect(nonSeparatorItems).toHaveLength(1);
+      expect(nonSeparatorItems[0].item.name).toBe('Cursor Position Helper');
+    });
+
     describe('Search prioritization', () => {
       it('should prioritize "API Tester" over "Stripe Payment Links" for query "apit"', () => {
         const choices = [

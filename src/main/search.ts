@@ -143,6 +143,11 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
       
       if (scoredChoice) {
         // Choice was matched by fuzzy search
+        // Skip group separators - they should not be included in results
+        if (choice?.skip) {
+          continue;
+        }
+        
         if (isExactMatch(choice, transformedInput)) {
           exactMatchGroup.push(scoredChoice);
         } else if (startsWithQuery(choice, transformedInput)) {
