@@ -55,7 +55,6 @@ import { watcherLog as log, scriptLog } from './logs';
 import { prompts } from './prompts';
 import { createIdlePty } from './pty';
 import { parseSnippet } from './snippet-cache';
-import { updateQuickScoreConfig } from './quickscore-config';
 
 // Add a map to track recently processed files
 const recentlyProcessedFiles = new Map<string, number>();
@@ -935,25 +934,8 @@ export const parseEnvFile = debounce(async () => {
     setupWatchers('subscribeKey: kitState.suspendWatchers: false');
   }
 
-  if (envData?.KIT_SEARCH_MAX_ITERATIONS) {
-    kitState.kenvEnv.KIT_SEARCH_MAX_ITERATIONS = envData?.KIT_SEARCH_MAX_ITERATIONS;
-    // Update QuickScore config when KIT_SEARCH_MAX_ITERATIONS changes
-    updateQuickScoreConfig();
-  } else if (kitState.kenvEnv.KIT_SEARCH_MAX_ITERATIONS) {
-    kitState.kenvEnv.KIT_SEARCH_MAX_ITERATIONS = undefined;
-    // Update QuickScore config when KIT_SEARCH_MAX_ITERATIONS is removed
-    updateQuickScoreConfig();
-  }
-
-  if (envData?.KIT_SEARCH_MIN_SCORE) {
-    kitState.kenvEnv.KIT_SEARCH_MIN_SCORE = envData?.KIT_SEARCH_MIN_SCORE;
-    // Update QuickScore config when KIT_SEARCH_MIN_SCORE changes
-    updateQuickScoreConfig();
-  } else if (kitState.kenvEnv.KIT_SEARCH_MIN_SCORE) {
-    kitState.kenvEnv.KIT_SEARCH_MIN_SCORE = undefined;
-    // Update QuickScore config when KIT_SEARCH_MIN_SCORE is removed
-    updateQuickScoreConfig();
-  }
+  // VS Code fuzzy search doesn't use these configurations
+  // Keeping for backward compatibility but they won't affect search
 
   kitState.kenvEnv = envData;
 }, 100);

@@ -10,7 +10,6 @@ import {
 } from '@johnlindquist/kit/core/utils';
 import { debounce } from 'lodash-es';
 
-import { QuickScore } from 'quick-score';
 import { AppChannel } from '../shared/enums';
 import type { ScoredChoice } from '../shared/types';
 import { createScoredChoice, createAsTypedChoice } from './helpers';
@@ -18,22 +17,8 @@ import { searchLog as log } from './logs';
 import { cacheChoices } from './messages';
 import type { KitPrompt } from './prompt';
 import { kitCache, kitState } from './state';
-import { normalizeWithMap, remapRange } from './utils/normalize-map';
+import { searchChoices, scoreChoice, isExactMatch, startsWithQuery, clearFuzzyCache } from './vscode-search';
 
-import { getQuickScoreConfig, getQuickScoreMinScore } from './quickscore-config';
-
-/** Fix every RangeTuple inside a QuickScore result */
-function fixHighlightRanges<T extends ScoredChoice>(sc: T): T {
-  // QuickScore could have matches on multiple keys; walk them all.
-  for (const key in sc.matches) {
-    const raw = (sc.item as any)[key] as string;
-    if (!raw) continue;
-    // Trigger the cache in case we never normalised this exact raw string (rare)
-    normalizeWithMap(raw);
-    sc.matches[key] = sc.matches[key].map(r => remapRange(raw, r));
-  }
-  return sc;
-}
 
 export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'normal') => {
   // log.info(`${prompt.pid}: ${reason}: Invoke search: '${rawInput}'`);
@@ -114,105 +99,65 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     return;
   }
 
-  if (!prompt.kitSearch.qs) {
-    log.warn(`No qs for ${prompt.scriptPath}`);
-    return;
-  }
-  const rawResult = (prompt.kitSearch?.qs as QuickScore<Choice>)?.search(transformedInput);
-  const result = rawResult?.map((sc) => fixHighlightRanges(sc as ScoredChoice)) as ScoredChoice[];
+  // Use VS Code fuzzy search instead of QuickScore
+  const result = searchChoices(prompt.kitSearch.choices, transformedInput);
 
   // Get result length, but filter out info and miss choices
   const resultLength = result.filter((r) => !(r?.item?.info || r?.item?.miss)).length;
 
   if (prompt.kitSearch.hasGroup) {
     // Build a map for constant time access
-    const resultMap = new Map();
-    const keepGroups = new Set();
-    const removeGroups = new Map<string, { count: number; index: number }>();
+    const resultMap = new Map<string, ScoredChoice>();
     for (const r of result) {
       resultMap.set(r.item.id, r);
-      keepGroups.add(r.item.group);
-      removeGroups.set(r.item.group as string, {
-        count: 0,
-        index: 0,
-      });
     }
 
-    keepGroups.add('Pass');
-
     let groupedResults: ScoredChoice[] = [];
-
-    const infoGroup: ScoredChoice[] = [];
+    const exactMatchGroup: ScoredChoice[] = [];
     const startsWithGroup: ScoredChoice[] = [];
-    const includesGroup: ScoredChoice[] = [];
-    const matchLastGroup: ScoredChoice[] = [];
+    const otherMatchGroup: ScoredChoice[] = [];
+    const infoGroup: ScoredChoice[] = [];
+    const passGroup: ScoredChoice[] = [];
     const missGroup: ScoredChoice[] = [];
     let alias: Choice;
 
+    // Process all choices and categorize them
     for (const choice of prompt.kitSearch.choices) {
-      const lowerCaseName = choice.name?.toLowerCase();
-      const lowerCaseKeyword = choice.keyword?.toLowerCase() || choice?.tag?.toLowerCase() || '';
+      // Always include info choices
       if (choice?.info) {
         infoGroup.push(createScoredChoice(choice));
-      } else if ((choice as Script)?.alias === transformedInput || (choice as Script)?.trigger === transformedInput) {
+        continue;
+      }
+      
+      // Check for exact alias/trigger match
+      if ((choice as Script)?.alias === transformedInput || (choice as Script)?.trigger === transformedInput) {
         alias = structuredClone(choice);
         alias.pass = false;
         alias.group = choice?.trigger ? 'Trigger' : 'Alias';
         log.info(`${prompt.getLogPrefix()}: 🔔 Alias: ${alias.name} with group ${alias.group}`);
-      } else if (
-        !(choice?.skip || choice?.miss) &&
-        (lowerCaseName?.includes(lowerCaseInput) || lowerCaseKeyword.includes(lowerCaseInput))
-      ) {
-        const scoredChoice = resultMap.get(choice.id);
-        if (scoredChoice && !scoredChoice?.item?.lastGroup) {
-          const c = structuredClone(scoredChoice);
-          c.item.tag ||= c?.item?.kenv || c?.item?.group === 'Pass' ? '' : c?.item?.group;
-          // This was breaking the choice.preview lookup in the SDK
-          // c.item.id = Math.random();
-          c.item.pass = false;
-          c.item.exact = true;
-          if (lowerCaseName.startsWith(lowerCaseInput) || scoredChoice?.item?.keyword?.startsWith(lowerCaseInput)) {
-            startsWithGroup.push(c);
-          } else {
-            includesGroup.push(c);
-          }
-        } else if (scoredChoice?.item?.lastGroup) {
-          const c = structuredClone(scoredChoice);
-          c.item.tag = c?.item?.kenv || c?.item?.group === 'Pass' ? '' : c?.item?.group;
-          // This was breaking the choice.preview lookup in the SDK
-          // c.item.id = Math.random();
-          c.item.pass = false;
-          // log.info(`Found match last: ${c?.item?.name}`);
-          matchLastGroup.push(c);
+        continue;
+      }
+      
+      // Check if choice was matched by fuzzy search
+      const scoredChoice = resultMap.get(choice.id);
+      
+      if (scoredChoice) {
+        // Choice was matched by fuzzy search
+        if (isExactMatch(choice, transformedInput)) {
+          exactMatchGroup.push(scoredChoice);
+        } else if (startsWithQuery(choice, transformedInput)) {
+          startsWithGroup.push(scoredChoice);
+        } else {
+          otherMatchGroup.push(scoredChoice);
         }
-
-        // Aggressive search everything
-        // else {
-        //   const start = choice?.name?.toLowerCase()?.indexOf(lowerCaseInput);
-
-        //   if (start > -1) {
-        //     const end = start + lowerCaseInput.length;
-        //     log.info({ start, end });
-        //     const scoredChoice = createScoredChoice(choice);
-        //     scoredChoice.matches = {
-        //       slicedName: [[start, end]],
-        //       name: [[start, end]],
-        //     };
-        //     scoredChoice.score = 0.5;
-        //     includesGroup.push(scoredChoice);
-        //     // TODO
-        //   }
-        // }
       } else {
+        // Choice was not matched by fuzzy search
         const hide = choice?.hideWithoutInput && transformedInput === '';
         const miss = choice?.miss && !hide;
-        const choiceInfo = choice?.info && !hide;
-        if (choiceInfo) {
-          infoGroup.push(createScoredChoice(choice));
-        } else if (miss) {
+        
+        if (miss) {
           missGroup.push(createScoredChoice(choice));
         } else if (!hide) {
-          const scoredChoice = resultMap.get(choice.id);
           if (choice?.pass) {
             if (typeof choice?.pass === 'string' && (choice?.pass as string).startsWith('/')) {
               // log.info(`Found regex pass: ${choice?.pass} on ${choice?.name}`);
@@ -239,74 +184,17 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
             } else {
               groupedResults.push(createScoredChoice(choice));
             }
-          } else if (scoredChoice?.item?.lastGroup) {
-            const c = structuredClone(scoredChoice);
-            matchLastGroup.push(c);
-          } else if (scoredChoice) {
-            groupedResults.push(scoredChoice);
-            const removeGroup = removeGroups.get(scoredChoice?.item?.group);
-            if (removeGroup) {
-              if (scoredChoice?.item?.skip && removeGroup.index === 0) {
-                removeGroup.index = groupedResults.length - 1;
-              } else {
-                removeGroup.count += 1;
-              }
-            }
-          } else if (choice?.skip && keepGroups?.has(choice?.group)) {
-            const removeGroup = removeGroups.get(choice?.group as string);
-
-            groupedResults.push(createScoredChoice(choice));
-            if (removeGroup && removeGroup.index === 0) {
-              removeGroup.index = groupedResults.length - 1;
-            }
           }
         }
       }
     }
-
-    removeGroups.delete('Pass');
-
-    // loop through removeGroups and remove groups that have no results
-    // Sort removeGroups by index in descending order
-    const sortedRemoveGroups = Array.from(removeGroups).sort((a, b) => b[1].index - a[1].index);
-    for (const [group, { count, index }] of sortedRemoveGroups) {
-      // log.info(`Group ${group} has ${count} results at ${index}`);
-      // log.info(`The item at ${index} is ${groupedResults[index]?.item?.name}`);
-      if (count === 0) {
-        // log.info(
-        //   `🗑 ${group} with no results. Removing ${groupedResults[index].item.name}`
-        // );
-        groupedResults.splice(index, 1);
-      }
-    }
-
-    if (startsWithGroup.length > 0) {
-      startsWithGroup.sort((a, b) => {
-        const aKeyword = a?.item?.keyword;
-        const bKeyword = b?.item?.keyword;
-
-        if (aKeyword === lowerCaseInput) {
-          return -1;
-        }
-        if (bKeyword === lowerCaseInput) {
-          return 1;
-        }
-        if (aKeyword && !bKeyword) {
-          return -1;
-        }
-        if (!aKeyword && bKeyword) {
-          return 1;
-        }
-        if (aKeyword && bKeyword) {
-          return aKeyword.length - bKeyword.length;
-        }
-
-        return 0;
-      });
-    }
-
-    if (startsWithGroup.length > 0 || includesGroup?.length > 0) {
-      startsWithGroup.unshift(
+    
+    // Combine results in priority order
+    let combinedResults: ScoredChoice[] = [];
+    
+    // Add exact matches first with header
+    if (exactMatchGroup.length > 0) {
+      combinedResults.push(
         createScoredChoice({
           name: 'Exact Match',
           group: 'Match',
@@ -316,45 +204,45 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
           className: defaultGroupClassName,
           height: PROMPT.ITEM.HEIGHT.XXXS,
           id: Math.random().toString(),
-        }),
+        })
       );
-
-      startsWithGroup.push(...includesGroup);
-      groupedResults.unshift(...startsWithGroup);
+      combinedResults.push(...exactMatchGroup);
+    }
+    
+    // Add starts with matches (already sorted by VS Code algorithm)
+    if (startsWithGroup.length > 0) {
+      if (exactMatchGroup.length === 0) {
+        // Only add header if we didn't already add exact match header
+        combinedResults.push(
+          createScoredChoice({
+            name: 'Best Matches',
+            group: 'Match',
+            pass: false,
+            skip: true,
+            nameClassName: defaultGroupNameClassName,
+            className: defaultGroupClassName,
+            height: PROMPT.ITEM.HEIGHT.XXXS,
+            id: Math.random().toString(),
+          })
+        );
+      }
+      combinedResults.push(...startsWithGroup);
+    }
+    
+    // Add other matches
+    combinedResults.push(...otherMatchGroup);
+    
+    // Add pass choices that matched the regex
+    combinedResults.push(...passGroup);
+    
+    // If no matches, show miss group
+    if (combinedResults.length === 0 && result.length === 0) {
+      combinedResults = missGroup;
     }
 
-    if (matchLastGroup.length > 0) {
-      matchLastGroup.sort((a, b) => {
-        if (a?.item?.keyword && !b?.item?.keyword) {
-          return -1;
-        }
-        if (!a?.item?.keyword && b?.item?.keyword) {
-          return 1;
-        }
-
-        return 0;
-      });
-      matchLastGroup.unshift(
-        createScoredChoice({
-          name: matchLastGroup[0]?.item?.group || 'Last Match',
-          group: matchLastGroup[0]?.item?.group || 'Last Match',
-          pass: false,
-          skip: true,
-          nameClassName: defaultGroupNameClassName,
-          className: defaultGroupClassName,
-          height: PROMPT.ITEM.HEIGHT.XXXS,
-          id: Math.random().toString(),
-        }),
-      );
-      groupedResults.push(...matchLastGroup);
-    }
-
-    if (groupedResults.length === 0) {
-      groupedResults = missGroup;
-    }
-
+    // Add alias if found
     if (alias) {
-      groupedResults.unshift(
+      combinedResults.unshift(
         createScoredChoice({
           name: alias.group,
           group: alias.group,
@@ -369,145 +257,44 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
       );
     }
 
-    groupedResults.unshift(...infoGroup);
+    // Always show info items at the top
+    combinedResults.unshift(...infoGroup);
 
-    {
-      const asTypedSc = generateAsTyped(result);
-      if (asTypedSc) groupedResults.push(asTypedSc);
-      setScoredChoices(prompt, groupedResults, 'prompt.kitSearch.hasGroup');
-    }
+    // Add "as typed" option if applicable
+    const asTypedSc = generateAsTyped(result);
+    if (asTypedSc) combinedResults.push(asTypedSc);
+    
+    setScoredChoices(prompt, combinedResults, 'prompt.kitSearch.hasGroup');
   } else if (resultLength === 0) {
-    const filteredResults: ScoredChoice[] = [];
-    let hasChoice = false;
+    // VS Code fuzzy search returned no results, show miss/info choices
+    const fallbackResults: ScoredChoice[] = [];
+    
     for (const choice of prompt.kitSearch.choices) {
-      if (choice?.miss) {
-        filteredResults.push(createScoredChoice(choice));
-        continue;
-      }
-      if (choice?.pass) {
-        filteredResults.push(createScoredChoice(choice));
-        continue;
-      }
-      if (choice?.info) {
-        filteredResults.push(createScoredChoice(choice));
-        continue;
-      }
-      for (const key of prompt.kitSearch.keys) {
-        let start = -1;
-
-        const value = (choice as any)?.[key];
-        if (typeof value === 'string' && value.trim()) {
-          start = value?.toLowerCase()?.indexOf(lowerCaseInput);
-        }
-
-        if (start > -1) {
-          const end = start + lowerCaseInput.length;
-          const scoredChoice = createScoredChoice(choice);
-          scoredChoice.matches = {
-            [key]: [[start, end]],
-          };
-          scoredChoice.score = 1;
-          filteredResults.push(scoredChoice);
-          hasChoice = true;
-          break;
-        }
+      if (choice?.miss || choice?.info || choice?.pass) {
+        fallbackResults.push(createScoredChoice(choice));
       }
     }
-
-    const scoredChoices = filterAndSortOtherChoices(filteredResults, transformedInput, lowerCaseInput, hasChoice);
-
-    {
-      const asTypedSc = generateAsTyped(filteredResults);
-      if (asTypedSc) scoredChoices.push(asTypedSc);
-      setScoredChoices(prompt, scoredChoices, 'resultLength === 0');
-    }
+    
+    const asTypedSc = generateAsTyped(result);
+    if (asTypedSc) fallbackResults.push(asTypedSc);
+    
+    setScoredChoices(prompt, fallbackResults, 'resultLength === 0');
   } else {
-    const allMisses = result.every((r) => r?.item?.miss && r?.item?.info);
-    if (allMisses) {
-      setScoredChoices(prompt, result, 'allMisses');
-    } else {
-      const filteredResults: ScoredChoice[] = [];
-      let hasChoice = false;
-      for (const choice of result) {
-        if (choice?.item?.miss) {
-          filteredResults.push(choice);
-          continue;
-        }
-        if (choice?.item?.pass) {
-          filteredResults.push(choice);
-          continue;
-        }
-        if (choice?.item?.info) {
-          filteredResults.push(choice);
-          continue;
-        }
-
-        hasChoice = true;
-        filteredResults.push(choice);
-        log.info(`${prompt.getLogPrefix()}: hasChoice ${choice?.item?.name}`);
-      }
-
-      const scoredChoices = filterAndSortOtherChoices(filteredResults, transformedInput, lowerCaseInput, hasChoice);
-
-      {
-        const asTypedSc = generateAsTyped(result);
-        if (asTypedSc) scoredChoices.push(asTypedSc);
-        setScoredChoices(prompt, scoredChoices, 'resultLength > 0');
-      }
-    }
+    // Non-grouped results - already sorted by VS Code algorithm
+    const infoChoices = result.filter(r => r.item.info);
+    const normalChoices = result.filter(r => !r.item.info && !r.item.miss);
+    const missChoices = result.filter(r => r.item.miss);
+    
+    // Combine: info first, then normal results, then miss choices
+    const combinedResults = [...infoChoices, ...normalChoices, ...missChoices];
+    
+    const asTypedSc = generateAsTyped(result);
+    if (asTypedSc) combinedResults.push(asTypedSc);
+    
+    setScoredChoices(prompt, combinedResults, 'resultLength > 0');
   }
 };
 
-function filterAndSortOtherChoices(
-  result: ScoredChoice[],
-  transformedInput: string,
-  lowerCaseInput: string,
-  hasChoice: boolean,
-) {
-  const infos: ScoredChoice[] = [];
-  const filterConditions = result.filter((r) => {
-    if (r.item.miss) {
-      return !hasChoice;
-    }
-    if (r.item.info) {
-      infos.push(r);
-      return false;
-    }
-    if (r.item.pass) {
-      return true;
-    }
-    if (r.item.hideWithoutInput) {
-      return transformedInput !== '';
-    }
-
-    return true;
-  });
-  // Sort that r.item.name.includes(transformedInput) is first
-  // And the closer the includes to the start of the name, the closer to the front of the array
-
-  filterConditions.sort((a, b) => {
-    const aIndex = a.item.name.toLowerCase().indexOf(lowerCaseInput);
-    const bIndex = b.item.name.toLowerCase().indexOf(lowerCaseInput);
-
-    if (aIndex === bIndex) {
-      return 0;
-    }
-
-    if (aIndex === -1) {
-      return 1;
-    }
-
-    if (bIndex === -1) {
-      return -1;
-    }
-
-    return aIndex - bIndex;
-  });
-
-  filterConditions.unshift(...infos);
-
-  return filterConditions;
-}
 
 export const debounceInvokeSearch = debounce(invokeSearch, 100);
 
@@ -523,127 +310,72 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
     return;
   }
 
-  const rawResult = prompt.flagSearch?.qs?.search(input);
-  const result = rawResult?.map((sc) => fixHighlightRanges(sc as ScoredChoice)) as ScoredChoice[];
+  // Use VS Code fuzzy search for flags
+  const result = searchChoices(prompt.flagSearch.choices, input);
 
   if (prompt.flagSearch.hasGroup) {
-    // Build a map for constant time access
-    const resultMap = new Map();
-    const keepGroups = new Set();
+    // Build a map for quick lookup
+    const resultMap = new Map<string, ScoredChoice>();
     for (const r of result) {
       resultMap.set(r.item.id, r);
-      keepGroups.add(r.item.group);
     }
 
-    keepGroups.add('Pass');
-
-    let groupedResults: ScoredChoice[] = [];
+    const exactMatchGroup: ScoredChoice[] = [];
     const startsWithGroup: ScoredChoice[] = [];
-    const includesGroup: ScoredChoice[] = [];
-
-    const matchGroup = [
-      createScoredChoice({
-        name: 'Exact Match',
-        group: 'Match',
-        pass: true,
-        skip: true,
-        nameClassName: defaultGroupNameClassName,
-        className: defaultGroupClassName,
-        height: PROMPT.ITEM.HEIGHT.XXXS,
-      }),
-    ];
+    const otherMatchGroup: ScoredChoice[] = [];
     const missGroup: ScoredChoice[] = [];
 
-    for (const choice of prompt.flagSearch.choices) {
-      const hide = choice?.hideWithoutInput && input === '';
-      const miss = choice?.miss && !hide;
-      if (miss) {
-        missGroup.push(createScoredChoice(choice));
-      } else if (!hide) {
-        const scoredChoice = resultMap.get(choice.id);
-        if (scoredChoice) {
-          const lowerCaseName = choice.name?.toLowerCase();
-          // Check if it's a startsWith match
-          if (lowerCaseName?.startsWith(lowerCaseInput)) {
-            startsWithGroup.push(scoredChoice);
-          } else {
-            includesGroup.push(scoredChoice);
-          }
-        } else if (choice?.pass) {
-          groupedResults.push(createScoredChoice(choice));
-        } else if (choice?.skip && keepGroups?.has(choice?.group)) {
-          groupedResults.push(createScoredChoice(choice));
-        }
+    // Categorize results
+    for (const scoredChoice of result) {
+      if (scoredChoice.item.miss) {
+        missGroup.push(scoredChoice);
+      } else if (isExactMatch(scoredChoice.item, input)) {
+        exactMatchGroup.push(scoredChoice);
+      } else if (startsWithQuery(scoredChoice.item, input)) {
+        startsWithGroup.push(scoredChoice);
+      } else {
+        otherMatchGroup.push(scoredChoice);
       }
     }
 
-    // Sort startsWithGroup to prioritize exact matches and shorter names
-    if (startsWithGroup.length > 0) {
-      startsWithGroup.sort((a, b) => {
-        const aName = a?.item?.name?.toLowerCase() || '';
-        const bName = b?.item?.name?.toLowerCase() || '';
-
-        // Exact match comes first
-        if (aName === lowerCaseInput) return -1;
-        if (bName === lowerCaseInput) return 1;
-
-        // Then sort by length (shorter first)
-        return aName.length - bName.length;
-      });
+    // Build final results
+    let groupedResults: ScoredChoice[] = [];
+    
+    // Add exact matches with header
+    if (exactMatchGroup.length > 0) {
+      groupedResults.push(
+        createScoredChoice({
+          name: 'Exact Match',
+          group: 'Match',
+          pass: false,
+          skip: true,
+          nameClassName: defaultGroupNameClassName,
+          className: defaultGroupClassName,
+          height: PROMPT.ITEM.HEIGHT.XXXS,
+          id: Math.random().toString(),
+        }),
+        ...exactMatchGroup
+      );
     }
-
-    // Combine results: startsWith first, then includes, then others
-    if (startsWithGroup.length > 0 || includesGroup.length > 0) {
-      groupedResults = [...startsWithGroup, ...includesGroup, ...groupedResults];
-    }
-
-    if (matchGroup.length > 1) {
-      groupedResults = matchGroup.concat(groupedResults);
-    }
-
+    
+    // Add other matches
+    groupedResults.push(...startsWithGroup, ...otherMatchGroup);
+    
+    // Show miss group if no matches
     if (groupedResults.length === 0) {
       groupedResults = missGroup;
     }
 
     setScoredFlags(prompt, groupedResults);
-  } else if (result?.length === 0) {
-    const missGroup = [];
-    for (const choice of prompt.flagSearch.choices) {
-      if (choice?.miss) {
-        missGroup.push(createScoredChoice(choice));
-      }
-    }
+  } else if (result.length === 0) {
+    // No matches, show miss choices
+    const missGroup = prompt.flagSearch.choices
+      .filter(c => c?.miss)
+      .map(createScoredChoice);
     setScoredFlags(prompt, missGroup);
   } else {
-    // Sort non-grouped results by startsWith match
-    const startsWithResults: ScoredChoice[] = [];
-    const otherResults: ScoredChoice[] = [];
-    
-    for (const r of result) {
-      const lowerCaseName = r.item.name?.toLowerCase();
-      if (lowerCaseName?.startsWith(lowerCaseInput)) {
-        startsWithResults.push(r);
-      } else {
-        otherResults.push(r);
-      }
-    }
-    
-    // Sort startsWithResults by exact match and length
-    if (startsWithResults.length > 0) {
-      startsWithResults.sort((a, b) => {
-        const aName = a?.item?.name?.toLowerCase() || '';
-        const bName = b?.item?.name?.toLowerCase() || '';
-
-        // Exact match comes first
-        if (aName === lowerCaseInput) return -1;
-        if (bName === lowerCaseInput) return 1;
-
-        // Then sort by length (shorter first)
-        return aName.length - bName.length;
-      });
-    }
-    
-    setScoredFlags([...startsWithResults, ...otherResults]);
+    // Non-grouped results - already sorted by VS Code algorithm
+    setScoredFlags(prompt, result);
   }
 };
 
@@ -685,14 +417,8 @@ export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys & Partial<Choice>) 
   prompt.flagSearch.choices = choices;
   prompt.flagSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
 
-  prompt.flagSearch.qs = new QuickScore(choices, {
-    keys: prompt.kitSearch.keys,
-    minimumScore: getQuickScoreMinScore(),
-    transformString: normalizeWithMap,
-    config: getQuickScoreConfig(),
-  } as any);
-
-  // setFlagShortcodes(choices);
+  // Clear fuzzy cache when flag choices change
+  clearFuzzyCache();
 
   log.info(`${prompt.getLogPrefix()}: Flag choices: ${choices.length}`);
   invokeFlagSearch(prompt, prompt.flagSearch.input);
@@ -776,7 +502,6 @@ export const setChoices = (
     prompt.kitSearch.choices = [];
     setScoredChoices(prompt, [], '!choices || !Array.isArray(choices) || choices.length === 0');
     prompt.kitSearch.hasGroup = false;
-    prompt.kitSearch.qs = null;
     return;
   }
 
@@ -793,13 +518,10 @@ export const setChoices = (
 
   prompt.kitSearch.choices = choices.filter((c) => !c?.exclude);
   prompt.kitSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
+  
+  // Clear fuzzy cache when choices change
+  clearFuzzyCache();
 
-  prompt.kitSearch.qs = new QuickScore(choices, {
-    keys: prompt.kitSearch.keys,
-    minimumScore: getQuickScoreMinScore(),
-    transformString: normalizeWithMap,
-    config: getQuickScoreConfig(),
-  } as any);
   sendToPrompt(Channel.SET_CHOICES_CONFIG, { preload });
 
   setShortcodes(prompt, choices);

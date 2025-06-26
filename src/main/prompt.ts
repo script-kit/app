@@ -29,7 +29,6 @@ import { debounce } from 'lodash-es';
 import type { ChildProcess } from 'node:child_process';
 import EventEmitter from 'node:events';
 import { fileURLToPath } from 'node:url';
-import { QuickScore } from 'quick-score';
 import { getAssetPath } from '../shared/assets';
 import { closedDiv, noScript } from '../shared/defaults';
 import { EMOJI_HEIGHT, EMOJI_WIDTH, ZOOM_LEVEL } from '../shared/defaults';
@@ -646,15 +645,6 @@ export class KitPrompt {
     keywords: new Map<string, Choice>(kitCache.keywords),
     shortcodes: new Map<string, Choice>(kitCache.shortcodes),
     hasGroup: false,
-    qs: new QuickScore(kitCache.choices, {
-      keys: kitCache.keys.map((name) => ({
-        name,
-        // scorer,
-      })),
-      minimumScore: kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE
-        ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
-        : 0.4,
-    }) as QuickScore<ScoredChoice> | null,
     commandChars: [] as string[],
     keys: kitCache.keys,
   };
@@ -668,7 +658,6 @@ export class KitPrompt {
     this.kitSearch.keyword = '';
     this.kitSearch.choices = [];
     this.kitSearch.input = '';
-    this.kitSearch.qs = new QuickScore([], { keys: ['name'] }); // Adjust according to your actual keys
     this.kitSearch.keywords.clear();
     this.kitSearch.triggers.clear();
     this.kitSearch.postfixes.clear();
@@ -683,14 +672,12 @@ export class KitPrompt {
     input: '',
     choices: [] as Choice[],
     hasGroup: false,
-    qs: null as null | QuickScore<Choice>,
   };
 
   clearFlagSearch = () => {
     this.flagSearch.input = '';
     this.flagSearch.choices = [];
     this.flagSearch.hasGroup = false;
-    this.flagSearch.qs = null;
   };
 
   // Long-running script monitoring methods

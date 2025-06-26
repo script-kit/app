@@ -176,9 +176,6 @@ importers:
       prop-types:
         specifier: ^15.8.1
         version: 15.8.1
-      quick-score:
-        specifier: 0.2.0
-        version: 0.2.0
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -212,6 +209,9 @@ importers:
       valtio:
         specifier: ^2.1.5
         version: 2.1.5(@types/react@19.1.6)(react@19.1.0)
+      vscode-fuzzy-scorer:
+        specifier: ^0.0.4
+        version: 0.0.4
       xstate:
         specifier: ^5.19.4
         version: 5.19.4
@@ -3308,6 +3308,9 @@ packages:
   cookie@0.7.1:
     resolution: {integrity: sha512-6DnInpx7SJ2AK3+CTUE/ZM0vWTUboZCegxhC2xiIydHR9jNuTAASBrfEpHhiGOZw/nX51bHt6YQl8jsGo4y/0w==}
     engines: {node: '>= 0.6'}
+
+  core-js@3.43.0:
+    resolution: {integrity: sha512-N6wEbTTZSYOY2rYAn85CuvWWkCK6QweMn7/4Nr3w+gDBeBhk/x4EJeY6FPo4QzDoJZxVTv8U7CMvgWk6pOHHqA==}
 
   core-util-is@1.0.2:
     resolution: {integrity: sha512-3lqz5YjWTYnW6dlDa5TLaTCcShfar1e40rmcJVwCBJC6mWlFuj0eCHIElmG1g5kyuJ/GD+8Wn4FFCcz4gJPfaQ==}
@@ -7995,6 +7998,9 @@ packages:
   vm-browserify@0.0.4:
     resolution: {integrity: sha512-NyZNR3WDah+NPkjh/YmhuWSsT4a0mF0BJYgUmvrJ70zxjTXh5Y2Asobxlh0Nfs0PCFB5FVpRJft7NozAWFMwLQ==}
 
+  vscode-fuzzy-scorer@0.0.4:
+    resolution: {integrity: sha512-nXMU/ys6pGQ4+b8uwWmq+emv7ASQGmpMJA6Yntqw/510fBqBOe42OC3j7p0gqVFpu75yexYIIPnb/LhcejOFZw==}
+
   w3c-xmlserializer@5.0.0:
     resolution: {integrity: sha512-o8qghlI8NZHU1lLPrpi2+Uq7abh4GGPpYANlalzWxyWteJOCsr/P+oPBA49TOLu5FTZO4d3F9MnWJfiMo4BkmA==}
     engines: {node: '>=18'}
@@ -11563,6 +11569,8 @@ snapshots:
   cookie-signature@1.2.2: {}
 
   cookie@0.7.1: {}
+
+  core-js@3.43.0: {}
 
   core-util-is@1.0.2: {}
 
@@ -16948,6 +16956,10 @@ snapshots:
   vm-browserify@0.0.4:
     dependencies:
       indexof: 0.0.1
+
+  vscode-fuzzy-scorer@0.0.4:
+    dependencies:
+      core-js: 3.43.0
 
   w3c-xmlserializer@5.0.0:
     dependencies:
