@@ -513,6 +513,8 @@ export const debounceInvokeSearch = debounce(invokeSearch, 100);
 
 export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
   prompt.flagSearch.input = input;
+  const lowerCaseInput = input?.toLowerCase();
+  
   if (input === '') {
     setScoredFlags(
       prompt,
@@ -536,6 +538,8 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
     keepGroups.add('Pass');
 
     let groupedResults: ScoredChoice[] = [];
+    const startsWithGroup: ScoredChoice[] = [];
+    const includesGroup: ScoredChoice[] = [];
 
     const matchGroup = [
       createScoredChoice({
@@ -557,16 +561,40 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
         missGroup.push(createScoredChoice(choice));
       } else if (!hide) {
         const scoredChoice = resultMap.get(choice.id);
-        if (choice?.pass) {
-          groupedResults.push(createScoredChoice(choice));
-        }
-
         if (scoredChoice) {
-          groupedResults.push(scoredChoice);
+          const lowerCaseName = choice.name?.toLowerCase();
+          // Check if it's a startsWith match
+          if (lowerCaseName?.startsWith(lowerCaseInput)) {
+            startsWithGroup.push(scoredChoice);
+          } else {
+            includesGroup.push(scoredChoice);
+          }
+        } else if (choice?.pass) {
+          groupedResults.push(createScoredChoice(choice));
         } else if (choice?.skip && keepGroups?.has(choice?.group)) {
           groupedResults.push(createScoredChoice(choice));
         }
       }
+    }
+
+    // Sort startsWithGroup to prioritize exact matches and shorter names
+    if (startsWithGroup.length > 0) {
+      startsWithGroup.sort((a, b) => {
+        const aName = a?.item?.name?.toLowerCase() || '';
+        const bName = b?.item?.name?.toLowerCase() || '';
+
+        // Exact match comes first
+        if (aName === lowerCaseInput) return -1;
+        if (bName === lowerCaseInput) return 1;
+
+        // Then sort by length (shorter first)
+        return aName.length - bName.length;
+      });
+    }
+
+    // Combine results: startsWith first, then includes, then others
+    if (startsWithGroup.length > 0 || includesGroup.length > 0) {
+      groupedResults = [...startsWithGroup, ...includesGroup, ...groupedResults];
     }
 
     if (matchGroup.length > 1) {
@@ -587,7 +615,35 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
     }
     setScoredFlags(prompt, missGroup);
   } else {
-    setScoredFlags(prompt, result);
+    // Sort non-grouped results by startsWith match
+    const startsWithResults: ScoredChoice[] = [];
+    const otherResults: ScoredChoice[] = [];
+    
+    for (const r of result) {
+      const lowerCaseName = r.item.name?.toLowerCase();
+      if (lowerCaseName?.startsWith(lowerCaseInput)) {
+        startsWithResults.push(r);
+      } else {
+        otherResults.push(r);
+      }
+    }
+    
+    // Sort startsWithResults by exact match and length
+    if (startsWithResults.length > 0) {
+      startsWithResults.sort((a, b) => {
+        const aName = a?.item?.name?.toLowerCase() || '';
+        const bName = b?.item?.name?.toLowerCase() || '';
+
+        // Exact match comes first
+        if (aName === lowerCaseInput) return -1;
+        if (bName === lowerCaseInput) return 1;
+
+        // Then sort by length (shorter first)
+        return aName.length - bName.length;
+      });
+    }
+    
+    setScoredFlags([...startsWithResults, ...otherResults]);
   }
 };
 

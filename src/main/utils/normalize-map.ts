@@ -2,6 +2,7 @@
  * A record of "original → { transformed, indexMap }"
  * indexMap[i] = absolute index in the ORIGINAL string that produced the i-th
  * character in the TRANSFORMED string.
+ * Transforms strings to lowercase and strips hyphens (but preserves spaces).
  */
 const normCache = new Map<string, { transformed: string; indexMap: number[] }>();
 
@@ -14,7 +15,7 @@ export function normalizeWithMap(raw: string): string {
 
   for (let i = 0, j = 0; i < raw.length; i++) {
     const ch = raw[i];
-    if (ch === "-" || ch === " ") continue;           // strip but **remember**
+    if (ch === "-") continue;                         // strip hyphens but **remember**
     transformed += ch.toLocaleLowerCase();
     indexMap[j++] = i;                                // record origin
   }

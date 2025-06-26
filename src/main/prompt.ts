@@ -653,7 +653,7 @@ export class KitPrompt {
       })),
       minimumScore: kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE
         ? Number.parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
-        : 0.6,
+        : 0.4,
     }) as QuickScore<ScoredChoice> | null,
     commandChars: [] as string[],
     keys: kitCache.keys,
@@ -676,7 +676,7 @@ export class KitPrompt {
     this.updateShortcodes();
     this.kitSearch.hasGroup = false;
     this.kitSearch.commandChars = [];
-    this.kitSearch.keys = ['slicedName', 'tag', 'group', 'command', 'alias'];
+    this.kitSearch.keys = ['slicedName', 'name', 'tag', 'group', 'command', 'alias'];
   };
 
   flagSearch = {
@@ -1236,7 +1236,7 @@ export class KitPrompt {
       emojiActive: this.emojiActive,
       focusedEmojiActive: prompts?.focused?.emojiActive,
     });
-    
+
     // Use visibility controller to handle blur
     visibilityController.handleBlur(this);
 
@@ -1318,11 +1318,11 @@ export class KitPrompt {
       log.silly(`sendToPrompt: ${String(channel)}`, data);
 
       // Log [SCRIPTS RENDER] events
-      if (channel === AppChannel.SET_CACHED_MAIN_STATE || 
-          channel === AppChannel.SET_CACHED_MAIN_SCORED_CHOICES ||
-          channel === AppChannel.SET_CACHED_MAIN_SHORTCUTS ||
-          channel === AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS ||
-          channel === AppChannel.SET_CACHED_MAIN_PREVIEW) {
+      if (channel === AppChannel.SET_CACHED_MAIN_STATE ||
+        channel === AppChannel.SET_CACHED_MAIN_SCORED_CHOICES ||
+        channel === AppChannel.SET_CACHED_MAIN_SHORTCUTS ||
+        channel === AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS ||
+        channel === AppChannel.SET_CACHED_MAIN_PREVIEW) {
         this.logInfo(`[SCRIPTS RENDER] Prompt ${this.pid}:${this.id} sending ${String(channel)} to renderer`);
       }
 
