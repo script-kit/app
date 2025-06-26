@@ -14,11 +14,17 @@ function convertMatches(matches: IMatch[] | undefined): Array<[number, number]> 
   return matches.map(m => [m.start, m.end]);
 }
 
+// Split text by both spaces and path separators
+function splitIntoWords(text: string): string[] {
+  // Split by spaces, forward slashes, and backslashes
+  return text.split(/[\s\/\\]+/).filter(w => w.length > 0);
+}
+
 // Check if query matches as a mnemonic (first letters of words)
 function isMnemonicMatch(text: string, query: string): boolean {
   if (!text || !query) return false;
   
-  const words = text.split(/\s+/).filter(w => w.length > 0);
+  const words = splitIntoWords(text);
   const queryLower = query.toLowerCase();
   
   // Try to match query letters to first letters of consecutive words
@@ -54,16 +60,21 @@ function isSequentialWordMatch(text: string, matches: Array<[number, number]>, q
   const words: { text: string; start: number; end: number }[] = [];
   let position = 0;
   
-  text.split(/\s+/).forEach(word => {
-    if (word) {
+  // Split by spaces and path separators, but keep track of positions
+  const parts = text.split(/([\s\/\\]+)/);
+  
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (part && !/^[\s\/\\]+$/.test(part)) {
+      // This is a word, not a separator
       words.push({
-        text: word,
+        text: part,
         start: position,
-        end: position + word.length
+        end: position + part.length
       });
-      position += word.length + 1; // +1 for space
     }
-  });
+    position += part.length;
+  }
   
   if (words.length < 2) return false;
   
@@ -116,6 +127,7 @@ export function scoreChoice(choice: Choice, query: string): ScoredChoice | null 
 
   // Score name field as primary label
   if (choice.name) {
+    // Always use the full string for scoring first
     const nameAccessor = {
       getItemLabel: (item: any) => item.name,
       getItemDescription: () => undefined,
@@ -124,7 +136,46 @@ export function scoreChoice(choice: Choice, query: string): ScoredChoice | null 
     
     const nameScore = scoreItemFuzzy(choice, preparedQuery, true, nameAccessor, {});
     if (nameScore && nameScore.score > 0) {
-      totalScore += nameScore.score * 100; // Much higher priority for name matches
+      // For paths, apply a penalty if matches are scattered across path separators
+      const isPath = choice.name.includes('/') || choice.name.includes('\\');
+      
+      if (isPath && nameScore.labelMatch) {
+        // Check if matches span multiple path components without being at word boundaries
+        const pathParts = choice.name.split(/[\/\\]+/);
+        let componentBoundaries: number[] = [0];
+        let pos = 0;
+        
+        // Calculate component boundaries
+        for (let i = 0; i < pathParts.length - 1; i++) {
+          pos += pathParts[i].length + 1; // +1 for separator
+          componentBoundaries.push(pos);
+        }
+        
+        // Check if matches respect component boundaries
+        let crossesComponents = false;
+        for (const match of nameScore.labelMatch) {
+          // Check if this match starts at a component boundary
+          const startsAtBoundary = componentBoundaries.some(b => b === match.start);
+          
+          // Check if match spans across components
+          for (const boundary of componentBoundaries) {
+            if (match.start < boundary && match.end > boundary) {
+              crossesComponents = true;
+              break;
+            }
+          }
+        }
+        
+        // Apply penalty for matches that cross component boundaries
+        if (crossesComponents) {
+          totalScore += nameScore.score * 50; // Reduced weight for scattered matches
+        } else {
+          totalScore += nameScore.score * 100; // Full weight for clean matches
+        }
+      } else {
+        totalScore += nameScore.score * 100; // Normal weight for non-paths
+      }
+      
       if (nameScore.labelMatch?.length) {
         allMatches.name = convertMatches(nameScore.labelMatch);
         
@@ -206,8 +257,8 @@ export function scoreChoice(choice: Choice, query: string): ScoredChoice | null 
   scoredChoice.matches = allMatches;
   
   // Check for sequential word matching bonus
-  if (allMatches.name && choice.name) {
-    const isSequential = isSequentialWordMatch(choice.name, allMatches.name, query);
+  if (choice.name) {
+    const isSequential = isSequentialWordMatch(choice.name, allMatches.name || [], query);
     if (isSequential) {
       // Give significant bonus for sequential word matches
       scoredChoice.score *= 1.5;
