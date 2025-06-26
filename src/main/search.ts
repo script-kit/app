@@ -206,6 +206,12 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
           id: Math.random().toString(),
         })
       );
+      // Sort exact matches by original index (they're all exact matches)
+      exactMatchGroup.sort((a, b) => {
+        const aIndex = a.originalIndex || 0;
+        const bIndex = b.originalIndex || 0;
+        return aIndex - bIndex;
+      });
       combinedResults.push(...exactMatchGroup);
     }
     
@@ -226,10 +232,24 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
           })
         );
       }
+      // Sort startsWith matches by original index (they all start with the query)
+      startsWithGroup.sort((a, b) => {
+        const aIndex = a.originalIndex || 0;
+        const bIndex = b.originalIndex || 0;
+        return aIndex - bIndex;
+      });
       combinedResults.push(...startsWithGroup);
     }
     
-    // Add other matches
+    // Add other matches - sort by score, then by original index
+    otherMatchGroup.sort((a, b) => {
+      if (b.score === a.score) {
+        const aIndex = a.originalIndex || 0;
+        const bIndex = b.originalIndex || 0;
+        return aIndex - bIndex;
+      }
+      return b.score - a.score;
+    });
     combinedResults.push(...otherMatchGroup);
     
     // Add pass choices that matched the regex

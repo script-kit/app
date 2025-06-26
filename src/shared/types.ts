@@ -8,6 +8,7 @@ export interface ScoredChoice {
     [key: string]: [number, number][];
   };
   _: string;
+  originalIndex?: number;
 }
 
 export interface ChoiceButtonData {

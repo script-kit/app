@@ -6,12 +6,19 @@ import { AppChannel } from '../shared/enums';
 import type { ScoredChoice } from '../shared/types';
 import type { KitPrompt } from './prompt';
 
-// Mock debounce for immediate execution in tests while using real QuickScore
+// Mock debounce for immediate execution in tests
 vi.mock('lodash-es', () => ({
   debounce: vi.fn((fn) => fn), // Immediate execution for tests
 }));
 
-// Using real QuickScore implementation for more realistic testing
+// Mock VS Code fuzzy search
+vi.mock('./vscode-search', () => ({
+  searchChoices: vi.fn(),
+  scoreChoice: vi.fn(),
+  isExactMatch: vi.fn(),
+  startsWithQuery: vi.fn(),
+  clearFuzzyCache: vi.fn(),
+}))
 
 vi.mock('./logs', () => ({
   searchLog: {
@@ -36,12 +43,9 @@ vi.mock('./state', () => ({
     shortcodes: new Map(),
   },
   kitState: {
-    kenvEnv: {
-      KIT_SEARCH_MAX_ITERATIONS: '3',
-      KIT_SEARCH_MIN_SCORE: '0.6',
-    },
+    kenvEnv: {},
   },
-}));
+}))
 
 // Use real implementations for pure functions
 vi.mock('@johnlindquist/kit/core/utils', async () => {
@@ -52,13 +56,26 @@ vi.mock('@johnlindquist/kit/core/utils', async () => {
   };
 });
 
-// Mock normalize-map module to track its usage
-vi.mock('./utils/normalize-map', () => ({
-  normalizeWithMap: vi.fn((str: string) => str.replace(/[-\s]/g, '').toLowerCase()),
-  remapRange: vi.fn((raw: string, range: [number, number]): [number, number] => range),
-}));
+// Mock helpers
+vi.mock('./helpers', () => {
+  return {
+    createScoredChoice: vi.fn((choice: any) => ({ 
+      item: choice, 
+      score: 0, 
+      matches: {}, 
+      _: '' 
+    })),
+    createAsTypedChoice: vi.fn((input: string, template: any) => ({
+      ...template,
+      name: template?.name || '{input}',
+      value: template?.value !== undefined ? template.value : input,
+      group: template?.group || 'As Typed',
+      asTyped: true,
+    })),
+  };
+})
 
-// Import after mocks - now using real implementations for pure functions
+// Import after mocks
 import {
   appendChoices,
   debounceInvokeSearch,
@@ -71,7 +88,8 @@ import {
   setShortcodes,
 } from './search';
 
-import { normalizeWithMap, remapRange } from './utils/normalize-map';
+import { searchChoices, scoreChoice, isExactMatch, startsWithQuery, clearFuzzyCache } from './vscode-search';
+import { createScoredChoice, createAsTypedChoice } from './helpers';
 
 describe('Search Functionality', () => {
   let mockPrompt: KitPrompt;
@@ -79,7 +97,13 @@ describe('Search Functionality', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.restoreAllMocks();
     mockSendToPrompt = vi.fn();
+    
+    // Set default mock implementations
+    vi.mocked(searchChoices).mockReturnValue([]);
+    vi.mocked(isExactMatch).mockReturnValue(false);
+    vi.mocked(startsWithQuery).mockReturnValue(false);
 
     mockPrompt = {
       ui: UI.arg,
@@ -97,7 +121,6 @@ describe('Search Functionality', () => {
         flaggedValue: '',
         choices: [],
         scripts: [],
-        qs: null,
         hasGroup: false,
         keys: ['name', 'keyword', 'tag'],
         keywords: new Map(),
@@ -109,7 +132,6 @@ describe('Search Functionality', () => {
         input: '',
         choices: [],
         hasGroup: false,
-        qs: null,
       },
       updateShortcodes: vi.fn(),
     } as any;
@@ -139,7 +161,7 @@ describe('Search Functionality', () => {
     it('should transform input using regex when inputRegex is set', () => {
       mockPrompt.kitSearch.inputRegex = /test-(\w+)/;
       mockPrompt.kitSearch.choices = [{ id: '1', name: 'Test Choice', keyword: 'test' }];
-      mockPrompt.kitSearch.qs = { search: vi.fn(() => []) };
+      vi.mocked(searchChoices).mockReturnValue([]);
 
       invokeSearch(mockPrompt, 'test-something extra text');
 
@@ -216,9 +238,9 @@ describe('Search Functionality', () => {
       );
     });
 
-    it('should warn and return when qs is not available', () => {
+    it('should handle search with empty results', () => {
       mockPrompt.kitSearch.choices = [{ id: '1', name: 'Test' }];
-      mockPrompt.kitSearch.qs = null;
+      vi.mocked(searchChoices).mockReturnValue([]);
 
       invokeSearch(mockPrompt, 'test');
 
@@ -238,7 +260,7 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = true;
-      mockPrompt.kitSearch.qs = { search: vi.fn(() => searchResults) };
+      vi.mocked(searchChoices).mockReturnValue(searchResults);
 
       invokeSearch(mockPrompt, 'test');
 
@@ -253,7 +275,7 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = true;
-      mockPrompt.kitSearch.qs = { search: vi.fn(() => []) };
+      vi.mocked(searchChoices).mockReturnValue([]);
 
       invokeSearch(mockPrompt, 'testing123');
 
@@ -268,7 +290,7 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = false;
-      mockPrompt.kitSearch.qs = { search: vi.fn(() => []) };
+      vi.mocked(searchChoices).mockReturnValue([]);
 
       // Test with empty input
       invokeSearch(mockPrompt, '');
@@ -311,7 +333,9 @@ describe('Search Functionality', () => {
 
       mockPrompt.flagSearch.choices = flagChoices;
       mockPrompt.flagSearch.hasGroup = true;
-      mockPrompt.flagSearch.qs = { search: vi.fn(() => searchResults) };
+      vi.mocked(searchChoices).mockReturnValue(searchResults);
+      vi.mocked(isExactMatch).mockReturnValue(false);
+      vi.mocked(startsWithQuery).mockReturnValue(true);
 
       invokeFlagSearch(mockPrompt, 'test');
 
@@ -422,7 +446,6 @@ describe('Search Functionality', () => {
 
       expect(mockPrompt.kitSearch.choices).toEqual([]);
       expect(mockPrompt.kitSearch.hasGroup).toBe(false);
-      expect(mockPrompt.kitSearch.qs).toBeNull();
       expect(mockSendToPrompt).toHaveBeenCalledWith(Channel.SET_SCORED_CHOICES, []);
     });
 
@@ -437,7 +460,6 @@ describe('Search Functionality', () => {
 
       expect(mockPrompt.kitSearch.choices).toHaveLength(2); // Excluded choice filtered
       expect(mockPrompt.kitSearch.hasGroup).toBe(true);
-      expect(mockPrompt.kitSearch.qs).toBeTruthy();
       expect(mockSendToPrompt).toHaveBeenCalledWith(Channel.SET_CHOICES_CONFIG, { preload: true });
     });
 
@@ -607,34 +629,19 @@ describe('Search Functionality', () => {
     });
   });
 
-  describe('Highlight Range Remapping', () => {
-    it('should remap highlight ranges for hyphenated words', () => {
+  describe('VS Code Fuzzy Search Highlighting', () => {
+    it('should handle highlight ranges for hyphenated words', () => {
       const choices = [
         { id: '1', name: 'kit-container', keyword: 'kit' },
         { id: '2', name: 'test-script', keyword: 'test' },
       ];
-
-      // Mock the normalize and remap functions to simulate real behavior
-      vi.mocked(normalizeWithMap).mockImplementation((str: string) => {
-        return str.replace(/[-\s]/g, '').toLowerCase();
-      });
-      
-      vi.mocked(remapRange).mockImplementation((raw: string, range: [number, number]): [number, number] => {
-        // Simulate remapping for 'kit-container' -> 'kitcontainer'
-        if (raw === 'kit-container' && range[0] === 0 && range[1] === 3) return [0, 3];
-        if (raw === 'kit-container' && range[0] === 3 && range[1] === 12) return [4, 13];
-        // Simulate remapping for 'test-script' -> 'testscript'
-        if (raw === 'test-script' && range[0] === 0 && range[1] === 4) return [0, 4];
-        if (raw === 'test-script' && range[0] === 4 && range[1] === 10) return [5, 11];
-        return range;
-      });
 
       const searchResults = [
         { 
           item: choices[0], 
           score: 0.9, 
           matches: { 
-            name: [[0, 3], [3, 12]] // Original ranges on normalized string
+            name: [[0, 3], [4, 13]] // VS Code returns proper ranges for original string
           }, 
           _: '' 
         },
@@ -642,16 +649,11 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = false;
-      mockPrompt.kitSearch.qs = { search: vi.fn(() => searchResults) };
+      vi.mocked(searchChoices).mockReturnValue(searchResults);
 
       invokeSearch(mockPrompt, 'kitcontainer');
 
-      // Verify normalizeWithMap was called to trigger cache
-      expect(normalizeWithMap).toHaveBeenCalledWith('kit-container');
-      
-      // Verify remapRange was called for each range
-      expect(remapRange).toHaveBeenCalledWith('kit-container', [0, 3]);
-      expect(remapRange).toHaveBeenCalledWith('kit-container', [3, 12]);
+      // VS Code fuzzy search handles highlighting internally
 
       // Verify the remapped ranges were sent to the prompt
       expect(mockSendToPrompt).toHaveBeenCalledWith(
@@ -659,7 +661,7 @@ describe('Search Functionality', () => {
         expect.arrayContaining([
           expect.objectContaining({
             matches: {
-              name: [[0, 3], [4, 13]] // Remapped ranges
+              name: [[0, 3], [4, 13]] // VS Code returns proper ranges
             },
           }),
         ]),
@@ -671,23 +673,12 @@ describe('Search Functionality', () => {
         { id: '1', name: 'kit container', keyword: 'kit' },
       ];
 
-      vi.mocked(normalizeWithMap).mockImplementation((str: string) => {
-        return str.replace(/[-\s]/g, '').toLowerCase();
-      });
-      
-      vi.mocked(remapRange).mockImplementation((raw: string, range: [number, number]): [number, number] => {
-        // Simulate remapping for 'kit container' -> 'kitcontainer'
-        if (raw === 'kit container' && range[0] === 0 && range[1] === 3) return [0, 3];
-        if (raw === 'kit container' && range[0] === 3 && range[1] === 12) return [4, 13];
-        return range;
-      });
-
       const searchResults = [
         { 
           item: choices[0], 
           score: 0.9, 
           matches: { 
-            name: [[0, 3], [3, 12]] // Original ranges on normalized string
+            name: [[0, 3], [4, 13]] // VS Code returns proper ranges
           }, 
           _: '' 
         },
@@ -695,28 +686,17 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = false;
-      mockPrompt.kitSearch.qs = { search: vi.fn(() => searchResults) };
+      vi.mocked(searchChoices).mockReturnValue(searchResults);
 
       invokeSearch(mockPrompt, 'kit container');
 
-      expect(normalizeWithMap).toHaveBeenCalledWith('kit container');
-      expect(remapRange).toHaveBeenCalledWith('kit container', [0, 3]);
-      expect(remapRange).toHaveBeenCalledWith('kit container', [3, 12]);
+      // VS Code fuzzy search handles spaces properly
     });
 
-    it('should remap flag search highlight ranges', () => {
+    it('should handle flag search highlight ranges', () => {
       const flagChoices = [
         { id: 'flag1', name: 'test-flag', group: 'Group1' },
       ];
-      
-      vi.mocked(normalizeWithMap).mockImplementation((str: string) => {
-        return str.replace(/[-\s]/g, '').toLowerCase();
-      });
-      
-      vi.mocked(remapRange).mockImplementation((raw: string, range: [number, number]): [number, number] => {
-        if (raw === 'test-flag' && range[0] === 0 && range[1] === 4) return [0, 4];
-        return range;
-      });
 
       const searchResults = [
         { 
@@ -729,12 +709,13 @@ describe('Search Functionality', () => {
 
       mockPrompt.flagSearch.choices = flagChoices;
       mockPrompt.flagSearch.hasGroup = true;
-      mockPrompt.flagSearch.qs = { search: vi.fn(() => searchResults) };
+      vi.mocked(searchChoices).mockReturnValue(searchResults);
+      vi.mocked(isExactMatch).mockReturnValue(false);
+      vi.mocked(startsWithQuery).mockReturnValue(true);
 
       invokeFlagSearch(mockPrompt, 'test');
 
-      expect(normalizeWithMap).toHaveBeenCalledWith('test-flag');
-      expect(remapRange).toHaveBeenCalledWith('test-flag', [0, 4]);
+      // VS Code handles flag search highlighting
 
       expect(mockSendToPrompt).toHaveBeenCalledWith(
         Channel.SET_SCORED_FLAGS,
@@ -764,7 +745,7 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = false;
-      mockPrompt.kitSearch.qs = { search: vi.fn(() => searchResults) };
+      vi.mocked(searchChoices).mockReturnValue(searchResults);
 
       invokeSearch(mockPrompt, 'test');
 
@@ -784,15 +765,6 @@ describe('Search Functionality', () => {
         { id: '1', name: 'kit-container', keyword: 'kit-key' },
       ];
 
-      vi.mocked(normalizeWithMap).mockImplementation((str: string) => {
-        return str.replace(/[-\s]/g, '').toLowerCase();
-      });
-      
-      vi.mocked(remapRange).mockImplementation((raw: string, range: [number, number]): [number, number] => {
-        if (raw === 'kit-container' && range[0] === 0 && range[1] === 3) return [0, 3];
-        if (raw === 'kit-key' && range[0] === 0 && range[1] === 3) return [0, 3];
-        return range;
-      });
 
       const searchResults = [
         { 
@@ -808,14 +780,23 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = false;
-      mockPrompt.kitSearch.qs = { search: vi.fn(() => searchResults) };
+      vi.mocked(searchChoices).mockReturnValue(searchResults);
 
       invokeSearch(mockPrompt, 'kit');
 
-      expect(normalizeWithMap).toHaveBeenCalledWith('kit-container');
-      expect(normalizeWithMap).toHaveBeenCalledWith('kit-key');
-      expect(remapRange).toHaveBeenCalledWith('kit-container', [0, 3]);
-      expect(remapRange).toHaveBeenCalledWith('kit-key', [0, 3]);
+      // VS Code fuzzy search handles multiple fields properly
+      expect(searchChoices).toHaveBeenCalledWith(choices, 'kit');
+      expect(mockSendToPrompt).toHaveBeenCalledWith(
+        Channel.SET_SCORED_CHOICES,
+        expect.arrayContaining([
+          expect.objectContaining({
+            matches: {
+              name: [[0, 3]],
+              keyword: [[0, 3]]
+            },
+          }),
+        ]),
+      );
     });
   });
 
@@ -830,7 +811,7 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = true;
-      mockPrompt.kitSearch.qs = { search: vi.fn(() => searchResults) };
+      vi.mocked(searchChoices).mockReturnValue(searchResults);
 
       invokeSearch(mockPrompt, 'test');
 
@@ -855,15 +836,19 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = true;
-      mockPrompt.kitSearch.qs = { search: vi.fn(() => searchResults) };
+      vi.mocked(searchChoices).mockReturnValue(searchResults);
 
       invokeSearch(mockPrompt, 'choice');
 
+      // Verify that both results are returned
       expect(mockSendToPrompt).toHaveBeenCalledWith(
         Channel.SET_SCORED_CHOICES,
         expect.arrayContaining([
           expect.objectContaining({
-            item: expect.objectContaining({ name: 'Group2', group: 'Group2' }),
+            item: expect.objectContaining({ name: 'Regular Choice' }),
+          }),
+          expect.objectContaining({
+            item: expect.objectContaining({ name: 'Last Group Choice', lastGroup: true }),
           }),
         ]),
       );
@@ -875,7 +860,7 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = false;
-      mockPrompt.kitSearch.qs = { search: vi.fn(() => searchResults) };
+      vi.mocked(searchChoices).mockReturnValue(searchResults);
 
       invokeSearch(mockPrompt, 'test');
 
@@ -899,7 +884,7 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = true;
-      mockPrompt.kitSearch.qs = { search: vi.fn(() => []) };
+      vi.mocked(searchChoices).mockReturnValue([]);
 
       invokeSearch(mockPrompt, 'test');
 
@@ -926,14 +911,14 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = true;
-      mockPrompt.kitSearch.qs = { search: vi.fn(() => []) };
+      vi.mocked(searchChoices).mockReturnValue([]);
 
       invokeSearch(mockPrompt, 'match');
 
       expect(mockSendToPrompt).toHaveBeenCalledWith(Channel.SET_SCORED_CHOICES, expect.any(Array));
     });
 
-    it('should handle manual string matching when QuickScore returns no results', () => {
+    it('should handle VS Code fuzzy search with no results', () => {
       const choices = [
         {
           id: '1',
@@ -947,12 +932,15 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = false;
-      mockPrompt.kitSearch.qs = { search: vi.fn(() => []) };
+      vi.mocked(searchChoices).mockReturnValue([
+        { item: choices[0], score: 0.8, matches: { name: [[9, 13]] }, _: '' }
+      ]);
       mockPrompt.kitSearch.keys = ['name', 'keyword'];
 
       invokeSearch(mockPrompt, 'test');
 
-      // Should find matches manually and create scored choices
+      // Should use VS Code fuzzy search
+      expect(searchChoices).toHaveBeenCalledWith(choices, 'test');
       expect(mockSendToPrompt).toHaveBeenCalledWith(
         Channel.SET_SCORED_CHOICES,
         expect.arrayContaining([
@@ -972,11 +960,9 @@ describe('Search Functionality', () => {
 
         mockPrompt.kitSearch.choices = choices;
         mockPrompt.kitSearch.hasGroup = false;
-        mockPrompt.kitSearch.qs = {
-          search: vi.fn(() => [
-            { item: choices[0], score: 0.7, matches: { name: [[0, 2]] }, _: '' },
-          ]),
-        };
+        vi.mocked(searchChoices).mockReturnValue([
+          { item: choices[0], score: 0.7, matches: { name: [[0, 2]] }, _: '' },
+        ]);
 
         invokeSearch(mockPrompt, 'gi');
 
@@ -1019,27 +1005,23 @@ describe('Search Functionality', () => {
 
         mockPrompt.kitSearch.choices = choices;
         mockPrompt.kitSearch.hasGroup = false;
-        mockPrompt.kitSearch.qs = {
-          search: vi.fn(() => [
-            { item: choices[0], score: 0.7, matches: { name: [[0, 2]] }, _: '' },
-          ]),
-        };
+        vi.mocked(searchChoices).mockReturnValue([
+          { item: choices[0], score: 0.7, matches: { name: [[0, 2]] }, _: '' },
+        ]);
 
         invokeSearch(mockPrompt, 'git foo');
 
-        expect(mockSendToPrompt).toHaveBeenCalledWith(
-          Channel.SET_SCORED_CHOICES,
-          expect.arrayContaining([
-            expect.objectContaining({
-              item: expect.objectContaining({
-                group: 'As Typed',
-                asTyped: true,
-                name: '{input}',
-                value: 'git foo',
-              }),
-            }),
-          ]),
-        );
+        const calls = mockSendToPrompt.mock.calls;
+        const setScoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+        const scoredChoices = setScoredChoicesCall?.[1] || [];
+        
+        // Find the as typed choice in the results
+        const asTypedChoice = scoredChoices.find((sc: ScoredChoice) => sc.item.asTyped === true);
+        
+        expect(asTypedChoice).toBeDefined();
+        expect(asTypedChoice.item.value).toBe('git foo');
+        expect(asTypedChoice.item.name).toBe('Create {input}');
+        expect(asTypedChoice.item.group).toBe('As Typed');
       });
 
       it('should not show "As Typed" option when exact match exists on name', () => {
@@ -1050,11 +1032,9 @@ describe('Search Functionality', () => {
 
         mockPrompt.kitSearch.choices = choices;
         mockPrompt.kitSearch.hasGroup = false;
-        mockPrompt.kitSearch.qs = {
-          search: vi.fn(() => [
-            { item: choices[0], score: 1.0, matches: { name: [[0, 3]] }, _: '' },
-          ]),
-        };
+        vi.mocked(searchChoices).mockReturnValue([
+          { item: choices[0], score: 1.0, matches: { name: [[0, 3]] }, _: '' },
+        ]);
 
         invokeSearch(mockPrompt, 'git');
 
@@ -1076,11 +1056,9 @@ describe('Search Functionality', () => {
 
         mockPrompt.kitSearch.choices = choices;
         mockPrompt.kitSearch.hasGroup = false;
-        mockPrompt.kitSearch.qs = {
-          search: vi.fn(() => [
-            { item: choices[0], score: 1.0, matches: { keyword: [[0, 3]] }, _: '' },
-          ]),
-        };
+        vi.mocked(searchChoices).mockReturnValue([
+          { item: choices[0], score: 1.0, matches: { keyword: [[0, 3]] }, _: '' },
+        ]);
 
         invokeSearch(mockPrompt, 'git');
 
@@ -1102,25 +1080,23 @@ describe('Search Functionality', () => {
 
         mockPrompt.kitSearch.choices = choices;
         mockPrompt.kitSearch.hasGroup = false;
-        mockPrompt.kitSearch.qs = {
-          search: vi.fn(() => [
-            { item: choices[0], score: 0.5, matches: { name: [[0, 1]] }, _: '' },
-          ]),
-        };
+        vi.mocked(searchChoices).mockReturnValue([
+          { item: choices[0], score: 0.5, matches: { name: [[0, 1]] }, _: '' },
+        ]);
 
         invokeSearch(mockPrompt, '/Users/john/Documents');
 
-        expect(mockSendToPrompt).toHaveBeenCalledWith(
-          Channel.SET_SCORED_CHOICES,
-          expect.arrayContaining([
-            expect.objectContaining({
-              item: expect.objectContaining({
-                value: '/Users/john/Documents',
-                name: '{input}',
-              }),
-            }),
-          ]),
-        );
+        const calls = mockSendToPrompt.mock.calls;
+        const setScoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+        const scoredChoices = setScoredChoicesCall?.[1] || [];
+        
+        // Find the as typed choice in the results
+        const asTypedChoice = scoredChoices.find((sc: ScoredChoice) => sc.item.asTyped === true);
+        
+        expect(asTypedChoice).toBeDefined();
+        expect(asTypedChoice.item.value).toBe('/Users/john/Documents');
+        expect(asTypedChoice.item.name).toBe('Select {input} as path');
+        expect(asTypedChoice.item.group).toBe('As Typed');
       });
 
       it('should handle multiple asTyped choices', () => {
@@ -1132,9 +1108,7 @@ describe('Search Functionality', () => {
 
         mockPrompt.kitSearch.choices = choices;
         mockPrompt.kitSearch.hasGroup = false;
-        mockPrompt.kitSearch.qs = {
-          search: vi.fn(() => []),
-        };
+        vi.mocked(searchChoices).mockReturnValue([]);
 
         invokeSearch(mockPrompt, 'newproject');
 
@@ -1157,11 +1131,9 @@ describe('Search Functionality', () => {
 
         mockPrompt.kitSearch.choices = choices;
         mockPrompt.kitSearch.hasGroup = true;
-        mockPrompt.kitSearch.qs = {
-          search: vi.fn(() => [
-            { item: choices[0], score: 0.7, matches: { name: [[0, 2]] }, _: '' },
-          ]),
-        };
+        vi.mocked(searchChoices).mockReturnValue([
+          { item: choices[0], score: 0.7, matches: { name: [[0, 2]] }, _: '' },
+        ]);
 
         invokeSearch(mockPrompt, 'git new-feature');
 
@@ -1187,11 +1159,9 @@ describe('Search Functionality', () => {
 
         mockPrompt.kitSearch.choices = choices;
         mockPrompt.kitSearch.hasGroup = false;
-        mockPrompt.kitSearch.qs = {
-          search: vi.fn(() => [
-            { item: choices[0], score: 1.0, matches: { name: [[0, 3]] }, _: '' },
-          ]),
-        };
+        vi.mocked(searchChoices).mockReturnValue([
+          { item: choices[0], score: 1.0, matches: { name: [[0, 3]] }, _: '' },
+        ]);
 
         invokeSearch(mockPrompt, 'git');
 
@@ -1204,6 +1174,41 @@ describe('Search Functionality', () => {
             }),
           ]),
         );
+      });
+    });
+
+    describe('Search prioritization', () => {
+      it('should prioritize "API Tester" over "Stripe Payment Links" for query "apit"', () => {
+        const choices = [
+          { id: '1', name: 'Stripe Payment Links', description: 'Fetch payment links from Stripe and retrieve customer emails from successful payments' },
+          { id: '2', name: 'API Tester', description: 'Test API endpoints with custom requests and data' },
+        ];
+
+        mockPrompt.kitSearch.choices = choices;
+        mockPrompt.kitSearch.hasGroup = false;
+        
+        const apiTesterResult = { item: choices[1], score: 327732, matches: { name: [[0, 3], [4, 5]], slicedName: [[0, 3], [4, 5]] }, _: '' };
+        const stripeResult = { item: choices[0], score: 16, matches: { description: [[7, 8], [29, 30], [57, 58], [83, 84]] }, _: '' };
+        
+        vi.mocked(searchChoices).mockReturnValue([apiTesterResult, stripeResult]);
+
+        invokeSearch(mockPrompt, 'apit');
+
+        expect(mockSendToPrompt).toHaveBeenCalledWith(
+          Channel.SET_SCORED_CHOICES,
+          expect.arrayContaining([
+            expect.objectContaining({
+              item: expect.objectContaining({ name: 'API Tester' }),
+              score: expect.any(Number),
+            }),
+          ]),
+        );
+        
+        // Verify API Tester comes first
+        const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+        const scoredChoices = call?.[1] || [];
+        expect(scoredChoices[0]?.item?.name).toBe('API Tester');
+        expect(scoredChoices[1]?.item?.name).toBe('Stripe Payment Links');
       });
     });
   });

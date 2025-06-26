@@ -1,5 +1,5 @@
 import type { Choice } from '@johnlindquist/kit/types/core';
-import type { IMatch } from 'vscode-fuzzy-scorer';
+import type { IMatch, IItemScore } from 'vscode-fuzzy-scorer';
 import { scoreItemFuzzy, prepareQuery, compareItemsByFuzzyScore } from 'vscode-fuzzy-scorer';
 import { searchLog as log } from './logs';
 import type { ScoredChoice } from '../shared/types';
@@ -8,41 +8,18 @@ import { createScoredChoice } from './helpers';
 // Cache for prepared queries
 const queryCache = new Map<string, any>();
 
-// Custom accessor for our Choice objects
-const choiceAccessor = {
-  getItemLabel: (choice: Choice): string => {
-    // Ensure we always return a string, avoid "undefined" string
-    if (!choice || !choice.name) return '';
-    return String(choice.name);
-  },
-  getItemDescription: (choice: Choice): string | undefined => {
-    // Include description as primary description field
-    if (choice?.description) return String(choice.description);
-    
-    // Otherwise combine other searchable fields
-    const parts: string[] = [];
-    if (choice?.keyword) parts.push(String(choice.keyword));
-    if (choice?.tag) parts.push(String(choice.tag));
-    return parts.length > 0 ? parts.join(' ') : undefined;
-  },
-  getItemPath: (choice: Choice): undefined => undefined // Not using path-based scoring
-};
-
 // Convert IMatch array to our expected format
 function convertMatches(matches: IMatch[] | undefined): Array<[number, number]> | undefined {
   if (!matches || matches.length === 0) return undefined;
   return matches.map(m => [m.start, m.end]);
 }
 
-// Score a single choice against a query
+// Score a single choice against a query with independent field matching
 export function scoreChoice(choice: Choice, query: string): ScoredChoice | null {
   if (!query || query.trim() === '') {
     // Empty query returns all choices with no highlighting
     return createScoredChoice(choice);
   }
-
-  // Note: We score all choices including pass/miss/info
-  // The main search logic will handle their special behavior
 
   // Get or create prepared query
   let preparedQuery = queryCache.get(query);
@@ -51,57 +28,99 @@ export function scoreChoice(choice: Choice, query: string): ScoredChoice | null 
     queryCache.set(query, preparedQuery);
   }
 
-  // Use VS Code's item fuzzy scorer
-  const fuzzy = true; // Enable fuzzy matching
-  const cache = {}; // Local cache for this scoring operation
-  
-  const itemScore = scoreItemFuzzy(
-    choice,
-    preparedQuery,
-    fuzzy,
-    choiceAccessor,
-    cache
-  );
+  let totalScore = 0;
+  const allMatches: { [key: string]: Array<[number, number]> } = {};
 
-  // More detailed logging
-  const label = choiceAccessor.getItemLabel(choice);
-  const description = choiceAccessor.getItemDescription(choice);
-  
-  // Temporarily use warn level to ensure visibility
-  if (!itemScore) {
-    log.warn(`No itemScore returned for "${label}" with query "${query}"`);
-    return null;
+  // Score name field as primary label
+  if (choice.name) {
+    const nameAccessor = {
+      getItemLabel: (item: any) => item.name,
+      getItemDescription: () => undefined,
+      getItemPath: () => undefined
+    };
+    
+    const nameScore = scoreItemFuzzy(choice, preparedQuery, true, nameAccessor, {});
+    if (nameScore && nameScore.score > 0) {
+      totalScore += nameScore.score * 100; // Much higher priority for name matches
+      if (nameScore.labelMatch?.length) {
+        allMatches.name = convertMatches(nameScore.labelMatch);
+        
+        // Handle slicedName
+        if (choice.slicedName && choice.name !== choice.slicedName) {
+          const sliceLength = choice.slicedName.length;
+          const slicedMatches = nameScore.labelMatch
+            .filter(m => m.start < sliceLength)
+            .map(m => ({
+              start: m.start,
+              end: Math.min(m.end, sliceLength)
+            }));
+          if (slicedMatches.length > 0) {
+            allMatches.slicedName = convertMatches(slicedMatches);
+          }
+        } else {
+          allMatches.slicedName = convertMatches(nameScore.labelMatch);
+        }
+      }
+    }
   }
-  
-  log.info(`Score for "${label}" = ${itemScore.score} (query: "${query}")`);
 
-  // If no match or score too low, return null
-  // VS Code uses negative scores for no match, positive for matches
-  if (itemScore.score <= 0) {
+  // Score description field (requires a label to work properly in VS Code scorer)
+  if (choice.description) {
+    const descAccessor = {
+      getItemLabel: () => 'dummy', // VS Code scorer needs a non-empty label
+      getItemDescription: (item: any) => item.description,
+      getItemPath: () => undefined
+    };
+    
+    const descScore = scoreItemFuzzy(choice, preparedQuery, true, descAccessor, {});
+    if (descScore && descScore.score > 0 && descScore.descriptionMatch?.length) {
+      totalScore += descScore.score * 0.1; // Much lower priority for description matches
+      allMatches.description = convertMatches(descScore.descriptionMatch);
+    }
+  }
+
+  // Score keyword field as a label
+  if (choice.keyword) {
+    const keywordAccessor = {
+      getItemLabel: (item: any) => item.keyword,
+      getItemDescription: () => undefined,
+      getItemPath: () => undefined
+    };
+    
+    const keywordScore = scoreItemFuzzy(choice, preparedQuery, true, keywordAccessor, {});
+    if (keywordScore && keywordScore.score > 0) {
+      totalScore += keywordScore.score * 50; // High priority, but less than name
+      if (keywordScore.labelMatch?.length) {
+        allMatches.keyword = convertMatches(keywordScore.labelMatch);
+      }
+    }
+  }
+
+  // Score tag field as a label
+  if (choice.tag) {
+    const tagAccessor = {
+      getItemLabel: (item: any) => item.tag,
+      getItemDescription: () => undefined,
+      getItemPath: () => undefined
+    };
+    
+    const tagScore = scoreItemFuzzy(choice, preparedQuery, true, tagAccessor, {});
+    if (tagScore && tagScore.score > 0) {
+      totalScore += tagScore.score * 1; // Low priority
+      if (tagScore.labelMatch?.length) {
+        allMatches.tag = convertMatches(tagScore.labelMatch);
+      }
+    }
+  }
+
+  // If no match at all, return null
+  if (totalScore <= 0) {
     return null;
   }
 
   const scoredChoice = createScoredChoice(choice);
-  scoredChoice.score = itemScore.score;
-
-  // Map VS Code's match format to our format
-  scoredChoice.matches = {};
-  
-  if (itemScore.labelMatch && itemScore.labelMatch.length > 0) {
-    scoredChoice.matches.name = convertMatches(itemScore.labelMatch);
-  }
-  
-  if (itemScore.descriptionMatch && itemScore.descriptionMatch.length > 0) {
-    // Apply description matches to the description field if it exists
-    if (choice.description) {
-      scoredChoice.matches.description = convertMatches(itemScore.descriptionMatch);
-    } else if (choice.keyword) {
-      // Otherwise apply to keyword or tag
-      scoredChoice.matches.keyword = convertMatches(itemScore.descriptionMatch);
-    } else if (choice.tag) {
-      scoredChoice.matches.tag = convertMatches(itemScore.descriptionMatch);
-    }
-  }
+  scoredChoice.score = totalScore;
+  scoredChoice.matches = allMatches;
 
   return scoredChoice;
 }
@@ -113,40 +132,51 @@ export function searchChoices(choices: Choice[], query: string): ScoredChoice[] 
 
   // Handle empty query - return all non-hidden choices
   if (!query || query.trim() === '') {
-    for (const choice of choices) {
+    for (let i = 0; i < choices.length; i++) {
+      const choice = choices[i];
       if (!choice.hideWithoutInput) {
-        results.push(createScoredChoice(choice));
+        const scoredChoice = createScoredChoice(choice);
+        scoredChoice.originalIndex = i;
+        results.push(scoredChoice);
       }
     }
     log.info(`Empty query - returning ${results.length} results`);
     return results;
   }
 
-  // Get or create prepared query
-  let preparedQuery = queryCache.get(query);
-  if (!preparedQuery) {
-    preparedQuery = prepareQuery(query);
-    queryCache.set(query, preparedQuery);
-  }
-
-  for (const choice of choices) {
+  for (let i = 0; i < choices.length; i++) {
+    const choice = choices[i];
     const scored = scoreChoice(choice, query);
     if (scored) {
+      scored.originalIndex = i;
       results.push(scored);
     }
   }
 
-  // Sort by score (highest first) using VS Code's comparison
+  // Sort by score (highest first), then by original index as tiebreaker
   if (results.length > 0) {
     results.sort((a, b) => {
-      return compareItemsByFuzzyScore(
-        a.item,
-        b.item,
-        preparedQuery,
-        true, // fuzzy
-        choiceAccessor,
-        {} // cache
-      );
+      const aIndex = a.originalIndex || 0;
+      const bIndex = b.originalIndex || 0;
+      
+      // Check if both items start with the query
+      const aStartsWith = a.item.name?.toLowerCase().startsWith(query.toLowerCase());
+      const bStartsWith = b.item.name?.toLowerCase().startsWith(query.toLowerCase());
+      
+      // If both start with the query, sort by original index
+      if (aStartsWith && bStartsWith) {
+        return aIndex - bIndex;
+      }
+      
+      // If only one starts with query, it wins
+      if (aStartsWith && !bStartsWith) return -1;
+      if (!aStartsWith && bStartsWith) return 1;
+      
+      // Otherwise, sort by score then by original index
+      if (b.score === a.score) {
+        return aIndex - bIndex;
+      }
+      return b.score - a.score;
     });
   }
 
