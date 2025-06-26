@@ -124,6 +124,7 @@ export function scoreChoice(choice: Choice, query: string): ScoredChoice | null 
 
   let totalScore = 0;
   const allMatches: { [key: string]: Array<[number, number]> } = {};
+  const fieldScores: { [key: string]: number } = {};
 
   // Score name field as primary label
   if (choice.name) {
@@ -155,7 +156,8 @@ export function scoreChoice(choice: Choice, query: string): ScoredChoice | null 
         let crossesComponents = false;
         for (const match of nameScore.labelMatch) {
           // Check if this match starts at a component boundary
-          const startsAtBoundary = componentBoundaries.some(b => b === match.start);
+          // Check if this match starts at a component boundary
+        // const startsAtBoundary = componentBoundaries.some(b => b === match.start);
           
           // Check if match spans across components
           for (const boundary of componentBoundaries) {
@@ -167,32 +169,39 @@ export function scoreChoice(choice: Choice, query: string): ScoredChoice | null 
         }
         
         // Apply penalty for matches that cross component boundaries
-        if (crossesComponents) {
-          totalScore += nameScore.score * 50; // Reduced weight for scattered matches
-        } else {
-          totalScore += nameScore.score * 100; // Full weight for clean matches
-        }
+        const finalPathScore = crossesComponents ? nameScore.score * 50 : nameScore.score * 100;
+        fieldScores.name = finalPathScore;
+        totalScore += finalPathScore;
       } else {
-        totalScore += nameScore.score * 100; // Normal weight for non-paths
+        // Non-path scoring
+        const finalScore = nameScore.score * 100;
+        fieldScores.name = finalScore;
+        totalScore += finalScore;
       }
       
       if (nameScore.labelMatch?.length) {
-        allMatches.name = convertMatches(nameScore.labelMatch);
-        
-        // Handle slicedName
-        if (choice.slicedName && choice.name !== choice.slicedName) {
-          const sliceLength = choice.slicedName.length;
-          const slicedMatches = nameScore.labelMatch
-            .filter(m => m.start < sliceLength)
-            .map(m => ({
-              start: m.start,
-              end: Math.min(m.end, sliceLength)
-            }));
-          if (slicedMatches.length > 0) {
-            allMatches.slicedName = convertMatches(slicedMatches);
+        const nameMatches = convertMatches(nameScore.labelMatch);
+        if (nameMatches) {
+          allMatches.name = nameMatches;
+          
+          // Handle slicedName
+          if (choice.slicedName && choice.name !== choice.slicedName) {
+            const sliceLength = choice.slicedName.length;
+            const slicedMatches = nameScore.labelMatch
+              .filter(m => m.start < sliceLength)
+              .map(m => ({
+                start: m.start,
+                end: Math.min(m.end, sliceLength)
+              }));
+            if (slicedMatches.length > 0) {
+              const slicedConverted = convertMatches(slicedMatches);
+              if (slicedConverted) {
+                allMatches.slicedName = slicedConverted;
+              }
+            }
+          } else if (nameMatches) {
+            allMatches.slicedName = nameMatches;
           }
-        } else {
-          allMatches.slicedName = convertMatches(nameScore.labelMatch);
         }
       }
     }
@@ -208,8 +217,13 @@ export function scoreChoice(choice: Choice, query: string): ScoredChoice | null 
     
     const descScore = scoreItemFuzzy(choice, preparedQuery, true, descAccessor, {});
     if (descScore && descScore.score > 0 && descScore.descriptionMatch?.length) {
-      totalScore += descScore.score * 0.1; // Much lower priority for description matches
-      allMatches.description = convertMatches(descScore.descriptionMatch);
+      const descriptionScore = descScore.score * 0.1; // Much lower priority for description matches
+      totalScore += descriptionScore;
+      fieldScores.description = descriptionScore;
+      const descMatches = convertMatches(descScore.descriptionMatch);
+      if (descMatches) {
+        allMatches.description = descMatches;
+      }
     }
   }
 
@@ -223,9 +237,14 @@ export function scoreChoice(choice: Choice, query: string): ScoredChoice | null 
     
     const keywordScore = scoreItemFuzzy(choice, preparedQuery, true, keywordAccessor, {});
     if (keywordScore && keywordScore.score > 0) {
-      totalScore += keywordScore.score * 50; // High priority, but less than name
+      const keywordFieldScore = keywordScore.score * 50; // High priority, but less than name
+      totalScore += keywordFieldScore;
+      fieldScores.keyword = keywordFieldScore;
       if (keywordScore.labelMatch?.length) {
-        allMatches.keyword = convertMatches(keywordScore.labelMatch);
+        const kwMatches = convertMatches(keywordScore.labelMatch);
+        if (kwMatches) {
+          allMatches.keyword = kwMatches;
+        }
       }
     }
   }
@@ -240,9 +259,14 @@ export function scoreChoice(choice: Choice, query: string): ScoredChoice | null 
     
     const tagScore = scoreItemFuzzy(choice, preparedQuery, true, tagAccessor, {});
     if (tagScore && tagScore.score > 0) {
-      totalScore += tagScore.score * 1; // Low priority
+      const tagFieldScore = tagScore.score * 1; // Low priority
+      totalScore += tagFieldScore;
+      fieldScores.tag = tagFieldScore;
       if (tagScore.labelMatch?.length) {
-        allMatches.tag = convertMatches(tagScore.labelMatch);
+        const tagMatches = convertMatches(tagScore.labelMatch);
+        if (tagMatches) {
+          allMatches.tag = tagMatches;
+        }
       }
     }
   }
@@ -251,10 +275,37 @@ export function scoreChoice(choice: Choice, query: string): ScoredChoice | null 
   if (totalScore <= 0) {
     return null;
   }
+  
+  // Apply a minimum score threshold to filter out nonsensical matches
+  // VS Code fuzzy scorer can return very low scores for poor matches
+  const MIN_SCORE_THRESHOLD = 100000; // Adjust based on testing
+  if (totalScore < MIN_SCORE_THRESHOLD) {
+    return null;
+  }
+
+  // Find the best matching field
+  let bestField = '';
+  let bestFieldScore = 0;
+  for (const [field, score] of Object.entries(fieldScores)) {
+    if (score > bestFieldScore) {
+      bestFieldScore = score;
+      bestField = field;
+    }
+  }
+  
+  // Only keep matches for the best field
+  const bestMatches: { [key: string]: Array<[number, number]> } = {};
+  if (bestField && allMatches[bestField]) {
+    bestMatches[bestField] = allMatches[bestField];
+    // If name is the best match and we have slicedName, include it
+    if (bestField === 'name' && allMatches.slicedName) {
+      bestMatches.slicedName = allMatches.slicedName;
+    }
+  }
 
   const scoredChoice = createScoredChoice(choice);
   scoredChoice.score = totalScore;
-  scoredChoice.matches = allMatches;
+  scoredChoice.matches = bestMatches;
   
   // Check for sequential word matching bonus
   if (choice.name) {
@@ -266,6 +317,8 @@ export function scoreChoice(choice: Choice, query: string): ScoredChoice | null 
     } else {
       scoredChoice.isSequentialMatch = false;
     }
+  } else {
+    scoredChoice.isSequentialMatch = false;
   }
 
   return scoredChoice;
