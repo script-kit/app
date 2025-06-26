@@ -14,6 +14,89 @@ function convertMatches(matches: IMatch[] | undefined): Array<[number, number]> 
   return matches.map(m => [m.start, m.end]);
 }
 
+// Check if query matches as a mnemonic (first letters of words)
+function isMnemonicMatch(text: string, query: string): boolean {
+  if (!text || !query) return false;
+  
+  const words = text.split(/\s+/).filter(w => w.length > 0);
+  const queryLower = query.toLowerCase();
+  
+  // Try to match query letters to first letters of consecutive words
+  for (let startWord = 0; startWord <= words.length - queryLower.length; startWord++) {
+    let matches = true;
+    
+    for (let i = 0; i < queryLower.length; i++) {
+      const word = words[startWord + i];
+      if (!word || word[0].toLowerCase() !== queryLower[i]) {
+        matches = false;
+        break;
+      }
+    }
+    
+    if (matches) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+// Check if matches are from sequential words (mnemonic matching)
+function isSequentialWordMatch(text: string, matches: Array<[number, number]>, query: string): boolean {
+  if (!text || !matches || matches.length === 0) return false;
+  
+  // First check if it's a mnemonic match
+  if (isMnemonicMatch(text, query)) {
+    return true;
+  }
+  
+  // Otherwise check if matches are from beginning of sequential words
+  const words: { text: string; start: number; end: number }[] = [];
+  let position = 0;
+  
+  text.split(/\s+/).forEach(word => {
+    if (word) {
+      words.push({
+        text: word,
+        start: position,
+        end: position + word.length
+      });
+      position += word.length + 1; // +1 for space
+    }
+  });
+  
+  if (words.length < 2) return false;
+  
+  // Find which word each match belongs to and if it's at the start
+  const matchedWordIndices: Set<number> = new Set();
+  
+  for (const [matchStart, matchEnd] of matches) {
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      // Check if match starts at the beginning of this word
+      if (matchStart === word.start) {
+        matchedWordIndices.add(i);
+        break;
+      }
+    }
+  }
+  
+  // Convert to array and sort
+  const sortedIndices = Array.from(matchedWordIndices).sort((a, b) => a - b);
+  
+  // Need at least 2 matched words
+  if (sortedIndices.length < 2) return false;
+  
+  // Check if all matched words are sequential
+  for (let i = 1; i < sortedIndices.length; i++) {
+    if (sortedIndices[i] !== sortedIndices[i - 1] + 1) {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
 // Score a single choice against a query with independent field matching
 export function scoreChoice(choice: Choice, query: string): ScoredChoice | null {
   if (!query || query.trim() === '') {
@@ -121,6 +204,18 @@ export function scoreChoice(choice: Choice, query: string): ScoredChoice | null 
   const scoredChoice = createScoredChoice(choice);
   scoredChoice.score = totalScore;
   scoredChoice.matches = allMatches;
+  
+  // Check for sequential word matching bonus
+  if (allMatches.name && choice.name) {
+    const isSequential = isSequentialWordMatch(choice.name, allMatches.name, query);
+    if (isSequential) {
+      // Give significant bonus for sequential word matches
+      scoredChoice.score *= 1.5;
+      scoredChoice.isSequentialMatch = true;
+    } else {
+      scoredChoice.isSequentialMatch = false;
+    }
+  }
 
   return scoredChoice;
 }
@@ -158,6 +253,14 @@ export function searchChoices(choices: Choice[], query: string): ScoredChoice[] 
     results.sort((a, b) => {
       const aIndex = a.originalIndex || 0;
       const bIndex = b.originalIndex || 0;
+      
+      // Check for sequential word matches
+      const aIsSequential = a.isSequentialMatch || false;
+      const bIsSequential = b.isSequentialMatch || false;
+      
+      // Sequential matches have highest priority
+      if (aIsSequential && !bIsSequential) return -1;
+      if (!aIsSequential && bIsSequential) return 1;
       
       // Check if both items start with the query
       const aStartsWith = a.item.name?.toLowerCase().startsWith(query.toLowerCase());

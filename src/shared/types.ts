@@ -9,6 +9,7 @@ export interface ScoredChoice {
   };
   _: string;
   originalIndex?: number;
+  isSequentialMatch?: boolean;
 }
 
 export interface ChoiceButtonData {
