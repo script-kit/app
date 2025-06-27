@@ -72,6 +72,7 @@ vi.mock('./helpers', () => {
       group: template?.group || 'As Typed',
       asTyped: true,
     })),
+    structuredClone: vi.fn((obj: any) => JSON.parse(JSON.stringify(obj))),
   };
 })
 
@@ -89,7 +90,7 @@ import {
 } from './search';
 
 import { searchChoices, scoreChoice, isExactMatch, startsWithQuery, clearFuzzyCache } from './vscode-search';
-import { createScoredChoice, createAsTypedChoice } from './helpers';
+import { createScoredChoice, createAsTypedChoice, structuredClone } from './helpers';
 
 describe('Search Functionality', () => {
   let mockPrompt: KitPrompt;
@@ -1412,6 +1413,229 @@ describe('Search Functionality', () => {
         expect(scoredChoices[0]?.item?.name).toBe('API Tester');
         expect(scoredChoices[1]?.item?.name).toBe('Stripe Payment Links');
       });
+    });
+  });
+
+  describe('Edge Cases for Pass Group and Skip Filtering', () => {
+    it('should handle pass group with regex patterns in grouped search', () => {
+      const choices = [
+        { id: '1', name: 'Email Choice', pass: '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/i', group: 'Validators' },
+        { id: '2', name: 'Phone Choice', pass: '/^\\d{3}-\\d{3}-\\d{4}$/', group: 'Validators' },
+        { id: '3', name: 'Normal Choice', group: 'Normal' },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = true;
+      vi.mocked(searchChoices).mockReturnValue([]);
+
+      invokeSearch(mockPrompt, 'test@example.com');
+
+      // Should include Pass group header and email choice
+      const calls = mockSendToPrompt.mock.calls;
+      const scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
+      
+      const passHeaderIndex = scoredChoices.findIndex(sc => sc.item.name === 'Pass "test@example.com" to...' && sc.item.skip === true);
+      const emailChoiceIndex = scoredChoices.findIndex(sc => sc.item.name === 'Email Choice');
+      const emailChoice = scoredChoices.find(sc => sc.item.name === 'Email Choice');
+      
+      expect(passHeaderIndex).toBeGreaterThan(-1);
+      expect(emailChoiceIndex).toBeGreaterThan(passHeaderIndex);
+      // Group property should be preserved now
+      expect(emailChoice?.item.group).toBe('Validators');
+    });
+
+    it('should handle pass group with boolean pass in grouped search', () => {
+      const choices = [
+        { id: '1', name: 'Always Pass Choice', pass: true, group: 'Special' },
+        { id: '2', name: 'Conditional Pass', pass: false, group: 'Special' },
+        { id: '3', name: 'Normal Choice', group: 'Normal' },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = true;
+      vi.mocked(searchChoices).mockReturnValue([]);
+
+      invokeSearch(mockPrompt, 'anything');
+
+      const calls = mockSendToPrompt.mock.calls;
+      const scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
+      
+      // Should include pass header and the always pass choice
+      expect(scoredChoices.some(sc => sc.item.name === 'Pass "anything" to...' && sc.item.skip === true)).toBe(true);
+      expect(scoredChoices.some(sc => sc.item.name === 'Always Pass Choice')).toBe(true);
+      expect(scoredChoices.some(sc => sc.item.name === 'Conditional Pass')).toBe(false);
+    });
+
+    it('should handle pass choices in non-grouped search with regex', () => {
+      const choices = [
+        { id: '1', name: 'URL Choice', pass: '/^https?:\\/\\/.+/' },
+        { id: '2', name: 'Normal Choice' },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = false;
+      vi.mocked(searchChoices).mockReturnValue([
+        { item: choices[1], score: 0.5, matches: {}, _: '' }
+      ]);
+
+      invokeSearch(mockPrompt, 'https://example.com');
+
+      const calls = mockSendToPrompt.mock.calls;
+      const scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
+      
+      // Should include both normal choice and pass choice
+      expect(scoredChoices.some(sc => sc.item.name === 'Normal Choice')).toBe(true);
+      expect(scoredChoices.some(sc => sc.item.name === 'URL Choice')).toBe(true);
+    });
+
+    it('should filter skip choices in non-grouped search', () => {
+      const choices = [
+        { id: '1', name: 'Group Header', skip: true },
+        { id: '2', name: 'Normal Choice' },
+        { id: '3', name: 'Another Choice' },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = false;
+      vi.mocked(searchChoices).mockReturnValue([
+        { item: choices[0], score: 0.9, matches: {}, _: '' },
+        { item: choices[1], score: 0.8, matches: {}, _: '' },
+        { item: choices[2], score: 0.7, matches: {}, _: '' },
+      ]);
+
+      invokeSearch(mockPrompt, 'choice');
+
+      const calls = mockSendToPrompt.mock.calls;
+      const scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
+      
+      // Should NOT include skip choice
+      expect(scoredChoices.some(sc => sc.item.skip === true)).toBe(false);
+      expect(scoredChoices.some(sc => sc.item.name === 'Normal Choice')).toBe(true);
+      expect(scoredChoices.some(sc => sc.item.name === 'Another Choice')).toBe(true);
+    });
+
+    it('should handle invalid regex patterns gracefully', () => {
+      const choices = [
+        { id: '1', name: 'Bad Regex', pass: '/[invalid(/', group: 'Test' },
+        { id: '2', name: 'Good Regex', pass: '/^test/', group: 'Test' },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = true;
+      vi.mocked(searchChoices).mockReturnValue([]);
+
+      // Should not throw error
+      expect(() => invokeSearch(mockPrompt, 'test')).not.toThrow();
+
+      const calls = mockSendToPrompt.mock.calls;
+      const scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
+      
+      // Should include good regex but not bad regex
+      expect(scoredChoices.some(sc => sc.item.name === 'Good Regex')).toBe(true);
+      expect(scoredChoices.some(sc => sc.item.name === 'Bad Regex')).toBe(false);
+    });
+
+    it('should show info choices consistently in both grouped and non-grouped paths', () => {
+      const choices = [
+        { id: '1', name: 'Info Choice', info: true },
+        { id: '2', name: 'Normal Choice' },
+      ];
+
+      // Test grouped path
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = true;
+      vi.mocked(searchChoices).mockReturnValue([
+        { item: choices[1], score: 0.8, matches: {}, _: '' }
+      ]);
+
+      invokeSearch(mockPrompt, 'test');
+
+      let calls = mockSendToPrompt.mock.calls;
+      let scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      let scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
+      
+      // Info should be at the beginning
+      expect(scoredChoices[0].item.name).toBe('Info Choice');
+
+      // Reset and test non-grouped path
+      vi.clearAllMocks();
+      mockPrompt.kitSearch.hasGroup = false;
+      vi.mocked(searchChoices).mockReturnValue([
+        { item: choices[0], score: 1.0, matches: {}, _: '' },
+        { item: choices[1], score: 0.8, matches: {}, _: '' }
+      ]);
+
+      invokeSearch(mockPrompt, 'test');
+
+      calls = mockSendToPrompt.mock.calls;
+      scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
+      
+      // Info should still be at the beginning
+      expect(scoredChoices[0].item.name).toBe('Info Choice');
+    });
+
+    it('should not show pass group header when no pass choices match', () => {
+      const choices = [
+        { id: '1', name: 'Email Only', pass: '/^[\\w.-]+@[\\w.-]+\\.\\w+$/', group: 'Validators' },
+        { id: '2', name: 'Normal Choice', group: 'Normal' },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = true;
+      vi.mocked(searchChoices).mockReturnValue([
+        { item: choices[1], score: 0.8, matches: {}, _: '' }
+      ]);
+
+      invokeSearch(mockPrompt, 'not-an-email');
+
+      const calls = mockSendToPrompt.mock.calls;
+      const scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
+      
+      // Should NOT include Pass header
+      expect(scoredChoices.some(sc => sc.item.name === 'Pass' && sc.item.skip === true)).toBe(false);
+      // Should include normal choice
+      expect(scoredChoices.some(sc => sc.item.name === 'Normal Choice')).toBe(true);
+      // Should NOT include email choice
+      expect(scoredChoices.some(sc => sc.item.name === 'Email Only')).toBe(false);
+    });
+
+    it('should include existing Pass group headers when showing pass choices', () => {
+      const choices = [
+        { id: 'pass-header-1', name: 'Pass "test" to...', skip: true, group: 'Pass input to terminal' },
+        { id: '1', name: 'Terminal Command', pass: true, group: 'Pass input to terminal' },
+        { id: '3', name: 'Normal Choice', group: 'Normal' },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = true;
+      vi.mocked(searchChoices).mockReturnValue([]);
+
+      invokeSearch(mockPrompt, 'test');
+
+      const calls = mockSendToPrompt.mock.calls;
+      const scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
+      
+      // Find the pass section
+      const passHeaderIndex = scoredChoices.findIndex(sc => 
+        sc.item.skip === true && sc.item.name?.includes('Pass')
+      );
+      const terminalChoiceIndex = scoredChoices.findIndex(sc => sc.item.name === 'Terminal Command');
+      
+      // Should have the existing group header followed by the pass choice
+      expect(passHeaderIndex).toBeGreaterThan(-1);
+      expect(terminalChoiceIndex).toBe(passHeaderIndex + 1);
+      
+      // Verify pass choice maintains its group
+      const terminalChoice = scoredChoices[terminalChoiceIndex];
+      expect(terminalChoice?.item.group).toBe('Pass input to terminal');
     });
   });
 });

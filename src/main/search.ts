@@ -12,7 +12,7 @@ import { debounce } from 'lodash-es';
 
 import { AppChannel } from '../shared/enums';
 import type { ScoredChoice } from '../shared/types';
-import { createScoredChoice, createAsTypedChoice } from './helpers';
+import { createScoredChoice, createAsTypedChoice, structuredClone } from './helpers';
 import { searchLog as log } from './logs';
 import { cacheChoices } from './messages';
 import type { KitPrompt } from './prompt';
@@ -119,10 +119,16 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     const infoGroup: ScoredChoice[] = [];
     const passGroup: ScoredChoice[] = [];
     const missGroup: ScoredChoice[] = [];
-    let alias: Choice;
+    const includedGroups = new Set<string>();
+    let alias: Choice | undefined;
 
     // Process all choices and categorize them
     for (const choice of prompt.kitSearch.choices) {
+      // Skip pass group headers - we'll create our own
+      if (choice?.skip && choice?.group && (choice?.group === 'Pass' || choice?.group?.includes('Pass') || choice?.name?.includes('Pass') && choice?.name?.includes('to...'))) {
+        continue;
+      }
+      
       // Always include info choices
       if (choice?.info) {
         infoGroup.push(createScoredChoice(choice));
@@ -132,9 +138,11 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
       // Check for exact alias/trigger match
       if ((choice as Script)?.alias === transformedInput || (choice as Script)?.trigger === transformedInput) {
         alias = structuredClone(choice);
-        alias.pass = false;
-        alias.group = choice?.trigger ? 'Trigger' : 'Alias';
-        log.info(`${prompt.getLogPrefix()}: 🔔 Alias: ${alias.name} with group ${alias.group}`);
+        if (alias) {
+          alias.pass = false;
+          alias.group = choice?.trigger ? 'Trigger' : 'Alias';
+          log.info(`${prompt.getLogPrefix()}: 🔔 Alias: ${alias.name} with group ${alias.group}`);
+        }
         continue;
       }
       
@@ -146,6 +154,10 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
         // Skip group separators - they should not be included in results
         if (choice?.skip) {
           continue;
+        }
+        
+        if (choice.group) {
+          includedGroups.add(choice.group);
         }
         
         if (isExactMatch(choice, transformedInput)) {
@@ -162,32 +174,33 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
         
         if (miss) {
           missGroup.push(createScoredChoice(choice));
-        } else if (!hide) {
-          if (choice?.pass) {
-            if (typeof choice?.pass === 'string' && (choice?.pass as string).startsWith('/')) {
-              // log.info(`Found regex pass: ${choice?.pass} on ${choice?.name}`);
-              const lastSlashIndex = choice?.pass.lastIndexOf('/');
-              if (lastSlashIndex) {
-                const regexPatternWithFlags = choice?.pass;
-                const regexPattern = regexPatternWithFlags.slice(1, lastSlashIndex);
-                const flags = lastSlashIndex === -1 ? '' : regexPatternWithFlags.slice(lastSlashIndex + 1);
-
+        } else if (!hide && choice?.pass) {
+          // Check if pass choice matches
+          let matches = false;
+          
+          if (typeof choice?.pass === 'string' && (choice?.pass as string).startsWith('/')) {
+            const lastSlashIndex = choice?.pass.lastIndexOf('/');
+            if (lastSlashIndex > 0) {
+              const regexPatternWithFlags = choice?.pass;
+              const regexPattern = regexPatternWithFlags.slice(1, lastSlashIndex);
+              const flags = regexPatternWithFlags.slice(lastSlashIndex + 1);
+              
+              try {
                 const regex = new RegExp(regexPattern, flags);
-
-                // log.info(
-                //   `Using regex pattern: ${regexPattern} with flags: ${flags}`,
-                // );
-                const result = regex.test(transformedInput);
-
-                if (result) {
-                  log.info(`Matched regex pass: ${choice?.pass} on ${choice?.name}`);
-                  groupedResults.push(createScoredChoice(choice));
-                }
-              } else {
-                log.warn(`No terminating slashes found in regex pattern: ${choice?.pass} for ${choice?.name}`);
+                matches = regex.test(transformedInput);
+              } catch (e) {
+                log.warn(`Invalid regex pattern: ${choice?.pass} for ${choice?.name}`);
               }
-            } else {
-              groupedResults.push(createScoredChoice(choice));
+            }
+          } else if (choice?.pass === true) {
+            matches = true;
+          }
+          
+          if (matches) {
+            log.info(`Matched pass: ${choice?.pass} on ${choice?.name}`);
+            passGroup.push(createScoredChoice(choice));
+            if (choice.group) {
+              includedGroups.add(choice.group);
             }
           }
         }
@@ -257,8 +270,23 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     });
     combinedResults.push(...otherMatchGroup);
     
-    // Add pass choices that matched the regex
-    combinedResults.push(...passGroup);
+    // Add pass group with single header
+    if (passGroup.length > 0) {
+      // Add single "Pass" header with dynamic text
+      combinedResults.push(
+        createScoredChoice({
+          name: `Pass "${transformedInput}" to...`,
+          group: 'Pass',
+          pass: false,
+          skip: true,
+          nameClassName: defaultGroupNameClassName,
+          className: defaultGroupClassName,
+          height: PROMPT.ITEM.HEIGHT.XXXS,
+          id: Math.random().toString(),
+        })
+      );
+      combinedResults.push(...passGroup);
+    }
     
     // If no matches, show miss group
     if (combinedResults.length === 0 && result.length === 0) {
@@ -269,8 +297,8 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     if (alias) {
       combinedResults.unshift(
         createScoredChoice({
-          name: alias.group,
-          group: alias.group,
+          name: alias.group || 'Alias',
+          group: alias.group || 'Alias',
           pass: false,
           skip: true,
           nameClassName: defaultGroupNameClassName,
@@ -307,11 +335,36 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
   } else {
     // Non-grouped results - already sorted by VS Code algorithm
     const infoChoices = result.filter(r => r.item.info);
-    const normalChoices = result.filter(r => !r.item.info && !r.item.miss);
+    const normalChoices = result.filter(r => !r.item.info && !r.item.miss && !r.item.skip);
     const missChoices = result.filter(r => r.item.miss);
     
-    // Combine: info first, then normal results, then miss choices
-    const combinedResults = [...infoChoices, ...normalChoices, ...missChoices];
+    // Check for pass choices that match regex patterns
+    const passChoices: ScoredChoice[] = [];
+    for (const choice of prompt.kitSearch.choices) {
+      if (choice?.pass && !result.some(r => r.item.id === choice.id)) {
+        if (typeof choice?.pass === 'string' && (choice?.pass as string).startsWith('/')) {
+          const lastSlashIndex = choice?.pass.lastIndexOf('/');
+          if (lastSlashIndex > 0) {
+            const regexPatternWithFlags = choice?.pass;
+            const regexPattern = regexPatternWithFlags.slice(1, lastSlashIndex);
+            const flags = lastSlashIndex === -1 ? '' : regexPatternWithFlags.slice(lastSlashIndex + 1);
+            try {
+              const regex = new RegExp(regexPattern, flags);
+              if (regex.test(transformedInput)) {
+                passChoices.push(createScoredChoice(choice));
+              }
+            } catch (e) {
+              log.warn(`Invalid regex pattern: ${choice?.pass} for ${choice?.name}`);
+            }
+          }
+        } else if (choice?.pass === true) {
+          passChoices.push(createScoredChoice(choice));
+        }
+      }
+    }
+    
+    // Combine: info first, then normal results, then pass choices, then miss choices
+    const combinedResults = [...infoChoices, ...normalChoices, ...passChoices, ...missChoices];
     
     const asTypedSc = generateAsTyped(result);
     if (asTypedSc) combinedResults.push(asTypedSc);
@@ -325,7 +378,6 @@ export const debounceInvokeSearch = debounce(invokeSearch, 100);
 
 export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
   prompt.flagSearch.input = input;
-  const lowerCaseInput = input?.toLowerCase();
   
   if (input === '') {
     setScoredFlags(
@@ -354,9 +406,9 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
     for (const scoredChoice of result) {
       if (scoredChoice.item.miss) {
         missGroup.push(scoredChoice);
-      } else if (isExactMatch(scoredChoice.item, input)) {
+      } else if (isExactMatch(scoredChoice.item, prompt.flagSearch.input)) {
         exactMatchGroup.push(scoredChoice);
-      } else if (startsWithQuery(scoredChoice.item, input)) {
+      } else if (startsWithQuery(scoredChoice.item, prompt.flagSearch.input)) {
         startsWithGroup.push(scoredChoice);
       } else {
         otherMatchGroup.push(scoredChoice);
@@ -410,19 +462,16 @@ export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys & Partial<Choice>) 
   const sortChoicesKey = f?.sortChoicesKey || [];
 
   // TODO: Think through type conversion here
-  let flagChoices: any[] = [];
+  let flagChoices: Choice[] = [];
   for (const [key, value] of Object.entries(f)) {
     if (key !== 'order' && key !== 'sortChoicesKey') {
       flagChoices.push({
-        ...(value as any),
+        ...(value as Choice),
         id: key,
         group: value?.group,
-        command: value?.name,
-        filePath: value?.name,
         name: value?.name || key,
         shortcut: value?.shortcut || '',
         tag: value?.tag || value?.shortcut || '',
-        friendlyShortcut: value?.shortcut || '',
         description: value?.description || '',
         value: key,
         preview: value?.preview || '',
@@ -476,8 +525,8 @@ export const setShortcodes = (prompt: KitPrompt, choices: Choice[]) => {
 
     const postfix = typeof choice?.pass === 'string' && !(choice?.pass as string).startsWith('/');
 
-    if (postfix) {
-      prompt.kitSearch.postfixes.set(choice?.pass.trim(), choice);
+    if (postfix && typeof choice.pass === 'string') {
+      prompt.kitSearch.postfixes.set(choice.pass.trim(), choice);
     }
   }
 
