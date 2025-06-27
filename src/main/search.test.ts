@@ -1235,9 +1235,10 @@ describe('Search Functionality', () => {
       const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
       const scoredChoices = call?.[1] || [];
       
-      // Should not have any group separators
+      // Should have "Fuzzy Match" separator since there are fuzzy matches
       const separators = scoredChoices.filter((sc: ScoredChoice) => sc.item.skip === true);
-      expect(separators).toHaveLength(0);
+      expect(separators).toHaveLength(1);
+      expect(separators[0].item.name).toBe('Fuzzy Match');
       
       // Should have both matched items
       const nonSeparatorItems = scoredChoices.filter((sc: ScoredChoice) => !sc.item.skip);
@@ -1378,6 +1379,82 @@ describe('Search Functionality', () => {
       const nonSeparatorItems = scoredChoices.filter((sc: ScoredChoice) => !sc.item.skip && sc.item.group !== 'Match');
       expect(nonSeparatorItems).toHaveLength(1);
       expect(nonSeparatorItems[0].item.name).toBe('Cursor Position Helper');
+    });
+
+    it('should show exact match for starts with match', () => {
+      const choices = [
+        { id: '1', name: 'Stripe', description: 'Stripe integration' },
+        { id: '2', name: 'Stripe Payment Links', description: 'Manage payment links' },
+        { id: '3', name: 'Strip HTML', description: 'Remove HTML tags' },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = true;
+      
+      vi.mocked(searchChoices).mockReturnValue([
+        { item: choices[0], score: 1.0, matches: { name: [[0, 6]] }, _: '' },
+        { item: choices[1], score: 0.9, matches: { name: [[0, 6]] }, _: '' },
+      ]);
+      // Both Stripe and Stripe Payment Links start with "Stripe" so they're exact matches
+      vi.mocked(isExactMatch).mockImplementation((choice) => 
+        choice.name?.toLowerCase().startsWith('stripe')
+      );
+      // Neither matches the mnemonic pattern for "Stripe"
+      vi.mocked(startsWithQuery).mockImplementation(() => false);
+
+      invokeSearch(mockPrompt, 'Stripe');
+
+      const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoices = call?.[1] || [];
+      
+      // Should have "Exact Match" header
+      const exactMatchHeader = scoredChoices.find((sc: ScoredChoice) => 
+        sc.item.name === 'Exact Match' && sc.item.skip === true
+      );
+      expect(exactMatchHeader).toBeDefined();
+      
+      // Both "Stripe" and "Stripe Payment Links" should be under Exact Match
+      const exactMatchIndex = scoredChoices.findIndex((sc: ScoredChoice) => sc.item.name === 'Exact Match');
+      expect(scoredChoices[exactMatchIndex + 1]?.item?.name).toBe('Stripe');
+      expect(scoredChoices[exactMatchIndex + 2]?.item?.name).toBe('Stripe Payment Links');
+    });
+
+    it('should show best match for mnemonic matches', () => {
+      const choices = [
+        { id: '1', name: 'Stripe Payment Links', description: 'Manage payment links' },
+        { id: '2', name: 'Send Pull Request', description: 'Create a PR' },
+        { id: '3', name: 'Strip HTML', description: 'Remove HTML tags' },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = true;
+      
+      vi.mocked(searchChoices).mockReturnValue([
+        { item: choices[0], score: 0.9, matches: { name: [[0, 1], [7, 8], [15, 16]] }, _: '' },
+        { item: choices[1], score: 0.8, matches: { name: [[0, 1], [5, 6], [10, 11]] }, _: '' },
+      ]);
+      // None start with "spl"
+      vi.mocked(isExactMatch).mockImplementation(() => false);
+      // Both match the mnemonic pattern S-P-L
+      vi.mocked(startsWithQuery).mockImplementation((choice) => 
+        choice.name === 'Stripe Payment Links' || choice.name === 'Send Pull Request'
+      );
+
+      invokeSearch(mockPrompt, 'spl');
+
+      const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoices = call?.[1] || [];
+      
+      // Should have "Best Matches" header
+      const bestMatchHeader = scoredChoices.find((sc: ScoredChoice) => 
+        sc.item.name === 'Best Matches' && sc.item.skip === true
+      );
+      expect(bestMatchHeader).toBeDefined();
+      
+      // Both should be under Best Matches
+      const bestMatchIndex = scoredChoices.findIndex((sc: ScoredChoice) => sc.item.name === 'Best Matches');
+      const bestMatches = [scoredChoices[bestMatchIndex + 1], scoredChoices[bestMatchIndex + 2]];
+      expect(bestMatches.map(m => m?.item?.name).sort()).toEqual(['Send Pull Request', 'Stripe Payment Links']);
     });
 
     describe('Search prioritization', () => {

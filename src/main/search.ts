@@ -125,7 +125,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     // Process all choices and categorize them
     for (const choice of prompt.kitSearch.choices) {
       // Skip pass group headers - we'll create our own
-      if (choice?.skip && choice?.group && (choice?.group === 'Pass' || choice?.group?.includes('Pass') || choice?.name?.includes('Pass') && choice?.name?.includes('to...'))) {
+      if (choice?.skip && choice?.name?.includes('Pass') && choice?.name?.includes('to...') && choice?.group?.includes('Pass')) {
         continue;
       }
       
@@ -259,16 +259,33 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
       combinedResults.push(...startsWithGroup);
     }
     
-    // Add other matches - sort by score, then by original index
-    otherMatchGroup.sort((a, b) => {
-      if (b.score === a.score) {
-        const aIndex = a.originalIndex || 0;
-        const bIndex = b.originalIndex || 0;
-        return aIndex - bIndex;
-      }
-      return b.score - a.score;
-    });
-    combinedResults.push(...otherMatchGroup);
+    // Add other matches with Fuzzy Match header
+    if (otherMatchGroup.length > 0) {
+      // Add Fuzzy Match header
+      combinedResults.push(
+        createScoredChoice({
+          name: 'Fuzzy Match',
+          group: 'Match',
+          pass: false,
+          skip: true,
+          nameClassName: defaultGroupNameClassName,
+          className: defaultGroupClassName,
+          height: PROMPT.ITEM.HEIGHT.XXXS,
+          id: Math.random().toString(),
+        })
+      );
+      
+      // Sort by score, then by original index
+      otherMatchGroup.sort((a, b) => {
+        if (b.score === a.score) {
+          const aIndex = a.originalIndex || 0;
+          const bIndex = b.originalIndex || 0;
+          return aIndex - bIndex;
+        }
+        return b.score - a.score;
+      });
+      combinedResults.push(...otherMatchGroup);
+    }
     
     // Add pass group with single header
     if (passGroup.length > 0) {
@@ -408,7 +425,7 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
         missGroup.push(scoredChoice);
       } else if (isExactMatch(scoredChoice.item, prompt.flagSearch.input)) {
         exactMatchGroup.push(scoredChoice);
-      } else if (startsWithQuery(scoredChoice.item, prompt.flagSearch.input)) {
+      } else if (startsWithQuery(scoredChoice.item, prompt.flagSearch.input || '')) {
         startsWithGroup.push(scoredChoice);
       } else {
         otherMatchGroup.push(scoredChoice);

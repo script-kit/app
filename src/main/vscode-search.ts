@@ -400,18 +400,17 @@ export function clearFuzzyCache(): void {
 export function isExactMatch(choice: Choice, query: string): boolean {
   const lowerQuery = query.toLowerCase();
   return (
-    choice.name?.toLowerCase() === lowerQuery ||
-    choice.keyword?.toLowerCase() === lowerQuery ||
-    (choice as any).alias?.toLowerCase() === lowerQuery ||
-    (choice as any).trigger?.toLowerCase() === lowerQuery
+    choice.name?.toLowerCase().startsWith(lowerQuery) ||
+    choice.keyword?.toLowerCase().startsWith(lowerQuery) ||
+    (choice as any).alias?.toLowerCase().startsWith(lowerQuery) ||
+    (choice as any).trigger?.toLowerCase().startsWith(lowerQuery)
   );
 }
 
-// Check if a string starts with the query (for startsWith detection)
+// Check if query matches as a mnemonic (first letters of words)
 export function startsWithQuery(choice: Choice, query: string): boolean {
-  const lowerQuery = query.toLowerCase();
   return (
-    choice.name?.toLowerCase().startsWith(lowerQuery) ||
-    choice.keyword?.toLowerCase().startsWith(lowerQuery)
+    isMnemonicMatch(choice.name || '', query) ||
+    isMnemonicMatch(choice.keyword || '', query)
   );
 }
