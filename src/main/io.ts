@@ -137,11 +137,9 @@ export const expectBackspaces = (count: number): Promise<void> => {
 
     // Set up timeout to resolve after 5 seconds to prevent memory leaks
     const timeoutId = setTimeout(() => {
-      if (!isResolved) {
-        isResolved = true;
-        backspaceResolve = null;
-        resolve();
-      }
+      isResolved = true;
+      backspaceResolve = null;
+      return Promise.reject(new Error('Backspace timeout...'));
     }, 5000);
 
     // Wrap the resolve function to clear timeout and prevent double resolution
