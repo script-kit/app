@@ -133,7 +133,26 @@ export const expectBackspaces = (count: number): Promise<void> => {
     return Promise.resolve();
   }
   return new Promise((resolve) => {
-    backspaceResolve = resolve;
+    let isResolved = false;
+
+    // Set up timeout to resolve after 5 seconds to prevent memory leaks
+    const timeoutId = setTimeout(() => {
+      if (!isResolved) {
+        isResolved = true;
+        backspaceResolve = null;
+        resolve();
+      }
+    }, 5000);
+
+    // Wrap the resolve function to clear timeout and prevent double resolution
+    backspaceResolve = () => {
+      if (!isResolved) {
+        isResolved = true;
+        clearTimeout(timeoutId);
+        backspaceResolve = null;
+        resolve();
+      }
+    };
   });
 };
 
@@ -229,7 +248,7 @@ export const registerIO = async (handler: (event: any) => void) => {
         log.info('✋ Escape pressed');
         kitState.escapePressed = true;
       }
-      
+
       // Track backspace presses for deleteText synchronization
       // Backspace keycode is 14 (from chars.ts)
       if (event.keycode === 14 && expectedBackspaces > 0) {

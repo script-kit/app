@@ -3,8 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import type { FSWatcher } from 'chokidar';
 
-import { createLogger } from './log-utils';
 import { kenvChokidarPath, kitChokidarPath, slash } from './path-utils';
+import { chokidarLog as log } from './logs';
 import { WatcherManager } from './watcher-manager';
 
 // Types
@@ -16,8 +16,6 @@ export interface WatchOptions {
 }
 
 type WatcherCallback = (eventName: WatchEvent, filePath: string, source?: WatchSource) => Promise<void>;
-
-const log = createLogger('chokidar.ts');
 
 const ignored = [
   '**/node_modules/**',

@@ -199,7 +199,9 @@ const logTypes = [
   "mcp",
   "io",
   "tick",
-  "keyboard"
+  "keyboard",
+  "chokidar",
+  "compare"
 ] as const;
 
 type LogType = (typeof logTypes)[number];
@@ -304,6 +306,10 @@ export const {
   tickLogPath,
   keyboardLog,
   keyboardLogPath,
+  chokidarLog,
+  chokidarLogPath,
+  compareLog,
+  compareLogPath,
   ...rest
 } = logExports;
 

@@ -1,9 +1,7 @@
 import * as path from 'node:path'; // Import the path module
 import type { MainLogger } from 'electron-log';
 import { isEqual } from 'lodash';
-import { createLogger } from './log-utils';
-
-const log = createLogger('compare');
+import { compareLog as log } from './logs';
 
 /**
  * Computes the differences between two objects, excluding the specified keys.

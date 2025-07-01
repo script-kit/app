@@ -42,19 +42,17 @@ import { kenvChokidarPath, kitChokidarPath, slash } from './path-utils';
 import {
   clearIdleProcesses,
   ensureIdleProcess,
-  processes,
   sendToAllActiveChildren,
   spawnShebang,
   updateTheme,
 } from './process';
 import { clearPromptCache, clearPromptCacheFor, setKitStateAtom } from './prompt';
 import { setCSSVariable } from './theme';
-import { removeSnippet, snippetMap, snippetScriptChanged } from './tick';
+import { removeSnippet, snippetScriptChanged, addTextSnippet } from './tick';
 
 import { watcherLog as log, scriptLog } from './logs';
 import { prompts } from './prompts';
 import { createIdlePty } from './pty';
-import { parseSnippet } from './snippet-cache';
 
 // Add a map to track recently processed files
 const recentlyProcessedFiles = new Map<string, number>();
@@ -695,33 +693,17 @@ const handleScriptletsChanged = debounce(async (eventName: WatchEvent, filePath:
 }, 50);
 
 export async function handleSnippetFileChange(eventName: WatchEvent, snippetPath: string) {
+  log.info(`handleSnippetFileChange ${eventName} ${snippetPath}`);
+
   if (eventName === 'unlink') {
-    snippetMap.delete(snippetPath);
+    removeSnippet(snippetPath);
     return;
   }
 
-  // if 'add' or 'change', parse once, update map
-  try {
-    const contents = await readFile(snippetPath, 'utf8');
-    const { metadata, snippetKey, postfix } = parseSnippet(contents);
-
-    if (!snippetKey) {
-      // No expand snippet found => remove from kitState if it had one
-      snippetMap.delete(snippetPath);
-      return;
-    }
-
-    snippetMap.set(snippetPath, {
-      filePath: snippetPath,
-      snippetKey,
-      postfix, // TODO: fix types
-      rawMetadata: metadata,
-      contents,
-    });
-  } catch (error) {
-    log.warn(`[handleSnippetFileChange] Error reading snippet: ${snippetPath}`, error);
-    // remove from kitState
-    snippetMap.delete(snippetPath);
+  // if 'add' or 'change', use the existing addTextSnippet function
+  // which properly registers snippets with their snippet key
+  if (eventName === 'add' || eventName === 'change') {
+    await addTextSnippet(snippetPath);
   }
 }
 

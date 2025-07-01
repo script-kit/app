@@ -21,7 +21,7 @@ import {
   kitPnpmPath,
   processPlatformSpecificTheme,
 } from '@johnlindquist/kit/core/utils';
-import type { Choice, FlagsObject, Script, Scriptlet, Shortcut } from '@johnlindquist/kit/types';
+import type { Choice, FlagsObject, Script, Scriptlet, Shortcut, Snippet } from '@johnlindquist/kit/types';
 import { CACHED_GROUPED_SCRIPTS_WORKER, CREATE_BIN_WORKER } from '@johnlindquist/kit/workers';
 import * as tar from 'tar';
 import download, { type DownloadOptions } from './download';
@@ -1057,6 +1057,10 @@ export const syncScripts = async () => {
   for await (const script of kitState.scripts.values()) {
     await onScriptChanged('add', script, true, true);
   }
+
+  for await (const snippet of kitState.snippets.values()) {
+    await onScriptChanged('add', snippet, true, true);
+  }
 };
 
 let firstRun = true;
@@ -1108,10 +1112,10 @@ export const cacheMainMenu = async ({
       preview: kitCache.preview,
       timestamp
     };
-    
+
     // Log the atomic update
     log.info(`[SCRIPTS RENDER] Sending atomic state update to all prompts at ${timestamp}`);
-    
+
     // Send as single atomic update
     sendToAllPrompts(AppChannel.SET_CACHED_MAIN_STATE, atomicState);
     sendToAllPrompts(AppChannel.INIT_PROMPT, {});
@@ -1119,8 +1123,10 @@ export const cacheMainMenu = async ({
     log.info('🧹 Clearing scriptlets and scripts...');
     const previousScriptlets = Array.from(kitState.scriptlets.entries());
     const previousScripts = Array.from(kitState.scripts.entries());
+    const previousSnippets = Array.from(kitState.snippets.entries());
     kitState.scriptlets.clear();
     kitState.scripts.clear();
+    kitState.snippets.clear();
 
     const logQueue: string[] = [];
     let logTimeout: NodeJS.Timeout;
@@ -1190,18 +1196,22 @@ export const cacheMainMenu = async ({
       if (isBinnableScript(script)) {
         queueLog(`Binnable ${script.filePath}`);
         kitState.scripts.set(script.filePath, script);
+      } else if (script?.expand || script?.snippet) {
+        queueLog(`Snippet ${script.filePath}`);
+        kitState.snippets.set(script.filePath, script as Snippet);
       }
     }
 
     const newScriptlets = new Map(Array.from(kitState.scriptlets.entries()));
     const newScripts = new Map(Array.from(kitState.scripts.entries()));
+    const newSnippets = new Map(Array.from(kitState.snippets.entries()));
 
     // ... [Other code]
 
     // Create maps for quick lookup of previous scriptlets and scripts by filePath
     const previousScriptletsMap = new Map(previousScriptlets);
     const previousScriptsMap = new Map(previousScripts);
-
+    const previousSnippetsMap = new Map(previousSnippets);
     // Compare scriptlets
     const scriptletsDifferences = compareCollections(previousScriptletsMap, newScriptlets, ['id']);
 
@@ -1213,6 +1223,10 @@ export const cacheMainMenu = async ({
 
     // Log scripts differences
     logDifferences(scriptLog as any, 'scripts', scriptsDifferences);
+
+    // Compare snippets
+    const snippetsDifferences = compareCollections(previousSnippetsMap, newSnippets, ['id']);
+    logDifferences(scriptLog as any, 'snippets', snippetsDifferences);
 
     // Ensure any remaining logs are flushed
     flushLogQueue();

@@ -1563,7 +1563,7 @@ export class KitPrompt {
       // remove blur handler
       this.window.removeListener('blur', this.onBlur);
       this.makeWindow();
-      
+
       // Notify renderer that DevTools are open
       this.sendToPrompt(Channel.DEV_TOOLS, true);
     });
@@ -1585,7 +1585,7 @@ export class KitPrompt {
 
       // Re-add blur handler that was removed when DevTools opened
       this.window.on('blur', this.onBlur);
-      
+
       // Notify renderer that DevTools are closed
       this.sendToPrompt(Channel.DEV_TOOLS, false);
     });
@@ -1665,8 +1665,8 @@ export class KitPrompt {
 
     this.window.webContents?.on('render-process-gone', (event, details) => {
       processes.removeByPid(this.pid, 'prompt exit cleanup');
-      this.sendToPrompt = () => {};
-      this.window.webContents.send = () => {};
+      this.sendToPrompt = () => { };
+      this.window.webContents.send = () => { };
       this.logError('🫣 Render process gone...');
       this.logError({ event, details });
     });
@@ -2605,18 +2605,11 @@ export class KitPrompt {
     // });
 
     if (kitState.hasSnippet) {
-      // Calculate delay based on snippet length + buffer for the deletion
-      // Each character takes ~10ms to delete, plus we need extra time for the word before it
-      const snippetKey = this.script?.expand || this.script?.snippet || '';
-      const snippetLength = snippetKey.length || 2;
-      const estimatedWordLength = 10; // Average word length before snippet
-      const perCharDelay = 15; // 10ms per char + buffer
-      const baseDelay = 100; // Base delay for focus/UI
-      
-      const calculatedDelay = baseDelay + (snippetLength + estimatedWordLength) * perCharDelay;
-      const timeout = this.script?.snippetdelay || calculatedDelay;
-      
-      this.logInfo(`Snippet delay: ${timeout}ms for snippet: ${snippetKey}`);
+      // Since we now properly wait for backspaces to complete in deleteText(),
+      // we only need a minimal delay for UI stabilization
+      const timeout = this.script?.snippetdelay || 0; // Reduced from 280ms to 50ms
+
+      this.logInfo(`Snippet delay: ${timeout}ms for snippet: ${this.script?.expand || this.script?.snippet || ''}`);
       // eslint-disable-next-line promise/param-names
       await new Promise((r) => setTimeout(r, timeout));
       kitState.hasSnippet = false;
@@ -2624,10 +2617,10 @@ export class KitPrompt {
 
     const visible = this.isVisible();
     this.logInfo(`${this.id}: visible ${visible ? 'true' : 'false'} 👀`);
-    
+
     // Default behavior: show the prompt unless explicitly told not to
     const shouldShow = promptData?.show !== false;
-    
+
     if (!visible && shouldShow) {
       this.logInfo(`${this.id}: Prompt not visible but should show`);
       // For snippets and other triggers that don't pre-show the prompt,
@@ -2849,13 +2842,13 @@ export class KitPrompt {
 
   forceFocus = () => {
     this.logInfo(`${this.pid}: forceFocus`);
-    
+
     // Don't steal focus when DevTools are open
     if (this.window?.webContents?.isDevToolsOpened()) {
       this.logInfo('DevTools are open - skipping forceFocus');
       return;
     }
-    
+
     this.window?.show();
     this.window?.focus();
   };
@@ -3151,7 +3144,7 @@ export class KitPrompt {
         this.hideInstant(isProcessExit);
       }
 
-      this.sendToPrompt = () => {};
+      this.sendToPrompt = () => { };
 
       try {
         if (!kitState.isMac) {
