@@ -123,6 +123,20 @@ export const toKey = (keycode: number, shift = false) => {
   }
 };
 
+// Backspace tracking for deleteText synchronization
+let expectedBackspaces = 0;
+let backspaceResolve: (() => void) | null = null;
+
+export const expectBackspaces = (count: number): Promise<void> => {
+  expectedBackspaces = count;
+  if (count === 0) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    backspaceResolve = resolve;
+  });
+};
+
 export const registerIO = async (handler: (event: any) => void) => {
   const { UiohookKey, uIOhook } = shims['uiohook-napi'];
 
@@ -214,6 +228,17 @@ export const registerIO = async (handler: (event: any) => void) => {
       if (event.keycode === UiohookKey.Escape) {
         log.info('✋ Escape pressed');
         kitState.escapePressed = true;
+      }
+      
+      // Track backspace presses for deleteText synchronization
+      // Backspace keycode is 14 (from chars.ts)
+      if (event.keycode === 14 && expectedBackspaces > 0) {
+        expectedBackspaces--;
+        log.info(`Backspace detected. Remaining: ${expectedBackspaces}`);
+        if (expectedBackspaces === 0 && backspaceResolve) {
+          backspaceResolve();
+          backspaceResolve = null;
+        }
       }
     } catch (error) {
       log.error(error);

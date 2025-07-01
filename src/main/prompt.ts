@@ -2605,7 +2605,18 @@ export class KitPrompt {
     // });
 
     if (kitState.hasSnippet) {
-      const timeout = this.script?.snippetdelay || 120;
+      // Calculate delay based on snippet length + buffer for the deletion
+      // Each character takes ~10ms to delete, plus we need extra time for the word before it
+      const snippetKey = this.script?.expand || this.script?.snippet || '';
+      const snippetLength = snippetKey.length || 2;
+      const estimatedWordLength = 10; // Average word length before snippet
+      const perCharDelay = 15; // 10ms per char + buffer
+      const baseDelay = 100; // Base delay for focus/UI
+      
+      const calculatedDelay = baseDelay + (snippetLength + estimatedWordLength) * perCharDelay;
+      const timeout = this.script?.snippetdelay || calculatedDelay;
+      
+      this.logInfo(`Snippet delay: ${timeout}ms for snippet: ${snippetKey}`);
       // eslint-disable-next-line promise/param-names
       await new Promise((r) => setTimeout(r, timeout));
       kitState.hasSnippet = false;
@@ -2613,9 +2624,20 @@ export class KitPrompt {
 
     const visible = this.isVisible();
     this.logInfo(`${this.id}: visible ${visible ? 'true' : 'false'} 👀`);
-    if (!visible && promptData?.show) {
-      this.showAfterNextResize = true;
-    } else if (visible && !promptData?.show) {
+    
+    // Default behavior: show the prompt unless explicitly told not to
+    const shouldShow = promptData?.show !== false;
+    
+    if (!visible && shouldShow) {
+      this.logInfo(`${this.id}: Prompt not visible but should show`);
+      // For snippets and other triggers that don't pre-show the prompt,
+      // we need to show it immediately when setPromptData is called
+      if (!this.firstPrompt) {
+        this.showPrompt();
+      } else {
+        this.showAfterNextResize = true;
+      }
+    } else if (visible && !shouldShow) {
       this.actualHide();
     }
 
@@ -3015,7 +3037,7 @@ export class KitPrompt {
     this.sendToPrompt(Channel.SET_PID, pid);
 
     this.scriptPath = serializableScript.filePath;
-    kitState.hasSnippet = Boolean(serializableScript?.snippet);
+    kitState.hasSnippet = Boolean(serializableScript?.snippet || serializableScript?.expand);
     // if (promptScript?.filePath === script?.filePath) return;
 
     this.script = serializableScript;

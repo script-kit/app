@@ -197,7 +197,9 @@ const logTypes = [
   "metadataWatcher",
   "messages",
   "mcp",
-  "io"
+  "io",
+  "tick",
+  "keyboard"
 ] as const;
 
 type LogType = (typeof logTypes)[number];
@@ -298,6 +300,10 @@ export const {
   mcpLogPath,
   ioLog,
   ioLogPath,
+  tickLog,
+  tickLogPath,
+  keyboardLog,
+  keyboardLogPath,
   ...rest
 } = logExports;
 

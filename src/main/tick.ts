@@ -21,11 +21,9 @@ import { deleteText } from './keyboard';
 
 import { addToClipboardHistory, getClipboardHistory } from './clipboard';
 import { registerIO } from './io';
-import { createLogger } from './log-utils';
-import { snippetLog } from './logs';
+import { snippetLog, tickLog as log } from './logs';
 import { prompts } from './prompts';
 import shims from './shims';
-const log = createLogger('tick.ts');
 
 type FrontmostApp = {
   localizedName: string;
@@ -412,13 +410,27 @@ function updateSnippetPrefixIndex() {
   const keys = snippetMap.keys();
   for (const key of keys) {
     const kl = key.length;
-    const prefix = kl >= 3 ? key.slice(-3) : key;
-    let arr = snippetPrefixIndex.get(prefix);
-    if (!arr) {
-      arr = [];
-      snippetPrefixIndex.set(prefix, arr);
+    // For snippets of 2 chars, index under 2-char prefix
+    // For snippets of 3+ chars, index under 3-char prefix
+    // This ensures we can find short snippets like ",,"
+    if (kl === 2) {
+      // Store 2-char snippets under their full key
+      let arr = snippetPrefixIndex.get(key);
+      if (!arr) {
+        arr = [];
+        snippetPrefixIndex.set(key, arr);
+      }
+      arr.push(key);
+    } else {
+      // Store 3+ char snippets under their last 3 chars
+      const prefix = key.slice(-3);
+      let arr = snippetPrefixIndex.get(prefix);
+      if (!arr) {
+        arr = [];
+        snippetPrefixIndex.set(prefix, arr);
+      }
+      arr.push(key);
     }
-    arr.push(key);
   }
 }
 
@@ -428,14 +440,28 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet: string) => 
     return;
   }
 
-  const potentialPrefix = sl >= 3 ? snippet.slice(-3) : snippet.slice(0, sl);
-  const potentialSnippetKeys = snippetPrefixIndex.get(potentialPrefix);
-  if (!potentialSnippetKeys) {
-    return;
+  // Check both 2-char and 3-char prefixes to find all possible snippet matches
+  const prefixesToCheck: string[] = [];
+  if (sl >= 2) {
+    prefixesToCheck.push(snippet.slice(-2));
+  }
+  if (sl >= 3) {
+    prefixesToCheck.push(snippet.slice(-3));
   }
 
-  for (let i = 0; i < potentialSnippetKeys.length; i++) {
-    const snippetKey = potentialSnippetKeys[i];
+  // Collect all potential snippet keys from all prefixes
+  const potentialSnippetKeys = new Set<string>();
+  for (const prefix of prefixesToCheck) {
+    const keys = snippetPrefixIndex.get(prefix);
+    if (keys) {
+      for (const key of keys) {
+        potentialSnippetKeys.add(key);
+      }
+    }
+  }
+
+  // Check if the typed text ends with any of the snippet keys
+  for (const snippetKey of potentialSnippetKeys) {
     if (snippet.endsWith(snippetKey)) {
       log.info(`Running snippet: ${snippetKey}`);
       const script = snippetMap.get(snippetKey)!;
@@ -446,7 +472,9 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet: string) => 
         const stringToDelete = postfix ? snippet : snippetKey;
         log.info({ stringToDelete, postfix });
         kitState.snippet = '';
+        log.info('Before deleteText', { stringToDelete });
         await deleteText(stringToDelete);
+        log.info('After deleteText', { stringToDelete });
       }
 
       const args = postfix ? [snippet.slice(0, snippet.length - snippetKey.length)] : [];

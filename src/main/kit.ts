@@ -253,6 +253,12 @@ export const runPromptProcess = async (
     log.info(`${pid}: 🏠 Main script: ${promptScriptPath}`);
     prompt.initMainBounds();
     prompt.initShowPrompt();
+  } else if (options.trigger === Trigger.Snippet) {
+    log.info(`${pid}: 📝 Snippet trigger: Preparing prompt`);
+    // For snippets, prepare the prompt bounds but don't show it yet
+    // The script will call setPromptData if it needs to show a prompt
+    prompt.initBounds();
+    // Don't call initShowPrompt() here - let the script decide
   } else {
     log.info(`${pid}: 🖱️ Moving prompt to mouse screen`);
     prompt.moveToMouseScreen();
