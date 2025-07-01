@@ -31,6 +31,7 @@ import {
   colorAtom,
   cssAtom,
   descriptionAtom,
+  devToolsOpenAtom,
   editorAppendAtom,
   editorConfigAtom,
   editorLogModeAtom,
@@ -193,6 +194,7 @@ export default () => {
   const [, setTermConfig] = useAtom(termConfigAtom);
   const [micConfig, setMicConfig] = useAtom(micConfigAtom);
   const setTermExit = useSetAtom(termExitAtom);
+  const setDevToolsOpen = useSetAtom(devToolsOpenAtom);
   const scrollToIndex = useAtomValue(scrollToIndexAtom);
   const setPreloaded = useSetAtom(preloadedAtom);
   const setTriggerKeyword = useSetAtom(triggerKeywordAtom);
@@ -245,6 +247,7 @@ export default () => {
       toast.dismiss();
       setPid(pid);
     },
+    [Channel.DEV_TOOLS]: setDevToolsOpen,
     [Channel.SET_PROMPT_BOUNDS]: setPromptBounds,
     [Channel.SET_SCRIPT]: setScript,
     [Channel.SET_CHOICES_CONFIG]: setChoicesConfig,

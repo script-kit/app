@@ -1457,6 +1457,44 @@ describe('Search Functionality', () => {
       expect(bestMatches.map(m => m?.item?.name).sort()).toEqual(['Send Pull Request', 'Stripe Payment Links']);
     });
 
+    it('should show best match when typing a word from the middle', () => {
+      const choices = [
+        { id: '1', name: 'Stripe Payment Links', description: 'Manage payment links' },
+        { id: '2', name: 'Process Payment Gateway', description: 'Payment processing' },
+        { id: '3', name: 'PayPal Integration', description: 'PayPal payments' },
+      ];
+
+      mockPrompt.kitSearch.choices = choices;
+      mockPrompt.kitSearch.hasGroup = true;
+      
+      vi.mocked(searchChoices).mockReturnValue([
+        { item: choices[0], score: 0.9, matches: { name: [[7, 14]] }, _: '' },
+        { item: choices[1], score: 0.8, matches: { name: [[8, 15]] }, _: '' },
+      ]);
+      // None start with "Payment" at position 0
+      vi.mocked(isExactMatch).mockImplementation(() => false);
+      // Both have "Payment" as a word
+      vi.mocked(startsWithQuery).mockImplementation((choice) => 
+        choice.name === 'Stripe Payment Links' || choice.name === 'Process Payment Gateway'
+      );
+
+      invokeSearch(mockPrompt, 'Payment');
+
+      const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoices = call?.[1] || [];
+      
+      // Should have "Best Matches" header
+      const bestMatchHeader = scoredChoices.find((sc: ScoredChoice) => 
+        sc.item.name === 'Best Matches' && sc.item.skip === true
+      );
+      expect(bestMatchHeader).toBeDefined();
+      
+      // Should include both choices that have "Payment" as a word
+      const bestMatchIndex = scoredChoices.findIndex((sc: ScoredChoice) => sc.item.name === 'Best Matches');
+      const bestMatches = [scoredChoices[bestMatchIndex + 1], scoredChoices[bestMatchIndex + 2]];
+      expect(bestMatches.map(m => m?.item?.name).sort()).toEqual(['Process Payment Gateway', 'Stripe Payment Links']);
+    });
+
     describe('Search prioritization', () => {
       it('should prioritize "API Tester" over "Stripe Payment Links" for query "apit"', () => {
         const choices = [

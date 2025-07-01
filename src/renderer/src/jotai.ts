@@ -3329,3 +3329,4 @@ export const termOutputAtom = atom(
 export const gridReadyAtom = atom(false);
 
 export const isWindowAtom = atom<boolean>(false);
+export const devToolsOpenAtom = atom<boolean>(false);

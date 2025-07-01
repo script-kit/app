@@ -81,11 +81,17 @@ contextMenu({
           log.info(`Inspect prompt: ${bw.id}`, {
             browserWindow,
           });
-          prompts
-            .find((prompt) => prompt?.window?.id === bw.id)
-            ?.window?.webContents?.openDevTools({
+          const prompt = prompts.find((p) => p?.window?.id === bw.id);
+          if (prompt) {
+            // Set flag to prevent main menu from closing
+            prompt.devToolsOpening = true;
+            setTimeout(() => {
+              prompt.devToolsOpening = false;
+            }, 200);
+            prompt.window?.webContents?.openDevTools({
               mode: 'detach',
             });
+          }
         }
       },
     },
@@ -585,6 +591,7 @@ export class KitPrompt {
   cacheScriptPreview = false;
   actionsOpen = false;
   wasActionsJustOpen = false;
+  devToolsOpening = false;
 
   // Long-running script monitoring
   private longRunningTimer?: NodeJS.Timeout;
@@ -1229,6 +1236,11 @@ export class KitPrompt {
 
     const isMainScript = getMainScriptPath() === this.scriptPath;
     if (isMainScript && !this.mainMenuPreventCloseOnBlur) {
+      // Don't close main menu if DevTools are being opened
+      if (this.devToolsOpening) {
+        this.logInfo('Main menu blur ignored - DevTools are opening');
+        return;
+      }
       this.logInfo('Main script. Make window');
       this.hideAndRemoveProcess();
       return;
@@ -1305,11 +1317,13 @@ export class KitPrompt {
       log.silly(`sendToPrompt: ${String(channel)}`, data);
 
       // Log [SCRIPTS RENDER] events
-      if (channel === AppChannel.SET_CACHED_MAIN_STATE ||
+      if (
+        channel === AppChannel.SET_CACHED_MAIN_STATE ||
         channel === AppChannel.SET_CACHED_MAIN_SCORED_CHOICES ||
         channel === AppChannel.SET_CACHED_MAIN_SHORTCUTS ||
         channel === AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS ||
-        channel === AppChannel.SET_CACHED_MAIN_PREVIEW) {
+        channel === AppChannel.SET_CACHED_MAIN_PREVIEW
+      ) {
         this.logInfo(`[SCRIPTS RENDER] Prompt ${this.pid}:${this.id} sending ${String(channel)} to renderer`);
       }
 
@@ -1320,7 +1334,7 @@ export class KitPrompt {
           dataKeys: data ? Object.keys(data) : [],
           textLength: data?.text?.length || 0,
           pid: data?.pid,
-          exitCode: data?.exitCode
+          exitCode: data?.exitCode,
         });
       }
 
@@ -1529,10 +1543,29 @@ export class KitPrompt {
       this.window.loadFile(fileURLToPath(new URL('../renderer/index.html', import.meta.url)));
     }
 
+    // Intercept DevTools keyboard shortcuts to set flag before blur happens
+    this.window.webContents?.on('before-input-event', (_event, input) => {
+      // Check for common DevTools shortcuts: Ctrl/Cmd+Shift+I or F12
+      const isDevToolsShortcut =
+        ((input.control || input.meta) && input.shift && input.key.toLowerCase() === 'i') || input.key === 'F12';
+
+      if (isDevToolsShortcut) {
+        this.devToolsOpening = true;
+        // Reset flag after a short delay
+        setTimeout(() => {
+          this.devToolsOpening = false;
+        }, 200);
+      }
+    });
+
     this.window.webContents?.on('devtools-opened', () => {
+      this.devToolsOpening = false;
       // remove blur handler
       this.window.removeListener('blur', this.onBlur);
       this.makeWindow();
+      
+      // Notify renderer that DevTools are open
+      this.sendToPrompt(Channel.DEV_TOOLS, true);
     });
 
     this.window.webContents?.on('devtools-closed', () => {
@@ -1544,7 +1577,17 @@ export class KitPrompt {
       } else {
         this.setPromptAlwaysOnTop(false);
       }
-      this.maybeHide(HideReason.DevToolsClosed);
+
+      // Don't hide main menu when DevTools closes
+      if (this.scriptPath !== getMainScriptPath()) {
+        this.maybeHide(HideReason.DevToolsClosed);
+      }
+
+      // Re-add blur handler that was removed when DevTools opened
+      this.window.on('blur', this.onBlur);
+      
+      // Notify renderer that DevTools are closed
+      this.sendToPrompt(Channel.DEV_TOOLS, false);
     });
 
     this.window.on('always-on-top-changed', () => {
@@ -1622,8 +1665,8 @@ export class KitPrompt {
 
     this.window.webContents?.on('render-process-gone', (event, details) => {
       processes.removeByPid(this.pid, 'prompt exit cleanup');
-      this.sendToPrompt = () => { };
-      this.window.webContents.send = () => { };
+      this.sendToPrompt = () => {};
+      this.window.webContents.send = () => {};
       this.logError('🫣 Render process gone...');
       this.logError({ event, details });
     });
@@ -2784,6 +2827,13 @@ export class KitPrompt {
 
   forceFocus = () => {
     this.logInfo(`${this.pid}: forceFocus`);
+    
+    // Don't steal focus when DevTools are open
+    if (this.window?.webContents?.isDevToolsOpened()) {
+      this.logInfo('DevTools are open - skipping forceFocus');
+      return;
+    }
+    
     this.window?.show();
     this.window?.focus();
   };
@@ -3079,7 +3129,7 @@ export class KitPrompt {
         this.hideInstant(isProcessExit);
       }
 
-      this.sendToPrompt = () => { };
+      this.sendToPrompt = () => {};
 
       try {
         if (!kitState.isMac) {

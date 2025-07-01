@@ -11,6 +11,10 @@ vi.mock('./state', () => ({
   },
 }));
 
+vi.mock('@johnlindquist/kit/core/utils', () => ({
+  getMainScriptPath: vi.fn(() => '/path/to/main.js'),
+}));
+
 // Helper to create a mock prompt
 function createMockPrompt(overrides: Partial<KitPrompt> = {}): KitPrompt {
   return {
@@ -225,6 +229,35 @@ describe('VisibilityController', () => {
       // Escape should not work on blurred window
       const handled1 = visibilityController.handleEscape(prompt1, false);
       expect(handled1).toBe(false);
+    });
+
+    it('should always hide main menu on escape regardless of hideOnEscape setting', () => {
+      const mainMenu = createMockPrompt({
+        scriptPath: '/path/to/main.js', // This matches the mocked getMainScriptPath
+        hideOnEscape: false, // Explicitly set to false
+      });
+      
+      visibilityController.handleFocus(mainMenu);
+      
+      // Should hide even with hideOnEscape false and child process
+      const handled = visibilityController.handleEscape(mainMenu, true);
+      expect(handled).toBe(true);
+      expect(mainMenu.maybeHide).toHaveBeenCalledWith(HideReason.Escape);
+      expect(mainMenu.sendToPrompt).toHaveBeenCalledWith(Channel.SET_INPUT, '');
+    });
+
+    it('should not hide non-main scripts when hideOnEscape is false', () => {
+      const regularScript = createMockPrompt({
+        scriptPath: '/path/to/other-script.js',
+        hideOnEscape: false,
+      });
+      
+      visibilityController.handleFocus(regularScript);
+      
+      // Should not hide when hideOnEscape is false
+      const handled = visibilityController.handleEscape(regularScript, false);
+      expect(handled).toBe(false);
+      expect(regularScript.maybeHide).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,6 +1,7 @@
 import { useAtom } from 'jotai';
 import { type RefObject, useEffect } from 'react';
 import {
+  devToolsOpenAtom,
   flaggedChoiceValueAtom,
   inputFocusAtom,
   isHiddenAtom,
@@ -23,13 +24,15 @@ export default (ref: RefObject<HTMLElement>) => {
   const [script] = useAtom(scriptAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [isHidden] = useAtom(isHiddenAtom);
+  const [devToolsOpen] = useAtom(devToolsOpenAtom);
 
   useEffect(() => {
-    if (ref?.current && open && window?.pid && document.activeElement !== ref?.current) {
+    // Don't steal focus when DevTools are open
+    if (ref?.current && open && window?.pid && document.activeElement !== ref?.current && !devToolsOpen) {
       log.info(`${window?.pid}: 🏆 Focusing`, ref?.current?.tagName, document.activeElement?.tagName);
       ref?.current?.focus();
     }
-  }, [flagValue, submitted, open, inputFocus, processing, script, isHidden, promptData, ref, ref?.current]);
+  }, [flagValue, submitted, open, inputFocus, processing, script, isHidden, promptData, ref, ref?.current, devToolsOpen]);
 
   // useEffect(() => {
   //   const handleFocusIn = () => {

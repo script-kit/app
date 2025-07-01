@@ -799,6 +799,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       const window = BrowserWindow.fromId(Number.parseInt(id, 10));
       log.info(`Focusing window ${id}: ${window?.getTitle()}`);
       if (window) {
+        // Don't steal focus when DevTools are open
+        if (window.webContents?.isDevToolsOpened()) {
+          log.info('DevTools are open - skipping focus steal');
+          return;
+        }
         app.focus({ steal: true });
         window.focus();
       }

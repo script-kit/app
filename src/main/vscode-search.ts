@@ -407,10 +407,22 @@ export function isExactMatch(choice: Choice, query: string): boolean {
   );
 }
 
-// Check if query matches as a mnemonic (first letters of words)
+// Check if query matches as a mnemonic (first letters of words) or starts with any word
 export function startsWithQuery(choice: Choice, query: string): boolean {
-  return (
+  const lowerQuery = query.toLowerCase();
+  
+  // Check if any word in the name starts with the query
+  const nameWords = splitIntoWords(choice.name || '');
+  const keywordWords = splitIntoWords(choice.keyword || '');
+  
+  const matchesWordStart = 
+    nameWords.some(word => word.toLowerCase().startsWith(lowerQuery)) ||
+    keywordWords.some(word => word.toLowerCase().startsWith(lowerQuery));
+  
+  // Also check mnemonic matches
+  const matchesMnemonic = 
     isMnemonicMatch(choice.name || '', query) ||
-    isMnemonicMatch(choice.keyword || '', query)
-  );
+    isMnemonicMatch(choice.keyword || '', query);
+  
+  return matchesWordStart || matchesMnemonic;
 }

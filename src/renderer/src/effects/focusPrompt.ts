@@ -1,9 +1,14 @@
 import { atomEffect } from 'jotai-effect';
-import { inputFocusAtom } from '../jotai';
+import { inputFocusAtom, devToolsOpenAtom } from '../jotai';
 import { AppChannel } from '../../../shared/enums';
 
 export const focusPromptEffect = atomEffect((get) => {
   // Observe inputFocusAtom for changes
   get(inputFocusAtom);
-  window.electron.ipcRenderer.send(AppChannel.FOCUS_PROMPT);
+  
+  // Don't send focus request if DevTools are open
+  const devToolsOpen = get(devToolsOpenAtom);
+  if (!devToolsOpen) {
+    window.electron.ipcRenderer.send(AppChannel.FOCUS_PROMPT);
+  }
 });
