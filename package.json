@@ -50,7 +50,7 @@
   ],
   "homepage": "https://github.com/script-kit/kitapp#readme",
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.0.6",
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@fontsource/jetbrains-mono": "^5.2.6",
     "@heroicons/react": "^2.2.0",
@@ -134,7 +134,7 @@
   "dependencies": {
     "@jitsi/robotjs": "^0.6.16",
     "@johnlindquist/clipboard": "^0.1.38",
-    "@johnlindquist/kit": "^3.34.0",
+    "@johnlindquist/kit": "^3.34.1",
     "@modelcontextprotocol/sdk": "^1.13.3",
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^28.0.6",
