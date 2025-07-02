@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React from 'react';
 import iconUrl from '../assets/icon.png';
 import {
   appConfigAtom,
@@ -7,7 +7,6 @@ import {
   splashBodyAtom,
   splashHeaderAtom,
   splashProgressAtom,
-  submitSurveyAtom,
 } from '../jotai';
 
 // const questions = [
@@ -33,16 +32,28 @@ const Spinner = () => (
   </svg>
 );
 
-const questions = [
-  'What problem do you want a script to solve?',
-  'How are you currently dealing with this problem?',
-  'Describe the last time you scripted something',
-  'What tools do you use for scripting?',
-  'Which API do you wish you could automate?',
-  `What's your most annoying daily task?`,
-  'What work task wastes your most time?',
-  'What question do you think I should have asked?',
-  'Anything else?',
+// Key features to highlight during installation
+const features = [
+  {
+    icon: '⚡',
+    title: 'Quick Script Creation',
+    description: 'Write TypeScript/JavaScript with top-level await and built-in helpers'
+  },
+  {
+    icon: '🎯',
+    title: 'Powerful Prompts',
+    description: 'Use arg() for input, editor() for text, div() for HTML, and more'
+  },
+  {
+    icon: '🔧',
+    title: 'System Integration',
+    description: 'Control clipboard, windows, notifications, and system processes'
+  },
+  {
+    icon: '🤖',
+    title: 'AI Integration',
+    description: 'Built-in AI helpers for text generation and automation'
+  },
 ];
 
 function Aside() {
@@ -52,20 +63,7 @@ function Aside() {
   const [progress] = useAtom(splashProgressAtom);
   const [runMainScript] = useAtom(runMainScriptAtom);
 
-  const links = [
-    {
-      label: 'Community Scripts',
-      href: `${appConfig.url}/scripts`,
-    },
-    // {
-    //   label: 'Documentation',
-    //   href: 'https://github.com/johnlindquist/kit/discussions/categories/docs',
-    // },
-    {
-      label: 'Questions?',
-      href: 'https://github.com/johnlindquist/kit/discussions/categories/q-a',
-    },
-  ];
+  // Links are now hardcoded in the nav section
 
   return (
     <aside className="col-span-3 flex h-full flex-col justify-between bg-bg-base/40 p-5 pt-12 shadow-inner">
@@ -119,18 +117,25 @@ function Aside() {
           </div>
         )}
       </div>
-      <nav className="pb-4">
-        {links.map(({ label, href }) => {
-          return (
-            <a
-              key={href}
-              href={href}
-              className="flex w-full items-center justify-center p-1 text-sm font-normal text-text-base no-underline opacity-70 transition hover:opacity-100"
-            >
-              {label}
-            </a>
-          );
-        })}
+      <nav className="space-y-2 pb-4">
+        <a
+          href="https://github.com/johnlindquist/kit/discussions"
+          className="flex w-full items-center justify-center rounded-md bg-text-base bg-opacity-5 p-2 text-sm font-normal text-text-base no-underline opacity-70 transition hover:bg-opacity-10 hover:opacity-100"
+        >
+          💬 Community Forum
+        </a>
+        <a
+          href="https://www.scriptkit.com/scripts"
+          className="flex w-full items-center justify-center rounded-md bg-text-base bg-opacity-5 p-2 text-sm font-normal text-text-base no-underline opacity-70 transition hover:bg-opacity-10 hover:opacity-100"
+        >
+          📦 Browse Scripts
+        </a>
+        <a
+          href="https://github.com/johnlindquist/kit/discussions/categories/docs"
+          className="flex w-full items-center justify-center rounded-md bg-text-base bg-opacity-5 p-2 text-sm font-normal text-text-base no-underline opacity-70 transition hover:bg-opacity-10 hover:opacity-100"
+        >
+          📚 Documentation
+        </a>
       </nav>
       <small className="text-center opacity-40">{appConfig.version}</small>
     </aside>
@@ -138,175 +143,104 @@ function Aside() {
 }
 
 export default function Splash() {
-  const [, submitSurvey] = useAtom(submitSurveyAtom);
+  const [appConfig] = useAtom(appConfigAtom);
+  const [progress] = useAtom(splashProgressAtom);
+  const [runMainScript] = useAtom(runMainScriptAtom);
 
-  // useEscape();
-  const [isSubmitted, setSubmitted] = React.useState<boolean>(false);
-  const [isSubmitting, setSubmitting] = React.useState<boolean>(false);
-  const [response, setResponse] = React.useState<string>('');
-  const [email, setEmail] = React.useState<string>('');
-  const [question, setQuestion] = useState<string>('');
-  const [subscribe, setSubscribe] = useState(false);
-  const [subscribeSubmitted, setSubscribeSubmitted] = useState(false);
-  const [contactSubmitted, setContactSubmitted] = useState(false);
-  const [hideEmail, setHideEmail] = useState(false);
-  const [contact, setContact] = useState(false);
-  const questionRef = useRef<HTMLTextAreaElement>(null);
-  const emailRef = useRef<HTMLInputElement>(null);
-  const [qIndex, setQIndex] = useState(0);
-
-  useEffect(() => {
-    setQuestion(questions[qIndex]);
-  }, [questionRef, questionRef?.current, qIndex]);
-
-  useEffect(() => {
-    setTimeout(() => {
-      questionRef?.current?.focus();
-    }, 250);
-  }, [questionRef?.current]);
-
-  const handleOnSubmit = useCallback(() => {
-    submitSurvey({
-      question,
-      response,
-      email,
-      subscribe,
-      contact,
-    });
-    // submitting
-    setSubmitting(true);
-    // done
-    setQuestion('');
-    return setTimeout(() => {
-      setSubmitting(false);
-      setSubmitted(true);
-      setResponse('');
-      setQIndex(qIndex + 1 > questions.length - 1 ? questions.length - 1 : qIndex + 1);
-      setSubscribeSubmitted(subscribe);
-      setContactSubmitted(contact);
-      setHideEmail(email?.length > 0 && subscribe && contact);
-      questionRef?.current?.focus();
-    }, 1000);
-  }, [subscribe, contact, response, email, question, questionRef, questionRef?.current, isSubmitting, isSubmitted]);
-
-  const emailRequired = subscribe || contact;
+  const shortcuts = [
+    { keys: [appConfig?.isMac ? 'CMD' : 'CTRL', ';'], description: 'Open main menu' },
+    { keys: [appConfig?.isMac ? 'CMD' : 'CTRL', 'P'], description: 'Generate new script' },
+    { keys: [appConfig?.isMac ? 'CMD' : 'CTRL', 'K'], description: 'Actions menu' },
+    { keys: [appConfig?.isMac ? 'CMD' : 'CTRL', 'E'], description: 'Explore examples' },
+  ];
 
   return (
     <div key="splash" className="fixed left-0 top-0 grid h-screen w-screen grid-cols-8">
       <Aside />
-      <main className="col-span-5 h-full w-full bg-bg-base/10 p-6">
-        <form onSubmit={handleOnSubmit} className="flex h-full flex-col justify-center">
-          <fieldset className="space-y-2 p-2">
-            <legend className="h-14 w-full text-lg opacity-90">
-              <p className="mb-2 text-base">👋 Your feedback guides Script Kit's future:</p>
-
-              {question && (
-                <p
-                  layoutId="question"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="font-semibold"
-                >
-                  {question}
-                </p>
-              )}
-            </legend>
-            <div className="flex flex-col rounded-md  border border-text-base border-opacity-25 focus:border-opacity-100">
-              <textarea
-                tabIndex={0}
-                ref={questionRef}
-                value={response}
-                // onKeyDown={onMaybeEnter}
-                onChange={(e) => {
-                  setResponse(e?.currentTarget?.value || '');
-                }}
-                id="answer"
-                required={contact && !subscribe}
-                placeholder="Type your answer here..."
-                className="w-full rounded-md border-none bg-text-base bg-opacity-5 px-5 py-3 text-lg placeholder-text-base placeholder-opacity-25 "
-                rows={5}
-              />
+      <main className="col-span-5 h-full w-full bg-bg-base/10 p-8">
+        <div className="flex h-full flex-col justify-center">
+          <div className="space-y-6">
+            {/* Welcome Section */}
+            <div className="mb-8">
+              <h2 className="mb-3 text-3xl font-bold text-text-base">Welcome to Script Kit! 🚀</h2>
+              <p className="text-lg text-text-base opacity-80">
+                A powerful automation tool that lets you create custom scripts and workflows quickly.
+              </p>
             </div>
 
-            <div>
-              {!contactSubmitted && (
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={contact}
-                    onChange={(e) => setContact(e?.target?.checked)}
-                    id="contact"
-                    className="rounded-sm border border-text-base  border-opacity-25 bg-text-base bg-opacity-5 "
-                  />
-                  <label htmlFor="contact" className="pl-2">
-                    Contact me with an example of my script idea
-                  </label>
+            {/* Features Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              {features.map((feature, index) => (
+                <div key={index} className="rounded-lg border border-text-base border-opacity-10 bg-text-base bg-opacity-5 p-4">
+                  <div className="mb-2 text-2xl">{feature.icon}</div>
+                  <h3 className="mb-1 font-semibold text-text-base">{feature.title}</h3>
+                  <p className="text-sm text-text-base opacity-70">{feature.description}</p>
                 </div>
-              )}
+              ))}
+            </div>
 
-              {!subscribeSubmitted && (
-                <div className="flex items-center">
-                  <div className="relative flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={subscribe}
-                      onChange={(e) => setSubscribe(e?.target?.checked)}
-                      id="subscribe"
-                      className="rounded-sm border border-text-base  border-opacity-25 bg-text-base bg-opacity-5 "
-                    />
-                    <label htmlFor="subscribe" className="pl-2">
-                      Receive Script Kit Tips, Tricks, and News
-                    </label>
+            {/* Keyboard Shortcuts */}
+            <div className="mt-6">
+              <h3 className="mb-3 text-lg font-semibold text-text-base">Essential Keyboard Shortcuts</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {shortcuts.map((shortcut, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1">
+                      {shortcut.keys.map((key, i) => (
+                        <React.Fragment key={i}>
+                          <kbd className="rounded bg-text-base bg-opacity-10 px-2 py-1 text-xs font-mono">{key}</kbd>
+                          {i < shortcut.keys.length - 1 && <span className="text-xs">+</span>}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                    <span className="text-sm text-text-base opacity-70">{shortcut.description}</span>
                   </div>
-                </div>
-              )}
-              {hideEmail ? null : (
-                <div className="my-3 rounded-md border border-text-base border-opacity-25 bg-text-base  bg-opacity-5">
-                  <label
-                    className={`absolute px-5 py-3 ${
-                      emailRequired ? "after:absolute after:text-primary after:content-['*']" : ''
-                    }`}
-                    htmlFor="email"
-                  >
-                    Email
-                  </label>
-                  <input
-                    required={emailRequired}
-                    ref={emailRef}
-                    onChange={(event) => setEmail(event.target.value || '')}
-                    value={email}
-                    type="email"
-                    id="email"
-                    className="w-full rounded-md border-none bg-transparent px-5 py-3 pl-20 placeholder-text-base placeholder-opacity-25"
-                    placeholder="you@company.com"
-                  />
-                </div>
-              )}
+                ))}
+              </div>
             </div>
 
-            <div className="flex w-full flex-row justify-between pt-2">
-              <button
-                type="submit"
-                className="h-10 rounded-md border border-text-base border-opacity-25 bg-primary bg-opacity-90 px-5 py-2 font-medium text-bg-base transition-all hover:bg-opacity-100 hover:shadow-primary/25"
-              >
-                {isSubmitting ? <Spinner /> : 'Send'}
-              </button>
-              {/* {isSubmitted && (
-                  <h2 className="-mb-1">Thanks! 🙌</h2>
-                )} */}
-              {isSubmitted && (subscribeSubmitted || contactSubmitted) && (
-                <div className="w-9/12 pl-2 opacity-80">
-                  <ul>
-                    {subscribeSubmitted && <li className="pb-4">Verify the newsletter subscription in your inbox</li>}
-                    {contactSubmitted && <li>We will e-mail you an example of your script idea</li>}
-                  </ul>
-                </div>
-              )}
+            {/* Community Links */}
+            <div className="mt-8 border-t border-text-base border-opacity-10 pt-6">
+              <h3 className="mb-3 text-lg font-semibold text-text-base">Join Our Community</h3>
+              <div className="flex space-x-4">
+                <a
+                  href="https://discord.gg/qnUX4XqJQd"
+                  className="flex items-center space-x-2 rounded-lg bg-[#5865F2] px-4 py-2 text-white transition-opacity hover:opacity-90"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/>
+                  </svg>
+                  <span className="font-medium">Join Discord</span>
+                </a>
+                <a
+                  href="https://x.com/scriptkitapp"
+                  className="flex items-center space-x-2 rounded-lg bg-[#1DA1F2] px-4 py-2 text-white transition-opacity hover:opacity-90"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                  <span className="font-medium">Follow on X</span>
+                </a>
+              </div>
             </div>
-          </fieldset>
-        </form>
+
+            {/* Progress indicator for installation */}
+            {progress < 100 && (
+              <div className="mt-6">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm text-text-base opacity-70">Installing Kit SDK...</span>
+                  <span className="text-sm font-mono text-text-base opacity-70">{progress}%</span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-text-base bg-opacity-10">
+                  <div 
+                    className="h-2 rounded-full bg-primary transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </main>
     </div>
   );
