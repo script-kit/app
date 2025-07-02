@@ -1235,6 +1235,17 @@ export class KitPrompt {
     visibilityController.handleBlur(this);
 
     const isMainScript = getMainScriptPath() === this.scriptPath;
+    const isSplashScreen = this.ui === UI.splash;
+    
+    // Don't hide splash screen on blur - it's a regular window now
+    if (isSplashScreen) {
+      this.logInfo('Splash screen blur - keeping window open');
+      if (this.window.isVisible()) {
+        this.sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
+      }
+      return;
+    }
+    
     if (isMainScript && !this.mainMenuPreventCloseOnBlur) {
       // Don't close main menu if DevTools are being opened
       if (this.devToolsOpening) {
@@ -1308,7 +1319,8 @@ export class KitPrompt {
       };
     };
 
-    const options = getPromptOptions();
+    const isSplashScreen = this.ui === UI.splash;
+    const options = getPromptOptions(isSplashScreen);
     this.window = new BrowserWindow(options);
 
     this.window.webContents.ipc.on(AppChannel.GET_KIT_CONFIG, getKitConfig);
@@ -1474,13 +1486,8 @@ export class KitPrompt {
           return;
         }
         this.logInfo('📬 Messages ready. ');
-        if (this.ui === UI.splash) {
-          this.window.on('blur', () => {
-            this.logInfo(`${this.pid}: ${this.scriptName}: 🙈 Prompt window blurred`);
-          });
-        } else {
-          this.window.on('blur', this.onBlur);
-        }
+        // Always use the standard blur handler, even for splash screen
+        this.window.on('blur', this.onBlur);
 
         if (this.initMain) {
           this.initMainPrompt('messages ready');
@@ -2828,7 +2835,11 @@ export class KitPrompt {
         this.setIgnoreMouseEvents(false);
         this.setOpacity(1);
 
-        if (kitState.isMac) {
+        // Splash screen is a regular window, use normal focus
+        if (this.ui === UI.splash || this.isWindow) {
+          this.window?.show();
+          this.window?.focus();
+        } else if (kitState.isMac) {
           makeKeyPanel(this.window);
         } else {
           this.window?.showInactive();
@@ -2861,6 +2872,12 @@ export class KitPrompt {
   };
 
   setPromptAlwaysOnTop = (onTop: boolean, manual = false) => {
+    // Never set alwaysOnTop for splash screen - it's a regular window now
+    if (this.ui === UI.splash) {
+      this.logInfo('alwaysOnTop disabled for splash screen (regular window)');
+      return;
+    }
+    
     if (kitState.isMac) {
       this.logInfo('alwaysOnTop is disabled on mac');
       return;
@@ -3419,13 +3436,7 @@ export class KitPrompt {
 }
 
 export const makeSplashWindow = (window?: BrowserWindow) => {
-  if (!kitState.isMac) {
-    return;
-  }
-  log.info('👋 Prep for close');
-  if (!window) {
-    return;
-  }
-
-  prepForClose(window);
+  // No longer needed - splash screen is now a regular window
+  // that doesn't need special handling when closing
+  log.info('👋 Splash window close - no special handling needed');
 };

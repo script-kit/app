@@ -13,7 +13,12 @@ const log = createLogger('prompt.options.ts');
 export const OFFSCREEN_X = -10000;
 export const OFFSCREEN_Y = -10000;
 
-export const getPromptOptions = () => {
+/**
+ * Get window options for creating prompts
+ * @param isSplashScreen - If true, creates a regular window instead of a panel for the splash screen
+ *                         This allows users to minimize/background the window during installation
+ */
+export const getPromptOptions = (isSplashScreen = false) => {
   const width = PROMPT.WIDTH.BASE;
   const height = PROMPT.HEIGHT.BASE;
   // const currentScreen = getCurrentScreenFromMouse();
@@ -34,6 +39,10 @@ export const getPromptOptions = () => {
   let frame = false;
   if (kitState?.kenvEnv?.KIT_FRAME) {
     frame = kitState.kenvEnv.KIT_FRAME === 'true';
+  }
+  // Show frame for splash screen to provide window controls
+  if (isSplashScreen) {
+    frame = true;
   }
 
   let transparent = false;
@@ -96,6 +105,7 @@ export const getPromptOptions = () => {
 
   // Log all of the conditional options:
   log.info('Prompt Options:', {
+    isSplashScreen,
     gpu: kitState.gpuEnabled,
     backgroundThrottling,
     hasShadow,
@@ -125,10 +135,10 @@ export const getPromptOptions = () => {
       preload: fileURLToPath(new URL('../preload/index.mjs', import.meta.url)),
       webSecurity: false,
     },
-    minimizable: false,
+    minimizable: isSplashScreen,
     maximizable: false,
     movable: true,
-    skipTaskbar: true,
+    skipTaskbar: !isSplashScreen,
     width,
     height,
     minWidth: MIN_WIDTH,
@@ -140,15 +150,18 @@ export const getPromptOptions = () => {
     backgroundMaterial,
     thickFrame,
     roundedCorners,
-    focusable: kitState.isLinux,
-    type: 'panel',
+    focusable: kitState.isLinux || isSplashScreen,
+    type: isSplashScreen ? undefined : 'panel',
   } as BrowserWindowConstructorOptions;
 
   if (kitState.isMac) {
-    options.vibrancy = 'popover';
-    options.visualEffectState = 'active';
-    options.backgroundColor = kitState.kenvEnv.KIT_BACKGROUND_COLOR || '#00000000';
-    options.transparent = true;
+    // Don't apply vibrancy for splash screen window
+    if (!isSplashScreen) {
+      options.vibrancy = 'popover';
+      options.visualEffectState = 'active';
+      options.backgroundColor = kitState.kenvEnv.KIT_BACKGROUND_COLOR || '#00000000';
+      options.transparent = true;
+    }
   }
 
   return options;

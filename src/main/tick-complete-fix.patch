@@ -1,0 +1,64 @@
+--- a/app/src/main/tick.ts
++++ b/app/src/main/tick.ts
+@@ -408,19 +408,27 @@
+ export const snippetMap = new Map<string, SnippetInfo>();
+ const snippetPrefixIndex = new Map<string, string[]>();
+ 
++// Build index with multiple prefix lengths for better matching
+ function updateSnippetPrefixIndex() {
+   snippetPrefixIndex.clear();
+   const keys = snippetMap.keys();
+   for (const key of keys) {
+     const kl = key.length;
+-    const prefix = kl >= 3 ? key.slice(-3) : key;
+-    let arr = snippetPrefixIndex.get(prefix);
+-    if (!arr) {
+-      arr = [];
+-      snippetPrefixIndex.set(prefix, arr);
++    
++    // Store the key under multiple prefix lengths to ensure we can find it
++    // For ",,", store under ",," (2 chars)
++    // For "test", store under "est" (3 chars) and "test" (4 chars)
++    const prefixLengths = kl >= 3 ? [3] : [kl];
++    if (kl === 2) prefixLengths.push(2); // Ensure 2-char keys are findable
++    
++    for (const len of prefixLengths) {
++      const prefix = key.slice(-len);
++      let arr = snippetPrefixIndex.get(prefix);
++      if (!arr) {
++        arr = [];
++        snippetPrefixIndex.set(prefix, arr);
++      }
++      arr.push(key);
+     }
+-    arr.push(key);
+   }
+ }
+ 
+@@ -428,12 +436,20 @@
+   if (sl < 2) {
+     return;
+   }
+ 
+-  const potentialPrefix = sl >= 3 ? snippet.slice(-3) : snippet.slice(0, sl);
+-  const potentialSnippetKeys = snippetPrefixIndex.get(potentialPrefix);
+-  if (!potentialSnippetKeys) {
+-    return;
++  // Check multiple prefix lengths to catch shorter snippet keys
++  const prefixesToCheck = [];
++  if (sl >= 2) prefixesToCheck.push(snippet.slice(-2));
++  if (sl >= 3) prefixesToCheck.push(snippet.slice(-3));
++  
++  let potentialSnippetKeys: string[] = [];
++  for (const prefix of prefixesToCheck) {
++    const keys = snippetPrefixIndex.get(prefix);
++    if (keys) {
++      potentialSnippetKeys = potentialSnippetKeys.concat(keys);
++    }
+   }
+ 
++  // Remove duplicates
++  potentialSnippetKeys = [...new Set(potentialSnippetKeys)];
++  
+   for (let i = 0; i < potentialSnippetKeys.length; i++) {
+     const snippetKey = potentialSnippetKeys[i];

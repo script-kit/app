@@ -318,6 +318,23 @@ const buildPromptsSubmenu = (): MenuItemConstructorOptions[] => {
 const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
   const toolsSubmenu: MenuItemConstructorOptions[] = [];
 
+  // Add development-only options
+  if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
+    toolsSubmenu.push({
+      label: 'Test Splash Screen',
+      click: async () => {
+        log.info('Testing splash screen from tray...');
+        // Import and show the splash screen
+        const { showSplash } = await import('./install');
+        await showSplash();
+      },
+    });
+    
+    toolsSubmenu.push({
+      type: 'separator' as const,
+    });
+  }
+
   toolsSubmenu.push({
     label: 'Force Reload',
     click: () => {

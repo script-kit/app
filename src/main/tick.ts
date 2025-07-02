@@ -455,7 +455,10 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet: string) => 
     const keys = snippetPrefixIndex.get(prefix);
     if (keys) {
       for (const key of keys) {
-        potentialSnippetKeys.add(key);
+        // Double-check the key still exists in the main map
+        if (snippetMap.has(key)) {
+          potentialSnippetKeys.add(key);
+        }
       }
     }
   }
@@ -464,7 +467,13 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet: string) => 
   for (const snippetKey of potentialSnippetKeys) {
     if (snippet.endsWith(snippetKey)) {
       log.info(`Running snippet: ${snippetKey}`);
-      const script = snippetMap.get(snippetKey)!;
+      const script = snippetMap.get(snippetKey);
+      if (!script) {
+        log.warn(`Snippet key "${snippetKey}" found in index but not in map. This should not happen. Skipping.`);
+        // Clean up the stale index entry
+        updateSnippetPrefixIndex();
+        continue;
+      }
       log.info('script', script, { snippetKey });
       const postfix = script.postfix;
 
@@ -541,8 +550,8 @@ export const addTextSnippet = async (filePath: string) => {
     const keys = snippetMap.keys();
     const toDelete: string[] = [];
     for (const key of keys) {
-      const val = snippetMap.get(key)!;
-      if (val.filePath === filePath && val.txt) {
+      const val = snippetMap.get(key);
+      if (val && val.filePath === filePath && val.txt) {
         toDelete.push(key);
       }
     }
@@ -578,8 +587,8 @@ export const snippetScriptChanged = (script: Script) => {
   const keys = snippetMap.keys();
   const toDelete: string[] = [];
   for (const key of keys) {
-    const val = snippetMap.get(key)!;
-    if (val.filePath === script.filePath && !val.txt) {
+    const val = snippetMap.get(key);
+    if (val && val.filePath === script.filePath && !val.txt) {
       snippetLog.info(`Adding snippet key to remove: ${key}`);
       toDelete.push(key);
     }
@@ -623,8 +632,8 @@ export const removeSnippet = (filePath: string) => {
   const keys = snippetMap.keys();
   const toDelete: string[] = [];
   for (const key of keys) {
-    const val = snippetMap.get(key)!;
-    if (val.filePath === filePath) {
+    const val = snippetMap.get(key);
+    if (val && val.filePath === filePath) {
       toDelete.push(key);
     }
   }

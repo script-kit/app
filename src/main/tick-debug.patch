@@ -1,0 +1,12 @@
+--- a/app/src/main/tick.ts
++++ b/app/src/main/tick.ts
+@@ -450,6 +450,9 @@
+       }
+ 
+       const args = postfix ? [snippet.slice(0, snippet.length - snippetKey.length)] : [];
++      log.info(`🔍 Postfix snippet debug:`, {
++        postfix, snippet, snippetKey, capturedText: args[0], args
++      });
+       const options = {
+         force: false,
+         trigger: Trigger.Snippet,

@@ -1,0 +1,15 @@
+--- a/app/src/main/tick.ts
++++ b/app/src/main/tick.ts
+@@ -428,7 +428,11 @@
+     return;
+   }
+ 
+-  const potentialPrefix = sl >= 3 ? snippet.slice(-3) : snippet.slice(0, sl);
++  // For short snippet keys (like ",,"), we need to check if the snippet ends with them
++  // So we need to look at the last 2 characters for 2-char keys, last 3 for 3+ char keys
++  const minPrefixLength = Math.min(3, sl);
++  const potentialPrefix = snippet.slice(-minPrefixLength);
++  
+   const potentialSnippetKeys = snippetPrefixIndex.get(potentialPrefix);
+   if (!potentialSnippetKeys) {
+     return;
