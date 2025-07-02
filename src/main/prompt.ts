@@ -1236,7 +1236,7 @@ export class KitPrompt {
 
     const isMainScript = getMainScriptPath() === this.scriptPath;
     const isSplashScreen = this.ui === UI.splash;
-    
+
     // Don't hide splash screen on blur - it's a regular window now
     if (isSplashScreen) {
       this.logInfo('Splash screen blur - keeping window open');
@@ -1245,7 +1245,7 @@ export class KitPrompt {
       }
       return;
     }
-    
+
     if (isMainScript && !this.mainMenuPreventCloseOnBlur) {
       // Don't close main menu if DevTools are being opened
       if (this.devToolsOpening) {
@@ -2877,7 +2877,7 @@ export class KitPrompt {
       this.logInfo('alwaysOnTop disabled for splash screen (regular window)');
       return;
     }
-    
+
     if (kitState.isMac) {
       this.logInfo('alwaysOnTop is disabled on mac');
       return;
@@ -3011,6 +3011,7 @@ export class KitPrompt {
 
   setScript = (script: Script, pid: number, _force = false): 'denied' | 'allowed' => {
     const { preview, scriptlet, inputs, tag, ...serializableScript } = script as Scriptlet;
+    this.attemptPreload(script.filePath);
 
     log.info(`${this.pid}: setScript`, serializableScript, JSON.stringify(script));
 

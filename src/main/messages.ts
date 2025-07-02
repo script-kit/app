@@ -139,13 +139,12 @@ export const formatScriptChoices = (data: Choice[]) => {
     if (script.background) {
       const backgroundScript = getBackgroundTasks().find((t) => t.filePath === script.filePath);
 
-      script.description = `${script.description || ''}${
-        backgroundScript
-          ? `🟢  Uptime: ${formatDistanceToNowStrict(
-              new Date(backgroundScript.process.start),
-            )} PID: ${backgroundScript.process.pid}`
-          : "🛑 isn't running"
-      }`;
+      script.description = `${script.description || ''}${backgroundScript
+        ? `🟢  Uptime: ${formatDistanceToNowStrict(
+          new Date(backgroundScript.process.start),
+        )} PID: ${backgroundScript.process.pid}`
+        : "🛑 isn't running"
+        }`;
     }
 
     if (script.schedule) {
@@ -226,15 +225,15 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     <K extends keyof ChannelMap>(
       fn: (processInfo: ProcessAndPrompt, data: SendData<K>, samePrompt?: boolean) => void,
     ) =>
-    (data: SendData<K>) =>
-      handleChannelMessage(data, fn, true);
+      (data: SendData<K>) =>
+        handleChannelMessage(data, fn, true);
 
   const onChildChannelOverride =
     <K extends keyof ChannelMap>(
       fn: (processInfo: ProcessAndPrompt, data: SendData<K>, samePrompt?: boolean) => void,
     ) =>
-    (data: SendData<K>) =>
-      handleChannelMessage(data, fn);
+      (data: SendData<K>) =>
+        handleChannelMessage(data, fn);
 
   const SHOW_IMAGE = async (data: SendData<Channel.SHOW_IMAGE>) => {
     kitState.blurredByKit = true;
@@ -271,10 +270,10 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
   };
 
   const kitMessageMap: ChannelHandler = {
-    KIT_LOADING: () => {},
-    KIT_READY: () => {},
-    MAIN_MENU_READY: () => {},
-    PONG: (_data) => {},
+    KIT_LOADING: () => { },
+    KIT_READY: () => { },
+    MAIN_MENU_READY: () => { },
+    PONG: (_data) => { },
     QUIT_AND_RELAUNCH: () => {
       log.info('👋 Quitting and relaunching');
       app.relaunch();

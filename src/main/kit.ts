@@ -78,14 +78,14 @@ emitter.on(
   (
     scriptOrScriptAndData:
       | {
-          scriptPath: string;
-          args: string[];
-          options: {
-            force: boolean;
-            trigger: Trigger;
-            cwd?: string;
-          };
-        }
+        scriptPath: string;
+        args: string[];
+        options: {
+          force: boolean;
+          trigger: Trigger;
+          cwd?: string;
+        };
+      }
       | string,
   ) => {
     if (!kitState.ready) {
@@ -108,15 +108,15 @@ emitter.on(
     const { scriptPath, args, options } =
       typeof scriptOrScriptAndData === 'string'
         ? {
-            scriptPath: scriptOrScriptAndData,
-            args: [],
-            options: {
-              force: false,
-              trigger: Trigger.Kit,
-              sponsorCheck: true,
-              cwd: '',
-            },
-          }
+          scriptPath: scriptOrScriptAndData,
+          args: [],
+          options: {
+            force: false,
+            trigger: Trigger.Kit,
+            sponsorCheck: true,
+            cwd: '',
+          },
+        }
         : scriptOrScriptAndData;
 
     // TODO: Each prompt will need its own "ignoreBlur"
@@ -191,13 +191,13 @@ export const runPromptProcess = async (
     sponsorCheck: boolean;
     cwd?: string;
   } = {
-    force: false,
-    trigger: Trigger.App,
-    main: false,
-    sponsorCheck: false,
-    headers: {},
-    cwd: '',
-  },
+      force: false,
+      trigger: Trigger.App,
+      main: false,
+      sponsorCheck: false,
+      headers: {},
+      cwd: '',
+    },
 ): Promise<ProcessInfo | null> => {
   if (!kitState.ready) {
     log.warn('Kit not ready. Ignoring prompt process:', { promptScriptPath, args, options });
@@ -303,7 +303,7 @@ export const runPromptProcess = async (
   let script: Script | undefined;
   try {
     script = scriptlet || (await findScript(promptScriptPath));
-  } catch {}
+  } catch { }
   if (!script) {
     log.error(`Couldn't find script, blocking run: `, promptScriptPath);
     return null;
