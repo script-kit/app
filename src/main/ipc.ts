@@ -583,12 +583,6 @@ ${child?.pid} 📝 Submitting...
           if (message?.state?.value === Channel.TERMINAL) {
             message.state.value = '';
           }
-
-          if (prompt.scriptPath === getMainScriptPath()) {
-            if (typeof message?.state?.value?.filePath === 'string' && !message?.state?.flag) {
-              prompt.attemptPreload(message?.state?.value?.filePath);
-            }
-          }
         }
 
         if (channel === Channel.SHORTCUT) {

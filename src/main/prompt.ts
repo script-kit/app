@@ -3011,7 +3011,6 @@ export class KitPrompt {
 
   setScript = (script: Script, pid: number, _force = false): 'denied' | 'allowed' => {
     const { preview, scriptlet, inputs, tag, ...serializableScript } = script as Scriptlet;
-    this.attemptPreload(script.filePath);
 
     log.info(`${this.pid}: setScript`, serializableScript, JSON.stringify(script));
 

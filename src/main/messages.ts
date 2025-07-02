@@ -953,16 +953,16 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // "app-run" will invoke "SET_SCRIPT"
       // TODO: Attempting to preload on SET_SCRIPT causes weird resizing issues
       // Need to figure out initBounds, jotai's resize/hasPreview preload
-      // const filePath = data?.value?.filePath;
-      // attemptPreload(filePath);
+      const filePath = data?.value?.filePath;
 
-      if (prompt.preloaded && getMainScriptPath() === data?.value?.filePath) {
+      if (prompt.preloaded && getMainScriptPath() === filePath) {
         log.info(`👀 ${prompt.pid}: Ignoring main setScript because preloaded:`, prompt.preloaded);
         prompt.preloaded = '';
         return;
+      } else {
+        prompt.attemptPreload(filePath);
       }
 
-      const filePath = data?.value?.filePath;
       if (processInfo.type === ProcessType.Prompt) {
         processInfo.scriptPath = filePath;
 
