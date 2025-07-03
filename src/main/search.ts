@@ -602,7 +602,7 @@ export const setChoices = (
     return;
   }
 
-  if (prompt.scriptPath === getMainScriptPath()) {
+  if (prompt.isMainMenu) {
     log.info(`${prompt.getLogPrefix()}: 💝 Caching main menu choices. First script: ${scoredChoices?.[1]?.item?.name}`);
     kitCache.choices = scoredChoices;
   }
@@ -631,7 +631,7 @@ export const setScoredChoices = (prompt: KitPrompt, choices: ScoredChoice[], rea
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
 
   if (
-    prompt.scriptPath === getMainScriptPath() &&
+    prompt.isMainMenu &&
     prompt.kitSearch.input === '' &&
     !prompt.kitSearch.inputRegex &&
     choices?.length > 0

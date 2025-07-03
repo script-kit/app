@@ -610,6 +610,16 @@ export class KitPrompt {
     return this?.scriptPath?.split('/')?.pop() || '';
   }
 
+  get isMainMenu() {
+    // Consolidated logic to identify main menu:
+    // 1. Script path matches the main script path
+    // 2. No script path and pid is 0 (uninitialized main menu)
+    // 3. Empty script path (idle process that shows main menu)
+    return this.scriptPath === getMainScriptPath() || 
+           (!this.scriptPath && this.pid === 0) ||
+           this.scriptPath === '';
+  }
+
   public window: BrowserWindow;
   public sendToPrompt: (channel: Channel | AppChannel, data?: any) => void = (channel, data) => {
     this.logWarn('sendToPrompt not set', { channel, data });
@@ -703,7 +713,7 @@ export class KitPrompt {
 
     // Skip monitoring for main script or if disabled
     if (
-      this.scriptPath === getMainScriptPath() ||
+      this.isMainMenu ||
       (kitState?.kenvEnv as any)?.KIT_DISABLE_LONG_RUNNING_MONITOR === 'true' ||
       this.script?.longRunning === true
     ) {
@@ -1798,6 +1808,12 @@ export class KitPrompt {
     }
 
     this.setPromptAlwaysOnTop(true);
+
+    // Ensure visibility controller knows we're about to be focused
+    // This prevents the state from being out of sync when moving to a new display
+    if (this.window && !this.window.isDestroyed()) {
+      visibilityController.handleFocus(this);
+    }
 
     this.focusPrompt();
 
@@ -3392,7 +3408,7 @@ export class KitPrompt {
   };
 
   private shouldClosePromptOnInitialEscape = (isEscape: boolean): boolean => {
-    return (this.firstPrompt || this.scriptPath === getMainScriptPath()) && isEscape && !this.wasActionsJustOpen;
+    return (this.firstPrompt || this.isMainMenu) && isEscape && !this.wasActionsJustOpen;
   };
 
   private hideAndRemoveProcess = () => {

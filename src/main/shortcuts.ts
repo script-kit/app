@@ -357,7 +357,7 @@ export const updateMainShortcut = (shortcut?: string) => {
   const mainShortcutAction = createProcessHandler(async () => {
     kitState.shortcutPressed = finalShortcut;
 
-    const isFocusedPromptMainScript = prompts.focused?.scriptPath === getMainScriptPath();
+    const isFocusedPromptMainScript = prompts.focused?.isMainMenu;
 
     log.info(`🏡 Main shortcut pressed. Focused prompt script: ${prompts?.focused?.scriptPath}`);
 

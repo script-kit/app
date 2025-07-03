@@ -261,6 +261,7 @@ export const runPromptProcess = async (
     // Don't call initShowPrompt() here - let the script decide
   } else {
     log.info(`${pid}: 🖱️ Moving prompt to mouse screen`);
+    prompt.attemptPreload(promptScriptPath);
     prompt.moveToMouseScreen();
   }
 

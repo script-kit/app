@@ -1140,7 +1140,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
           promptId: prompt.id,
         });
       }
-      if (prompt.scriptPath === getMainScriptPath() && prompt.kitSearch.input === '' && value?.length > 0) {
+      if (prompt.isMainMenu && prompt.kitSearch.input === '' && value?.length > 0) {
         prompt.sendToPrompt(AppChannel.SET_CACHED_MAIN_SHORTCUTS, value);
       }
 

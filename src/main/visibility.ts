@@ -1,5 +1,4 @@
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
 import { HideReason } from '../shared/enums';
 import { createLogger } from './log-utils';
 // visibility.ts
@@ -115,7 +114,7 @@ class VisibilityController {
     }
 
     // Special handling for main menu - always hide on escape
-    if (prompt.scriptPath === getMainScriptPath()) {
+    if (prompt.isMainMenu) {
       log.info('␛ Main menu detected - hiding on escape');
       prompt.maybeHide(HideReason.Escape);
       prompt.sendToPrompt(Channel.SET_INPUT, '');

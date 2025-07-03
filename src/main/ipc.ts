@@ -548,6 +548,25 @@ ${data.error}
           // If visibility controller didn't handle it, let it propagate to child process
           if (!handled) {
             log.info(`␛ Escape not handled by visibility controller, propagating to child process`);
+            
+            // Check if we can actually send to child
+            if (!child || !child.connected) {
+              log.warn(`␛ Child process not ready to receive escape, closing prompt`);
+              
+              // Kill any existing child process
+              if (child && child.pid) {
+                child.kill();
+              }
+              
+              // Hide the prompt
+              prompt.maybeHide(HideReason.Escape);
+              prompt.sendToPrompt(Channel.SET_INPUT, '');
+              
+              // Clean up the process
+              processes.removeByPid(prompt.pid, 'escape with no child');
+              
+              return; // Don't try to send to child
+            }
           }
         }
 
