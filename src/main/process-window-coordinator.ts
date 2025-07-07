@@ -1,6 +1,4 @@
-import { createLogger } from './log-utils';
-
-const log = createLogger('process-window-coordinator');
+import { processWindowCoordinatorLog as log } from './logs';
 
 export enum WindowOperation {
   Focus = 'focus',
@@ -34,22 +32,22 @@ class ProcessWindowCoordinator {
    */
   registerOperation(pid: number, operation: WindowOperation, windowId: number): string {
     const operationId = `${pid}-${windowId}-${operation}-${++this.operationCounter}`;
-    
+
     if (!this.pendingOperations.has(pid)) {
       this.pendingOperations.set(pid, new Map());
     }
-    
+
     const operationInfo: OperationInfo = {
       operation,
       windowId,
       timestamp: Date.now(),
       completed: false,
     };
-    
+
     this.pendingOperations.get(pid)!.set(operationId, operationInfo);
-    
+
     log.info(`🔄 Registered ${operation} operation for PID ${pid}, Window ${windowId}, ID: ${operationId}`);
-    
+
     return operationId;
   }
 
@@ -59,27 +57,27 @@ class ProcessWindowCoordinator {
   completeOperation(operationId: string): void {
     const [pidStr] = operationId.split('-');
     const pid = parseInt(pidStr, 10);
-    
+
     const operations = this.pendingOperations.get(pid);
     if (!operations) {
       log.warn(`⚠️ No operations found for PID ${pid} when completing ${operationId}`);
       return;
     }
-    
+
     const operation = operations.get(operationId);
     if (!operation) {
       log.warn(`⚠️ Operation ${operationId} not found`);
       return;
     }
-    
+
     operation.completed = true;
     operations.delete(operationId);
-    
+
     // Clean up empty maps
     if (operations.size === 0) {
       this.pendingOperations.delete(pid);
     }
-    
+
     log.info(`✅ Completed ${operation.operation} operation ${operationId}`);
   }
 
@@ -88,24 +86,24 @@ class ProcessWindowCoordinator {
    */
   canCleanupProcess(pid: number): boolean {
     const operations = this.pendingOperations.get(pid);
-    
+
     if (!operations || operations.size === 0) {
       log.info(`✅ Process ${pid} has no pending operations, safe to cleanup`);
       return true;
     }
-    
+
     // Check for any incomplete critical operations
     const criticalOps = [WindowOperation.Focus, WindowOperation.Create, WindowOperation.Show];
     const hasCriticalOps = Array.from(operations.values()).some(
       op => !op.completed && criticalOps.includes(op.operation)
     );
-    
+
     if (hasCriticalOps) {
       log.warn(`❌ Process ${pid} has critical pending operations, cannot cleanup yet`);
       log.warn(`   Pending: ${Array.from(operations.values()).map(op => op.operation).join(', ')}`);
       return false;
     }
-    
+
     log.info(`✅ Process ${pid} has only non-critical operations, safe to cleanup`);
     return true;
   }
@@ -134,11 +132,11 @@ class ProcessWindowCoordinator {
    */
   getAllPendingOperations(): Map<number, OperationInfo[]> {
     const result = new Map<number, OperationInfo[]>();
-    
+
     for (const [pid, operations] of this.pendingOperations) {
       result.set(pid, Array.from(operations.values()));
     }
-    
+
     return result;
   }
 
@@ -148,17 +146,17 @@ class ProcessWindowCoordinator {
   cleanupStaleOperations(): void {
     const now = Date.now();
     const staleThreshold = 30000; // 30 seconds
-    
+
     for (const [pid, operations] of this.pendingOperations) {
       const staleOps = Array.from(operations.entries()).filter(
         ([_, op]) => now - op.timestamp > staleThreshold
       );
-      
+
       for (const [opId, op] of staleOps) {
         log.warn(`🧹 Cleaning up stale operation ${opId} (${op.operation}) for PID ${pid}`);
         operations.delete(opId);
       }
-      
+
       if (operations.size === 0) {
         this.pendingOperations.delete(pid);
       }

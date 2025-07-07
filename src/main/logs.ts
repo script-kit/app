@@ -201,7 +201,8 @@ const logTypes = [
   "tick",
   "keyboard",
   "chokidar",
-  "compare"
+  "compare",
+  "processWindowCoordinator"
 ] as const;
 
 type LogType = (typeof logTypes)[number];
@@ -310,6 +311,8 @@ export const {
   chokidarLogPath,
   compareLog,
   compareLogPath,
+  processWindowCoordinatorLog,
+  processWindowCoordinatorLogPath,
   ...rest
 } = logExports;
 
