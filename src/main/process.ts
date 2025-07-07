@@ -28,6 +28,7 @@ import { debounceSetScriptTimestamp, getThemes, kitState, kitStore } from './sta
 import { widgetState } from '../shared/widget';
 
 import { sendToAllPrompts } from './channel';
+import { processWindowCoordinator } from './process-window-coordinator';
 
 import { KitEvent, emitter } from '../shared/events';
 import { showInspector } from './show';
@@ -790,6 +791,14 @@ class Processes extends Array<ProcessAndPrompt> {
   }
 
   public removeByPid(pid: number, reason = 'unknown') {
+    // Check if process has pending window operations
+    if (!processWindowCoordinator.canCleanupProcess(pid)) {
+      processLog.warn(`❌ Cannot remove PID ${pid} - window operations pending`);
+      processLog.warn(`   Pending operations: ${JSON.stringify(processWindowCoordinator.getPendingOperations(pid))}`);
+      // Force cleanup the coordinator state since we're being asked to remove the process
+      processWindowCoordinator.forceCleanupProcess(pid);
+    }
+
     prompts.get(pid)?.close(`process.removeByPid: ${reason}`);
     prompts.getPromptMap().delete(pid);
 
@@ -882,6 +891,9 @@ class Processes extends Array<ProcessAndPrompt> {
 
       processesChanged();
     }
+    
+    // Ensure coordinator state is cleaned up
+    processWindowCoordinator.forceCleanupProcess(pid);
 
     const activeWidgets = widgetState.widgets.filter((w) => w.pid === pid);
     if (activeWidgets.length > 0) {

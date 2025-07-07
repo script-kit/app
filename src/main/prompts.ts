@@ -1,6 +1,7 @@
 import { promptLog } from './logs';
 import { processes } from './process';
 import { KitPrompt } from './prompt';
+import { processWindowCoordinator } from './process-window-coordinator';
 
 const promptMap = new Map<number, KitPrompt>();
 
@@ -332,6 +333,8 @@ export const prompts = {
     for (const [pid, prompt] of promptMap.entries()) {
       if (!allProcessPids.has(pid)) {
         promptLog.warn(`Found orphaned prompt ${prompt.window?.id} for PID ${pid}, cleaning up`);
+        // Force cleanup any pending operations for this orphaned process
+        processWindowCoordinator.forceCleanupProcess(pid);
         prompt.close('orphaned prompt cleanup');
         promptMap.delete(pid);
         cleanedCount++;

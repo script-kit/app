@@ -48,6 +48,7 @@ import {
   isBoundsWithinDisplays,
 } from './screen';
 import { invokeSearch, setChoices, setFlags } from './search';
+import { processWindowCoordinator, WindowOperation } from './process-window-coordinator';
 import shims from './shims';
 import {
   getEmojiShortcut,
@@ -1234,6 +1235,13 @@ export class KitPrompt {
   };
 
   onBlur = () => {
+    // Register blur operation
+    const blurOpId = processWindowCoordinator.registerOperation(
+      this.pid,
+      WindowOperation.Blur,
+      this.window.id
+    );
+
     this.logInfo('🙈 Prompt window blurred');
 
     this.logInfo(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred. Emoji active: ${this.emojiActive}`, {
@@ -1253,6 +1261,7 @@ export class KitPrompt {
       if (this.window.isVisible()) {
         this.sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
       }
+      processWindowCoordinator.completeOperation(blurOpId);
       return;
     }
 
@@ -1260,10 +1269,12 @@ export class KitPrompt {
       // Don't close main menu if DevTools are being opened
       if (this.devToolsOpening) {
         this.logInfo('Main menu blur ignored - DevTools are opening');
+        processWindowCoordinator.completeOperation(blurOpId);
         return;
       }
       this.logInfo('Main script. Make window');
       this.hideAndRemoveProcess();
+      processWindowCoordinator.completeOperation(blurOpId);
       return;
     }
 
@@ -1274,10 +1285,12 @@ export class KitPrompt {
     }
 
     if (!this.shown) {
+      processWindowCoordinator.completeOperation(blurOpId);
       return;
     }
 
     if (this.window.isDestroyed()) {
+      processWindowCoordinator.completeOperation(blurOpId);
       return;
     }
 
@@ -1286,10 +1299,15 @@ export class KitPrompt {
     }
 
     if (os.platform().startsWith('win')) {
+      // Complete the blur operation before returning
+      processWindowCoordinator.completeOperation(blurOpId);
       return;
     }
 
     kitState.blurredByKit = false;
+    
+    // Complete the blur operation
+    processWindowCoordinator.completeOperation(blurOpId);
   };
 
   initMainPrompt = (reason = 'unknown') => {
@@ -1332,6 +1350,15 @@ export class KitPrompt {
     const isSplashScreen = this.ui === UI.splash;
     const options = getPromptOptions(isSplashScreen);
     this.window = new BrowserWindow(options);
+    
+    // Register window creation
+    const createOpId = processWindowCoordinator.registerOperation(
+      this.pid,
+      WindowOperation.Create,
+      this.window.id
+    );
+    // Complete immediately as window is created
+    processWindowCoordinator.completeOperation(createOpId);
 
     this.window.webContents.ipc.on(AppChannel.GET_KIT_CONFIG, getKitConfig);
 
@@ -1837,7 +1864,18 @@ export class KitPrompt {
       this.logWarn('Prompt window is destroyed. Not hiding.');
       return;
     }
+    
+    // Register hide operation
+    const hideOpId = processWindowCoordinator.registerOperation(
+      this.pid,
+      WindowOperation.Hide,
+      this.window.id
+    );
+    
     this.actualHide();
+    
+    // Complete the hide operation
+    processWindowCoordinator.completeOperation(hideOpId);
   };
 
   onHideOnce = (fn: () => void) => {
@@ -1868,15 +1906,26 @@ export class KitPrompt {
     if (this.window.isDestroyed()) {
       return;
     }
+    
+    // Register show operation
+    const showOpId = processWindowCoordinator.registerOperation(
+      this.pid,
+      WindowOperation.Show,
+      this.window.id
+    );
+    
     this.initShowPrompt();
     this.sendToPrompt(Channel.SET_OPEN, true);
 
-    setTimeout(() => {
-      if (!this?.window || this.window?.isDestroyed()) {
-        return;
-      }
-      this.shown = true;
-    }, 100);
+    // Mark shown immediately for snappy response
+    if (!this?.window || this.window?.isDestroyed()) {
+      processWindowCoordinator.completeOperation(showOpId);
+      return;
+    }
+    this.shown = true;
+    
+    // Complete the show operation
+    processWindowCoordinator.completeOperation(showOpId);
   };
 
   moveToMouseScreen = () => {
@@ -2831,15 +2880,14 @@ export class KitPrompt {
   };
 
   hasBeenFocused = false;
-  focusPromptCoolingDown = false;
   focusPrompt = () => {
-    if (this.focusPromptCoolingDown) {
-      return;
-    }
-    this.focusPromptCoolingDown = true;
-    setTimeout(() => {
-      this.focusPromptCoolingDown = false;
-    }, 1000);
+    // Register focus operation
+    const focusOpId = processWindowCoordinator.registerOperation(
+      this.pid,
+      WindowOperation.Focus,
+      this.window.id
+    );
+
     this.hasBeenFocused = true;
     if (!this.window.focusable) {
       this.logInfo(`${this.pid}: Setting focusable to true`);
@@ -2861,9 +2909,17 @@ export class KitPrompt {
           this.window?.showInactive();
           this.window?.focus();
         }
+        
+        // Complete the focus operation
+        processWindowCoordinator.completeOperation(focusOpId);
       } catch (error) {
         this.logError(error);
+        // Complete the operation even on error
+        processWindowCoordinator.completeOperation(focusOpId);
       }
+    } else {
+      // Complete the operation if we didn't need to focus
+      processWindowCoordinator.completeOperation(focusOpId);
     }
   };
 
@@ -3122,9 +3178,15 @@ export class KitPrompt {
   };
 
   closed = false;
-  closeCoolingDown = false;
   close = (reason = 'unknown') => {
     this.logInfo(`${this.pid}: "close" because ${reason}`);
+
+    // Register close operation
+    const closeOpId = processWindowCoordinator.registerOperation(
+      this.pid,
+      WindowOperation.Close,
+      this.window?.id || 0
+    );
 
     // Clear long-running monitor when closing
     this.clearLongRunningMonitor();
@@ -3147,27 +3209,22 @@ export class KitPrompt {
         } else {
           this.logInfo(`${this.pid}: "close" !hasBeenFocused`);
           this.resetState();
+          processWindowCoordinator.completeOperation(closeOpId);
           return;
         }
       } else {
+        processWindowCoordinator.completeOperation(closeOpId);
         return;
       }
     }
 
-    // Skip cooldown for process exit scenarios
-    if (this.closeCoolingDown && !isProcessExit) {
-      this.logInfo(`${this.pid}: "close" still cooling down`);
-      return;
-    }
-    this.closeCoolingDown = true;
-    setTimeout(() => {
-      this.closeCoolingDown = false;
-    }, 100);
     if (this.closed) {
+      processWindowCoordinator.completeOperation(closeOpId);
       return;
     }
     this.closed = true;
     if (!this.window || this.window.isDestroyed()) {
+      processWindowCoordinator.completeOperation(closeOpId);
       return;
     }
 
@@ -3193,7 +3250,17 @@ export class KitPrompt {
 
       setImmediate(() => {
         try {
+          // Register destroy operation
+          const destroyOpId = processWindowCoordinator.registerOperation(
+            this.pid,
+            WindowOperation.Destroy,
+            this.window?.id || 0
+          );
+          
           this.window.destroy();
+          
+          // Complete the destroy operation
+          processWindowCoordinator.completeOperation(destroyOpId);
         } catch (error) {
           this.logError(error);
         }
@@ -3208,6 +3275,9 @@ export class KitPrompt {
       kitState.previousDownload = new Date();
     }
 
+    // Complete the close operation
+    processWindowCoordinator.completeOperation(closeOpId);
+    
     return;
   };
 
