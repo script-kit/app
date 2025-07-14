@@ -331,9 +331,9 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
     },
     ...(port
       ? {
-          stdio: 'pipe',
-          execArgv: ['--loader', loaderFileUrl, `--inspect=${port}`],
-        }
+        stdio: 'pipe',
+        execArgv: ['--loader', loaderFileUrl, `--inspect=${port}`],
+      }
       : {}),
   });
 
@@ -891,7 +891,7 @@ class Processes extends Array<ProcessAndPrompt> {
 
       processesChanged();
     }
-    
+
     // Ensure coordinator state is cleaned up
     processWindowCoordinator.forceCleanupProcess(pid);
 

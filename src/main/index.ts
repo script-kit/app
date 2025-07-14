@@ -90,6 +90,7 @@ import {
   setupLog,
   showSplash,
   spawnP,
+  syncBins,
 } from './install';
 import { invoke } from './invoke-pty';
 import { startIpc } from './ipc';
@@ -783,8 +784,7 @@ const isNewVersion = async () => {
 
   const versionMatch = semver.eq(currentVersion, storedVersion);
   await setupLog(
-    `🤔 Stored version: ${storedVersion} -> Current version: ${currentVersion}. Semver match? ${
-      versionMatch ? 'true' : 'false'
+    `🤔 Stored version: ${storedVersion} -> Current version: ${currentVersion}. Semver match? ${versionMatch ? 'true' : 'false'
     }`,
   );
 
@@ -1229,6 +1229,8 @@ emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
     channel: Channel.CACHE_MAIN_SCRIPTS,
     value: stamp,
   });
+
+  syncBins();
 });
 
 const startHealthMonitor = async () => {

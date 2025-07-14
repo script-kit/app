@@ -67,6 +67,7 @@ vi.mock('./helpers', () => {
     })),
     createAsTypedChoice: vi.fn((input: string, template: any) => ({
       ...template,
+      id: `typed-${template?.id || 'default'}-${input}-${Date.now()}`,
       name: template?.name || '{input}',
       value: template?.value !== undefined ? template.value : input,
       group: template?.group || 'As Typed',
@@ -1113,14 +1114,79 @@ describe('Search Functionality', () => {
 
         invokeSearch(mockPrompt, 'newproject');
 
-        // Should only show one "As Typed" option, not multiple
+        // Should show both "As Typed" options
         const calls = mockSendToPrompt.mock.calls;
         const setScoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
         const scoredChoices = setScoredChoicesCall?.[1] || [];
         const asTypedChoices = scoredChoices.filter((sc: ScoredChoice) => sc.item.asTyped === true);
         
-        expect(asTypedChoices).toHaveLength(1);
+        expect(asTypedChoices).toHaveLength(2);
         expect(asTypedChoices[0].item.value).toBe('newproject');
+        expect(asTypedChoices[0].item.name).toBe('Create file: {input}');
+        expect(asTypedChoices[1].item.value).toBe('newproject');
+        expect(asTypedChoices[1].item.name).toBe('Create folder: {input}');
+      });
+
+      it('should handle value defaulting correctly for asTyped choices', () => {
+        const choices = [
+          { id: '1', name: 'Git', value: 'git' },
+          { id: '2', name: 'Use {input} as command', asTyped: true }, // No value specified
+          { id: '3', name: 'Set custom value', asTyped: true, value: 'custom-value' }, // Custom value
+        ];
+
+        mockPrompt.kitSearch.choices = choices;
+        mockPrompt.kitSearch.hasGroup = false;
+        vi.mocked(searchChoices).mockReturnValue([]);
+
+        invokeSearch(mockPrompt, 'my-input-text');
+
+        const calls = mockSendToPrompt.mock.calls;
+        const setScoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+        const scoredChoices = setScoredChoicesCall?.[1] || [];
+        const asTypedChoices = scoredChoices.filter((sc: ScoredChoice) => sc.item.asTyped === true);
+        
+        expect(asTypedChoices).toHaveLength(2);
+        // First choice should default to input value
+        expect(asTypedChoices[0].item.value).toBe('my-input-text');
+        expect(asTypedChoices[0].item.name).toBe('Use {input} as command');
+        // Second choice should use custom value
+        expect(asTypedChoices[1].item.value).toBe('custom-value');
+        expect(asTypedChoices[1].item.name).toBe('Set custom value');
+      });
+
+      it('should generate unique IDs for multiple asTyped choices', () => {
+        const choices = [
+          { id: '1', name: 'Git', value: 'git' },
+          { id: 'file-choice', name: 'Create file: {input}', asTyped: true },
+          { id: 'folder-choice', name: 'Create folder: {input}', asTyped: true },
+          { id: 'custom-choice', name: 'Custom: {input}', asTyped: true },
+        ];
+
+        mockPrompt.kitSearch.choices = choices;
+        mockPrompt.kitSearch.hasGroup = false;
+        vi.mocked(searchChoices).mockReturnValue([]);
+
+        invokeSearch(mockPrompt, 'test-input');
+
+        const calls = mockSendToPrompt.mock.calls;
+        const setScoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+        const scoredChoices = setScoredChoicesCall?.[1] || [];
+        const asTypedChoices = scoredChoices.filter((sc: ScoredChoice) => sc.item.asTyped === true);
+        
+        // Check that we have 3 asTyped choices
+        expect(asTypedChoices).toHaveLength(3);
+        
+        // Extract all IDs
+        const ids = asTypedChoices.map((choice: ScoredChoice) => choice.item.id);
+        
+        // Check that all IDs are unique
+        const uniqueIds = new Set(ids);
+        expect(uniqueIds.size).toBe(3);
+        
+        // Verify each ID includes the original choice ID
+        expect(ids[0]).toContain('file-choice');
+        expect(ids[1]).toContain('folder-choice');
+        expect(ids[2]).toContain('custom-choice');
       });
 
       it('should work with grouped search results', () => {

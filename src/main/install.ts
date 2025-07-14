@@ -1017,7 +1017,7 @@ export const syncBins = async () => {
       const worker = getBinWorker();
       const deletePromises: Promise<void>[] = [];
       for (const bin of binFiles) {
-        const script = Array.from(kitState.scripts.values()).find((s) => s.command === bin);
+        const script = Array.from(kitState.scripts.values()).find((s) => s.command === bin || !s.bin);
         if (!script) {
           log.info(`🔗 Deleting bin ${bin}`);
           deletePromises.push(unlink(path.resolve(binDirPath, bin)));
@@ -1027,6 +1027,11 @@ export const syncBins = async () => {
       await Promise.all(deletePromises);
 
       for (const script of kitState.scripts.values()) {
+        log.info('script', script.filePath, script.bin ? 'bin' : 'no bin');
+        if (!script.bin) {
+          log.info('no bin', script.filePath);
+          continue;
+        }
         if (binFiles.includes(script.command) && !(script as Scriptlet).scriptlet) {
           continue;
         }

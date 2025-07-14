@@ -1,0 +1,15 @@
+# Add patterns to ignore here, one per line
+# Example:
+# *.log
+# tmp/
+assets/
+.claude/
+.cursor/
+.specstory/
+.vscode/
+investigations/
+issues/
+postmortem/
+prompts/
+refactors/
+

@@ -48,24 +48,20 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
   const lowerCaseInput = transformedInput?.toLowerCase();
 
   // -------------------------------------------------------------
-  //  OPTIONAL "AS TYPED" CANDIDATE
+  //  OPTIONAL "AS TYPED" CANDIDATES
   //  Show only when we already have some results but none of them
   //  matches the input EXACTLY on any key we care about.
   //  AND only when there's an asTyped choice in the choices array.
   // -------------------------------------------------------------
-  const generateAsTyped = (searchResult: ScoredChoice[] | undefined) => {
-    if (!transformedInput || transformedInput === '') return null;
+  const generateAsTyped = (searchResult: ScoredChoice[] | undefined): ScoredChoice[] => {
+    if (!transformedInput || transformedInput === '') return [];
 
-    // Check if there's an asTyped choice in the original choices
-    const asTypedChoice = prompt.kitSearch.choices.find(choice => choice?.asTyped === true);
-    if (!asTypedChoice) return null;
+    // Find ALL asTyped choices in the original choices
+    const asTypedChoices = prompt.kitSearch.choices.filter(choice => choice?.asTyped === true);
+    if (asTypedChoices.length === 0) return [];
 
-    // If no search results, show the "As Typed" option
-    if (!searchResult || searchResult.length === 0) {
-      return createScoredChoice(createAsTypedChoice(transformedInput, asTypedChoice));
-    }
-
-    const hasExact = searchResult.some(r => {
+    // Check if we should show the "As Typed" options
+    const shouldShowAsTyped = !searchResult || searchResult.length === 0 || !searchResult.some(r => {
       const { name = '', keyword = '' } = r.item;
       return (
         name.toLowerCase() === lowerCaseInput ||
@@ -73,7 +69,12 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
       );
     });
 
-    return hasExact ? null : createScoredChoice(createAsTypedChoice(transformedInput, asTypedChoice));
+    if (!shouldShowAsTyped) return [];
+
+    // Generate an "as typed" choice for each template
+    return asTypedChoices.map(asTypedChoice => 
+      createScoredChoice(createAsTypedChoice(transformedInput, asTypedChoice))
+    );
   };
 
   if (transformedInput === '') {
@@ -330,9 +331,9 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     // Always show info items at the top
     combinedResults.unshift(...infoGroup);
 
-    // Add "as typed" option if applicable
-    const asTypedSc = generateAsTyped(result);
-    if (asTypedSc) combinedResults.push(asTypedSc);
+    // Add "as typed" options if applicable
+    const asTypedChoices = generateAsTyped(result);
+    combinedResults.push(...asTypedChoices);
     
     setScoredChoices(prompt, combinedResults, 'prompt.kitSearch.hasGroup');
   } else if (resultLength === 0) {
@@ -345,8 +346,8 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
       }
     }
     
-    const asTypedSc = generateAsTyped(result);
-    if (asTypedSc) fallbackResults.push(asTypedSc);
+    const asTypedChoices = generateAsTyped(result);
+    fallbackResults.push(...asTypedChoices);
     
     setScoredChoices(prompt, fallbackResults, 'resultLength === 0');
   } else {
@@ -383,8 +384,8 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     // Combine: info first, then normal results, then pass choices, then miss choices
     const combinedResults = [...infoChoices, ...normalChoices, ...passChoices, ...missChoices];
     
-    const asTypedSc = generateAsTyped(result);
-    if (asTypedSc) combinedResults.push(asTypedSc);
+    const asTypedChoices = generateAsTyped(result);
+    combinedResults.push(...asTypedChoices);
     
     setScoredChoices(prompt, combinedResults, 'resultLength > 0');
   }

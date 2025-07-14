@@ -1086,6 +1086,46 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       sendToPrompt(Channel.EDITOR_INSERT_TEXT, value);
     }),
 
+    EDITOR_REPLACE_RANGE: onChildChannel(({ child }, { channel, value }) => {
+      sendToPrompt(Channel.EDITOR_REPLACE_RANGE, value);
+    }),
+
+    EDITOR_GET_LINE_INFO: onChildChannel(({ child }, { channel, value }) => {
+      sendToPrompt(Channel.EDITOR_GET_LINE_INFO, value);
+    }),
+
+    EDITOR_FIND_REPLACE_ALL: onChildChannel(({ child }, { channel, value }) => {
+      sendToPrompt(Channel.EDITOR_FIND_REPLACE_ALL, value);
+    }),
+
+    EDITOR_GET_FOLDED_REGIONS: onChildChannel(({ child }, { channel }) => {
+      sendToPrompt(Channel.EDITOR_GET_FOLDED_REGIONS);
+    }),
+
+    EDITOR_SET_FOLDED_REGIONS: onChildChannel(({ child }, { channel, value }) => {
+      sendToPrompt(Channel.EDITOR_SET_FOLDED_REGIONS, value);
+    }),
+
+    EDITOR_EXECUTE_COMMAND: onChildChannel(({ child }, { channel, value }) => {
+      sendToPrompt(Channel.EDITOR_EXECUTE_COMMAND, value);
+    }),
+
+    EDITOR_SCROLL_TO: onChildChannel(({ child }, { channel, value }) => {
+      sendToPrompt(Channel.EDITOR_SCROLL_TO, value);
+    }),
+
+    EDITOR_SCROLL_TO_TOP: onChildChannel(({ child }, { channel }) => {
+      sendToPrompt(Channel.EDITOR_SCROLL_TO_TOP);
+    }),
+
+    EDITOR_SCROLL_TO_BOTTOM: onChildChannel(({ child }, { channel }) => {
+      sendToPrompt(Channel.EDITOR_SCROLL_TO_BOTTOM);
+    }),
+
+    EDITOR_GET_CURRENT_INPUT: onChildChannel(({ child }, { channel }) => {
+      sendToPrompt(Channel.EDITOR_GET_CURRENT_INPUT);
+    }),
+
     APPEND_INPUT: onChildChannel(({ child }, { channel, value }) => {
       sendToPrompt(Channel.APPEND_INPUT, value);
     }),
@@ -2424,17 +2464,17 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       }
     }),
     ...HANDLER_CHANNELS.reduce((acc, channel) => {
-      acc[channel] = onChildChannel(({ child }, { channel, value }) => {
+      acc[channel] = onChildChannel(({ child, scriptPath }, { channel, value }) => {
         log.info('SYSTEM CHANNEL', { channel, value });
         if (value && processInfo?.preventChannels?.has(channel)) {
           processInfo?.preventChannels?.delete(channel);
-          log.info(`${child.pid} ${channel} removed from "prevent" list`, {
+          log.info(`${child.pid}:${scriptPath} ${channel} removed from "prevent" list`, {
             channel,
             value,
           });
         } else {
           processInfo?.preventChannels?.add(channel);
-          log.info(`${child.pid} ${channel} added to "prevent" list`, {
+          log.info(`${child.pid}:${scriptPath} ${channel} added to "prevent" list`, {
             channel,
             value,
           });

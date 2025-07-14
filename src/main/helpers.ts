@@ -204,7 +204,7 @@ export const createScoredChoice = (item: Choice): ScoredChoice => {
 
 export function createAsTypedChoice(rawInput: string, originalChoice?: Choice): Choice {
   return {
-    id: `typed-${rawInput}-${Date.now()}`,
+    id: `typed-${originalChoice?.id || 'default'}-${rawInput}-${Date.now()}`,
     name: originalChoice?.name || '{input}',
     keyword: '',      // we don't compete on keyword
     value: originalChoice?.value !== undefined ? originalChoice.value : rawInput,  // Use original value if provided

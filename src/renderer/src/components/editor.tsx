@@ -525,13 +525,212 @@ export default function Editor() {
 
     ipcRenderer.on(Channel.EDITOR_MOVE_CURSOR, moveCursor);
 
+    const replaceTextRange = (event: any, { start, end, text }: { start: number; end: number; text: string }) => {
+      if (!editor || !editor.getModel()) return;
+      
+      const startPos = editor.getModel()!.getPositionAt(start);
+      const endPos = editor.getModel()!.getPositionAt(end);
+      
+      const range = new Range(
+        startPos.lineNumber, startPos.column,
+        endPos.lineNumber, endPos.column
+      );
+      
+      editor.executeEdits('replace-range', [{
+        identifier: { major: 1, minor: 1 },
+        range,
+        text,
+        forceMoveMarkers: true
+      }]);
+      
+      channel(Channel.EDITOR_REPLACE_RANGE, { 
+        value: editor.getModel()!.getOffsetAt(editor.getPosition()!) 
+      });
+    };
+
+    ipcRenderer.on(Channel.EDITOR_REPLACE_RANGE, replaceTextRange);
+
+    const getLineInfo = (event: any, lineNumber?: number) => {
+      if (!editor || !editor.getModel()) return;
+      
+      const currentLine = lineNumber || editor.getPosition()?.lineNumber || 1;
+      const lineContent = editor.getModel()!.getLineContent(currentLine);
+      const lineLength = lineContent.length;
+      const lineCount = editor.getModel()!.getLineCount();
+      
+      channel(Channel.EDITOR_GET_LINE_INFO, {
+        value: {
+          lineNumber: currentLine,
+          content: lineContent,
+          length: lineLength,
+          totalLines: lineCount,
+          indentation: lineContent.match(/^(\s*)/)?.[1] || ''
+        }
+      });
+    };
+
+    ipcRenderer.on(Channel.EDITOR_GET_LINE_INFO, getLineInfo);
+
+    const findAndReplaceAll = (event: any, { searchText, replaceText, options }: { searchText: string; replaceText: string; options?: { regex?: boolean; matchCase?: boolean; wholeWord?: boolean } }) => {
+      if (!editor || !editor.getModel()) return;
+      
+      const model = editor.getModel()!;
+      const matches = model.findMatches(
+        searchText, 
+        false, // searchOnlyEditableRange
+        options?.regex || false,
+        options?.matchCase || false,
+        options?.wholeWord || false,
+        true // captureMatches
+      );
+      
+      const edits = matches.map(match => ({
+        identifier: { major: 1, minor: 1 },
+        range: match.range,
+        text: replaceText,
+        forceMoveMarkers: true
+      }));
+      
+      editor.executeEdits('find-replace-all', edits);
+      
+      channel(Channel.EDITOR_FIND_REPLACE_ALL, { 
+        value: { replacedCount: matches.length } 
+      });
+    };
+
+    ipcRenderer.on(Channel.EDITOR_FIND_REPLACE_ALL, findAndReplaceAll);
+
+    const getFoldedRegions = () => {
+      if (!editor) return;
+      
+      // Monaco doesn't expose folding state directly, so we'll return empty array for now
+      // In a real implementation, you'd need to access internal folding model
+      channel(Channel.EDITOR_GET_FOLDED_REGIONS, { 
+        value: []
+      });
+    };
+
+    ipcRenderer.on(Channel.EDITOR_GET_FOLDED_REGIONS, getFoldedRegions);
+
+    const setFoldedRegions = (event: any, regions: Array<{ start: number; end: number }>) => {
+      if (!editor) return;
+      
+      // First unfold all
+      editor.getAction('editor.unfoldAll')?.run();
+      
+      // Then fold specified regions
+      regions.forEach(region => {
+        editor.setSelection(new Range(
+          region.start, 1, 
+          region.end, 1
+        ));
+        editor.getAction('editor.fold')?.run();
+      });
+      
+      channel(Channel.EDITOR_SET_FOLDED_REGIONS);
+    };
+
+    ipcRenderer.on(Channel.EDITOR_SET_FOLDED_REGIONS, setFoldedRegions);
+
+    const executeMonacoCommand = async (event: any, { commandId, args }: { commandId: string; args?: any }) => {
+      if (!editor) return;
+      
+      try {
+        const result = await editor.getAction(commandId)?.run(args);
+        
+        channel(Channel.EDITOR_EXECUTE_COMMAND, { 
+          value: { 
+            success: true, 
+            commandId,
+            result 
+          } 
+        });
+      } catch (error: any) {
+        channel(Channel.EDITOR_EXECUTE_COMMAND, { 
+          value: { 
+            success: false, 
+            commandId,
+            error: error.message 
+          } 
+        });
+      }
+    };
+
+    ipcRenderer.on(Channel.EDITOR_EXECUTE_COMMAND, executeMonacoCommand);
+
+    const scrollToPosition = (event: any, position: 'top' | 'center' | 'bottom' | number) => {
+      if (!editor) return;
+      
+      if (typeof position === 'number') {
+        editor.revealLineInCenter(position);
+      } else if (position === 'top') {
+        editor.setScrollPosition({ scrollTop: 0 });
+      } else if (position === 'bottom') {
+        const lineNumber = editor.getModel()?.getLineCount() || 0;
+        const column = (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+        const pos = { lineNumber, column };
+        editor.setPosition(pos);
+        editor.revealPosition(pos);
+      } else if (position === 'center') {
+        const lineNumber = editor.getModel()?.getLineCount() || 0;
+        editor.revealLineInCenter(Math.floor(lineNumber / 2));
+      }
+      
+      channel(Channel.EDITOR_SCROLL_TO);
+    };
+
+    ipcRenderer.on(Channel.EDITOR_SCROLL_TO, scrollToPosition);
+
+    const scrollToTop = () => {
+      if (!editor) return;
+      editor.revealLine(1);
+      editor.setScrollPosition({ scrollTop: 0 });
+      channel(Channel.EDITOR_SCROLL_TO_TOP);
+    };
+
+    ipcRenderer.on(Channel.EDITOR_SCROLL_TO_TOP, scrollToTop);
+
+    const scrollToBottom = () => {
+      if (!editor || !editor.getModel()) return;
+      const model = editor.getModel();
+      const lineNumber = model.getLineCount();
+      if (lineNumber > 0) {
+        const column = model.getLineMaxColumn(lineNumber);
+        const position = { lineNumber, column };
+        editor.setPosition(position);
+        editor.revealPosition(position, 1); // 1 = ScrollType.Immediate
+      }
+      channel(Channel.EDITOR_SCROLL_TO_BOTTOM);
+    };
+
+    ipcRenderer.on(Channel.EDITOR_SCROLL_TO_BOTTOM, scrollToBottom);
+
+    const getCurrentInput = () => {
+      if (!editor || !editor.getModel()) return;
+      
+      const value = editor.getModel()!.getValue();
+      channel(Channel.EDITOR_GET_CURRENT_INPUT, { value });
+    };
+
+    ipcRenderer.on(Channel.EDITOR_GET_CURRENT_INPUT, getCurrentInput);
+
     return () => {
       ipcRenderer.removeListener(Channel.EDITOR_GET_SELECTION, getSelectedText);
       ipcRenderer.removeListener(Channel.EDITOR_GET_CURSOR_OFFSET, getCursorPosition);
       ipcRenderer.removeListener(Channel.EDITOR_INSERT_TEXT, insertTextAtCursor);
       ipcRenderer.removeListener(Channel.EDITOR_MOVE_CURSOR, moveCursor);
+      ipcRenderer.removeListener(Channel.EDITOR_REPLACE_RANGE, replaceTextRange);
+      ipcRenderer.removeListener(Channel.EDITOR_GET_LINE_INFO, getLineInfo);
+      ipcRenderer.removeListener(Channel.EDITOR_FIND_REPLACE_ALL, findAndReplaceAll);
+      ipcRenderer.removeListener(Channel.EDITOR_GET_FOLDED_REGIONS, getFoldedRegions);
+      ipcRenderer.removeListener(Channel.EDITOR_SET_FOLDED_REGIONS, setFoldedRegions);
+      ipcRenderer.removeListener(Channel.EDITOR_EXECUTE_COMMAND, executeMonacoCommand);
+      ipcRenderer.removeListener(Channel.EDITOR_SCROLL_TO, scrollToPosition);
+      ipcRenderer.removeListener(Channel.EDITOR_SCROLL_TO_TOP, scrollToTop);
+      ipcRenderer.removeListener(Channel.EDITOR_SCROLL_TO_BOTTOM, scrollToBottom);
+      ipcRenderer.removeListener(Channel.EDITOR_GET_CURRENT_INPUT, getCurrentInput);
     };
-  }, [editor]);
+  }, [editor, channel]);
 
   const shortcutStrings = useAtomValue(shortcutStringsAtom);
   const appConfig = useAtomValue(appConfigAtom);
