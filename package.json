@@ -186,7 +186,7 @@
     "node-schedule": "2.1.1",
     "node-stream-zip": "^1.15.0",
     "package-up": "^5.0.0",
-    "pnpm": "10.12.4",
+    "pnpm": "10.13.1",
     "prop-types": "^15.8.1",
     "react": "^19.1.0",
     "rebuild": "^0.1.2",
