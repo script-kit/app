@@ -14,6 +14,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Electron download configuration
+  ELECTRON_DOWNLOAD_TIMEOUT: 180000  # 3 minutes
+  ELECTRON_GET_USE_PROXY: true
+  # Optional: Use a mirror if GitHub is rate limiting
+  # ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+
 permissions:
   contents: write
   packages: write
@@ -245,6 +252,9 @@ jobs:
       - name: Install npm dependencies
         run: pnpm i
 
+      - name: Install tsx for build retry script
+        run: pnpm add -D tsx
+
       - name: Set Optional Dependencies Based on Platform and Architecture
         if: needs.tag.outputs.kit_tag == 'latest'
         uses: johnlindquist/kit-action@main
@@ -265,14 +275,14 @@ jobs:
         run: |
           cat ./package.json
           pnpm vite-prebuild
-          pnpm exec kit ./build.ts win x64 always
+          pnpm exec tsx ./scripts/build-with-retry.ts win x64 always
 
       - name: Publish windows arm64
         if: matrix.platform == 'win32' && matrix.arch == 'arm64'
         run: |
           pnpm exec kit remove-tick
           pnpm vite-prebuild
-          pnpm exec kit ./build.ts win arm64 always
+          pnpm exec tsx ./scripts/build-with-retry.ts win arm64 always
         env:
           # These values are used for auto updates signing
           CSC_LINK: ${{ secrets.CSC_LINK }}
@@ -304,7 +314,7 @@ jobs:
 
           cat ./package.json
           pnpm vite-prebuild
-          pnpm exec kit ./build.ts linux x64 always
+          pnpm exec tsx ./scripts/build-with-retry.ts linux x64 always
 
       - name: Publish linux arm64
         if: matrix.platform == 'linux' && matrix.arch == 'arm64'
@@ -396,7 +406,7 @@ jobs:
           pnpm vite-prebuild
           which npm
           pnpm --version
-          pnpm exec kit ./build.ts linux arm64 always
+          pnpm exec tsx ./scripts/build-with-retry.ts linux arm64 always
 
       - name: Write Apple API Key to ~/.private_keys
         run: |
@@ -426,7 +436,7 @@ jobs:
         run: |
           sleep 600
           pnpm vite-prebuild
-          pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
+          pnpm exec tsx ./scripts/build-with-retry.ts mac ${{ matrix.arch }} always
 
       - name: Publish mac arm64
         if: matrix.platform == 'mac' && matrix.arch == 'arm64'
@@ -448,7 +458,7 @@ jobs:
           DEBUG: electron-notarize
         run: |
           pnpm vite-prebuild
-          pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
+          pnpm exec tsx ./scripts/build-with-retry.ts mac ${{ matrix.arch }} always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml
         if: matrix.platform == 'mac'

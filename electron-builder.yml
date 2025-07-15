@@ -1,0 +1,23 @@
+# Electron Builder Configuration
+# This file provides additional configuration for electron-builder
+
+# Download settings
+electronDownload:
+  # Cache directory for downloaded Electron binaries
+  cache: ~/.cache/electron
+  # Mirror URL (can be overridden by ELECTRON_MIRROR env var)
+  mirror: https://github.com/electron/electron/releases/download/
+  # Custom download options
+  # strictSSL: false  # Only uncomment if having SSL issues
+  
+# Build settings  
+buildDependenciesFromSource: false
+nodeGypRebuild: false
+
+# Increase timeouts
+requestHeaders:
+  User-Agent: "electron-builder"
+  
+# Additional environment variables for the build process
+env:
+  ELECTRON_DOWNLOAD_TIMEOUT: "180000"  # 3 minutes

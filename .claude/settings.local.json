@@ -9,7 +9,6 @@
       "Bash(pnpm:*)",
       "Bash(sleep:*)",
       "Bash(gh:*)",
-      "Bash(git:*)",
       "Bash(jq:*)",
       "Bash(find:*)",
       "WebFetch(domain:github.com)",
@@ -17,7 +16,8 @@
       "Bash(repomix:*)",
       "Bash(ls:*)",
       "Bash(chmod:*)",
-      "Bash(./run-repomix.sh)"
+      "Bash(./run-repomix.sh)",
+      "WebFetch(domain:biomejs.dev)"
     ],
     "deny": []
   }
