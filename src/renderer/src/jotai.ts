@@ -736,8 +736,24 @@ export const scoredChoicesAtom = atom(
 
     s(hasSkipAtom, hasSkip);
     s(allSkipAtom, allSkip);
+    
+    // Preserve focus when appending choices - only reset index if the current focused choice no longer exists
     if (changed) {
-      s(indexAtom, 0);
+      const currentFocusedChoice = g(focusedChoiceAtom);
+      if (currentFocusedChoice && currentFocusedChoice.id) {
+        // Try to find the previously focused choice in the new array
+        const newIndex = cs.findIndex(sc => sc.item.id === currentFocusedChoice.id);
+        if (newIndex !== -1) {
+          // Choice still exists, preserve the focus
+          s(indexAtom, newIndex);
+        } else {
+          // Choice no longer exists, reset to 0
+          s(indexAtom, 0);
+        }
+      } else {
+        // No focused choice, reset to 0
+        s(indexAtom, 0);
+      }
     }
 
     const isFilter = g(uiAtom) === UI.arg && g(promptData)?.mode === Mode.FILTER;
@@ -773,9 +789,7 @@ export const scoredChoicesAtom = atom(
 
         // const keyword = g(promptDataAtom)?.keyword;
         // log.info({ keyword, inputLength: input.length });
-        if (changed) {
-          s(indexAtom, 0);
-        }
+        // Index is already handled above when changed is true
       } else if (prevIndex && !g(selectedAtom)) {
         let adjustForGroup = prevIndex;
         if (cs?.[prevIndex - 1]?.item?.skip) {

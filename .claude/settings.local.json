@@ -17,7 +17,9 @@
       "Bash(repomix:*)",
       "Bash(ls:*)",
       "Bash(chmod:*)",
-      "Bash(./run-repomix.sh)"
+      "Bash(./run-repomix.sh)",
+      "mcp__deepwiki__ask_question",
+      "Bash(npx tsc:*)"
     ],
     "deny": []
   }

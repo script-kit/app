@@ -72,7 +72,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     if (!shouldShowAsTyped) return [];
 
     // Generate an "as typed" choice for each template
-    return asTypedChoices.map(asTypedChoice => 
+    return asTypedChoices.map(asTypedChoice =>
       createScoredChoice(createAsTypedChoice(transformedInput, asTypedChoice))
     );
   };
@@ -100,8 +100,11 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     return;
   }
 
-  // Use VS Code fuzzy search instead of QuickScore
-  const result = searchChoices(prompt.kitSearch.choices, transformedInput);
+  // Use dynamic search keys instead of hardcoded ones
+  const searchKeys = prompt.kitSearch.keys || ['name', 'keyword', 'tag'];
+
+  // Use VS Code fuzzy search with dynamic keys
+  const result = searchChoices(prompt.kitSearch.choices, transformedInput, searchKeys);
 
   // Get result length, but filter out info and miss choices
   const resultLength = result.filter((r) => !(r?.item?.info || r?.item?.miss)).length;
@@ -129,13 +132,13 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
       if (choice?.skip && choice?.name?.includes('Pass') && choice?.name?.includes('to...') && choice?.group?.includes('Pass')) {
         continue;
       }
-      
+
       // Always include info choices
       if (choice?.info) {
         infoGroup.push(createScoredChoice(choice));
         continue;
       }
-      
+
       // Check for exact alias/trigger match
       if ((choice as Script)?.alias === transformedInput || (choice as Script)?.trigger === transformedInput) {
         alias = structuredClone(choice);
@@ -146,21 +149,21 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
         }
         continue;
       }
-      
+
       // Check if choice was matched by fuzzy search
       const scoredChoice = resultMap.get(choice.id);
-      
+
       if (scoredChoice) {
         // Choice was matched by fuzzy search
         // Skip group separators - they should not be included in results
         if (choice?.skip) {
           continue;
         }
-        
+
         if (choice.group) {
           includedGroups.add(choice.group);
         }
-        
+
         if (isExactMatch(choice, transformedInput)) {
           exactMatchGroup.push(scoredChoice);
         } else if (startsWithQuery(choice, transformedInput)) {
@@ -172,20 +175,20 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
         // Choice was not matched by fuzzy search
         const hide = choice?.hideWithoutInput && transformedInput === '';
         const miss = choice?.miss && !hide;
-        
+
         if (miss) {
           missGroup.push(createScoredChoice(choice));
         } else if (!hide && choice?.pass) {
           // Check if pass choice matches
           let matches = false;
-          
+
           if (typeof choice?.pass === 'string' && (choice?.pass as string).startsWith('/')) {
             const lastSlashIndex = choice?.pass.lastIndexOf('/');
             if (lastSlashIndex > 0) {
               const regexPatternWithFlags = choice?.pass;
               const regexPattern = regexPatternWithFlags.slice(1, lastSlashIndex);
               const flags = regexPatternWithFlags.slice(lastSlashIndex + 1);
-              
+
               try {
                 const regex = new RegExp(regexPattern, flags);
                 matches = regex.test(transformedInput);
@@ -196,7 +199,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
           } else if (choice?.pass === true) {
             matches = true;
           }
-          
+
           if (matches) {
             log.info(`Matched pass: ${choice?.pass} on ${choice?.name}`);
             passGroup.push(createScoredChoice(choice));
@@ -207,10 +210,10 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
         }
       }
     }
-    
+
     // Combine results in priority order
     let combinedResults: ScoredChoice[] = [];
-    
+
     // Add exact matches first with header
     if (exactMatchGroup.length > 0) {
       combinedResults.push(
@@ -233,7 +236,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
       });
       combinedResults.push(...exactMatchGroup);
     }
-    
+
     // Add starts with matches (already sorted by VS Code algorithm)
     if (startsWithGroup.length > 0) {
       if (exactMatchGroup.length === 0) {
@@ -259,7 +262,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
       });
       combinedResults.push(...startsWithGroup);
     }
-    
+
     // Add other matches with Fuzzy Match header
     if (otherMatchGroup.length > 0) {
       // Add Fuzzy Match header
@@ -275,7 +278,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
           id: Math.random().toString(),
         })
       );
-      
+
       // Sort by score, then by original index
       otherMatchGroup.sort((a, b) => {
         if (b.score === a.score) {
@@ -287,7 +290,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
       });
       combinedResults.push(...otherMatchGroup);
     }
-    
+
     // Add pass group with single header
     if (passGroup.length > 0) {
       // Add single "Pass" header with dynamic text
@@ -305,7 +308,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
       );
       combinedResults.push(...passGroup);
     }
-    
+
     // If no matches, show miss group
     if (combinedResults.length === 0 && result.length === 0) {
       combinedResults = missGroup;
@@ -334,28 +337,28 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     // Add "as typed" options if applicable
     const asTypedChoices = generateAsTyped(result);
     combinedResults.push(...asTypedChoices);
-    
+
     setScoredChoices(prompt, combinedResults, 'prompt.kitSearch.hasGroup');
   } else if (resultLength === 0) {
     // VS Code fuzzy search returned no results, show miss/info choices
     const fallbackResults: ScoredChoice[] = [];
-    
+
     for (const choice of prompt.kitSearch.choices) {
       if (choice?.miss || choice?.info || choice?.pass) {
         fallbackResults.push(createScoredChoice(choice));
       }
     }
-    
+
     const asTypedChoices = generateAsTyped(result);
     fallbackResults.push(...asTypedChoices);
-    
+
     setScoredChoices(prompt, fallbackResults, 'resultLength === 0');
   } else {
     // Non-grouped results - already sorted by VS Code algorithm
     const infoChoices = result.filter(r => r.item.info);
     const normalChoices = result.filter(r => !r.item.info && !r.item.miss && !r.item.skip);
     const missChoices = result.filter(r => r.item.miss);
-    
+
     // Check for pass choices that match regex patterns
     const passChoices: ScoredChoice[] = [];
     for (const choice of prompt.kitSearch.choices) {
@@ -380,13 +383,13 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
         }
       }
     }
-    
+
     // Combine: info first, then normal results, then pass choices, then miss choices
     const combinedResults = [...infoChoices, ...normalChoices, ...passChoices, ...missChoices];
-    
+
     const asTypedChoices = generateAsTyped(result);
     combinedResults.push(...asTypedChoices);
-    
+
     setScoredChoices(prompt, combinedResults, 'resultLength > 0');
   }
 };
@@ -396,7 +399,7 @@ export const debounceInvokeSearch = debounce(invokeSearch, 100);
 
 export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
   prompt.flagSearch.input = input;
-  
+
   if (input === '') {
     setScoredFlags(
       prompt,
@@ -405,7 +408,7 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
     return;
   }
 
-  // Use VS Code fuzzy search for flags
+  // Use VS Code fuzzy search with default keys for flag search
   const result = searchChoices(prompt.flagSearch.choices, input);
 
   if (prompt.flagSearch.hasGroup) {
@@ -435,7 +438,7 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
 
     // Build final results
     let groupedResults: ScoredChoice[] = [];
-    
+
     // Add exact matches with header
     if (exactMatchGroup.length > 0) {
       groupedResults.push(
@@ -452,10 +455,10 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
         ...exactMatchGroup
       );
     }
-    
+
     // Add other matches
     groupedResults.push(...startsWithGroup, ...otherMatchGroup);
-    
+
     // Show miss group if no matches
     if (groupedResults.length === 0) {
       groupedResults = missGroup;
@@ -610,7 +613,7 @@ export const setChoices = (
 
   prompt.kitSearch.choices = choices.filter((c) => !c?.exclude);
   prompt.kitSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
-  
+
   // Clear fuzzy cache when choices change
   clearFuzzyCache();
 

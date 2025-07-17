@@ -616,9 +616,9 @@ export class KitPrompt {
     // 1. Script path matches the main script path
     // 2. No script path and pid is 0 (uninitialized main menu)
     // 3. Empty script path (idle process that shows main menu)
-    return this.scriptPath === getMainScriptPath() || 
-           (!this.scriptPath && this.pid === 0) ||
-           this.scriptPath === '';
+    return this.scriptPath === getMainScriptPath() ||
+      (!this.scriptPath && this.pid === 0) ||
+      this.scriptPath === '';
   }
 
   public window: BrowserWindow;
@@ -652,6 +652,8 @@ export class KitPrompt {
   kitSearch = {
     input: '',
     inputRegex: undefined as undefined | RegExp,
+    filterRegex: undefined as undefined | RegExp,
+    filteredChoices: undefined as undefined | Choice[],
     keyword: '',
     keywordCleared: false,
     generated: false,
@@ -683,7 +685,7 @@ export class KitPrompt {
     this.updateShortcodes();
     this.kitSearch.hasGroup = false;
     this.kitSearch.commandChars = [];
-    this.kitSearch.keys = ['slicedName', 'name', 'tag', 'group', 'command', 'alias'];
+    this.kitSearch.keys = ['name', 'keyword', 'tag'];
   };
 
   flagSearch = {
@@ -1305,7 +1307,7 @@ export class KitPrompt {
     }
 
     kitState.blurredByKit = false;
-    
+
     // Complete the blur operation
     processWindowCoordinator.completeOperation(blurOpId);
   };
@@ -1350,7 +1352,7 @@ export class KitPrompt {
     const isSplashScreen = this.ui === UI.splash;
     const options = getPromptOptions(isSplashScreen);
     this.window = new BrowserWindow(options);
-    
+
     // Register window creation
     const createOpId = processWindowCoordinator.registerOperation(
       this.pid,
@@ -1864,16 +1866,16 @@ export class KitPrompt {
       this.logWarn('Prompt window is destroyed. Not hiding.');
       return;
     }
-    
+
     // Register hide operation
     const hideOpId = processWindowCoordinator.registerOperation(
       this.pid,
       WindowOperation.Hide,
       this.window.id
     );
-    
+
     this.actualHide();
-    
+
     // Complete the hide operation
     processWindowCoordinator.completeOperation(hideOpId);
   };
@@ -1906,14 +1908,14 @@ export class KitPrompt {
     if (this.window.isDestroyed()) {
       return;
     }
-    
+
     // Register show operation
     const showOpId = processWindowCoordinator.registerOperation(
       this.pid,
       WindowOperation.Show,
       this.window.id
     );
-    
+
     this.initShowPrompt();
     this.sendToPrompt(Channel.SET_OPEN, true);
 
@@ -1923,7 +1925,7 @@ export class KitPrompt {
       return;
     }
     this.shown = true;
-    
+
     // Complete the show operation
     processWindowCoordinator.completeOperation(showOpId);
   };
@@ -2909,7 +2911,7 @@ export class KitPrompt {
           this.window?.showInactive();
           this.window?.focus();
         }
-        
+
         // Complete the focus operation
         processWindowCoordinator.completeOperation(focusOpId);
       } catch (error) {
@@ -3256,9 +3258,9 @@ export class KitPrompt {
             WindowOperation.Destroy,
             this.window?.id || 0
           );
-          
+
           this.window.destroy();
-          
+
           // Complete the destroy operation
           processWindowCoordinator.completeOperation(destroyOpId);
         } catch (error) {
@@ -3277,7 +3279,7 @@ export class KitPrompt {
 
     // Complete the close operation
     processWindowCoordinator.completeOperation(closeOpId);
-    
+
     return;
   };
 

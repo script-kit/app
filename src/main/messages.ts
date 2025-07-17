@@ -1279,7 +1279,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       prompt.scriptPath = value?.scriptPath || '';
       prompt.hideOnEscape = Boolean(value?.hideOnEscape);
 
-      prompt.kitSearch.keys = value?.searchKeys || ['slicedName', 'tag', 'group', 'command', 'alias'];
+      prompt.kitSearch.keys = value?.searchKeys || ['name', 'keyword', 'tag'];
       if (typeof value?.keyword === 'string') {
         prompt.kitSearch.keywords.clear();
         prompt.kitSearch.input = '';
