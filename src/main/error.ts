@@ -17,13 +17,37 @@ ${process.platform} ${os.release()}
 Locale: ${app.getLocale()}
 `.trim();
 
-export const displayError = debounce((error: Error) => {
+export const displayError = debounce(async (error: Error) => {
   log.error(error);
-  trackEvent(TrackEvent.Error, {
-    error: error?.name || 'Unknown error',
-    message: error?.message || 'Unknown error message',
-    stack: error?.stack || 'Unknown error stack',
-  });
+  
+  // Try to get enhanced error info if sourcemap support is available
+  let enhancedStack = error?.stack || 'Unknown error stack';
+  try {
+    const { SourcemapErrorFormatter } = await import('@johnlindquist/kit/core/sourcemap-formatter');
+    const formattedError = SourcemapErrorFormatter.formatError(error);
+    enhancedStack = formattedError.stack;
+    
+    // Track with enhanced telemetry
+    const errorLocation = SourcemapErrorFormatter.extractErrorLocation(error);
+    trackEvent(TrackEvent.Error, {
+      error: error?.name || 'Unknown error',
+      message: error?.message || 'Unknown error message',
+      stack: enhancedStack,
+      originalFile: errorLocation?.file,
+      line: errorLocation?.line,
+      column: errorLocation?.column,
+      mappingSuccess: !!errorLocation
+    });
+  } catch (e) {
+    // Fallback to original telemetry if formatter fails
+    log.warn('Failed to format error with sourcemap support:', e);
+    trackEvent(TrackEvent.Error, {
+      error: error?.name || 'Unknown error',
+      message: error?.message || 'Unknown error message',
+      stack: error?.stack || 'Unknown error stack',
+    });
+  }
+  
   emitter.emit(KitEvent.RunPromptProcess, {
     scriptPath: kitPath('cli', 'info.js'),
     args: [
@@ -35,7 +59,7 @@ Please report to our [GitHub Discussions](https://github.com/johnlindquist/kit/d
 ## ${debugInfo()?.replaceAll('\n', '')}
 
 ~~~
-${error?.stack || 'Unknown error stack'}
+${enhancedStack}
 ~~~
 `,
     ],
