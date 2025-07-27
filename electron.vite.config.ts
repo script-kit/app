@@ -15,6 +15,7 @@ const build: BuildOptions = {
     external: external(),
   },
   target: 'node22',
+  sourcemap: 'external', // Generate external sourcemaps for better debugging
 };
 
 export default defineConfig(() => ({

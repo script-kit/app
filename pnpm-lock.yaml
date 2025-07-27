@@ -191,6 +191,9 @@ importers:
       shell-env:
         specifier: ^4.0.1
         version: 4.0.1
+      source-map-support:
+        specifier: ^0.5.21
+        version: 0.5.21
       tail:
         specifier: ^2.2.6
         version: 2.2.6
@@ -9506,7 +9509,7 @@ snapshots:
       '@octokit/plugin-rest-endpoint-methods': 15.0.0(@octokit/core@7.0.2)
       '@octokit/plugin-retry': 8.0.1(@octokit/core@7.0.2)
       '@octokit/plugin-throttling': 11.0.1(@octokit/core@7.0.2)
-      '@openrouter/ai-sdk-provider': 1.0.0-beta.1(ai@5.0.0-beta.18(zod@3.25.67))(zod@4.0.5)
+      '@openrouter/ai-sdk-provider': 1.0.0-beta.1(ai@5.0.0-beta.18(zod@4.0.5))(zod@4.0.5)
       '@types/chalk': 2.2.4
       '@types/download': 8.0.5
       '@types/fs-extra': 11.0.4
@@ -9776,7 +9779,7 @@ snapshots:
     dependencies:
       '@octokit/openapi-types': 25.1.0
 
-  '@openrouter/ai-sdk-provider@1.0.0-beta.1(ai@5.0.0-beta.18(zod@3.25.67))(zod@4.0.5)':
+  '@openrouter/ai-sdk-provider@1.0.0-beta.1(ai@5.0.0-beta.18(zod@4.0.5))(zod@4.0.5)':
     dependencies:
       ai: 5.0.0-beta.18(zod@4.0.5)
       zod: 4.0.5

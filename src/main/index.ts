@@ -298,11 +298,20 @@ log.info(`😎 KIT_APP_VERSION ${getVersion()}`);
 const KIT = kitPath();
 process.env.KIT = KIT;
 
-// TODO: Fix source-map-support and electron-debug???
-// if (process.env.NODE_ENV === 'production') {
-//   const sourceMapSupport = require('source-map-support');
-//   sourceMapSupport.install();
-// }
+// Enable sourcemap support for better error stack traces
+if (process.env.KIT_ENABLE_SOURCEMAPS !== 'false') {
+  const start = performance.now();
+  try {
+    const sourceMapSupport = require('source-map-support');
+    sourceMapSupport.install({
+      environment: 'node',
+      handleUncaughtExceptions: false // Let Electron handle these
+    });
+    log.info(`[Perf] Sourcemap support loaded in ${(performance.now() - start).toFixed(2)}ms`);
+  } catch (error) {
+    log.warn('Failed to load source-map-support:', error.message);
+  }
+}
 
 // if (
 //   process.env.NODE_ENV === 'development' ||
