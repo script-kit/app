@@ -341,7 +341,9 @@ const defaultEditorOptions: editor.IStandaloneEditorConstructionOptions = {
   renderWhitespace: 'none',
   trimAutoWhitespace: true,
   renderLineHighlight: 'none',
-  stickyScroll: false,
+  stickyScroll: {
+    enabled: false,
+  },
 };
 
 export const editorOptions = atom<editor.IStandaloneEditorConstructionOptions>(defaultEditorOptions);
@@ -736,24 +738,8 @@ export const scoredChoicesAtom = atom(
 
     s(hasSkipAtom, hasSkip);
     s(allSkipAtom, allSkip);
-    
-    // Preserve focus when appending choices - only reset index if the current focused choice no longer exists
     if (changed) {
-      const currentFocusedChoice = g(focusedChoiceAtom);
-      if (currentFocusedChoice && currentFocusedChoice.id) {
-        // Try to find the previously focused choice in the new array
-        const newIndex = cs.findIndex(sc => sc.item.id === currentFocusedChoice.id);
-        if (newIndex !== -1) {
-          // Choice still exists, preserve the focus
-          s(indexAtom, newIndex);
-        } else {
-          // Choice no longer exists, reset to 0
-          s(indexAtom, 0);
-        }
-      } else {
-        // No focused choice, reset to 0
-        s(indexAtom, 0);
-      }
+      s(indexAtom, 0);
     }
 
     const isFilter = g(uiAtom) === UI.arg && g(promptData)?.mode === Mode.FILTER;
@@ -789,7 +775,9 @@ export const scoredChoicesAtom = atom(
 
         // const keyword = g(promptDataAtom)?.keyword;
         // log.info({ keyword, inputLength: input.length });
-        // Index is already handled above when changed is true
+        if (changed) {
+          s(indexAtom, 0);
+        }
       } else if (prevIndex && !g(selectedAtom)) {
         let adjustForGroup = prevIndex;
         if (cs?.[prevIndex - 1]?.item?.skip) {
@@ -1551,8 +1539,7 @@ export const promptDataAtom = atom(
 
     wasPromptDataPreloaded = Boolean(prevPromptData?.preload && !a?.preload);
     log.info(
-      `${g(pidAtom)}: 👀 Preloaded: ${a?.scriptPath} ${
-        wasPromptDataPreloaded ? 'true' : 'false'
+      `${g(pidAtom)}: 👀 Preloaded: ${a?.scriptPath} ${wasPromptDataPreloaded ? 'true' : 'false'
       } and keyword: ${a?.keyword}
       prevPromptData: ${prevPromptData?.preload ? 'yup' : 'nope'}
       currentPromptData: ${a?.preload ? 'yup' : 'nope'}
@@ -1840,7 +1827,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
 
 export const channelAtom = atom((g) => {
   if (g(pauseChannelAtom)) {
-    return () => {};
+    return () => { };
   }
   return (channel: Channel, override?: any) => {
     const state = g(appStateAtom);
@@ -2138,7 +2125,7 @@ const emptyFilePathBounds: FilePathBounds = {
 };
 export const filePathBoundsAtom = atom<FilePathBounds>(emptyFilePathBounds);
 
-const setAppearance = () => {};
+const setAppearance = () => { };
 
 const _tempThemeAtom = atom('');
 export const tempThemeAtom = atom(
@@ -2593,7 +2580,7 @@ export const colorAtom = atom((g) => {
 
       ipcRenderer.send(channel, appMessage);
       return color;
-    } catch (error) {}
+    } catch (error) { }
     return '';
   };
 });
@@ -2664,7 +2651,7 @@ export const setChatMessageAtom = atom(null, (g, s, a: { index: number; message:
       value: a.message,
       pid: g(pidAtom),
     });
-  } catch (error) {}
+  } catch (error) { }
 });
 export const termConfigDefaults: TermConfig = {
   command: '',
@@ -3067,7 +3054,7 @@ export const previewCheckAtom = atom((g) => {
 export const shortcodesAtom = atom<string[]>([]);
 
 export const triggerKeywordAtom = atom(
-  (_g) => {},
+  (_g) => { },
   (
     g,
     _s,
@@ -3203,7 +3190,7 @@ export const initPromptAtom = atom(null, (g, s) => {
     `${window.pid}: scoredChoices`,
     scoredChoices.slice(0, 2).map((c) => c.item.name),
   );
-  
+
   // Set all cached values atomically to prevent flicker
   s(scoredChoicesAtom, scoredChoices);
   s(previewHTMLAtom, g(cachedMainPreviewAtom));

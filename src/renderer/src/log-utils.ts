@@ -6,9 +6,9 @@ log.transports.ipc.level = 'info';
 let ignoredPrefixes: string[] = [];
 let filteredPrefixes: string[] = [];
 
-if (process) {
-  ignoredPrefixes = process?.env?.KIT_LOG_IGNORE_PREFIX?.split(',') || [];
-  filteredPrefixes = process?.env?.KIT_LOG_FILTER_PREFIX?.split(',') || [];
+if (typeof process !== 'undefined' && process?.env) {
+  ignoredPrefixes = process.env.KIT_LOG_IGNORE_PREFIX?.split(',') || [];
+  filteredPrefixes = process.env.KIT_LOG_FILTER_PREFIX?.split(',') || [];
 }
 
 function isLoggerDisabled(prefix: string): boolean {
