@@ -14,6 +14,6 @@ export const termConfigAtom = atom<TermConfig>({
   args: [],
   closeOnExit: true,
   pid: 0,
-});
+} as TermConfig);
 
 // Add other terminal related atoms here

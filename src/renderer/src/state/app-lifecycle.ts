@@ -48,7 +48,7 @@ export const openAtom = atom(
     // Handling closure side effects
     if (g(_open) && a === false) {
       s(resizeCompleteAtom, false);
-      s(lastScriptClosed, g(_script).filePath);
+      s(lastScriptClosed, (g(_script) as any).filePath);
 
       // Resetting various states on close
       s(closedInput, g(_inputAtom));
@@ -79,12 +79,12 @@ export const openAtom = atom(
         args: [],
         closeOnExit: true,
         pid: 0,
-      });
+      } as any);
 
       // Cleanup media streams
       const stream = g(webcamStreamAtom);
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
+      if (stream && 'getTracks' in stream) {
+        (stream as MediaStream).getTracks().forEach((track) => track.stop());
         s(webcamStreamAtom, null);
         const webcamEl = document.getElementById('webcam') as HTMLVideoElement;
         if (webcamEl) {

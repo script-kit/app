@@ -4,7 +4,7 @@
 
 import { Channel, Mode, UI, PROMPT } from '@johnlindquist/kit/core/enum';
 import type { PromptData, Shortcut } from '@johnlindquist/kit/types/core';
-import type { TermConfig } from '@johnlindquist/kit/types/kitapp';
+import type { TermConfig } from '../../../shared/types';
 import { atom, type Getter } from 'jotai';
 import { debounce, isEqual } from 'lodash-es';
 import { closedDiv, noChoice } from '../../../shared/defaults';
@@ -22,6 +22,15 @@ import {
   cachedMainPromptDataAtom,
 } from './app-core';
 import { scriptAtom } from './script-state';
+
+// Declare window.electron
+declare global {
+  interface Window {
+    electron: {
+      ipcRenderer: any;
+    };
+  }
+}
 
 const { ipcRenderer } = window.electron;
 const log = createLogger('prompt-data.ts');
@@ -214,7 +223,7 @@ export const promptDataAtom = atom(
     // channel(Channel.ON_INIT);
 
     ipcRenderer.send(Channel.SET_PROMPT_DATA, {
-      messageId: a.messageId,
+      messageId: (a as any).messageId,
       ui: a.ui,
     });
 

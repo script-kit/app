@@ -2,7 +2,7 @@
 // IMPORTS AND SETUP
 // =================================================================================================
 
-import type { AppDb, UserDb } from '@johnlindquist/kit/core/db';
+import type { UserDb } from '@johnlindquist/kit/core/db';
 import { Channel, Mode, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import type {
   Action,
@@ -17,7 +17,6 @@ import type {
   Shortcut,
 } from '@johnlindquist/kit/types/core';
 import type {
-  AppConfig,
   AppMessage,
   EditorConfig,
   EditorOptions,
@@ -34,13 +33,20 @@ import { unstable_batchedUpdates } from 'react-dom';
 import type { VariableSizeList } from 'react-window';
 
 // Assuming these imports are correct based on the original file structure
-import { findCssVar, toHex } from '../../shared/color-utils';
+import { findCssVar } from '../../shared/color-utils';
 import { DEFAULT_HEIGHT, SPLASH_PATH, closedDiv, noChoice, noScript } from '../../shared/defaults';
 import { AppChannel } from '../../shared/enums';
 import type { ResizeData, ScoredChoice, Survey, TermConfig } from '../../shared/types';
 import { formatShortcut } from './components/formatters';
 import { createLogger } from './log-utils';
-import { arraysEqual, colorUtils, dataUtils, domUtils, themeUtils } from './utils/state-utils';
+import { arraysEqual, colorUtils, dataUtils, domUtils } from './utils/state-utils';
+
+// Add window.pid declaration
+declare global {
+  interface Window {
+    pid?: number;
+  }
+}
 
 const { ipcRenderer } = window.electron;
 const log = createLogger('jotai.ts');
@@ -163,8 +169,8 @@ export const openAtom = atom(
 
       // Cleanup media streams
       const stream = g(webcamStreamAtom);
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
+      if (stream && 'getTracks' in stream) {
+        (stream as MediaStream).getTracks().forEach((track) => track.stop());
         s(webcamStreamAtom, null);
         const webcamEl = document.getElementById('webcam') as HTMLVideoElement;
         if (webcamEl) {
@@ -490,7 +496,7 @@ export const promptDataAtom = atom(
     s(shortcutsAtom, a.shortcuts || []);
     s(actionsConfigAtom, a.actionsConfig || {});
 
-    s(prevChoicesConfig, []);
+    s(prevChoicesConfig, { preload: false });
     s(audioDotAtom, false);
 
     if (a.choicesType === 'async') {
@@ -515,7 +521,7 @@ export const promptDataAtom = atom(
     channel(Channel.ON_INIT);
 
     ipcRenderer.send(Channel.SET_PROMPT_DATA, {
-      messageId: a.messageId,
+      messageId: (a as any).messageId,
       ui: a.ui,
     });
 
@@ -539,7 +545,7 @@ export const uiAtom = atom(
 
     // Manage focus based on UI type
     if ([UI.arg, UI.textarea, UI.hotkey, UI.splash].includes(a)) {
-      s(inputFocusAtom, true);
+      s(inputFocusAtom, Math.random());
     }
 
     // Clear 'Enter' label for certain UIs
@@ -1198,8 +1204,8 @@ const _flagsAtom = atom<FlagsObject>({});
 export const flagsAtom = atom(
   (g) => {
     // Exclude internal properties when reading flags
-    const { sortChoicesKey, order, ...flags } = g(_flagsAtom);
-    return flags;
+    const { sortChoicesKey, order, ...flags } = g(_flagsAtom) as any;
+    return flags as FlagsObject;
   },
   (g, s, a: FlagsObject) => {
     log.info(`👀 flagsAtom: ${Object.keys(a)}`);
@@ -1432,17 +1438,20 @@ export const actionsAtom = atom((g) => {
   const shortcuts = g(shortcutsAtom);
   const disabled = g(flaggedChoiceValueAtom); // Disabled if the actions menu is already open? Seems odd, but matching original logic.
 
-  const flagActions = Object.entries(flags).map(([key, flag]) => ({
-    key: flag?.key || flag?.shortcut,
-    value: key,
-    name: flag?.name,
-    shortcut: formatShortcut(flag?.shortcut),
-    position: flag.bar,
-    arrow: (flag as Action)?.arrow,
-    flag: key,
-    disabled: Boolean(disabled),
-    visible: Boolean(flag?.visible),
-  } as Action));
+  const flagActions = Object.entries(flags).map(([key, flag]) => {
+    const f = flag as any;
+    return {
+      key: f?.key || f?.shortcut,
+      value: key,
+      name: f?.name,
+      shortcut: formatShortcut(f?.shortcut),
+      position: f?.bar,
+      arrow: f?.arrow,
+      flag: key,
+      disabled: Boolean(disabled),
+      visible: Boolean(f?.visible),
+    } as Action;
+  });
 
   const shortcutActions = shortcuts
     .filter((s) => s?.bar)
@@ -1745,7 +1754,7 @@ export const resize = debounce(
 
     const data: ResizeData = {
       id: promptData?.id || 'missing',
-      pid: window.pid,
+      pid: window.pid || 0,
       reason,
       scriptPath: g(_script)?.filePath,
       placeholderOnly,
@@ -1763,13 +1772,14 @@ export const resize = debounce(
       isSplash: g(isSplashAtom),
       hasPreview,
       inputChanged: g(_inputChangedAtom),
-      justOpened: g(justOpenedAtom),
       forceResize,
       forceHeight,
-      forceWidth: promptData?.width, // Using promptData?.width directly as per original structure
-      totalChoices: scoredChoicesLength,
-      isMainScript: g(isMainScriptAtom),
-    };
+      isWindow: g(isWindowAtom),
+      justOpened: g(justOpenedAtom) as any,
+      forceWidth: promptData?.width as any, // Using promptData?.width directly as per original structure
+      totalChoices: scoredChoicesLength as any,
+      isMainScript: g(isMainScriptAtom) as any,
+    } as ResizeData;
 
     s(prevMh, mh);
 
@@ -2062,7 +2072,7 @@ export const editorConfigAtom = atom(
     s(editorConfig, a);
 
     // Destructure to separate options for Monaco from other configurations (like callbacks)
-    const { file, scrollTo, hint: h, onInput, onEscape, onAbandon, onBlur, ignoreBlur, extraLibs, ...options } = a;
+    const { file, scrollTo, hint: h, onInput, onEscape, onAbandon, onBlur, ignoreBlur, extraLibs, ...options } = a as any;
 
     s(editorOptions, {
       ...defaultEditorOptions,
@@ -2282,7 +2292,7 @@ export const audioDotAtom = atom(false);
 type SpeakOptions = {
   text: string;
   name?: string;
-} & SpeechSynthesisUtterance;
+} & Partial<SpeechSynthesisUtterance>;
 
 export const _speechAtom = atom<SpeakOptions | null>(null);
 export const speechAtom = atom(
@@ -2317,7 +2327,7 @@ export const micStreamEnabledAtom = atom(
   },
 );
 
-export const micMediaRecorderAtom = atom<MediaRecorder | null>(null);
+export const micMediaRecorderAtom = atom<any | null>(null);
 export const micStateAtom = atom<'idle' | 'recording' | 'stopped'>('idle');
 
 // --- Webcam ---
@@ -2617,8 +2627,8 @@ export const submitValueAtom = atom(
 
     // 10. Cleanup media streams
     const stream = g(webcamStreamAtom);
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
+    if (stream && 'getTracks' in stream) {
+      (stream as MediaStream).getTracks().forEach((track) => track.stop());
       s(webcamStreamAtom, null);
       const webcamEl = document.getElementById('webcam') as HTMLVideoElement;
       if (webcamEl) {
@@ -2830,7 +2840,7 @@ export const shortcutStringsAtom: Atom<
 
   const shortcutKeys = dataUtils.transformKeys(shortcuts, 'key', 'shortcut');
   const actionKeys = dataUtils.transformKeys(actionsThatArentShortcuts, 'key', 'action');
-  const flagKeys = dataUtils.transformKeys(Object.values(flags), 'shortcut', 'flag');
+  const flagKeys = dataUtils.transformKeys(Object.values(flags) as any[], 'shortcut', 'flag');
 
   return new Set([...shortcutKeys, ...actionKeys, ...flagKeys]);
 });
