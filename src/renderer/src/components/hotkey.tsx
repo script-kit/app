@@ -5,7 +5,7 @@ import React, { type KeyboardEvent, useCallback, useEffect, useRef } from 'react
 
 import { useAtom } from 'jotai';
 import { useFocus } from '../hooks';
-import { choicesConfigAtom, hintAtom, placeholderAtom } from '../jotai';
+import { choicesConfigAtom, hintAtom, placeholderAtom } from "../state";
 
 interface HotkeyProps {
   submit(data: any): void;

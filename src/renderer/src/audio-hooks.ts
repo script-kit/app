@@ -16,7 +16,7 @@ import {
   micStateAtom,
   submitValueAtom,
   uiAtom,
-} from './jotai';
+} from "./state";
 
 let mountPid: number;
 export function useAudioRecorder() {

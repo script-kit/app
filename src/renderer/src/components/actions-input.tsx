@@ -24,7 +24,7 @@ import {
   enterButtonDisabledAtom,
   enterButtonNameAtom,
   flaggedChoiceValueAtom,
-} from '../jotai';
+} from "../state";
 import { EnterButton } from './actionenterbutton';
 import { ActionSeparator } from './actionseparator';
 

@@ -22,7 +22,7 @@ import {
   shortcutsAtom,
   submitValueAtom,
   uiAtom,
-} from '../jotai';
+} from "../state";
 import { createLogger } from '../log-utils';
 
 import { useCallback, useMemo } from 'react';

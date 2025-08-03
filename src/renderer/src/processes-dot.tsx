@@ -1,6 +1,6 @@
 import { useAtomValue } from 'jotai';
 import React, { useCallback } from 'react';
-import { processesAtom, runProcessesAtom } from './jotai';
+import { processesAtom, runProcessesAtom } from "./state";
 
 export default function ProcessesDot() {
   const processes = useAtomValue(processesAtom);

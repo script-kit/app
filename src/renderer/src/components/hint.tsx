@@ -1,7 +1,7 @@
 import parse from 'html-react-parser';
 import { useAtom } from 'jotai';
 import React from 'react';
-import { hintAtom } from '../jotai';
+import { hintAtom } from "../state";
 
 export default function Hint() {
   const [hint] = useAtom(hintAtom);

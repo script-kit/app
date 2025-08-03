@@ -1,5 +1,5 @@
 import { atomEffect } from 'jotai-effect';
-import { logLinesAtom, logHTMLAtom, convertAtom } from '../jotai';
+import { logLinesAtom, logHTMLAtom, convertAtom } from "../state";
 
 // Convert log lines to HTML once per change in logLinesAtom.
 export const logFormatterEffect = atomEffect((get, set) => {

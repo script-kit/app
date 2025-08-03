@@ -12,7 +12,7 @@ import {
   sendActionAtom,
   sendShortcutAtom,
   uiAtom,
-} from '../jotai';
+} from "../state";
 import { type Action, bg, textContrast } from './actions';
 import { IconSwapper } from './iconswapper';
 import { createLogger } from '../log-utils';

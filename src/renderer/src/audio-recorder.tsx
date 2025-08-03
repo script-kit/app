@@ -2,7 +2,7 @@ import { UI } from '@johnlindquist/kit/core/enum';
 
 import { useAtomValue } from 'jotai';
 import { useAudioRecorder } from './audio-hooks';
-import { micStateAtom, placeholderAtom, previewEnabledAtom } from './jotai';
+import { micStateAtom, placeholderAtom, previewEnabledAtom } from "./state";
 
 export default function AudioRecorder() {
   const placeholder = useAtomValue(placeholderAtom);

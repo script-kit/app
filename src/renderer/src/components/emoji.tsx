@@ -2,7 +2,7 @@ import Picker, { type EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-rea
 import { useAtomValue, useSetAtom } from 'jotai';
 /* eslint-disable react/jsx-no-duplicate-props */
 import React, { useEffect } from 'react';
-import { darkAtom, resizingAtom, submitValueAtom } from '../jotai';
+import { darkAtom, resizingAtom, submitValueAtom } from "../state";
 
 const Emoji = () => {
   const submit = useSetAtom(submitValueAtom);

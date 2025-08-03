@@ -1,5 +1,5 @@
 import { atomEffect } from 'jotai-effect';
-import { micStreamEnabledAtom, channelAtom } from '../jotai';
+import { micStreamEnabledAtom, channelAtom } from "../state";
 import { Channel } from '@johnlindquist/kit/core/enum';
 
 export const micStreamEffect = atomEffect((get) => {

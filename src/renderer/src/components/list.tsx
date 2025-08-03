@@ -14,7 +14,7 @@ import {
   promptDataAtom,
   requiresScrollAtom,
   scoredChoicesAtom,
-} from '../jotai';
+} from "../state";
 import ChoiceButton from './button';
 import { createLogger } from '../log-utils';
 import { useHotkeys } from 'react-hotkeys-hook';

@@ -10,7 +10,7 @@ import {
   promptDataAtom,
   scriptAtom,
   submittedAtom,
-} from '../jotai';
+} from "../state";
 import { createLogger } from '../log-utils';
 
 const log = createLogger('useFocus');

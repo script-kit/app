@@ -5,7 +5,7 @@ import { UI } from '@johnlindquist/kit/core/enum';
 /* eslint-disable react/jsx-props-no-spreading */
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import React, { useCallback } from 'react';
-import { appConfigAtom, enterPressedAtom, focusedFlagValueAtom, sendShortcutAtom, uiAtom } from '../jotai';
+import { appConfigAtom, enterPressedAtom, focusedFlagValueAtom, sendShortcutAtom, uiAtom } from "../state";
 
 import { type Action, bg, textContrast } from './actions';
 import { IconSwapper } from './iconswapper';

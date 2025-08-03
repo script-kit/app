@@ -21,7 +21,7 @@ import {
   termConfigAtom,
   termFontAtom,
   termOutputAtom,
-} from './jotai';
+} from "./state";
 
 import { AppChannel } from '../../shared/enums';
 import XTerm from './components/xterm';

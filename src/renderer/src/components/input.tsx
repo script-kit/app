@@ -52,7 +52,7 @@ import {
   submitValueAtom,
   submittedAtom,
   userAtom,
-} from '../jotai';
+} from "../state";
 import { ActionButton } from './actionbutton';
 import { EnterButton } from './actionenterbutton';
 import { OptionsButton } from './actionoptionsbutton';

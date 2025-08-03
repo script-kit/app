@@ -4,7 +4,7 @@ import { useAtom } from 'jotai';
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
 import React from 'react';
-import { appConfigAtom } from '../jotai';
+import { appConfigAtom } from "../state";
 
 export function ActionSeparator() {
   const [app] = useAtom(appConfigAtom);

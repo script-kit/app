@@ -3,7 +3,7 @@ import { useAtom, useAtomValue } from 'jotai';
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import React, { useCallback } from 'react';
-import { flaggedChoiceValueAtom, inputHeightAtom, selectedAtom } from '../jotai';
+import { flaggedChoiceValueAtom, inputHeightAtom, selectedAtom } from "../state";
 import { IconSwapper } from './iconswapper';
 
 export default function Selected() {
