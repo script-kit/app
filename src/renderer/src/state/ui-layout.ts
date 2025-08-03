@@ -9,6 +9,6 @@ export const resizeCompleteAtom = atom(false);
 export const promptBoundsAtom = atom({});
 export const promptBoundsDefault = {};
 export const requiresScrollAtom = atom(-1);
-export const scrollToIndexAtom = atom((g: any) => (index: number) => {});
+export const scrollToIndexAtom = atom((_g: any) => (_index: number) => {});
 
 // Add other UI layout related atoms here

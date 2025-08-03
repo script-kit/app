@@ -11,6 +11,7 @@ export const termConfigAtom = atom<TermConfig>({
   command: '',
   cwd: '',
   env: {},
+  shell: undefined,
   args: [],
   closeOnExit: true,
   pid: 0,

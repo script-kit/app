@@ -84,7 +84,7 @@ export const openAtom = atom(
       // Cleanup media streams
       const stream = g(webcamStreamAtom);
       if (stream && 'getTracks' in stream) {
-        (stream as MediaStream).getTracks().forEach((track) => track.stop());
+        (stream as MediaStream).getTracks().forEach((track: MediaStreamTrack) => track.stop());
         s(webcamStreamAtom, null);
         const webcamEl = document.getElementById('webcam') as HTMLVideoElement;
         if (webcamEl) {

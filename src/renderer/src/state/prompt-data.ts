@@ -2,14 +2,12 @@
 // Core data driving the prompt UI and behavior (PromptData and related atoms).
 // =================================================================================================
 
-import { Channel, Mode, UI, PROMPT } from '@johnlindquist/kit/core/enum';
+import { Channel, Mode, UI } from '@johnlindquist/kit/core/enum';
 import type { PromptData, Shortcut } from '@johnlindquist/kit/types/core';
 import type { TermConfig } from '../../../shared/types';
-import { atom, type Getter } from 'jotai';
-import { debounce, isEqual } from 'lodash-es';
-import { closedDiv, noChoice } from '../../../shared/defaults';
+import { atom } from 'jotai';
+import { isEqual } from 'lodash-es';
 import { createLogger } from '../log-utils';
-import { domUtils } from '../utils/state-utils';
 import { 
   pidAtom, 
   kitConfigAtom, 
@@ -23,14 +21,6 @@ import {
 } from './app-core';
 import { scriptAtom } from './script-state';
 
-// Declare window.electron
-declare global {
-  interface Window {
-    electron: {
-      ipcRenderer: any;
-    };
-  }
-}
 
 const { ipcRenderer } = window.electron;
 const log = createLogger('prompt-data.ts');
@@ -112,16 +102,16 @@ export const promptDataAtom = atom(
     // Terminal configuration
     if (a.ui === UI.term) {
       const b: any = a; // Using any for convenience as input/cwd/etc are on the prompt data
-      const config: TermConfig = {
-        promptId: a.id,
-        command: b?.input || '',
-        cwd: b?.cwd || '',
-        env: b?.env || {},
-        shell: b?.shell,
-        args: b?.args || [],
-        closeOnExit: typeof b?.closeOnExit !== 'undefined' ? b.closeOnExit : true,
-        pid: g(pidAtom),
-      };
+      // const config: TermConfig = {
+      //   promptId: a.id,
+      //   command: b?.input || '',
+      //   cwd: b?.cwd || '',
+      //   env: b?.env || {},
+      //   shell: b?.shell,
+      //   args: b?.args || [],
+      //   closeOnExit: typeof b?.closeOnExit !== 'undefined' ? b.closeOnExit : true,
+      //   pid: g(pidAtom),
+      // };
       // s(termConfigAtom, config);
     }
 
@@ -161,8 +151,8 @@ export const promptDataAtom = atom(
 
     // Description and Name
     const script = g(scriptAtom);
-    const promptDescription = a.description || (a.name ? '' : script?.description || '');
-    const promptName = a.name || script?.name || '';
+    // const promptDescription = a.description || (a.name ? '' : script?.description || '');
+    // const promptName = a.name || script?.name || '';
     // s(descriptionAtom, promptDescription || promptName);
     // s(nameAtom, promptDescription ? promptName : promptDescription);
 
@@ -242,7 +232,7 @@ export const modeAtom = atom((g) => g(promptData)?.mode || Mode.FILTER);
 const _ui = atom<UI>(UI.arg);
 export const uiAtom = atom(
   (g) => g(_ui),
-  (g, s, a: UI) => {
+  (_g, s, a: UI) => {
     s(_ui, a);
 
     // Manage focus based on UI type
@@ -284,7 +274,7 @@ export const uiAtom = atom(
 const hint = atom('');
 export const hintAtom = atom(
   (g) => g(hint),
-  (g, s, a: string) => {
+  (_g, s, a: string) => {
     const aHint = typeof a !== 'string' ? '' : a;
     // const getConvert = g(convertAtom);
     // Convert ANSI codes to HTML for the hint
@@ -293,7 +283,7 @@ export const hintAtom = atom(
   },
 );
 
-let placeholderTimeoutId: NodeJS.Timeout;
+let placeholderTimeoutId: NodeJS.Timeout | undefined;
 const placeholder = atom('');
 export const placeholderAtom = atom(
   (g) => g(placeholder),

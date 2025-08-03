@@ -41,12 +41,6 @@ import { formatShortcut } from './components/formatters';
 import { createLogger } from './log-utils';
 import { arraysEqual, colorUtils, dataUtils, domUtils } from './utils/state-utils';
 
-// Add window.pid declaration
-declare global {
-  interface Window {
-    pid?: number;
-  }
-}
 
 const { ipcRenderer } = window.electron;
 const log = createLogger('jotai.ts');
@@ -170,7 +164,7 @@ export const openAtom = atom(
       // Cleanup media streams
       const stream = g(webcamStreamAtom);
       if (stream && 'getTracks' in stream) {
-        (stream as MediaStream).getTracks().forEach((track) => track.stop());
+        (stream as MediaStream).getTracks().forEach((track: MediaStreamTrack) => track.stop());
         s(webcamStreamAtom, null);
         const webcamEl = document.getElementById('webcam') as HTMLVideoElement;
         if (webcamEl) {
@@ -1715,7 +1709,7 @@ export const resize = debounce(
     }
 
     // Handle forced dimensions (e.g., when actions menu is open)
-    const promptBounds = g(promptBoundsAtom);
+    // const promptBounds = g(promptBoundsAtom);
     // Note: Original logic for forceWidth seemed slightly ambiguous, simplifying based on apparent intent.
     // const samePrompt = promptBounds?.id === promptData?.id;
     // const forceWidth = samePrompt ? promptBounds?.width : promptData?.width;
@@ -2188,7 +2182,7 @@ type MessageTypeWithIndex = MessageType & { index: number };
 const _chatMessagesAtom = atom<Partial<MessageType>[]>([]);
 export const chatMessagesAtom = atom(
   (g) => g(_chatMessagesAtom),
-  (g, s, a: Partial<MessageTypeWithIndex>[]) => {
+  (_g, s, a: Partial<MessageTypeWithIndex>[]) => {
     // Ensure indices are set
     for (let i = 0; i < a.length; i++) {
       a[i].index = i;
@@ -2628,7 +2622,7 @@ export const submitValueAtom = atom(
     // 10. Cleanup media streams
     const stream = g(webcamStreamAtom);
     if (stream && 'getTracks' in stream) {
-      (stream as MediaStream).getTracks().forEach((track) => track.stop());
+      (stream as MediaStream).getTracks().forEach((track: MediaStreamTrack) => track.stop());
       s(webcamStreamAtom, null);
       const webcamEl = document.getElementById('webcam') as HTMLVideoElement;
       if (webcamEl) {
@@ -2825,21 +2819,16 @@ export const enterButtonDisabledAtom = atom<boolean>((g) => {
   return focusedChoice?.name === noChoice.name;
 });
 
-export const shortcutStringsAtom: Atom<
-  Set<{
-    type: 'shortcut' | 'action' | 'flag';
-    value: string;
-  }>
-> = atom((g) => {
+export const shortcutStringsAtom = atom((g) => {
   const shortcuts = g(shortcutsAtom);
   const actions = g(actionsAtom);
   const flags = g(flagsAtom);
 
   // Filter out actions that are already defined as shortcuts to avoid duplication
-  const actionsThatArentShortcuts = actions.filter((a) => !shortcuts.find((s) => s.key === a.key));
+  const actionsThatArentShortcuts = actions.filter((a: any) => !shortcuts.find((s) => s.key === a.key));
 
   const shortcutKeys = dataUtils.transformKeys(shortcuts, 'key', 'shortcut');
-  const actionKeys = dataUtils.transformKeys(actionsThatArentShortcuts, 'key', 'action');
+  const actionKeys = dataUtils.transformKeys(actionsThatArentShortcuts as any[], 'key', 'action');
   const flagKeys = dataUtils.transformKeys(Object.values(flags) as any[], 'shortcut', 'flag');
 
   return new Set([...shortcutKeys, ...actionKeys, ...flagKeys]);

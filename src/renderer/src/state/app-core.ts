@@ -13,12 +13,6 @@ import type {
 import { atom } from 'jotai';
 import type { ScoredChoice } from '../../../shared/types';
 
-// Add window.pid declaration
-declare global {
-  interface Window {
-    pid?: number;
-  }
-}
 
 // --- Configuration and Environment ---
 

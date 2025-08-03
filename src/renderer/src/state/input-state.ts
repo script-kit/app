@@ -2,7 +2,7 @@
 // Manages user input, modifiers, and focus state.
 // =================================================================================================
 
-import { Channel, Mode, UI } from '@johnlindquist/kit/core/enum';
+import { Mode, UI } from '@johnlindquist/kit/core/enum';
 import { atom } from 'jotai';
 import { createLogger } from '../log-utils';
 import { submittedAtom, loading, loadingAtom } from './app-core';
