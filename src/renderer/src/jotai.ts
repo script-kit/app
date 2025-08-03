@@ -1,3 +1,5 @@
+/// <reference path="./env.d.ts" />
+
 // =================================================================================================
 // IMPORTS AND SETUP
 // =================================================================================================
@@ -25,7 +27,7 @@ import type {
 import Convert from 'ansi-to-html';
 import DOMPurify from 'dompurify';
 import type { Rectangle } from 'electron';
-import { type Atom, type Getter, type Setter, atom } from 'jotai';
+import { type Getter, type Setter, atom } from 'jotai';
 import { drop as _drop, debounce, isEqual, throttle } from 'lodash-es';
 import type { editor } from 'monaco-editor';
 import type { MessageType } from 'react-chat-elements';
@@ -164,7 +166,7 @@ export const openAtom = atom(
       // Cleanup media streams
       const stream = g(webcamStreamAtom);
       if (stream && 'getTracks' in stream) {
-        (stream as MediaStream).getTracks().forEach((track: MediaStreamTrack) => track.stop());
+        (stream as MediaStream).getTracks().forEach((track) => track.stop());
         s(webcamStreamAtom, null);
         const webcamEl = document.getElementById('webcam') as HTMLVideoElement;
         if (webcamEl) {
@@ -1703,7 +1705,7 @@ export const resize = debounce(
     }
 
     // Adjust height if log is visible
-    if (g(logHTMLAtom)?.length > 0 && g(scriptAtom)?.log !== 'false') {
+    if (g(logHTMLAtom)?.length > 0 && g(scriptAtom)?.log !== false) {
       const logHeight = document.getElementById('log')?.offsetHeight;
       mh += logHeight || 0;
     }
@@ -2622,7 +2624,7 @@ export const submitValueAtom = atom(
     // 10. Cleanup media streams
     const stream = g(webcamStreamAtom);
     if (stream && 'getTracks' in stream) {
-      (stream as MediaStream).getTracks().forEach((track: MediaStreamTrack) => track.stop());
+      (stream as MediaStream).getTracks().forEach((track) => track.stop());
       s(webcamStreamAtom, null);
       const webcamEl = document.getElementById('webcam') as HTMLVideoElement;
       if (webcamEl) {
@@ -2924,7 +2926,7 @@ export const shortcodesAtom = atom<string[]>([]);
 
 // These seem related to specific features (mini shortcuts UI) that might be deprecated or experimental
 export const miniShortcutsHoveredAtom = atom(false);
-export const miniShortcutsVisibleAtom = atom((g) => {
+export const miniShortcutsVisibleAtom = atom((_g) => {
   // This feature was explicitly disabled in the original code (`return false;`)
   return false;
   /*
