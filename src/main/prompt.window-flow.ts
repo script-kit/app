@@ -6,7 +6,8 @@ import type { KitPrompt } from './prompt';
 import { processWindowCoordinator, WindowOperation } from './process-window-coordinator';
 import { ensureIdleProcess } from './process';
 import { kitState } from './state';
-import { getCurrentScreenPromptCache } from './prompt.screen-utils';
+import { getCurrentScreenPromptCache, getCurrentScreenFromMouse } from './prompt.screen-utils';
+import shims from './shims';
 
 export function initShowPromptFlow(prompt: KitPrompt) {
     prompt.logInfo(`${prompt.pid}:🎪 initShowPrompt: ${prompt.id} ${prompt.scriptPath}`);
@@ -73,7 +74,6 @@ export function showPromptFlow(prompt: KitPrompt) {
 }
 
 export function moveToMouseScreenFlow(prompt: KitPrompt) {
-    const { getCurrentScreenFromMouse } = require('./prompt.screen-utils');
     if (prompt?.window?.isDestroyed()) {
         prompt.logWarn('moveToMouseScreen. Window already destroyed', prompt?.id);
         return;
@@ -116,7 +116,6 @@ export function blurPromptFlow(prompt: KitPrompt) {
     if (prompt.window.isDestroyed()) return;
     if (prompt.window) {
         if (kitState.isMac) {
-            const shims = require('./shims').default;
             shims['@johnlindquist/mac-panel-window'].blurInstant(prompt.window);
         }
         prompt.window.blur();
