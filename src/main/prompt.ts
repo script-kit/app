@@ -77,6 +77,7 @@ import {
   pointOnMouseScreen as utilPointOnMouseScreen,
 } from './prompt.screen-utils';
 import { isDevToolsShortcut, computeShouldCloseOnInitialEscape } from './prompt.focus-utils';
+import { isCloseCombo } from './prompt.input-utils';
 
 import { promptLog as log, themeLog } from './logs';
 import { handleBlurVisibility } from './prompt.visibility-utils';
@@ -1377,8 +1378,8 @@ export class KitPrompt {
     this.window.on('focus', () => {
       this.logInfo('👓 Focus bounds:');
 
-    // Use visibility controller to handle focus
-    handleBlurVisibility(this);
+      // Use visibility controller to handle focus
+      handleBlurVisibility(this);
 
       if (!kitState.isLinux) {
         this.logVerbose('👓 Registering emoji shortcut');
@@ -3070,7 +3071,7 @@ export class KitPrompt {
 
     const shouldCloseOnInitialEscape = this.shouldClosePromptOnInitialEscape(isEscape);
     // this.logInfo(`${this.pid}: shouldCloseOnInitialEscape: ${shouldCloseOnInitialEscape}`);
-    if ((isW && (kitState.isMac ? input.meta : input.control)) || shouldCloseOnInitialEscape) {
+    if (isCloseCombo(input as any, kitState.isMac) || shouldCloseOnInitialEscape) {
       this.logInfo(`${this.pid}: Closing prompt window`);
       if (isW) {
         this.logInfo(`Closing prompt window with ${kitState.isMac ? '⌘' : '⌃'}+w`);
