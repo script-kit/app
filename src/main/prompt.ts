@@ -79,7 +79,7 @@ import {
 import { isDevToolsShortcut, computeShouldCloseOnInitialEscape } from './prompt.focus-utils';
 
 import { promptLog as log, themeLog } from './logs';
-import { visibilityController } from './visibility';
+import { handleBlurVisibility } from './prompt.visibility-utils';
 
 // TODO: Hack context menu to avoid "object destroyed" errors
 contextMenu({
@@ -954,7 +954,7 @@ export class KitPrompt {
     });
 
     // Use visibility controller to handle blur
-    visibilityController.handleBlur(this);
+    handleBlurVisibility(this);
 
     const isMainScript = getMainScriptPath() === this.scriptPath;
     const isSplashScreen = this.ui === UI.splash;
@@ -1377,8 +1377,8 @@ export class KitPrompt {
     this.window.on('focus', () => {
       this.logInfo('👓 Focus bounds:');
 
-      // Use visibility controller to handle focus
-      visibilityController.handleFocus(this);
+    // Use visibility controller to handle focus
+    handleBlurVisibility(this);
 
       if (!kitState.isLinux) {
         this.logVerbose('👓 Registering emoji shortcut');
@@ -1544,7 +1544,7 @@ export class KitPrompt {
     // Ensure visibility controller knows we're about to be focused
     // This prevents the state from being out of sync when moving to a new display
     if (this.window && !this.window.isDestroyed()) {
-      visibilityController.handleFocus(this);
+      handleBlurVisibility(this);
     }
 
     this.focusPrompt();
