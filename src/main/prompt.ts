@@ -66,6 +66,7 @@ import { makeKeyPanel, makeWindow, prepForClose, setAppearance } from './window/
 import { clearPromptCacheFor } from './prompt.cache';
 import { calculateTargetDimensions, calculateTargetPosition } from './prompt.resize-utils';
 import { adjustBoundsToAvoidOverlap, getTitleBarHeight, ensureMinWindowHeight } from './prompt.bounds-utils';
+import { buildLongRunningNotificationOptions, buildProcessConnectionLostOptions, buildProcessDebugInfo } from './prompt.notifications';
 import {
   getAllScreens as utilGetAllScreens,
   getCurrentScreenFromMouse as utilGetCurrentScreenFromMouse,
@@ -626,58 +627,20 @@ export class KitPrompt {
 
     // Try to provide context about why the script might be running long
     let contextHint = '';
-    if (this.ui === UI.term) {
-      contextHint = ' It appears to be running a terminal command.';
-    } else if (this.ui === UI.editor) {
-      contextHint = ' It appears to be in an editor session.';
-    } else if (this.promptData?.input?.includes('http')) {
-      contextHint = ' It might be making network requests.';
-    } else if (this.promptData?.input?.includes('file') || this.promptData?.input?.includes('path')) {
-      contextHint = ' It might be processing files.';
-    } else if (this.ui === UI.arg && (this.promptData as any)?.choices?.length === 0) {
-      contextHint = ' It might be waiting for user input.';
-    }
+    if (this.ui === UI.term) contextHint = ' It appears to be running a terminal command.';
+    else if (this.ui === UI.editor) contextHint = ' It appears to be in an editor session.';
+    else if (this.promptData?.input?.includes('http')) contextHint = ' It might be making network requests.';
+    else if (this.promptData?.input?.includes('file') || this.promptData?.input?.includes('path')) contextHint = ' It might be processing files.';
+    else if (this.ui === UI.arg && (this.promptData as any)?.choices?.length === 0) contextHint = ' It might be waiting for user input.';
 
     this.logInfo(`Showing long-running notification for ${scriptName} (running for ${runningTimeSeconds}s)`);
 
-    const notificationOptions: Electron.NotificationConstructorOptions = {
-      title: 'Long-Running Script',
-      body: `"${scriptName}" has been running for ${runningTimeSeconds} seconds.${contextHint} Would you like to terminate it or let it continue?`,
-      actions: [
-        {
-          type: 'button',
-          text: 'Terminate Script',
-        },
-        {
-          type: 'button',
-          text: 'Keep Running',
-        },
-        {
-          type: 'button',
-          text: "Don't Ask Again",
-        },
-      ],
-      timeoutType: 'never',
-      urgency: 'normal',
-    };
-
-    // Add Windows-specific toast XML for better formatting
-    if (process.platform === 'win32') {
-      notificationOptions.toastXml = `
-<toast>
-  <visual>
-    <binding template="ToastGeneric">
-      <text>Long-Running Script</text>
-      <text>"${scriptName}" has been running for ${runningTimeSeconds} seconds.${contextHint} Would you like to terminate it or let it continue?</text>
-    </binding>
-  </visual>
-  <actions>
-    <action content="Terminate Script" arguments="action=terminate" />
-    <action content="Keep Running" arguments="action=keep" />
-    <action content="Don't Ask Again" arguments="action=never" />
-  </actions>
-</toast>`;
-    }
+    const notificationOptions = buildLongRunningNotificationOptions(
+      scriptName,
+      runningTimeSeconds,
+      contextHint,
+      process.platform === 'win32',
+    );
 
     const notification = new Notification(notificationOptions);
 
@@ -788,44 +751,11 @@ export class KitPrompt {
 
     this.logInfo(`Showing process connection lost notification for ${this.scriptName} (PID: ${this.pid})`);
 
-    const connectionLostOptions: Electron.NotificationConstructorOptions = {
-      title: 'Script Process Connection Lost',
-      body: `"${this.scriptName}" (PID: ${this.pid}) is no longer responding. The prompt window is still open but disconnected from the process.`,
-      actions: [
-        {
-          type: 'button',
-          text: 'Close Prompt',
-        },
-        {
-          type: 'button',
-          text: 'Keep Open',
-        },
-        {
-          type: 'button',
-          text: 'Show Debug Info',
-        },
-      ],
-      timeoutType: 'never',
-      urgency: 'normal',
-    };
-
-    // Add Windows-specific toast XML for better formatting
-    if (process.platform === 'win32') {
-      connectionLostOptions.toastXml = `
-<toast>
-  <visual>
-    <binding template="ToastGeneric">
-      <text>Script Process Connection Lost</text>
-      <text>"${this.scriptName}" (PID: ${this.pid}) is no longer responding. The prompt window is still open but disconnected from the process.</text>
-    </binding>
-  </visual>
-  <actions>
-    <action content="Close Prompt" arguments="action=close" />
-    <action content="Keep Open" arguments="action=keep" />
-    <action content="Show Debug Info" arguments="action=debug" />
-  </actions>
-</toast>`;
-    }
+    const connectionLostOptions = buildProcessConnectionLostOptions(
+      this.scriptName,
+      this.pid,
+      process.platform === 'win32',
+    );
 
     const notification = new Notification(connectionLostOptions);
 
@@ -855,7 +785,7 @@ export class KitPrompt {
    * Show debug information about the process connection
    */
   private showProcessDebugInfo = () => {
-    const debugInfo = {
+    const debugInfo = buildProcessDebugInfo({
       promptId: this.id,
       windowId: this.window?.id,
       pid: this.pid,
@@ -863,12 +793,12 @@ export class KitPrompt {
       scriptName: this.scriptName,
       boundToProcess: this.boundToProcess,
       processConnectionLost: this.processConnectionLost,
-      lastProcessCheckTime: new Date(this.lastProcessCheckTime).toISOString(),
+      lastProcessCheckTimeIso: new Date(this.lastProcessCheckTime).toISOString(),
       timeSinceLastCheck: Date.now() - this.lastProcessCheckTime,
       isVisible: this.isVisible(),
       isFocused: this.isFocused(),
       isDestroyed: this.isDestroyed(),
-    };
+    });
 
     this.logInfo('Process Debug Info:', debugInfo);
 
