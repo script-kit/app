@@ -71,7 +71,8 @@ import { shouldMonitorProcess, getProcessCheckInterval, getLongRunningThresholdM
 import { startProcessMonitoring as monitorStart, stopProcessMonitoring as monitorStop, listenForProcessExit as monitorListen, checkProcessAlive as monitorCheck } from './prompt.process-monitor';
 import { setupDevtoolsHandlers, setupDomAndFinishLoadHandlers } from './prompt.init-utils';
 import { setupResizeAndMoveListeners } from './prompt.resize-listeners';
-import { buildLongRunningNotificationOptions, buildProcessConnectionLostOptions, buildProcessDebugInfo } from './prompt.notifications';
+import { buildProcessConnectionLostOptions, buildProcessDebugInfo } from './prompt.notifications';
+import { startLongRunningMonitorFlow, clearLongRunningMonitorFlow, showLongRunningNotificationFlow, terminateLongRunningScriptFlow } from './prompt.long-running';
 import {
   getAllScreens as utilGetAllScreens,
   getCurrentScreenFromMouse as utilGetCurrentScreenFromMouse,
@@ -587,117 +588,19 @@ export class KitPrompt {
       return;
     }
 
-    // Only set start time if it hasn't been set yet (to preserve original start time)
-    if (!this.scriptStartTime) {
-      this.scriptStartTime = Date.now();
-    }
-    this.hasShownLongRunningNotification = false;
-
-    this.longRunningTimer = setTimeout(() => {
-      if (!(this.hasShownLongRunningNotification || this.window?.isDestroyed())) {
-        this.showLongRunningNotification();
-        this.hasShownLongRunningNotification = true;
-      }
-    }, this.longRunningThresholdMs);
-
-    this.logInfo(`Started long-running monitor for ${this.scriptName} (${this.longRunningThresholdMs}ms)`);
+    startLongRunningMonitorFlow(this as any);
   };
 
   private clearLongRunningMonitor = () => {
-    if (this.longRunningTimer) {
-      clearTimeout(this.longRunningTimer);
-      this.longRunningTimer = undefined;
-      this.logInfo(`Cleared long-running monitor for ${this.scriptName}`);
-    }
+    clearLongRunningMonitorFlow(this as any);
   };
 
   private showLongRunningNotification = () => {
-    if (!this.scriptStartTime) {
-      return;
-    }
-
-    // Don't show notifications for idle prompts or invalid scripts
-    if (!this.scriptName || this.scriptName === 'script-not-set' || !this.scriptPath || this.scriptPath === '') {
-      this.logInfo(`Skipping long-running notification for idle prompt (PID: ${this.pid})`);
-      return;
-    }
-
-    const runningTimeMs = Date.now() - this.scriptStartTime;
-    const runningTimeSeconds = Math.floor(runningTimeMs / 1000);
-    const scriptName = this.scriptName || 'Unknown Script';
-
-    // Try to provide context about why the script might be running long
-    let contextHint = '';
-    if (this.ui === UI.term) contextHint = ' It appears to be running a terminal command.';
-    else if (this.ui === UI.editor) contextHint = ' It appears to be in an editor session.';
-    else if (this.promptData?.input?.includes('http')) contextHint = ' It might be making network requests.';
-    else if (this.promptData?.input?.includes('file') || this.promptData?.input?.includes('path')) contextHint = ' It might be processing files.';
-    else if (this.ui === UI.arg && (this.promptData as any)?.choices?.length === 0) contextHint = ' It might be waiting for user input.';
-
-    this.logInfo(`Showing long-running notification for ${scriptName} (running for ${runningTimeSeconds}s)`);
-
-    const notificationOptions = buildLongRunningNotificationOptions(
-      scriptName,
-      runningTimeSeconds,
-      contextHint,
-      process.platform === 'win32',
-    );
-
-    const notification = new Notification(notificationOptions);
-
-    notification.on('action', (_event, index) => {
-      if (index === 0) {
-        // Terminate Script
-        this.logInfo(`User chose to terminate long-running script: ${scriptName}`);
-        this.terminateLongRunningScript();
-      } else if (index === 1) {
-        // Keep Running
-        this.logInfo(`User chose to keep running script: ${scriptName}`);
-        this.hasShownLongRunningNotification = true;
-      } else if (index === 2) {
-        // Don't Ask Again - could implement a whitelist in the future
-        this.logInfo(`User chose "don't ask again" for script: ${scriptName}`);
-        this.hasShownLongRunningNotification = true;
-        // TODO: Implement script whitelist functionality
-      }
-    });
-
-    notification.on('click', () => {
-      // Focus the prompt when notification is clicked
-      this.logInfo(`Long-running notification clicked for: ${scriptName}`);
-      this.focusPrompt();
-    });
-
-    notification.on('close', () => {
-      // Treat close as "keep running"
-      this.logInfo(`Long-running notification closed for: ${scriptName}`);
-      this.hasShownLongRunningNotification = true;
-    });
-
-    notification.show();
+    showLongRunningNotificationFlow(this as any);
   };
 
   private terminateLongRunningScript = () => {
-    this.logInfo(`Terminating long-running script: ${this.scriptName} (PID: ${this.pid})`);
-
-    // Clear the monitor
-    this.clearLongRunningMonitor();
-
-    // Hide the prompt
-    this.hideInstant();
-
-    // Remove and kill the process
-    processes.removeByPid(this.pid, 'long-running script terminated by user');
-    emitter.emit(KitEvent.KillProcess, this.pid);
-
-    // Show a brief confirmation
-    const confirmNotification = new Notification({
-      title: 'Script Terminated',
-      body: `"${this.scriptName}" has been terminated.`,
-      timeoutType: 'default',
-    });
-
-    confirmNotification.show();
+    terminateLongRunningScriptFlow(this as any);
   };
 
   boundToProcess = false;
