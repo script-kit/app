@@ -118,7 +118,7 @@ export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
 
     prompt.window.webContents?.on('render-process-gone', (event, details) => {
         try { processes.removeByPid(prompt.pid, 'prompt exit cleanup'); } catch { }
-        prompt.sendToPrompt = () => { } as any;
+        prompt.sendToPrompt = (() => { }) as any;
         (prompt.window.webContents as any).send = () => { };
         prompt.logError('🫣 Render process gone...');
         prompt.logError({ event, details });
