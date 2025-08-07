@@ -66,6 +66,7 @@ import { makeKeyPanel, makeWindow, prepForClose, setAppearance } from './window/
 import { clearPromptCacheFor } from './prompt.cache';
 import { calculateTargetDimensions, calculateTargetPosition } from './prompt.resize-utils';
 import { adjustBoundsToAvoidOverlap, getTitleBarHeight, ensureMinWindowHeight } from './prompt.bounds-utils';
+import { shouldMonitorProcess, getProcessCheckInterval, getLongRunningThresholdMs } from './prompt.process-utils';
 import { buildLongRunningNotificationOptions, buildProcessConnectionLostOptions, buildProcessDebugInfo } from './prompt.notifications';
 import {
   getAllScreens as utilGetAllScreens,
@@ -560,13 +561,7 @@ export class KitPrompt {
     this.clearLongRunningMonitor();
 
     // Check for custom threshold from environment variables
-    const customThreshold = (kitState?.kenvEnv as any)?.KIT_LONG_RUNNING_THRESHOLD;
-    if (customThreshold) {
-      const thresholdMs = Number.parseInt(customThreshold, 10) * 1000; // Convert seconds to ms
-      if (!Number.isNaN(thresholdMs) && thresholdMs > 0) {
-        this.longRunningThresholdMs = thresholdMs;
-      }
-    }
+    this.longRunningThresholdMs = getLongRunningThresholdMs(kitState?.kenvEnv as any, this.longRunningThresholdMs);
 
     // Skip monitoring for main script or if disabled
     if (
@@ -815,25 +810,13 @@ export class KitPrompt {
     }
 
     // Check if monitoring is disabled via environment variable
-    if ((kitState?.kenvEnv as any)?.KIT_DISABLE_PROCESS_MONITOR === 'true') {
-      this.logInfo('Process monitoring disabled via KIT_DISABLE_PROCESS_MONITOR');
-      return;
-    }
-
-    // Skip monitoring for idle prompts or prompts without valid scripts
-    if (!this.scriptPath || this.scriptPath === '' || !this.scriptName || this.scriptName === 'script-not-set') {
-      this.logInfo('Skipping process monitoring for idle prompt (no valid script)');
+    if (!shouldMonitorProcess({ scriptPath: this.scriptPath, scriptName: this.scriptName, kenvEnv: kitState?.kenvEnv as any })) {
+      this.logInfo('Skipping process monitoring (disabled or no valid script)');
       return;
     }
 
     // Get custom check interval if set
-    const customInterval = (kitState?.kenvEnv as any)?.KIT_PROCESS_MONITOR_INTERVAL;
-    if (customInterval) {
-      const intervalMs = Number.parseInt(customInterval, 10) * 1000;
-      if (!Number.isNaN(intervalMs) && intervalMs > 0) {
-        this.processCheckInterval = intervalMs;
-      }
-    }
+    this.processCheckInterval = getProcessCheckInterval(kitState?.kenvEnv as any, this.processCheckInterval);
 
     this.logInfo(`Starting process monitoring for PID ${this.pid} (checking every ${this.processCheckInterval}ms)`);
 
