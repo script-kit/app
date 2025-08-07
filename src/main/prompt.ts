@@ -119,9 +119,7 @@ contextMenu({
   ],
 });
 
-const getDefaultWidth = () => {
-  return PROMPT.WIDTH.BASE;
-};
+// legacy width helper removed; use prompt.resize-utils for calculations
 
 interface PromptState {
   isMinimized: boolean;
@@ -2215,70 +2213,8 @@ export class KitPrompt {
     resizeData: ResizeData,
     currentBounds: Electron.Rectangle,
   ): Pick<Rectangle, 'width' | 'height'> {
-    const {
-      topHeight,
-      mainHeight,
-      footerHeight,
-      ui,
-      isSplash,
-      hasPreview,
-      forceHeight,
-      forceWidth,
-      hasInput,
-      isMainScript,
-    } = resizeData;
-
-    // Get cached dimensions for main script
-    const getCachedDimensions = (): Partial<Pick<Rectangle, 'width' | 'height'>> => {
-      if (!isMainScript) {
-        return {};
-      }
-
-      const cachedBounds = getCurrentScreenPromptCache(getMainScriptPath());
-      return {
-        width: cachedBounds?.width || getDefaultWidth(),
-        height: hasInput ? undefined : cachedBounds?.height || PROMPT.HEIGHT.BASE,
-      };
-    };
-
-    const { width: cachedWidth, height: cachedHeight } = getCachedDimensions();
-
-    const maxHeight = Math.max(PROMPT.HEIGHT.BASE, currentBounds.height);
-    const targetHeight = topHeight + mainHeight + footerHeight;
-
-    let width = cachedWidth || forceWidth || currentBounds.width;
-    let height = cachedHeight || forceHeight || Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
-
-    // Handle splash screen
-    if (isSplash) {
-      return {
-        width: PROMPT.WIDTH.BASE,
-        height: PROMPT.HEIGHT.BASE,
-      };
-    }
-
-    height = Math.round(height);
-    width = Math.round(width);
-
-    const heightLessThanBase = height < PROMPT.HEIGHT.BASE;
-
-    // Ensure minimum height for specific conditions
-    if (
-      (isMainScript && !hasInput && heightLessThanBase) ||
-      ([UI.term, UI.editor].includes(ui) && heightLessThanBase)
-    ) {
-      height = PROMPT.HEIGHT.BASE;
-    }
-
-    // Handle preview adjustments
-    if (hasPreview) {
-      if (!isMainScript) {
-        width = Math.max(getDefaultWidth(), width);
-      }
-      height = currentBounds.height < PROMPT.HEIGHT.BASE ? PROMPT.HEIGHT.BASE : currentBounds.height;
-    }
-
-    return { width, height };
+    const { calculateTargetDimensions } = require('./prompt.resize-utils');
+    return calculateTargetDimensions(resizeData, currentBounds);
   }
 
   private calculateTargetPosition(
@@ -2286,11 +2222,8 @@ export class KitPrompt {
     targetDimensions: Pick<Rectangle, 'width' | 'height'>,
     cachedBounds?: Partial<Electron.Rectangle>,
   ): Pick<Rectangle, 'x' | 'y'> {
-    // Center the window horizontally if no cached position
-    const newX = cachedBounds?.x ?? Math.round(currentBounds.x + (currentBounds.width - targetDimensions.width) / 2);
-    const newY = cachedBounds?.y ?? currentBounds.y;
-
-    return { x: newX, y: newY };
+    const { calculateTargetPosition } = require('./prompt.resize-utils');
+    return calculateTargetPosition(currentBounds, targetDimensions, cachedBounds);
   }
 
   private saveBoundsIfInitial(resizeData: ResizeData, bounds: Rectangle) {
