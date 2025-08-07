@@ -71,6 +71,7 @@ import { shouldMonitorProcess, getProcessCheckInterval, getLongRunningThresholdM
 import { startProcessMonitoring as monitorStart, stopProcessMonitoring as monitorStop, listenForProcessExit as monitorListen, checkProcessAlive as monitorCheck } from './prompt.process-monitor';
 import { setupDevtoolsHandlers, setupDomAndFinishLoadHandlers } from './prompt.init-utils';
 import { setupResizeAndMoveListeners } from './prompt.resize-listeners';
+import { togglePromptEnvFlow } from './prompt.toggle-env';
 import { buildProcessConnectionLostOptions, buildProcessDebugInfo } from './prompt.notifications';
 import { startLongRunningMonitorFlow, clearLongRunningMonitorFlow, showLongRunningNotificationFlow, terminateLongRunningScriptFlow } from './prompt.long-running';
 import {
@@ -1446,26 +1447,7 @@ export class KitPrompt {
     }
   };
 
-  togglePromptEnv = (envName: string) => {
-    this.logInfo(`Toggle prompt env: ${envName} to ${kitState.kenvEnv?.[envName]}`);
-
-    if (process.env[envName]) {
-      delete process.env[envName];
-      delete kitState.kenvEnv?.[envName];
-      this.window?.webContents.executeJavaScript(`
-      if(!process) process = {};
-      if(!process.env) process.env = {};
-      if(process.env?.["${envName}"]) delete process.env["${envName}"]
-      `);
-    } else if (kitState.kenvEnv?.[envName]) {
-      process.env[envName] = kitState.kenvEnv?.[envName];
-      this.window?.webContents.executeJavaScript(`
-      if(!process) process = {};
-      if(!process.env) process.env = {};
-      process.env["${envName}"] = "${kitState.kenvEnv?.[envName]}"
-      `);
-    }
-  };
+  togglePromptEnv = (envName: string) => togglePromptEnvFlow(this as any, envName);
 
   centerPrompt = () => {
     this.window.center();
