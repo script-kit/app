@@ -32,7 +32,8 @@ import { getMainScriptPath, kenvPath, kitPath, processPlatformSpecificTheme } fr
 // const { pathExistsSync, readJson } = fsExtra;
 import type { Stamp } from '@johnlindquist/kit/core/db';
 import { type Logger, getLog } from './logs';
-import { clearPromptCache, getCurrentScreenFromMouse } from './prompt';
+import { getCurrentScreenFromMouse } from './prompt.screen-utils';
+import { clearPromptCache } from './prompt.cache';
 import {
   debounceSetScriptTimestamp,
   forceQuit,

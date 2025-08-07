@@ -31,14 +31,14 @@ import EventEmitter from 'node:events';
 import { fileURLToPath } from 'node:url';
 import { getAssetPath } from '../shared/assets';
 import { closedDiv, noScript } from '../shared/defaults';
-import { EMOJI_HEIGHT, EMOJI_WIDTH, ZOOM_LEVEL } from '../shared/defaults';
+import { ZOOM_LEVEL } from '../shared/defaults';
 import { AppChannel, HideReason } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
-import type { ResizeData, ScoredChoice } from '../shared/types';
+import type { ResizeData } from '../shared/types';
 import { sendToAllPrompts } from './channel';
 import { cliFromParams, runPromptProcess } from './kit';
 import { ensureIdleProcess, getIdles, processes, updateTheme } from './process';
-import { OFFSCREEN_X, OFFSCREEN_Y, getPromptOptions } from './prompt.options';
+import { getPromptOptions } from './prompt.options';
 import { prompts } from './prompts';
 import { createPty } from './pty';
 import {
@@ -63,6 +63,13 @@ import {
 import { TrackEvent, trackEvent } from './track';
 import { getVersion } from './version';
 import { makeKeyPanel, makeWindow, prepForClose, setAppearance } from './window/utils';
+import { clearPromptCacheFor } from './prompt.cache';
+import {
+  getAllScreens as utilGetAllScreens,
+  getCurrentScreenFromMouse as utilGetCurrentScreenFromMouse,
+  getCurrentScreenPromptCache as utilGetCurrentScreenPromptCache,
+  pointOnMouseScreen as utilPointOnMouseScreen,
+} from './prompt.screen-utils';
 
 import { promptLog as log, themeLog } from './logs';
 import { visibilityController } from './visibility';
@@ -193,133 +200,13 @@ export const logPromptState = () => {
 };
 
 // TODO: Move this into a screen utils
-export const getCurrentScreenFromMouse = (): Display => {
-  return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-};
+export const getCurrentScreenFromMouse = utilGetCurrentScreenFromMouse;
 
-export const getAllScreens = (): Display[] => {
-  return screen.getAllDisplays();
-};
+export const getAllScreens = utilGetAllScreens;
 
-export const getCurrentScreenPromptCache = (
-  scriptPath: string,
-  { ui, resize, bounds }: { ui: UI; resize: boolean; bounds: Partial<Rectangle> } = {
-    ui: UI.arg,
-    resize: false,
-    bounds: {},
-  },
-): Partial<Rectangle> & { screenId: string } => {
-  const currentScreen = getCurrentScreen();
-  const screenId = String(currentScreen.id);
-  // log.info(`screens:`, promptState.screens);
+export const getCurrentScreenPromptCache = utilGetCurrentScreenPromptCache;
 
-  const savedPromptBounds = promptState?.screens?.[screenId]?.[scriptPath];
-
-  if (savedPromptBounds) {
-    log.info(`📱 Screen: ${screenId}: `, savedPromptBounds);
-    log.info(`Bounds: found saved bounds for ${scriptPath}`);
-    // TODO: Reimplement div UI based on promptWindow?
-    return savedPromptBounds;
-  }
-
-  // log.info(`resetPromptBounds`, scriptPath);
-  const { width: screenWidth, height: screenHeight, x: workX, y: workY } = currentScreen.workArea;
-
-  let width = getDefaultWidth();
-  let height = PROMPT.HEIGHT.BASE;
-
-  if (ui !== UI.none && resize) {
-    if (ui === UI.emoji) {
-      width = EMOJI_WIDTH;
-      height = EMOJI_HEIGHT;
-    }
-    if (ui === UI.form) {
-      width /= 2;
-    }
-    if (ui === UI.drop) {
-      // width /= 2;
-      height /= 2;
-    }
-    if (ui === UI.hotkey) {
-      // width /= 2;
-    }
-
-    // TODO: Reimplement div UI based on promptWindow?
-    // if (ui === UI.div) {
-    //   // width /= 2;
-    //   height = promptWindow?.getBounds()?.height;
-    // }
-
-    if (ui === UI.arg) {
-      // width /= 2;
-    }
-
-    if (ui === UI.editor || ui === UI.textarea) {
-      width = Math.max(width, getDefaultWidth());
-      height = Math.max(height, PROMPT.HEIGHT.BASE);
-    }
-  }
-
-  if (typeof bounds?.width === 'number') {
-    width = bounds.width;
-  }
-  if (typeof bounds?.height === 'number') {
-    height = bounds.height;
-  }
-
-  let x = Math.round(screenWidth / 2 - width / 2 + workX);
-  let y = Math.round(workY + screenHeight / 8);
-
-  // Log screen and window bounds
-  const screenTopLeft = { x: workX, y: workY };
-  const screenBottomRight = { x: workX + screenWidth, y: workY + screenHeight };
-  const windowTopLeft = { x, y };
-  const windowBottomRight = { x: x + width, y: y + height };
-
-  log.info('Screen bounds:', {
-    topLeft: screenTopLeft,
-    bottomRight: screenBottomRight,
-  });
-
-  log.info('Center screen', {
-    x: screenWidth / 2,
-    y: screenHeight / 2,
-  });
-
-  log.info('Window bounds:', {
-    topLeft: windowTopLeft,
-    bottomRight: windowBottomRight,
-  });
-
-  if (typeof bounds?.x === 'number' && bounds.x !== OFFSCREEN_X) {
-    log.info(`x is a number and not ${OFFSCREEN_X}`);
-    x = bounds.x;
-  }
-  if (typeof bounds?.y === 'number' && bounds.y !== OFFSCREEN_Y) {
-    log.info(`y is a number and not ${OFFSCREEN_Y}`);
-    y = bounds.y;
-  }
-
-  const promptBounds = { x, y, width, height, screenId };
-
-  if (ui === UI.arg) {
-    const bounds = {
-      ...promptBounds,
-      width: getDefaultWidth(),
-      height: PROMPT.HEIGHT.BASE,
-      screenId,
-    };
-
-    log.verbose('Bounds: No UI', bounds);
-    return bounds;
-  }
-
-  log.info(`Bounds: No saved bounds for ${scriptPath}, returning default bounds`, promptBounds);
-  return promptBounds;
-};
-
-let hadPreview = true;
-let prevResizeData = {} as ResizeData;
+// Removed unused resize tracking variables as part of refactor
 
 // TODO: Needs refactor to include unique ids, or conflicts will happen
 
@@ -328,18 +215,7 @@ enum Bounds {
   Size = 1 << 1,
 }
 
-export const pointOnMouseScreen = ({ x, y }: Point) => {
-  log.silly('function: pointOnMouseScreen');
-  const mouseScreen = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-  // if bounds are off screen, don't save
-  const onMouseScreen =
-    x > mouseScreen.bounds.x &&
-    y > mouseScreen.bounds.y &&
-    x < mouseScreen.bounds.x + mouseScreen.bounds.width &&
-    y < mouseScreen.bounds.y + mouseScreen.bounds.height;
-
-  return onMouseScreen;
-};
+export const pointOnMouseScreen = utilPointOnMouseScreen as (p: Point) => boolean;
 
 const writePromptState = (prompt: KitPrompt, screenId: string, scriptPath: string, bounds: PromptBounds) => {
   if (!(prompt.window && prompt?.isDestroyed())) {
@@ -523,31 +399,8 @@ const subEscapePressed = subscribeKey(kitState, 'escapePressed', (escapePressed)
   setFocusedKitStateAtom({ escapePressed });
 });
 
-export const clearPromptCacheFor = async (scriptPath: string) => {
-  try {
-    const displays = screen.getAllDisplays();
-    for await (const display of displays) {
-      if (promptState?.screens?.[display.id]?.[scriptPath]) {
-        delete promptState.screens[display.id][scriptPath];
-        log.verbose(`🗑 Clear prompt cache for ${scriptPath} on ${display.id}`);
-      }
-    }
-  } catch (e) {
-    log.error(e);
-  }
-
-  if (preloadChoicesMap.has(scriptPath)) {
-    preloadChoicesMap.delete(scriptPath);
-  }
-
-  if (preloadPromptDataMap.has(scriptPath)) {
-    preloadPromptDataMap.delete(scriptPath);
-  }
-
-  if (preloadPreviewMap.has(scriptPath)) {
-    preloadPreviewMap.delete(scriptPath);
-  }
-};
+// moved to prompt.cache.ts; keep export for backward compatibility
+export { clearPromptCacheFor } from './prompt.cache';
 
 export const clearPromptTimers = async () => {
   try {
@@ -670,7 +523,7 @@ export class KitPrompt {
   };
 
   clearSearch = () => {
-    if (kitState.kenvEnv?.KIT_NO_CLEAR_SEARCH === 'true') {
+    if ((kitState.kenvEnv as any)?.KIT_NO_CLEAR_SEARCH === 'true') {
       return;
     }
 
@@ -2451,7 +2304,7 @@ export class KitPrompt {
       return;
     }
 
-    prevResizeData = resizeData;
+    // refactor: removed prevResizeData tracking
 
     if (this.showAfterNextResize) {
       this.logInfo('🎤 Showing prompt after next resize...');
@@ -2483,7 +2336,7 @@ export class KitPrompt {
     this.setBounds(bounds, resizeData.reason);
     this.saveBoundsIfInitial(resizeData, bounds);
 
-    hadPreview = resizeData.hasPreview;
+    // refactor: removed hadPreview tracking
   };
 
   updateShortcodes = () => {
@@ -2616,7 +2469,7 @@ export class KitPrompt {
       });
     }
 
-    if (promptData.flags && typeof promptData.flags === 'object' && promptData.flags !== true) {
+    if (promptData.flags && typeof promptData.flags === 'object') {
       this.logInfo(`🏳️‍🌈 Setting flags from setPromptData: ${Object.keys(promptData.flags)}`);
       setFlags(this, promptData.flags);
     }
@@ -3363,7 +3216,7 @@ export class KitPrompt {
       }
     }
     this.updateShortcodes();
-    if (promptData.flags && typeof promptData.flags === 'object' && promptData.flags !== true) {
+    if (promptData.flags && typeof promptData.flags === 'object') {
       this.logInfo(`🏴‍☠️ Setting flags from preloadPromptData: ${Object.keys(promptData.flags)}`);
       setFlags(this, promptData.flags);
     }
@@ -3523,7 +3376,7 @@ export class KitPrompt {
   };
 }
 
-export const makeSplashWindow = (window?: BrowserWindow) => {
+export const makeSplashWindow = (_window?: BrowserWindow) => {
   // No longer needed - splash screen is now a regular window
   // that doesn't need special handling when closing
   log.info('👋 Splash window close - no special handling needed');

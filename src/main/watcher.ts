@@ -46,7 +46,8 @@ import {
   spawnShebang,
   updateTheme,
 } from './process';
-import { clearPromptCache, clearPromptCacheFor, setKitStateAtom } from './prompt';
+import { setKitStateAtom } from './prompt';
+import { clearPromptCache, clearPromptCacheFor } from './prompt.cache';
 import { setCSSVariable } from './theme';
 import { removeSnippet, snippetScriptChanged, addTextSnippet } from './tick';
 

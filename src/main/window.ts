@@ -10,7 +10,7 @@ import { snapshot } from 'valtio';
 import { getAssetPath } from '../shared/assets';
 import { WindowChannel } from '../shared/enums';
 import { windowsState } from '../shared/windows';
-import { getCurrentScreenFromMouse } from './prompt';
+import { getCurrentScreenFromMouse } from './prompt.screen-utils';
 import { getPromptOptions } from './prompt.options';
 import { kitState } from './state';
 
