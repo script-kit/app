@@ -69,6 +69,7 @@ import { adjustBoundsToAvoidOverlap, getTitleBarHeight, ensureMinWindowHeight, a
 import { shouldMonitorProcess, getProcessCheckInterval, getLongRunningThresholdMs } from './prompt.process-utils';
 import { startProcessMonitoring as monitorStart, stopProcessMonitoring as monitorStop, listenForProcessExit as monitorListen, checkProcessAlive as monitorCheck } from './prompt.process-monitor';
 import { setupDevtoolsHandlers, setupDomAndFinishLoadHandlers } from './prompt.init-utils';
+import { setupResizeAndMoveListeners } from './prompt.resize-listeners';
 import { buildLongRunningNotificationOptions, buildProcessConnectionLostOptions, buildProcessDebugInfo } from './prompt.notifications';
 import {
   getAllScreens as utilGetAllScreens,
@@ -1301,64 +1302,7 @@ export class KitPrompt {
       this.logInfo('😳 Prompt window shown');
     });
 
-    const onResized = () => {
-      this.logSilly('event: onResized');
-      this.modifiedByUser = false;
-      this.logInfo(`Resized: ${this.window.getSize()}`);
-
-      if (this.resizing) {
-        this.resizing = false;
-      }
-
-      this.saveCurrentPromptBounds();
-    };
-
-    if (kitState.isLinux) {
-      this.window.on('resize', () => {
-        this.modifiedByUser = true;
-      });
-    } else {
-      this.window.on('will-resize', (_event, rect) => {
-        this.logSilly(`Will Resize ${rect.width} ${rect.height}`);
-        this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, {
-          id: this.id,
-          ...rect,
-          human: true,
-        });
-        this.modifiedByUser = true;
-      });
-    }
-
-    const willMoveHandler = debounce(
-      () => {
-        this.logSilly('event: will-move');
-        (kitState as any).modifiedByUser = true;
-      },
-      250,
-      { leading: true },
-    );
-
-    const onMoved = debounce(() => {
-      this.logSilly('event: onMove');
-      this.modifiedByUser = false;
-      this.saveCurrentPromptBounds();
-    }, 250);
-
-    this.window.on('will-move', willMoveHandler);
-    this.window.on('resized', onResized);
-    this.window.on('moved', onMoved);
-    if (kitState.isWindows) {
-      const handler = (_e, display, changedMetrics) => {
-        if (changedMetrics.includes('scaleFactor')) {
-          this.window.webContents.setZoomFactor(1 / display.scaleFactor);
-        }
-      };
-      screen.on('display-metrics-changed', handler);
-      this.window.webContents.setZoomFactor(1 / screen.getPrimaryDisplay().scaleFactor);
-      this.window.on('close', () => {
-        screen.removeListener('display-metrics-changed', handler);
-      });
-    }
+    setupResizeAndMoveListeners(this);
   }
 
   appearance: 'light' | 'dark' | 'auto' = 'auto';

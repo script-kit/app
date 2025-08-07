@@ -99,26 +99,26 @@ export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
         }
     });
 
-  prompt.window.webContents?.on('did-fail-load', (errorCode, errorDescription, validatedURL, isMainFrame) => {
-    prompt.logError(`did-fail-load: ${errorCode} ${errorDescription} ${validatedURL} ${isMainFrame}`);
-  });
+    prompt.window.webContents?.on('did-fail-load', (errorCode, errorDescription, validatedURL, isMainFrame) => {
+        prompt.logError(`did-fail-load: ${errorCode} ${errorDescription} ${validatedURL} ${isMainFrame}`);
+    });
 
-  prompt.window.webContents?.on('did-stop-loading', () => {
-    prompt.logInfo('did-stop-loading');
-  });
+    prompt.window.webContents?.on('did-stop-loading', () => {
+        prompt.logInfo('did-stop-loading');
+    });
 
-  prompt.window.webContents?.on('dom-ready', () => {
-    prompt.logInfo(`🍀 dom-ready on ${prompt?.scriptPath}`);
-    prompt.sendToPrompt(AppChannel.SET_READY, true);
-  });
+    prompt.window.webContents?.on('dom-ready', () => {
+        prompt.logInfo(`🍀 dom-ready on ${prompt?.scriptPath}`);
+        prompt.sendToPrompt(AppChannel.SET_READY, true);
+    });
 
-  prompt.window.webContents?.on('render-process-gone', (event, details) => {
-    try { processes.removeByPid(prompt.pid, 'prompt exit cleanup'); } catch {}
-    prompt.sendToPrompt = () => { } as any;
-    (prompt.window.webContents as any).send = () => { };
-    prompt.logError('🫣 Render process gone...');
-    prompt.logError({ event, details });
-  });
+    prompt.window.webContents?.on('render-process-gone', (event, details) => {
+        try { processes.removeByPid(prompt.pid, 'prompt exit cleanup'); } catch { }
+        prompt.sendToPrompt = () => { } as any;
+        (prompt.window.webContents as any).send = () => { };
+        prompt.logError('🫣 Render process gone...');
+        prompt.logError({ event, details });
+    });
 }
 
 
