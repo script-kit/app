@@ -36,7 +36,7 @@ import { KitEvent, emitter } from '../shared/events';
 import type { ResizeData } from '../shared/types';
 import { sendToAllPrompts } from './channel';
 import { cliFromParams, runPromptProcess } from './kit';
-import { ensureIdleProcess, getIdles, processes, updateTheme } from './process';
+import { getIdles, processes, updateTheme } from './process';
 import { getPromptOptions } from './prompt.options';
 import { prompts } from './prompts';
 import { createPty } from './pty';
@@ -63,6 +63,7 @@ import { TrackEvent, trackEvent } from './track';
 import { getVersion } from './version';
 import { makeKeyPanel, makeWindow, prepForClose, setAppearance } from './window/utils';
 import { setPromptBounds as applyWindowBounds, centerThenFocus } from './prompt.window-utils';
+import { initShowPromptFlow, hideFlow, onHideOnceFlow, showPromptFlow, moveToMouseScreenFlow, initBoundsFlow, blurPromptFlow, initMainBoundsFlow } from './prompt.window-flow';
 import { clearPromptCacheFor } from './prompt.cache';
 import { calculateTargetDimensions, calculateTargetPosition } from './prompt.resize-utils';
 import { adjustBoundsToAvoidOverlap, getTitleBarHeight, ensureMinWindowHeight, applyPromptDataBounds } from './prompt.bounds-utils';
@@ -1356,181 +1357,23 @@ export class KitPrompt {
     this.sendToPrompt(AppChannel.CLEAR_CACHE, {});
   };
 
-  initShowPrompt = () => {
-    this.logInfo(`${this.pid}:🎪 initShowPrompt: ${this.id} ${this.scriptPath}`);
-    if (!kitState.isMac) {
-      if ((kitState?.kenvEnv as any)?.KIT_PROMPT_RESTORE === 'true') {
-        this.window?.restore();
-      }
-    }
+  initShowPrompt = () => initShowPromptFlow(this);
 
-    this.setPromptAlwaysOnTop(true);
+  hide = () => hideFlow(this);
 
-    // Ensure visibility controller knows we're about to be focused
-    // This prevents the state from being out of sync when moving to a new display
-    if (this.window && !this.window.isDestroyed()) {
-      handleBlurVisibility(this);
-    }
-
-    this.focusPrompt();
-
-    this.sendToPrompt(Channel.SET_OPEN, true);
-
-    if (topTimeout) {
-      clearTimeout(topTimeout);
-    }
-
-    setTimeout(() => {
-      ensureIdleProcess();
-    }, 10);
-  };
-
-  hide = () => {
-    if (this.window.isVisible()) {
-      this.hasBeenHidden = true;
-    }
-    this.logInfo('Hiding prompt window...');
-    if (this.window.isDestroyed()) {
-      this.logWarn('Prompt window is destroyed. Not hiding.');
-      return;
-    }
-
-    // Register hide operation
-    const hideOpId = processWindowCoordinator.registerOperation(
-      this.pid,
-      WindowOperation.Hide,
-      this.window.id
-    );
-
-    this.actualHide();
-
-    // Complete the hide operation
-    processWindowCoordinator.completeOperation(hideOpId);
-  };
-
-  onHideOnce = (fn: () => void) => {
-    let id: null | NodeJS.Timeout = null;
-    if (this.window) {
-      const handler = () => {
-        if (id) {
-          clearTimeout(id);
-        }
-        this.window.removeListener('hide', handler);
-        fn();
-      };
-
-      id = setTimeout(() => {
-        if (!this?.window || this.window?.isDestroyed()) {
-          return;
-        }
-        this.window?.removeListener('hide', handler);
-      }, 1000);
-
-      this.window?.once('hide', handler);
-    }
-  };
+  onHideOnce = (fn: () => void) => onHideOnceFlow(this, fn);
 
   showAfterNextResize = false;
 
-  showPrompt = () => {
-    if (this.window.isDestroyed()) {
-      return;
-    }
+  showPrompt = () => showPromptFlow(this);
 
-    // Register show operation
-    const showOpId = processWindowCoordinator.registerOperation(
-      this.pid,
-      WindowOperation.Show,
-      this.window.id
-    );
+  moveToMouseScreen = () => moveToMouseScreenFlow(this);
 
-    this.initShowPrompt();
-    this.sendToPrompt(Channel.SET_OPEN, true);
+  initBounds = (forceScriptPath?: string, _show = false) => initBoundsFlow(this, forceScriptPath);
 
-    // Mark shown immediately for snappy response
-    if (!this?.window || this.window?.isDestroyed()) {
-      processWindowCoordinator.completeOperation(showOpId);
-      return;
-    }
-    this.shown = true;
+  blurPrompt = () => blurPromptFlow(this);
 
-    // Complete the show operation
-    processWindowCoordinator.completeOperation(showOpId);
-  };
-
-  moveToMouseScreen = () => {
-    if (this?.window?.isDestroyed()) {
-      this.logWarn('moveToMouseScreen. Window already destroyed', this?.id);
-      return;
-    }
-
-    const mouseScreen = getCurrentScreenFromMouse();
-    this.window.setPosition(mouseScreen.workArea.x, mouseScreen.workArea.y);
-  };
-
-  initBounds = (forceScriptPath?: string, _show = false) => {
-    if (this?.window?.isDestroyed()) {
-      this.logWarn('initBounds. Window already destroyed', this?.id);
-      return;
-    }
-
-    const bounds = this.window.getBounds();
-    const cachedBounds = getCurrentScreenPromptCache(forceScriptPath || this.scriptPath, {
-      ui: this.ui,
-      resize: this.allowResize,
-      bounds: {
-        width: bounds.width,
-        height: bounds.height,
-      },
-    });
-
-    const currentBounds = this?.window?.getBounds();
-    this.logInfo(`${this.pid}:${path.basename(this?.scriptPath || '')}: ↖ Init bounds: ${this.ui} ui`, {
-      currentBounds,
-      cachedBounds,
-    });
-
-    const { x, y, width, height } = this.window.getBounds();
-    if (cachedBounds.width !== width || cachedBounds.height !== height) {
-      this.logVerbose(
-        `Started resizing: ${this.window?.getSize()}. First prompt?: ${this.firstPrompt ? 'true' : 'false'}`,
-      );
-
-      this.resizing = true;
-    }
-
-    if (this.promptData?.scriptlet) {
-      cachedBounds.height = this.promptData?.inputHeight;
-    }
-
-    if (this?.window?.isFocused()) {
-      cachedBounds.x = x;
-      cachedBounds.y = y;
-    }
-
-    this.setBounds(cachedBounds, 'initBounds');
-  };
-
-  blurPrompt = () => {
-    this.logInfo(`${this.pid}: blurPrompt`);
-    if (this.window.isDestroyed()) {
-      return;
-    }
-    if (this.window) {
-      if (kitState.isMac) {
-        shims['@johnlindquist/mac-panel-window'].blurInstant(this.window);
-      }
-      this.window.blur();
-    }
-  };
-
-  initMainBounds = () => {
-    const bounds = getCurrentScreenPromptCache(getMainScriptPath());
-    if (!bounds.height || bounds.height < PROMPT.HEIGHT.BASE) {
-      bounds.height = PROMPT.HEIGHT.BASE;
-    }
-    this.setBounds(bounds, 'initMainBounds');
-  };
+  initMainBounds = () => initMainBoundsFlow(this);
 
   setBounds = (bounds: Partial<Rectangle>, reason = '') => {
     if (!this.window || this.window.isDestroyed()) {
