@@ -11,6 +11,10 @@ import { getVersion } from './version';
 import { ipcMain } from 'electron';
 import { KitEvent, emitter } from '../shared/events';
 import { processes } from './process';
+import { cliFromParams, runPromptProcess } from './kit';
+import { kitPath } from '@johnlindquist/kit/core/utils';
+import { app, BrowserWindow } from 'electron';
+import { fileURLToPath } from 'node:url';
 
 export function setupDevtoolsHandlers(prompt: KitPrompt) {
     prompt.window.webContents?.on('devtools-opened', () => {
@@ -119,6 +123,83 @@ export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
         prompt.logError('🫣 Render process gone...');
         prompt.logError({ event, details });
     });
+}
+
+export function setupNavigationHandlers(prompt: KitPrompt) {
+  prompt.window.webContents?.on('will-navigate', async (event, navigationUrl) => {
+    try {
+      const url = new URL(navigationUrl);
+      prompt.logInfo(`👉 Prevent navigating to ${navigationUrl}`);
+      event.preventDefault();
+
+      const pathname = url.pathname.replace('//', '');
+
+      if (url.host === 'scriptkit.com' && url.pathname === '/api/new') {
+        await cliFromParams('new-from-protocol', url.searchParams);
+      } else if (url.host === 'scriptkit.com' && pathname === 'kenv') {
+        const repo = url.searchParams.get('repo');
+        await runPromptProcess(kitPath('cli', 'kenv-clone.js'), [repo || '']);
+      } else if (url.protocol === 'kit:') {
+        prompt.logInfo('Attempting to run kit protocol:', JSON.stringify(url));
+        await cliFromParams(url.pathname, url.searchParams);
+      } else if (url.protocol === 'submit:') {
+        prompt.logInfo('Attempting to run submit protocol:', JSON.stringify(url));
+        prompt.sendToPrompt(Channel.SET_SUBMIT_VALUE as any, url.pathname);
+      } else if (url.protocol.startsWith('http')) {
+        require('electron').shell.openExternal(url.href);
+      }
+    } catch (e) {
+      prompt.logWarn(e);
+    }
+  });
+
+  prompt.window.webContents?.setWindowOpenHandler(({ url }) => {
+    prompt.logInfo(`Opening ${url}`);
+    if (!url.startsWith('http')) return { action: 'deny' } as any;
+    require('electron').shell.openExternal(url);
+    return { action: 'deny' } as any;
+  });
+}
+
+export function loadPromptHtml(prompt: KitPrompt) {
+  prompt.logSilly('Loading prompt window html');
+  if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
+    prompt.window.loadURL(`${process.env.ELECTRON_RENDERER_URL}/index.html`);
+  } else {
+    prompt.window.loadFile(fileURLToPath(new URL('../renderer/index.html', import.meta.url)));
+  }
+}
+
+export function setupWindowLifecycleHandlers(prompt: KitPrompt) {
+  prompt.window.webContents?.on('unresponsive', () => {
+    prompt.logError('Prompt window unresponsive. Reloading');
+    if (prompt.window.isDestroyed()) {
+      prompt.logError('Prompt window is destroyed. Not reloading');
+      return;
+    }
+    prompt.window.webContents?.once('did-finish-load', () => {
+      prompt.logInfo('Prompt window reloaded');
+    });
+    prompt.window.reload();
+  });
+
+  prompt.window.on('always-on-top-changed', () => prompt.logInfo('📌 always-on-top-changed'));
+  prompt.window.on('minimize', () => prompt.logInfo('📌 minimize'));
+  prompt.window.on('restore', () => prompt.logInfo('📌 restore'));
+  prompt.window.on('maximize', () => prompt.logInfo('📌 maximize'));
+  prompt.window.on('unmaximize', () => prompt.logInfo('📌 unmaximize'));
+  prompt.window.on('close', () => {
+    try { processes.removeByPid((prompt as any).pid, 'prompt destroy cleanup'); } catch {}
+    prompt.logInfo('📌 close');
+  });
+  prompt.window.on('closed', () => {
+    prompt.logInfo('📌 closed');
+    (require('./state').kitState as any).emojiActive = false;
+  });
+  prompt.window.webContents?.on('focus', () => {
+    prompt.logInfo(' WebContents Focus');
+    (prompt as any).emojiActive = false;
+  });
 }
 
 

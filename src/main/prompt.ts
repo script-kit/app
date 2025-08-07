@@ -69,7 +69,7 @@ import { calculateTargetDimensions, calculateTargetPosition } from './prompt.res
 import { adjustBoundsToAvoidOverlap, getTitleBarHeight, ensureMinWindowHeight, applyPromptDataBounds } from './prompt.bounds-utils';
 import { shouldMonitorProcess, getProcessCheckInterval, getLongRunningThresholdMs } from './prompt.process-utils';
 import { startProcessMonitoring as monitorStart, stopProcessMonitoring as monitorStop, listenForProcessExit as monitorListen, checkProcessAlive as monitorCheck } from './prompt.process-monitor';
-import { setupDevtoolsHandlers, setupDomAndFinishLoadHandlers } from './prompt.init-utils';
+import { setupDevtoolsHandlers, setupDomAndFinishLoadHandlers, setupNavigationHandlers, loadPromptHtml, setupWindowLifecycleHandlers } from './prompt.init-utils';
 import { setupResizeAndMoveListeners } from './prompt.resize-listeners';
 import { togglePromptEnvFlow } from './prompt.toggle-env';
 import { buildProcessConnectionLostOptions, buildProcessDebugInfo } from './prompt.notifications';
@@ -1011,32 +1011,7 @@ export class KitPrompt {
       }
     }
 
-    this.window.webContents?.on('will-navigate', async (event, navigationUrl) => {
-      try {
-        const url = new URL(navigationUrl);
-        this.logInfo(`👉 Prevent navigating to ${navigationUrl}`);
-        event.preventDefault();
-
-        const pathname = url.pathname.replace('//', '');
-
-        if (url.host === 'scriptkit.com' && url.pathname === '/api/new') {
-          await cliFromParams('new-from-protocol', url.searchParams);
-        } else if (url.host === 'scriptkit.com' && pathname === 'kenv') {
-          const repo = url.searchParams.get('repo');
-          await runPromptProcess(kitPath('cli', 'kenv-clone.js'), [repo || '']);
-        } else if (url.protocol === 'kit:') {
-          this.logInfo('Attempting to run kit protocol:', JSON.stringify(url));
-          await cliFromParams(url.pathname, url.searchParams);
-        } else if (url.protocol === 'submit:') {
-          this.logInfo('Attempting to run submit protocol:', JSON.stringify(url));
-          this.sendToPrompt(Channel.SET_SUBMIT_VALUE, url.pathname);
-        } else if (url.protocol.startsWith('http')) {
-          shell.openExternal(url.href);
-        }
-      } catch (e) {
-        this.logWarn(e);
-      }
-    });
+    setupNavigationHandlers(this);
 
     this.window.once('ready-to-show', async () => {
       this.logInfo('👍 ready-to-show');
@@ -1064,19 +1039,7 @@ export class KitPrompt {
 
     setupDomAndFinishLoadHandlers(this);
 
-    this.window.webContents?.on('unresponsive', () => {
-      this.logError('Prompt window unresponsive. Reloading');
-      if (this.window.isDestroyed()) {
-        this.logError('Prompt window is destroyed. Not reloading');
-        return;
-      }
-
-      this.window.webContents?.once('did-finish-load', () => {
-        this.logInfo('Prompt window reloaded');
-      });
-
-      this.window.reload();
-    });
+    setupWindowLifecycleHandlers(this);
 
     this.window.webContents?.setWindowOpenHandler(({ url }) => {
       this.logInfo(`Opening ${url}`);
@@ -1091,13 +1054,7 @@ export class KitPrompt {
       return { action: 'deny' };
     });
 
-    this.logSilly('Loading prompt window html');
-
-    if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
-      this.window.loadURL(`${process.env.ELECTRON_RENDERER_URL}/index.html`);
-    } else {
-      this.window.loadFile(fileURLToPath(new URL('../renderer/index.html', import.meta.url)));
-    }
+    loadPromptHtml(this);
 
     // Intercept DevTools keyboard shortcuts to set flag before blur happens
     this.window.webContents?.on('before-input-event', (_event, input) => {
@@ -1112,40 +1069,7 @@ export class KitPrompt {
 
     setupDevtoolsHandlers(this);
 
-    this.window.on('always-on-top-changed', () => {
-      this.logInfo('📌 always-on-top-changed');
-    });
-
-    this.window.on('minimize', () => {
-      this.logInfo('📌 minimize');
-    });
-
-    this.window.on('restore', () => {
-      this.logInfo('📌 restore');
-    });
-
-    this.window.on('maximize', () => {
-      this.logInfo('📌 maximize');
-    });
-
-    this.window.on('unmaximize', () => {
-      this.logInfo('📌 unmaximize');
-    });
-
-    this.window.on('close', () => {
-      processes.removeByPid(this.pid, 'prompt destroy cleanup');
-      this.logInfo('📌 close');
-    });
-
-    this.window.on('closed', () => {
-      this.logInfo('📌 closed');
-      kitState.emojiActive = false;
-    });
-
-    this.window.webContents?.on('focus', () => {
-      this.logInfo(' WebContents Focus');
-      this.emojiActive = false;
-    });
+    // lifecycle handlers moved
 
     this.window.on('focus', () => {
       this.logInfo('👓 Focus bounds:');
