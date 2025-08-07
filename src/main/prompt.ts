@@ -69,6 +69,7 @@ import { calculateTargetDimensions, calculateTargetPosition } from './prompt.res
 import { adjustBoundsToAvoidOverlap, getTitleBarHeight, ensureMinWindowHeight, applyPromptDataBounds } from './prompt.bounds-utils';
 import { shouldMonitorProcess, getProcessCheckInterval, getLongRunningThresholdMs } from './prompt.process-utils';
 import { startProcessMonitoring as monitorStart, stopProcessMonitoring as monitorStop, listenForProcessExit as monitorListen, checkProcessAlive as monitorCheck } from './prompt.process-monitor';
+import { setupDevtoolsHandlers } from './prompt.init-utils';
 import { buildLongRunningNotificationOptions, buildProcessConnectionLostOptions, buildProcessDebugInfo } from './prompt.notifications';
 import {
   getAllScreens as utilGetAllScreens,
@@ -1308,37 +1309,7 @@ export class KitPrompt {
       }
     });
 
-    this.window.webContents?.on('devtools-opened', () => {
-      this.devToolsOpening = false;
-      // remove blur handler
-      this.window.removeListener('blur', this.onBlur);
-      this.makeWindow();
-
-      // Notify renderer that DevTools are open
-      this.sendToPrompt(Channel.DEV_TOOLS, true);
-    });
-
-    this.window.webContents?.on('devtools-closed', () => {
-      this.logSilly('event: devtools-closed');
-
-      if (kitState.isMac && !this.isWindow) {
-        this.logInfo('👋 setPromptAlwaysOnTop: false, so makeWindow');
-        this.makeWindow();
-      } else {
-        this.setPromptAlwaysOnTop(false);
-      }
-
-      // Don't hide main menu when DevTools closes
-      if (this.scriptPath !== getMainScriptPath()) {
-        this.maybeHide(HideReason.DevToolsClosed);
-      }
-
-      // Re-add blur handler that was removed when DevTools opened
-      this.window.on('blur', this.onBlur);
-
-      // Notify renderer that DevTools are closed
-      this.sendToPrompt(Channel.DEV_TOOLS, false);
-    });
+    setupDevtoolsHandlers(this);
 
     this.window.on('always-on-top-changed', () => {
       this.logInfo('📌 always-on-top-changed');
