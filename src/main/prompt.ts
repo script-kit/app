@@ -29,7 +29,6 @@ import { debounce } from 'lodash-es';
 import type { ChildProcess } from 'node:child_process';
 import EventEmitter from 'node:events';
 import { fileURLToPath } from 'node:url';
-import { getAssetPath } from '../shared/assets';
 import { closedDiv, noScript } from '../shared/defaults';
 import { ZOOM_LEVEL } from '../shared/defaults';
 import { AppChannel, HideReason } from '../shared/enums';
@@ -69,7 +68,7 @@ import { calculateTargetDimensions, calculateTargetPosition } from './prompt.res
 import { adjustBoundsToAvoidOverlap, getTitleBarHeight, ensureMinWindowHeight, applyPromptDataBounds } from './prompt.bounds-utils';
 import { shouldMonitorProcess, getProcessCheckInterval, getLongRunningThresholdMs } from './prompt.process-utils';
 import { startProcessMonitoring as monitorStart, stopProcessMonitoring as monitorStop, listenForProcessExit as monitorListen, checkProcessAlive as monitorCheck } from './prompt.process-monitor';
-import { setupDevtoolsHandlers } from './prompt.init-utils';
+import { setupDevtoolsHandlers, setupDomAndFinishLoadHandlers } from './prompt.init-utils';
 import { buildLongRunningNotificationOptions, buildProcessConnectionLostOptions, buildProcessDebugInfo } from './prompt.notifications';
 import {
   getAllScreens as utilGetAllScreens,
@@ -1107,6 +1106,9 @@ export class KitPrompt {
       }
     };
 
+    // mark handlers as used to satisfy linter after extraction
+    void this.beforeInputHandler;
+
     // Ensure methods referenced by external monitor helpers are marked as used for linter
     void this.notifyProcessConnectionLost;
     void this.checkProcessAlive;
@@ -1193,75 +1195,7 @@ export class KitPrompt {
       await this.attemptReadTheme();
     });
 
-    this.window.webContents?.on('dom-ready', () => {
-      this.logInfo('📦 dom-ready');
-      this.window?.webContents?.setZoomLevel(ZOOM_LEVEL);
-
-      this.window.webContents?.on('before-input-event', this.beforeInputHandler);
-    });
-
-    this.window.webContents?.once('did-finish-load', () => {
-      kitState.hiddenByUser = false;
-
-      this.logSilly('event: did-finish-load');
-      this.sendToPrompt(Channel.APP_CONFIG, {
-        delimiter: path.delimiter,
-        sep: path.sep,
-        os: os.platform(),
-        isMac: os.platform().startsWith('darwin'),
-        isWin: os.platform().startsWith('win'),
-        isLinux: os.platform().startsWith('linux'),
-        assetPath: getAssetPath(),
-        version: getVersion(),
-        isDark: kitState.isDark,
-        searchDebounce: Boolean(kitState.kenvEnv?.KIT_SEARCH_DEBOUNCE === 'false'),
-        termFont: kitState.kenvEnv?.KIT_TERM_FONT || 'monospace',
-        url: kitState.url,
-      });
-
-      const user = snapshot(kitState.user);
-      this.logInfo(`did-finish-load, setting prompt user to: ${user?.login}`);
-
-      this.sendToPrompt(AppChannel.USER_CHANGED, user);
-      setKitStateAtom({
-        isSponsor: kitState.isSponsor,
-      });
-      emitter.emit(KitEvent.DID_FINISH_LOAD);
-
-      const messagesReadyHandler = async (_event, _pid) => {
-        if (!this.window || this.window.isDestroyed()) {
-          this.logError('📬 Messages ready. Prompt window is destroyed. Not initializing');
-          return;
-        }
-        this.logInfo('📬 Messages ready. ');
-        // Always use the standard blur handler, even for splash screen
-        this.window.on('blur', this.onBlur);
-
-        if (this.initMain) {
-          this.initMainPrompt('messages ready');
-        }
-
-        this.readyEmitter.emit('ready');
-        this.ready = true;
-
-        this.logInfo(`🚀 Prompt ready. Forcing render. ${this.window?.isVisible() ? 'visible' : 'hidden'}`);
-
-        this.sendToPrompt(AppChannel.FORCE_RENDER);
-        await this.window?.webContents?.executeJavaScript('console.log(document.body.offsetHeight);');
-        await this.window?.webContents?.executeJavaScript('console.clear();');
-
-        // this.window.webContents.setBackgroundThrottling(true);
-      };
-
-      ipcMain.once(AppChannel.MESSAGES_READY, messagesReadyHandler);
-
-      if (kitState.kenvEnv?.KIT_MIC) {
-        this.sendToPrompt(AppChannel.SET_MIC_ID, kitState.kenvEnv.KIT_MIC);
-      }
-      if (kitState.kenvEnv?.KIT_WEBCAM) {
-        this.sendToPrompt(AppChannel.SET_WEBCAM_ID, kitState.kenvEnv.KIT_WEBCAM);
-      }
-    });
+    setupDomAndFinishLoadHandlers(this);
 
     this.window.webContents?.on('unresponsive', () => {
       this.logError('Prompt window unresponsive. Reloading');
