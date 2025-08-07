@@ -8,7 +8,7 @@ import { getAssetPath } from '../shared/assets';
 import os from 'node:os';
 import path from 'node:path';
 import { getVersion } from './version';
-import { ipcMain } from 'electron';
+import { ipcMain, shell } from 'electron';
 import { KitEvent, emitter } from '../shared/events';
 import { processes } from './process';
 import { cliFromParams, runPromptProcess } from './kit';
@@ -146,7 +146,7 @@ export function setupNavigationHandlers(prompt: KitPrompt) {
         prompt.logInfo('Attempting to run submit protocol:', JSON.stringify(url));
         prompt.sendToPrompt(Channel.SET_SUBMIT_VALUE as any, url.pathname);
       } else if (url.protocol.startsWith('http')) {
-        require('electron').shell.openExternal(url.href);
+        shell.openExternal(url.href);
       }
     } catch (e) {
       prompt.logWarn(e);
@@ -156,7 +156,7 @@ export function setupNavigationHandlers(prompt: KitPrompt) {
   prompt.window.webContents?.setWindowOpenHandler(({ url }) => {
     prompt.logInfo(`Opening ${url}`);
     if (!url.startsWith('http')) return { action: 'deny' } as any;
-    require('electron').shell.openExternal(url);
+    shell.openExternal(url);
     return { action: 'deny' } as any;
   });
 }
@@ -194,7 +194,7 @@ export function setupWindowLifecycleHandlers(prompt: KitPrompt) {
   });
   prompt.window.on('closed', () => {
     prompt.logInfo('📌 closed');
-    (require('./state').kitState as any).emojiActive = false;
+    (kitState as any).emojiActive = false;
   });
   prompt.window.webContents?.on('focus', () => {
     prompt.logInfo(' WebContents Focus');
