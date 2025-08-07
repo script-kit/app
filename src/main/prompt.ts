@@ -65,6 +65,7 @@ import { getVersion } from './version';
 import { makeKeyPanel, makeWindow, prepForClose, setAppearance } from './window/utils';
 import { clearPromptCacheFor } from './prompt.cache';
 import { calculateTargetDimensions, calculateTargetPosition } from './prompt.resize-utils';
+import { adjustBoundsToAvoidOverlap, getTitleBarHeight, ensureMinWindowHeight } from './prompt.bounds-utils';
 import {
   getAllScreens as utilGetAllScreens,
   getCurrentScreenFromMouse as utilGetCurrentScreenFromMouse,
@@ -1988,38 +1989,15 @@ export class KitPrompt {
 
       this.logInfo(`${this.pid}: Apply ${this.scriptName}: setBounds reason: ${reason}`, bounds);
 
-      const finalBounds = {
+      const rounded = {
         x: Math.round(bounds.x),
         y: Math.round(bounds.y),
         width: Math.round(bounds.width),
         height: Math.round(bounds.height),
       };
 
-      let hasMatch = true;
-
-      while (hasMatch) {
-        hasMatch = false;
-        for (const prompt of prompts) {
-          if (!prompt.id || prompt.id === this.id) {
-            continue;
-          }
-
-          const bounds = prompt.getBounds();
-          if (bounds.x === finalBounds.x) {
-            this.logInfo(`🔀 Prompt ${prompt.id} has same x as ${this.id}. Scooching x!`);
-            finalBounds.x += 40;
-            hasMatch = true;
-          }
-          if (bounds.y === finalBounds.y) {
-            this.logInfo(`🔀 Prompt ${prompt.id} has same y as ${this.id}. Scooching y!`);
-            finalBounds.y += 40;
-            hasMatch = true;
-          }
-          if (hasMatch) {
-            break;
-          }
-        }
-      }
+      const peers = Array.from(prompts).map((p) => ({ id: p.id, bounds: p.getBounds() }));
+      const finalBounds = adjustBoundsToAvoidOverlap(peers, this.id, rounded);
 
       // this.logInfo(`Final bounds:`, finalBounds);
 
@@ -2033,30 +2011,11 @@ export class KitPrompt {
 
       this.logInfo('setBounds', finalBounds);
 
-      const getTitleBarHeight = () => {
-        const normalBounds = this.window.getNormalBounds();
-        const contentBounds = this.window.getContentBounds();
-        const windowBounds = this.window.getBounds();
-        const size = this.window.getSize();
-        const contentSize = this.window.getContentSize();
-        const minimumSize = this.window.getMinimumSize();
-
-        const titleBarHeight = windowBounds.height - contentBounds.height;
-        log.info('titleBarHeight', {
-          normalBounds,
-          contentBounds,
-          windowBounds,
-          size,
-          contentSize,
-          minimumSize,
-        });
-        return titleBarHeight;
-      };
-
-      const titleBarHeight = getTitleBarHeight();
-      if (finalBounds.height < PROMPT.INPUT.HEIGHT.XS + titleBarHeight) {
+      const titleBarHeight = getTitleBarHeight(this.window);
+      const minHeight = ensureMinWindowHeight(finalBounds.height, titleBarHeight);
+      if (minHeight !== finalBounds.height) {
         this.logInfo('too small, setting to min height', PROMPT.INPUT.HEIGHT.XS);
-        finalBounds.height = PROMPT.INPUT.HEIGHT.XS + titleBarHeight;
+        finalBounds.height = minHeight;
       }
 
       this.window.setBounds(finalBounds, false);
