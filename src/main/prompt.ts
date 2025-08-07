@@ -76,6 +76,7 @@ import {
   getCurrentScreenPromptCache as utilGetCurrentScreenPromptCache,
   pointOnMouseScreen as utilPointOnMouseScreen,
 } from './prompt.screen-utils';
+import { isDevToolsShortcut, computeShouldCloseOnInitialEscape } from './prompt.focus-utils';
 
 import { promptLog as log, themeLog } from './logs';
 import { visibilityController } from './visibility';
@@ -1297,11 +1298,7 @@ export class KitPrompt {
 
     // Intercept DevTools keyboard shortcuts to set flag before blur happens
     this.window.webContents?.on('before-input-event', (_event, input) => {
-      // Check for common DevTools shortcuts: Ctrl/Cmd+Shift+I or F12
-      const isDevToolsShortcut =
-        ((input.control || input.meta) && input.shift && input.key.toLowerCase() === 'i') || input.key === 'F12';
-
-      if (isDevToolsShortcut) {
+      if (isDevToolsShortcut(input)) {
         this.devToolsOpening = true;
         // Reset flag after a short delay
         setTimeout(() => {
@@ -3048,7 +3045,7 @@ export class KitPrompt {
   };
 
   private shouldClosePromptOnInitialEscape = (isEscape: boolean): boolean => {
-    return (this.firstPrompt || this.isMainMenu) && isEscape && !this.wasActionsJustOpen;
+    return computeShouldCloseOnInitialEscape(this.firstPrompt, this.isMainMenu, isEscape, this.wasActionsJustOpen);
   };
 
   private hideAndRemoveProcess = () => {
