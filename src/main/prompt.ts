@@ -168,46 +168,7 @@ let prevPromptState: PromptState = {
   isKiosk: false,
 };
 
-export const logPromptState = () => {
-  for (const prompt of prompts) {
-    const promptState: PromptState = {
-      isMinimized: prompt.window.isMinimized(),
-      isVisible: prompt.window.isVisible(),
-      isFocused: prompt.window.isFocused(),
-      isDestroyed: prompt.window.isDestroyed(),
-      isFullScreen: prompt.window.isFullScreen(),
-      isFullScreenable: prompt.window.isFullScreenable(),
-      isMaximizable: prompt.window.isMaximizable(),
-      isResizable: prompt.window.isResizable(),
-      isModal: prompt.window.isModal(),
-      isAlwaysOnTop: prompt.window.isAlwaysOnTop(),
-      isClosable: prompt.window.isClosable(),
-      isMovable: prompt.window.isMovable(),
-      isSimpleFullScreen: prompt.window.isSimpleFullScreen(),
-      isKiosk: prompt.window.isKiosk(),
-      isNormal: prompt.window.isNormal(),
-      isVisibleOnAllWorkspaces: prompt.window.isVisibleOnAllWorkspaces(),
-    };
-
-    // Compare the previous state to the current state
-    const diff = Object.keys(promptState).reduce((acc, key) => {
-      if (promptState[key] !== prevPromptState[key]) {
-        acc[key] = promptState[key];
-      }
-      return acc;
-    }, {} as any);
-
-    // If there are any differences, log them
-    if (Object.keys(diff).length > 0) {
-      log.info(
-        `
-  👙 Prompt State:`,
-        JSON.stringify(diff, null, 2),
-      );
-      prevPromptState = promptState;
-    }
-  }
-};
+export { logPromptStateFlow as logPromptState } from './prompt.log-state';
 
 // TODO: Move this into a screen utils
 export const getCurrentScreenFromMouse = utilGetCurrentScreenFromMouse;
