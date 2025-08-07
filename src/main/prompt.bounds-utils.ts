@@ -60,29 +60,29 @@ export function ensureMinWindowHeight(height: number, titleBarHeight: number): n
 }
 
 export function applyPromptDataBounds(window: BrowserWindow, promptData: PromptData) {
-  const { x, y, width, height, ui } = promptData as any;
+    const { x, y, width, height, ui } = promptData as any;
 
-  // Handle position
-  if (x !== undefined || y !== undefined) {
-    const [currentX, currentY] = window?.getPosition() || [];
-    if ((x !== undefined && x !== currentX) || (y !== undefined && y !== currentY)) {
-      window?.setPosition(
-        x !== undefined ? Math.round(Number(x)) : currentX,
-        y !== undefined ? Math.round(Number(y)) : currentY,
-      );
+    // Handle position
+    if (x !== undefined || y !== undefined) {
+        const [currentX, currentY] = window?.getPosition() || [];
+        if ((x !== undefined && x !== currentX) || (y !== undefined && y !== currentY)) {
+            window?.setPosition(
+                x !== undefined ? Math.round(Number(x)) : currentX,
+                y !== undefined ? Math.round(Number(y)) : currentY,
+            );
+        }
     }
-  }
 
-  // Only handle size if not UI.arg and dimensions are provided
-  if (ui !== 'arg' && (width !== undefined || height !== undefined)) {
-    const [currentWidth, currentHeight] = window?.getSize() || [];
-    if ((width !== undefined && width !== currentWidth) || (height !== undefined && height !== currentHeight)) {
-      window?.setSize(
-        width !== undefined ? Math.round(Number(width)) : currentWidth,
-        height !== undefined ? Math.round(Number(height)) : currentHeight,
-      );
+    // Only handle size if not UI.arg and dimensions are provided
+    if (ui !== 'arg' && (width !== undefined || height !== undefined)) {
+        const [currentWidth, currentHeight] = window?.getSize() || [];
+        if ((width !== undefined && width !== currentWidth) || (height !== undefined && height !== currentHeight)) {
+            window?.setSize(
+                width !== undefined ? Math.round(Number(width)) : currentWidth,
+                height !== undefined ? Math.round(Number(height)) : currentHeight,
+            );
+        }
     }
-  }
 }
 
 

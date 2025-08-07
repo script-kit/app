@@ -67,6 +67,7 @@ import { clearPromptCacheFor } from './prompt.cache';
 import { calculateTargetDimensions, calculateTargetPosition } from './prompt.resize-utils';
 import { adjustBoundsToAvoidOverlap, getTitleBarHeight, ensureMinWindowHeight, applyPromptDataBounds } from './prompt.bounds-utils';
 import { shouldMonitorProcess, getProcessCheckInterval, getLongRunningThresholdMs } from './prompt.process-utils';
+import { startProcessMonitoring as monitorStart, stopProcessMonitoring as monitorStop, listenForProcessExit as monitorListen, checkProcessAlive as monitorCheck } from './prompt.process-monitor';
 import { buildLongRunningNotificationOptions, buildProcessConnectionLostOptions, buildProcessDebugInfo } from './prompt.notifications';
 import {
   getAllScreens as utilGetAllScreens,
@@ -732,7 +733,7 @@ export class KitPrompt {
   /**
    * Send notification about lost process connection
    */
-  private notifyProcessConnectionLost = () => {
+  private notifyProcessConnectionLost() {
     if (!this.scriptName || this.scriptName === 'unknown' || this.scriptName === 'script-not-set') {
       this.logWarn(`Process connection lost for unknown script (PID: ${this.pid}) - skipping notification`);
       return;
@@ -774,7 +775,7 @@ export class KitPrompt {
     });
 
     notification.show();
-  };
+  }
 
   /**
    * Show debug information about the process connection
@@ -818,90 +819,23 @@ export class KitPrompt {
     // Get custom check interval if set
     this.processCheckInterval = getProcessCheckInterval(kitState?.kenvEnv as any, this.processCheckInterval);
 
-    this.logInfo(`Starting process monitoring for PID ${this.pid} (checking every ${this.processCheckInterval}ms)`);
-
-    // Start monitoring immediately for better process exit detection
-    if (this.boundToProcess && this.pid) {
-      // Do an immediate check first
-      this.checkProcessAlive(true);
-
-      // Then start regular interval monitoring
-      this.processMonitorTimer = setInterval(() => {
-        this.checkProcessAlive();
-      }, this.processCheckInterval);
-    }
+    monitorStart(this);
   };
 
   private stopProcessMonitoring = () => {
-    if (this.processMonitorTimer) {
-      clearInterval(this.processMonitorTimer);
-      this.processMonitorTimer = undefined;
-      this.logInfo(`Stopped process monitoring for PID ${this.pid}`);
-    }
+    monitorStop(this);
   };
 
-  private checkProcessAlive = (force = false) => {
-    if (!(this.pid && this.boundToProcess)) {
-      return;
-    }
-
-    // Don't check processes that were just bound (give them time to initialize)
-    if (!force && this.scriptStartTime && Date.now() - this.scriptStartTime < 2000) {
-      return;
-    }
-
+  private checkProcessAlive(force = false) {
     this.lastProcessCheckTime = Date.now();
-
-    try {
-      // Use process.kill(pid, 0) to check if process exists without actually killing it
-      // This will throw an error if the process doesn't exist
-      process.kill(this.pid, 0);
-
-      // If we get here, the process is still alive
-      // Reset connection lost flag if it was previously set
-      if (this.processConnectionLost) {
-        this.logInfo(`Process ${this.pid} reconnected or was temporarily unavailable`);
-        this.processConnectionLost = false;
-      }
-    } catch (error) {
-      // Process doesn't exist anymore
-      if (!this.processConnectionLost) {
-        this.logInfo(`Process ${this.pid} is no longer running. Setting connection lost flag.`);
-        this.processConnectionLost = true;
-
-        // Notify user about the lost connection
-        this.notifyProcessConnectionLost();
-      }
-
-      // Don't immediately clean up - let user decide via notification
-      // But after a timeout, clean up automatically
-      setTimeout(() => {
-        if (this.processConnectionLost && this.boundToProcess) {
-          this.logInfo(`Auto-cleaning up disconnected prompt after timeout: PID ${this.pid}`);
-          this.handleProcessGone();
-        }
-      }, 30000); // 30 seconds timeout
-    }
-  };
+    monitorCheck(this, force);
+  }
 
   private listenForProcessExit = () => {
-    // Listen for the ProcessGone event from the process manager
-    const processGoneHandler = (pid: number) => {
-      if (pid === this.pid) {
-        this.logInfo(`Received ProcessGone event for PID ${this.pid}`);
-        this.handleProcessGone();
-      }
-    };
-
-    emitter.on(KitEvent.ProcessGone, processGoneHandler);
-
-    // Clean up listener when prompt is destroyed
-    this.window.once('closed', () => {
-      emitter.off(KitEvent.ProcessGone, processGoneHandler);
-    });
+    monitorListen(this);
   };
 
-  private handleProcessGone = () => {
+  private handleProcessGone() {
     if (!this.boundToProcess) {
       return; // Already handled
     }
@@ -937,7 +871,7 @@ export class KitPrompt {
 
     // Reset the prompt state
     this.resetState();
-  };
+  }
 
   promptBounds = {
     id: '',
@@ -1168,6 +1102,11 @@ export class KitPrompt {
         }
       }
     };
+
+    // Ensure methods referenced by external monitor helpers are marked as used for linter
+    void this.notifyProcessConnectionLost;
+    void this.checkProcessAlive;
+    void this.handleProcessGone;
 
     this.logInfo(`🎬 Init appearance: ${kitState.appearance}`);
     setAppearance(this.window, kitState.appearance);

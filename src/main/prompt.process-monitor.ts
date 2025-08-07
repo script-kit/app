@@ -1,22 +1,5 @@
-import { Notification } from 'electron';
-import { KitEvent, emitter } from './shared/events';
-import { AppChannel } from './shared/enums';
-
-export interface ProcessMonitorDeps {
-    pid: number;
-    windowDestroyed: () => boolean;
-    isMainMenu: boolean;
-    scriptStartTime?: number;
-    boundToProcess: boolean;
-    logInfo: (...args: any[]) => void;
-    logWarn: (...args: any[]) => void;
-    logError: (...args: any[]) => void;
-    focusPrompt: () => void;
-    close: (reason: string) => void;
-    hideInstant: () => void;
-    isDestroyed: () => boolean;
-    sendToAllPrompts: (channel: AppChannel, data: any) => void;
-}
+import { KitEvent, emitter } from '../shared/events';
+import { processes } from './process';
 
 export function processExists(pid: number): boolean {
     try {
@@ -25,6 +8,74 @@ export function processExists(pid: number): boolean {
     } catch {
         return false;
     }
+}
+
+export function checkProcessAlive(prompt: any, force = false) {
+  if (!(prompt.pid && prompt.boundToProcess)) return;
+
+  if (!force && prompt.scriptStartTime && Date.now() - prompt.scriptStartTime < 2000) return;
+
+  prompt.lastProcessCheckTime = Date.now();
+
+  try {
+    process.kill(prompt.pid, 0);
+    if (prompt.processConnectionLost) {
+      prompt.logInfo?.(`Process ${prompt.pid} reconnected or was temporarily unavailable`);
+      prompt.processConnectionLost = false;
+    }
+  } catch {
+    if (!prompt.processConnectionLost) {
+      prompt.logInfo?.(`Process ${prompt.pid} is no longer running. Setting connection lost flag.`);
+      prompt.processConnectionLost = true;
+      // Notify user about the lost connection
+      prompt.notifyProcessConnectionLost?.();
+    }
+
+    setTimeout(() => {
+      if (prompt.processConnectionLost && prompt.boundToProcess) {
+        prompt.logInfo?.(`Auto-cleaning up disconnected prompt after timeout: PID ${prompt.pid}`);
+        // Inline logic similar to handleProcessGone minimal behavior
+        try {
+          processes.removeByPid(prompt.pid, 'process gone - prompt cleanup');
+        } catch {}
+        prompt.handleProcessGone?.();
+      }
+    }, 30000);
+  }
+}
+
+export function startProcessMonitoring(prompt: any) {
+  if (!prompt.processMonitoringEnabled || prompt.processMonitorTimer) return;
+
+  prompt.logInfo?.(`Starting process monitoring for PID ${prompt.pid} (checking every ${prompt.processCheckInterval}ms)`);
+  if (prompt.boundToProcess && prompt.pid) {
+    checkProcessAlive(prompt, true);
+    prompt.processMonitorTimer = setInterval(() => {
+      checkProcessAlive(prompt);
+    }, prompt.processCheckInterval);
+  }
+}
+
+export function stopProcessMonitoring(prompt: any) {
+  if (prompt.processMonitorTimer) {
+    clearInterval(prompt.processMonitorTimer);
+    prompt.processMonitorTimer = undefined;
+    prompt.logInfo?.(`Stopped process monitoring for PID ${prompt.pid}`);
+  }
+}
+
+export function listenForProcessExit(prompt: any) {
+  const processGoneHandler = (pid: number) => {
+    if (pid === prompt.pid) {
+      prompt.logInfo?.(`Received ProcessGone event for PID ${prompt.pid}`);
+      prompt.handleProcessGone?.();
+    }
+  };
+
+  emitter.on(KitEvent.ProcessGone, processGoneHandler);
+  prompt.window?.once('closed', () => {
+    emitter.off(KitEvent.ProcessGone, processGoneHandler);
+  });
 }
 
 
