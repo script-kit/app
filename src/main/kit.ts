@@ -199,11 +199,12 @@ export const runPromptProcess = async (
       cwd: '',
     },
 ): Promise<ProcessInfo | null> => {
+  const chainId = Math.random().toString(36).slice(2, 10);
   if (!kitState.ready) {
-    log.warn('Kit not ready. Ignoring prompt process:', { promptScriptPath, args, options });
+    log.warn(`[SC_CHAIN ${chainId}] Kit not ready. Ignoring prompt process:`, { promptScriptPath, args, options });
     return null;
   }
-  log.info('runPromptProcess', { promptScriptPath, args, options });
+  log.info(`[SC_CHAIN ${chainId}] runPromptProcess:start`, { promptScriptPath, args, options });
   // log.info(`->>> Prompt script path: ${promptScriptPath}`);
 
   const count = prompts.getVisiblePromptCount();
@@ -230,6 +231,10 @@ export const runPromptProcess = async (
   // TODO: Handle Schedule/Background/etc without prompts?
   // Quickly firing schedule processes would create WAY too many prompts
   const promptInfo = processes.findIdlePromptProcess();
+  log.info(`[SC_CHAIN ${chainId}] pickedIdlePrompt`, {
+    pid: promptInfo?.pid,
+    scriptPath: promptInfo?.scriptPath,
+  });
 
   promptInfo.launchedFromMain = isMain;
   if (!kitState.hasOpenedMainMenu && isMain) {
@@ -251,16 +256,19 @@ export const runPromptProcess = async (
   prompt.alwaysOnTop = true;
   if (isMain) {
     log.info(`${pid}: 🏠 Main script: ${promptScriptPath}`);
+    log.info(`[SC_CHAIN ${chainId}] mainInitBoundsAndShow`);
     prompt.initMainBounds();
     prompt.initShowPrompt();
   } else if (options.trigger === Trigger.Snippet) {
     log.info(`${pid}: 📝 Snippet trigger: Preparing prompt`);
+    log.info(`[SC_CHAIN ${chainId}] snippetInitBounds`);
     // For snippets, prepare the prompt bounds but don't show it yet
     // The script will call setPromptData if it needs to show a prompt
     prompt.initBounds();
     // Don't call initShowPrompt() here - let the script decide
   } else {
     log.info(`${pid}: 🖱️ Moving prompt to mouse screen`);
+    log.info(`[SC_CHAIN ${chainId}] attemptPreloadAndMoveToMouseScreen`);
     prompt.attemptPreload(promptScriptPath);
     prompt.moveToMouseScreen();
   }
@@ -304,21 +312,26 @@ export const runPromptProcess = async (
   let script: Script | undefined;
   try {
     script = scriptlet || (await findScript(promptScriptPath));
-  } catch { }
+    log.info(`[SC_CHAIN ${chainId}] findScript:success`, { name: script?.name, filePath: script?.filePath });
+  } catch (error) {
+    log.warn(`[SC_CHAIN ${chainId}] findScript:error`, error as any);
+  }
   if (!script) {
-    log.error(`Couldn't find script, blocking run: `, promptScriptPath);
+    log.error(`[SC_CHAIN ${chainId}] Couldn't find script, blocking run: `, promptScriptPath);
     return null;
   }
   const visible = prompt?.isVisible();
   log.info(`${pid}: ${visible ? '👀 visible' : '🙈 not visible'} before setScript ${script?.name}`);
+  log.info(`[SC_CHAIN ${chainId}] beforeSetScript`, { visible, scriptName: script?.name });
 
   if (visible) {
     setShortcodes(prompt, kitCache.scripts);
   }
 
   const status = await prompt.setScript(script, pid, options?.force);
+  log.info(`[SC_CHAIN ${chainId}] afterSetScript`, { status });
   if (status === 'denied') {
-    log.info(`Another script is already controlling the UI. Denying UI control: ${path.basename(promptScriptPath)}`);
+    log.info(`[SC_CHAIN ${chainId}] deniedUIControl ${path.basename(promptScriptPath)}`);
   }
 
   // processes.assignScriptToProcess(promptScriptPath, pid);
@@ -338,20 +351,25 @@ export const runPromptProcess = async (
     options?.cwd || '',
   ];
 
-  log.info(`${pid}: 🚀 Send ${promptScriptPath} with `, { argsWithTrigger });
-  child?.send({
-    channel: Channel.VALUE_SUBMITTED,
-    input: '',
-    value: {
-      script: promptScriptPath,
-      args: argsWithTrigger,
-      trigger: options?.trigger,
-      choices: scriptlet ? [scriptlet] : [],
-      name: script?.name,
-      headers: options?.headers,
-      scriptlet,
-    },
-  });
+  log.info(`[SC_CHAIN ${chainId}] beforeChildSend`, { pid, promptScriptPath, argsWithTrigger });
+  try {
+    child?.send({
+      channel: Channel.VALUE_SUBMITTED,
+      input: '',
+      value: {
+        script: promptScriptPath,
+        args: argsWithTrigger,
+        trigger: options?.trigger,
+        choices: scriptlet ? [scriptlet] : [],
+        name: script?.name,
+        headers: options?.headers,
+        scriptlet,
+      },
+    });
+    log.info(`[SC_CHAIN ${chainId}] afterChildSend:success`, { pid });
+  } catch (error) {
+    log.error(`[SC_CHAIN ${chainId}] afterChildSend:error`, error as any);
+  }
 
   return promptInfo;
 };

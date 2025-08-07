@@ -965,10 +965,36 @@ export class KitPrompt {
       }
 
       if (this?.window?.webContents?.send) {
-        if (channel) {
-          this.window?.webContents.send(String(channel), data);
-        } else {
+        if (!channel) {
           this.logError('channel is undefined', { data });
+          return;
+        }
+        try {
+          this.window?.webContents.send(String(channel), data);
+        } catch (error) {
+          const err = error as Error;
+          const isSerializationError = typeof err?.message === 'string' && err.message.includes('Failed to serialize arguments');
+          const dataSummary = (() => {
+            const type = typeof data;
+            if (data === null || type !== 'object') return { type, preview: String(data) };
+            try {
+              const keys = Object.keys(data as any);
+              const sample: Record<string, string> = {};
+              for (const k of keys.slice(0, 10)) {
+                const v = (data as any)[k];
+                const vt = typeof v;
+                sample[k] = vt === 'object' ? (v?.constructor?.name || 'object') : vt;
+              }
+              return { type: 'object', keys: keys.slice(0, 50), sampleTypes: sample };
+            } catch {
+              return { type: 'object', note: 'Could not inspect keys' };
+            }
+          })();
+          this.logError(isSerializationError ? 'sendToPrompt: Failed to serialize arguments' : 'sendToPrompt error', {
+            channel: String(channel),
+            message: err?.message,
+            dataSummary,
+          });
         }
       }
     };

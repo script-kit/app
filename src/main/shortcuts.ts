@@ -125,11 +125,13 @@ const createProcessHandler = (fn: () => Promise<void> | void, options: ProcessHa
 const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
   try {
     const shortcutAction = createProcessHandler(() => {
+      const traceId = Math.random().toString(36).slice(2, 10);
+      log.info(`[SC ${traceId}] Shortcut handler start`, { shortcut, filePath, shebang: !!shebang });
       kitState.shortcutPressed = shortcut;
 
       if (shebang) {
         // split shebang into command and args
-        log.info(`Running shebang: ${shebang} for ${filePath}`);
+        log.info(`[SC ${traceId}] Running shebang: ${shebang} for ${filePath}`);
         spawnShebang({ shebang, filePath });
 
         return;
@@ -138,12 +140,14 @@ const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
       log.info(`
 ----------------------------------------
 🏡  Shortcut pressed: ${shortcut} -> ${filePath}`);
+      log.info(`[SC ${traceId}] runPromptProcess`, { shortcut, filePath });
 
       runPromptProcess(filePath, [], {
         force: true,
         trigger: Trigger.Shortcut,
         sponsorCheck: true,
       });
+      log.info(`[SC ${traceId}] runPromptProcess:dispatched`, { shortcut, filePath });
     });
     const success = globalShortcut.register(shortcut, shortcutAction);
 
