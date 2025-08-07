@@ -64,6 +64,7 @@ import { TrackEvent, trackEvent } from './track';
 import { getVersion } from './version';
 import { makeKeyPanel, makeWindow, prepForClose, setAppearance } from './window/utils';
 import { clearPromptCacheFor } from './prompt.cache';
+import { calculateTargetDimensions, calculateTargetPosition } from './prompt.resize-utils';
 import {
   getAllScreens as utilGetAllScreens,
   getCurrentScreenFromMouse as utilGetCurrentScreenFromMouse,
@@ -2213,7 +2214,6 @@ export class KitPrompt {
     resizeData: ResizeData,
     currentBounds: Electron.Rectangle,
   ): Pick<Rectangle, 'width' | 'height'> {
-    const { calculateTargetDimensions } = require('./prompt.resize-utils');
     return calculateTargetDimensions(resizeData, currentBounds);
   }
 
@@ -2222,7 +2222,6 @@ export class KitPrompt {
     targetDimensions: Pick<Rectangle, 'width' | 'height'>,
     cachedBounds?: Partial<Electron.Rectangle>,
   ): Pick<Rectangle, 'x' | 'y'> {
-    const { calculateTargetPosition } = require('./prompt.resize-utils');
     return calculateTargetPosition(currentBounds, targetDimensions, cachedBounds);
   }
 
