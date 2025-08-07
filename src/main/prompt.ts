@@ -1294,36 +1294,11 @@ export class KitPrompt {
 
     this.window.on('hide', () => {
       this.logInfo('🫣 Prompt window hidden');
-
-      if (!kitState.isLinux) {
-        kitState.emojiActive = false;
-      }
+      if (!kitState.isLinux) kitState.emojiActive = false;
     });
 
     this.window.on('show', () => {
       this.logInfo('😳 Prompt window shown');
-    });
-
-    this.window.webContents?.on('did-fail-load', (errorCode, errorDescription, validatedURL, isMainFrame) => {
-      this.logError(`did-fail-load: ${errorCode} ${errorDescription} ${validatedURL} ${isMainFrame}`);
-    });
-
-    this.window.webContents?.on('did-stop-loading', () => {
-      this.logInfo('did-stop-loading');
-    });
-
-    this.window.webContents?.on('dom-ready', () => {
-      this.logInfo(`🍀 dom-ready on ${this?.scriptPath}`);
-
-      this.sendToPrompt(Channel.SET_READY, true);
-    });
-
-    this.window.webContents?.on('render-process-gone', (event, details) => {
-      processes.removeByPid(this.pid, 'prompt exit cleanup');
-      this.sendToPrompt = () => { };
-      this.window.webContents.send = () => { };
-      this.logError('🫣 Render process gone...');
-      this.logError({ event, details });
     });
 
     const onResized = () => {

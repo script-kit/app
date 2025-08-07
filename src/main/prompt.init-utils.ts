@@ -10,6 +10,7 @@ import path from 'node:path';
 import { getVersion } from './version';
 import { ipcMain } from 'electron';
 import { KitEvent, emitter } from '../shared/events';
+import { processes } from './process';
 
 export function setupDevtoolsHandlers(prompt: KitPrompt) {
     prompt.window.webContents?.on('devtools-opened', () => {
@@ -39,63 +40,84 @@ export function setupDevtoolsHandlers(prompt: KitPrompt) {
 }
 
 export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
-  prompt.window.webContents?.on('dom-ready', () => {
-    prompt.logInfo('📦 dom-ready');
-    prompt.window?.webContents?.setZoomLevel(0);
-    prompt.window.webContents?.on('before-input-event', prompt.beforeInputHandler as any);
-  });
-
-  prompt.window.webContents?.once('did-finish-load', () => {
-    kitState.hiddenByUser = false;
-    prompt.logSilly('event: did-finish-load');
-    prompt.sendToPrompt(AppChannel.APP_CONFIG as any, {
-      delimiter: path.delimiter,
-      sep: path.sep,
-      os: os.platform(),
-      isMac: os.platform().startsWith('darwin'),
-      isWin: os.platform().startsWith('win'),
-      isLinux: os.platform().startsWith('linux'),
-      assetPath: getAssetPath(),
-      version: getVersion(),
-      isDark: kitState.isDark,
-      searchDebounce: Boolean(kitState.kenvEnv?.KIT_SEARCH_DEBOUNCE === 'false'),
-      termFont: kitState.kenvEnv?.KIT_TERM_FONT || 'monospace',
-      url: kitState.url,
+    prompt.window.webContents?.on('dom-ready', () => {
+        prompt.logInfo('📦 dom-ready');
+        prompt.window?.webContents?.setZoomLevel(0);
+        prompt.window.webContents?.on('before-input-event', prompt.beforeInputHandler as any);
     });
 
-    const user = (prompt as any).snapshot ? (prompt as any).snapshot(kitState.user) : kitState.user;
-    prompt.logInfo(`did-finish-load, setting prompt user to: ${user?.login}`);
-    prompt.sendToPrompt(AppChannel.USER_CHANGED, user);
-    (prompt as any).setKitStateAtom?.({ isSponsor: kitState.isSponsor });
-    emitter.emit(KitEvent.DID_FINISH_LOAD);
+    prompt.window.webContents?.once('did-finish-load', () => {
+        kitState.hiddenByUser = false;
+        prompt.logSilly('event: did-finish-load');
+        prompt.sendToPrompt(AppChannel.APP_CONFIG as any, {
+            delimiter: path.delimiter,
+            sep: path.sep,
+            os: os.platform(),
+            isMac: os.platform().startsWith('darwin'),
+            isWin: os.platform().startsWith('win'),
+            isLinux: os.platform().startsWith('linux'),
+            assetPath: getAssetPath(),
+            version: getVersion(),
+            isDark: kitState.isDark,
+            searchDebounce: Boolean(kitState.kenvEnv?.KIT_SEARCH_DEBOUNCE === 'false'),
+            termFont: kitState.kenvEnv?.KIT_TERM_FONT || 'monospace',
+            url: kitState.url,
+        });
 
-    const messagesReadyHandler = async (_event, _pid) => {
-      if (!prompt.window || prompt.window.isDestroyed()) {
-        prompt.logError('📬 Messages ready. Prompt window is destroyed. Not initializing');
-        return;
-      }
-      prompt.logInfo('📬 Messages ready. ');
-      prompt.window.on('blur', prompt.onBlur);
+        const user = (prompt as any).snapshot ? (prompt as any).snapshot(kitState.user) : kitState.user;
+        prompt.logInfo(`did-finish-load, setting prompt user to: ${user?.login}`);
+        prompt.sendToPrompt(AppChannel.USER_CHANGED, user);
+        (prompt as any).setKitStateAtom?.({ isSponsor: kitState.isSponsor });
+        emitter.emit(KitEvent.DID_FINISH_LOAD);
 
-      if (prompt.initMain) prompt.initMainPrompt('messages ready');
+        const messagesReadyHandler = async (_event, _pid) => {
+            if (!prompt.window || prompt.window.isDestroyed()) {
+                prompt.logError('📬 Messages ready. Prompt window is destroyed. Not initializing');
+                return;
+            }
+            prompt.logInfo('📬 Messages ready. ');
+            prompt.window.on('blur', prompt.onBlur);
 
-      prompt.readyEmitter.emit('ready');
-      prompt.ready = true;
+            if (prompt.initMain) prompt.initMainPrompt('messages ready');
 
-      prompt.logInfo(`🚀 Prompt ready. Forcing render. ${prompt.window?.isVisible() ? 'visible' : 'hidden'}`);
-      prompt.sendToPrompt(AppChannel.FORCE_RENDER, undefined);
-      await prompt.window?.webContents?.executeJavaScript('console.log(document.body.offsetHeight);');
-      await prompt.window?.webContents?.executeJavaScript('console.clear();');
-    };
+            prompt.readyEmitter.emit('ready');
+            prompt.ready = true;
 
-    ipcMain.once(AppChannel.MESSAGES_READY, messagesReadyHandler as any);
+            prompt.logInfo(`🚀 Prompt ready. Forcing render. ${prompt.window?.isVisible() ? 'visible' : 'hidden'}`);
+            prompt.sendToPrompt(AppChannel.FORCE_RENDER, undefined);
+            await prompt.window?.webContents?.executeJavaScript('console.log(document.body.offsetHeight);');
+            await prompt.window?.webContents?.executeJavaScript('console.clear();');
+        };
 
-    if (kitState.kenvEnv?.KIT_MIC) {
-      prompt.sendToPrompt(AppChannel.SET_MIC_ID, kitState.kenvEnv.KIT_MIC);
-    }
-    if (kitState.kenvEnv?.KIT_WEBCAM) {
-      prompt.sendToPrompt(AppChannel.SET_WEBCAM_ID, kitState.kenvEnv.KIT_WEBCAM);
-    }
+        ipcMain.once(AppChannel.MESSAGES_READY, messagesReadyHandler as any);
+
+        if (kitState.kenvEnv?.KIT_MIC) {
+            prompt.sendToPrompt(AppChannel.SET_MIC_ID, kitState.kenvEnv.KIT_MIC);
+        }
+        if (kitState.kenvEnv?.KIT_WEBCAM) {
+            prompt.sendToPrompt(AppChannel.SET_WEBCAM_ID, kitState.kenvEnv.KIT_WEBCAM);
+        }
+    });
+
+  prompt.window.webContents?.on('did-fail-load', (errorCode, errorDescription, validatedURL, isMainFrame) => {
+    prompt.logError(`did-fail-load: ${errorCode} ${errorDescription} ${validatedURL} ${isMainFrame}`);
+  });
+
+  prompt.window.webContents?.on('did-stop-loading', () => {
+    prompt.logInfo('did-stop-loading');
+  });
+
+  prompt.window.webContents?.on('dom-ready', () => {
+    prompt.logInfo(`🍀 dom-ready on ${prompt?.scriptPath}`);
+    prompt.sendToPrompt(AppChannel.SET_READY, true);
+  });
+
+  prompt.window.webContents?.on('render-process-gone', (event, details) => {
+    try { processes.removeByPid(prompt.pid, 'prompt exit cleanup'); } catch {}
+    prompt.sendToPrompt = () => { } as any;
+    (prompt.window.webContents as any).send = () => { };
+    prompt.logError('🫣 Render process gone...');
+    prompt.logError({ event, details });
   });
 }
 
