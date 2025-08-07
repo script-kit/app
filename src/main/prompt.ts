@@ -1422,18 +1422,7 @@ export class KitPrompt {
     centerThenFocus(this.window, this.focusPrompt);
   };
 
-  pingPrompt = async (channel: AppChannel, data?: any) => {
-    this.logSilly(`sendToPrompt: ${String(channel)} ${data?.kitScript}`);
-    return new Promise((resolve) => {
-      if (this.window && !this.window.isDestroyed() && this.window?.webContents) {
-        ipcMain.once(channel, () => {
-          this.logInfo(`🎤 ${channel} !!! <<<<`);
-          resolve(true);
-        });
-        this.sendToPrompt(channel, data);
-      }
-    });
-  };
+  pingPrompt = async (channel: AppChannel, data?: any) => (await import('./prompt.ipc-utils')).pingPrompt(this as any, channel, data);
 
   savePromptBounds = (scriptPath: string, bounds: Rectangle, b: number = Bounds.Position | Bounds.Size) => {
     if (!this.window || this.window.isDestroyed()) {
@@ -1479,27 +1468,10 @@ export class KitPrompt {
 
   isDestroyed = () => this.window?.isDestroyed();
 
-  getFromPrompt = <K extends keyof ChannelMap>(child: ChildProcess, channel: K, data?: ChannelMap[K]) => {
-    if (process.env.KIT_SILLY) {
-      this.logSilly(`sendToPrompt: ${String(channel)}`, data);
-    }
-    // this.logInfo(`>_ ${channel}`);
-    if (this.window && !this.window.isDestroyed() && this.window?.webContents) {
-      ipcMain.removeAllListeners(String(channel));
-      ipcMain.once(String(channel), (_event, { value }) => {
-        this.logSilly(`getFromPrompt: ${String(channel)}`, value);
-        try {
-          // this.logInfo('childSend', channel, value, child, child?.connected);
-          if (child?.connected) {
-            child.send({ channel, value });
-          }
-        } catch (error) {
-          this.logError('childSend error', error);
-        }
-      });
-      this.window?.webContents.send(String(channel), data);
-    }
-  };
+  getFromPrompt = <K extends keyof ChannelMap>(child: ChildProcess, channel: K, data?: ChannelMap[K]) => (async () => {
+    const { getFromPrompt } = await import('./prompt.ipc-utils');
+    getFromPrompt(this as any, child, channel, data);
+  })();
 
   private shouldApplyResize(resizeData: ResizeData): boolean {
     if (kitState.isLinux) {
