@@ -63,6 +63,7 @@ import {
 import { TrackEvent, trackEvent } from './track';
 import { getVersion } from './version';
 import { makeKeyPanel, makeWindow, prepForClose, setAppearance } from './window/utils';
+import { setPromptBounds as applyWindowBounds, centerThenFocus } from './prompt.window-utils';
 import { clearPromptCacheFor } from './prompt.cache';
 import { calculateTargetDimensions, calculateTargetPosition } from './prompt.resize-utils';
 import { adjustBoundsToAvoidOverlap, getTitleBarHeight, ensureMinWindowHeight, applyPromptDataBounds } from './prompt.bounds-utils';
@@ -1870,13 +1871,8 @@ export class KitPrompt {
         finalBounds.height = minHeight;
       }
 
-      this.window.setBounds(finalBounds, false);
-      this.promptBounds = {
-        id: this.id,
-        ...this.window?.getBounds(),
-      };
-
-      this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, this.promptBounds);
+      applyWindowBounds(this.window, this.id, finalBounds, this.sendToPrompt as any);
+      this.promptBounds = { id: this.id, ...this.window.getBounds() } as any;
     } catch (error) {
       this.logInfo(`setBounds error ${reason}`, error);
     }
@@ -1912,9 +1908,7 @@ export class KitPrompt {
   };
 
   resetWindow = () => {
-    this.window.setPosition(0, 0);
-    this.window.center();
-    this.focusPrompt();
+    centerThenFocus(this.window, this.focusPrompt);
   };
 
   pingPrompt = async (channel: AppChannel, data?: any) => {
