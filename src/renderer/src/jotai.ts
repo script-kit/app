@@ -994,12 +994,8 @@ export const scoredChoicesAtom = atom(
     }
 
     // Calculate total height of choices
-    let choicesHeight = 0;
     const itemHeight = g(itemHeightAtom);
-    for (const { item: { height } } of cs) {
-      choicesHeight += height || itemHeight;
-      if (choicesHeight > MAX_VLIST_HEIGHT) break; // Limit calculation for very long lists
-    }
+    const choicesHeight = calcVirtualListHeight(cs as any, itemHeight, MAX_VLIST_HEIGHT);
 
     s(choicesHeightAtom, choicesHeight);
 
@@ -1174,10 +1170,11 @@ export const toggleAllSelectedChoicesAtom = atom(null, (g, s) => {
 
 // --- Choice Inputs (for Scriptlets/Dynamic Inputs) ---
 
-const _choiceInputsAtom = atom<string[]>([]);
+type ChoiceInputId = string;
+const _choiceInputsAtom = atom<ChoiceInputId[]>([]);
 export const choiceInputsAtom = atom(
   (g) => g(_choiceInputsAtom),
-  (_g, s, a: string[]) => {
+  (_g, s, a: ChoiceInputId[]) => {
     s(_choiceInputsAtom, a);
   },
 );
@@ -1333,17 +1330,9 @@ export const scoredFlagsAtom = atom(
 
       // Calculate height asynchronously
       requestAnimationFrame(() => {
-        let choicesHeight = 0;
         const itemHeight = g(actionsItemHeightAtom);
-
-        for (const { item: { height } } of a) {
-          choicesHeight += height || itemHeight;
-          if (choicesHeight > MAX_VLIST_HEIGHT) {
-            choicesHeight = MAX_VLIST_HEIGHT;
-            break;
-          }
-        }
-        s(flagsHeightAtom, choicesHeight);
+        const height = calcVirtualListHeight(a as any, itemHeight, MAX_VLIST_HEIGHT);
+        s(flagsHeightAtom, height);
       });
     });
   },

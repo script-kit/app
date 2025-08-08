@@ -12,6 +12,7 @@ export * from './utils';
 export * from './dom-ids';
 export * from './skip-nav';
 export * from './resize/compute';
+export * from './reset';
 
 // As we migrate atoms to the new structure, we'll update this file to import from the new locations
 // For example:
