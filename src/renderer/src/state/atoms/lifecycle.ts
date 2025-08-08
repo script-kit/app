@@ -1,0 +1,42 @@
+/**
+ * Application lifecycle atoms for open/close state management.
+ * These atoms handle the app window visibility lifecycle.
+ */
+
+import { atom } from 'jotai';
+import { pidAtom } from './app-core';
+
+// Temporary atoms that will be properly wired after all modules are extracted
+export const mouseEnabledAtom = atom(
+  () => false,
+  (_g, _s, _a: number) => {}
+);
+
+const _open = atom(false);
+
+// This will be properly implemented after extracting all dependencies
+export const openAtom = atom(
+  (g) => g(_open),
+  (g, s, a: boolean) => {
+    if (g(_open) === a) return;
+    
+    s(mouseEnabledAtom, 0);
+    
+    // TODO: Will add reset logic after all atoms are extracted
+    if (g(_open) && a === false) {
+      // resetPromptState will be added here
+    }
+    s(_open, a);
+  },
+);
+
+export const exitAtom = atom(
+  (g) => g(openAtom),
+  (g, s, pid: number) => {
+    if (g(pidAtom) === pid) {
+      s(openAtom, false);
+    }
+  },
+);
+
+export const resizeCompleteAtom = atom(false);
