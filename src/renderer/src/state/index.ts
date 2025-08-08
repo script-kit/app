@@ -6,6 +6,13 @@
 // Re-export everything from the original jotai.ts file for now
 export * from '../jotai';
 
+// Start re-exporting split files to prepare for future import path changes
+export * from './constants';
+export * from './utils';
+export * from './dom-ids';
+export * from './skip-nav';
+export * from './resize/compute';
+
 // As we migrate atoms to the new structure, we'll update this file to import from the new locations
 // For example:
 // export * from './app-core';
