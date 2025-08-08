@@ -32,6 +32,47 @@ export const createWindow = async ({
     frame: true,
   });
 
+  // Dev-only: wrap send to log serialization failures from this utility window too
+  if (process.env.NODE_ENV === 'development') {
+    try {
+      const originalSend = win.webContents.send.bind(win.webContents);
+      (win.webContents as any).send = (channel: unknown, data?: unknown) => {
+        try {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          structuredClone?.(data);
+        } catch (cloneError) {
+          const err = cloneError as Error;
+          const summarize = (value: unknown) => {
+            const t = typeof value;
+            if (value === null || t !== 'object') return { type: t, preview: String(value) };
+            try {
+              const ctor = (value as any)?.constructor?.name || 'object';
+              const keys = Object.keys(value as any).slice(0, 20);
+              const sample: Record<string, string> = {};
+              for (const k of keys) {
+                const v = (value as any)[k];
+                sample[k] = typeof v === 'object' ? ((v as any)?.constructor?.name || 'object') : typeof v;
+              }
+              return { type: ctor, keys, sampleTypes: sample };
+            } catch {
+              return { type: 'object', note: 'Could not inspect keys' };
+            }
+          };
+          log.error('webContents.send: Failed to serialize arguments', {
+            channel: String(channel),
+            message: err?.message,
+            dataSummary: summarize(data),
+          });
+          throw cloneError;
+        }
+        return originalSend(String(channel), data);
+      };
+    } catch (error) {
+      log.warn('Failed to wrap webContents.send for dev diagnostics', { error: (error as Error)?.message });
+    }
+  }
+
   windowsState.windows.push({
     scriptPath,
     id: win.id,

@@ -923,6 +923,48 @@ export class KitPrompt {
     const options = getPromptOptions(isSplashScreen);
     this.window = new BrowserWindow(options);
 
+    // In development, wrap webContents.send to capture serialization issues from any sender
+    if (process.env.NODE_ENV === 'development') {
+      try {
+        const originalSend = this.window.webContents.send.bind(this.window.webContents);
+        (this.window.webContents as any).send = (channel: unknown, data?: unknown) => {
+          // Validate structured cloneability before actually sending
+          try {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore Node 18+ provides structuredClone; Electron main also supports it
+            structuredClone?.(data);
+          } catch (cloneError) {
+            const err = cloneError as Error;
+            const summarize = (value: unknown) => {
+              const t = typeof value;
+              if (value === null || t !== 'object') return { type: t, preview: String(value) };
+              try {
+                const ctor = (value as any)?.constructor?.name || 'object';
+                const keys = Object.keys(value as any).slice(0, 20);
+                const sample: Record<string, string> = {};
+                for (const k of keys) {
+                  const v = (value as any)[k];
+                  sample[k] = typeof v === 'object' ? ((v as any)?.constructor?.name || 'object') : typeof v;
+                }
+                return { type: ctor, keys, sampleTypes: sample };
+              } catch {
+                return { type: 'object', note: 'Could not inspect keys' };
+              }
+            };
+            this.logError('webContents.send: Failed to serialize arguments', {
+              channel: String(channel),
+              message: err?.message,
+              dataSummary: summarize(data),
+            });
+            throw cloneError;
+          }
+          return originalSend(String(channel), data);
+        };
+      } catch (error) {
+        this.logWarn('Failed to wrap webContents.send for dev diagnostics', { error: (error as Error)?.message });
+      }
+    }
+
     // Register window creation
     const createOpId = processWindowCoordinator.registerOperation(
       this.pid,
