@@ -44,6 +44,7 @@ import { createLogger } from './log-utils';
 import { arraysEqual, colorUtils, dataUtils, domUtils } from './utils/state-utils';
 import { removeTopBorderOnFirstItem, calcVirtualListHeight } from './state/utils';
 import { advanceIndexSkipping } from './state/skip-nav';
+import { computeResize } from './state/resize/compute';
 import {
   SCROLL_THROTTLE_MS,
   PREVIEW_THROTTLE_MS,
@@ -1660,14 +1661,14 @@ export const resize = debounce(
         ch = (document as any)?.getElementById(UI.form)?.offsetHeight;
         mh = ch;
       } else if (ui === UI.div) {
-        ch = (document as any)?.getElementById('panel')?.offsetHeight;
+        ch = (document as any)?.getElementById(ID_PANEL)?.offsetHeight;
         if (ch) {
           mh = promptData?.height || ch;
         } else {
           return; // Wait if the panel isn't rendered yet
         }
       } else if (ui === UI.arg && hasPanel) {
-        ch = (document as any)?.getElementById('panel')?.offsetHeight;
+        ch = (document as any)?.getElementById(ID_PANEL)?.offsetHeight;
         mh = ch;
         forceResize = true;
       } else if (ui === UI.arg && !hasPanel && !scoredChoicesLength && !document.getElementById(ID_LIST)) {
@@ -1695,46 +1696,32 @@ export const resize = debounce(
       forceResize = true;
       prevTopHeight = topHeight;
     }
+    // Compute DOM-free dimensions and flags using extracted compute function
+    const logVisible = g(logHTMLAtom)?.length > 0 && g(scriptAtom)?.log !== false;
+    const logHeight = document.getElementById(ID_LOG)?.offsetHeight || 0;
+    const computeOut = computeResize({
+      ui,
+      scoredChoicesLength: scoredChoicesLength || 0,
+      choicesHeight,
+      hasPanel,
+      hasPreview,
+      promptData: { height: promptData?.height, baseHeight: PROMPT.HEIGHT.BASE },
+      topHeight,
+      footerHeight,
+      isWindow: g(isWindowAtom),
+      justOpened: Boolean(g(justOpenedAtom)),
+      flaggedValue: g(_flaggedValue),
+      mainHeightCurrent: mh,
+      itemHeight: g(itemHeightAtom),
+      logVisible,
+      logHeight,
+      gridActive: g(gridReadyAtom),
+      prevMainHeight: g(prevMh),
+      placeholderOnly,
+    });
 
-    // Adjust height if preview is present (ensure minimum height)
-    if (hasPreview && mh < PROMPT.HEIGHT.BASE) {
-      const previewHeight = document.getElementById(ID_PREVIEW)?.offsetHeight || 0;
-      mh = Math.max(g(flagsHeightAtom), choicesHeight, previewHeight, promptData?.height || PROMPT.HEIGHT.BASE);
-      forceResize = true;
-    }
-
-    // Adjust height if log is visible
-    if (g(logHTMLAtom)?.length > 0 && g(scriptAtom)?.log !== false) {
-      const logHeight = document.getElementById(ID_LOG)?.offsetHeight;
-      mh += logHeight || 0;
-    }
-
-    // Handle forced dimensions (e.g., when actions menu is open)
-    // const promptBounds = g(promptBoundsAtom);
-    // Note: Original logic for forceWidth seemed slightly ambiguous, simplifying based on apparent intent.
-    // const samePrompt = promptBounds?.id === promptData?.id;
-    // const forceWidth = samePrompt ? promptBounds?.width : promptData?.width;
-    let forceHeight;
-
-    const flaggedValue = g(_flaggedValue);
-
-    // Specific height rules when actions (flaggedValue) are active
-    if (ui !== UI.arg) {
-      if (flaggedValue) {
-        if (!promptData?.height || promptData.height < PROMPT.HEIGHT.BASE) {
-          forceHeight = PROMPT.HEIGHT.BASE;
-        } else {
-          forceHeight = promptData.height;
-        }
-      } else {
-        forceHeight = promptData?.height;
-      }
-    }
-
-    if (ui === UI.arg && flaggedValue) {
-      log.info(`🍃 flaggedValue: ${flaggedValue} forceHeight: ${forceHeight}`);
-      forceHeight = PROMPT.HEIGHT.BASE;
-    }
+    mh = computeOut.mainHeight;
+    let forceHeight = computeOut.forceHeight;
 
     if (ui === UI.debugger) {
       forceHeight = 128;
@@ -2019,7 +2006,7 @@ export const panelHTMLAtom = atom(
     }
 
     // Adjust main height if the panel is cleared and no list is present
-    if (a === '' && document.getElementById('panel') && !document.getElementById('list')) {
+    if (a === '' && document.getElementById(ID_PANEL) && !document.getElementById(ID_LIST)) {
       s(mainHeightAtom, 0);
     }
 
