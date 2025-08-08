@@ -34,3 +34,7 @@ export * from './scrolling';
 export * from './editor';
 export * from './chat';
 export * from './log';
+
+// IPC and utilities
+export * from './ipc';
+export * from './utils';
