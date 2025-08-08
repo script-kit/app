@@ -1,5 +1,5 @@
 import { atomEffect } from 'jotai-effect';
-import { kitStateAtom, audioAtom } from '../jotai';
+import { kitStateAtom, audioAtom } from "../state";
 
 export const escapeAudioEffect = atomEffect((get, set) => {
   const { escapePressed } = get(kitStateAtom);

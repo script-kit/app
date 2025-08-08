@@ -9,7 +9,7 @@ import {
     boundsAtom,
     promptResizedByHumanAtom,
     resize,
-} from '../jotai';
+} from "../state";
 
 // Observe geometry-related atoms and trigger a single debounced resize per batch.
 export const unobserveResize = observe((get, set) => {

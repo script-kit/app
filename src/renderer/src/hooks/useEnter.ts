@@ -22,7 +22,7 @@ import {
   submitValueAtom,
   toggleSelectedChoiceAtom,
   uiAtom,
-} from '../jotai';
+} from "../state";
 import { hotkeysOptions } from './shared';
 
 export default () => {

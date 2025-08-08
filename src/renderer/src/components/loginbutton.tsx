@@ -4,7 +4,7 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback } from 'react';
-import { appConfigAtom, channelAtom, sendShortcutAtom, signInActionAtom } from '../jotai';
+import { appConfigAtom, channelAtom, sendShortcutAtom, signInActionAtom } from "../state";
 import { bg, textContrast } from './actions';
 import { GithubIcon } from './icons';
 import { Channel, Mode, PROMPT, UI } from '@johnlindquist/kit/core/enum';

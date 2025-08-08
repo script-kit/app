@@ -10,7 +10,7 @@ import {
   processesAtom,
   promptDataAtom,
   socialAtom,
-} from '../jotai';
+} from "../state";
 
 const TopRightButton = () => {
   const name = useAtomValue(nameAtom);

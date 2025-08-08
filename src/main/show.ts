@@ -19,7 +19,7 @@ import { ensureDir } from './cjs-exports';
 import { fileURLToPath } from 'node:url';
 import { Channel } from '@johnlindquist/kit/core/enum';
 import { getAssetPath } from '../shared/assets';
-import { getCurrentScreenFromMouse } from './prompt';
+import { getCurrentScreenFromMouse } from './prompt.screen-utils';
 import { forceQuit, kitState } from './state';
 
 export const INSTALL_ERROR = 'install-error';
@@ -256,9 +256,9 @@ export const show = async (
     ...(options?.transparent
       ? {}
       : {
-          vibrancy: 'popover',
-          visualEffectState: 'active',
-        }),
+        vibrancy: 'popover',
+        visualEffectState: 'active',
+      }),
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,

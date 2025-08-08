@@ -1,5 +1,5 @@
 import { atomEffect } from 'jotai-effect';
-import { webcamStreamAtom } from '../jotai';
+import { webcamStreamAtom } from "../state";
 
 export const webcamEffect = atomEffect((get) => {
   const stream = get(webcamStreamAtom);

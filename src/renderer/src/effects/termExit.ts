@@ -7,7 +7,7 @@ import {
   promptDataAtom,
   termOutputAtom,
   submitValueAtom,
-} from '../jotai';
+} from "../state";
 import { UI } from '@johnlindquist/kit/core/enum';
 
 export const termExitEffect = atomEffect((get, set) => {

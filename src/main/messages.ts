@@ -32,7 +32,8 @@ import { getMainScriptPath, kenvPath, kitPath, processPlatformSpecificTheme } fr
 // const { pathExistsSync, readJson } = fsExtra;
 import type { Stamp } from '@johnlindquist/kit/core/db';
 import { type Logger, getLog } from './logs';
-import { clearPromptCache, getCurrentScreenFromMouse } from './prompt';
+import { getCurrentScreenFromMouse } from './prompt.screen-utils';
+import { clearPromptCache } from './prompt.cache';
 import {
   debounceSetScriptTimestamp,
   forceQuit,
@@ -2170,7 +2171,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       app.showEmojiPanel();
     }),
     SET_APPEARANCE: onChildChannel(async ({ child }, { channel, value }) => {
-      sendToPrompt(Channel.SET_APPEARANCE, value);
+      // Normalize to a safe literal to avoid passing complex objects
+      const normalized = value === 'dark' || value === 'light' || value === 'auto' ? value : 'auto';
+      sendToPrompt(Channel.SET_APPEARANCE, normalized);
     }),
     SELECT_FILE: onChildChannelOverride(async ({ child }, { channel, value }) => {
       // Show electron file selector dialog

@@ -12,7 +12,7 @@ import {
   inputFocusAtom,
   mouseEnabledAtom,
   shortcutsAtom,
-} from '../jotai';
+} from "../state";
 
 import { hotkeysOptions } from './shared';
 

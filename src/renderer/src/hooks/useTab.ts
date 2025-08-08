@@ -2,7 +2,7 @@ import { Channel } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
-import { channelAtom, focusedChoiceAtom, inputAtom, isMainScriptAtom, tabIndexAtom, tabsAtom } from '../jotai';
+import { channelAtom, focusedChoiceAtom, inputAtom, isMainScriptAtom, tabIndexAtom, tabsAtom } from "../state";
 import { hotkeysOptions } from './shared';
 
 export default () => {

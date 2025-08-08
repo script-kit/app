@@ -1,5 +1,5 @@
 import { atomEffect } from 'jotai-effect';
-import { previewEnabledAtom, triggerResizeAtom } from '../jotai';
+import { previewEnabledAtom, triggerResizeAtom } from "../state";
 
 export const previewEnabledEffect = atomEffect((get, set) => {
   get(previewEnabledAtom);

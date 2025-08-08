@@ -36,7 +36,7 @@ import {
   invalidateChoiceInputsAtom,
   kitStateAtom,
   lastKeyDownWasModifierAtom,
-  miniShortcutsHoveredAtom,
+  _miniShortcutsHoveredAtom,
   miniShortcutsVisibleAtom,
   modifiers,
   onInputSubmitAtom,
@@ -52,7 +52,7 @@ import {
   submitValueAtom,
   submittedAtom,
   userAtom,
-} from '../jotai';
+} from "../state";
 import { ActionButton } from './actionbutton';
 import { EnterButton } from './actionenterbutton';
 import { OptionsButton } from './actionoptionsbutton';
@@ -235,7 +235,7 @@ function MainInput() {
   const [inputFocus, setInputFocus] = useAtom(inputFocusAtom);
   const gridReady = useAtomValue(gridReadyAtom);
 
-  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(miniShortcutsHoveredAtom);
+  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(_miniShortcutsHoveredAtom);
   const flags = useAtomValue(flagsAtom);
   const [flagValue] = useAtom(flaggedChoiceValueAtom);
 
@@ -451,7 +451,7 @@ export default function Input() {
   const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
   const shouldActionButtonShowOnInput = useAtomValue(shouldActionButtonShowOnInputAtom);
   const miniShortcutsVisible = useAtomValue(miniShortcutsVisibleAtom);
-  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(miniShortcutsHoveredAtom);
+  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(_miniShortcutsHoveredAtom);
 
   const footerHidden = useAtomValue(footerHiddenAtom);
   const inputHeight = useAtomValue(inputHeightAtom);

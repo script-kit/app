@@ -6,7 +6,7 @@
 import { UI } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue } from 'jotai';
 import React, { useCallback, useState } from 'react';
-import { placeholderAtom, previewCheckAtom, previewEnabledAtom, previewHTMLAtom, submitValueAtom } from '../jotai';
+import { placeholderAtom, previewCheckAtom, previewEnabledAtom, previewHTMLAtom, submitValueAtom } from "../state";
 
 export default function Drop() {
   // useEscape();

@@ -17,7 +17,7 @@ import {
   panelHTMLAtom,
   shortcutsAtom,
   uiAtom,
-} from '../jotai';
+} from "../state";
 
 function extractInnerHtmlAndClasses(panelHTML: string) {
   // if panelHTML isn't wrapped in a tag, wrap it in a div

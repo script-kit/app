@@ -3,7 +3,7 @@
 import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
-import { cmdAtom, submitValueAtom } from '../jotai';
+import { cmdAtom, submitValueAtom } from "../state";
 
 import { hotkeysOptions } from './shared';
 

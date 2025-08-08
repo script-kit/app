@@ -7,7 +7,7 @@ import React, { type RefObject, useCallback, useRef, useState } from 'react';
 import SimpleBar from 'simplebar-react';
 const { ipcRenderer } = window.electron;
 import { AppChannel } from '../../../shared/enums';
-import { logHTMLAtom, logHeightAtom, scriptAtom } from '../jotai';
+import { logHTMLAtom, logHeightAtom, scriptAtom } from "../state";
 
 export default function Console() {
   const [script, setScript] = useAtom(scriptAtom);

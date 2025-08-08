@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import React, { useEffect, useRef } from 'react';
-import { progressAtom } from './jotai';
+import { progressAtom } from "./state";
 
 export default function ProgressBar() {
   const [progress, setProgress] = useAtom(progressAtom);

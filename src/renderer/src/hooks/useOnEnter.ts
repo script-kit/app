@@ -1,6 +1,6 @@
 import { useAtomValue } from 'jotai';
 import { useEffect } from 'react';
-import { enterPressedAtom } from '../jotai';
+import { enterPressedAtom } from "../state";
 
 export default (callback: () => void) => {
   const enterPressed = useAtomValue(enterPressedAtom);
