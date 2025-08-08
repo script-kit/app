@@ -18,7 +18,7 @@ import {
   pidAtom,
   _chatMessagesAtom,
   runningAtom,
-  miniShortcutsHoveredAtom,
+  _miniShortcutsHoveredAtom,
   logLinesAtom,
   audioDotAtom,
   disableSubmitAtom,
@@ -47,7 +47,7 @@ export function resetPromptState(g: Getter, s: Setter) {
   s(pidAtom, 0);
   s(_chatMessagesAtom, [] as any);
   s(runningAtom, false);
-  s(miniShortcutsHoveredAtom, false);
+  s(_miniShortcutsHoveredAtom, false);
   s(logLinesAtom, []);
   s(audioDotAtom, false);
   s(disableSubmitAtom, false);

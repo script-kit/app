@@ -180,7 +180,7 @@ function resetPromptState(g: Getter, s: Setter) {
   s(pidAtom, 0);
   s(_chatMessagesAtom, []);
   s(runningAtom, false);
-  s(miniShortcutsHoveredAtom, false);
+  s(_miniShortcutsHoveredAtom, false);
   s(logLinesAtom, []);
   s(audioDotAtom, false);
   s(disableSubmitAtom, false);
@@ -260,7 +260,7 @@ export const clearCacheAtom = atom(null, (_g, s) => {
 // Description: State related to the currently executing script.
 // =================================================================================================
 
-const _script = atom<Script>(noScript);
+export const _script = atom<Script>(noScript);
 export const lastScriptClosed = atom('');
 export const backToMainAtom = atom(false);
 export const preloadedAtom = atom(false);
@@ -352,7 +352,7 @@ export const socialAtom = atom((g) => {
 // Description: Core data driving the prompt UI and behavior (PromptData and related atoms).
 // =================================================================================================
 
-const promptData = atom<null | Partial<PromptData>>({
+export const promptData = atom<null | Partial<PromptData>>({
   ui: UI.arg,
   input: '',
   footerClassName: 'hidden',
@@ -1221,7 +1221,7 @@ export const flagsAtom = atom(
 
 // --- Actions Menu State (Open/Close) ---
 
-const _flaggedValue = atom<Choice | string>('');
+export const _flaggedValue = atom<Choice | string>('');
 // Controls whether the actions menu is open (value is the context, e.g., the choice it's open for)
 export const flaggedChoiceValueAtom = atom(
   (g) => g(_flaggedValue),
@@ -1977,7 +1977,7 @@ export const previewCheckAtom = atom((g) => {
 
 // --- Panel HTML (Separate from Preview, often used for UI.div or alongside UI.arg) ---
 
-const _panelHTML = atom<string>('');
+export const _panelHTML = atom<string>('');
 
 export const panelHTMLAtom = atom(
   (g) =>
@@ -2157,7 +2157,7 @@ export const termOutputAtom = atom(
 
 type MessageTypeWithIndex = MessageType & { index: number };
 
-const _chatMessagesAtom = atom<Partial<MessageType>[]>([]);
+export const _chatMessagesAtom = atom<Partial<MessageType>[]>([]);
 export const chatMessagesAtom = atom(
   (g) => g(_chatMessagesAtom),
   (_g, s, a: Partial<MessageTypeWithIndex>[]) => {
@@ -2901,7 +2901,7 @@ export const onShortcutAtom = atom<OnShortcut>({});
 export const shortcodesAtom = atom<string[]>([]);
 
 // These seem related to specific features (mini shortcuts UI) that might be deprecated or experimental
-export const miniShortcutsHoveredAtom = atom(false);
+export const _miniShortcutsHoveredAtom = atom(false);
 export const miniShortcutsVisibleAtom = atom((_g) => {
   // This feature was explicitly disabled in the original code (`return false;`)
   return false;
