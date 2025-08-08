@@ -1,6 +1,5 @@
-import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
+import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import type { Choice, PromptBounds, PromptData, Script, Scriptlet } from '@johnlindquist/kit/types/core';
-import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 
 import { readFile } from 'node:fs/promises';
@@ -12,41 +11,34 @@ import { differenceInHours } from 'date-fns';
 import {
   BrowserWindow,
   type Input,
-  Notification,
   type Point,
   type Rectangle,
   TouchBar,
   app,
   globalShortcut,
-  ipcMain,
   screen,
   shell,
 } from 'electron';
 import type { Display } from 'electron';
-import contextMenu from 'electron-context-menu';
+import { setupPromptContextMenu } from './prompt.context-menu';
 import { debounce } from 'lodash-es';
 
 import type { ChildProcess } from 'node:child_process';
 import EventEmitter from 'node:events';
-import { fileURLToPath } from 'node:url';
 import { closedDiv, noScript } from '../shared/defaults';
 import { ZOOM_LEVEL } from '../shared/defaults';
-import { AppChannel, HideReason } from '../shared/enums';
+import { AppChannel } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
 import type { ResizeData } from '../shared/types';
 import { sendToAllPrompts } from './channel';
-import { cliFromParams, runPromptProcess } from './kit';
 import { getIdles, processes, updateTheme } from './process';
 import { getPromptOptions } from './prompt.options';
 import { prompts } from './prompts';
-import { createPty } from './pty';
 import {
-  getCurrentScreen,
   getCurrentScreenFromBounds,
-  isBoundsWithinDisplayById,
   isBoundsWithinDisplays,
 } from './screen';
-import { invokeSearch, setChoices, setFlags } from './search';
+import { setChoices, setFlags } from './search';
 import { processWindowCoordinator, WindowOperation } from './process-window-coordinator';
 import shims from './shims';
 import {
@@ -62,111 +54,37 @@ import {
 import { TrackEvent, trackEvent } from './track';
 import { getVersion } from './version';
 import { makeKeyPanel, makeWindow, prepForClose, setAppearance } from './window/utils';
-import { setPromptBounds as applyWindowBounds, centerThenFocus } from './prompt.window-utils';
+import { centerThenFocus } from './prompt.window-utils';
 import { initShowPromptFlow, hideFlow, onHideOnceFlow, showPromptFlow, moveToMouseScreenFlow, initBoundsFlow, blurPromptFlow, initMainBoundsFlow } from './prompt.window-flow';
 import { clearPromptCacheFor } from './prompt.cache';
 import { calculateTargetDimensions, calculateTargetPosition } from './prompt.resize-utils';
-import { adjustBoundsToAvoidOverlap, getTitleBarHeight, ensureMinWindowHeight, applyPromptDataBounds } from './prompt.bounds-utils';
-import { shouldMonitorProcess, getProcessCheckInterval, getLongRunningThresholdMs } from './prompt.process-utils';
-import { startProcessMonitoring as monitorStart, stopProcessMonitoring as monitorStop, listenForProcessExit as monitorListen, checkProcessAlive as monitorCheck } from './prompt.process-monitor';
+import { applyPromptDataBounds } from './prompt.bounds-utils';
+import { getLongRunningThresholdMs } from './prompt.process-utils';
 import { setupDevtoolsHandlers, setupDomAndFinishLoadHandlers, setupNavigationHandlers, loadPromptHtml, setupWindowLifecycleHandlers } from './prompt.init-utils';
 import { setupResizeAndMoveListeners } from './prompt.resize-listeners';
 import { togglePromptEnvFlow } from './prompt.toggle-env';
-import { buildProcessConnectionLostOptions, buildProcessDebugInfo } from './prompt.notifications';
-import { startLongRunningMonitorFlow, clearLongRunningMonitorFlow, showLongRunningNotificationFlow, terminateLongRunningScriptFlow } from './prompt.long-running';
+import { startLongRunningMonitorFlow, clearLongRunningMonitorFlow } from './prompt.long-running';
 import {
   getAllScreens as utilGetAllScreens,
   getCurrentScreenFromMouse as utilGetCurrentScreenFromMouse,
   getCurrentScreenPromptCache as utilGetCurrentScreenPromptCache,
   pointOnMouseScreen as utilPointOnMouseScreen,
 } from './prompt.screen-utils';
+import { writePromptState } from './prompt.state-utils';
 import { isDevToolsShortcut, computeShouldCloseOnInitialEscape } from './prompt.focus-utils';
 import { isCloseCombo } from './prompt.input-utils';
 
 import { promptLog as log, themeLog } from './logs';
 import { handleBlurVisibility } from './prompt.visibility-utils';
+import { applyPromptBounds } from './prompt.bounds-apply';
+import { setPromptDataImpl } from './prompt.set-prompt-data';
+import { notifyProcessConnectionLostImpl, startProcessMonitoringImpl, stopProcessMonitoringImpl, listenForProcessExitImpl, checkProcessAliveImpl, handleProcessGoneImpl } from './prompt.process-connection';
+import { initMainChoicesImpl, initMainPreviewImpl, initMainShortcutsImpl, initMainFlagsImpl, initThemeImpl, initPromptImpl } from './prompt.init-main';
+import { actualHideImpl, isVisibleImpl, maybeHideImpl } from './prompt.hide-utils';
 
-// TODO: Hack context menu to avoid "object destroyed" errors
-contextMenu({
-  showInspectElement: true,
-  showSearchWithGoogle: false,
-  showLookUpSelection: false,
-  append: (_defaultActions, _params, browserWindow) => [
-    {
-      label: 'Detach Dev Tools',
-      click: async () => {
-        // Type check to ensure browserWindow is a BrowserWindow
-        if (browserWindow && 'id' in browserWindow && typeof (browserWindow as BrowserWindow).id === 'number') {
-          const bw = browserWindow as BrowserWindow;
-          log.info(`Inspect prompt: ${bw.id}`, {
-            browserWindow,
-          });
-          const prompt = prompts.find((p) => p?.window?.id === bw.id);
-          if (prompt) {
-            // Set flag to prevent main menu from closing
-            prompt.devToolsOpening = true;
-            setTimeout(() => {
-              prompt.devToolsOpening = false;
-            }, 200);
-            prompt.window?.webContents?.openDevTools({
-              mode: 'detach',
-            });
-          }
-        }
-      },
-    },
-    {
-      label: 'Close',
-      click: async () => {
-        // Type check to ensure browserWindow is a BrowserWindow
-        if (browserWindow && 'id' in browserWindow && typeof (browserWindow as BrowserWindow).id === 'number') {
-          const bw = browserWindow as BrowserWindow;
-          log.info(`Close prompt: ${bw.id}`, {
-            browserWindow,
-          });
-          prompts.find((prompt) => prompt?.window?.id === bw.id)?.close('detach dev tools');
-        }
-      },
-    },
-  ],
-});
+setupPromptContextMenu();
 
-// legacy width helper removed; use prompt.resize-utils for calculations
 
-interface PromptState {
-  isMinimized: boolean;
-  isVisible: boolean;
-  isFocused: boolean;
-  isDestroyed: boolean;
-  isFullScreen: boolean;
-  isFullScreenable: boolean;
-  isMaximizable: boolean;
-  isResizable: boolean;
-  isModal: boolean;
-  isAlwaysOnTop: boolean;
-  isClosable: boolean;
-  isMovable: boolean;
-  isSimpleFullScreen: boolean;
-  isKiosk: boolean;
-  [key: string]: boolean;
-}
-
-let prevPromptState: PromptState = {
-  isMinimized: false,
-  isVisible: false,
-  isFocused: false,
-  isDestroyed: false,
-  isFullScreen: false,
-  isFullScreenable: false,
-  isMaximizable: false,
-  isResizable: false,
-  isModal: false,
-  isAlwaysOnTop: false,
-  isClosable: false,
-  isMovable: false,
-  isSimpleFullScreen: false,
-  isKiosk: false,
-};
 
 export { logPromptStateFlow as logPromptState } from './prompt.log-state';
 
@@ -188,36 +106,7 @@ enum Bounds {
 
 export const pointOnMouseScreen = utilPointOnMouseScreen as (p: Point) => boolean;
 
-const writePromptState = (prompt: KitPrompt, screenId: string, scriptPath: string, bounds: PromptBounds) => {
-  if (!(prompt.window && prompt?.isDestroyed())) {
-    return;
-  }
-  if (prompt.kitSearch.input !== '' || prompt.kitSearch.inputRegex) {
-    return;
-  }
-  log.verbose('writePromptState', { screenId, scriptPath, bounds });
-
-  if (!promptState?.screens) {
-    promptState.screens = {};
-  }
-  if (!promptState?.screens[screenId]) {
-    promptState.screens[screenId] = {};
-  }
-
-  if (!bounds.height) {
-    return;
-  }
-  if (!bounds.width) {
-    return;
-  }
-  if (!bounds.x) {
-    return;
-  }
-  if (!bounds.y) {
-    return;
-  }
-  promptState.screens[screenId][scriptPath] = bounds;
-};
+// moved to prompt.state-utils.ts
 
 export type ScriptTrigger = 'startup' | 'shortcut' | 'prompt' | 'background' | 'schedule' | 'snippet';
 
@@ -418,11 +307,7 @@ export class KitPrompt {
   wasActionsJustOpen = false;
   devToolsOpening = false;
 
-  // Long-running script monitoring
-  private longRunningTimer?: NodeJS.Timeout;
-  private hasShownLongRunningNotification = false;
   private longRunningThresholdMs = 60000; // 1 minute default
-  private scriptStartTime?: number;
 
   birthTime = performance.now();
 
@@ -557,21 +442,10 @@ export class KitPrompt {
     clearLongRunningMonitorFlow(this as any);
   };
 
-  private showLongRunningNotification = () => {
-    showLongRunningNotificationFlow(this as any);
-  };
 
-  private terminateLongRunningScript = () => {
-    terminateLongRunningScriptFlow(this as any);
-  };
 
   boundToProcess = false;
-  // Process monitoring
-  private processMonitorTimer?: NodeJS.Timeout;
-  private processMonitoringEnabled = true;
-  private processCheckInterval = 5000; // Check every 5 seconds
   private processConnectionLost = false;
-  private lastProcessCheckTime = 0;
 
   bindToProcess = (pid: number) => {
     if (this.boundToProcess) {
@@ -580,7 +454,6 @@ export class KitPrompt {
     this.pid = pid;
     this.boundToProcess = true;
     this.processConnectionLost = false;
-    this.lastProcessCheckTime = Date.now();
     this.logInfo(`${pid} -> ${this?.window?.id}: 🔗 Binding prompt to process`);
 
     // Start monitoring for long-running scripts
@@ -603,145 +476,18 @@ export class KitPrompt {
   /**
    * Send notification about lost process connection
    */
-  private notifyProcessConnectionLost() {
-    if (!this.scriptName || this.scriptName === 'unknown' || this.scriptName === 'script-not-set') {
-      this.logWarn(`Process connection lost for unknown script (PID: ${this.pid}) - skipping notification`);
-      return;
-    }
+  private notifyProcessConnectionLost() { notifyProcessConnectionLostImpl(this); }
 
-    // Don't notify for idle prompts or prompts without valid scripts
-    if (!this.scriptPath || this.scriptPath === '') {
-      this.logWarn(`Process connection lost for idle prompt (PID: ${this.pid}) - skipping notification`);
-      return;
-    }
 
-    this.logInfo(`Showing process connection lost notification for ${this.scriptName} (PID: ${this.pid})`);
+  private startProcessMonitoring = () => { startProcessMonitoringImpl(this); };
 
-    const connectionLostOptions = buildProcessConnectionLostOptions(
-      this.scriptName,
-      this.pid,
-      process.platform === 'win32',
-    );
+  private stopProcessMonitoring = () => { stopProcessMonitoringImpl(this); };
 
-    const notification = new Notification(connectionLostOptions);
+  private checkProcessAlive(force = false) { checkProcessAliveImpl(this, force); }
 
-    notification.on('action', (_event, index) => {
-      if (index === 0) {
-        // Close Prompt
-        this.logInfo(`User chose to close disconnected prompt: ${this.scriptName}`);
-        this.close('user requested close after connection lost');
-      } else if (index === 1) {
-        // Keep Open
-        this.logInfo(`User chose to keep disconnected prompt open: ${this.scriptName}`);
-      } else if (index === 2) {
-        // Show Debug Info
-        this.logInfo(`User requested debug info for disconnected prompt: ${this.scriptName}`);
-        this.showProcessDebugInfo();
-      }
-    });
+  private listenForProcessExit = () => { listenForProcessExitImpl(this); };
 
-    notification.on('click', () => {
-      this.focusPrompt();
-    });
-
-    notification.show();
-  }
-
-  /**
-   * Show debug information about the process connection
-   */
-  private showProcessDebugInfo = () => {
-    const debugInfo = buildProcessDebugInfo({
-      promptId: this.id,
-      windowId: this.window?.id,
-      pid: this.pid,
-      scriptPath: this.scriptPath,
-      scriptName: this.scriptName,
-      boundToProcess: this.boundToProcess,
-      processConnectionLost: this.processConnectionLost,
-      lastProcessCheckTimeIso: new Date(this.lastProcessCheckTime).toISOString(),
-      timeSinceLastCheck: Date.now() - this.lastProcessCheckTime,
-      isVisible: this.isVisible(),
-      isFocused: this.isFocused(),
-      isDestroyed: this.isDestroyed(),
-    });
-
-    this.logInfo('Process Debug Info:', debugInfo);
-
-    // Also send to all prompts so it can be displayed in any open debug panels
-    sendToAllPrompts(AppChannel.DEBUG_INFO, {
-      type: 'process-connection-lost',
-      data: debugInfo,
-    });
-  };
-
-  private startProcessMonitoring = () => {
-    if (!this.processMonitoringEnabled || this.processMonitorTimer) {
-      return;
-    }
-
-    // Check if monitoring is disabled via environment variable
-    if (!shouldMonitorProcess({ scriptPath: this.scriptPath, scriptName: this.scriptName, kenvEnv: kitState?.kenvEnv as any })) {
-      this.logInfo('Skipping process monitoring (disabled or no valid script)');
-      return;
-    }
-
-    // Get custom check interval if set
-    this.processCheckInterval = getProcessCheckInterval(kitState?.kenvEnv as any, this.processCheckInterval);
-
-    monitorStart(this);
-  };
-
-  private stopProcessMonitoring = () => {
-    monitorStop(this);
-  };
-
-  private checkProcessAlive(force = false) {
-    this.lastProcessCheckTime = Date.now();
-    monitorCheck(this, force);
-  }
-
-  private listenForProcessExit = () => {
-    monitorListen(this);
-  };
-
-  private handleProcessGone() {
-    if (!this.boundToProcess) {
-      return; // Already handled
-    }
-
-    this.logInfo(`Process ${this.pid} is gone. Cleaning up prompt.`);
-
-    // Stop monitoring
-    this.stopProcessMonitoring();
-    this.clearLongRunningMonitor();
-
-    // Mark as no longer bound
-    this.boundToProcess = false;
-
-    // Force close the prompt for process exit scenarios
-    // This bypasses all the normal checks that might prevent closing
-    if (!this.isDestroyed()) {
-      this.close('ProcessGone - force close');
-
-      // If close didn't work (due to cooldowns or other checks), force hide
-      if (!(this.closed || this.isDestroyed())) {
-        this.hideInstant();
-        // Set a short timeout to try closing again
-        setTimeout(() => {
-          if (!(this.closed || this.isDestroyed())) {
-            this.close('ProcessGone - retry force close');
-          }
-        }, 100);
-      }
-    }
-
-    // Remove from processes if it's still there (defensive cleanup)
-    processes.removeByPid(this.pid, 'process gone - prompt cleanup');
-
-    // Reset the prompt state
-    this.resetState();
-  }
+  private handleProcessGone() { handleProcessGoneImpl(this); }
 
   promptBounds = {
     id: '',
@@ -1233,168 +979,8 @@ export class KitPrompt {
   initMainBounds = () => initMainBoundsFlow(this);
 
   setBounds = (bounds: Partial<Rectangle>, reason = '') => {
-    if (!this.window || this.window.isDestroyed()) {
-      return;
-    }
-    this.logInfo(`${this.pid}: 🆒 Attempt ${this.scriptName}: setBounds reason: ${reason}`, bounds);
-    if (!kitState.ready) {
-      return;
-    }
-    const currentBounds = this.window.getBounds();
-    const widthNotChanged = bounds?.width && Math.abs(bounds.width - currentBounds.width) < 4;
-    const heightNotChanged = bounds?.height && Math.abs(bounds.height - currentBounds.height) < 4;
-    const xNotChanged = bounds?.x && Math.abs(bounds.x - currentBounds.x) < 4;
-    const yNotChanged = bounds?.y && Math.abs(bounds.y - currentBounds.y) < 4;
-
-    let sameXAndYAsAnotherPrompt = false;
-    for (const prompt of prompts) {
-      if (prompt?.window?.id === this.window?.id) {
-        continue;
-      }
-      if (prompt.getBounds().x === bounds.x && prompt.getBounds().y === bounds.y) {
-        if (prompt?.isFocused() && prompt?.isVisible()) {
-          this.logInfo(`🔀 Prompt ${prompt.id} has same x and y as ${this.id}. Scooching x and y!`);
-          sameXAndYAsAnotherPrompt = true;
-        }
-      }
-    }
-
-    const noChange =
-      heightNotChanged &&
-      widthNotChanged &&
-      xNotChanged &&
-      yNotChanged &&
-      !sameXAndYAsAnotherPrompt &&
-      !prompts.focused;
-
-    if (noChange) {
-      this.logInfo('📐 No change in bounds, ignoring', {
-        currentBounds,
-        bounds,
-      });
-      return;
-    }
-
-    this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, {
-      id: this.id,
-      ...bounds,
-    });
-
-    const boundsScreen = getCurrentScreenFromBounds(this.window?.getBounds());
-    const mouseScreen = getCurrentScreen();
-    const boundsOnMouseScreen = isBoundsWithinDisplayById(bounds as Rectangle, mouseScreen.id);
-
-    this.logInfo(
-      `${this.pid}: boundsScreen.id ${boundsScreen.id} mouseScreen.id ${mouseScreen.id} boundsOnMouseScreen ${boundsOnMouseScreen ? 'true' : 'false'} isVisible: ${this.isVisible() ? 'true' : 'false'}`,
-    );
-
-    let currentScreen = boundsScreen;
-    if (boundsScreen.id !== mouseScreen.id && boundsOnMouseScreen) {
-      this.logInfo('🔀 Mouse screen is different, but bounds are within display. Using mouse screen.');
-      currentScreen = mouseScreen;
-    }
-
-    const { x, y, width, height } = { ...currentBounds, ...bounds };
-    const { x: workX, y: workY } = currentScreen.workArea;
-    const { width: screenWidth, height: screenHeight } = currentScreen.workAreaSize;
-
-    if (typeof bounds?.height !== 'number') {
-      bounds.height = currentBounds.height;
-    }
-    if (typeof bounds?.width !== 'number') {
-      bounds.width = currentBounds.width;
-    }
-    if (typeof bounds?.x !== 'number') {
-      bounds.x = currentBounds.x;
-    }
-    if (typeof bounds?.y !== 'number') {
-      bounds.y = currentBounds.y;
-    }
-
-    const xIsNumber = typeof x === 'number';
-
-    if (!boundsOnMouseScreen) {
-      this.window.center();
-    }
-
-    if (xIsNumber && x < workX) {
-      bounds.x = workX;
-    } else if (width && (xIsNumber ? x : currentBounds.x) + width > workX + screenWidth) {
-      bounds.x = workX + screenWidth - width;
-    } else if (xIsNumber) {
-      bounds.x = x;
-    } else {
-    }
-
-    if (typeof y === 'number' && y < workY) {
-      bounds.y = workY;
-    } else if (height && (y || currentBounds.y) + height > workY + screenHeight) {
-    }
-
-    if (width && width > screenWidth) {
-      bounds.x = workX;
-      bounds.width = screenWidth;
-    }
-    if (height && height > screenHeight) {
-      bounds.y = workY;
-      bounds.height = screenHeight;
-    }
-
-    // this.logInfo(`📐 setBounds: ${reason}`, {
-    //   ...bounds,
-    // });
-
-    if (kitState?.kenvEnv?.KIT_WIDTH) {
-      bounds.width = Number.parseInt(kitState?.kenvEnv?.KIT_WIDTH, 10);
-    }
-
     try {
-      // if (this.pid) {
-      //   debuginfo(
-      //     `Count: ${this.count} -> 📐 setBounds: ${this.scriptPath} reason ${reason}`,
-      //     bounds
-      //     // {
-      //     //   screen: currentScreen,
-      //     //   isVisible: this.isVisible() ? 'true' : 'false',
-      //     //   noChange: noChange ? 'true' : 'false',
-      //     //   pid: this.pid,
-      //     // }
-      //   );
-      // }
-
-      this.logInfo(`${this.pid}: Apply ${this.scriptName}: setBounds reason: ${reason}`, bounds);
-
-      const rounded = {
-        x: Math.round(bounds.x),
-        y: Math.round(bounds.y),
-        width: Math.round(bounds.width),
-        height: Math.round(bounds.height),
-      };
-
-      const peers = Array.from(prompts).map((p) => ({ id: p.id, bounds: p.getBounds() }));
-      const finalBounds = adjustBoundsToAvoidOverlap(peers, this.id, rounded);
-
-      // this.logInfo(`Final bounds:`, finalBounds);
-
-      // TODO: Windows prompt behavior
-      // if (kitState.isWindows) {
-      //   if (!this.window?.isFocusable()) {
-      //     finalBounds.x = OFFSCREEN_X;
-      //     finalBounds.y = OFFSCREEN_Y;
-      //   }
-      // }
-
-      this.logInfo('setBounds', finalBounds);
-
-      const titleBarHeight = getTitleBarHeight(this.window);
-      const minHeight = ensureMinWindowHeight(finalBounds.height, titleBarHeight);
-      if (minHeight !== finalBounds.height) {
-        this.logInfo('too small, setting to min height', PROMPT.INPUT.HEIGHT.XS);
-        finalBounds.height = minHeight;
-      }
-
-      applyWindowBounds(this.window, this.id, finalBounds, this.sendToPrompt as any);
-      this.promptBounds = { id: this.id, ...this.window.getBounds() } as any;
+      applyPromptBounds(this, bounds, reason);
     } catch (error) {
       this.logInfo(`setBounds error ${reason}`, error);
     }
@@ -1595,187 +1181,23 @@ export class KitPrompt {
   };
 
   setPromptData = async (promptData: PromptData) => {
-    // log.silly(`🔥 Setting prompt data: ${promptData.scriptPath}`, JSON.stringify(promptData, null, 2));
-    this.promptData = promptData;
-
-    const setPromptDataHandler = debounce(
-      (_x, { ui }: { ui: UI }) => {
-        this.logInfo(`${this.pid}: Received SET_PROMPT_DATA from renderer. ${ui} Ready!`);
-        this.refocusPrompt();
-      },
-      100,
-      {
-        leading: true,
-        trailing: false,
-      },
-    );
-
-    this.window.webContents.ipc.removeHandler(Channel.SET_PROMPT_DATA);
-    this.window.webContents.ipc.once(Channel.SET_PROMPT_DATA, setPromptDataHandler);
-
-    if (promptData.ui === UI.term) {
-      const termConfig = {
-        // TODO: Fix termConfig/promptData type
-        command: (promptData as any)?.command || '',
-        cwd: promptData.cwd || '',
-        shell: (promptData as any)?.shell || '',
-        promptId: this.id || '',
-        env: promptData.env || {},
-      };
-
-      // this.logInfo(`termConfig`, termConfig);
-      this.sendToPrompt(AppChannel.SET_TERM_CONFIG, termConfig);
-      createPty(this);
-    }
-
-    // if (promptData.ui !== UI.arg) {
-    //   if (kitState.isMac) {
-    //     makeWindow(this.window);
-    //   }
-    // }
-
-    this.scriptPath = promptData?.scriptPath;
-    this.clearFlagSearch();
-    this.kitSearch.shortcodes.clear();
-    this.kitSearch.triggers.clear();
-    if (promptData?.hint) {
-      for (const trigger of promptData?.hint?.match(/(?<=\[)\w+(?=\])/gi) || []) {
-        this.kitSearch.triggers.set(trigger, { name: trigger, value: trigger });
-      }
-    }
-
-    this.kitSearch.commandChars = promptData.inputCommandChars || [];
-    this.updateShortcodes();
-
-    if (this.cacheScriptPromptData && !promptData.preload) {
-      this.cacheScriptPromptData = false;
-      promptData.name ||= this.script.name || '';
-      promptData.description ||= this.script.description || '';
-      this.logInfo(`💝 Caching prompt data: ${this?.scriptPath}`);
-      preloadPromptDataMap.set(this.scriptPath, {
-        ...promptData,
-        input: promptData?.keyword ? '' : promptData?.input || '',
-        keyword: '',
-      });
-    }
-
-    if (promptData.flags && typeof promptData.flags === 'object') {
-      this.logInfo(`🏳️‍🌈 Setting flags from setPromptData: ${Object.keys(promptData.flags)}`);
-      setFlags(this, promptData.flags);
-    }
-
-    // TODO: When to handled preloaded?
-    // if (this.preloaded) {
-    //   this.preloaded = '';
-    //   return;
-    // }
-
-    kitState.hiddenByUser = false;
-    // if (!pidMatch(pid, `setPromptData`)) return;
-
-    if (typeof promptData?.alwaysOnTop === 'boolean') {
-      this.logInfo(`📌 setPromptAlwaysOnTop from promptData: ${promptData.alwaysOnTop ? 'true' : 'false'}`);
-
-      this.setPromptAlwaysOnTop(promptData.alwaysOnTop, true);
-    }
-
-    if (typeof promptData?.skipTaskbar === 'boolean') {
-      this.setSkipTaskbar(promptData.skipTaskbar);
-    }
-
-    this.allowResize = promptData?.resize;
-    kitState.shortcutsPaused = promptData.ui === UI.hotkey;
-
-    this.logVerbose(`setPromptData ${promptData.scriptPath}`);
-
-    this.id = promptData.id;
-    this.ui = promptData.ui;
-
-    if (this.kitSearch.keyword) {
-      promptData.keyword = this.kitSearch.keyword || this.kitSearch.keyword;
-    }
-
-    this.sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
-
-    const isMainScript = getMainScriptPath() === promptData.scriptPath;
-
-    if (this.firstPrompt && !isMainScript) {
-      this.logInfo(`${this.pid} Before initBounds`);
-      this.initBounds();
-      this.logInfo(`${this.pid} After initBounds`);
-      // TODO: STRONGLY consider waiting for SET_PROMPT_DATA to complete and the UI to change before focusing the prompt
-      // this.focusPrompt();
-      this.logInfo(`${this.pid} Disabling firstPrompt`);
-      this.firstPrompt = false;
-    }
-
-    if (!isMainScript) {
-      this.checkPromptDataBounds(promptData);
-    }
-    // TODO: Combine types for sendToPrompt and appToPrompt?
-    this.sendToPrompt(AppChannel.USER_CHANGED, snapshot(kitState.user));
-
-    // positionPrompt({
-    //   ui: promptData.ui,
-    //   scriptPath: promptData.scriptPath,
-    //   tabIndex: promptData.tabIndex,
-    // });
-
-    if (kitState.hasSnippet) {
-      // Since we now properly wait for backspaces to complete in deleteText(),
-      // we only need a minimal delay for UI stabilization
-      const timeout = this.script?.snippetdelay || 0; // Reduced from 280ms to 50ms
-
-      this.logInfo(`Snippet delay: ${timeout}ms for snippet: ${this.script?.expand || this.script?.snippet || ''}`);
-      // eslint-disable-next-line promise/param-names
-      await new Promise((r) => setTimeout(r, timeout));
-      kitState.hasSnippet = false;
-    }
-
-    const visible = this.isVisible();
-    this.logInfo(`${this.id}: visible ${visible ? 'true' : 'false'} 👀`);
-
-    // Default behavior: show the prompt unless explicitly told not to
-    const shouldShow = promptData?.show !== false;
-
-    if (!visible && shouldShow) {
-      this.logInfo(`${this.id}: Prompt not visible but should show`);
-      // For snippets and other triggers that don't pre-show the prompt,
-      // we need to show it immediately when setPromptData is called
-      if (!this.firstPrompt) {
-        this.showPrompt();
-      } else {
-        this.showAfterNextResize = true;
-      }
-    } else if (visible && !shouldShow) {
-      this.actualHide();
-    }
-
-    if (!visible && promptData?.scriptPath.includes('.md#')) {
-      this.focusPrompt();
-    }
+    await setPromptDataImpl(this, promptData);
     if (boundsCheck) {
       clearTimeout(boundsCheck);
     }
     boundsCheck = setTimeout(async () => {
-      if (!this.window) {
-        return;
-      }
-      if (this.window?.isDestroyed()) {
-        return;
-      }
+      if (!this.window) return;
+      if (this.window?.isDestroyed()) return;
       const currentBounds = this.window?.getBounds();
       const validBounds = isBoundsWithinDisplays(currentBounds);
-
-      if (validBounds) {
-        this.logInfo('Prompt window in bounds.');
-      } else {
+      if (!validBounds) {
         this.logInfo('Prompt window out of bounds. Clearing cache and resetting.');
         await clearPromptCacheFor(this.scriptPath);
         this.initBounds();
+      } else {
+        this.logInfo('Prompt window in bounds.');
       }
     }, 1000);
-
     if (promptData?.scriptPath && this?.script) {
       trackEvent(TrackEvent.SetPrompt, {
         ui: promptData.ui,
@@ -1783,89 +1205,15 @@ export class KitPrompt {
         name: promptData?.name || this?.script?.name || '',
         description: promptData?.description || this?.script?.description || '',
       });
-    } else {
-      // this.logWarn({
-      //   promptData,
-      //   script: this?.script,
-      // });
     }
   };
 
   hasBeenHidden = false;
-  actualHide = () => {
-    if (!this?.window) {
-      return;
-    }
-    if (this.window.isDestroyed()) {
-      return;
-    }
-    if (kitState.emojiActive) {
-      // globalShortcut.unregister(getEmojiShortcut());
-      kitState.emojiActive = false;
-    }
-    // if (kitState.isMac) {
-    //   this.logInfo(`🙈 Hiding prompt window`);
-    //   makeWindow(this.window);
-    // }
-    this.setPromptAlwaysOnTop(false);
-    if (!this.isVisible()) {
-      return;
-    }
+  actualHide = () => { actualHideImpl(this); };
 
-    this.logInfo('🙈 Hiding prompt window');
+  isVisible = () => isVisibleImpl(this);
 
-    this.hideInstant();
-  };
-
-  isVisible = () => {
-    if (!this.window) {
-      return false;
-    }
-
-    if (this.window.isDestroyed()) {
-      return false;
-    }
-    const visible = this.window?.isVisible();
-    // log.silly(`function: isVisible: ${visible ? 'true' : 'false'}`);
-    return visible;
-  };
-
-  maybeHide = (reason: string) => {
-    if (!(this.isVisible() && this.boundToProcess)) {
-      return;
-    }
-    this.logInfo(`Attempt Hide: ${reason}`);
-
-    if (reason === HideReason.NoScript || reason === HideReason.Escape || reason === HideReason.BeforeExit) {
-      this.actualHide();
-
-      this.clearSearch();
-      invokeSearch(this, '', 'maybeHide, so clear');
-      return;
-    }
-
-    if (reason === HideReason.PingTimeout) {
-      this.logInfo('⛑ Attempting recover...');
-
-      emitter.emit(KitEvent.KillProcess, this.pid);
-      this.actualHide();
-      this.reload();
-
-      return;
-    }
-
-    if (reason === HideReason.DebuggerClosed) {
-      this.actualHide();
-      return;
-    }
-
-    if (this.window?.isVisible()) {
-      this.logInfo(`Hiding because ${reason}`);
-      if (!kitState.preventClose) {
-        this.actualHide();
-      }
-    }
-  };
+  maybeHide = (reason: string) => { maybeHideImpl(this, reason); };
 
   saveCurrentPromptBounds = () => {
     if (!this?.window || this.window?.isDestroyed()) {
@@ -2331,54 +1679,17 @@ export class KitPrompt {
     // this.sendToPrompt(Channel.SET_PROMPT_DATA, kitCache.promptData);
   };
 
-  initMainChoices = () => {
-    // TODO: Reimplement cache?
-    this.logInfo(`${this.pid}: Caching main scored choices: ${kitCache.choices.length}`);
-    this.logInfo(
-      'Most recent 3:',
-      kitCache.choices.slice(1, 4).map((c) => c?.item?.name),
-    );
+  initMainChoices = () => { initMainChoicesImpl(this); };
 
-    if (this.window && !this.window.isDestroyed()) {
-      this.sendToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, kitCache.choices);
-    }
-    // this.sendToPrompt(Channel.SET_SCORED_CHOICES, kitCache.choices);
-  };
+  initMainPreview = () => { initMainPreviewImpl(this); };
 
-  initMainPreview = () => {
-    if (!this.window || this.window.isDestroyed()) {
-      this.logWarn('initMainPreview: Window is destroyed. Skipping sendToPrompt.');
-      return;
-    }
-    // this.logInfo({
-    //   preview: kitCache.preview,
-    // });
-    this.sendToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, kitCache.preview);
-    // this.sendToPrompt(Channel.SET_PREVIEW, kitCache.preview);
-  };
+  initMainShortcuts = () => { initMainShortcutsImpl(this); };
 
-  initMainShortcuts = () => {
-    if (this.window && !this.window.isDestroyed()) {
-      this.sendToPrompt(AppChannel.SET_CACHED_MAIN_SHORTCUTS, kitCache.shortcuts);
-    }
-    // this.sendToPrompt(Channel.SET_SHORTCUTS, kitCache.shortcuts);
-  };
+  initMainFlags = () => { initMainFlagsImpl(this); };
 
-  initMainFlags = () => {
-    if (this.window && !this.window.isDestroyed()) {
-      this.sendToPrompt(AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS, kitCache.scriptFlags);
-    }
-    // this.sendToPrompt(Channel.SET_FLAGS, kitCache.flags);
-  };
+  initTheme = () => { initThemeImpl(this); };
 
-  initTheme = () => {
-    themeLog.info(`${this.pid}: initTheme: ${kitState.themeName}`);
-    this.sendToPrompt(Channel.SET_THEME, kitState.theme);
-  };
-
-  initPrompt = () => {
-    this.sendToPrompt(AppChannel.INIT_PROMPT, {});
-  };
+  initPrompt = () => { initPromptImpl(this); };
 
   preloadPromptData = (promptData: PromptData) => {
     let input = '';
