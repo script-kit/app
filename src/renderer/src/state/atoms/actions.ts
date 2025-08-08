@@ -1,0 +1,115 @@
+/**
+ * Actions and flags state atoms.
+ * Manages actions menu, flags, and keyboard shortcuts.
+ */
+
+import type { Action, FlagsObject, Shortcut, ActionsConfig, Choice } from '@johnlindquist/kit/types/core';
+import type { ScoredChoice } from '../../../shared/types';
+import { atom } from 'jotai';
+import { isEqual } from 'lodash-es';
+import { unstable_batchedUpdates } from 'react-dom';
+import { createLogger } from '../../log-utils';
+
+const log = createLogger('actions.ts');
+
+// --- Flags Configuration ---
+const _flagsAtom = atom<FlagsObject>({});
+export const flagsAtom = atom(
+  (g) => {
+    // Exclude internal properties when reading flags
+    const { sortChoicesKey, order, ...flags } = g(_flagsAtom) as any;
+    return flags as FlagsObject;
+  },
+  (_g, s, a: FlagsObject) => {
+    log.info(`👀 flagsAtom: ${Object.keys(a)}`);
+    s(_flagsAtom, a);
+  },
+);
+
+// --- Actions Menu State ---
+export const _flaggedValue = atom<Choice | string>('');
+export const flaggedChoiceValueAtom = atom((g) => g(_flaggedValue));
+
+// --- Actions Input ---
+const _actionsInputAtom = atom('');
+export const actionsInputAtom = atom(
+  (g) => g(_actionsInputAtom),
+  (_g, s, a: string) => {
+    s(_actionsInputAtom, a);
+  },
+);
+
+const actionsInputFocus = atom<number>(0);
+export const actionsInputFocusAtom = atom(
+  (g) => g(actionsInputFocus),
+  (g, s, a: any) => {
+    if (g(actionsInputFocus) === a) return;
+    s(actionsInputFocus, a);
+  },
+);
+
+// --- Scored Flags/Actions ---
+export const defaultActionsIdAtom = atom('');
+export const scoredFlags = atom([] as ScoredChoice[]);
+export const scoredFlagsAtom = atom((g) => g(scoredFlags));
+
+// --- Actions Indexing and Focus ---
+const flagsIndex = atom(0);
+export const flagsIndexAtom = atom((g) => g(flagsIndex));
+
+const _focusedFlag = atom('');
+export const focusedFlagValueAtom = atom(
+  (g) => g(_focusedFlag),
+  (_g, s, a: string) => {
+    s(_focusedFlag, a);
+  },
+);
+
+export const focusedActionAtom = atom<Action>({} as Action);
+
+// --- Shortcuts ---
+const _shortcuts = atom<Shortcut[]>([]);
+export const shortcutsAtom = atom(
+  (g) => g(_shortcuts),
+  (g, s, a: Shortcut[]) => {
+    const prevShortcuts = g(_shortcuts);
+    if (isEqual(prevShortcuts, a)) return;
+    log.info(`🔥 Setting shortcuts to ${a.length}`, a);
+    s(_shortcuts, a);
+  },
+);
+
+export const hasRightShortcutAtom = atom((g) => {
+  return !!g(shortcutsAtom).find((s) => s?.key === 'right');
+});
+
+// --- Actions Configuration ---
+const _actionsConfigAtom = atom<ActionsConfig>({});
+export const actionsConfigAtom = atom(
+  (g) => g(_actionsConfigAtom),
+  (g, s, a: ActionsConfig) => {
+    s(_actionsConfigAtom, { ...g(_actionsConfigAtom), ...a });
+  },
+);
+
+// Derived atoms will be wired later
+export const hasActionsAtom = atom(() => false);
+export const actionsAtom = atom(() => [] as Action[]);
+export const preventSubmitWithoutActionAtom = atom(() => false);
+export const actionsPlaceholderAtom = atom(() => 'Actions');
+
+// Setter atoms for later wiring
+export const setScoredFlagsAtom = atom(null, (_g, s, a: ScoredChoice[]) => {
+  unstable_batchedUpdates(() => {
+    s(scoredFlags, a);
+    s(flagsIndex, 0);
+  });
+});
+
+export const setFlagsIndexAtom = atom(null, (_g, s, a: number) => {
+  s(flagsIndex, a);
+});
+
+export const setFlaggedValueAtom = atom(null, (_g, s, a: Choice | string) => {
+  s(_flaggedValue, a);
+});
