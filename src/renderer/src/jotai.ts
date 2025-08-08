@@ -1456,6 +1456,7 @@ export const actionsAtom = atom((g) => {
 export const preventSubmitWithoutActionAtom = atom((g) => {
   const flaggedValue = g(flaggedChoiceValueAtom);
   const focusedAction = g(focusedActionAtom);
+  // Submit should be prevented when actions menu is open without a selected action
   // If the actions menu is open but no specific action is focused, prevent submission.
   return flaggedValue && Object.keys(focusedAction).length === 0;
 });
