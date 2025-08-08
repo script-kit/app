@@ -42,6 +42,19 @@ import type { ResizeData, ScoredChoice, Survey, TermConfig } from '../../shared/
 import { formatShortcut } from './components/formatters';
 import { createLogger } from './log-utils';
 import { arraysEqual, colorUtils, dataUtils, domUtils } from './utils/state-utils';
+import { advanceIndexSkipping } from './state/skip-nav';
+import {
+  SCROLL_THROTTLE_MS,
+  PREVIEW_THROTTLE_MS,
+  RESIZE_DEBOUNCE_MS,
+  SEND_RESIZE_DEBOUNCE_MS,
+  JUST_OPENED_MS,
+  PROCESSING_SPINNER_DELAY_MS,
+  MAX_VLIST_HEIGHT,
+  MAX_LOG_LINES,
+  MAX_EDITOR_HISTORY,
+  MAX_TABCHECK_ATTEMPTS,
+} from './state/constants';
 
 
 const { ipcRenderer } = window.electron;
@@ -51,6 +64,7 @@ const log = createLogger('jotai.ts');
 // FILE: src/state/app-core.ts
 // Description: Core application state, configuration, and process management.
 // =================================================================================================
+// REFACTOR_TARGET: keep public exports stable; internal logic will be extracted in later steps.
 
 // --- Configuration and Environment ---
 
@@ -134,49 +148,52 @@ export const openAtom = atom(
 
     s(mouseEnabledAtom, 0);
 
-    // Handling closure side effects
+    // REFACTOR_TARGET(reset): consolidate to resetPromptState() helper (no behavior change)
     if (g(_open) && a === false) {
-      s(resizeCompleteAtom, false);
-      s(lastScriptClosed, g(_script).filePath);
-      // s(_open, a); // Set state after cleanup if needed, but seems fine here.
-
-      // Resetting various states on close
-      s(closedInput, g(_inputAtom));
-      s(_panelHTML, '');
-      s(formHTMLAtom, '');
-      s(logHTMLAtom, '');
-      s(flagsAtom, {});
-      s(_flaggedValue, '');
-      s(loading, false);
-      s(loadingAtom, false);
-      s(progressAtom, 0);
-      s(editorConfigAtom, {});
-      s(promptData, null);
-      s(requiresScrollAtom, -1);
-      s(pidAtom, 0);
-      s(_chatMessagesAtom, []);
-      s(runningAtom, false);
-      s(miniShortcutsHoveredAtom, false);
-      s(logLinesAtom, []);
-      s(audioDotAtom, false);
-      s(disableSubmitAtom, false);
-      g(scrollToIndexAtom)(0);
-      s(termConfigAtom, {});
-
-      // Cleanup media streams
-      const stream = g(webcamStreamAtom);
-      if (stream && 'getTracks' in stream) {
-        (stream as MediaStream).getTracks().forEach((track) => track.stop());
-        s(webcamStreamAtom, null);
-        const webcamEl = document.getElementById('webcam') as HTMLVideoElement;
-        if (webcamEl) {
-          webcamEl.srcObject = null;
-        }
-      }
+      resetPromptState(g, s);
     }
     s(_open, a);
   },
 );
+
+// Local helper for Step 3 extraction. Keeps logic identical to the previous close-branch.
+function resetPromptState(g: Getter, s: Setter) {
+  s(resizeCompleteAtom, false);
+  s(lastScriptClosed, g(_script).filePath);
+  // Resetting various states on close (order preserved)
+  s(closedInput, g(_inputAtom));
+  s(_panelHTML, '');
+  s(formHTMLAtom, '');
+  s(logHTMLAtom, '');
+  s(flagsAtom, {});
+  s(_flaggedValue, '');
+  s(loading, false);
+  s(loadingAtom, false);
+  s(progressAtom, 0);
+  s(editorConfigAtom, {});
+  s(promptData, null);
+  s(requiresScrollAtom, -1);
+  s(pidAtom, 0);
+  s(_chatMessagesAtom, []);
+  s(runningAtom, false);
+  s(miniShortcutsHoveredAtom, false);
+  s(logLinesAtom, []);
+  s(audioDotAtom, false);
+  s(disableSubmitAtom, false);
+  g(scrollToIndexAtom)(0);
+  s(termConfigAtom, {});
+
+  // Cleanup media streams
+  const stream = g(webcamStreamAtom);
+  if (stream && 'getTracks' in stream) {
+    (stream as MediaStream).getTracks().forEach((track) => track.stop());
+    s(webcamStreamAtom, null);
+    const webcamEl = document.getElementById('webcam') as HTMLVideoElement;
+    if (webcamEl) {
+      webcamEl.srcObject = null;
+    }
+  }
+}
 
 export const exitAtom = atom(
   (g) => g(openAtom),
@@ -383,7 +400,7 @@ export const promptDataAtom = atom(
     // Handle open state transitions
     if (!prevPromptData && a) {
       s(justOpenedAtom, true);
-      setTimeout(() => s(justOpenedAtom, false), 250);
+      setTimeout(() => s(justOpenedAtom, false), JUST_OPENED_MS);
     } else {
       s(justOpenedAtom, false);
     }
@@ -556,10 +573,10 @@ export const uiAtom = atom(
 
     // Notify main process about UI change, ensuring the element exists first
     let id: string = a === UI.arg ? 'input' : a;
-    const timeoutId = setTimeout(() => ipcRenderer.send(a), 250);
+    const timeoutId = setTimeout(() => ipcRenderer.send(a), JUST_OPENED_MS);
 
     let attempts = 0;
-    const maxAttempts = 60; // ~1 second
+    const maxAttempts = MAX_TABCHECK_ATTEMPTS; // ~1 second
 
     requestAnimationFrame(function checkElement() {
       attempts++;
@@ -799,7 +816,7 @@ export const enterPressedAtom = atom(
   (g) => g(enterPressed),
   (_g, s) => {
     s(enterPressed, true);
-    setTimeout(() => s(enterPressed, false), 100);
+    setTimeout(() => s(enterPressed, false), SEND_RESIZE_DEBOUNCE_MS);
   },
 );
 
@@ -979,7 +996,7 @@ export const scoredChoicesAtom = atom(
     const itemHeight = g(itemHeightAtom);
     for (const { item: { height } } of cs) {
       choicesHeight += height || itemHeight;
-      if (choicesHeight > 1920) break; // Limit calculation for very long lists
+      if (choicesHeight > MAX_VLIST_HEIGHT) break; // Limit calculation for very long lists
     }
 
     s(choicesHeightAtom, choicesHeight);
@@ -1041,21 +1058,10 @@ export const indexAtom = atom(
       return; // If all are skipped, don't proceed with indexing logic
     }
 
-    // Handle skipped choices navigation
+    // REFACTOR_TARGET(skip-nav): extract to shared advanceIndexSkipping()
     if (choice?.skip) {
-      let loopCount = 0;
-      while (choice?.skip && loopCount < cs.length) {
-        calcIndex = (calcIndex + direction + cs.length) % cs.length;
-        log.info(`calcIndex: ${calcIndex}, direction: ${direction}, cs.length: ${cs.length}`);
-        choice = cs[calcIndex]?.item;
-        loopCount++;
-      }
-
-      // If all choices were skipped (safety check, though allSkipAtom should handle this)
-      if (loopCount === cs.length) {
-        calcIndex = clampedIndex; // Reset to original attempt
-        choice = cs[calcIndex]?.item;
-      }
+      calcIndex = advanceIndexSkipping(clampedIndex, direction, cs as any);
+      choice = cs[calcIndex]?.item;
     }
 
     prevChoiceIndexId = choice?.id || 'prevChoiceIndexId';
@@ -1120,7 +1126,7 @@ const throttleChoiceFocused = throttle(
       }
     }
   },
-  25,
+  SCROLL_THROTTLE_MS,
   { leading: true, trailing: true },
 );
 
@@ -1332,8 +1338,8 @@ export const scoredFlagsAtom = atom(
 
         for (const { item: { height } } of a) {
           choicesHeight += height || itemHeight;
-          if (choicesHeight > 1920) {
-            choicesHeight = 1920;
+          if (choicesHeight > MAX_VLIST_HEIGHT) {
+            choicesHeight = MAX_VLIST_HEIGHT;
             break;
           }
         }
@@ -1371,17 +1377,10 @@ export const flagsIndexAtom = atom(
     let calcIndex = clampedIndex;
     let choice = cs?.[calcIndex]?.item;
 
-    // Handle skipped actions (similar logic to indexAtom, could potentially be abstracted)
+    // REFACTOR_TARGET(skip-nav): extract to shared advanceIndexSkipping()
     if (choice?.skip) {
-      let loopCount = 0;
-      // Keep track of the starting index to prevent infinite loops if all items are skipped
-      const startIndex = calcIndex;
-      while (choice?.skip && loopCount < cs.length) {
-        calcIndex = (calcIndex + direction + cs.length) % cs.length;
-        choice = cs[calcIndex]?.item;
-        loopCount++;
-        if (calcIndex === startIndex) break;
-      }
+      calcIndex = advanceIndexSkipping(clampedIndex, direction, cs as any);
+      choice = cs[calcIndex]?.item;
     }
 
     if (g(flagsIndex) !== calcIndex) {
@@ -1601,9 +1600,10 @@ export const resizingAtom = atom(false);
 export const resizeCompleteAtom = atom(false);
 
 const sendResize = (data: ResizeData) => ipcRenderer.send(AppChannel.RESIZE, data);
-const debounceSendResize = debounce(sendResize, 100);
+const debounceSendResize = debounce(sendResize, SEND_RESIZE_DEBOUNCE_MS);
 
 // Central resize function, debounced to prevent rapid firing during dynamic changes
+// REFACTOR_TARGET(resize): extract DOM-free compute + thin DOM wrapper
 export const resize = debounce(
   (g: Getter, s: Setter, reason = 'UNSET') => {
     const human = g(promptResizedByHumanAtom);
@@ -1787,7 +1787,7 @@ export const resize = debounce(
       sendResize(data);
     }
   },
-  50,
+  RESIZE_DEBOUNCE_MS,
   { leading: true, trailing: true },
 );
 
@@ -1798,7 +1798,7 @@ export const triggerResizeAtom = atom(null, (g, s, reason: string) => {
 export const domUpdatedAtom = atom(null, (g, s) => {
   return debounce((reason = '') => {
     resize(g, s, reason);
-  }, 25);
+  }, PREVIEW_THROTTLE_MS);
 });
 
 // --- Bounds and Position ---
@@ -1812,7 +1812,7 @@ export const boundsAtom = atom(
     // Allow UI to settle after bounds change before potentially triggering another resize calculation
     setTimeout(() => {
       resize(g, s, 'SETTLED');
-    }, 100);
+    }, SEND_RESIZE_DEBOUNCE_MS);
   },
 );
 
@@ -1961,7 +1961,7 @@ export const previewEnabledAtom = atom<boolean>(true);
 const throttleSetPreview = throttle((g, s, a: string) => {
   s(_previewHTML, a);
   resize(g, s, 'SET_PREVIEW');
-}, 25);
+}, PREVIEW_THROTTLE_MS);
 
 export const previewHTMLAtom = atom(
   (g) => {
@@ -2117,8 +2117,8 @@ export const editorHistoryPush = atom(null, (g, s, a: string) => {
   ];
 
   // Keep the 30 most recent entries (Note: Original code used shift() which removes the first/newest, corrected to pop() or length limiting)
-  if (updatedHistory.length > 30) {
-    updatedHistory.length = 30; // Keep the first 30 elements
+  if (updatedHistory.length > MAX_EDITOR_HISTORY) {
+    updatedHistory.length = MAX_EDITOR_HISTORY; // Keep the first N elements
   }
   s(editorHistory, updatedHistory);
 });
@@ -2412,8 +2412,8 @@ export const appendToLogHTMLAtom = atom(null, (g, s, a: string) => {
     return;
   }
   const oldLog = g(logLinesAtom);
-  // Keep a maximum of 256 log lines, dropping the oldest if necessary
-  const updatedLog = _drop(oldLog, oldLog.length > 256 ? oldLog.length - 256 : 0).concat([a]);
+  // Keep a maximum number of log lines, dropping the oldest if necessary
+  const updatedLog = _drop(oldLog, oldLog.length > MAX_LOG_LINES ? oldLog.length - MAX_LOG_LINES : 0).concat([a]);
   s(logLinesAtom, updatedLog);
 });
 
@@ -2611,7 +2611,7 @@ export const submitValueAtom = atom(
     placeholderTimeoutId = setTimeout(() => {
       s(loadingAtom, true);
       s(processingAtom, true);
-    }, 500);
+    }, PROCESSING_SPINNER_DELAY_MS);
 
     s(submittedAtom, true);
     s(closedInput, g(inputAtom));
