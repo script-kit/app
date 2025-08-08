@@ -42,6 +42,7 @@ import type { ResizeData, ScoredChoice, Survey, TermConfig } from '../../shared/
 import { formatShortcut } from './components/formatters';
 import { createLogger } from './log-utils';
 import { arraysEqual, colorUtils, dataUtils, domUtils } from './utils/state-utils';
+import { removeTopBorderOnFirstItem, calcVirtualListHeight } from './state/utils';
 import { advanceIndexSkipping } from './state/skip-nav';
 import {
   SCROLL_THROTTLE_MS,
@@ -55,6 +56,8 @@ import {
   MAX_EDITOR_HISTORY,
   MAX_TABCHECK_ATTEMPTS,
 } from './state/constants';
+import { ID_HEADER, ID_FOOTER, ID_MAIN, ID_LIST, ID_PANEL, ID_PREVIEW, ID_WEBCAM, ID_LOG } from './state/dom-ids';
+import { resetPromptState } from './state/reset';
 
 
 const { ipcRenderer } = window.electron;
@@ -188,7 +191,7 @@ function resetPromptState(g: Getter, s: Setter) {
   if (stream && 'getTracks' in stream) {
     (stream as MediaStream).getTracks().forEach((track) => track.stop());
     s(webcamStreamAtom, null);
-    const webcamEl = document.getElementById('webcam') as HTMLVideoElement;
+    const webcamEl = document.getElementById(ID_WEBCAM) as HTMLVideoElement;
     if (webcamEl) {
       webcamEl.srcObject = null;
     }
@@ -896,9 +899,7 @@ export const scoredChoicesAtom = atom(
     s(prevScoredChoicesIdsAtom, csIds);
 
     // UI adjustment: remove top border from the first item if present
-    if (cs[0]?.item?.className) {
-      cs[0].item.className = cs[0]?.item?.className.replace('border-t-1', '');
-    }
+    removeTopBorderOnFirstItem(cs);
 
     s(choices, cs || []);
     s(currentChoiceHeightsAtom, cs || []);
@@ -1320,9 +1321,7 @@ export const scoredFlagsAtom = atom(
       s(flagsIndexAtom, 0);
 
       // UI adjustment
-      if (a?.[0]?.item?.className) {
-        a[0].item.className = a[0].item.className.replace('border-t-1', '');
-      }
+      removeTopBorderOnFirstItem(a);
 
       // Handle default action selection
       const defaultActionId = g(defaultActionsIdAtom);
@@ -1624,13 +1623,13 @@ export const resize = debounce(
     let mh = g(mainHeightAtom);
 
     // Prevent resize if grid is active and main element already has height
-    if (promptData?.grid && document.getElementById('main')?.clientHeight > 10) {
+    if (promptData?.grid && document.getElementById(ID_MAIN)?.clientHeight > 10) {
       return;
     }
 
     const placeholderOnly = promptData?.mode === Mode.FILTER && scoredChoicesLength === 0 && ui === UI.arg;
-    const topHeight = document.getElementById('header')?.offsetHeight || 0;
-    const footerHeight = document.getElementById('footer')?.offsetHeight || 0;
+    const topHeight = document.getElementById(ID_HEADER)?.offsetHeight || 0;
+    const footerHeight = document.getElementById(ID_FOOTER)?.offsetHeight || 0;
     const hasPreview = g(previewCheckAtom);
     const choicesHeight = g(choicesHeightAtom);
 
@@ -1671,13 +1670,13 @@ export const resize = debounce(
         ch = (document as any)?.getElementById('panel')?.offsetHeight;
         mh = ch;
         forceResize = true;
-      } else if (ui === UI.arg && !hasPanel && !scoredChoicesLength && !document.getElementById('list')) {
+      } else if (ui === UI.arg && !hasPanel && !scoredChoicesLength && !document.getElementById(ID_LIST)) {
         // Collapsed state
         ch = 0;
         mh = 0;
         forceResize = true;
       } else if (ui !== UI.arg) {
-        ch = (document as any)?.getElementById('main')?.offsetHeight;
+        ch = (document as any)?.getElementById(ID_MAIN)?.offsetHeight;
       }
 
       // Determine if a resize is forced based on discrepancies between expected and actual height
@@ -1699,14 +1698,14 @@ export const resize = debounce(
 
     // Adjust height if preview is present (ensure minimum height)
     if (hasPreview && mh < PROMPT.HEIGHT.BASE) {
-      const previewHeight = document.getElementById('preview')?.offsetHeight || 0;
+      const previewHeight = document.getElementById(ID_PREVIEW)?.offsetHeight || 0;
       mh = Math.max(g(flagsHeightAtom), choicesHeight, previewHeight, promptData?.height || PROMPT.HEIGHT.BASE);
       forceResize = true;
     }
 
     // Adjust height if log is visible
     if (g(logHTMLAtom)?.length > 0 && g(scriptAtom)?.log !== false) {
-      const logHeight = document.getElementById('log')?.offsetHeight;
+      const logHeight = document.getElementById(ID_LOG)?.offsetHeight;
       mh += logHeight || 0;
     }
 
