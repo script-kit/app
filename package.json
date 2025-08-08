@@ -28,7 +28,8 @@
     "build-and-install:linux:arm64": "electron-vite build && pnpm exec kit ./build.ts linux arm64 never",
     "test": "vitest run",
     "bench": "vitest bench",
-    "coverage": "vitest run --coverage --config electron.vite.config.ts"
+    "coverage": "vitest run --coverage --config electron.vite.config.ts",
+    "state:quickcheck": "pnpm tsc --noEmit && echo '✅ typecheck ok'"
   },
   "repository": {
     "type": "git",
