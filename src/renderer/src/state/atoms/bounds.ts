@@ -7,6 +7,7 @@ import { atom } from 'jotai';
 import type { Rectangle } from 'electron';
 import { PROMPT } from '@johnlindquist/kit/core/enum';
 import { createLogger } from '../../log-utils';
+import { itemHeightAtom, inputHeightAtom } from './ui-elements';
 
 const log = createLogger('bounds.ts');
 
@@ -63,6 +64,41 @@ export const actionsButtonNameFontSizeAtom = atom('text-sm');
 export const actionsButtonDescriptionFontSizeAtom = atom('text-xs');
 export const actionsInputFontSizeAtom = atom('text-lg');
 
-export const buttonNameFontSizeAtom = atom(() => 'text-base');
-export const buttonDescriptionFontSizeAtom = atom(() => 'text-xs');
-export const inputFontSizeAtom = atom(() => 'text-2xl');
+export const buttonNameFontSizeAtom = atom((g) => {
+  const itemHeight = g(itemHeightAtom);
+  switch (itemHeight) {
+    case PROMPT.ITEM.HEIGHT.XXS: return 'text-xxs';
+    case PROMPT.ITEM.HEIGHT.XS: return 'text-xs';
+    case PROMPT.ITEM.HEIGHT.SM: return 'text-sm';
+    case PROMPT.ITEM.HEIGHT.BASE: return 'text-base';
+    case PROMPT.ITEM.HEIGHT.LG: return 'text-lg';
+    case PROMPT.ITEM.HEIGHT.XL: return 'text-xl';
+    default: return 'text-base';
+  }
+});
+
+export const buttonDescriptionFontSizeAtom = atom((g) => {
+  const itemHeight = g(itemHeightAtom);
+  switch (itemHeight) {
+    case PROMPT.ITEM.HEIGHT.XXS: return 'text-xxs';
+    case PROMPT.ITEM.HEIGHT.XS: return 'text-xxs';
+    case PROMPT.ITEM.HEIGHT.SM: return 'text-xs';
+    case PROMPT.ITEM.HEIGHT.BASE: return 'text-xs';
+    case PROMPT.ITEM.HEIGHT.LG: return 'text-sm';
+    case PROMPT.ITEM.HEIGHT.XL: return 'text-base';
+    default: return 'text-xs';
+  }
+});
+
+export const inputFontSizeAtom = atom((g) => {
+  const inputHeight = g(inputHeightAtom);
+  switch (inputHeight) {
+    case PROMPT.INPUT.HEIGHT.XXS: return 'text-sm';
+    case PROMPT.INPUT.HEIGHT.XS: return 'text-base';
+    case PROMPT.INPUT.HEIGHT.SM: return 'text-xl';
+    case PROMPT.INPUT.HEIGHT.BASE: return 'text-2xl';
+    case PROMPT.INPUT.HEIGHT.LG: return 'text-3xl';
+    case PROMPT.INPUT.HEIGHT.XL: return 'text-4xl';
+    default: return 'text-2xl';
+  }
+});
