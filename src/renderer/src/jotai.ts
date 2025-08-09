@@ -525,10 +525,11 @@ export const promptDataAtom = atom(
     }
     
     // Always handle panel - set if exists and non-empty, clear otherwise (unless UI.div)
-    if (a.panel && a.panel.trim()) {
+    // Note: closedDiv ('<div></div>') is treated as empty
+    if (a.panel && a.panel.trim() && a.panel !== closedDiv) {
       s(panelHTMLAtom, a.panel);
     } else if (a.ui !== UI.div) {
-      // Clear panel if no panel provided or empty (unless UI.div)
+      // Clear panel if no panel provided, empty, or is closedDiv (unless UI.div)
       s(panelHTMLAtom, '');
     }
 
