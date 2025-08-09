@@ -51,20 +51,12 @@ export const panelHTMLAtom = atom(
     }),
   (g, s, a: string) => {
     if (g(_panelHTML) === a) return;
+    
     s(_panelHTML, a);
     
     // If panel is set, ensure preview is closed unless explicitly defined in prompt data
-    if (a && !g(promptData)?.preview) {
+    if (!g(promptData)?.preview) {
       s(_previewHTML, closedDiv);
-    }
-    
-    // Adjust main height if the panel is cleared and no list is present
-    if (a === '' && document.getElementById(ID_PANEL) && !document.getElementById(ID_LIST)) {
-      s(mainHeightAtom, 0);
-    }
-    
-    if (a) {
-      s(loadingAtom, false);
     }
   },
 );
