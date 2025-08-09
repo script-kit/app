@@ -524,13 +524,19 @@ export const promptDataAtom = atom(
       s(previewHTMLAtom, a.preview);
     }
     
-    // Always handle panel - set if exists and non-empty, clear otherwise (unless UI.div)
+    // Always handle panel - clear first, then set if valid
     // Note: closedDiv ('<div></div>') is treated as empty
-    if (a.panel && a.panel.trim() && a.panel !== closedDiv) {
-      s(panelHTMLAtom, a.panel);
-    } else if (a.ui !== UI.div) {
-      // Clear panel if no panel provided, empty, or is closedDiv (unless UI.div)
-      s(panelHTMLAtom, '');
+    const panelContent = a.panel || '';
+    const trimmedPanel = panelContent.trim();
+    const hasValidPanel = trimmedPanel && trimmedPanel !== closedDiv && trimmedPanel !== '<div></div>';
+    
+    if (hasValidPanel) {
+      s(panelHTMLAtom, panelContent);
+    } else {
+      // Always clear panel if no valid content (except for UI.div which might set it separately)
+      if (a.ui !== UI.div) {
+        s(panelHTMLAtom, '');
+      }
     }
 
     if (typeof a.footer === 'string') {
