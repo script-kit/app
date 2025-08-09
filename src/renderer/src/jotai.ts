@@ -818,12 +818,12 @@ export const scoredChoicesAtom = atom(
 
     s(choicesHeightAtom, choicesHeight);
 
-    // Don't directly set mainHeightAtom - let the resize function handle it
-    // This avoids race conditions between this setter and the resize function
+    // Adjust main height based on UI mode
     const ui = g(uiAtom);
-    if (ui === UI.arg || ui !== UI.arg) {
-      // Trigger a resize instead of directly setting mainHeightAtom
-      resize(g, s, 'CHOICES_UPDATED');
+    if (ui === UI.arg) {
+      s(mainHeightAtom, choicesHeight);
+    } else {
+      s(mainHeightAtom, DEFAULT_HEIGHT);
     }
   },
 );
@@ -1061,13 +1061,8 @@ export const resize = debounce(
     const footerHeight = document.getElementById(ID_FOOTER)?.offsetHeight || 0;
     const hasPreview = g(previewCheckAtom);
     const choicesHeight = g(choicesHeightAtom);
-    const inputHeight = g(inputHeightAtom);
-    
-    // Store the calculated topHeight back to the atom
-    if (topHeight > 0 && topHeight !== g(_topHeight)) {
-      s(_topHeight, topHeight);
-    }
 
+    // Calculate Main Height (mh) based on UI state
     if (ui === UI.arg) {
       if (!g(choicesReadyAtom)) return;
 
@@ -1119,7 +1114,12 @@ export const resize = debounce(
         forceResize = Boolean(ch > g(prevMh));
       }
     } catch (error) {
-      // Handle potential DOM errors
+      // Handle potential DOM errors gracefully
+    }
+
+    if (topHeight !== prevTopHeight) {
+      forceResize = true;
+      prevTopHeight = topHeight;
     }
 
     const logVisible = g(logHTMLAtom)?.length > 0 && g(scriptAtom)?.log !== false;
@@ -1304,7 +1304,21 @@ export const enterButtonDisabledAtom = atom<boolean>((g) => {
   if (g(flaggedChoiceValueAtom)) return false; // Usually enabled when actions menu is open
   if (g(disableSubmitAtom)) return true;
   const enterButtonName = g(enterButtonNameAtom);
-  return !enterButtonName || enterButtonName?.length === 0;
+  if (enterButtonName === '') return true;
+
+  const ui = g(uiAtom);
+  if ([UI.fields, UI.form, UI.div].includes(ui)) return false;
+
+  const focusedChoice = g(focusedChoiceAtom);
+  if (focusedChoice?.disableSubmit) return true;
+
+  if (g(panelHTMLAtom)?.length > 0) return false;
+
+  const pd = g(promptDataAtom);
+  if (!pd?.strict) return false;
+
+  // If strict mode is on, disable if no choice is focused
+  return focusedChoice?.name === noChoice.name;
 });
 
 export const shortcutStringsAtom = atom((g) => {
@@ -1338,7 +1352,8 @@ export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
 
 export const sendActionAtom = atom(null, (g, _s, action: Action) => {
   const channel = g(channelAtom);
-  channel(Channel.ACTION, action);
+  log.info(`👉 Sending action: ${action.name}`);
+  channel(Channel.ACTION, { action });
 });
 
 export const submitValueAtom = atom(
@@ -1532,7 +1547,7 @@ export const colorAtom = atom((g) => {
       return color;
     } catch (error) {
       // User cancelled or EyeDropper failed
-      return null;
+      return '';
     }
   };
 });
@@ -1586,6 +1601,115 @@ export const triggerKeywordAtom = atom(
     });
   },
 );
+
+// =================================================================================================
+// DERIVED ATOMS
+// These atoms depend on the wired state and must be defined here.
+// =================================================================================================
+
+// --- UI State ---
+
+export const isMainScriptInitialAtom = atom<boolean>((g) => {
+  return g(isMainScriptAtom) && g(inputAtom) === '';
+});
+
+export const showTabsAtom = atom((g) => {
+  const isArg = [UI.arg].includes(g(uiAtom));
+  const hasTabs = g(tabsAtom)?.length > 0;
+  return isArg && hasTabs;
+});
+
+export const showSelectedAtom = atom((g) => {
+  return [UI.arg, UI.hotkey].includes(g(uiAtom)) && g(selectedAtom) && g(tabsAtom)?.length > 0;
+});
+
+// --- Actions State ---
+
+export const hasActionsAtom = atom((g) => {
+  const flags = g(flagsAtom);
+  const focusedChoice = g(focusedChoiceAtom);
+  // Actions exist if there are global flags or the focused choice has specific actions
+  return Object.entries(flags).length > 0 || !!focusedChoice?.actions;
+});
+
+// Merges flags and shortcuts into a unified list of actions for display
+export const actionsAtom = atom((g) => {
+  const flags = g(flagsAtom);
+  const shortcuts = g(shortcutsAtom);
+  const disabled = g(flaggedChoiceValueAtom); // Disabled if the actions menu is already open
+
+  const flagActions = Object.entries(flags).map(([key, flag]) => {
+    const f = flag as any;
+    return {
+      key: f?.key || f?.shortcut,
+      value: key,
+      name: f?.name,
+      shortcut: formatShortcut(f?.shortcut),
+      position: f?.bar,
+      arrow: f?.arrow,
+      flag: key,
+      disabled: Boolean(disabled),
+      visible: Boolean(f?.visible),
+    } as Action;
+  });
+
+  const shortcutActions = shortcuts
+    .filter((s) => s?.bar)
+    .map(({ key, name, bar, flag, visible }) => ({
+      key,
+      name,
+      value: key,
+      shortcut: formatShortcut(key),
+      position: bar,
+      flag,
+      disabled: Boolean(disabled),
+      visible: Boolean(visible),
+    } as Action));
+
+  return flagActions.concat(shortcutActions);
+});
+
+export const preventSubmitWithoutActionAtom = atom((g) => {
+  const flaggedValue = g(flaggedChoiceValueAtom);
+  const focusedAction = g(focusedActionAtom);
+  // Submit should be prevented when actions menu is open without a selected action
+  return flaggedValue && Object.keys(focusedAction).length === 0;
+});
+
+export const actionsPlaceholderAtom = atom((g) => {
+  const hasActions = g(hasActionsAtom);
+  return hasActions ? 'Actions' : 'No Actions Available';
+});
+
+// --- Utility Actions ---
+
+export const listProcessesActionAtom = atom((g) => {
+  const shortcuts = g(shortcutsAtom);
+  return shortcuts.find((s) => s?.key?.endsWith('p'));
+});
+
+export const signInActionAtom = atom((g) => {
+  const actions = g(actionsAtom);
+  return actions.find((s) => s?.flag === 'sign-in-to-script-kit');
+});
+
+export const actionsButtonActionAtom = atom<Action>((g) => {
+  const isMac = g(appConfigAtom).isMac;
+
+  return {
+    name: 'Actions',
+    value: isMac ? 'cmd+k' : 'ctrl+k',
+    shortcut: isMac ? '⌘+K' : '⌃+K',
+    position: 'right',
+    disabled: false,
+  } as Action;
+});
+
+export const shouldActionButtonShowOnInputAtom = atom((g) => {
+  const hasFlags = Object.keys(g(flagsAtom)).length > 0;
+  const hasRightShortcut = g(hasRightShortcutAtom);
+  return hasFlags && !hasRightShortcut;
+});
 
 // --- Missing atoms that are referenced but not defined ---
 export const initPromptAtom = atom(null, (g, s) => {

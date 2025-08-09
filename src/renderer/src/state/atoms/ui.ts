@@ -33,11 +33,11 @@ export const promptReadyAtom = atom(false);
 export const modeAtom = atom((g) => g(promptData)?.mode || Mode.FILTER);
 
 // --- Show/Hide States ---
-export const showSelectedAtom = atom(() => false);
-export const showTabsAtom = atom(() => false);
+// showSelectedAtom defined in jotai.ts (derived atom)
+// showTabsAtom defined in jotai.ts (derived atom)
 
 // --- Other UI-related atoms ---
-export const isMainScriptInitialAtom = atom<boolean>(() => false);
+// isMainScriptInitialAtom defined in jotai.ts (derived atom)
 // export const choicesConfigAtom = atom(
 //   () => ({ preload: false }),
 //   (_g, _s, _a: { preload: boolean }) => {}

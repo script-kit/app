@@ -92,11 +92,11 @@ export const actionsConfigAtom = atom(
   },
 );
 
-// Derived atoms will be wired later
-export const hasActionsAtom = atom(() => false);
-export const actionsAtom = atom(() => [] as Action[]);
-export const preventSubmitWithoutActionAtom = atom(() => false);
-export const actionsPlaceholderAtom = atom(() => 'Actions');
+// Derived atoms defined in jotai.ts
+// export const hasActionsAtom = atom(() => false);
+// export const actionsAtom = atom(() => [] as Action[]);
+// export const preventSubmitWithoutActionAtom = atom(() => false);
+// export const actionsPlaceholderAtom = atom(() => 'Actions');
 
 // Setter atoms for later wiring
 export const setScoredFlagsAtom = atom(null, (_g, s, a: ScoredChoice[]) => {
