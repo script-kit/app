@@ -8,7 +8,7 @@ import { UI, Mode } from '@johnlindquist/kit/core/enum';
 import type { PromptData } from '@johnlindquist/kit/types/core';
 
 // --- Core UI State ---
-const _ui = atom<UI>(UI.arg);
+export const _ui = atom<UI>(UI.arg);
 export const uiAtom = atom((g) => g(_ui));
 export const setUiAtom = atom(null, (_g, s, a: UI) => {
   s(_ui, a);

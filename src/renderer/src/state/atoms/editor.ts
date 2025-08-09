@@ -6,7 +6,7 @@
 import { atom } from 'jotai';
 import type { editor } from 'monaco-editor';
 import type { EditorConfig, EditorOptions } from '@johnlindquist/kit/types/kitapp';
-import { findCssVar } from '../../../shared/color-utils';
+import { findCssVar } from '../../../../shared/color-utils';
 
 const MAX_EDITOR_HISTORY = 30;
 

@@ -4,7 +4,7 @@
  */
 
 import { atom } from 'jotai';
-import type { TermConfig } from '../../../shared/types';
+import type { TermConfig } from '../../../../shared/types';
 
 export const termConfigDefaults: TermConfig = {
   command: '',

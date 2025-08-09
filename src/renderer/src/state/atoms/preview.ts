@@ -5,7 +5,7 @@
 
 import { atom } from 'jotai';
 import DOMPurify from 'dompurify';
-import { closedDiv } from '../../../shared/defaults';
+import { closedDiv } from '../../../../shared/defaults';
 
 // --- Preview HTML ---
 export const _previewHTML = atom('');

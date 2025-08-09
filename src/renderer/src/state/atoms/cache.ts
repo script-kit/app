@@ -4,7 +4,7 @@
  */
 
 import type { PromptData, FlagsObject, Shortcut } from '@johnlindquist/kit/types/core';
-import type { ScoredChoice } from '../../../shared/types';
+import type { ScoredChoice } from '../../../../shared/types';
 import { UI } from '@johnlindquist/kit/core/enum';
 import { atom } from 'jotai';
 

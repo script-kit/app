@@ -4,16 +4,16 @@
  */
 
 import type { Choice } from '@johnlindquist/kit/types/core';
-import type { ScoredChoice } from '../../../shared/types';
+import type { ScoredChoice } from '../../../../shared/types';
 import { atom } from 'jotai';
-import { noChoice } from '../../../shared/defaults';
+import { noChoice } from '../../../../shared/defaults';
 import { arraysEqual } from '../../utils/state-utils';
 
 // --- Core Choices State ---
-const choices = atom<ScoredChoice[]>([]);
+export const choices = atom<ScoredChoice[]>([]);
 export const choicesReadyAtom = atom(false);
 export const filteredChoicesIdAtom = atom<number>(0);
-const prevScoredChoicesIdsAtom = atom<string[]>([]);
+export const prevScoredChoicesIdsAtom = atom<string[]>([]);
 
 // Configuration for how choices are loaded
 export const choicesConfig = atom({ preload: false });
@@ -44,7 +44,7 @@ export const hasSkipAtom = atom(false);
 export const allSkipAtom = atom(false);
 
 // --- Focused Choice ---
-const _focused = atom<Choice | null>(noChoice as Choice);
+export const _focused = atom<Choice | null>(noChoice as Choice);
 export const focusedChoiceAtom = atom((g) => g(_focused));
 export const hasFocusedChoiceAtom = atom((g) => g(_focused) && g(_focused)?.name !== noChoice.name);
 

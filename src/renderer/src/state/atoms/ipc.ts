@@ -5,9 +5,9 @@
 
 import { atom } from 'jotai';
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { AppChannel } from '../../../shared/enums';
+import { AppChannel } from '../../../../shared/enums';
 import type { AppState, AppMessage, Survey } from '@johnlindquist/kit/types/core';
-import type { ResizeData } from '../../../shared/types';
+import type { ResizeData } from '../../../../shared/types';
 import { createLogger } from '../../log-utils';
 
 const { ipcRenderer } = window.electron;

@@ -5,14 +5,9 @@
 
 import { atom } from 'jotai';
 import { pidAtom } from './app-core';
+import { mouseEnabledAtom } from './input';
 
-// Temporary atoms that will be properly wired after all modules are extracted
-export const mouseEnabledAtom = atom(
-  () => false,
-  (_g, _s, _a: number) => {}
-);
-
-const _open = atom(false);
+export const _open = atom(false);
 
 // This will be properly implemented after extracting all dependencies
 export const openAtom = atom(

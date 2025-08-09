@@ -4,7 +4,7 @@
  */
 
 import type { Action, FlagsObject, Shortcut, ActionsConfig, Choice } from '@johnlindquist/kit/types/core';
-import type { ScoredChoice } from '../../../shared/types';
+import type { ScoredChoice } from '../../../../shared/types';
 import { atom } from 'jotai';
 import { isEqual } from 'lodash-es';
 import { unstable_batchedUpdates } from 'react-dom';
@@ -31,7 +31,7 @@ export const _flaggedValue = atom<Choice | string>('');
 export const flaggedChoiceValueAtom = atom((g) => g(_flaggedValue));
 
 // --- Actions Input ---
-const _actionsInputAtom = atom('');
+export const _actionsInputAtom = atom('');
 export const actionsInputAtom = atom(
   (g) => g(_actionsInputAtom),
   (_g, s, a: string) => {
@@ -54,7 +54,7 @@ export const scoredFlags = atom([] as ScoredChoice[]);
 export const scoredFlagsAtom = atom((g) => g(scoredFlags));
 
 // --- Actions Indexing and Focus ---
-const flagsIndex = atom(0);
+export const flagsIndex = atom(0);
 export const flagsIndexAtom = atom((g) => g(flagsIndex));
 
 const _focusedFlag = atom('');

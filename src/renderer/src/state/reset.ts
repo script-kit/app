@@ -4,6 +4,7 @@ import {
   lastScriptClosed,
   _script,
   closedInput,
+  _inputAtom,
   _panelHTML,
   formHTMLAtom,
   logHTMLAtom,
@@ -12,8 +13,7 @@ import {
   loadingAtom,
   progressAtom,
   editorConfigAtom,
-  promptData as _promptDataInternal,
-  promptDataAtom,
+  promptData,
   requiresScrollAtom,
   pidAtom,
   _chatMessagesAtom,
@@ -25,7 +25,7 @@ import {
   scrollToIndexAtom,
   termConfigAtom,
   webcamStreamAtom,
-} from '../jotai';
+} from './atoms';
 import { ID_WEBCAM } from './dom-ids';
 
 // Copy-only reset of prompt-related state used when closing the prompt.
@@ -33,7 +33,7 @@ import { ID_WEBCAM } from './dom-ids';
 export function resetPromptState(g: Getter, s: Setter) {
   s(resizeCompleteAtom, false);
   s(lastScriptClosed, g(_script).filePath);
-  s(closedInput, g((_promptDataInternal as any) as any)); // placeholder to preserve order; overwritten next
+  s(closedInput, g(_inputAtom)); // use _inputAtom instead of non-existent _promptDataInternal
   s(_panelHTML, '');
   s(formHTMLAtom, '');
   s(logHTMLAtom, '');
@@ -42,7 +42,7 @@ export function resetPromptState(g: Getter, s: Setter) {
   s(loadingAtom, false);
   s(progressAtom, 0);
   s(editorConfigAtom, {} as any);
-  s(promptDataAtom, null as any);
+  s(promptData, null as any);
   s(requiresScrollAtom, -1);
   s(pidAtom, 0);
   s(_chatMessagesAtom, [] as any);

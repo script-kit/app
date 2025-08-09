@@ -4,8 +4,8 @@
  */
 
 import { atom } from 'jotai';
-import { AppChannel } from '../../../shared/enums';
-import type { ResizeData, FilePathBounds } from '../../../shared/types';
+import { AppChannel } from '../../../../shared/enums';
+import type { ResizeData, FilePathBounds } from '../../../../shared/types';
 
 const { ipcRenderer } = window.electron;
 

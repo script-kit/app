@@ -5,7 +5,7 @@
 
 import type { Script } from '@johnlindquist/kit/types/core';
 import { atom } from 'jotai';
-import { SPLASH_PATH, noScript } from '../../../shared/defaults';
+import { SPLASH_PATH, noScript } from '../../../../shared/defaults';
 import { kitConfigAtom, appConfigAtom } from './app-core';
 import { createLogger } from '../../log-utils';
 
