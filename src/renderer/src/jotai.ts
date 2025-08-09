@@ -523,8 +523,13 @@ export const promptDataAtom = atom(
     if (!a.keepPreview && a.preview) {
       s(previewHTMLAtom, a.preview);
     }
-    if (a.panel) {
+    
+    // Always handle panel - set if exists and non-empty, clear otherwise (unless UI.div)
+    if (a.panel && a.panel.trim()) {
       s(panelHTMLAtom, a.panel);
+    } else if (a.ui !== UI.div) {
+      // Clear panel if no panel provided or empty (unless UI.div)
+      s(panelHTMLAtom, '');
     }
 
     if (typeof a.footer === 'string') {
