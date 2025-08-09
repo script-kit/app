@@ -8,7 +8,7 @@ import DOMPurify from 'dompurify';
 import { closedDiv } from '../../../../shared/defaults';
 import { promptData } from './ui';
 import { mainHeightAtom } from './ui-elements';
-import { loadingAtom } from './app-core';
+import { loadingAtom, isHiddenAtom } from './app-core';
 import { ID_PANEL, ID_LIST } from '../dom-ids';
 
 // --- Preview HTML ---
@@ -37,7 +37,10 @@ export const hasPreviewAtom = atom<boolean>((g) => {
 export const previewCheckAtom = atom((g) => {
   const previewHTML = g(previewHTMLAtom);
   const enabled = g(previewEnabledAtom);
-  return Boolean(previewHTML && enabled);
+  const hidden = g(isHiddenAtom);
+  // closedDiv ('<div></div>') should be treated as no preview
+  const hasContent = previewHTML && previewHTML !== closedDiv && previewHTML !== '<div></div>';
+  return Boolean(hasContent && enabled && !hidden);
 });
 
 // --- Panel HTML ---
