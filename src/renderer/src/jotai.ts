@@ -681,9 +681,9 @@ export const tabIndexAtom = atom(
 
 // --- UI Atom ---
 export const uiAtom = atom(
-  (g) => g(uiAtom),
+  (g) => g(_ui),
   (g, s, a: UI) => {
-    s(uiAtom, a);
+    s(_ui, a);
 
     if ([UI.arg, UI.textarea, UI.hotkey, UI.splash].includes(a)) {
       s(inputFocusAtom, Math.random());
@@ -719,7 +719,7 @@ export const uiAtom = atom(
 
 // --- Scored Choices with Complex Logic ---
 export const scoredChoicesAtom = atom(
-  (g) => g(scoredChoicesAtom),
+  (g) => g(choices),
   (g, s, cs: ScoredChoice[] = []) => {
     s(choicesReadyAtom, true);
     s(cachedAtom, false);
