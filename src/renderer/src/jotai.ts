@@ -461,6 +461,13 @@ export const promptDataAtom = atom(
     s(uiAtom, a.ui);
     s(_open, true);
     s(submittedAtom, false);
+    
+    // Clear loading timeout when new prompt opens
+    if (placeholderTimeoutId) {
+      clearTimeout(placeholderTimeoutId);
+      s(loadingAtom, false);
+      s(processingAtom, false);
+    }
 
     if (a.ui === UI.term) {
       const b: any = a;
