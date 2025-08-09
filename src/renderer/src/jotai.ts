@@ -117,7 +117,7 @@ import {
   tempThemeAtom,
   itemHeightAtom,
   inputHeightAtom,
-  mainHeightAtom,
+  _mainHeight,
   choicesHeightAtom,
   flagsHeightAtom,
   actionsItemHeightAtom,
@@ -1219,6 +1219,31 @@ export const domUpdatedAtom = atom(null, (g, s) => {
     resize(g, s, reason);
   }, PREVIEW_THROTTLE_MS);
 });
+
+// Override mainHeightAtom with complex setter that triggers resize
+export const mainHeightAtom = atom(
+  (g) => g(_mainHeight),
+  (g, s, a: number) => {
+    const prevHeight = g(_mainHeight);
+    const nextMainHeight = a < 0 ? 0 : a;
+
+    // Prevent setting height to 0 if content (panel or choices) exists
+    if (nextMainHeight === 0) {
+      if (g(panelHTMLAtom) !== '' || g(scoredChoicesAtom).length > 0) {
+        return;
+      }
+    }
+
+    s(_mainHeight, nextMainHeight);
+    if (a === prevHeight) return;
+
+    // Skip resize trigger for specific UIs that manage their own dimensions
+    const ui = g(uiAtom);
+    if ([UI.drop, UI.editor, UI.textarea].includes(ui)) return;
+
+    resize(g, s, 'MAIN_HEIGHT');
+  },
+);
 
 // --- Channel Communication ---
 export const channelAtom = atom((g) => {
