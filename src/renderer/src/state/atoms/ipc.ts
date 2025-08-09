@@ -18,7 +18,7 @@ export const pauseChannelAtom = atom(false);
 
 // --- Submission State ---
 export const _submitValue = atom('');
-export const submitValueAtom = atom((g) => g(_submitValue));
+// export const submitValueAtom = atom((g) => g(_submitValue)); // Complex version with computed properties is in jotai.ts
 export const disableSubmitAtom = atom(false);
 
 // --- Shortcodes ---
@@ -29,9 +29,9 @@ export const onShortcutAtom = atom<OnShortcut>({});
 export const shortcodesAtom = atom<string[]>([]);
 
 // --- IPC Actions ---
-export const runMainScriptAtom = atom(() => () => {
-  ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
-});
+// export const runMainScriptAtom = atom(() => () => {
+//   ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
+// }); // Complex version with computed properties is in jotai.ts
 
 export const runKenvTrustScriptAtom = atom(() => (kenv: string) => {
   log.info(`🔑 Running kenv-trust script for ${kenv}`);

@@ -18,10 +18,10 @@ export const tabsAtom = atom(
 
 export const tabChangedAtom = atom(false);
 export const _tabIndex = atom(0);
-export const tabIndexAtom = atom(
-  (g) => g(_tabIndex),
-  (_g, s, a: number) => {
-    // Will be properly implemented after all dependencies are extracted
-    s(_tabIndex, a);
-  },
-);
+// export const tabIndexAtom = atom(
+//   (g) => g(_tabIndex),
+//   (_g, s, a: number) => {
+//     // Will be properly implemented after all dependencies are extracted
+//     s(_tabIndex, a);
+//   },
+// ); // Complex version with computed properties is in jotai.ts

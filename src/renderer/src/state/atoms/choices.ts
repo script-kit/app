@@ -20,7 +20,7 @@ export const choicesConfig = atom({ preload: false });
 export const prevChoicesConfig = atom({ preload: false });
 
 // Export the choices atom for read-only access
-export const scoredChoicesAtom = atom((g) => g(choices));
+// export const scoredChoicesAtom = atom((g) => g(choices)); // Complex version with computed properties is in jotai.ts
 export const choicesAtom = atom((g) => g(choices).map((result) => result.item));
 
 // --- Choice Heights ---
@@ -37,7 +37,7 @@ export const defaultValueAtom = atom('');
 export const defaultChoiceIdAtom = atom('');
 export const prevIndexAtom = atom(0);
 export const _indexAtom = atom(0);
-export const indexAtom = atom((g) => g(_indexAtom));
+// Note: indexAtom is defined in jotai.ts with more complex logic
 
 // --- Skip State ---
 export const hasSkipAtom = atom(false);
@@ -45,7 +45,7 @@ export const allSkipAtom = atom(false);
 
 // --- Focused Choice ---
 export const _focused = atom<Choice | null>(noChoice as Choice);
-export const focusedChoiceAtom = atom((g) => g(_focused));
+// export const focusedChoiceAtom = atom((g) => g(_focused)); // Complex version with computed properties is in jotai.ts
 export const hasFocusedChoiceAtom = atom((g) => g(_focused) && g(_focused)?.name !== noChoice.name);
 
 // --- Multiple Selection ---

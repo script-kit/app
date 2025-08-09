@@ -28,7 +28,7 @@ export const flagsAtom = atom(
 
 // --- Actions Menu State ---
 export const _flaggedValue = atom<Choice | string>('');
-export const flaggedChoiceValueAtom = atom((g) => g(_flaggedValue));
+// export const flaggedChoiceValueAtom = atom((g) => g(_flaggedValue)); // Complex version with computed properties is in jotai.ts
 
 // --- Actions Input ---
 export const _actionsInputAtom = atom('');
@@ -51,11 +51,11 @@ export const actionsInputFocusAtom = atom(
 // --- Scored Flags/Actions ---
 export const defaultActionsIdAtom = atom('');
 export const scoredFlags = atom([] as ScoredChoice[]);
-export const scoredFlagsAtom = atom((g) => g(scoredFlags));
+// export const scoredFlagsAtom = atom((g) => g(scoredFlags)); // Complex version with computed properties is in jotai.ts
 
 // --- Actions Indexing and Focus ---
 export const flagsIndex = atom(0);
-export const flagsIndexAtom = atom((g) => g(flagsIndex));
+// export const flagsIndexAtom = atom((g) => g(flagsIndex)); // Complex version with computed properties is in jotai.ts
 
 const _focusedFlag = atom('');
 export const focusedFlagValueAtom = atom(

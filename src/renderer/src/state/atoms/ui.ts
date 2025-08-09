@@ -9,7 +9,7 @@ import type { PromptData } from '@johnlindquist/kit/types/core';
 
 // --- Core UI State ---
 export const _ui = atom<UI>(UI.arg);
-export const uiAtom = atom((g) => g(_ui));
+// export const uiAtom = atom((g) => g(_ui)); // Complex version with computed properties is in jotai.ts
 export const setUiAtom = atom(null, (_g, s, a: UI) => {
   s(_ui, a);
 });
@@ -24,7 +24,7 @@ export const promptData = atom<null | Partial<PromptData>>({
   placeholder: 'Script Kit',
 });
 
-export const promptDataAtom = atom((g) => g(promptData));
+// export const promptDataAtom = atom((g) => g(promptData)); // Complex version with computed properties is in jotai.ts
 export const setPromptDataAtom = atom(null, (_g, s, a: null | Partial<PromptData>) => {
   s(promptData, a);
 });
@@ -38,7 +38,7 @@ export const showTabsAtom = atom(() => false);
 
 // --- Other UI-related atoms ---
 export const isMainScriptInitialAtom = atom<boolean>(() => false);
-export const choicesConfigAtom = atom(
-  () => ({ preload: false }),
-  (_g, _s, _a: { preload: boolean }) => {}
-);
+// export const choicesConfigAtom = atom(
+//   () => ({ preload: false }),
+//   (_g, _s, _a: { preload: boolean }) => {}
+// ); // Complex version with computed properties is in jotai.ts
