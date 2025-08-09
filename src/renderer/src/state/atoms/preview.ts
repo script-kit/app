@@ -55,3 +55,6 @@ export const panelHTMLAtom = atom(
     }
   },
 );
+
+// Check if panel has content (checks raw HTML, not sanitized)
+export const hasPanelAtom = atom((g) => g(_panelHTML) !== '');

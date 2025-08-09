@@ -1056,7 +1056,7 @@ export const resize = debounce(
 
     const ui = g(uiAtom);
     const scoredChoicesLength = g(scoredChoicesAtom)?.length;
-    const hasPanel = g(panelHTMLAtom) !== '';
+    const hasPanel = g(_panelHTML) !== '';
     let mh = g(mainHeightAtom);
 
     if (promptData?.grid && document.getElementById(ID_MAIN)?.clientHeight > 10) {

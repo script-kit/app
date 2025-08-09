@@ -43,6 +43,7 @@ import {
 	focusedElementAtom,
 	footerHiddenAtom,
 	headerHiddenAtom,
+	hasPanelAtom,
 	hintAtom,
 	inputAtom,
 	inputWhileSubmittedAtom,
@@ -192,7 +193,7 @@ export default function App() {
 	const [open] = useAtom(openAtom);
 	const [script] = useAtom(scriptAtom);
 	const [hint] = useAtom(hintAtom);
-	const [panelHTML] = useAtom(panelHTMLAtom);
+	const hasPanel = useAtomValue(hasPanelAtom);
 
 	const [ui] = useAtom(uiAtom);
 	const loading = useAtomValue(loadingAtom);
@@ -770,7 +771,7 @@ ${showTabs ? "border-t border-ui-border" : ""}
 										{ui === UI.mic && open && <AudioRecorder />}
 										{ui === UI.webcam && open && <Webcam />}
 
-										{((ui === UI.arg && !panelHTML) || ui === UI.hotkey) && (
+										{((ui === UI.arg && !hasPanel) || ui === UI.hotkey) && (
 											<div
 												className="w-full h-full"
 												style={{ padding: promptData?.gridPadding || "0" }}
@@ -783,7 +784,7 @@ ${showTabs ? "border-t border-ui-border" : ""}
 											</div>
 										)}
 										{(!!(ui === UI.arg || ui === UI.div) &&
-											panelHTML.length > 0 && <Panel />) ||
+											hasPanel && <Panel />) ||
 											(ui === UI.form && <Form />)}
 									</div>
 								</PanelChild>
