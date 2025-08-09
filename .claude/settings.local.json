@@ -20,7 +20,8 @@
       "Bash(./run-repomix.sh)",
       "mcp__deepwiki__ask_question",
       "Bash(npx tsc:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(gemini:*)"
     ],
     "deny": []
   }

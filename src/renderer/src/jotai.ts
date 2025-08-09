@@ -312,6 +312,7 @@ let wereChoicesPreloaded = false;
 let wasPromptDataPreloaded = false;
 let prevFocusedChoiceId = 'prevFocusedChoiceId';
 let prevChoiceIndexId = 'prevChoiceIndexId';
+let prevTopHeight = 0;
 
 // --- Open/Close Lifecycle with Reset ---
 export const openAtom = atom(
@@ -817,11 +818,12 @@ export const scoredChoicesAtom = atom(
 
     s(choicesHeightAtom, choicesHeight);
 
+    // Don't directly set mainHeightAtom - let the resize function handle it
+    // This avoids race conditions between this setter and the resize function
     const ui = g(uiAtom);
-    if (ui === UI.arg) {
-      s(mainHeightAtom, choicesHeight);
-    } else {
-      s(mainHeightAtom, DEFAULT_HEIGHT);
+    if (ui === UI.arg || ui !== UI.arg) {
+      // Trigger a resize instead of directly setting mainHeightAtom
+      resize(g, s, 'CHOICES_UPDATED');
     }
   },
 );
@@ -1047,7 +1049,7 @@ export const resize = debounce(
 
     const ui = g(uiAtom);
     const scoredChoicesLength = g(scoredChoicesAtom)?.length;
-    const hasPanel = g(_panelHTML) !== '';
+    const hasPanel = g(panelHTMLAtom) !== '';
     let mh = g(mainHeightAtom);
 
     if (promptData?.grid && document.getElementById(ID_MAIN)?.clientHeight > 10) {
@@ -1059,6 +1061,12 @@ export const resize = debounce(
     const footerHeight = document.getElementById(ID_FOOTER)?.offsetHeight || 0;
     const hasPreview = g(previewCheckAtom);
     const choicesHeight = g(choicesHeightAtom);
+    const inputHeight = g(inputHeightAtom);
+    
+    // Store the calculated topHeight back to the atom
+    if (topHeight > 0 && topHeight !== g(_topHeight)) {
+      s(_topHeight, topHeight);
+    }
 
     if (ui === UI.arg) {
       if (!g(choicesReadyAtom)) return;
