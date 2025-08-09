@@ -21,14 +21,9 @@ import type {
 } from '@johnlindquist/kit/types/core';
 import type {
   AppMessage,
-  EditorOptions,
-  TermConfig,
 } from '@johnlindquist/kit/types/kitapp';
-import Convert from 'ansi-to-html';
-import DOMPurify from 'dompurify';
 import { type Getter, type Setter, atom } from 'jotai';
 import { debounce, throttle } from 'lodash-es';
-import type { MessageType } from 'react-chat-elements';
 import { unstable_batchedUpdates } from 'react-dom';
 
 // Import all modularized atoms
@@ -67,24 +62,19 @@ import {
   prevScoredChoicesIdsAtom,
   scoredChoicesAtom,
   choicesAtom,
-  indexAtom,
-  focusedChoiceAtom,
   selectedChoicesAtom,
   flagsAtom,
-  scoredFlagsAtom,
   scoredFlags,
   flagsIndex,
   focusedFlagValueAtom,
   focusedActionAtom,
   shortcutsAtom,
-  uiAtom,
   _ui,
   modeAtom,
   enterAtom,
   nameAtom,
   descriptionAtom,
   tabsAtom,
-  tabIndexAtom,
   previewHTMLAtom,
   panelHTMLAtom,
   formHTMLAtom,
@@ -93,9 +83,7 @@ import {
   termConfigAtom,
   editorConfigAtom,
   editorCursorPosAtom,
-  editorValueAtom,
   editorHistory,
-  chatMessagesAtom,
   webcamStreamAtom,
   pidAtom,
   processingAtom,
@@ -112,7 +100,6 @@ import {
   pauseChannelAtom,
   kitConfigAtom,
   appConfigAtom,
-  darkAtom,
   themeAtom,
   tempThemeAtom,
   itemHeightAtom,
@@ -126,7 +113,6 @@ import {
   flagsListAtom,
   scrollToIndexAtom,
   requiresScrollAtom,
-  boundsAtom,
   promptBoundsAtom,
   isWindowAtom,
   justOpenedAtom,
@@ -153,30 +139,16 @@ import {
   inputWhileSubmittedAtom,
   lastKeyDownWasModifierAtom,
   enterLastPressedAtom,
-  enterPressedAtom,
   closedInput,
   lastScriptClosed,
   logoAtom,
   preloadedAtom,
   backToMainAtom,
   choiceInputsAtom,
-  invalidateChoiceInputsAtom,
   editorAppendAtom,
-  editorSuggestionsAtom,
   editorHistoryPush,
   termOutputAtom,
-  preventChatScrollAtom,
-  speechAtom,
-  audioAtom,
-  micIdAtom,
-  textareaValueAtom,
-  textareaConfigAtom,
   formDataAtom,
-  splashBodyAtom,
-  splashHeaderAtom,
-  splashProgressAtom,
-  convertAtom,
-  appendToLogHTMLAtom,
   footerAtom,
   containerClassNameAtom,
   headerHiddenAtom,
@@ -185,40 +157,20 @@ import {
   onInputSubmitAtom,
   defaultActionsIdAtom,
   hasRightShortcutAtom,
-  shouldHighlightDescriptionAtom,
   showSelectedAtom,
   showTabsAtom,
-  lightenUIAtom,
   previewEnabledAtom,
-  hasPreviewAtom,
   previewCheckAtom,
-  zoomAtom,
-  hasBorderAtom,
-  devToolsOpenAtom,
-  buttonNameFontSizeAtom,
-  buttonDescriptionFontSizeAtom,
-  inputFontSizeAtom,
-  actionsButtonNameFontSizeAtom,
-  actionsButtonDescriptionFontSizeAtom,
-  actionsInputFontSizeAtom,
   promptResizedByHumanAtom,
-  resizingAtom,
-  appBoundsAtom,
   scrollToItemAtom,
   flagsRequiresScrollAtom,
-  isScrollingAtom,
-  isFlagsScrollingAtom,
   topHeightAtom,
   currentChoiceHeightsAtom,
-  hasFocusedChoiceAtom,
   prevMh,
-  setFocusedChoiceAtom,
   toggleSelectedChoiceAtom,
   toggleAllSelectedChoicesAtom,
   actionsPlaceholderAtom,
-  isKitScriptAtom,
   isMainScriptInitialAtom,
-  socialAtom,
   cachedAtom,
   clearCacheAtom,
   submitValueAtom,
@@ -232,12 +184,6 @@ import {
   preventSubmitAtom,
   changeAtom,
   runMainScriptAtom,
-  runKenvTrustScriptAtom,
-  runProcessesAtom,
-  applyUpdateAtom,
-  loginAtom,
-  submitSurveyAtom,
-  logAtom,
   initPromptAtom,
   enterButtonNameAtom,
   enterButtonDisabledAtom,
@@ -245,28 +191,16 @@ import {
   onPasteAtom,
   onDropAtom,
   colorAtom,
-  createAssetAtom,
-  searchDebounceAtom,
-  topRefAtom,
-  resetIdAtom,
   resize,
-  mainElementIdAtom,
-  scrollToAtom,
-  onShortcutAtom,
-  shortcodesAtom,
-  miniShortcutsVisibleAtom,
-  filePathBoundsAtom,
-  initialResizeAtom,
   listProcessesActionAtom,
   signInActionAtom,
   actionsButtonActionAtom,
   shouldActionButtonShowOnInputAtom,
-  setFlagByShortcutAtom,
 } from './state/atoms';
 
 
 // Shared imports
-import { DEFAULT_HEIGHT, SPLASH_PATH, closedDiv, noChoice, noScript } from '../../shared/defaults';
+import { DEFAULT_HEIGHT, closedDiv, noChoice } from '../../shared/defaults';
 import { AppChannel } from '../../shared/enums';
 import type { ResizeData, ScoredChoice, TermConfig as SharedTermConfig } from '../../shared/types';
 import { formatShortcut } from './components/formatters';
@@ -283,8 +217,6 @@ import {
   JUST_OPENED_MS,
   PROCESSING_SPINNER_DELAY_MS,
   MAX_VLIST_HEIGHT,
-  MAX_LOG_LINES,
-  MAX_EDITOR_HISTORY,
   MAX_TABCHECK_ATTEMPTS,
 } from './state/constants';
 import {
@@ -293,7 +225,6 @@ import {
   ID_MAIN,
   ID_LIST,
   ID_PANEL,
-  ID_PREVIEW,
   ID_WEBCAM,
   ID_LOG,
 } from './state/dom-ids';
@@ -461,7 +392,7 @@ export const promptDataAtom = atom(
     s(uiAtom, a.ui);
     s(_open, true);
     s(submittedAtom, false);
-    
+
     // Clear loading timeout when new prompt opens
     if (placeholderTimeoutId) {
       clearTimeout(placeholderTimeoutId);
@@ -523,7 +454,7 @@ export const promptDataAtom = atom(
     if (!a.keepPreview && a.preview) {
       s(previewHTMLAtom, a.preview);
     }
-    
+
     // Match main branch behavior exactly - only set panel if a.panel exists
     if (a.panel) {
       s(panelHTMLAtom, a.panel);
@@ -1133,7 +1064,7 @@ export const resize = debounce(
 
     const logVisible = g(logHTMLAtom)?.length > 0 && g(scriptAtom)?.log !== false;
     const logHeight = document.getElementById(ID_LOG)?.offsetHeight || 0;
-    
+
     const computeOut = computeResize({
       ui,
       scoredChoicesLength: scoredChoicesLength || 0,
@@ -1248,7 +1179,7 @@ export const mainHeightAtom = atom(
 // --- Channel Communication ---
 export const channelAtom = atom((g) => {
   if (g(pauseChannelAtom)) {
-    return () => {};
+    return () => { };
   }
 
   return (channel: Channel, override?: any) => {

@@ -7,7 +7,7 @@ import { atom } from 'jotai';
 import DOMPurify from 'dompurify';
 import { closedDiv } from '../../../../shared/defaults';
 import { promptData } from './ui';
-import { mainHeightAtom } from './ui-elements';
+import { _mainHeight } from './ui-elements';
 import { loadingAtom, isHiddenAtom } from './app-core';
 import { ID_PANEL, ID_LIST } from '../dom-ids';
 
@@ -64,7 +64,7 @@ export const panelHTMLAtom = atom(
 
     // Adjust main height if the panel is cleared and no list is present
     if (a === '' && document.getElementById(ID_PANEL) && !document.getElementById(ID_LIST)) {
-      s(mainHeightAtom, 0);
+      s(_mainHeight, 0);
     }
 
     if (a) {
