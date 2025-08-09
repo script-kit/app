@@ -248,6 +248,7 @@ import {
   searchDebounceAtom,
   topRefAtom,
   resetIdAtom,
+  resize,
   mainElementIdAtom,
   scrollToAtom,
   onShortcutAtom,
