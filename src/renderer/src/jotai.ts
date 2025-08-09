@@ -52,6 +52,7 @@ import {
   _chatMessagesAtom,
   _miniShortcutsHoveredAtom,
   _submitValue,
+  _indexAtom,
   cachedMainScoredChoicesAtom,
   cachedMainPromptDataAtom,
   cachedMainPreviewAtom,
@@ -827,7 +828,7 @@ export const scoredChoicesAtom = atom(
 
 // --- Index Atom with Skip Logic ---
 export const indexAtom = atom(
-  (g) => g(indexAtom),
+  (g) => g(_indexAtom),
   (g, s, a: number) => {
     if (g(flaggedChoiceValueAtom) || g(submittedAtom)) return;
 
