@@ -23,7 +23,7 @@ import { mouseEnabledAtom } from './input-state';
 import { resizeCompleteAtom, promptBoundsAtom, promptBoundsDefault } from './ui-layout';
 import { lastScriptClosed, _script } from './script-state';
 import { closedInput, _inputAtom } from './input-state';
-import { _panelHTML } from './preview-state';
+import { _panelHTML } from './atoms/preview';
 import { formHTMLAtom } from './components/other-components';
 import { logHTMLAtom, logLinesAtom } from './log-state';
 import { flagsAtom, _flaggedValue } from './actions-state';
