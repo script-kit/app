@@ -1,21 +1,19 @@
 /// <reference types="vite/client" />
+/// <reference lib="dom" />
 
-// Global type declarations for renderer process
+import type { ElectronAPI, API } from '../../preload/index.d.ts';
+
 declare global {
   interface Window {
     pid?: number;
-    electron: {
-      ipcRenderer: any;
-      webFrame: any;
-    };
-    api: {
-      path: any;
-      os: any;
-      fs: any;
-      fsPromises: any;
-      url: any;
-    };
+    electron: ElectronAPI;
+    api: API;
   }
+  
+  // Ensure global constructors are available
+  const self: Window & typeof globalThis;
+  const window: Window & typeof globalThis;
+  const document: Document;
 }
 
 export {};

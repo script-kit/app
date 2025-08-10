@@ -4,15 +4,14 @@ import { throttle } from 'lodash-es';
 
 import { Channel } from '@johnlindquist/kit/core/enum';
 import type { Choice } from '@johnlindquist/kit/types/core';
+import { closedDiv, noChoice } from '../../../../shared/defaults';
 
 import { 
   _focused,
   choiceInputsAtom,
   submittedAtom,
   previewHTMLAtom,
-  channelAtom,
-  closedDiv,
-  noChoice
+  channelAtom
 } from '../../jotai';
 
 import { SCROLL_THROTTLE_MS } from '../constants';

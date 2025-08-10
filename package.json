@@ -31,7 +31,8 @@
     "test": "vitest run",
     "bench": "vitest bench",
     "coverage": "vitest run --coverage --config electron.vite.config.ts",
-    "state:quickcheck": "pnpm tsc --noEmit && echo '✅ typecheck ok'"
+    "state:quickcheck": "pnpm tsc --noEmit && echo '✅ typecheck ok'",
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
