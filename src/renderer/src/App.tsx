@@ -192,14 +192,14 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function App() {
-	const [pid] = useAtom(pidAtom);
-	const [input] = useAtom(inputAtom);
-	const [open] = useAtom(openAtom);
-	const [script] = useAtom(scriptAtom);
-	const [hint] = useAtom(hintAtom);
-	const [panelHTML] = useAtom(panelHTMLAtom);
+	const pid = useAtomValue(pidAtom);
+	const input = useAtomValue(inputAtom);
+	const open = useAtomValue(openAtom);
+	const script = useAtomValue(scriptAtom);
+	const hint = useAtomValue(hintAtom);
+	const panelHTML = useAtomValue(panelHTMLAtom);
 
-	const [ui] = useAtom(uiAtom);
+	const ui = useAtomValue(uiAtom);
 	const loading = useAtomValue(loadingAtom);
 	const progress = useAtomValue(progressAtom);
 	const choices = useAtomValue(scoredChoicesAtom);
@@ -208,7 +208,7 @@ export default function App() {
 	const onDrop = useAtomValue(onDropAtom);
 	const logHTML = useAtomValue(logHTMLAtom);
 
-	const [promptData] = useAtom(promptDataAtom);
+	const promptData = useAtomValue(promptDataAtom);
 
 	const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
 	const triggerResize = useSetAtom(triggerResizeAtom);
@@ -219,11 +219,11 @@ export default function App() {
 	const [user, setUser] = useAtom(userAtom);
 	const setIsMouseDown = useSetAtom(isMouseDownAtom);
 
-	const [kitState] = useAtom(kitStateAtom);
-	const [flagValue] = useAtom(flaggedChoiceValueAtom);
-	const [termConfig] = useAtom(termConfigAtom);
-	const [headerHidden] = useAtom(headerHiddenAtom);
-	const [footerHidden] = useAtom(footerHiddenAtom);
+	const kitState = useAtomValue(kitStateAtom);
+	const flagValue = useAtomValue(flaggedChoiceValueAtom);
+	const termConfig = useAtomValue(termConfigAtom);
+	const headerHidden = useAtomValue(headerHiddenAtom);
+	const footerHidden = useAtomValue(footerHiddenAtom);
 	const processes = useAtomValue(processesAtom);
 	const isMainScript = useAtomValue(isMainScriptAtom);
 	const css = useAtomValue(cssAtom);
@@ -271,7 +271,7 @@ export default function App() {
 	const [_selectionBroadcastEffect] = useAtom(selectionBroadcastEffect);
 	const [_escapeAudioEffect] = useAtom(escapeAudioEffect);
 
-	const [chatMessages] = useAtom(chatMessagesWithEffect);
+	const chatMessages = useAtomValue(chatMessagesWithEffect);
 
 	useMessages();
 
