@@ -39,6 +39,13 @@ export {
   getEditorHistoryAtom,
 } from '../atoms/actions-utils';
 
+export {
+  changeAtom,
+  runMainScriptAtom,
+  onPasteAtom,
+  onDropAtom,
+} from '../atoms/misc-utils';
+
 /**
  * Migration tracking:
  * 
