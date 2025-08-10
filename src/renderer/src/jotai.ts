@@ -1230,25 +1230,9 @@ export const shortcutStringsAtom = atom((g) => {
   return new Set([...shortcutKeys, ...actionKeys, ...flagKeys]);
 });
 
-export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
-  const channel = g(channelAtom);
-  const hasEnterShortcut = g(shortcutsAtom).find((s) => s.key === 'enter');
-  log.info('🎬 Send shortcut', { shortcut, hasEnterShortcut });
-
-  // If 'enter' is pressed and not defined as a specific shortcut, treat it as a submission trigger (tracked via time)
-  if (shortcut === 'enter' && !hasEnterShortcut) {
-    s(enterLastPressedAtom, new Date());
-  } else {
-    // Otherwise, send it as a shortcut event.
-    channel(Channel.SHORTCUT, { shortcut });
-  }
-});
-
-export const sendActionAtom = atom(null, (g, _s, action: Action) => {
-  const channel = g(channelAtom);
-  log.info(`👉 Sending action: ${action.name}`);
-  channel(Channel.ACTION, { action });
-});
+// Moved to state/atoms/actions-utils.ts:
+// - sendShortcutAtom
+// - sendActionAtom
 
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
@@ -1377,57 +1361,19 @@ export const runMainScriptAtom = atom(() => () => {
 // - toggleSelectedChoiceAtom
 // - toggleAllSelectedChoicesAtom
 
-export const getEditorHistoryAtom = atom((g) => () => {
-  const channel = g(channelAtom);
-  channel(Channel.GET_EDITOR_HISTORY, { editorHistory: g(editorHistory) });
-});
+// Moved to state/atoms/actions-utils.ts:
+// - getEditorHistoryAtom
 
-export const colorAtom = atom((g) => {
-  return async () => {
-    try {
-      // @ts-ignore -- EyeDropper API might not be in standard TS types yet
-      const eyeDropper = new EyeDropper();
-      const { sRGBHex } = await eyeDropper.open();
-
-      const color = colorUtils.convertColor(sRGBHex);
-      const channel = Channel.GET_COLOR;
-      const pid = g(pidAtom);
-
-      const appMessage = {
-        channel,
-        pid: pid || 0,
-        value: color,
-      };
-
-      ipcRenderer.send(channel, appMessage);
-      return color;
-    } catch (error) {
-      // User cancelled or EyeDropper failed
-      return '';
-    }
-  };
-});
+// Moved to state/atoms/theme-utils.ts:
+// - colorAtom
 
 // Moved to state/atoms/utilities.ts:
 // - appendInputAtom
 // - valueInvalidAtom  
 // - preventSubmitAtom
 
-export const triggerKeywordAtom = atom(
-  (_g) => { },
-  (
-    g,
-    _s,
-    { keyword, choice }: { keyword: string; choice: Choice },
-  ) => {
-    const channel = g(channelAtom);
-    channel(Channel.KEYWORD_TRIGGERED, {
-      keyword,
-      focused: choice,
-      value: choice?.value,
-    });
-  },
-);
+// Moved to state/atoms/actions-utils.ts:
+// - triggerKeywordAtom
 
 // =================================================================================================
 // DERIVED ATOMS

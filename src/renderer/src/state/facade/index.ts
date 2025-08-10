@@ -30,6 +30,15 @@ export {
   _open,
 } from '../atoms/lifecycle';
 
+export { colorAtom } from '../atoms/theme-utils';
+
+export {
+  sendShortcutAtom,
+  sendActionAtom,
+  triggerKeywordAtom,
+  getEditorHistoryAtom,
+} from '../atoms/actions-utils';
+
 /**
  * Migration tracking:
  * 
