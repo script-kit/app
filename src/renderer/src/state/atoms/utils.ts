@@ -44,8 +44,9 @@ export const createAssetAtom = (...parts: string[]) =>
   });
 
 // --- Process Management ---
-export const listProcessesActionAtom = atom(() => null);
-export const signInActionAtom = atom(() => null);
-export const actionsButtonActionAtom = atom(() => ({} as any));
-export const shouldActionButtonShowOnInputAtom = atom(() => false);
+// These are stubs - the real implementations live in jotai.ts
+const listProcessesActionAtom = atom(() => null);
+const signInActionAtom = atom(() => null);
+const actionsButtonActionAtom = atom(() => ({} as any));
+const shouldActionButtonShowOnInputAtom = atom(() => false);
 export const setFlagByShortcutAtom = atom(null, () => {});
