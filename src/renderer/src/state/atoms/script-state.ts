@@ -16,7 +16,7 @@ export const lastScriptClosed = atom('');
 export const backToMainAtom = atom(false);
 export const preloadedAtom = atom(false);
 
-// isMainScriptAtom moved to shared-atoms.ts to avoid duplication
+// isMainScriptAtom is defined in shared-atoms.ts to avoid duplication
 
 export const isKitScriptAtom = atom<boolean>((g) => {
   return (g(_script) as Script)?.filePath?.includes(g(kitConfigAtom).kitPath);

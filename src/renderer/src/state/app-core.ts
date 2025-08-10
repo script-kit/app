@@ -92,6 +92,7 @@ export const progressAtom = atom(0);
 export const _open = atom(false);
 
 // openAtom is defined in app-lifecycle.ts to avoid circular dependencies
+// We import it from there when needed
 
 export const exitAtom = atom(
   (g) => g(openAtom),
