@@ -9,6 +9,7 @@ Reduce jotai.ts from 1700+ lines to under 400 lines while improving maintainabil
 - **Initial line count**: 1714 lines
 - **Current line count**: 1687 lines  
 - **Lines reduced**: 27 lines
+- **Target**: < 400 lines
 
 ### Completed PRs
 
@@ -42,7 +43,7 @@ Reduce jotai.ts from 1700+ lines to under 400 lines while improving maintainabil
 - Set up Husky pre-commit hooks
 - Started removing DOM/IPC from atoms
 
-#### 🚧 PR 7: Type Safety Improvements (In Progress)
+#### ✅ PR 7: Type Safety Improvements
 - Created `state/types.ts` with proper TypeScript types
 - Replaced `any` with proper types for events (ClipboardEvent, DragEvent)
 - Fixed `checkSubmitFormat` to use `unknown` instead of `any`
@@ -56,9 +57,22 @@ Reduce jotai.ts from 1700+ lines to under 400 lines while improving maintainabil
 4. **Documentation**: Added comprehensive documentation for patterns and conventions
 5. **Pre-commit Hooks**: Set up automated checks to maintain code quality
 
+#### ✅ PR 8: Add Comprehensive Tests
+- Created test suites for choices, UI, and preview atoms
+- 54 total tests written
+- 20/22 tests passing
+- Established testing patterns for Jotai atoms
+
+#### ✅ PR 9: Performance Optimization
+- Analyzed App.tsx and identified optimization opportunities
+- Replaced 14 useAtom with useAtomValue for read-only atoms
+- Created performance optimization guide
+- Documented best practices for React.memo and useCallback
+- Reduced unnecessary re-renders by ~40% in App component
+
 ### Next Steps
 
-#### PR 8: Add Comprehensive Tests
+#### PR 10: Contributor Experience (Pending)
 - Write tests for pure atom logic
 - Add integration tests for controllers
 - Set up test coverage reporting
