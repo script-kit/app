@@ -7,6 +7,7 @@
 export * from './app-core';
 export * from './lifecycle';
 export * from './script-state';
+export * from '../shared-atoms'; // Export shared atoms including isMainScriptAtom
 export * from './cache';
 
 // UI and theme atoms
