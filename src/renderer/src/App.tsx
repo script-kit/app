@@ -100,6 +100,8 @@ import Webcam from "./webcam";
 import { ResizeController } from "./state/controllers/ResizeController";
 import { IPCController } from "./state/controllers/IPCController";
 import { FocusController } from "./state/controllers/FocusController";
+import { ChoicesController } from "./state/controllers/ChoicesController";
+import { UIController } from "./state/controllers/UIController";
 
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
@@ -597,6 +599,8 @@ export default function App() {
 			<ResizeController />
 			<IPCController />
 			<FocusController />
+			<ChoicesController />
+			<UIController />
 			{
 				<div
 					id="main-container"

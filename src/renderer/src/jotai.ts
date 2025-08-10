@@ -601,23 +601,10 @@ export const uiAtom = atom(
       s(scoredChoicesAtom, []);
     }
 
-    let id: string = a === UI.arg ? 'input' : a;
-    const timeoutId = setTimeout(() => ipcRenderer.send(a), JUST_OPENED_MS);
-
-    let attempts = 0;
-    const maxAttempts = MAX_TABCHECK_ATTEMPTS;
-
-    requestAnimationFrame(function checkElement() {
-      attempts++;
-      if (document.getElementById(id)) {
-        clearTimeout(timeoutId);
-        ipcRenderer.send(a);
-      } else if (attempts < maxAttempts) {
-        requestAnimationFrame(checkElement);
-      } else {
-        clearTimeout(timeoutId);
-      }
-    });
+    // Side effects moved to UIController
+    // The UIController now handles:
+    // - Checking for DOM element availability  
+    // - Sending IPC messages when UI changes
   },
 );
 
@@ -792,34 +779,20 @@ export const indexAtom = atom(
 );
 
 // --- Focused Choice with Throttling ---
-const throttleChoiceFocused = throttle(
+// Throttled focus logic moved to ChoicesController
+// The controller handles:
+// - Throttling focus changes
+// - Updating preview HTML
+// - Sending IPC messages
+// - Managing prevFocusedChoiceId
+
+export const focusedChoiceAtom = atom(
+  (g) => g(_focused),
   (g, s, choice: Choice) => {
-    s(choiceInputsAtom, []);
-    if (choice?.skip) return;
-    if (choice?.id === prevFocusedChoiceId) return;
-    if (g(submittedAtom)) return;
-
-    prevFocusedChoiceId = choice?.id || 'prevFocusedChoiceId';
+    // Simple setter - side effects handled by ChoicesController
     s(_focused, choice || noChoice);
-
-    if (choice?.id || (choice?.name && choice?.name !== noChoice.name)) {
-      if (typeof choice?.preview === 'string') {
-        s(previewHTMLAtom, choice?.preview);
-      } else if (!choice?.hasPreview) {
-        s(previewHTMLAtom, closedDiv);
-      }
-
-      if (choice?.name !== noChoice.name) {
-        const channel = g(channelAtom);
-        channel(Channel.CHOICE_FOCUSED);
-      }
-    }
-  },
-  SCROLL_THROTTLE_MS,
-  { leading: true, trailing: true },
+  }
 );
-
-export const focusedChoiceAtom = atom((g) => g(_focused), throttleChoiceFocused);
 
 // --- Flagged Choice Value ---
 export const flaggedChoiceValueAtom = atom(
