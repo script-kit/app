@@ -1169,7 +1169,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
 });
 
 // --- Submit Value ---
-const checkSubmitFormat = (g: Getter, checkValue: any) => {
+const checkSubmitFormat = (g: Getter, checkValue: unknown): unknown => {
   if (checkValue instanceof ArrayBuffer) {
     return checkValue;
   }
@@ -1179,7 +1179,7 @@ const checkSubmitFormat = (g: Getter, checkValue: any) => {
     }
 
     const files = checkValue.map((file) => {
-      const fileObject: any = {};
+      const fileObject: Record<string, unknown> = {};
       for (const key in file) {
         if (typeof file[key] !== 'function') {
           fileObject[key] = file[key];
@@ -1658,7 +1658,7 @@ export const topHeightAtom = atom(
   },
 );
 
-export const onPasteAtom = atom((g) => (event: any) => {
+export const onPasteAtom = atom((g) => (event: ClipboardEvent) => {
   if (g(uiAtom) === UI.editor) {
     event.preventDefault(); // Assuming we want to handle paste manually or let Monaco handle it, but the original had this.
   }
@@ -1666,14 +1666,14 @@ export const onPasteAtom = atom((g) => (event: any) => {
   channel(Channel.ON_PASTE);
 });
 
-export const onDropAtom = atom((g) => (event: any) => {
+export const onDropAtom = atom((g) => (event: DragEvent) => {
   if (g(uiAtom) === UI.drop) return; // UI.drop likely has its own specific handler
   event.preventDefault();
   let drop = '';
   const files = Array.from(event?.dataTransfer?.files || []);
   if (files.length > 0) {
     drop = files
-      .map((file: any) => file.path)
+      .map((file: File) => (file as any).path)
       .join('\n')
       .trim();
   } else {

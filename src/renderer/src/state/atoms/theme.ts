@@ -31,8 +31,8 @@ export const tempThemeAtom = atom(
 export const isDefaultTheme = atom(true);
 
 export const lightenUIAtom = atom((g) => {
-  const theme: any = g(themeAtom);
-  const temporaryTheme: any = g(tempThemeAtom);
-  const isLightened = theme['--color-secondary'] === 'lighten' || temporaryTheme['--color-secondary'] === 'lighten';
+  const theme = g(themeAtom) as string;
+  const temporaryTheme = g(tempThemeAtom) as string;
+  const isLightened = theme.includes('--color-secondary: lighten') || temporaryTheme.includes('--color-secondary: lighten');
   return isLightened;
 });
