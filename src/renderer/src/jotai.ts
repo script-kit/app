@@ -255,14 +255,8 @@ export const openAtom = atom(
   },
 );
 
-export const exitAtom = atom(
-  (g) => g(openAtom),
-  (g, s, pid: number) => {
-    if (g(pidAtom) === pid) {
-      s(openAtom, false);
-    }
-  },
-);
+// Moved to state/atoms/lifecycle.ts:
+// - exitAtom
 
 // --- Script Atom with Complex Logic ---
 export const scriptAtom = atom(
@@ -1366,26 +1360,9 @@ export const submitInputAtom = atom(null, (g, s) => {
   s(submitValueAtom, input);
 });
 
-export const escapeAtom = atom<any>((g) => {
-  const channel = g(channelAtom);
-  return () => {
-    // Stop any ongoing speech synthesis
-    const synth = window.speechSynthesis;
-    if (synth.speaking) {
-      synth.cancel();
-    }
-
-    log.info('👋 Sending Channel.ESCAPE');
-    channel(Channel.ESCAPE);
-  };
-});
-
-export const blurAtom = atom(null, (g) => {
-  if (g(openAtom)) {
-    const channel = g(channelAtom);
-    channel(Channel.BLUR);
-  }
-});
+// Moved to state/atoms/lifecycle.ts:
+// - escapeAtom
+// - blurAtom
 
 export const changeAtom = atom((g) => (data: any) => {
   const channel = g(channelAtom);
@@ -1396,30 +1373,9 @@ export const runMainScriptAtom = atom(() => () => {
   ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
 });
 
-export const toggleSelectedChoiceAtom = atom(null, (g, s, id: string) => {
-  const selectedChoices = [...g(selectedChoicesAtom)];
-  const scoredChoice = g(choices).find((c) => c?.item?.id === id);
-  const index = selectedChoices.findIndex((c) => c?.id === id);
-
-  if (index > -1) {
-    selectedChoices.splice(index, 1);
-  } else if (scoredChoice?.item) {
-    selectedChoices.push(scoredChoice.item as Choice);
-  }
-
-  s(selectedChoicesAtom, selectedChoices);
-});
-
-export const toggleAllSelectedChoicesAtom = atom(null, (g, s) => {
-  const selectedChoices = g(selectedChoicesAtom);
-  const cs = g(choices).map((c) => c?.item as Choice);
-
-  if (selectedChoices.length === cs.length) {
-    s(selectedChoicesAtom, []);
-  } else {
-    s(selectedChoicesAtom, cs);
-  }
-});
+// Moved to state/atoms/utilities.ts:
+// - toggleSelectedChoiceAtom
+// - toggleAllSelectedChoicesAtom
 
 export const getEditorHistoryAtom = atom((g) => () => {
   const channel = g(channelAtom);
@@ -1452,39 +1408,10 @@ export const colorAtom = atom((g) => {
   };
 });
 
-export const appendInputAtom = atom(null, (g, s, a: string) => {
-  const ui = g(uiAtom);
-  if (ui === UI.editor) {
-    s(editorAppendAtom, a);
-  } else {
-    const input = g(_inputAtom);
-    s(_inputAtom, input + a);
-  }
-});
-
-export const valueInvalidAtom = atom(null, (g, s, a: string) => {
-  if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
-
-  s(processingAtom, false);
-  s(inputAtom, '');
-  s(_inputChangedAtom, false);
-
-  if (typeof a === 'string') {
-    // hintAtom setter handles the ANSI conversion
-    s(hintAtom, a);
-  }
-
-  const channel = g(channelAtom);
-  channel(Channel.ON_VALIDATION_FAILED);
-});
-
-export const preventSubmitAtom = atom(null, (_g, s, _a: string) => {
-  s(promptActiveAtom, true);
-  if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
-  s(submittedAtom, false);
-  s(processingAtom, false);
-  s(_inputChangedAtom, false);
-});
+// Moved to state/atoms/utilities.ts:
+// - appendInputAtom
+// - valueInvalidAtom  
+// - preventSubmitAtom
 
 export const triggerKeywordAtom = atom(
   (_g) => { },

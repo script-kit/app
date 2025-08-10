@@ -13,10 +13,22 @@
 // Re-export everything from jotai.ts for backward compatibility
 export * from '../../jotai';
 
-// As we extract atoms, we'll override the exports here
-// Example:
-// export { mouseEnabledAtom } from '../atoms/interaction';
-// export { termConfigAtom } from '../atoms/terminal';
+// Override with extracted atoms - these take precedence
+export {
+  appendInputAtom,
+  valueInvalidAtom,
+  preventSubmitAtom,
+  toggleSelectedChoiceAtom,
+  toggleAllSelectedChoicesAtom,
+} from '../atoms/utilities';
+
+export {
+  exitAtom,
+  escapeAtom,
+  blurAtom,
+  resizeCompleteAtom,
+  _open,
+} from '../atoms/lifecycle';
 
 /**
  * Migration tracking:
