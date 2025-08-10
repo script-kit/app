@@ -5,7 +5,7 @@ import { UI } from '@johnlindquist/kit/core/enum';
 import { 
   uiAtom,
   justOpenedAtom
-} from '../../jotai';
+} from '../facade';
 
 import { 
   JUST_OPENED_MS,

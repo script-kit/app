@@ -12,7 +12,7 @@ import {
   submittedAtom,
   previewHTMLAtom,
   channelAtom
-} from '../../jotai';
+} from '../facade';
 
 import { SCROLL_THROTTLE_MS } from '../constants';
 import { createLogger } from '../../log-utils';

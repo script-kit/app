@@ -29,8 +29,8 @@ import { logHTMLAtom, logLinesAtom } from './log-state';
 import { flagsAtom, _flaggedValue } from './actions-state';
 import { editorConfigAtom } from './components/editor-state';
 import { promptData } from './prompt-data';
-// promptDataAtom is temporarily in jotai.ts until refactoring is complete
-import { promptDataAtom } from '../jotai';
+// Import from facade for gradual migration
+import { promptDataAtom } from './facade';
 import { requiresScrollAtom, scrollToIndexAtom } from './ui-layout';
 import { _chatMessagesAtom } from './components/chat-state';
 import { miniShortcutsHoveredAtom } from './utils';

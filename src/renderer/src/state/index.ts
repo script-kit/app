@@ -1,12 +1,12 @@
 // =================================================================================================
-// Re-export all atoms from the original jotai.ts file
+// Re-export all atoms through the facade pattern
 // This ensures backward compatibility while the migration is in progress
 // =================================================================================================
 
-// Re-export everything from the original jotai.ts file for now
-export * from '../jotai';
+// Use the facade pattern for jotai exports - this allows gradual migration
+export * from './facade';
 
-// Start re-exporting split files to prepare for future import path changes
+// Re-export utility modules
 export * from './constants';
 export * from './utils';
 export * from './dom-ids';
@@ -14,10 +14,5 @@ export * from './skip-nav';
 export * from './resize/compute';
 export * from './reset';
 
-// As we migrate atoms to the new structure, we'll update this file to import from the new locations
-// For example:
-// export * from './app-core';
-// export * from './script-state';
-// export * from './prompt-data';
-// export * from './input-state';
-// etc.
+// As we migrate atoms to the new structure, the facade will handle the redirects
+// This allows us to move atoms without breaking imports
