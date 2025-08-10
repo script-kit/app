@@ -97,6 +97,9 @@ import ProcessesDot from "./processes-dot";
 import ProgressBar from "./progress-bar";
 import Terminal from "./term";
 import Webcam from "./webcam";
+import { ResizeController } from "./state/controllers/ResizeController";
+import { IPCController } from "./state/controllers/IPCController";
+import { FocusController } from "./state/controllers/FocusController";
 
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
@@ -591,6 +594,9 @@ export default function App() {
 
 	return (
 		<ErrorBoundary>
+			<ResizeController />
+			<IPCController />
+			<FocusController />
 			{
 				<div
 					id="main-container"

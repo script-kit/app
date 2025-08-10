@@ -7,8 +7,7 @@ import { atom } from 'jotai';
 import { noScript, SPLASH_PATH } from '../../../shared/defaults';
 import { createLogger } from '../log-utils';
 import { kitConfigAtom, pidAtom, processingAtom, loadingAtom, progressAtom } from './app-core';
-import { isMainScriptAtom } from './prompt-data';
-import { inputAtom } from './input-state';
+import { isMainScriptAtom } from './shared-atoms';
 
 const log = createLogger('script-state.ts');
 
@@ -61,9 +60,7 @@ export const isKitScriptAtom = atom<boolean>((g) => {
   return (g(_script) as Script)?.filePath?.includes(g(kitConfigAtom).kitPath);
 });
 
-export const isMainScriptInitialAtom = atom<boolean>((g) => {
-  return g(isMainScriptAtom) && g(inputAtom) === '';
-});
+// isMainScriptInitialAtom moved to selectors/scriptSelectors.ts to avoid circular dependency
 
 export const isSplashAtom = atom((g) => {
   return g(scriptAtom)?.filePath === SPLASH_PATH;

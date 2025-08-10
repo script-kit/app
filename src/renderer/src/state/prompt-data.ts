@@ -20,6 +20,7 @@ import {
   cachedMainPromptDataAtom,
 } from './app-core';
 import { scriptAtom } from './script-state';
+import { isMainScriptAtom } from './shared-atoms';
 
 
 const { ipcRenderer } = window.electron;
@@ -35,7 +36,7 @@ export const promptData = atom<null | Partial<PromptData>>({
 });
 
 export const promptReadyAtom = atom(false);
-export const isMainScriptAtom = atom(false);
+// isMainScriptAtom moved to shared-atoms.ts to avoid circular dependency
 let wasPromptDataPreloaded = false;
 
 // The main atom setter that processes incoming PromptData and updates numerous other atoms.

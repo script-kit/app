@@ -4,7 +4,8 @@
  */
 
 import { atom } from 'jotai';
-import type { Rectangle } from 'electron';
+// Using Rectangle type from shared types to avoid electron import
+type Rectangle = { x: number; y: number; width: number; height: number; };
 import { PROMPT } from '@johnlindquist/kit/core/enum';
 import { createLogger } from '../../log-utils';
 import { itemHeightAtom, inputHeightAtom } from './ui-elements';

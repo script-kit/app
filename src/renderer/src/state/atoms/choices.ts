@@ -44,7 +44,30 @@ export const hasSkipAtom = atom(false);
 export const allSkipAtom = atom(false);
 
 // --- Focused Choice ---
-export const _focused = atom<Choice | null>(noChoice as Choice);
+// Enhanced focused choice atom with better error handling and initialization safety
+const _focusedInternal = atom<Choice | null>(noChoice as Choice);
+
+export const _focused = atom<Choice | null>(
+  (g) => {
+    const focused = g(_focusedInternal);
+    // Ensure we never return null/undefined - always return a valid Choice object
+    if (!focused || typeof focused !== 'object' || !focused.id) {
+      console.warn('_focused atom: Internal focused value is invalid, using noChoice fallback', focused);
+      return noChoice as Choice;
+    }
+    return focused;
+  },
+  (g, s, choice: Choice | null) => {
+    // Setter: validate the choice being set and ensure it's never null/undefined
+    if (!choice || typeof choice !== 'object') {
+      console.warn('_focused atom: Attempt to set invalid choice, using noChoice instead', choice);
+      s(_focusedInternal, noChoice as Choice);
+    } else {
+      s(_focusedInternal, choice);
+    }
+  }
+);
+
 // export const focusedChoiceAtom = atom((g) => g(_focused)); // Complex version with computed properties is in jotai.ts
 export const hasFocusedChoiceAtom = atom((g) => g(_focused) && g(_focused)?.name !== noChoice.name);
 
