@@ -1,9 +1,16 @@
 # Jotai.ts Migration Plan
 
 ## Current Situation
-- **1687 lines** in jotai.ts (target: <400)
+- **1560 lines** in jotai.ts (target: <400) - **127 lines reduced!**
 - **115 files** depend on it
 - **High interdependencies** between atoms
+
+## Progress Update
+- ✅ Facade pattern established
+- ✅ Critical imports updated to use facade
+- ✅ 13 atoms successfully extracted
+- 🚀 No circular dependencies introduced
+- 🎯 1160 more lines to reduce to reach target
 
 ## Migration Strategy: Facade Pattern
 
@@ -12,7 +19,7 @@
 2. Re-exports everything from jotai.ts
 3. Provides backward compatibility
 
-### Phase 2: Update Import Paths (NEXT)
+### Phase 2: Update Import Paths (✅ DONE)
 Instead of:
 ```typescript
 import { uiAtom, promptDataAtom } from '../jotai';
@@ -87,19 +94,29 @@ Update the most commonly importing files first:
 - hooks/useMessages.ts
 - state/controllers/IPCController.tsx
 
-### Step 2: Extract Utility Atoms
-Move these to `state/atoms/utilities.ts`:
+### Step 2: Extract Utility Atoms (✅ DONE)
+Moved to `state/atoms/utilities.ts`:
 - appendInputAtom
 - valueInvalidAtom
 - preventSubmitAtom
 - toggleSelectedChoiceAtom
 - toggleAllSelectedChoicesAtom
 
-### Step 3: Extract Exit/Close Logic
-Move to `state/atoms/lifecycle.ts`:
+### Step 3: Extract Exit/Close Logic (✅ DONE)
+Moved to `state/atoms/lifecycle.ts`:
 - exitAtom
 - blurAtom
 - escapeAtom
+
+### Step 3.5: Extract Action/Theme Atoms (✅ DONE)
+Moved to `state/atoms/actions-utils.ts`:
+- sendShortcutAtom
+- sendActionAtom
+- triggerKeywordAtom
+- getEditorHistoryAtom
+
+Moved to `state/atoms/theme-utils.ts`:
+- colorAtom
 
 ### Step 4: Measure Progress
 After each extraction:
@@ -112,9 +129,9 @@ After each extraction:
 - [ ] jotai.ts under 1000 lines (Phase 1 goal)
 - [ ] jotai.ts under 600 lines (Phase 2 goal)
 - [ ] jotai.ts under 400 lines (Final goal)
-- [ ] No circular dependencies
-- [ ] All tests passing
-- [ ] No runtime errors
+- [x] No circular dependencies (verified)
+- [ ] All tests passing (2 unrelated test failures)
+- [x] No runtime errors (app runs correctly)
 
 ## Risk Mitigation
 1. **Use facade pattern** for backward compatibility
