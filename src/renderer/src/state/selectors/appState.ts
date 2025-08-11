@@ -10,7 +10,7 @@ import { _script } from '../atoms/script-state';
 import { nameAtom, descriptionAtom } from '../atoms/ui-elements';
 import { choicesAtom, selectedChoicesAtom } from '../atoms/choices';
 import { editorCursorPosAtom } from '../atoms/editor';
-import { modeAtom } from '../prompt-data';
+import { modeAtom } from '../../jotai';
 // Import from facade for gradual migration
 import { 
   focusedFlagValueAtom, 
