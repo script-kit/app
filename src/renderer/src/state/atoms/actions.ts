@@ -9,6 +9,10 @@ import { atom } from 'jotai';
 import { isEqual } from 'lodash-es';
 import { unstable_batchedUpdates } from 'react-dom';
 import { createLogger } from '../../log-utils';
+import { flagsRequiresScrollAtom } from './scrolling';
+import { actionsItemHeightAtom, flagsHeightAtom } from './ui-elements';
+import { calcVirtualListHeight } from '../utils';
+import { MAX_VLIST_HEIGHT } from '../constants';
 
 const log = createLogger('actions.ts');
 
@@ -34,8 +38,31 @@ export const _flaggedValue = atom<Choice | string>('');
 export const _actionsInputAtom = atom('');
 export const actionsInputAtom = atom(
   (g) => g(_actionsInputAtom),
-  (_g, s, a: string) => {
+  (g, s, a: string) => {
+    // 1) store new filter
     s(_actionsInputAtom, a);
+
+    // 2) reset selection to the top of the (newly filtered) list
+    s(flagsIndex, 0);
+
+    // 3) request scroll so the first item is visible
+    s(flagsRequiresScrollAtom, -1);
+
+    // 4) update Actions list height to match the filtered list
+    const base = g(scoredFlags);
+    const q = (a || '').toLowerCase().trim();
+    const filtered = !q
+      ? base
+      : base.filter((sc) => {
+          const it: any = sc?.item || {};
+          const name = (it.name || '').toLowerCase();
+          const desc = (it.description || '').toLowerCase();
+          const id = (it.id || '').toLowerCase();
+          const val = (typeof it.value === 'string' ? it.value : '').toLowerCase();
+          return name.includes(q) || desc.includes(q) || id.includes(q) || val.includes(q);
+        });
+    const h = calcVirtualListHeight(filtered as any, g(actionsItemHeightAtom), MAX_VLIST_HEIGHT);
+    s(flagsHeightAtom, h);
   },
 );
 
