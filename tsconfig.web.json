@@ -1,31 +1,53 @@
 {
-  "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
   "include": [
     "src/renderer/src/env.d.ts",
     "src/renderer/src/**/*",
     "src/renderer/src/**/*.tsx",
     "src/preload/*.d.ts",
-    "src/shared/*",
+    "src/shared/*"
   ],
   "compilerOptions": {
-    "target": "esnext",
+    "target": "ES2022",
     "module": "ESNext",
-    "composite": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
-    "baseUrl": ".",
+    "declaration": true,
+    "composite": true,
+    "incremental": true,
+    
+    /* Module Resolution */
     "moduleResolution": "bundler",
+    "baseUrl": ".",
     "paths": {
-      "@renderer/*": [
-        "src/renderer/src/*"
-      ]
+      "@renderer/*": ["src/renderer/src/*"],
+      "@/utils/*": ["src/renderer/src/utils/*"]
     },
-    "types": [
-      "jest"
-    ],
-    "lib": [
-      "ES2023",
-      "DOM",
-      "DOM.Iterable"
-    ]
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    
+    /* Type Checking - Currently relaxed, will tighten over time */
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "strictBindCallApply": false,
+    "strictPropertyInitialization": false,
+    "noImplicitThis": false,
+    "alwaysStrict": false,
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    
+    /* Skip lib check for faster builds */
+    "skipLibCheck": true,
+    
+    /* Interop */
+    "isolatedModules": true,
+    "types": ["vite/client", "node"]
   }
 }

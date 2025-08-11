@@ -8,7 +8,7 @@ import { _panelHTML } from '../atoms/preview';
 import { _flaggedValue } from '../atoms/actions';
 import { Mode } from '@johnlindquist/kit/core/enum';
 import { ID_HEADER, ID_FOOTER, ID_LOG } from '../dom-ids';
-// These need to stay imported from jotai.ts as they have complex logic
+// Import from facade for gradual migration
 import { promptDataAtom, uiAtom, scoredChoicesAtom, scriptAtom } from '../../jotai';
 
 /**

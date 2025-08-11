@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.0.6/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -8,18 +8,20 @@
   },
   "files": {
     "includes": [
-      "src/**/*.ts",
-      "!.cache/**",
-      "!.history/**",
-      "!.npm-cache/**",
-      "!node_modules/**",
-      "!.vscode/**",
-      "!assets/**",
-      "!src/main/logs.ts"
+      "**",
+      "!**/.cache/**",
+      "!**/.history/**",
+      "!**/.npm-cache/**",
+      "!**/node_modules/**",
+      "!**/.vscode/**",
+      "!**/assets/**",
+      "!**/src/main/logs.ts",
+      "!**/dist/**",
+      "!**/out/**"
     ]
   },
   "linter": {
-    "includes": ["src/**/*.ts"],
+    "enabled": true,
     "rules": {
       "recommended": true,
       "a11y": {

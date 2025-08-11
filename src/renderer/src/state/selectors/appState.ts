@@ -11,7 +11,7 @@ import { nameAtom, descriptionAtom } from '../atoms/ui-elements';
 import { choicesAtom, selectedChoicesAtom } from '../atoms/choices';
 import { editorCursorPosAtom } from '../atoms/editor';
 import { modeAtom } from '../prompt-data';
-// These complex atoms remain in jotai.ts for now
+// Import from facade for gradual migration
 import { 
   focusedFlagValueAtom, 
   indexAtom, 

@@ -601,23 +601,10 @@ export const uiAtom = atom(
       s(scoredChoicesAtom, []);
     }
 
-    let id: string = a === UI.arg ? 'input' : a;
-    const timeoutId = setTimeout(() => ipcRenderer.send(a), JUST_OPENED_MS);
-
-    let attempts = 0;
-    const maxAttempts = MAX_TABCHECK_ATTEMPTS;
-
-    requestAnimationFrame(function checkElement() {
-      attempts++;
-      if (document.getElementById(id)) {
-        clearTimeout(timeoutId);
-        ipcRenderer.send(a);
-      } else if (attempts < maxAttempts) {
-        requestAnimationFrame(checkElement);
-      } else {
-        clearTimeout(timeoutId);
-      }
-    });
+    // Side effects moved to UIController
+    // The UIController now handles:
+    // - Checking for DOM element availability  
+    // - Sending IPC messages when UI changes
   },
 );
 
@@ -792,34 +779,20 @@ export const indexAtom = atom(
 );
 
 // --- Focused Choice with Throttling ---
-const throttleChoiceFocused = throttle(
+// Throttled focus logic moved to ChoicesController
+// The controller handles:
+// - Throttling focus changes
+// - Updating preview HTML
+// - Sending IPC messages
+// - Managing prevFocusedChoiceId
+
+export const focusedChoiceAtom = atom(
+  (g) => g(_focused),
   (g, s, choice: Choice) => {
-    s(choiceInputsAtom, []);
-    if (choice?.skip) return;
-    if (choice?.id === prevFocusedChoiceId) return;
-    if (g(submittedAtom)) return;
-
-    prevFocusedChoiceId = choice?.id || 'prevFocusedChoiceId';
+    // Simple setter - side effects handled by ChoicesController
     s(_focused, choice || noChoice);
-
-    if (choice?.id || (choice?.name && choice?.name !== noChoice.name)) {
-      if (typeof choice?.preview === 'string') {
-        s(previewHTMLAtom, choice?.preview);
-      } else if (!choice?.hasPreview) {
-        s(previewHTMLAtom, closedDiv);
-      }
-
-      if (choice?.name !== noChoice.name) {
-        const channel = g(channelAtom);
-        channel(Channel.CHOICE_FOCUSED);
-      }
-    }
-  },
-  SCROLL_THROTTLE_MS,
-  { leading: true, trailing: true },
+  }
 );
-
-export const focusedChoiceAtom = atom((g) => g(_focused), throttleChoiceFocused);
 
 // --- Flagged Choice Value ---
 export const flaggedChoiceValueAtom = atom(
@@ -1196,7 +1169,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
 });
 
 // --- Submit Value ---
-const checkSubmitFormat = (g: Getter, checkValue: any) => {
+const checkSubmitFormat = (g: Getter, checkValue: unknown): unknown => {
   if (checkValue instanceof ArrayBuffer) {
     return checkValue;
   }
@@ -1206,7 +1179,7 @@ const checkSubmitFormat = (g: Getter, checkValue: any) => {
     }
 
     const files = checkValue.map((file) => {
-      const fileObject: any = {};
+      const fileObject: Record<string, unknown> = {};
       for (const key in file) {
         if (typeof file[key] !== 'function') {
           fileObject[key] = file[key];
@@ -1263,25 +1236,9 @@ export const shortcutStringsAtom = atom((g) => {
   return new Set([...shortcutKeys, ...actionKeys, ...flagKeys]);
 });
 
-export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
-  const channel = g(channelAtom);
-  const hasEnterShortcut = g(shortcutsAtom).find((s) => s.key === 'enter');
-  log.info('🎬 Send shortcut', { shortcut, hasEnterShortcut });
-
-  // If 'enter' is pressed and not defined as a specific shortcut, treat it as a submission trigger (tracked via time)
-  if (shortcut === 'enter' && !hasEnterShortcut) {
-    s(enterLastPressedAtom, new Date());
-  } else {
-    // Otherwise, send it as a shortcut event.
-    channel(Channel.SHORTCUT, { shortcut });
-  }
-});
-
-export const sendActionAtom = atom(null, (g, _s, action: Action) => {
-  const channel = g(channelAtom);
-  log.info(`👉 Sending action: ${action.name}`);
-  channel(Channel.ACTION, { action });
-});
+// Moved to state/atoms/actions-utils.ts:
+// - sendShortcutAtom
+// - sendActionAtom
 
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
@@ -1529,6 +1486,26 @@ export const triggerKeywordAtom = atom(
   },
 );
 
+export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
+  const channel = g(channelAtom);
+  const hasEnterShortcut = g(shortcutsAtom).find((s) => s.key === 'enter');
+  log.info('🎬 Send shortcut', { shortcut, hasEnterShortcut });
+
+  // If 'enter' is pressed and not defined as a specific shortcut, treat it as a submission trigger (tracked via time)
+  if (shortcut === 'enter' && !hasEnterShortcut) {
+    s(enterLastPressedAtom, new Date());
+  } else {
+    // Otherwise, send it as a shortcut event.
+    channel(Channel.SHORTCUT, { shortcut });
+  }
+});
+
+export const sendActionAtom = atom(null, (g, _s, action: Action) => {
+  const channel = g(channelAtom);
+  log.info(`👉 Sending action: ${action.name}`);
+  channel(Channel.ACTION, { action });
+});
+
 // =================================================================================================
 // DERIVED ATOMS
 // These atoms depend on the wired state and must be defined here.
@@ -1685,22 +1662,22 @@ export const topHeightAtom = atom(
   },
 );
 
-export const onPasteAtom = atom((g) => (event: any) => {
+export const onPasteAtom = atom((g) => (event: ClipboardEvent) => {
   if (g(uiAtom) === UI.editor) {
-    event.preventDefault(); // Assuming we want to handle paste manually or let Monaco handle it, but the original had this.
+    event.preventDefault(); // Assuming we want to handle paste manually or let Monaco handle it
   }
   const channel = g(channelAtom);
   channel(Channel.ON_PASTE);
 });
 
-export const onDropAtom = atom((g) => (event: any) => {
+export const onDropAtom = atom((g) => (event: DragEvent) => {
   if (g(uiAtom) === UI.drop) return; // UI.drop likely has its own specific handler
   event.preventDefault();
   let drop = '';
   const files = Array.from(event?.dataTransfer?.files || []);
   if (files.length > 0) {
     drop = files
-      .map((file: any) => file.path)
+      .map((file: File) => (file as any).path)
       .join('\n')
       .trim();
   } else {

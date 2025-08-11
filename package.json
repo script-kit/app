@@ -12,6 +12,8 @@
     "clear-cache": "rimraf ./node_modules/.vite",
     "format:check": "biome check",
     "format:fix": "biome check --write --unsafe",
+    "typecheck": "tsc --noEmit -p tsconfig.web.json",
+    "typecheck:watch": "tsc --noEmit -p tsconfig.web.json --watch",
     "rebuild-node-pty": "electron-rebuild -f -o node-pty -m ./",
     "cp-vs-assets": "cp -R ./node_modules/monaco-editor/min/vs ./assets",
     "v": "PATH=~/.knode/bin:$PATH node --version",
@@ -29,7 +31,8 @@
     "test": "vitest run",
     "bench": "vitest bench",
     "coverage": "vitest run --coverage --config electron.vite.config.ts",
-    "state:quickcheck": "pnpm tsc --noEmit && echo '✅ typecheck ok'"
+    "state:quickcheck": "pnpm tsc --noEmit && echo '✅ typecheck ok'",
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
-// Import paths adjusted for the codebase
+// Import from facade for gradual migration
 import {
   scoredChoicesAtom,         // ScoredChoice[] (sorted for relevance)
   focusedChoiceAtom,         // Choice | undefined

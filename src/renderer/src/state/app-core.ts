@@ -12,6 +12,7 @@ import type {
 } from '@johnlindquist/kit/types/core';
 import { atom } from 'jotai';
 import type { ScoredChoice } from '../../../shared/types';
+import { openAtom } from './app-lifecycle';
 
 
 // --- Configuration and Environment ---
@@ -90,13 +91,8 @@ export const progressAtom = atom(0);
 
 export const _open = atom(false);
 
-// openAtom will be properly defined in app-lifecycle.ts to avoid circular dependencies
-export const openAtom = atom(
-  (g) => g(_open),
-  (_g, _s, _a: boolean) => {
-    // Implementation will be in app-lifecycle.ts
-  },
-);
+// openAtom is defined in app-lifecycle.ts to avoid circular dependencies
+// We import it from there when needed
 
 export const exitAtom = atom(
   (g) => g(openAtom),

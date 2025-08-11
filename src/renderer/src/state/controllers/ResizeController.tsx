@@ -17,7 +17,7 @@ import {
 } from '../dom-ids';
 import { createLogger } from '../../log-utils';
 
-// Import all necessary atoms (adjusted paths for this codebase)
+// Import from facade for gradual migration
 import {
   _mainHeight, // The trigger atom
   promptResizedByHumanAtom, promptBoundsAtom, channelAtom, promptActiveAtom,
