@@ -17,7 +17,7 @@ import {
   mouseEnabledAtom,
   submitValueAtom,
   uiAtom,
-} from "../state";
+} from '../jotai';
 
 import { UI } from '@johnlindquist/kit/core/enum';
 // import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';

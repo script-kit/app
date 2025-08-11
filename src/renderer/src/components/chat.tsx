@@ -36,7 +36,7 @@ import {
 	preventChatScrollAtom,
 	promptDataAtom,
 	uiAtom,
-} from "../state";
+} from '../jotai';
 import { chatMessagesWithEffect } from "../effects/chat";
 import Button from "./chat/button";
 import MessageBox from "./chat/messagebox";

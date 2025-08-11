@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import { useLayoutEffect, useRef } from 'react';
-import { mainHeightAtom } from "../state";
+import { mainHeightAtom } from '../jotai';
 
 export default () => {
   const containerRef = useRef<HTMLDivElement>(null);

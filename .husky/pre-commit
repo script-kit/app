@@ -3,6 +3,14 @@
 # Pre-commit hook to run validation checks
 echo "🔍 Running pre-commit checks..."
 
+# Check for circular dependencies
+echo "🔄 Checking for circular dependencies..."
+pnpm check:circular
+if [ $? -ne 0 ]; then
+  echo "❌ Circular dependencies detected! Please fix them before committing."
+  exit 1
+fi
+
 # Run tests if they exist and pass quickly
 echo "🧪 Running tests..."
 pnpm test --run 2>/dev/null

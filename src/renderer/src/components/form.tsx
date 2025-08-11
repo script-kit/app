@@ -9,7 +9,7 @@ import { useAtom, useAtomValue } from 'jotai';
 /* eslint-disable no-nested-ternary */
 import React, { useCallback, type KeyboardEvent, useEffect, useRef } from 'react';
 
-import { changeAtom, containerClassNameAtom, formDataAtom, formHTMLAtom, logAtom, previewHTMLAtom, submitValueAtom } from "../state";
+import { changeAtom, containerClassNameAtom, formDataAtom, formHTMLAtom, logAtom, previewHTMLAtom, submitValueAtom } from '../jotai';
 
 export default function Form() {
   // useEscape();

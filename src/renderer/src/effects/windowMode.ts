@@ -1,5 +1,5 @@
 import { atomEffect } from 'jotai-effect';
-import { isWindowAtom, triggerResizeAtom } from "../state";
+import { isWindowAtom, triggerResizeAtom } from '../jotai';
 
 export const windowModeEffect = atomEffect((get, set) => {
   const win = get(isWindowAtom);

@@ -14,7 +14,7 @@ import {
   tabIndexAtom,
   tabsAtom,
   userAtom,
-} from "../state";
+} from '../jotai';
 import { GithubIcon } from './icons';
 
 const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {

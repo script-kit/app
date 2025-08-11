@@ -78,7 +78,7 @@ import {
 	uiAtom,
 	userAtom,
 	zoomAtom,
-} from "./state";
+} from './jotai';
 
 import { loader } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";

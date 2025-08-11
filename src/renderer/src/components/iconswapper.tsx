@@ -15,7 +15,7 @@ import {
 } from 'react-icons/bs';
 import { MdKeyboardTab, MdOutlineKeyboardControlKey, MdSpaceBar } from 'react-icons/md';
 
-import { appConfigAtom } from "../state";
+import { appConfigAtom } from '../jotai';
 
 const styles = {
   className: 'h-5 w-3 mt-px',

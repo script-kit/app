@@ -1,5 +1,5 @@
 import { atomEffect } from 'jotai-effect';
-import { _audioAtom, channelAtom } from "../state";
+import { _audioAtom, channelAtom } from '../jotai';
 import { Channel } from '@johnlindquist/kit/core/enum';
 
 export const audioPlaybackEffect = atomEffect((get) => {

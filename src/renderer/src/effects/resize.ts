@@ -19,7 +19,7 @@ import {
     choicesReadyAtom, // Affects the timing of the resize calculation
     scoredChoicesAtom,// Affects placeholderOnly calculation
     choicesHeightAtom,// Affects height calculations
-} from "../state";
+} from '../jotai';
 
 import { _panelHTML } from "../state/atoms/preview";
 

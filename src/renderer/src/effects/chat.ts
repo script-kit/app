@@ -1,5 +1,5 @@
 import { withAtomEffect } from 'jotai-effect';
-import { chatMessagesAtom } from "../state";
+import { chatMessagesAtom } from '../jotai';
 import { Channel } from '@johnlindquist/kit/core/enum';
 
 const { ipcRenderer } = window.electron;

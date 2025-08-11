@@ -12,7 +12,7 @@ import {
   scriptAtom,
   shortcutsAtom,
   uiAtom,
-} from "../state";
+} from '../jotai';
 
 import { createLogger } from '../log-utils';
 

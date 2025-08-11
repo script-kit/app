@@ -8,7 +8,7 @@ import {
   splashHeaderAtom,
   splashProgressAtom,
   submitSurveyAtom,
-} from "../state";
+} from '../jotai';
 
 // const questions = [
 //   `What problem should Script Kit will solve for you?`,

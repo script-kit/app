@@ -27,7 +27,7 @@ import {
   shortcutStringsAtom,
   submitInputAtom,
   uiAtom,
-} from "../state";
+} from '../jotai';
 
 import { convertStringShortcutToMoncacoNumber } from '@renderer/utils/keycodes';
 import { kitLight, nightOwl } from '../editor-themes';

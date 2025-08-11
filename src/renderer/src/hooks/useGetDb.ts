@@ -2,7 +2,7 @@ const { ipcRenderer } = window.electron;
 import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
-import { appStateAtom, cmdAtom } from "../state";
+import { appStateAtom, cmdAtom } from '../jotai';
 
 import { AppChannel } from '../../../shared/enums';
 import { hotkeysOptions } from './shared';

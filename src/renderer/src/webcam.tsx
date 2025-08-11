@@ -5,7 +5,7 @@ import { useAtom } from 'jotai';
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import useOnEnter from './hooks/useOnEnter';
-import { focusedFlagValueAtom, submitValueAtom, webcamIdAtom, webcamStreamAtom } from "./state";
+import { focusedFlagValueAtom, submitValueAtom, webcamIdAtom, webcamStreamAtom } from './jotai';
 
 export default function Webcam() {
   const [stream, setStream] = useAtom(webcamStreamAtom);

@@ -3,7 +3,7 @@ import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import { AppChannel } from '../../../shared/enums';
-import { appStateAtom, choicesAtom, cmdAtom, indexAtom } from "../state";
+import { appStateAtom, choicesAtom, cmdAtom, indexAtom } from '../jotai';
 import { hotkeysOptions } from './shared';
 
 export default () => {

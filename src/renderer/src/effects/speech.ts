@@ -1,5 +1,5 @@
 import { atomEffect } from 'jotai-effect';
-import { speechAtom, channelAtom } from "../state";
+import { speechAtom, channelAtom } from '../jotai';
 import { Channel } from '@johnlindquist/kit/core/enum';
 
 export const speechEffect = atomEffect((get) => {

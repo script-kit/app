@@ -1,5 +1,5 @@
 import { atomEffect } from 'jotai-effect';
-import { inputFocusAtom, devToolsOpenAtom } from "../state";
+import { inputFocusAtom, devToolsOpenAtom } from '../jotai';
 import { AppChannel } from '../../../shared/enums';
 
 export const focusPromptEffect = atomEffect((get) => {

@@ -11,7 +11,7 @@ import {
   sendActionAtom,
   flaggedChoiceValueAtom,
   uiAtom,
-} from "../state";
+} from '../jotai';
 
 import { createLogger } from '../log-utils';
 import { useState } from 'react';

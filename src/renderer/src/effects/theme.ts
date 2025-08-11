@@ -1,5 +1,5 @@
 import { atomEffect } from 'jotai-effect';
-import { themeAtom, appearanceAtom } from "../state";
+import { themeAtom, appearanceAtom } from '../jotai';
 
 // Synchronize appearanceAtom (light/dark) with the current CSS string in themeAtom.
 // This runs eagerly whenever themeAtom changes and is entirely side-effect-free.

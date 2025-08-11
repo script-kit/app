@@ -1,7 +1,7 @@
 import { motion, useAnimation } from 'framer-motion';
 import { useAtomValue } from 'jotai';
 import React, { useEffect } from 'react';
-import { darkAtom } from "../state";
+import { darkAtom } from '../jotai';
 
 export default function TopBar() {
   const controls = useAnimation();

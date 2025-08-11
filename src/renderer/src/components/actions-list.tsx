@@ -14,7 +14,7 @@ import {
   focusedElementAtom,
   isFlagsScrollingAtom,
   scoredFlagsAtom,
-} from "../state";
+} from '../jotai';
 import ActionsInput from './actions-input';
 import FlagButton from './flag-button';
 

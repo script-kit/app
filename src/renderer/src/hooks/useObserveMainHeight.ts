@@ -2,7 +2,7 @@ import useResizeObserver from '@react-hook/resize-observer';
 import { useAtom } from 'jotai';
 import { debounce } from 'lodash-es';
 import { type RefObject, useRef } from 'react';
-import { mainHeightAtom, openAtom } from "../state";
+import { mainHeightAtom, openAtom } from '../jotai';
 
 export default <T extends HTMLElement = HTMLElement>(selector = '') => {
   const containerRef = useRef<T>();

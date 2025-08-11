@@ -9,7 +9,7 @@ import { Range, type editor as monacoEditor } from 'monaco-editor';
 const { ipcRenderer } = window.electron;
 import { WindowChannel } from '../../../shared/enums';
 import { kitLight, nightOwl } from '../editor-themes';
-import { cmdAtom, darkAtom, editorConfigAtom, editorOptions, editorThemeAtom, shortcutsAtom } from "../state";
+import { cmdAtom, darkAtom, editorConfigAtom, editorOptions, editorThemeAtom, shortcutsAtom } from '../jotai';
 
 const registerLogLanguage = (monaco: Monaco, theme: { foreground: string; background: string }) => {
   monaco.languages.register({ id: 'log' });

@@ -5,7 +5,7 @@ import { useAtom } from 'jotai';
 import React, { type LegacyRef, useRef } from 'react';
 
 import { useClose, useFocus } from '../hooks';
-import { inputAtom, promptDataAtom } from "../state";
+import { inputAtom, promptDataAtom } from '../jotai';
 
 // RESIZE ME!!!!!
 

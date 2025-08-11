@@ -16,7 +16,7 @@ import {
   lightenUIAtom,
   shortcutsAtom,
   uiAtom,
-} from "../state";
+} from '../jotai';
 import { ActionButton } from './actionbutton';
 import { EnterButton } from './actionenterbutton';
 import { IconButton } from './icon';

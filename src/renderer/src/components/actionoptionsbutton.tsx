@@ -14,7 +14,7 @@ import {
   indexAtom,
   inputAtom,
   uiAtom,
-} from "../state";
+} from '../jotai';
 
 import { ActionButton } from './actionbutton';
 

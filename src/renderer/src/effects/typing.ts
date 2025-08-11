@@ -1,5 +1,5 @@
 import { atomEffect } from 'jotai-effect';
-import { inputAtom, typingAtom } from "../state";
+import { inputAtom, typingAtom } from '../jotai';
 
 export const typingEffect = atomEffect((get, set) => {
   // Accessing inputAtom makes this effect re-run whenever input changes

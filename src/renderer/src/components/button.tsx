@@ -24,7 +24,7 @@ import {
   shouldHighlightDescriptionAtom,
   submitValueAtom,
   toggleSelectedChoiceAtom,
-} from "../state";
+} from '../jotai';
 
 // import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg?asset';
 import { AppChannel } from '../../../shared/enums';
