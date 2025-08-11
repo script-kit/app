@@ -506,8 +506,9 @@ describe('MCP HTTP Server - Stack Overflow Fixes', () => {
 
   describe('writeHead Patching', () => {
     it('should prevent recursive writeHead wrapping', () => {
+      const originalWriteHead = vi.fn().mockReturnThis();
       const mockRes: any = {
-        writeHead: vi.fn().mockReturnThis(),
+        writeHead: originalWriteHead,
         end: vi.fn().mockReturnThis()
       };
       
@@ -533,7 +534,8 @@ describe('MCP HTTP Server - Stack Overflow Fixes', () => {
       // Should only have been wrapped once
       expect(mockRes.__mcpPatched).toBe(true);
       // The original mock should have been called exactly once
-      expect(vi.mocked(mockRes.writeHead).mock.calls.length).toBe(1);
+      expect(originalWriteHead).toHaveBeenCalledTimes(1);
+      expect(originalWriteHead).toHaveBeenCalledWith(200, { 'Content-Type': 'application/json', 'Mcp-Session-Id': 'test-id' });
     });
   });
 
@@ -604,8 +606,12 @@ describe('MCP HTTP Server - Stack Overflow Fixes', () => {
       const mockDump = (obj: any) => {
         try {
           return JSON.stringify(obj, (key, value) => {
+            // Handle both Buffer instances and JSON-serialized buffers
             if (value instanceof Buffer) {
               return `Buffer(${value.length} bytes)`;
+            }
+            if (value && typeof value === 'object' && value.type === 'Buffer' && Array.isArray(value.data)) {
+              return `Buffer(${value.data.length} bytes)`;
             }
             if (typeof value === 'string' && value.startsWith('data:image/') && value.length > 1000) {
               return `Base64Image(${value.length} chars)`;

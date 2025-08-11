@@ -128,9 +128,12 @@ export function scoreChoice(choice: Choice, query: string, searchKeys: string[] 
 
   // Score name field as primary label if it's in searchKeys
   if (choice.name && (searchKeys.includes('name') || searchKeys.includes('slicedName'))) {
+    // Ensure name is a string
+    const nameStr = typeof choice.name === 'string' ? choice.name : String(choice.name);
+    
     // Always use the full string for scoring first
     const nameAccessor = {
-      getItemLabel: (item: any) => item.name,
+      getItemLabel: (item: any) => typeof item.name === 'string' ? item.name : String(item.name),
       getItemDescription: () => undefined,
       getItemPath: () => undefined
     };
@@ -138,11 +141,11 @@ export function scoreChoice(choice: Choice, query: string, searchKeys: string[] 
     const nameScore = scoreItemFuzzy(choice, preparedQuery, true, nameAccessor, {});
     if (nameScore && nameScore.score > 0) {
       // For paths, apply a penalty if matches are scattered across path separators
-      const isPath = choice.name.includes('/') || choice.name.includes('\\');
+      const isPath = nameStr.includes('/') || nameStr.includes('\\');
 
       if (isPath && nameScore.labelMatch) {
         // Check if matches span multiple path components without being at word boundaries
-        const pathParts = choice.name.split(/[\/\\]+/);
+        const pathParts = nameStr.split(/[\/\\]+/);
         let componentBoundaries: number[] = [0];
         let pos = 0;
 
@@ -210,7 +213,7 @@ export function scoreChoice(choice: Choice, query: string, searchKeys: string[] 
   // Score description field - treat it as a label since VS Code scorer has issues with description-only matching
   if (choice.description && searchKeys.includes('description')) {
     const descAccessor = {
-      getItemLabel: (item: any) => item.description, // Use description as label
+      getItemLabel: (item: any) => typeof item.description === 'string' ? item.description : String(item.description),
       getItemDescription: () => undefined,
       getItemPath: () => undefined
     };
@@ -230,7 +233,7 @@ export function scoreChoice(choice: Choice, query: string, searchKeys: string[] 
   // Score keyword field as a label
   if (choice.keyword && searchKeys.includes('keyword')) {
     const keywordAccessor = {
-      getItemLabel: (item: any) => item.keyword,
+      getItemLabel: (item: any) => typeof item.keyword === 'string' ? item.keyword : String(item.keyword),
       getItemDescription: () => undefined,
       getItemPath: () => undefined
     };
@@ -252,7 +255,7 @@ export function scoreChoice(choice: Choice, query: string, searchKeys: string[] 
   // Score tag field as a label
   if (choice.tag && searchKeys.includes('tag')) {
     const tagAccessor = {
-      getItemLabel: (item: any) => item.tag,
+      getItemLabel: (item: any) => typeof item.tag === 'string' ? item.tag : String(item.tag),
       getItemDescription: () => undefined,
       getItemPath: () => undefined
     };
@@ -279,7 +282,7 @@ export function scoreChoice(choice: Choice, query: string, searchKeys: string[] 
     const fieldValue = (choice as any)[fieldName];
     if (fieldValue && typeof fieldValue === 'string') {
       const customAccessor = {
-        getItemLabel: (item: any) => item[fieldName],
+        getItemLabel: (item: any) => typeof item[fieldName] === 'string' ? item[fieldName] : String(item[fieldName]),
         getItemDescription: () => undefined,
         getItemPath: () => undefined
       };
@@ -429,11 +432,17 @@ export function clearFuzzyCache(): void {
 // Check if a string matches exactly (for exact match detection)
 export function isExactMatch(choice: Choice, query: string): boolean {
   const lowerQuery = query.toLowerCase();
+  
+  const nameStr = choice.name ? String(choice.name) : '';
+  const keywordStr = choice.keyword ? String(choice.keyword) : '';
+  const aliasStr = (choice as any).alias ? String((choice as any).alias) : '';
+  const triggerStr = (choice as any).trigger ? String((choice as any).trigger) : '';
+  
   return (
-    choice.name?.toLowerCase().startsWith(lowerQuery) ||
-    choice.keyword?.toLowerCase().startsWith(lowerQuery) ||
-    (choice as any).alias?.toLowerCase().startsWith(lowerQuery) ||
-    (choice as any).trigger?.toLowerCase().startsWith(lowerQuery)
+    nameStr.toLowerCase().startsWith(lowerQuery) ||
+    keywordStr.toLowerCase().startsWith(lowerQuery) ||
+    aliasStr.toLowerCase().startsWith(lowerQuery) ||
+    triggerStr.toLowerCase().startsWith(lowerQuery)
   );
 }
 
@@ -442,8 +451,10 @@ export function startsWithQuery(choice: Choice, query: string): boolean {
   const lowerQuery = query.toLowerCase();
 
   // Check if any word in the name starts with the query
-  const nameWords = splitIntoWords(choice.name || '');
-  const keywordWords = splitIntoWords(choice.keyword || '');
+  const nameStr = choice.name ? String(choice.name) : '';
+  const nameWords = splitIntoWords(nameStr);
+  const keywordStr = choice.keyword ? String(choice.keyword) : '';
+  const keywordWords = splitIntoWords(keywordStr);
 
   const matchesWordStart =
     nameWords.some(word => word.toLowerCase().startsWith(lowerQuery)) ||
@@ -451,8 +462,8 @@ export function startsWithQuery(choice: Choice, query: string): boolean {
 
   // Also check mnemonic matches
   const matchesMnemonic =
-    isMnemonicMatch(choice.name || '', query) ||
-    isMnemonicMatch(choice.keyword || '', query);
+    isMnemonicMatch(nameStr, query) ||
+    isMnemonicMatch(keywordStr, query);
 
   return matchesWordStart || matchesMnemonic;
 }

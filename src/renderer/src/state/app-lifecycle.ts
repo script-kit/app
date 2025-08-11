@@ -4,19 +4,20 @@
 
 import { atom } from 'jotai';
 import type { PromptData } from '@johnlindquist/kit/types/core';
-import { 
-  _open, 
-  loading, 
-  loadingAtom, 
-  progressAtom, 
+import {
+  _open,
+  loadingAtom,
+  progressAtom,
   pidAtom,
   runningAtom,
+} from './atoms/app-core';
+import {
   cachedMainPromptDataAtom,
   cachedMainScoredChoicesAtom,
   cachedMainPreviewAtom,
   cachedMainShortcutsAtom,
   cachedMainFlagsAtom,
-} from './app-core';
+} from './atoms/cache';
 
 // These will be imported from their respective files once they're created
 import { mouseEnabledAtom } from './input-state';
@@ -59,7 +60,6 @@ export const openAtom = atom(
       s(logHTMLAtom, '');
       s(flagsAtom, {});
       s(_flaggedValue, '');
-      s(loading, false);
       s(loadingAtom, false);
       s(progressAtom, 0);
       s(editorConfigAtom, {});

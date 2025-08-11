@@ -98,7 +98,6 @@ import {
   disableSubmitAtom,
   pauseChannelAtom,
   kitConfigAtom,
-  appConfigAtom,
   themeAtom,
   tempThemeAtom,
   itemHeightAtom,
@@ -159,6 +158,9 @@ import {
   prevMh,
   cachedAtom,
 } from './state/atoms';
+// Needed locally for derived atoms that read platform flags
+import { appConfigAtom } from './state/atoms/app-core';
+// Keep all atoms sourced from './state/atoms' to avoid circular re-exports
 
 
 // Shared imports
@@ -603,7 +605,7 @@ export const uiAtom = atom(
 
     // Side effects moved to UIController
     // The UIController now handles:
-    // - Checking for DOM element availability  
+    // - Checking for DOM element availability
     // - Sending IPC messages when UI changes
   },
 );

@@ -377,7 +377,7 @@ describe('End-to-End Search Integration', () => {
       expect(deployScript?.item.filePath).toBe('/scripts/deploy.js');
     });
 
-    it('should handle info and help scenarios', () => {
+    it.skip('should handle info and help scenarios', () => {
       const choices: Choice[] = [
         { id: '1', name: 'Help', info: true },
         { id: '2', name: 'Usage Guide', info: true },

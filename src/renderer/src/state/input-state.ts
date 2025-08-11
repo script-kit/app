@@ -5,7 +5,7 @@
 import { Mode, UI } from '@johnlindquist/kit/core/enum';
 import { atom } from 'jotai';
 import { createLogger } from '../log-utils';
-import { submittedAtom, loading, loadingAtom } from './app-core';
+import { submittedAtom, loadingAtom } from './atoms/app-core';
 import { modeAtom, uiAtom, tabChangedAtom } from './prompt-data';
 
 const log = createLogger('input-state.ts');
@@ -61,7 +61,6 @@ export const inputAtom = atom(
 
     // Trigger loading state for GENERATE mode
     if (mode === Mode.GENERATE /* && !flaggedValue */) {
-      s(loading, true);
       s(loadingAtom, true);
     }
 

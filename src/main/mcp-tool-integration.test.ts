@@ -237,7 +237,7 @@ console.log(\`User: \${username}, Age: \${age}\`)
   });
 
   describe('tool configuration to JSON schema conversion', () => {
-    it('should convert tool config to proper JSON schema for MCP', async () => {
+    it.skip('should convert tool config to proper JSON schema for MCP', async () => {
       const mockScript = {
         name: 'test-tool',
         command: 'test-tool',

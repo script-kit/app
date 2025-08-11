@@ -53,7 +53,7 @@ export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
   prompt.window.webContents?.once('did-finish-load', () => {
     kitState.hiddenByUser = false;
     prompt.logSilly('event: did-finish-load');
-    prompt.sendToPrompt(AppChannel.APP_CONFIG as any, {
+    prompt.sendToPrompt(Channel.APP_CONFIG as any, {
       delimiter: path.delimiter,
       sep: path.sep,
       os: os.platform(),

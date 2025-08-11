@@ -6,7 +6,7 @@ import type { Script } from '@johnlindquist/kit/types/core';
 import { atom } from 'jotai';
 import { noScript, SPLASH_PATH } from '../../../shared/defaults';
 import { createLogger } from '../log-utils';
-import { kitConfigAtom, pidAtom, processingAtom, loadingAtom, progressAtom } from './app-core';
+import { kitConfigAtom, pidAtom, processingAtom, loadingAtom, progressAtom } from './atoms/app-core';
 import { isMainScriptAtom } from './shared-atoms';
 
 const log = createLogger('script-state.ts');

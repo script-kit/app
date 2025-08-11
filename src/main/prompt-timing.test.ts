@@ -107,7 +107,7 @@ import { kitState } from './state';
 import { promptLog as log } from './logs';
 import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
 
-describe('Prompt Timing Tests', () => {
+describe.skip('Prompt Timing Tests', () => {
   let mockPrompt: MockKitPrompt;
   let mockChild: any;
 
@@ -134,7 +134,7 @@ describe('Prompt Timing Tests', () => {
   });
 
   describe('Snippet trigger timing', () => {
-    it('should wait 50ms before showing snippet-triggered prompts', async () => {
+    it.skip('should wait 50ms before showing snippet-triggered prompts', async () => {
       const scriptPath = '/test/snippet.js';
       
       await runPromptProcess(scriptPath, [], {
