@@ -919,6 +919,12 @@ export const flagsIndexAtom = atom(
 
     const focusedFlag = (choice as Choice)?.value;
     s(focusedFlagValueAtom, focusedFlag);
+    // CRITICAL: also reflect that an action is selected so submit can fire Channel.ACTION
+    if (focusedFlag) {
+      s(focusedActionAtom, { hasAction: true, flag: focusedFlag } as any);
+    } else {
+      s(focusedActionAtom, {} as any);
+    }
   },
 );
 
