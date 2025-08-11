@@ -1600,8 +1600,10 @@ export const actionsAtom = atom((g) => {
 export const preventSubmitWithoutActionAtom = atom((g) => {
   const flaggedValue = g(flaggedChoiceValueAtom);
   const focusedAction = g(focusedActionAtom);
-  // Submit should be prevented when actions menu is open without a selected action
-  return flaggedValue && Object.keys(focusedAction).length === 0;
+  const hasFlagSelected = !!g(focusedFlagValueAtom);
+  // Allow submit if a flag is selected (legacy flow) OR an action object exists
+  // Only prevent when actions menu is open AND neither is present.
+  return flaggedValue && !hasFlagSelected && Object.keys(focusedAction || {}).length === 0;
 });
 
 export const actionsPlaceholderAtom = atom((g) => {
