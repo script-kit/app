@@ -7,7 +7,7 @@ import { atom } from 'jotai';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import type { Choice } from '@johnlindquist/kit/types/core';
 
-// Import dependencies from facade to avoid circular deps
+// Import dependencies directly from jotai.ts
 import {
   uiAtom,
   editorAppendAtom,
@@ -21,7 +21,7 @@ import {
   submittedAtom,
   selectedChoicesAtom,
   choices,
-} from '../facade';
+} from '../../jotai';
 
 // Track placeholder timeout
 let placeholderTimeoutId: NodeJS.Timeout | null = null;

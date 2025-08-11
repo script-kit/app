@@ -13,38 +13,33 @@
 // Re-export everything from jotai.ts for backward compatibility
 export * from '../../jotai';
 
-// Override with extracted atoms - these take precedence
-export {
-  appendInputAtom,
-  valueInvalidAtom,
-  preventSubmitAtom,
-  toggleSelectedChoiceAtom,
-  toggleAllSelectedChoicesAtom,
-} from '../atoms/utilities';
+// Note: We've temporarily moved the extracted atoms back to jotai.ts
+// to avoid build issues. Once we resolve the circular dependencies,
+// we can re-enable these exports:
 
-export {
-  exitAtom,
-  escapeAtom,
-  blurAtom,
-  resizeCompleteAtom,
-  _open,
-} from '../atoms/lifecycle';
+// export {
+//   appendInputAtom,
+//   valueInvalidAtom,
+//   preventSubmitAtom,
+//   toggleSelectedChoiceAtom,
+//   toggleAllSelectedChoicesAtom,
+// } from '../atoms/utilities';
 
-export { colorAtom } from '../atoms/theme-utils';
+// export { colorAtom } from '../atoms/theme-utils';
 
-export {
-  sendShortcutAtom,
-  sendActionAtom,
-  triggerKeywordAtom,
-  getEditorHistoryAtom,
-} from '../atoms/actions-utils';
+// export {
+//   sendShortcutAtom,
+//   sendActionAtom,
+//   triggerKeywordAtom,
+//   getEditorHistoryAtom,
+// } from '../atoms/actions-utils';
 
-export {
-  changeAtom,
-  runMainScriptAtom,
-  onPasteAtom,
-  onDropAtom,
-} from '../atoms/misc-utils';
+// export {
+//   changeAtom,
+//   runMainScriptAtom,
+//   onPasteAtom,
+//   onDropAtom,
+// } from '../atoms/misc-utils';
 
 /**
  * Migration tracking:

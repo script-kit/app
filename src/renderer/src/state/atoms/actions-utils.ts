@@ -8,13 +8,15 @@ import { Channel } from '@johnlindquist/kit/core/enum';
 import type { Action, Choice } from '@johnlindquist/kit/types/core';
 import log from 'electron-log';
 
-// Import dependencies from facade
+// Import dependencies directly from jotai.ts
 import {
   channelAtom,
   shortcutsAtom,
   enterLastPressedAtom,
-  editorHistory,
-} from '../facade';
+} from '../../jotai';
+
+// Import from specific location to avoid circular dependency
+import { editorHistory } from '../atoms/editor';
 
 /**
  * Send shortcut atom - handles keyboard shortcut events.
@@ -22,7 +24,7 @@ import {
 export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
   const channel = g(channelAtom);
   const hasEnterShortcut = g(shortcutsAtom).find((s) => s.key === 'enter');
-  log.info('<¬ Send shortcut', { shortcut, hasEnterShortcut });
+  log.info('<ï¿½ Send shortcut', { shortcut, hasEnterShortcut });
 
   // If 'enter' is pressed and not defined as a specific shortcut, treat it as a submission trigger (tracked via time)
   if (shortcut === 'enter' && !hasEnterShortcut) {

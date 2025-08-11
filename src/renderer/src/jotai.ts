@@ -255,8 +255,14 @@ export const openAtom = atom(
   },
 );
 
-// Moved to state/atoms/lifecycle.ts:
-// - exitAtom
+export const exitAtom = atom(
+  (g) => g(openAtom),
+  (g, s, pid: number) => {
+    if (g(pidAtom) === pid) {
+      s(openAtom, false);
+    }
+  },
+);
 
 // --- Script Atom with Complex Logic ---
 export const scriptAtom = atom(
@@ -1344,31 +1350,161 @@ export const submitInputAtom = atom(null, (g, s) => {
   s(submitValueAtom, input);
 });
 
-// Moved to state/atoms/lifecycle.ts:
-// - escapeAtom
-// - blurAtom
+export const escapeAtom = atom<any>((g) => {
+  const channel = g(channelAtom);
+  return () => {
+    // Stop any ongoing speech synthesis
+    const synth = window.speechSynthesis;
+    if (synth.speaking) {
+      synth.cancel();
+    }
 
-// Moved to state/atoms/misc-utils.ts:
-// - changeAtom
-// - runMainScriptAtom
+    log.info('👋 Sending Channel.ESCAPE');
+    channel(Channel.ESCAPE);
+  };
+});
 
-// Moved to state/atoms/utilities.ts:
-// - toggleSelectedChoiceAtom
-// - toggleAllSelectedChoicesAtom
+export const blurAtom = atom(null, (g) => {
+  if (g(openAtom)) {
+    const channel = g(channelAtom);
+    channel(Channel.BLUR);
+  }
+});
 
-// Moved to state/atoms/actions-utils.ts:
-// - getEditorHistoryAtom
+export const changeAtom = atom((g) => (data: any) => {
+  const channel = g(channelAtom);
+  channel(Channel.CHANGE, { value: data });
+});
 
-// Moved to state/atoms/theme-utils.ts:
-// - colorAtom
+export const runMainScriptAtom = atom(() => () => {
+  ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
+});
 
-// Moved to state/atoms/utilities.ts:
-// - appendInputAtom
-// - valueInvalidAtom  
-// - preventSubmitAtom
+export const toggleSelectedChoiceAtom = atom(null, (g, s, id: string) => {
+  const selectedChoices = [...g(selectedChoicesAtom)];
+  const scoredChoice = g(choices).find((c) => c?.item?.id === id);
+  const index = selectedChoices.findIndex((c) => c?.id === id);
 
-// Moved to state/atoms/actions-utils.ts:
-// - triggerKeywordAtom
+  if (index > -1) {
+    selectedChoices.splice(index, 1);
+  } else if (scoredChoice?.item) {
+    selectedChoices.push(scoredChoice.item as Choice);
+  }
+
+  s(selectedChoicesAtom, selectedChoices);
+});
+
+export const toggleAllSelectedChoicesAtom = atom(null, (g, s) => {
+  const selectedChoices = g(selectedChoicesAtom);
+  const cs = g(choices).map((c) => c?.item as Choice);
+
+  if (selectedChoices.length === cs.length) {
+    s(selectedChoicesAtom, []);
+  } else {
+    s(selectedChoicesAtom, cs);
+  }
+});
+
+export const getEditorHistoryAtom = atom((g) => () => {
+  const channel = g(channelAtom);
+  channel(Channel.GET_EDITOR_HISTORY, { editorHistory: g(editorHistory) });
+});
+
+export const colorAtom = atom((g) => {
+  return async () => {
+    try {
+      // @ts-ignore -- EyeDropper API might not be in standard TS types yet
+      const eyeDropper = new EyeDropper();
+      const { sRGBHex } = await eyeDropper.open();
+
+      const color = colorUtils.convertColor(sRGBHex);
+      const channel = Channel.GET_COLOR;
+      const pid = g(pidAtom);
+
+      const appMessage = {
+        channel,
+        pid: pid || 0,
+        value: color,
+      };
+
+      ipcRenderer.send(channel, appMessage);
+      return color;
+    } catch (error) {
+      // User cancelled or EyeDropper failed
+      return '';
+    }
+  };
+});
+
+export const appendInputAtom = atom(null, (g, s, a: string) => {
+  const ui = g(uiAtom);
+  if (ui === UI.editor) {
+    s(editorAppendAtom, a);
+  } else {
+    const input = g(_inputAtom);
+    s(_inputAtom, input + a);
+  }
+});
+
+export const valueInvalidAtom = atom(null, (g, s, a: string) => {
+  if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
+
+  s(processingAtom, false);
+  s(inputAtom, '');
+  s(_inputChangedAtom, false);
+
+  if (typeof a === 'string') {
+    // hintAtom setter handles the ANSI conversion
+    s(hintAtom, a);
+  }
+
+  const channel = g(channelAtom);
+  channel(Channel.ON_VALIDATION_FAILED);
+});
+
+export const preventSubmitAtom = atom(null, (_g, s, _a: string) => {
+  s(promptActiveAtom, true);
+  if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
+  s(submittedAtom, false);
+  s(processingAtom, false);
+  s(_inputChangedAtom, false);
+});
+
+export const triggerKeywordAtom = atom(
+  (_g) => { },
+  (
+    g,
+    _s,
+    { keyword, choice }: { keyword: string; choice: Choice },
+  ) => {
+    const channel = g(channelAtom);
+    channel(Channel.KEYWORD_TRIGGERED, {
+      keyword,
+      focused: choice,
+      value: choice?.value,
+    });
+  },
+);
+
+export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
+  const channel = g(channelAtom);
+  const hasEnterShortcut = g(shortcutsAtom).find((s) => s.key === 'enter');
+  log.info('🎬 Send shortcut', { shortcut, hasEnterShortcut });
+
+  // If 'enter' is pressed and not defined as a specific shortcut, treat it as a submission trigger (tracked via time)
+  if (shortcut === 'enter' && !hasEnterShortcut) {
+    s(enterLastPressedAtom, new Date());
+  } else {
+    // Otherwise, send it as a shortcut event.
+    channel(Channel.SHORTCUT, { shortcut });
+  }
+});
+
+export const sendActionAtom = atom(null, (g, _s, action: Action) => {
+  const channel = g(channelAtom);
+  log.info(`👉 Sending action: ${action.name}`);
+  channel(Channel.ACTION, { action });
+});
 
 // =================================================================================================
 // DERIVED ATOMS
@@ -1526,9 +1662,30 @@ export const topHeightAtom = atom(
   },
 );
 
-// Moved to state/atoms/misc-utils.ts:
-// - onPasteAtom
-// - onDropAtom
+export const onPasteAtom = atom((g) => (event: ClipboardEvent) => {
+  if (g(uiAtom) === UI.editor) {
+    event.preventDefault(); // Assuming we want to handle paste manually or let Monaco handle it
+  }
+  const channel = g(channelAtom);
+  channel(Channel.ON_PASTE);
+});
+
+export const onDropAtom = atom((g) => (event: DragEvent) => {
+  if (g(uiAtom) === UI.drop) return; // UI.drop likely has its own specific handler
+  event.preventDefault();
+  let drop = '';
+  const files = Array.from(event?.dataTransfer?.files || []);
+  if (files.length > 0) {
+    drop = files
+      .map((file: File) => (file as any).path)
+      .join('\n')
+      .trim();
+  } else {
+    drop = event?.dataTransfer?.getData('URL') || event?.dataTransfer?.getData('Text') || '';
+  }
+  const channel = g(channelAtom);
+  channel(Channel.ON_DROP, { drop });
+});
 
 // Export remaining helper functions and constants for compatibility
 export { placeholderTimeoutId };
