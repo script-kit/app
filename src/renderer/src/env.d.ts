@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 /// <reference lib="dom" />
+/// <reference path="./types/ban-electron-import.d.ts" />
 
 import type { ElectronAPI, API } from '../../preload/index.d.ts';
 

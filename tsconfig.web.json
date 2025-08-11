@@ -19,7 +19,8 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@renderer/*": ["src/renderer/src/*"]
+      "@renderer/*": ["src/renderer/src/*"],
+      "@/utils/*": ["src/renderer/src/utils/*"]
     },
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
