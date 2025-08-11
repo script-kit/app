@@ -834,7 +834,23 @@ export const flaggedChoiceValueAtom = atom(
 export const scoredFlagsAtom = atom(
   (g) => {
     if (!g(hasActionsAtom)) return [];
-    return g(scoredFlags);
+    const input = (g(actionsInputAtom) || '').toLowerCase().trim();
+    const base = g(scoredFlags);
+    if (!input) return base;
+    // Client-side filter (keeps scoring shape/type intact)
+    return base.filter((sc) => {
+      const it: any = sc?.item || {};
+      const name = (it.name || '').toLowerCase();
+      const desc = (it.description || '').toLowerCase();
+      const id = (it.id || '').toLowerCase();
+      const val = (typeof it.value === 'string' ? it.value : '').toLowerCase();
+      return (
+        name.includes(input) ||
+        desc.includes(input) ||
+        id.includes(input) ||
+        val.includes(input)
+      );
+    });
   },
   (g, s, a: ScoredChoice[]) => {
     unstable_batchedUpdates(() => {
