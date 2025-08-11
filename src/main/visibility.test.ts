@@ -235,6 +235,7 @@ describe('VisibilityController', () => {
       const mainMenu = createMockPrompt({
         scriptPath: '/path/to/main.js', // This matches the mocked getMainScriptPath
         hideOnEscape: false, // Explicitly set to false
+        isMainMenu: true, // Add this property to indicate this is the main menu
       });
       
       visibilityController.handleFocus(mainMenu);

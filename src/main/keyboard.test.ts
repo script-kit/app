@@ -40,6 +40,8 @@ describe('DeleteText Tests', () => {
     vi.clearAllMocks();
     kitState.supportsNut = true;
     kitState.isTyping = false;
+    // Reset the keyTap mock to default behavior (no-op)
+    (shims['@jitsi/robotjs'].keyTap as Mock).mockImplementation(() => {});
   });
 
   describe('Basic functionality', () => {

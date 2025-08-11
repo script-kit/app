@@ -14,10 +14,20 @@ vi.mock('./log-utils', () => ({
   }),
 }));
 
+vi.mock('./state', () => ({
+  kitState: {
+    scripts: new Map(),
+    kenvPath: '/mock/kenv',
+  },
+  subs: [],
+}));
+
 describe('MCP Parameter Validation', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     mcpService.clearCache();
+    const { kitState } = await import('./state');
+    kitState.scripts.clear();
   });
 
   describe('Parameter Description Extraction', () => {
@@ -55,6 +65,10 @@ await sendResponse({ content: [{ type: 'text', text: 'done' }] })
 
       vi.mocked(getScripts).mockResolvedValue(mockScripts as any);
       vi.mocked(readFile).mockResolvedValue(testScript);
+      
+      // Add script to mocked kitState
+      const { kitState } = await import('./state');
+      kitState.scripts.set('test-script', mockScripts[0]);
 
       const scripts = await mcpService.getMCPScripts();
 
@@ -142,6 +156,10 @@ await sendResponse({ content: [{ type: 'text', text: 'done' }] })
       vi.mocked(getScripts).mockResolvedValue(mockScripts as any);
       vi.mocked(readFile).mockResolvedValue(complexScript);
 
+      // Add script to mocked kitState
+      const { kitState } = await import('./state');
+      kitState.scripts.set('complex-script', mockScripts[0]);
+
       const scripts = await mcpService.getMCPScripts();
       const script = scripts[0];
 
@@ -186,6 +204,10 @@ await sendResponse({
 
       vi.mocked(getScripts).mockResolvedValue(mockScripts as any);
       vi.mocked(readFile).mockResolvedValue(noArgsScript);
+
+      // Add script to mocked kitState
+      const { kitState } = await import('./state');
+      kitState.scripts.set('no-args-script', mockScripts[0]);
 
       const scripts = await mcpService.getMCPScripts();
       const script = scripts[0];
@@ -239,6 +261,10 @@ await sendResponse({ content: [{ type: 'text', text: 'done' }] })
 
       vi.mocked(getScripts).mockResolvedValue(mockScripts as any);
       vi.mocked(readFile).mockResolvedValue(choicesScript);
+
+      // Add script to mocked kitState
+      const { kitState } = await import('./state');
+      kitState.scripts.set('choices-script', mockScripts[0]);
 
       const scripts = await mcpService.getMCPScripts();
       const script = scripts[0];
@@ -301,6 +327,10 @@ await sendResponse({
 
       vi.mocked(getScripts).mockResolvedValue(mockScripts as any);
       vi.mocked(readFile).mockResolvedValue(aiScript);
+
+      // Add script to mocked kitState
+      const { kitState } = await import('./state');
+      kitState.scripts.set('ai-assistant', mockScripts[0]);
 
       const scripts = await mcpService.getMCPScripts();
       const script = scripts[0];

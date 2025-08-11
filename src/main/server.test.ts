@@ -18,6 +18,7 @@ vi.mock('./handleScript', () => ({
 }));
 vi.mock('@johnlindquist/kit/core/utils', () => ({
   kitPath: vi.fn((subpath?: string) => (subpath ? `/mock/kit/path/${subpath}` : '/mock/kit/path')),
+  kenvPath: vi.fn((subpath?: string) => (subpath ? `/mock/kenv/path/${subpath}` : '/mock/kenv/path')),
 }));
 vi.mock('./install', () => ({
   tmpCleanupName: 'mock-cleanup-name',

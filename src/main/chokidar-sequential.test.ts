@@ -170,6 +170,7 @@ vi.mock('@johnlindquist/kit/core/utils', async () => {
     kitPath: (...parts: string[]) => path.join(process.env.KIT!, ...parts),
     kenvPath: (...parts: string[]) => path.join(process.env.KENV!, ...parts),
     userDbPath: path.resolve(process.env.KIT!, 'db', 'user.json'),
+    getTrustedKenvsKey: () => 'KENV_TRUST_MAP',
   };
 });
 

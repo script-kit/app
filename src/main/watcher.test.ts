@@ -76,6 +76,11 @@ vi.mock('@johnlindquist/kit/core/enum', () => ({
   Trigger: {
     RunTxt: 'RUN_TXT',
   },
+  ProcessType: {
+    Prompt: 'PROMPT',
+    Kit: 'KIT',
+    Background: 'BACKGROUND',
+  },
 }));
 vi.mock('../shared/assets');
 vi.mock('electron/main');

@@ -78,6 +78,14 @@ vi.mock('./serverTrayUtils', () => ({
   getMcpPort: vi.fn(() => 3000),
 }));
 
+vi.mock('./state', () => ({
+  kitState: {
+    kenvPath: '/mock/kenv',
+    scripts: new Map(),
+  },
+  subs: [],
+}));
+
 // Mock implementation of createToolSchemaFromConfig for testing
 function createToolSchemaFromConfig(parameters: Record<string, any>): Record<string, z.ZodTypeAny> {
   const shape: Record<string, z.ZodTypeAny> = {};
@@ -320,7 +328,14 @@ describe('MCP HTTP Server Tool Handling', () => {
   });
 
   describe('tool registration with MCP server', () => {
+    beforeEach(async () => {
+      const { kitState } = await import('./state');
+      kitState.scripts.clear();
+    });
+
     it('should register tool-based scripts correctly', async () => {
+      const { kitState } = await import('./state');
+      
       const mockScript = {
         name: 'test-tool',
         command: 'test-tool',
@@ -328,6 +343,9 @@ describe('MCP HTTP Server Tool Handling', () => {
         description: 'Test tool',
         mcp: 'test-tool',
       };
+      
+      // Add script to mocked kitState
+      kitState.scripts.set('test-tool', mockScript);
 
       const scriptContent = `
 // Name: test-tool
@@ -367,6 +385,8 @@ const result = await tool({
     });
 
     it('should register arg-based scripts correctly', async () => {
+      const { kitState } = await import('./state');
+      
       const mockScript = {
         name: 'arg-script',
         command: 'arg-script',
@@ -374,6 +394,9 @@ const result = await tool({
         description: 'Arg-based script',
         mcp: 'arg-tool',
       };
+      
+      // Add script to mocked kitState
+      kitState.scripts.set('arg-script', mockScript);
 
       const scriptContent = `
 // Name: arg-script
