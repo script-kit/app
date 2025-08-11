@@ -19,7 +19,7 @@ import {
   previewHTMLAtom,
   promptDataAtom,
   focusedActionAtom,
-} from '../facade';
+} from '../../jotai';
 import type { AppState, Choice } from '@johnlindquist/kit/types/core';
 
 // --- START FIX: Initialization Safety ---

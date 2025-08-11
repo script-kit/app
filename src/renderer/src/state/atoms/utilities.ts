@@ -7,7 +7,7 @@ import { atom } from 'jotai';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import type { Choice } from '@johnlindquist/kit/types/core';
 
-// Import dependencies directly from jotai.ts
+// Import dependencies from shared-dependencies to avoid circular imports
 import {
   uiAtom,
   editorAppendAtom,
@@ -21,7 +21,7 @@ import {
   submittedAtom,
   selectedChoicesAtom,
   choices,
-} from '../../jotai';
+} from '../shared-dependencies';
 
 // Track placeholder timeout
 let placeholderTimeoutId: NodeJS.Timeout | null = null;

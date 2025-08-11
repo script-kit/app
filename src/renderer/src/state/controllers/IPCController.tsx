@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { appStateLiteAtom } from '../selectors/appState';
 import { ipcOutboxAtom, clearIpcOutboxAtom, pushIpcMessageAtom } from '../selectors/ipcOutbound';
-import { pauseChannelAtom, pidAtom, promptDataAtom } from '../facade';
+import { pauseChannelAtom, pidAtom, promptDataAtom } from '../../jotai';
 import { sendChannel } from '../services/ipc';
 import { Channel } from '@johnlindquist/kit/core/enum';
 import type { AppMessage } from '@johnlindquist/kit/types/kitapp';

@@ -10,8 +10,8 @@
  * 4. Eventually remove jotai.ts
  */
 
-// Re-export everything from jotai.ts for backward compatibility
-export * from '../../jotai';
+// DO NOT re-export everything from jotai.ts - this creates circular dependencies
+// Instead, we'll selectively export atoms as they are extracted
 
 // Note: We've temporarily moved the extracted atoms back to jotai.ts
 // to avoid build issues. Once we resolve the circular dependencies,

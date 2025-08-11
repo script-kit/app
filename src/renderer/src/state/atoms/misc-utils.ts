@@ -7,8 +7,8 @@ import { atom } from 'jotai';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import { AppChannel } from '../../../../shared/enums';
 
-// Import dependencies directly from jotai.ts
-import { channelAtom, uiAtom } from '../../jotai';
+// Import dependencies from shared-dependencies to avoid circular imports
+import { channelAtom, uiAtom } from '../shared-dependencies';
 
 const { ipcRenderer } = window.electron;
 

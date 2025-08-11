@@ -26,7 +26,7 @@ import {
   logHTMLAtom, scriptAtom, isWindowAtom, justOpenedAtom,
   gridReadyAtom, inputAtom, previewEnabledAtom, isSplashAtom,
   isMainScriptAtom
-} from '../facade';
+} from '../../jotai';
 
 import { _panelHTML } from '../atoms/preview';
 import { itemHeightAtom, prevMh } from '../atoms/ui-elements';

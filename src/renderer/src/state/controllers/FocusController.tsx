@@ -6,7 +6,7 @@ import {
   scoredChoicesAtom,         // ScoredChoice[] (sorted for relevance)
   focusedChoiceAtom,         // Choice | undefined
   inputAtom,                 // string
-} from '../facade';
+} from '../../jotai';
 
 import { 
   _indexAtom, 

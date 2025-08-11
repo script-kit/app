@@ -8,15 +8,13 @@ import { Channel } from '@johnlindquist/kit/core/enum';
 import type { Action, Choice } from '@johnlindquist/kit/types/core';
 import log from 'electron-log';
 
-// Import dependencies directly from jotai.ts
+// Import dependencies from shared-dependencies to avoid circular imports
 import {
   channelAtom,
   shortcutsAtom,
   enterLastPressedAtom,
-} from '../../jotai';
-
-// Import from specific location to avoid circular dependency
-import { editorHistory } from '../atoms/editor';
+  editorHistory,
+} from '../shared-dependencies';
 
 /**
  * Send shortcut atom - handles keyboard shortcut events.

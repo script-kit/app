@@ -1,6 +1,6 @@
 import { atom } from 'jotai';
 import { _indexAtom } from '../atoms/choices';
-import { scoredChoicesAtom } from '../facade';
+import { scoredChoicesAtom } from '../../jotai';
 
 /**
  * The requested index from user input or other sources.

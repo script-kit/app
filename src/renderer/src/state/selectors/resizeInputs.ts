@@ -9,7 +9,7 @@ import { _flaggedValue } from '../atoms/actions';
 import { Mode } from '@johnlindquist/kit/core/enum';
 import { ID_HEADER, ID_FOOTER, ID_LOG } from '../dom-ids';
 // Import from facade for gradual migration
-import { promptDataAtom, uiAtom, scoredChoicesAtom, scriptAtom } from '../facade';
+import { promptDataAtom, uiAtom, scoredChoicesAtom, scriptAtom } from '../../jotai';
 
 /**
  * Pure derived selector that gathers all inputs needed for resize calculation.

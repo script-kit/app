@@ -1,10 +1,10 @@
 // =================================================================================================
-// Re-export all atoms through the facade pattern
+// Re-export all atoms from the original jotai.ts file
 // This ensures backward compatibility while the migration is in progress
 // =================================================================================================
 
-// Use the facade pattern for jotai exports - this allows gradual migration
-export * from './facade';
+// Re-export everything from the original jotai.ts file for now
+export * from '../jotai';
 
 // Re-export utility modules
 export * from './constants';
