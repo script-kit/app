@@ -1,5 +1,4 @@
 import { PROMPT, UI } from '@johnlindquist/kit/core/enum';
-import { screen } from 'electron';
 import type { Rectangle } from 'electron';
 import type { ResizeData } from '../shared/types';
 import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
@@ -35,9 +34,7 @@ export function calculateTargetDimensions(
 
     const { width: cachedWidth, height: cachedHeight } = getCachedDimensions();
 
-    const display = screen.getDisplayMatching(currentBounds);
-    const workH = display?.workArea?.height || currentBounds.height;
-    const maxHeight = Math.max(PROMPT.HEIGHT.BASE, workH);
+    const maxHeight = Math.max(PROMPT.HEIGHT.BASE, currentBounds.height);
     const targetHeight = topHeight + mainHeight + footerHeight;
 
     let width = cachedWidth || forceWidth || currentBounds.width;
@@ -60,9 +57,10 @@ export function calculateTargetDimensions(
     }
 
     if (hasPreview) {
-        if (!isMainScript) width = Math.max(getDefaultWidth(), width);
-        // Let preview grow up to work area height while respecting computed targetHeight
-        height = Math.max(PROMPT.HEIGHT.BASE, Math.min(targetHeight, workH));
+        if (!isMainScript) {
+            width = Math.max(getDefaultWidth(), width);
+        }
+        height = currentBounds.height < PROMPT.HEIGHT.BASE ? PROMPT.HEIGHT.BASE : currentBounds.height;
     }
 
     return { width, height };

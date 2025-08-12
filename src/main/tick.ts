@@ -155,10 +155,10 @@ const ioEvent = (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
       kitState.typedText += key;
     } else {
       kitState.snippet += key;
-      const tt = kitState.typedText + key;
+      const tt = (kitState.typedText || '') + key;
       const tl = tt.length;
-      const limit = kitState.typedLimit;
-      kitState.typedText = tl > limit ? tt.slice(-limit) : tt;
+      const limit = Number.isFinite(kitState.typedLimit) ? kitState.typedLimit : 0;
+      kitState.typedText = limit > 0 && tl > limit ? tt.slice(-limit) : tt;
       snippetLog.silly('kitState.snippet = ', kitState.snippet);
     }
     prevKey = kc;

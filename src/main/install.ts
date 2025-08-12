@@ -145,7 +145,7 @@ export const showSplash = async () => {
       assetPath: getAssetPath(),
       version: getVersion(),
       isDark: kitState.isDark,
-      searchDebounce: Boolean(kitState.kenvEnv?.KIT_SEARCH_DEBOUNCE === 'false'),
+      searchDebounce: kitState.kenvEnv?.KIT_SEARCH_DEBOUNCE !== 'false',
       termFont: kitState.kenvEnv?.KIT_TERM_FONT || 'monospace',
       url: kitState.url,
     };
@@ -791,7 +791,10 @@ export const optionalSpawnSetup = (...args: string[]) => {
   return new Promise((resolve, _reject) => {
     log.info(`Running optional setup script: ${args.join(' ')}`);
     if (!kitState.KIT_NODE_PATH) {
-      log.error('No exec path found, skipping setup script');
+      log.error(
+        '[install] Cannot spawn terminal: KIT_NODE_PATH is not set. ' +
+        'This usually means setup didn\'t finish or node wasn\'t located.'
+      );
       resolve('done');
       return;
     }

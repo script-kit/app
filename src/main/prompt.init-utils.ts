@@ -63,7 +63,7 @@ export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
       assetPath: getAssetPath(),
       version: getVersion(),
       isDark: kitState.isDark,
-      searchDebounce: Boolean(kitState.kenvEnv?.KIT_SEARCH_DEBOUNCE === 'false'),
+      searchDebounce: kitState.kenvEnv?.KIT_SEARCH_DEBOUNCE !== 'false',
       termFont: kitState.kenvEnv?.KIT_TERM_FONT || 'monospace',
       url: kitState.url,
     });
