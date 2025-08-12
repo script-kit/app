@@ -485,82 +485,86 @@ const subScriptErrorPath = subscribeKey(kitState, 'scriptErrorPath', (scriptErro
 // TODO: I don't need to return booleans AND set kitState.isSponsor. Pick one.
 export const sponsorCheck = debounce(
   async (feature: string, block = true) => {
-    log.info(`Checking sponsor status... login: ${kitState?.user?.login} ${kitState.isSponsor ? '✅' : '❌'}`);
+    log.info(
+      `Checking sponsor status... login: ${kitState?.user?.login} (current=${kitState.isSponsor ? '✅' : '❌'})`,
+    );
     const isOnline = await online();
-    if (!isOnline || (process.env.KIT_SPONSOR === 'development' && os.userInfo().username === 'johnlindquist')) {
+    // Local dev override
+    if (process.env.KIT_SPONSOR === 'development' && os.userInfo().username === 'johnlindquist') {
       kitState.isSponsor = true;
+      kitStore.set('sponsor', true);
       return true;
     }
 
-    if (!kitState.isSponsor) {
-      let response = null;
-      try {
-        response = await axios.post(`${kitState.url}/api/check-sponsor`, {
-          ...kitState.user,
-          feature,
-        });
-      } catch (error) {
-        log.error('Error checking sponsor status', error);
-        kitState.isSponsor = true;
-        return true;
-      }
+    // If offline, fall back to last-known good; never auto‑elevate on failure
+    if (!isOnline) {
+      const cached = kitStore.get('sponsor');
+      kitState.isSponsor = Boolean(cached);
+      return kitState.isSponsor;
+    }
 
-      // check for axios post error
-      if (!response) {
-        log.error('Error checking sponsor status', response);
-        kitState.isSponsor = true;
-        return true;
-      }
+    try {
+      const response = await axios.post(
+        `${kitState.url}/api/check-sponsor`,
+        { ...kitState.user, feature },
+        { timeout: 5000 },
+      );
 
-      log.info(`Response status: ${response.status}`);
+      const ok =
+        response?.status === 200 &&
+        response?.data &&
+        kitState.user?.node_id &&
+        response.data.id === kitState.user.node_id;
 
-      // check for axios post error
-      if (response.status !== 200) {
-        log.error('Error checking sponsor status', response);
-      }
+      kitState.isSponsor = Boolean(ok);
+      kitStore.set('sponsor', kitState.isSponsor);
 
-      log.info('🕵️‍♀️ Sponsor check response', JSON.stringify(response.data));
+      if (kitState.isSponsor) return true;
+    } catch (error) {
+      log.warn('Sponsor check failed; falling back to cached status.', error);
+      const cached = kitStore.get('sponsor');
+      kitState.isSponsor = Boolean(cached);
+      if (kitState.isSponsor) return true;
+    }
 
-      if (response.data && kitState.user.node_id && response.data.id === kitState.user.node_id) {
-        log.info('User is sponsor');
-        kitState.isSponsor = true;
-        return true;
-      }
-
-      if (response.status !== 200) {
-        log.error('Sponsor check service is down. Granting temp sponsor status');
-        kitState.isSponsor = true;
-        return true;
-      }
-
-      if (block) {
-        kitState.isSponsor = false;
-
-        log.error(`
+    // Not a sponsor (by online check or cache). If blocking, show upsell.
+    if (block) {
+      log.error(`
 -----------------------------------------------------------
 🚨 User attempted to use: ${feature}, but is not a sponsor.
 -----------------------------------------------------------
-        `);
-        emitter.emit(KitEvent.RunPromptProcess, {
-          scriptPath: kitPath('pro', 'sponsor.js'),
-          args: [feature],
-          options: {
-            force: true,
-            trigger: Trigger.App,
-            sponsorCheck: false,
-          },
-        });
-
-        return false;
-      }
-
-      return false;
+      `);
+      emitter.emit(KitEvent.RunPromptProcess, {
+        scriptPath: kitPath('pro', 'sponsor.js'),
+        args: [feature],
+        options: { force: true, trigger: Trigger.App, sponsorCheck: false },
+      });
     }
-    return true;
+    return false;
   },
   2500,
   { leading: true, trailing: false },
 );
+
+// Reverse lookup: physical key "value" (e.g., 'q') -> code ('KeyQ')
+const reverseKeyValueToCode = new Map<string, string>();
+const rebuildReverseKeyMap = () => {
+  reverseKeyValueToCode.clear();
+  for (const [code, entry] of Object.entries(kitState.keymap || {})) {
+    const v = (entry as any)?.value;
+    if (typeof v === 'string' && v) {
+      reverseKeyValueToCode.set(v.toLowerCase(), code);
+    }
+  }
+  keymapLog.debug(`🔑 Rebuilt reverse keymap with ${reverseKeyValueToCode.size} entries`);
+};
+
+// Keep reverse map in sync as keymap updates
+const subKeymap = subscribeKey(kitState, 'keymap', () => {
+  rebuildReverseKeyMap();
+});
+// ensure initial build
+rebuildReverseKeyMap();
 
 // subs is an array of functions
 export const subs: (() => void)[] = [];
@@ -573,6 +577,7 @@ subs.push(
   subReady,
   subIgnoreBlur,
   scriptletsSub,
+  subKeymap,
 );
 
 const defaultKeyMap: {
@@ -643,32 +648,22 @@ const defaultKeyMap: {
 };
 
 export const convertKey = (sourceKey: string): string => {
-  const hasKeymap = Object.keys(kitState.keymap).length > 0;
-  log.info('🔑 Has keymap:', { hasKeymap });
-  if (kitState.kenvEnv?.KIT_CONVERT_KEY === 'false' || !hasKeymap) {
-    keymapLog.info(`🔑 Skipping key conversion: ${sourceKey}`);
+  const hasMap = reverseKeyValueToCode.size > 0;
+  keymapLog.debug('🔑 Has reverse keymap:', { hasMap });
+  if (kitState.kenvEnv?.KIT_CONVERT_KEY === 'false' || !hasMap) {
+    keymapLog.debug(`🔑 Skipping key conversion: ${sourceKey}`);
     return sourceKey;
   }
-
-  // Find the entry where the value matches the sourceKey
-  let entry;
-  for (const [code, value] of Object.entries(kitState.keymap)) {
-    if (value?.value?.toLowerCase() === sourceKey.toLowerCase()) {
-      entry = [code, value];
-      break;
-    }
+  const code = reverseKeyValueToCode.get(sourceKey.toLowerCase());
+  if (!code) {
+    keymapLog.debug(`🔑 No conversion for key: ${sourceKey}`);
+    return sourceKey;
   }
-  if (entry) {
-    log.info(`🔑 Found entry: ${entry}`);
-    const [code] = entry;
-    const target = defaultKeyMap[code]?.toUpperCase() || '';
-    if (target) {
-      log.info(`🔑 Converted key: ${code} -> ${target}`);
-      return target;
-    }
+  const target = defaultKeyMap[code]?.toUpperCase();
+  if (target) {
+    keymapLog.debug(`🔑 Converted key: ${code} -> ${target}`);
+    return target;
   }
-
-  keymapLog.info(`🔑 No conversion for key: ${sourceKey}`);
   return sourceKey;
 };
 

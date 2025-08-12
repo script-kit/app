@@ -4,7 +4,7 @@ import detect from 'detect-port';
 import sizeOf from 'image-size';
 import untildify from 'untildify';
 
-import { writeFile } from 'node:fs/promises';
+import { writeFile, unlink } from 'node:fs/promises';
 import http from 'node:http';
 import https from 'node:https';
 import os from 'node:os';
@@ -19,6 +19,7 @@ import {
   dialog,
   globalShortcut,
   nativeImage,
+  powerMonitor,
   screen,
   shell,
 } from 'electron';
@@ -86,27 +87,73 @@ import { showLogWindow } from './window';
 
 import { messagesLog as log } from './logs';
 
-let prevId1: string;
-let prevId2: string;
-let prevResult: boolean;
-
-const comparePromptScriptsById = (id1: string, id2: string) => {
-  if (id1 === prevId1 && id2 === prevId2) {
-    return prevResult;
+// Limit what we expose over IPC to child processes
+const sanitizeKitStateForIpc = () => {
+  const s: any = snapshot(kitState);
+  // Remove sensitive / heavy fields
+  delete s.kenvEnv;            // env variables may contain secrets
+  delete s.user;               // PII and identifiers
+  delete s.KIT_NODE_PATH;      // internal paths
+  delete s.PNPM_KIT_NODE_PATH; // internal paths
+  delete s.keymap;             // large and not needed by most callers
+  delete s.sleepClearKeys;     // internal housekeeping
+  // If needed, reduce 'notifications' to last few items
+  if (Array.isArray(s.notifications) && s.notifications.length > 25) {
+    s.notifications = s.notifications.slice(-25);
   }
+  return s;
+};
 
-  const id1Number = id1.slice(0, -2);
-  const id2Number = id2.slice(0, -2);
+const isSamePrompt = (incomingId?: string, currentId?: string) => {
+  return Boolean(incomingId && currentId && incomingId === currentId);
+};
 
-  prevId1 = id1;
-  prevId2 = id2;
-  prevResult = id1Number === id2Number;
-
-  return prevResult;
+// --- Helper to keep globalShortcut state sane per child process
+const unregisterShortcutsForPid = (pid: number) => {
+  const shortcuts = childShortcutMap.get(pid);
+  if (shortcuts && shortcuts.length) {
+    for (const acc of shortcuts) {
+      try {
+        globalShortcut.unregister(acc);
+      } catch (e) {
+        log.warn(`Error unregistering shortcut ${acc} for pid ${pid}`, e);
+      }
+    }
+    childShortcutMap.delete(pid);
+  }
 };
 
 // pid: count
-const errorMap = new Map<string, number>();
+type ErrorEntry = { count: number; lastAt: number };
+const errorMap = new Map<string, ErrorEntry>();
+const ERROR_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const ERROR_MAP_MAX = 500;
+
+const pruneErrorMap = () => {
+  const now = Date.now();
+  // Remove stale entries
+  for (const [k, v] of errorMap) {
+    if (now - v.lastAt > ERROR_TTL_MS) errorMap.delete(k);
+  }
+  // Size cap (remove oldest)
+  if (errorMap.size > ERROR_MAP_MAX) {
+    const entries = Array.from(errorMap.entries()).sort((a, b) => a[1].lastAt - b[1].lastAt);
+    const excess = errorMap.size - ERROR_MAP_MAX;
+    for (let i = 0; i < excess; i++) errorMap.delete(entries[i][0]);
+  }
+};
+
+const bumpError = (key: string) => {
+  const now = Date.now();
+  const entry = errorMap.get(key);
+  if (entry) {
+    entry.count += 1;
+    entry.lastAt = now;
+  } else {
+    errorMap.set(key, { count: 1, lastAt: now });
+  }
+  pruneErrorMap();
+};
 
 const getModifier = () => {
   return kitState.isMac ? ['command'] : ['control'];
@@ -177,6 +224,37 @@ export const formatScriptChoices = (data: Choice[]) => {
   return choices;
 };
 
+// Track temp thumbnails to clean up on quit
+const tempThumbnails = new Set<string>();
+app.on('before-quit', async () => {
+  for (const p of tempThumbnails) {
+    try {
+      await unlink(p);
+    } catch (_) {
+      // ignore
+    }
+  }
+  tempThumbnails.clear();
+});
+
+// Clear environment variables cached "until-sleep"
+powerMonitor.on('suspend', () => {
+  const keys = kitState.sleepClearKeys;
+  if (keys && keys.size) {
+    const log = getLog('messages');
+    log.info(`🔐 Clearing ${keys.size} cached env var(s) on sleep`);
+    for (const k of keys) {
+      try {
+        delete process.env[k];
+        if (kitState.kenvEnv) delete (kitState.kenvEnv as any)[k];
+      } catch (e) {
+        log.warn(`Failed clearing env var ${k} on sleep`, e);
+      }
+    }
+    keys.clear();
+  }
+});
+
 export const createMessageMap = (processInfo: ProcessAndPrompt) => {
   const robot = shims['@jitsi/robotjs'];
   let exiting = false;
@@ -184,11 +262,32 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
   const { prompt, scriptPath } = processInfo;
   const sendToPrompt = prompt.sendToPrompt;
+  const WAIT_ACK_TIMEOUT_MS = 3000;
   const waitForPrompt = async (channel: Channel, value: any) => {
-    prompt.window?.webContents?.ipc?.once(channel, () => {
-      childSend({ channel, value });
-    });
+    let settled = false;
+    const ack = (payload: any) => {
+      if (settled) return;
+      settled = true;
+      childSend({ channel, value: payload });
+    };
+    // Listen for renderer's ack
+    const once = prompt.window?.webContents?.ipc?.once?.bind(prompt.window?.webContents?.ipc);
+    if (once) {
+      once(channel, () => ack(value));
+    }
+    // Send the request to renderer
     sendToPrompt(channel, value);
+    // Fallback timeout to avoid hangs
+    setTimeout(() => {
+      if (!settled) {
+        const payload =
+          value && typeof value === 'object'
+            ? { ...value, __ackTimeout: true }
+            : value;
+        log.warn(`Timeout waiting for renderer ack on ${channel}`);
+        ack(payload);
+      }
+    }, WAIT_ACK_TIMEOUT_MS);
   };
   const setLog = (value) => sendToPrompt(Channel.SET_LOG, value);
   const childSend = createSendToChild(processInfo);
@@ -212,7 +311,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       );
     }
 
-    const samePrompt = comparePromptScriptsById(data?.promptId, prompt.id);
+    const samePrompt = isSamePrompt(
+      // many channels include promptId on data; cast keeps TS happy across variants
+      (data as any)?.promptId as string | undefined,
+      processInfo?.prompt?.id as string | undefined,
+    );
     const result = fn(processInfo, data, samePrompt);
 
     if (sendToChild) {
@@ -236,6 +339,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       (data: SendData<K>) =>
         handleChannelMessage(data, fn);
 
+  const IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+  const IMAGE_REQUEST_TIMEOUT_MS = 7000;    // 7 seconds
+
   const SHOW_IMAGE = async (data: SendData<Channel.SHOW_IMAGE>) => {
     kitState.blurredByKit = true;
 
@@ -243,18 +349,37 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     const imgOptions = url.parse((image as { src: string }).src);
 
     // eslint-disable-next-line promise/param-names
-    const { width, height } = await new Promise((resolveImage) => {
+    const { width, height } = await new Promise<{ width: number; height: number }>((resolveImage) => {
       const proto = imgOptions.protocol?.startsWith('https') ? https : http;
-      proto.get(imgOptions, (response: any) => {
-        const chunks: any = [];
+      const req = proto.get(imgOptions, (response: any) => {
+        const chunks: Buffer[] = [];
+        let total = 0;
         response
-          .on('data', (chunk: any) => {
+          .on('data', (chunk: Buffer) => {
+            total += chunk.length;
+            if (total > IMAGE_MAX_BYTES) {
+              req.destroy(new Error('IMAGE_TOO_LARGE'));
+              return;
+            }
             chunks.push(chunk);
           })
           .on('end', () => {
-            const buffer = Buffer.concat(chunks);
-            resolveImage(sizeOf(buffer));
+            try {
+              const buffer = Buffer.concat(chunks);
+              const dims = sizeOf(buffer);
+              resolveImage({ width: dims.width || 800, height: dims.height || 600 });
+            } catch (e) {
+              log.warn('SHOW_IMAGE: failed to read dimensions', e);
+              resolveImage({ width: 800, height: 600 });
+            }
           });
+      });
+      req.setTimeout(IMAGE_REQUEST_TIMEOUT_MS, () => {
+        req.destroy(new Error('IMAGE_REQUEST_TIMEOUT'));
+      });
+      req.on('error', (err: any) => {
+        log.warn('SHOW_IMAGE: request aborted/failed', err?.message || err);
+        resolveImage({ width: 800, height: 600 });
       });
     });
 
@@ -351,8 +476,8 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       if (widget) {
         widget?.webContents.send(channel, value);
       } else {
-        log.warn(`${widgetId}: widget not found. Killing process.`);
-        child?.kill();
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
       }
     }),
 
@@ -361,6 +486,12 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       const { widgetId, value: js } = value as any;
       const widget = findWidget(widgetId, channel);
       if (!widget) {
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
+        childSend({
+          channel,
+          value: { error: `Widget ${widgetId} not found` },
+        });
         return;
       }
 
@@ -369,16 +500,18 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         js: js.trim(),
       });
 
-      if (widget) {
+      try {
         const result = await widget?.webContents.executeJavaScript(js);
-
         childSend({
           channel,
           value: result,
         });
-      } else {
-        log.warn(`${widgetId}: widget not found. Killing process.`);
-        child?.kill();
+      } catch (error) {
+        log.error(`Failed to execute JavaScript in widget ${widgetId}:`, error);
+        childSend({
+          channel,
+          value: { error: error?.toString() },
+        });
       }
     }),
 
@@ -387,16 +520,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       const widget = findWidget(widgetId, channel);
       if (!widget) {
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
         return;
       }
 
       // log.info(`WIDGET_SET_STATE`, value);
-      if (widget) {
-        widget?.webContents.send(channel, state);
-      } else {
-        log.warn(`${widgetId}: widget not found. Terminating process.`);
-        child?.kill();
-      }
+      widget?.webContents.send(channel, state);
     }),
 
     WIDGET_CALL: onChildChannel(({ child }, { channel, value }) => {
@@ -404,19 +534,16 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       const widget = findWidget(widgetId, channel);
       if (!widget) {
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
         return;
       }
 
       log.info('📞 WIDGET_CALL', widgetId, value, args);
-      if (widget) {
-        try {
-          (widget as any)?.[method]?.(...args);
-        } catch (error) {
-          log.error(error);
-        }
-      } else {
-        log.warn(`${widgetId}: widget not found. Terminating process.`);
-        child?.kill();
+      try {
+        (widget as any)?.[method]?.(...args);
+      } catch (error) {
+        log.error(`Failed to call method ${method} on widget ${widgetId}:`, error);
       }
     }),
     VITE_WIDGET_SEND: onChildChannel(({ child }, { channel, value }) => {
@@ -425,16 +552,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       const widget = findWidget(widgetId, channel);
       if (!widget) {
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
         return;
       }
 
       // log.info('VITE_WIDGET_SEND', channel, value);
-      if (widget) {
-        widget?.webContents.send(value?.channel, data);
-      } else {
-        log.warn(`${widgetId}: widget not found. Terminating process.`);
-        child?.kill();
-      }
+      widget?.webContents.send(value?.channel, data);
     }),
 
     WIDGET_FIT: onChildChannel(({ child }, { channel, value }) => {
@@ -443,16 +567,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       const widget = findWidget(widgetId, channel);
       if (!widget) {
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
         return;
       }
 
       // log.info(`WIDGET_SET_STATE`, value);
-      if (widget) {
-        widget?.webContents.send(channel, state);
-      } else {
-        log.warn(`${widgetId}: widget not found. Terminating process.`);
-        child?.kill();
-      }
+      widget?.webContents.send(channel, state);
     }),
 
     WIDGET_SET_SIZE: onChildChannel(({ child }, { channel, value }) => {
@@ -460,16 +581,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // log.info({ widgetId }, `${channel}`);
       const widget = findWidget(widgetId, channel);
       if (!widget) {
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
         return;
       }
 
       // log.info(`WIDGET_SET_STATE`, value);
-      if (widget) {
-        widget?.setSize(width, height);
-      } else {
-        log.warn(`${widgetId}: widget not found. Terminating process.`);
-        child?.kill();
-      }
+      widget?.setSize(width, height);
     }),
 
     WIDGET_SET_POSITION: onChildChannel(({ child }, { value, channel }) => {
@@ -477,16 +595,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // log.info({ widgetId }, `${channel}`);
       const widget = findWidget(widgetId, channel);
       if (!widget) {
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
         return;
       }
 
       // log.info(`WIDGET_SET_STATE`, value);
-      if (widget) {
-        widget?.setPosition(x, y);
-      } else {
-        log.warn(`${widgetId}: widget not found. Terminating process.`);
-        child?.kill();
-      }
+      widget?.setPosition(x, y);
     }),
 
     WIDGET_GET: onChildChannelOverride(
@@ -715,6 +830,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
               const image = displaySource.thumbnail.toPNG();
               const thumbnailPath = osTmpPath(`display-thumbnail-${id}-${randomUUID()}.png`);
               await writeFile(thumbnailPath, image);
+              tempThumbnails.add(thumbnailPath);
               return { ...display, thumbnailPath };
             }
           } catch (error) {
@@ -839,11 +955,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       };
 
       if (prompt?.isVisible()) {
+        // Ack exactly once when hide completes.
         prompt?.onHideOnce(handler);
+        prompt.hide();
+      } else {
+        // Already hidden – ack now.
+        handler();
       }
-      handler();
-
-      prompt.hide();
     }),
 
     BEFORE_EXIT: onChildChannelOverride(({ pid }) => {
@@ -855,6 +973,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       prompt.hideInstant();
       processes.stampPid(pid);
       processes.removeByPid(pid, 'beforeExit');
+      unregisterShortcutsForPid(pid);
     }),
 
     QUIT_APP: onChildChannel(({ child }, { channel, value }) => {
@@ -1046,8 +1165,12 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     SET_BOUNDS: onChildChannel(async ({ child }, { channel, value }) => {
       prompt.modifiedByUser = true;
       (value as any).human = true;
-      await waitForPrompt(Channel.SET_BOUNDS, value);
+      // Apply once at the window level to avoid double-resize flicker
       prompt.setBounds(value);
+      // Notify renderer to sync any internal layout/state (do not wait)
+      sendToPrompt(Channel.SET_BOUNDS, value);
+      // Immediately acknowledge to caller
+      if (child) childSend({ channel, value: true });
     }),
 
     SET_IGNORE_BLUR: onChildChannel(({ child }, { channel, value }) => {
@@ -1601,6 +1724,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     TERMINATE_PROCESS: onChildChannel(async ({ child }, { channel, value }) => {
       log.warn(`${value}: Terminating process ${value}`);
       processes.removeByPid(value, 'messages value pid cleanup');
+      unregisterShortcutsForPid(value);
     }),
     TERMINATE_ALL_PROCESSES: onChildChannel(async ({ child }, { channel }) => {
       log.warn('Terminating all processes');
@@ -1608,6 +1732,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       activeProcesses.forEach((process) => {
         try {
           processes.removeByPid(process?.pid, 'messages process cleanup');
+          unregisterShortcutsForPid(process?.pid);
         } catch (error) {
           log.error(`Error terminating process ${process?.pid}`, error);
         }
@@ -1615,9 +1740,10 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     }),
 
     GET_APP_STATE: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      const safe = sanitizeKitStateForIpc();
       childSend({
         channel,
-        value: snapshot(kitState),
+        value: safe,
       });
     }),
 
@@ -1716,23 +1842,26 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     REGISTER_GLOBAL_SHORTCUT: onChildChannelOverride(({ child, scriptPath }, { channel, value }) => {
       const properShortcut = convertShortcut(value, scriptPath);
       log.info(`App: registering global shortcut ${value} as ${properShortcut}`);
-      const result = globalShortcut.register(properShortcut, () => {
-        kitState.shortcutPressed = properShortcut;
-        log.info(`Global shortcut: Sending ${value} on ${Channel.GLOBAL_SHORTCUT_PRESSED}`);
-        childSend({
-          channel: Channel.GLOBAL_SHORTCUT_PRESSED,
-          value,
+      let result = true;
+      if (globalShortcut.isRegistered(properShortcut)) {
+        log.warn(`Shortcut ${properShortcut} already registered; reusing existing registration`);
+      } else {
+        result = globalShortcut.register(properShortcut, () => {
+          kitState.shortcutPressed = properShortcut;
+          log.info(`Global shortcut: Sending ${value} on ${Channel.GLOBAL_SHORTCUT_PRESSED}`);
+          childSend({
+            channel: Channel.GLOBAL_SHORTCUT_PRESSED,
+            value,
+          });
         });
-      });
+      }
 
       log.info(`Shortcut ${value}: ${result ? 'success' : 'failure'}}`);
 
       if (result && child?.pid) {
-        if (child?.pid && !childShortcutMap.has(child.pid)) {
-          childShortcutMap.set(child.pid, [properShortcut]);
-        } else {
-          childShortcutMap.get(child.pid)?.push(properShortcut);
-        }
+        const current = childShortcutMap.get(child.pid) || [];
+        if (!current.includes(properShortcut)) current.push(properShortcut);
+        childShortcutMap.set(child.pid, current);
 
         childSend({
           channel,
@@ -1764,7 +1893,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       const properShortcut = convertShortcut(value, scriptPath);
       if (child?.pid && childShortcutMap.has(child.pid)) {
         const shortcuts = childShortcutMap.get(child.pid);
-        const index = shortcuts?.indexOf(value);
+        const index = shortcuts?.indexOf(properShortcut);
         if (typeof index === 'number' && index > -1) {
           shortcuts?.splice(index, 1);
         }
@@ -1804,12 +1933,17 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // keyboard.config.autoDelayMs =
       //   kitState?.keyboardConfig?.autoDelayMs || 0;
       kitState.isTyping = true;
-      // I can't remember why we do this. Something to do with "nut's" old typing system?
-      const text = typeof textOrKeys === 'string' ? textOrKeys : textOrKeys[0];
+      const text =
+        typeof textOrKeys === 'string'
+          ? textOrKeys
+          : Array.isArray(textOrKeys)
+          ? textOrKeys.join('')
+          : String(textOrKeys ?? '');
+      const delay = Number.isFinite(rate) ? Math.max(0, Math.min(1000, Number(rate))) : undefined;
       try {
-        if (typeof rate === 'number') {
-          log.info(`⌨️ Typing ${text} with delay ${rate}`);
-          shims['@jitsi/robotjs'].typeStringDelayed(text, rate);
+        if (typeof delay === 'number') {
+          log.info(`⌨️ Typing ${text} with delay ${delay}`);
+          shims['@jitsi/robotjs'].typeStringDelayed(text, delay);
         } else {
           log.info(`⌨️ Typing ${text} without delay`);
           shims['@jitsi/robotjs'].typeString(text);
@@ -1828,7 +1962,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
             channel,
           });
         },
-        Math.max(textOrKeys.length, 100),
+        Math.max(text.length, 100),
       );
 
       // END-REMOVE-NUT
@@ -1862,9 +1996,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // keyboard.config.autoDelayMs =
       //   kitState?.keyboardConfig?.autoDelayMs || 0;
       kitState.isTyping = true;
-      const speed = kitState?.kenvEnv?.KIT_TYPING_SPEED;
-      // I can't remember why we do this. Something to do with "nut's" old typing system?
-      const text = typeof value === 'string' ? value : value[0];
+      const envSpeed = kitState?.kenvEnv?.KIT_TYPING_SPEED;
+      const parsedEnv = typeof envSpeed === 'string' ? Number.parseInt(envSpeed, 10) : Number(envSpeed);
+      const speed = Number.isFinite(parsedEnv) ? Math.max(0, Math.min(1000, parsedEnv)) : undefined;
+      const text =
+        typeof value === 'string' ? value : Array.isArray(value) ? value.join('') : String(value ?? '');
       try {
         if (typeof speed === 'number') {
           log.info(`⌨️ Typing ${text} with delay ${speed}`);
@@ -1887,7 +2023,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
             channel,
           });
         },
-        Math.max(value.length, 100),
+        Math.max(text.length, 100),
       );
 
       // END-REMOVE-NUT
@@ -2150,6 +2286,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
           // askForFullDiskAccess();
         }
       }
+      // ✅ Always respond so callers don't hang
+      childSend({
+        channel,
+        value,
+      });
     }),
 
     SET_SELECTED_TEXT: onChildChannelOverride(
@@ -2334,13 +2475,20 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     ERROR: onChildChannelOverride(({ child }, { channel, value }) => {
       log.error(`${child.pid}: ERROR MESSAGE`, value);
       trackEvent(TrackEvent.Error, value);
-      const stack = value?.stack || '';
-      errorMap.set(stack, (errorMap.get(stack) || 0) + 1);
-      if (errorMap.get(stack) > 2) {
-        child.kill('SIGKILL');
-        log.info(`Killed child ${child.pid} after ${errorMap.get(stack)} of the same stack errors`, value);
-        errorMap.delete(stack);
-        displayError(value);
+      const key = (value?.stack && String(value.stack)) || JSON.stringify(value ?? {});
+      bumpError(key);
+      const entry = errorMap.get(key)!;
+      if (entry.count > 2) {
+        // Only escalate for clustered repeats (fresh within TTL by virtue of bumpError/prune)
+        try {
+          child?.kill?.('SIGKILL');
+          log.info(`Killed child ${child?.pid} after ${entry.count} of the same stack errors`, value);
+        } catch (e) {
+          log.warn('Failed to kill child after repeated errors', e);
+        } finally {
+          errorMap.delete(key); // reset the counter for this error signature
+          displayError(value);
+        }
       }
     }),
     GET_TYPED_TEXT: onChildChannelOverride(({ child }, { channel, value }) => {
