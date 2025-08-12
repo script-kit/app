@@ -87,8 +87,13 @@ export const flagsIndex = atom(0);
 const _focusedFlag = atom('');
 export const focusedFlagValueAtom = atom(
   (g) => g(_focusedFlag),
-  (_g, s, a: string) => {
-    s(_focusedFlag, a);
+  (g, s, a: string) => {
+    if (a !== g(_focusedFlag)) {
+      s(_focusedFlag, a);
+      const flags = g(flagsAtom);
+      const flag = flags[a];
+      s(focusedActionAtom, flag || {});
+    }
   },
 );
 

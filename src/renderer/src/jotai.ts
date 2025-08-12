@@ -830,6 +830,21 @@ export const flaggedChoiceValueAtom = atom(
   },
 );
 
+// Helper function to find match positions for highlighting
+const findMatchPositions = (text: string, query: string): [number, number][] => {
+  const positions: [number, number][] = [];
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  let index = lowerText.indexOf(lowerQuery);
+  
+  while (index !== -1) {
+    positions.push([index, index + query.length]);
+    index = lowerText.indexOf(lowerQuery, index + 1);
+  }
+  
+  return positions;
+};
+
 // --- Scored Flags ---
 export const scoredFlagsAtom = atom(
   (g) => {
@@ -837,20 +852,56 @@ export const scoredFlagsAtom = atom(
     const input = (g(actionsInputAtom) || '').toLowerCase().trim();
     const base = g(scoredFlags);
     if (!input) return base;
-    // Client-side filter (keeps scoring shape/type intact)
-    return base.filter((sc) => {
-      const it: any = sc?.item || {};
-      const name = (it.name || '').toLowerCase();
-      const desc = (it.description || '').toLowerCase();
-      const id = (it.id || '').toLowerCase();
-      const val = (typeof it.value === 'string' ? it.value : '').toLowerCase();
-      return (
-        name.includes(input) ||
-        desc.includes(input) ||
-        id.includes(input) ||
-        val.includes(input)
-      );
-    });
+    
+    // Client-side filter with match position calculation for highlighting
+    return base
+      .filter((sc) => {
+        const it: any = sc?.item || {};
+        const name = (it.name || '').toLowerCase();
+        const desc = (it.description || '').toLowerCase();
+        const id = (it.id || '').toLowerCase();
+        const val = (typeof it.value === 'string' ? it.value : '').toLowerCase();
+        return (
+          name.includes(input) ||
+          desc.includes(input) ||
+          id.includes(input) ||
+          val.includes(input)
+        );
+      })
+      .map((sc) => {
+        // Calculate match positions for highlighting
+        const it: any = sc?.item || {};
+        const matches: any = {};
+        
+        // Check name field for matches
+        if (it.name) {
+          const nameMatches = findMatchPositions(it.name, input);
+          if (nameMatches.length > 0) {
+            matches.slicedName = nameMatches;
+          }
+        }
+        
+        // Check tag field for matches
+        if (it.tag) {
+          const tagMatches = findMatchPositions(it.tag, input);
+          if (tagMatches.length > 0) {
+            matches.tag = tagMatches;
+          }
+        }
+        
+        // Check description field for matches
+        if (it.description) {
+          const descMatches = findMatchPositions(it.description, input);
+          if (descMatches.length > 0) {
+            matches.description = descMatches;
+          }
+        }
+        
+        return {
+          ...sc,
+          matches
+        };
+      });
   },
   (g, s, a: ScoredChoice[]) => {
     unstable_batchedUpdates(() => {
@@ -919,12 +970,6 @@ export const flagsIndexAtom = atom(
 
     const focusedFlag = (choice as Choice)?.value;
     s(focusedFlagValueAtom, focusedFlag);
-    // CRITICAL: also reflect that an action is selected so submit can fire Channel.ACTION
-    if (focusedFlag) {
-      s(focusedActionAtom, { hasAction: true, flag: focusedFlag } as any);
-    } else {
-      s(focusedActionAtom, {} as any);
-    }
   },
 );
 
