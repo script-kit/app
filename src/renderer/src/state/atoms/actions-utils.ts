@@ -10,17 +10,16 @@ import log from 'electron-log';
 
 // Import dependencies from shared-dependencies to avoid circular imports
 import {
-  channelAtom,
   shortcutsAtom,
   enterLastPressedAtom,
   editorHistory,
 } from '../shared-dependencies';
+import { pushIpcMessageAtom } from '../selectors/ipcOutbound';
 
 /**
  * Send shortcut atom - handles keyboard shortcut events.
  */
 export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
-  const channel = g(channelAtom);
   const hasEnterShortcut = g(shortcutsAtom).find((s) => s.key === 'enter');
   log.info('<� Send shortcut', { shortcut, hasEnterShortcut });
 
@@ -29,17 +28,18 @@ export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
     s(enterLastPressedAtom, new Date());
   } else {
     // Otherwise, send it as a shortcut event.
-    channel(Channel.SHORTCUT, { shortcut });
+    s(pushIpcMessageAtom, { channel: Channel.SHORTCUT, state: { shortcut } });
   }
 });
 
 /**
  * Send action atom - handles action button clicks.
  */
-export const sendActionAtom = atom(null, (g, _s, action: Action) => {
-  const channel = g(channelAtom);
+export const sendActionAtom = atom(null, (g, s, action: Action) => {
   log.info(`=I Sending action: ${action.name}`);
-  channel(Channel.ACTION, { action });
+  // Send as state override
+  // (Main process expects AppMessage with `state.action` set)
+  s(pushIpcMessageAtom, { channel: Channel.ACTION, state: { action } });
 });
 
 /**
@@ -49,14 +49,12 @@ export const triggerKeywordAtom = atom(
   (_g) => { },
   (
     g,
-    _s,
+    s,
     { keyword, choice }: { keyword: string; choice: Choice },
   ) => {
-    const channel = g(channelAtom);
-    channel(Channel.KEYWORD_TRIGGERED, {
-      keyword,
-      focused: choice,
-      value: choice?.value,
+    s(pushIpcMessageAtom, {
+      channel: Channel.KEYWORD_TRIGGERED,
+      state: { keyword, focused: choice, value: choice?.value },
     });
   },
 );
@@ -64,7 +62,10 @@ export const triggerKeywordAtom = atom(
 /**
  * Get editor history atom - retrieves editor history.
  */
-export const getEditorHistoryAtom = atom((g) => () => {
-  const channel = g(channelAtom);
-  channel(Channel.GET_EDITOR_HISTORY, { editorHistory: g(editorHistory) });
+export const getEditorHistoryAtom = atom(null, (g, s) => {
+  // Send state override with history
+  s(pushIpcMessageAtom, {
+    channel: Channel.GET_EDITOR_HISTORY,
+    state: { editorHistory: g(editorHistory) },
+  });
 });

@@ -161,6 +161,7 @@ import {
 } from './state/atoms';
 // Needed locally for derived atoms that read platform flags
 import { appConfigAtom } from './state/atoms/app-core';
+import { pushIpcMessageAtom } from './state/selectors/ipcOutbound';
 // Keep all atoms sourced from './state/atoms' to avoid circular re-exports
 
 
@@ -464,12 +465,14 @@ export const promptDataAtom = atom(
 
     s(promptData, a);
 
-    const channel = g(channelAtom);
-    channel(Channel.ON_INIT);
+    s(pushIpcMessageAtom, { channel: Channel.ON_INIT, state: {} });
 
-    ipcRenderer.send(Channel.SET_PROMPT_DATA, {
+    s(pushIpcMessageAtom, {
+      channel: Channel.SET_PROMPT_DATA,
+      args: [{
       messageId: (a as any).messageId,
       ui: a.ui,
+    }],
     });
 
     s(promptReadyAtom, true);
@@ -502,8 +505,7 @@ export const inputAtom = atom(
     s(_inputAtom, a);
 
     if (!g(submittedAtom)) {
-      const channel = g(channelAtom);
-      channel(Channel.INPUT);
+      s(pushIpcMessageAtom, { channel: Channel.INPUT, state: {} });
     }
 
     s(mouseEnabledAtom, 0);
@@ -557,11 +559,10 @@ export const choicesConfigAtom = atom(
 
 // --- Tab Index ---
 let sendTabChanged: () => void;
-const getSendTabChanged = (g: Getter) =>
+const getSendTabChanged = (g: Getter, s: Setter) =>
   debounce(
     () => {
-      const channel = g(channelAtom);
-      channel(Channel.TAB_CHANGED);
+      s(pushIpcMessageAtom, { channel: Channel.TAB_CHANGED, state: {} });
     },
     100,
     { leading: true, trailing: true },
@@ -578,7 +579,7 @@ export const tabIndexAtom = atom(
       s(flagsAtom, {});
       s(_flaggedValue, '');
 
-      sendTabChanged = sendTabChanged || getSendTabChanged(g);
+      sendTabChanged = sendTabChanged || getSendTabChanged(g, s);
       sendTabChanged();
 
       s(tabChangedAtom, true);
@@ -701,7 +702,7 @@ export const scoredChoicesAtom = atom(
     } else {
       s(focusedChoiceAtom, noChoice);
       if (isFilter && Boolean(cs) && g(promptReadyAtom)) {
-        channel(Channel.NO_CHOICES);
+        s(pushIpcMessageAtom, { channel: Channel.NO_CHOICES, state: {} });
       }
     }
 
@@ -825,8 +826,7 @@ export const flaggedChoiceValueAtom = atom(
       s(flagsIndexAtom, 0);
     }
 
-    const channel = g(channelAtom);
-    channel(Channel.ON_MENU_TOGGLE);
+    s(pushIpcMessageAtom, { channel: Channel.ON_MENU_TOGGLE, state: {} });
     resize(g, s, 'FLAG_VALUE');
   },
 );
@@ -1176,10 +1176,8 @@ export const submitValueAtom = atom(
       return;
     }
 
-    const channel = g(channelAtom);
-
     if ((action as FlagsWithKeys).hasAction) {
-      channel(Channel.ACTION);
+      s(pushIpcMessageAtom, { channel: Channel.ACTION, state: {} });
       if (action?.close && g(flaggedChoiceValueAtom)) {
         log.info('👋 Closing actions');
         s(flaggedChoiceValueAtom, '');
@@ -1223,7 +1221,7 @@ export const submitValueAtom = atom(
     }
 
     const valueSubmitted = { value, flag };
-    channel(Channel.VALUE_SUBMITTED, valueSubmitted);
+    s(pushIpcMessageAtom, { channel: Channel.VALUE_SUBMITTED, state: valueSubmitted });
 
     s(loadingAtom, false);
     if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
@@ -1258,32 +1256,30 @@ export const submitInputAtom = atom(null, (g, s) => {
   s(submitValueAtom, input);
 });
 
-export const escapeAtom = atom<any>((g) => {
-  const channel = g(channelAtom);
-  return () => {
-    // Stop any ongoing speech synthesis
-    const synth = window.speechSynthesis;
-    if (synth.speaking) {
-      synth.cancel();
-    }
+export const escapeAtom = atom(null, (g, s) => {
+  // Stop any ongoing speech synthesis
+  const synth = window.speechSynthesis;
+  if (synth.speaking) {
+    synth.cancel();
+  }
 
-    log.info('👋 Sending Channel.ESCAPE');
-    channel(Channel.ESCAPE);
-  };
+  log.info('👋 Sending Channel.ESCAPE');
+  s(pushIpcMessageAtom, { channel: Channel.ESCAPE, state: {} });
 });
 
-export const blurAtom = atom(null, (g) => {
+export const blurAtom = atom(null, (g, s) => {
   if (g(openAtom)) {
-    const channel = g(channelAtom);
-    channel(Channel.BLUR);
+    s(pushIpcMessageAtom, { channel: Channel.BLUR, state: {} });
   }
 });
 
+// This atom returns a function for compatibility with form.tsx
 export const changeAtom = atom((g) => (data: any) => {
   const channel = g(channelAtom);
   channel(Channel.CHANGE, { value: data });
 });
 
+// This atom returns a function for compatibility with icon.tsx
 export const runMainScriptAtom = atom(() => () => {
   ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
 });
@@ -1313,11 +1309,9 @@ export const toggleAllSelectedChoicesAtom = atom(null, (g, s) => {
   }
 });
 
-export const getEditorHistoryAtom = atom((g) => () => {
-  const channel = g(channelAtom);
-  channel(Channel.GET_EDITOR_HISTORY, { editorHistory: g(editorHistory) });
-});
+// Removed - now in actions-utils.ts
 
+// This atom returns a function for compatibility with useMessages.ts
 export const colorAtom = atom((g) => {
   return async () => {
     try {
@@ -1354,65 +1348,15 @@ export const appendInputAtom = atom(null, (g, s, a: string) => {
   }
 });
 
-export const valueInvalidAtom = atom(null, (g, s, a: string) => {
-  if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
+// Removed - now in utilities.ts
 
-  s(processingAtom, false);
-  s(inputAtom, '');
-  s(_inputChangedAtom, false);
+// Removed - now in utilities.ts
 
-  if (typeof a === 'string') {
-    // hintAtom setter handles the ANSI conversion
-    s(hintAtom, a);
-  }
+// Removed - now in actions-utils.ts
 
-  const channel = g(channelAtom);
-  channel(Channel.ON_VALIDATION_FAILED);
-});
+// Removed - now in actions-utils.ts
 
-export const preventSubmitAtom = atom(null, (_g, s, _a: string) => {
-  s(promptActiveAtom, true);
-  if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
-  s(submittedAtom, false);
-  s(processingAtom, false);
-  s(_inputChangedAtom, false);
-});
-
-export const triggerKeywordAtom = atom(
-  (_g) => { },
-  (
-    g,
-    _s,
-    { keyword, choice }: { keyword: string; choice: Choice },
-  ) => {
-    const channel = g(channelAtom);
-    channel(Channel.KEYWORD_TRIGGERED, {
-      keyword,
-      focused: choice,
-      value: choice?.value,
-    });
-  },
-);
-
-export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
-  const channel = g(channelAtom);
-  const hasEnterShortcut = g(shortcutsAtom).find((s) => s.key === 'enter');
-  log.info('🎬 Send shortcut', { shortcut, hasEnterShortcut });
-
-  // If 'enter' is pressed and not defined as a specific shortcut, treat it as a submission trigger (tracked via time)
-  if (shortcut === 'enter' && !hasEnterShortcut) {
-    s(enterLastPressedAtom, new Date());
-  } else {
-    // Otherwise, send it as a shortcut event.
-    channel(Channel.SHORTCUT, { shortcut });
-  }
-});
-
-export const sendActionAtom = atom(null, (g, _s, action: Action) => {
-  const channel = g(channelAtom);
-  log.info(`👉 Sending action: ${action.name}`);
-  channel(Channel.ACTION, { action });
-});
+// Removed - now in actions-utils.ts
 
 // =================================================================================================
 // DERIVED ATOMS
@@ -1572,29 +1516,50 @@ export const topHeightAtom = atom(
   },
 );
 
-export const onPasteAtom = atom((g) => (event: ClipboardEvent) => {
-  if (g(uiAtom) === UI.editor) {
-    event.preventDefault(); // Assuming we want to handle paste manually or let Monaco handle it
-  }
-  const channel = g(channelAtom);
-  channel(Channel.ON_PASTE);
+// These atoms need to return functions for backward compatibility with App.tsx
+export const onPasteAtom = atom((g) => {
+  // Create a closure that captures the setter via a writable atom
+  const setter = atom(null, (_g, s, event: ClipboardEvent) => {
+    if (g(uiAtom) === UI.editor) {
+      event.preventDefault(); // Assuming we want to handle paste manually or let Monaco handle it
+    }
+    s(pushIpcMessageAtom, { channel: Channel.ON_PASTE, state: {} });
+  });
+  
+  // Return a function that can be called with the event
+  return (event: ClipboardEvent) => {
+    // We need to access the setter somehow. Since we can't use hooks here,
+    // we'll keep the original pattern but use pushIpcMessageAtom inside
+    if (g(uiAtom) === UI.editor) {
+      event.preventDefault();
+    }
+    // This is a limitation - we can't directly call setter from here
+    // Let's use the channelAtom as before for these special cases
+    const channel = g(channelAtom);
+    channel(Channel.ON_PASTE);
+  };
 });
 
-export const onDropAtom = atom((g) => (event: DragEvent) => {
-  if (g(uiAtom) === UI.drop) return; // UI.drop likely has its own specific handler
-  event.preventDefault();
-  let drop = '';
-  const files = Array.from(event?.dataTransfer?.files || []);
-  if (files.length > 0) {
-    drop = files
-      .map((file: File) => (file as any).path)
-      .join('\n')
-      .trim();
-  } else {
-    drop = event?.dataTransfer?.getData('URL') || event?.dataTransfer?.getData('Text') || '';
-  }
-  const channel = g(channelAtom);
-  channel(Channel.ON_DROP, { drop });
+export const onDropAtom = atom((g) => {
+  // Return a function that can be called with the event
+  return (event: DragEvent) => {
+    if (g(uiAtom) === UI.drop) return; // UI.drop likely has its own specific handler
+    event.preventDefault();
+    let drop = '';
+    const files = Array.from(event?.dataTransfer?.files || []);
+    if (files.length > 0) {
+      drop = files
+        .map((file: File) => (file as any).path)
+        .join('\n')
+        .trim();
+    } else {
+      drop = event?.dataTransfer?.getData('URL') || event?.dataTransfer?.getData('Text') || '';
+    }
+    // This is a limitation - we can't directly call setter from here
+    // Let's use the channelAtom as before for these special cases
+    const channel = g(channelAtom);
+    channel(Channel.ON_DROP, { drop });
+  };
 });
 
 // Export remaining helper functions and constants for compatibility

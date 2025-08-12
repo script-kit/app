@@ -3,7 +3,7 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import { appStateLiteAtom } from '../selectors/appState';
 import { ipcOutboxAtom, clearIpcOutboxAtom, pushIpcMessageAtom } from '../selectors/ipcOutbound';
 import { pauseChannelAtom, pidAtom, promptDataAtom } from '../../jotai';
-import { sendChannel } from '../services/ipc';
+import { sendChannel, sendIPC } from '../services/ipc';
 import { Channel } from '@johnlindquist/kit/core/enum';
 import type { AppMessage } from '@johnlindquist/kit/types/kitapp';
 
@@ -61,15 +61,31 @@ export function IPCController() {
       if (pauseChannel) return;
 
       for (const msg of outbox) {
-        if (typeof msg === 'object' && msg !== null && 'channel' in msg) {
-          const message = msg as any;
-          const appMessage: AppMessage = {
-            channel: message.channel,
-            pid: pid || 0,
-            promptId: promptData?.id || '',
-            state: message.state || state,
-          };
-          sendChannel(message.channel, appMessage);
+        if (typeof msg === 'object' && msg) {
+          // Generic "raw" IPC message shape: { type, payload } or { channel, args }
+          if ('type' in (msg as any) || ('channel' in (msg as any) && 'args' in (msg as any))) {
+            // Delegate to generic helper (no AppState wrapping)
+            sendIPC(msg as any);
+            continue;
+          }
+          // State-override shape: { channel, state?: Partial<AppState> }
+          if ('channel' in (msg as any)) {
+            const message = msg as any;
+            const override = message.state || {};
+            let finalState = { ...state, ...override };
+            // Protect focused from being unset by override
+            if (!finalState.focused) finalState.focused = state.focused;
+            const appMessage: AppMessage = {
+              channel: message.channel,
+              pid: pid || 0,
+              promptId: promptData?.id || '',
+              state: finalState,
+            };
+            sendChannel(message.channel, appMessage);
+            continue;
+          }
+          // Unknown shape – ignore (or log)
+          // console.warn('Unknown IPC outbox message shape', msg);
         }
       }
       
