@@ -819,6 +819,9 @@ export const flaggedChoiceValueAtom = atom(
       s(choicesConfigAtom, g(prevChoicesConfig));
       s(indexAtom, g(prevIndexAtom));
       s(actionsInputAtom, '');
+      // Critical: fully clear any lingering action/flag selection when closing actions
+      s(focusedFlagValueAtom, '');
+      s(focusedActionAtom, {} as any);
     } else {
       s(selectedAtom, typeof a === 'string' ? a : (a as Choice)?.name);
       s(prevIndexAtom, g(indexAtom));
@@ -1176,7 +1179,10 @@ export const submitValueAtom = atom(
       return;
     }
 
-    if ((action as FlagsWithKeys).hasAction) {
+    // Only dispatch ACTION when the actions menu is actually open.
+    // This prevents stale focusedAction from firing after the menu was closed.
+    const actionsMenuOpen = Boolean(g(flaggedChoiceValueAtom));
+    if (actionsMenuOpen && (action as FlagsWithKeys).hasAction) {
       s(pushIpcMessageAtom, { channel: Channel.ACTION, state: {} });
       if (action?.close && g(flaggedChoiceValueAtom)) {
         log.info('👋 Closing actions');
