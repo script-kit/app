@@ -87,6 +87,24 @@ import { showLogWindow } from './window';
 
 import { messagesLog as log } from './logs';
 
+// Centralize magic numbers
+const IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+const IMAGE_REQUEST_TIMEOUT_MS = 7000;    // 7 seconds
+
+// Guard list: only these keys may be mutated via SET_KIT_STATE
+const MUTABLE_KITSTATE_KEYS = new Set<string>([
+  'resizePaused',
+  'hiddenByUser',
+  'tabIndex',
+  'shortcutsPaused',
+  'snippet',
+  'typedText',
+  'tempTheme',
+  'appearance',
+  'status',
+  'shortcutPressed',
+]);
+
 // Limit what we expose over IPC to child processes
 const sanitizeKitStateForIpc = () => {
   const s: any = snapshot(kitState);
@@ -339,17 +357,14 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       (data: SendData<K>) =>
         handleChannelMessage(data, fn);
 
-  const IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
-  const IMAGE_REQUEST_TIMEOUT_MS = 7000;    // 7 seconds
-
-  const SHOW_IMAGE = async (data: SendData<Channel.SHOW_IMAGE>) => {
-    kitState.blurredByKit = true;
-
-    const { image, options } = data.value;
-    const imgOptions = url.parse((image as { src: string }).src);
-
+  /**
+   * Fetch image dimensions safely (size-limited + timeout) before showing.
+   * Separated for readability/testability.
+   */
+  const fetchImageDimensions = async (src: string): Promise<{ width: number; height: number }> => {
+    const imgOptions = url.parse(src);
     // eslint-disable-next-line promise/param-names
-    const { width, height } = await new Promise<{ width: number; height: number }>((resolveImage) => {
+    return new Promise((resolveImage) => {
       const proto = imgOptions.protocol?.startsWith('https') ? https : http;
       const req = proto.get(imgOptions, (response: any) => {
         const chunks: Buffer[] = [];
@@ -368,8 +383,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
               const buffer = Buffer.concat(chunks);
               const dims = sizeOf(buffer);
               resolveImage({ width: dims.width || 800, height: dims.height || 600 });
-            } catch (e) {
-              log.warn('SHOW_IMAGE: failed to read dimensions', e);
+            } catch (_e) {
               resolveImage({ width: 800, height: 600 });
             }
           });
@@ -377,15 +391,20 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       req.setTimeout(IMAGE_REQUEST_TIMEOUT_MS, () => {
         req.destroy(new Error('IMAGE_REQUEST_TIMEOUT'));
       });
-      req.on('error', (err: any) => {
-        log.warn('SHOW_IMAGE: request aborted/failed', err?.message || err);
+      req.on('error', () => {
         resolveImage({ width: 800, height: 600 });
       });
     });
+  };
+
+  const SHOW_IMAGE = async (data: SendData<Channel.SHOW_IMAGE>) => {
+    kitState.blurredByKit = true;
+    const { image, options } = data.value;
+    const { width, height } = await fetchImageDimensions((image as { src: string }).src);
 
     const imageWindow = await show(
-      data?.script?.command || 'show-image',
-      String.raw`<img src="${image?.src}" alt="${image?.alt}" title="${image?.title}" />`,
+      'show-image',
+      String.raw`<img src="${(image as any)?.src}" alt="${(image as any)?.alt}" title="${(image as any)?.title}" />`,
       { width, height, ...options },
     );
     if (imageWindow && !imageWindow.isDestroyed()) {
@@ -983,18 +1002,6 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     SET_KIT_STATE: onChildChannel((_processInfo, data) => {
       log.info('SET_KIT_STATE', data?.value);
       // Only allow a known-safe subset of kitState fields to be mutated via IPC
-      const MUTABLE_KITSTATE_KEYS = new Set<string>([
-        'resizePaused',
-        'hiddenByUser',
-        'tabIndex',
-        'shortcutsPaused',
-        'snippet',
-        'typedText',
-        'tempTheme',
-        'appearance',
-        'status',
-        'shortcutPressed',
-      ]);
       for (const [key, value] of Object.entries(data?.value)) {
         if (MUTABLE_KITSTATE_KEYS.has(key)) {
           log.info(`Setting kitState.${key} to`, value);

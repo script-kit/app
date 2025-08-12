@@ -44,6 +44,9 @@ import shims from './shims';
 
 import type { IKeyboardMapping } from 'native-keymap';
 import { createLogger } from './log-utils';
+import { getThemes } from './state/themes';
+import { wireKeymapSubscriptions, convertKeyInternal, getEmojiShortcutInternal } from './state/keymap';
+import { makeOnline, makeSponsorCheck } from './state/sponsor';
 const log = createLogger('state.ts');
 const keymapLog = createLogger('keymapLog');
 
@@ -203,52 +206,8 @@ export const kitCache = {
   keys: ['slicedName', 'tag', 'group', 'command'],
 };
 
-const scriptKitTheme = `
-:root {
-    --name: "Script Kit Dark";
-    --appearance: dark;
-    --opacity-mac: 0.25;
-    --opacity-win: 0.5;
-    --opacity-other: 0.5;
-    --color-text: #ffffffee;
-    --color-primary: #fbbf24ee;
-    --color-secondary: #ffffff;
-    --color-background: #0f0f0f;
-    --ui-bg-opacity: 0.08;
-    --ui-border-opacity: 0.1;
-    --mono-font: JetBrains Mono;
-    --sans-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-    --serif-font: 'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times', 'serif';
-}
-`;
 
-const scriptKitLightTheme = `
-:root {
-    --name: "Script Kit Light";
-    --appearance: light;
-    --opacity-mac: 0.5;
-    --opacity-win: 0.9;
-    --opacity-other: 0.9;
-    --color-text: #2C2C2C;
-    --color-primary: #2F86D3;
-    --color-secondary: #2F86D3;
-    --color-background: #ffffff;
-    --ui-bg-opacity: 0.15;
-    --ui-border-opacity: 0.15;
-
-    --mono-font: JetBrains Mono;
-    --sans-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
-    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-    --serif-font: 'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
-    'serif';
-  }
-`;
-
-export const getThemes = () => ({
-  scriptKitTheme,
-  scriptKitLightTheme,
-});
-
+export { getThemes };
 export const theme = nativeTheme.shouldUseDarkColors ? getThemes().scriptKitTheme : getThemes().scriptKitLightTheme;
 
 const initState = {
@@ -439,18 +398,7 @@ const subDevToolsCount = subscribeKey(kitState, 'devToolsCount', (count) => {
   }
 });
 
-export const online = async () => {
-  log.info('Checking online status...');
-  try {
-    const result = await internetAvailable();
-
-    log.info(`🗼 Status: ${result ? 'Online' : 'Offline'}`);
-
-    return result;
-  } catch (error) {
-    return false;
-  }
-};
+export const online = makeOnline({ internetAvailable, log });
 
 // export const getScriptsSnapshot = (): Script[] => {
 //   return structuredClone(snapshot(kitState).scripts) as Script[];
@@ -483,88 +431,20 @@ const subScriptErrorPath = subscribeKey(kitState, 'scriptErrorPath', (scriptErro
 });
 
 // TODO: I don't need to return booleans AND set kitState.isSponsor. Pick one.
-export const sponsorCheck = debounce(
-  async (feature: string, block = true) => {
-    log.info(
-      `Checking sponsor status... login: ${kitState?.user?.login} (current=${kitState.isSponsor ? '✅' : '❌'})`,
-    );
-    const isOnline = await online();
-    // Local dev override
-    if (process.env.KIT_SPONSOR === 'development' && os.userInfo().username === 'johnlindquist') {
-      kitState.isSponsor = true;
-      kitStore.set('sponsor', true);
-      return true;
-    }
-
-    // If offline, fall back to last-known good; never auto‑elevate on failure
-    if (!isOnline) {
-      const cached = kitStore.get('sponsor');
-      kitState.isSponsor = Boolean(cached);
-      return kitState.isSponsor;
-    }
-
-    try {
-      const response = await axios.post(
-        `${kitState.url}/api/check-sponsor`,
-        { ...kitState.user, feature },
-        { timeout: 5000 },
-      );
-
-      const ok =
-        response?.status === 200 &&
-        response?.data &&
-        kitState.user?.node_id &&
-        response.data.id === kitState.user.node_id;
-
-      kitState.isSponsor = Boolean(ok);
-      kitStore.set('sponsor', kitState.isSponsor);
-
-      if (kitState.isSponsor) return true;
-    } catch (error) {
-      log.warn('Sponsor check failed; falling back to cached status.', error);
-      const cached = kitStore.get('sponsor');
-      kitState.isSponsor = Boolean(cached);
-      if (kitState.isSponsor) return true;
-    }
-
-    // Not a sponsor (by online check or cache). If blocking, show upsell.
-    if (block) {
-      log.error(`
------------------------------------------------------------
-🚨 User attempted to use: ${feature}, but is not a sponsor.
------------------------------------------------------------
-      `);
-      emitter.emit(KitEvent.RunPromptProcess, {
-        scriptPath: kitPath('pro', 'sponsor.js'),
-        args: [feature],
-        options: { force: true, trigger: Trigger.App, sponsorCheck: false },
-      });
-    }
-    return false;
-  },
-  2500,
-  { leading: true, trailing: false },
-);
-
-// Reverse lookup: physical key "value" (e.g., 'q') -> code ('KeyQ')
-const reverseKeyValueToCode = new Map<string, string>();
-const rebuildReverseKeyMap = () => {
-  reverseKeyValueToCode.clear();
-  for (const [code, entry] of Object.entries(kitState.keymap || {})) {
-    const v = (entry as any)?.value;
-    if (typeof v === 'string' && v) {
-      reverseKeyValueToCode.set(v.toLowerCase(), code);
-    }
-  }
-  keymapLog.debug(`🔑 Rebuilt reverse keymap with ${reverseKeyValueToCode.size} entries`);
-};
-
-// Keep reverse map in sync as keymap updates
-const subKeymap = subscribeKey(kitState, 'keymap', () => {
-  rebuildReverseKeyMap();
+export const sponsorCheck = makeSponsorCheck({ 
+  axios, 
+  kitState, 
+  kitStore, 
+  log, 
+  emitter, 
+  events: { KitEvent }, 
+  kitPath, 
+  Trigger, 
+  online 
 });
-// ensure initial build
-rebuildReverseKeyMap();
+
+// Wire reverse keymap subscriptions + initial build
+const subKeymap = wireKeymapSubscriptions(kitState);
 
 // subs is an array of functions
 export const subs: (() => void)[] = [];
@@ -580,96 +460,8 @@ subs.push(
   subKeymap,
 );
 
-const defaultKeyMap: {
-  [key: string]: string;
-} = {
-  KeyA: 'a',
-  KeyB: 'b',
-  KeyC: 'c',
-  KeyD: 'd',
-  KeyE: 'e',
-  KeyF: 'f',
-  KeyG: 'g',
-  KeyH: 'h',
-  KeyI: 'i',
-  KeyJ: 'j',
-  KeyK: 'k',
-  KeyL: 'l',
-  KeyM: 'm',
-  KeyN: 'n',
-  KeyO: 'o',
-  KeyP: 'p',
-  KeyQ: 'q',
-  KeyR: 'r',
-  KeyS: 's',
-  KeyT: 't',
-  KeyU: 'u',
-  KeyV: 'v',
-  KeyW: 'w',
-  KeyX: 'x',
-  KeyY: 'y',
-  KeyZ: 'z',
-  Digit0: '0',
-  Digit1: '1',
-  Digit2: '2',
-  Digit3: '3',
-  Digit4: '4',
-  Digit5: '5',
-  Digit6: '6',
-  Digit7: '7',
-  Digit8: '8',
-  Digit9: '9',
-  Numpad0: '0',
-  Numpad1: '1',
-  Numpad2: '2',
-  Numpad3: '3',
-  Numpad4: '4',
-  Numpad5: '5',
-  Numpad6: '6',
-  Numpad7: '7',
-  Numpad8: '8',
-  Numpad9: '9',
-  NumpadAdd: '+',
-  NumpadSubtract: '-',
-  NumpadMultiply: '*',
-  NumpadDivide: '/',
-  Space: ' ',
-  Minus: '-',
-  Equal: '=',
-  BracketLeft: '[',
-  BracketRight: ']',
-  Backslash: '\\',
-  Semicolon: ';',
-  Quote: "'",
-  Comma: ',',
-  Period: '.',
-  Slash: '/',
-  Backquote: '`',
-};
-
-export const convertKey = (sourceKey: string): string => {
-  const hasMap = reverseKeyValueToCode.size > 0;
-  keymapLog.debug('🔑 Has reverse keymap:', { hasMap });
-  if (kitState.kenvEnv?.KIT_CONVERT_KEY === 'false' || !hasMap) {
-    keymapLog.debug(`🔑 Skipping key conversion: ${sourceKey}`);
-    return sourceKey;
-  }
-  const code = reverseKeyValueToCode.get(sourceKey.toLowerCase());
-  if (!code) {
-    keymapLog.debug(`🔑 No conversion for key: ${sourceKey}`);
-    return sourceKey;
-  }
-  const target = defaultKeyMap[code]?.toUpperCase();
-  if (target) {
-    keymapLog.debug(`🔑 Converted key: ${code} -> ${target}`);
-    return target;
-  }
-  return sourceKey;
-};
-
-export const getEmojiShortcut = () => {
-  return kitState?.kenvEnv?.KIT_EMOJI_SHORTCUT || (kitState.isMac ? 'Command+Control+Space' : 'Super+.');
-};
+export const convertKey = (sourceKey: string) => convertKeyInternal(kitState, sourceKey);
+export const getEmojiShortcut = () => getEmojiShortcutInternal(kitState);
 
 export const preloadChoicesMap = new Map<string, Choice[]>();
 export const preloadPreviewMap = new Map<string, string>();
