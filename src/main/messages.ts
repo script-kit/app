@@ -355,8 +355,8 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       if (widget) {
         widget?.webContents.send(channel, value);
       } else {
-        log.warn(`${widgetId}: widget not found. Killing process.`);
-        child?.kill();
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
       }
     }),
 
@@ -365,6 +365,12 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       const { widgetId, value: js } = value as any;
       const widget = findWidget(widgetId, channel);
       if (!widget) {
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
+        childSend({
+          channel,
+          value: { error: `Widget ${widgetId} not found` },
+        });
         return;
       }
 
@@ -373,16 +379,18 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         js: js.trim(),
       });
 
-      if (widget) {
+      try {
         const result = await widget?.webContents.executeJavaScript(js);
-
         childSend({
           channel,
           value: result,
         });
-      } else {
-        log.warn(`${widgetId}: widget not found. Killing process.`);
-        child?.kill();
+      } catch (error) {
+        log.error(`Failed to execute JavaScript in widget ${widgetId}:`, error);
+        childSend({
+          channel,
+          value: { error: error?.toString() },
+        });
       }
     }),
 
@@ -391,16 +399,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       const widget = findWidget(widgetId, channel);
       if (!widget) {
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
         return;
       }
 
       // log.info(`WIDGET_SET_STATE`, value);
-      if (widget) {
-        widget?.webContents.send(channel, state);
-      } else {
-        log.warn(`${widgetId}: widget not found. Terminating process.`);
-        child?.kill();
-      }
+      widget?.webContents.send(channel, state);
     }),
 
     WIDGET_CALL: onChildChannel(({ child }, { channel, value }) => {
@@ -408,19 +413,16 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       const widget = findWidget(widgetId, channel);
       if (!widget) {
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
         return;
       }
 
       log.info('📞 WIDGET_CALL', widgetId, value, args);
-      if (widget) {
-        try {
-          (widget as any)?.[method]?.(...args);
-        } catch (error) {
-          log.error(error);
-        }
-      } else {
-        log.warn(`${widgetId}: widget not found. Terminating process.`);
-        child?.kill();
+      try {
+        (widget as any)?.[method]?.(...args);
+      } catch (error) {
+        log.error(`Failed to call method ${method} on widget ${widgetId}:`, error);
       }
     }),
     VITE_WIDGET_SEND: onChildChannel(({ child }, { channel, value }) => {
@@ -429,16 +431,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       const widget = findWidget(widgetId, channel);
       if (!widget) {
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
         return;
       }
 
       // log.info('VITE_WIDGET_SEND', channel, value);
-      if (widget) {
-        widget?.webContents.send(value?.channel, data);
-      } else {
-        log.warn(`${widgetId}: widget not found. Terminating process.`);
-        child?.kill();
-      }
+      widget?.webContents.send(value?.channel, data);
     }),
 
     WIDGET_FIT: onChildChannel(({ child }, { channel, value }) => {
@@ -447,16 +446,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
       const widget = findWidget(widgetId, channel);
       if (!widget) {
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
         return;
       }
 
       // log.info(`WIDGET_SET_STATE`, value);
-      if (widget) {
-        widget?.webContents.send(channel, state);
-      } else {
-        log.warn(`${widgetId}: widget not found. Terminating process.`);
-        child?.kill();
-      }
+      widget?.webContents.send(channel, state);
     }),
 
     WIDGET_SET_SIZE: onChildChannel(({ child }, { channel, value }) => {
@@ -464,16 +460,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // log.info({ widgetId }, `${channel}`);
       const widget = findWidget(widgetId, channel);
       if (!widget) {
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
         return;
       }
 
       // log.info(`WIDGET_SET_STATE`, value);
-      if (widget) {
-        widget?.setSize(width, height);
-      } else {
-        log.warn(`${widgetId}: widget not found. Terminating process.`);
-        child?.kill();
-      }
+      widget?.setSize(width, height);
     }),
 
     WIDGET_SET_POSITION: onChildChannel(({ child }, { value, channel }) => {
@@ -481,16 +474,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // log.info({ widgetId }, `${channel}`);
       const widget = findWidget(widgetId, channel);
       if (!widget) {
+        log.warn(`${widgetId}: widget not found. Cleaning up state.`);
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
         return;
       }
 
       // log.info(`WIDGET_SET_STATE`, value);
-      if (widget) {
-        widget?.setPosition(x, y);
-      } else {
-        log.warn(`${widgetId}: widget not found. Terminating process.`);
-        child?.kill();
-      }
+      widget?.setPosition(x, y);
     }),
 
     WIDGET_GET: onChildChannelOverride(
@@ -843,11 +833,13 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       };
 
       if (prompt?.isVisible()) {
+        // Ack exactly once when hide completes.
         prompt?.onHideOnce(handler);
+        prompt.hide();
+      } else {
+        // Already hidden – ack now.
+        handler();
       }
-      handler();
-
-      prompt.hide();
     }),
 
     BEFORE_EXIT: onChildChannelOverride(({ pid }) => {

@@ -546,6 +546,26 @@ export const sponsorCheck = debounce(
   { leading: true, trailing: false },
 );
 
+// Reverse lookup: physical key "value" (e.g., 'q') -> code ('KeyQ')
+const reverseKeyValueToCode = new Map<string, string>();
+const rebuildReverseKeyMap = () => {
+  reverseKeyValueToCode.clear();
+  for (const [code, entry] of Object.entries(kitState.keymap || {})) {
+    const v = (entry as any)?.value;
+    if (typeof v === 'string' && v) {
+      reverseKeyValueToCode.set(v.toLowerCase(), code);
+    }
+  }
+  keymapLog.debug(`🔑 Rebuilt reverse keymap with ${reverseKeyValueToCode.size} entries`);
+};
+
+// Keep reverse map in sync as keymap updates
+const subKeymap = subscribeKey(kitState, 'keymap', () => {
+  rebuildReverseKeyMap();
+});
+// ensure initial build
+rebuildReverseKeyMap();
+
 // subs is an array of functions
 export const subs: (() => void)[] = [];
 subs.push(
@@ -557,6 +577,7 @@ subs.push(
   subReady,
   subIgnoreBlur,
   scriptletsSub,
+  subKeymap,
 );
 
 const defaultKeyMap: {
@@ -627,32 +648,22 @@ const defaultKeyMap: {
 };
 
 export const convertKey = (sourceKey: string): string => {
-  const hasKeymap = Object.keys(kitState.keymap).length > 0;
-  log.info('🔑 Has keymap:', { hasKeymap });
-  if (kitState.kenvEnv?.KIT_CONVERT_KEY === 'false' || !hasKeymap) {
-    keymapLog.info(`🔑 Skipping key conversion: ${sourceKey}`);
+  const hasMap = reverseKeyValueToCode.size > 0;
+  keymapLog.debug('🔑 Has reverse keymap:', { hasMap });
+  if (kitState.kenvEnv?.KIT_CONVERT_KEY === 'false' || !hasMap) {
+    keymapLog.debug(`🔑 Skipping key conversion: ${sourceKey}`);
     return sourceKey;
   }
-
-  // Find the entry where the value matches the sourceKey
-  let entry;
-  for (const [code, value] of Object.entries(kitState.keymap)) {
-    if (value?.value?.toLowerCase() === sourceKey.toLowerCase()) {
-      entry = [code, value];
-      break;
-    }
+  const code = reverseKeyValueToCode.get(sourceKey.toLowerCase());
+  if (!code) {
+    keymapLog.debug(`🔑 No conversion for key: ${sourceKey}`);
+    return sourceKey;
   }
-  if (entry) {
-    log.info(`🔑 Found entry: ${entry}`);
-    const [code] = entry;
-    const target = defaultKeyMap[code]?.toUpperCase() || '';
-    if (target) {
-      log.info(`🔑 Converted key: ${code} -> ${target}`);
-      return target;
-    }
+  const target = defaultKeyMap[code]?.toUpperCase();
+  if (target) {
+    keymapLog.debug(`🔑 Converted key: ${code} -> ${target}`);
+    return target;
   }
-
-  keymapLog.info(`🔑 No conversion for key: ${sourceKey}`);
   return sourceKey;
 };
 
