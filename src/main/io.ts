@@ -104,9 +104,13 @@ export const toKey = (keycode: number, shift = false) => {
     // Apply keymap modifications
     if (kitState.keymap) {
       const char = chars[keycode];
-      if (char && kitState.keymap[char].value) {
-        // log.info(`Found keymap for ${char}: ${kitState.keymap[char]}`);
-        key = kitState.keymap[char].value;
+      if (char) {
+        const entry = (kitState.keymap as Record<string, any>)[char];
+        // Support either { value } objects or direct string mappings
+        const mapped = entry && (typeof entry === 'object' ? entry.value : entry);
+        if (typeof mapped === 'string' && mapped.length > 0) {
+          key = mapped;
+        }
       }
     }
 

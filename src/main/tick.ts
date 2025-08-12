@@ -155,7 +155,9 @@ const ioEvent = (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
       kitState.typedText += key;
     } else {
       kitState.snippet += key;
-      const tt = (kitState.typedText || '') + key;
+      // Compute next typed buffer from the previous value and enforce an optional max length
+      const prev = kitState.typedText || '';
+      const tt = prev + key;
       const tl = tt.length;
       const limit = Number.isFinite(kitState.typedLimit) ? kitState.typedLimit : 0;
       kitState.typedText = limit > 0 && tl > limit ? tt.slice(-limit) : tt;

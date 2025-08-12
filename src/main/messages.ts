@@ -863,10 +863,25 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     }),
     SET_KIT_STATE: onChildChannel((_processInfo, data) => {
       log.info('SET_KIT_STATE', data?.value);
+      // Only allow a known-safe subset of kitState fields to be mutated via IPC
+      const MUTABLE_KITSTATE_KEYS = new Set<string>([
+        'resizePaused',
+        'hiddenByUser',
+        'tabIndex',
+        'shortcutsPaused',
+        'snippet',
+        'typedText',
+        'tempTheme',
+        'appearance',
+        'status',
+        'shortcutPressed',
+      ]);
       for (const [key, value] of Object.entries(data?.value)) {
-        if ((kitState as any)?.[key] !== undefined) {
-          log.info(`Setting kitState.${key} to ${value}`);
+        if (MUTABLE_KITSTATE_KEYS.has(key)) {
+          log.info(`Setting kitState.${key} to`, value);
           (kitState as any)[key] = value;
+        } else {
+          log.warn(`Blocked attempt to set disallowed kitState key: ${key}`);
         }
       }
     }),
