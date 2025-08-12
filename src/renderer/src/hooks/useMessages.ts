@@ -137,7 +137,7 @@ export default () => {
   const setPromptBounds = useSetAtom(promptBoundsAtom);
   const setMicStreamEnabled = useSetAtom(micStreamEnabledAtom);
 
-  const getEditorHistory = useAtomValue(getEditorHistoryAtom);
+  const getEditorHistory = useSetAtom(getEditorHistoryAtom);
   const getColor = useAtomValue(colorAtom);
 
   const setExit = useSetAtom(exitAtom);
