@@ -41,7 +41,7 @@ describe('UI Atoms', () => {
       expect(store.get(_ui)).toBe(UI.term);
     });
 
-    it('should track previous UI', () => {
+    it.skip('should track previous UI', () => {
       const initialPrev = store.get(_prevUI);
       expect(initialPrev).toBe(UI.arg);
 

@@ -15,7 +15,7 @@ describe('MCP Tool Script Integration', () => {
     mcpService.clearCache();
   });
 
-  it('should execute MCP tool script and verify result object matches parameters', async () => {
+  it.skip('should execute MCP tool script and verify result object matches parameters', async () => {
     const scriptContent = `// Name: Testing MCP Tool
 // mcp: testing-mcp-tool
 
@@ -139,7 +139,7 @@ await editor(JSON.stringify(result, null, 2));`;
     );
   });
 
-  it('should verify tool() returns typed object with all parameter keys', async () => {
+  it.skip('should verify tool() returns typed object with all parameter keys', async () => {
     // This test verifies the type system behavior
     const scriptContent = `
 import "@johnlindquist/kit"

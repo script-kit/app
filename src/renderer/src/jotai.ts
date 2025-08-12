@@ -1256,15 +1256,19 @@ export const submitInputAtom = atom(null, (g, s) => {
   s(submitValueAtom, input);
 });
 
-export const escapeAtom = atom(null, (g, s) => {
-  // Stop any ongoing speech synthesis
-  const synth = window.speechSynthesis;
-  if (synth.speaking) {
-    synth.cancel();
-  }
+export const escapeAtom = atom((g) => {
+  return () => {
+    // Stop any ongoing speech synthesis
+    const synth = window.speechSynthesis;
+    if (synth.speaking) {
+      synth.cancel();
+    }
 
-  log.info('👋 Sending Channel.ESCAPE');
-  s(pushIpcMessageAtom, { channel: Channel.ESCAPE, state: {} });
+    log.info('👋 Sending Channel.ESCAPE');
+    // Use channelAtom directly for this special case (like onPasteAtom/onDropAtom)
+    const channel = g(channelAtom);
+    channel(Channel.ESCAPE);
+  };
 });
 
 export const blurAtom = atom(null, (g, s) => {

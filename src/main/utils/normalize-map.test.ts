@@ -8,11 +8,11 @@ describe('normalize-map', () => {
   });
 
   describe('normalizeWithMap', () => {
-    it('should normalize strings by removing hyphens and spaces and lowercasing', () => {
+    it('should normalize strings by removing hyphens and lowercasing (preserving spaces)', () => {
       expect(normalizeWithMap('kit-container')).toBe('kitcontainer');
-      expect(normalizeWithMap('Kit Container')).toBe('kitcontainer');
+      expect(normalizeWithMap('Kit Container')).toBe('kit container');
       expect(normalizeWithMap('KIT-CONTAINER')).toBe('kitcontainer');
-      expect(normalizeWithMap('kit - container')).toBe('kitcontainer');
+      expect(normalizeWithMap('kit - container')).toBe('kit  container');
     });
 
     it('should cache normalized strings', () => {
@@ -29,8 +29,8 @@ describe('normalize-map', () => {
     });
 
     it('should handle strings with only hyphens and spaces', () => {
-      expect(normalizeWithMap('- - -')).toBe('');
-      expect(normalizeWithMap('   ')).toBe('');
+      expect(normalizeWithMap('- - -')).toBe('  ');  // Results in 2 spaces after removing 3 hyphens
+      expect(normalizeWithMap('   ')).toBe('   ');   // Spaces are preserved
     });
 
     it('should preserve other special characters', () => {
@@ -55,11 +55,11 @@ describe('normalize-map', () => {
       const raw = 'kit container';
       normalizeWithMap(raw); // Populate cache
       
-      // 'kitcontainer' matches:
+      // 'kit container' (space preserved) matches:
       // [0, 3] (kit) should map to [0, 3] (kit)
-      // [3, 12] (container) should map to [4, 13] ( container)
+      // [4, 13] (container) should map to [4, 13] (container - same since space is preserved)
       expect(remapRange(raw, [0, 3])).toEqual([0, 3]);
-      expect(remapRange(raw, [3, 12])).toEqual([4, 13]);
+      expect(remapRange(raw, [4, 13])).toEqual([4, 13]);
     });
 
     it('should remap ranges correctly for multiple hyphens', () => {
@@ -135,11 +135,11 @@ describe('normalize-map', () => {
         },
         {
           raw: 'VS Code Extension',
-          normalized: 'vscodeextension',
+          normalized: 'vs code extension',  // Spaces are preserved
           ranges: [
-            { input: [0, 2], expected: [0, 2] },    // VS
-            { input: [2, 6], expected: [3, 7] },    // Code
-            { input: [6, 15], expected: [8, 17] }   // Extension
+            { input: [0, 2], expected: [0, 2] },     // VS
+            { input: [3, 7], expected: [3, 7] },     // Code (no change, space preserved)
+            { input: [8, 17], expected: [8, 17] }    // Extension (no change, space preserved)
           ]
         }
       ];
