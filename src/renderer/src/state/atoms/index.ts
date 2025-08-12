@@ -39,6 +39,7 @@ export * from './log';
 // IPC and utilities
 export * from './ipc';
 export * from './utils';
+export * from './utilities';
 export * from './misc-utils';
 export * from './actions-utils';
 export * from './channel-utilities';

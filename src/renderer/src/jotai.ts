@@ -1309,7 +1309,9 @@ export const toggleAllSelectedChoicesAtom = atom(null, (g, s) => {
   }
 });
 
-// Removed - now in actions-utils.ts
+// Re-export atoms that were moved to other files
+export { getEditorHistoryAtom, triggerKeywordAtom, sendActionAtom, sendShortcutAtom } from './state/atoms/actions-utils';
+export { valueInvalidAtom, preventSubmitAtom } from './state/atoms/utilities';
 
 // This atom returns a function for compatibility with useMessages.ts
 export const colorAtom = atom((g) => {
