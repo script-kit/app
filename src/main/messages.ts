@@ -240,6 +240,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       (data: SendData<K>) =>
         handleChannelMessage(data, fn);
 
+  const IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+  const IMAGE_REQUEST_TIMEOUT_MS = 7000;    // 7 seconds
+
   const SHOW_IMAGE = async (data: SendData<Channel.SHOW_IMAGE>) => {
     kitState.blurredByKit = true;
 
@@ -247,18 +250,37 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     const imgOptions = url.parse((image as { src: string }).src);
 
     // eslint-disable-next-line promise/param-names
-    const { width, height } = await new Promise((resolveImage) => {
+    const { width, height } = await new Promise<{ width: number; height: number }>((resolveImage) => {
       const proto = imgOptions.protocol?.startsWith('https') ? https : http;
-      proto.get(imgOptions, (response: any) => {
-        const chunks: any = [];
+      const req = proto.get(imgOptions, (response: any) => {
+        const chunks: Buffer[] = [];
+        let total = 0;
         response
-          .on('data', (chunk: any) => {
+          .on('data', (chunk: Buffer) => {
+            total += chunk.length;
+            if (total > IMAGE_MAX_BYTES) {
+              req.destroy(new Error('IMAGE_TOO_LARGE'));
+              return;
+            }
             chunks.push(chunk);
           })
           .on('end', () => {
-            const buffer = Buffer.concat(chunks);
-            resolveImage(sizeOf(buffer));
+            try {
+              const buffer = Buffer.concat(chunks);
+              const dims = sizeOf(buffer);
+              resolveImage({ width: dims.width || 800, height: dims.height || 600 });
+            } catch (e) {
+              log.warn('SHOW_IMAGE: failed to read dimensions', e);
+              resolveImage({ width: 800, height: 600 });
+            }
           });
+      });
+      req.setTimeout(IMAGE_REQUEST_TIMEOUT_MS, () => {
+        req.destroy(new Error('IMAGE_REQUEST_TIMEOUT'));
+      });
+      req.on('error', (err: any) => {
+        log.warn('SHOW_IMAGE: request aborted/failed', err?.message || err);
+        resolveImage({ width: 800, height: 600 });
       });
     });
 
@@ -1043,8 +1065,12 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     SET_BOUNDS: onChildChannel(async ({ child }, { channel, value }) => {
       prompt.modifiedByUser = true;
       (value as any).human = true;
-      await waitForPrompt(Channel.SET_BOUNDS, value);
+      // Apply once at the window level to avoid double-resize flicker
       prompt.setBounds(value);
+      // Notify renderer to sync any internal layout/state (do not wait)
+      sendToPrompt(Channel.SET_BOUNDS, value);
+      // Immediately acknowledge to caller
+      if (child) childSend({ channel, value: true });
     }),
 
     SET_IGNORE_BLUR: onChildChannel(({ child }, { channel, value }) => {
@@ -2152,6 +2178,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
           // askForFullDiskAccess();
         }
       }
+      // ✅ Always respond so callers don't hang
+      childSend({
+        channel,
+        value,
+      });
     }),
 
     SET_SELECTED_TEXT: onChildChannelOverride(
