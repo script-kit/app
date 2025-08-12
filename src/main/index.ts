@@ -110,6 +110,7 @@ import { loadShellEnv } from './shell';
 import shims, { loadSupportedOptionalLibraries } from './shims';
 import { handleKeymapChange, registerKillLatestShortcut, shortcutsSelfCheck, updateMainShortcut } from './shortcuts';
 import { startSK } from './sk';
+import { cacheSnippets } from './snippet-cache';
 import { snippetsSelfCheck } from './snippet-heal';
 import { optionalSetupScript } from './spawn';
 import { cacheKitScripts, getThemes, kitState, kitStore, subs } from './state';
@@ -606,6 +607,7 @@ const ready = async () => {
     await setupLog('');
     setupDone();
     await cacheKitScripts();
+    await cacheSnippets();
 
     // ensureIdleProcess();
     createIdlePty();

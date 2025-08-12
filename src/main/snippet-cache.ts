@@ -6,6 +6,7 @@ import { kenvPath } from '@johnlindquist/kit/core/utils';
 import log from 'electron-log';
 import { globby } from 'globby';
 import { type SnippetFile, kitState } from './state';
+import { snippetMap } from './tick';
 
 /**
  * Very similar to your existing parseSnippet,
@@ -84,6 +85,14 @@ export async function cacheSnippets() {
         rawMetadata: metadata,
         contents,
       });
+    }
+
+    // Assign to kitState
+    kitState.snippetFiles = newSnippetMap;
+
+    // Make them live in the runtime snippetMap
+    for (const { filePath, snippetKey, postfix } of newSnippetMap.values()) {
+      snippetMap.set(snippetKey, { filePath, postfix, txt: true });
     }
 
     log.info(`[cacheSnippets] Cached ${newSnippetMap.size} snippet files`);

@@ -1,11 +1,16 @@
+import path from 'node:path';
 import { snippetLog } from './logs';
 import { kitState } from './state';
 import { snippetMap } from './tick'; // The in-memory snippetMap that powers expansions
 import { addTextSnippet, snippetScriptChanged } from './tick';
+import { cacheSnippets } from './snippet-cache';
 
 export async function snippetsSelfCheck() {
   const expansionsNeeded = new Set<string>();
   try {
+    // 1) Ensure text snippets are cached
+    await cacheSnippets();
+
     // 2) Check snippets from normal scripts (with .expand or .snippet).
     for (const [filePath, script] of kitState.scripts) {
       const expand = script?.expand || script?.snippet;
@@ -39,7 +44,29 @@ export async function snippetsSelfCheck() {
       }
     }
 
-    // 3) Remove any extra entries from snippetMap.
+    // 3) Also include text snippet keys from snippetFiles
+    for (const sf of kitState.snippetFiles.values()) {
+      // Apply trust boundary for sub-kenvs
+      if (sf.filePath.includes(`${path.sep}kenvs${path.sep}`)) {
+        const parts = sf.filePath.split(path.sep);
+        const kenvIndex = parts.lastIndexOf('kenvs');
+        if (kenvIndex >= 0 && kenvIndex + 1 < parts.length) {
+          const kenvName = parts[kenvIndex + 1];
+          if (kenvName && !kitState.trustedKenvs.includes(kenvName)) {
+            continue; // Skip untrusted sub-kenv snippet
+          }
+        }
+      }
+
+      expansionsNeeded.add(sf.snippetKey);
+      
+      if (!snippetMap.has(sf.snippetKey)) {
+        snippetLog.info(`[selfHealSnippets] Missing text snippet '${sf.snippetKey}'. Re-adding...`);
+        snippetMap.set(sf.snippetKey, { filePath: sf.filePath, postfix: sf.postfix, txt: true });
+      }
+    }
+
+    // 4) Remove any extra entries from snippetMap.
     for (const [key] of snippetMap.entries()) {
       if (!expansionsNeeded.has(key)) {
         snippetLog.info(`[selfHealSnippets] snippetMap has extra key '${key}'. Removing...`);

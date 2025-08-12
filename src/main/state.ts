@@ -255,6 +255,7 @@ const initState = {
   scripts: new Map<string, Script>(),
   scriptlets: new Map<string, Scriptlet>(),
   snippets: new Map<string, Snippet>(),
+  snippetFiles: new Map<string, SnippetFile>(),
   gpuEnabled: true,
   displays: [] as Display[],
   debugging: false,
