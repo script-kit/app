@@ -19,26 +19,26 @@ import {
   cachedMainFlagsAtom,
 } from './atoms/cache';
 
-// These will be imported from their respective files once they're created
-import { mouseEnabledAtom } from './input-state';
+// Import from the real atom locations
+import { mouseEnabledAtom } from './atoms/input';
 import { resizeCompleteAtom, promptBoundsAtom, promptBoundsDefault } from './ui-layout';
-import { lastScriptClosed, _script } from './script-state';
-import { closedInput, _inputAtom } from './input-state';
+import { lastScriptClosed, _script } from './atoms/script-state';
+import { closedInput, _inputAtom } from './atoms/input';
 import { _panelHTML } from './atoms/preview';
-import { formHTMLAtom } from './components/other-components';
-import { logHTMLAtom, logLinesAtom } from './log-state';
-import { flagsAtom, _flaggedValue } from './actions-state';
-import { editorConfigAtom } from './components/editor-state';
+import { formHTMLAtom } from './atoms/form';
+import { logHTMLAtom, logLinesAtom } from './atoms/log';
+import { flagsAtom, _flaggedValue } from './atoms/actions';
+import { editorConfigAtom } from './atoms/editor';
 import { promptData } from './prompt-data';
 // Import from facade for gradual migration
 import { promptDataAtom } from './facade';
 import { requiresScrollAtom, scrollToIndexAtom } from './ui-layout';
-import { _chatMessagesAtom } from './components/chat-state';
+import { _chatMessagesAtom } from './atoms/chat';
 import { miniShortcutsHoveredAtom } from './utils';
-import { audioDotAtom, webcamStreamAtom } from './components/media-state';
-import { disableSubmitAtom } from './ipc';
-import { termConfigAtom } from './components/terminal-state';
-import { scoredChoicesAtom } from './choices-state';
+import { audioDotAtom, webcamStreamAtom } from './atoms/media';
+import { disableSubmitAtom } from './atoms/ipc';
+import { termConfigAtom } from './atoms/terminal';
+import { scoredChoicesAtom } from '../jotai';
 
 // Override the openAtom setter implementation
 export const openAtom = atom(
