@@ -87,6 +87,23 @@ import { showLogWindow } from './window';
 
 import { messagesLog as log } from './logs';
 
+// Limit what we expose over IPC to child processes
+const sanitizeKitStateForIpc = () => {
+  const s: any = snapshot(kitState);
+  // Remove sensitive / heavy fields
+  delete s.kenvEnv;            // env variables may contain secrets
+  delete s.user;               // PII and identifiers
+  delete s.KIT_NODE_PATH;      // internal paths
+  delete s.PNPM_KIT_NODE_PATH; // internal paths
+  delete s.keymap;             // large and not needed by most callers
+  delete s.sleepClearKeys;     // internal housekeeping
+  // If needed, reduce 'notifications' to last few items
+  if (Array.isArray(s.notifications) && s.notifications.length > 25) {
+    s.notifications = s.notifications.slice(-25);
+  }
+  return s;
+};
+
 const isSamePrompt = (incomingId?: string, currentId?: string) => {
   return Boolean(incomingId && currentId && incomingId === currentId);
 };
@@ -107,7 +124,36 @@ const unregisterShortcutsForPid = (pid: number) => {
 };
 
 // pid: count
-const errorMap = new Map<string, number>();
+type ErrorEntry = { count: number; lastAt: number };
+const errorMap = new Map<string, ErrorEntry>();
+const ERROR_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const ERROR_MAP_MAX = 500;
+
+const pruneErrorMap = () => {
+  const now = Date.now();
+  // Remove stale entries
+  for (const [k, v] of errorMap) {
+    if (now - v.lastAt > ERROR_TTL_MS) errorMap.delete(k);
+  }
+  // Size cap (remove oldest)
+  if (errorMap.size > ERROR_MAP_MAX) {
+    const entries = Array.from(errorMap.entries()).sort((a, b) => a[1].lastAt - b[1].lastAt);
+    const excess = errorMap.size - ERROR_MAP_MAX;
+    for (let i = 0; i < excess; i++) errorMap.delete(entries[i][0]);
+  }
+};
+
+const bumpError = (key: string) => {
+  const now = Date.now();
+  const entry = errorMap.get(key);
+  if (entry) {
+    entry.count += 1;
+    entry.lastAt = now;
+  } else {
+    errorMap.set(key, { count: 1, lastAt: now });
+  }
+  pruneErrorMap();
+};
 
 const getModifier = () => {
   return kitState.isMac ? ['command'] : ['control'];
@@ -216,11 +262,32 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
   const { prompt, scriptPath } = processInfo;
   const sendToPrompt = prompt.sendToPrompt;
+  const WAIT_ACK_TIMEOUT_MS = 3000;
   const waitForPrompt = async (channel: Channel, value: any) => {
-    prompt.window?.webContents?.ipc?.once(channel, () => {
-      childSend({ channel, value });
-    });
+    let settled = false;
+    const ack = (payload: any) => {
+      if (settled) return;
+      settled = true;
+      childSend({ channel, value: payload });
+    };
+    // Listen for renderer's ack
+    const once = prompt.window?.webContents?.ipc?.once?.bind(prompt.window?.webContents?.ipc);
+    if (once) {
+      once(channel, () => ack(value));
+    }
+    // Send the request to renderer
     sendToPrompt(channel, value);
+    // Fallback timeout to avoid hangs
+    setTimeout(() => {
+      if (!settled) {
+        const payload =
+          value && typeof value === 'object'
+            ? { ...value, __ackTimeout: true }
+            : value;
+        log.warn(`Timeout waiting for renderer ack on ${channel}`);
+        ack(payload);
+      }
+    }, WAIT_ACK_TIMEOUT_MS);
   };
   const setLog = (value) => sendToPrompt(Channel.SET_LOG, value);
   const childSend = createSendToChild(processInfo);
@@ -1673,9 +1740,10 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     }),
 
     GET_APP_STATE: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      const safe = sanitizeKitStateForIpc();
       childSend({
         channel,
-        value: snapshot(kitState),
+        value: safe,
       });
     }),
 
@@ -2407,13 +2475,20 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     ERROR: onChildChannelOverride(({ child }, { channel, value }) => {
       log.error(`${child.pid}: ERROR MESSAGE`, value);
       trackEvent(TrackEvent.Error, value);
-      const stack = value?.stack || '';
-      errorMap.set(stack, (errorMap.get(stack) || 0) + 1);
-      if (errorMap.get(stack) > 2) {
-        child.kill('SIGKILL');
-        log.info(`Killed child ${child.pid} after ${errorMap.get(stack)} of the same stack errors`, value);
-        errorMap.delete(stack);
-        displayError(value);
+      const key = (value?.stack && String(value.stack)) || JSON.stringify(value ?? {});
+      bumpError(key);
+      const entry = errorMap.get(key)!;
+      if (entry.count > 2) {
+        // Only escalate for clustered repeats (fresh within TTL by virtue of bumpError/prune)
+        try {
+          child?.kill?.('SIGKILL');
+          log.info(`Killed child ${child?.pid} after ${entry.count} of the same stack errors`, value);
+        } catch (e) {
+          log.warn('Failed to kill child after repeated errors', e);
+        } finally {
+          errorMap.delete(key); // reset the counter for this error signature
+          displayError(value);
+        }
       }
     }),
     GET_TYPED_TEXT: onChildChannelOverride(({ child }, { channel, value }) => {
