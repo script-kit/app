@@ -578,6 +578,8 @@ export const tabIndexAtom = atom(
       s(_tabIndex, a);
       s(flagsAtom, {});
       s(_flaggedValue, '');
+      s(focusedFlagValueAtom, '');
+      s(focusedActionAtom, {} as any);
 
       sendTabChanged = sendTabChanged || getSendTabChanged(g, s);
       sendTabChanged();

@@ -10,6 +10,8 @@ import {
   logHTMLAtom,
   flagsAtom,
   _flaggedValue,
+  focusedFlagValueAtom,
+  focusedActionAtom,
   loadingAtom,
   progressAtom,
   editorConfigAtom,
@@ -39,6 +41,8 @@ export function resetPromptState(g: Getter, s: Setter) {
   s(logHTMLAtom, '');
   s(flagsAtom, {} as any);
   s(_flaggedValue, '' as any);
+  s(focusedFlagValueAtom, '' as any);
+  s(focusedActionAtom, {} as any);
   s(loadingAtom, false);
   s(progressAtom, 0);
   s(editorConfigAtom, {} as any);
