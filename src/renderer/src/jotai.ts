@@ -157,6 +157,7 @@ import {
   currentChoiceHeightsAtom,
   prevMh,
   cachedAtom,
+  resizeTickAtom,
 } from './state/atoms';
 // Needed locally for derived atoms that read platform flags
 import { appConfigAtom } from './state/atoms/app-core';
@@ -973,173 +974,12 @@ export const flagsIndexAtom = atom(
   },
 );
 
-// --- Resize Logic ---
-const sendResize = (data: ResizeData) => ipcRenderer.send(AppChannel.RESIZE, data);
-const debounceSendResize = debounce(sendResize, SEND_RESIZE_DEBOUNCE_MS);
-
+// --- Resize Logic (delegated to ResizeController) ---
+// Keep the same API so existing call sites keep compiling,
+// but the only action is to request the controller to recompute.
 export const resize = debounce(
-  (g: Getter, s: Setter, reason = 'UNSET') => {
-    const human = g(promptResizedByHumanAtom);
-    if (human) {
-      g(channelAtom)(Channel.SET_BOUNDS, g(promptBoundsAtom));
-      return;
-    }
-
-    const active = g(promptActiveAtom);
-    if (!active) return;
-
-    const promptData = g(promptDataAtom);
-    if (!promptData?.scriptPath) return;
-
-    const ui = g(uiAtom);
-    const scoredChoicesLength = g(scoredChoicesAtom)?.length;
-    const hasPanel = g(_panelHTML) !== '';
-    let mh = g(mainHeightAtom);
-
-    if (promptData?.grid && document.getElementById(ID_MAIN)?.clientHeight > 10) {
-      return;
-    }
-
-    const placeholderOnly = promptData?.mode === Mode.FILTER && scoredChoicesLength === 0 && ui === UI.arg;
-    const topHeight = document.getElementById(ID_HEADER)?.offsetHeight || 0;
-    const footerHeight = document.getElementById(ID_FOOTER)?.offsetHeight || 0;
-    const hasPreview = g(previewCheckAtom);
-    const choicesHeight = g(choicesHeightAtom);
-
-    // Calculate Main Height (mh) based on UI state
-    if (ui === UI.arg) {
-      if (!g(choicesReadyAtom)) return;
-
-      if (choicesHeight > PROMPT.HEIGHT.BASE) {
-        log.info(`🍃 choicesHeight: ${choicesHeight} > PROMPT.HEIGHT.BASE: ${PROMPT.HEIGHT.BASE}`);
-        const baseHeight = (promptData?.height && promptData.height > PROMPT.HEIGHT.BASE) ? promptData.height : PROMPT.HEIGHT.BASE;
-        mh = baseHeight - topHeight - footerHeight;
-      } else {
-        log.info(`🍃 choicesHeight: ${choicesHeight} <= PROMPT.HEIGHT.BASE: ${PROMPT.HEIGHT.BASE}`);
-        mh = choicesHeight;
-      }
-    }
-
-    if (mh === 0 && hasPanel) {
-      mh = Math.max(g(itemHeightAtom), g(mainHeightAtom));
-    }
-
-    let forceResize = false;
-    let ch = 0;
-
-    try {
-      if (ui === UI.form || ui === UI.fields) {
-        ch = (document as any)?.getElementById(UI.form)?.offsetHeight;
-        mh = ch;
-      } else if (ui === UI.div) {
-        ch = (document as any)?.getElementById(ID_PANEL)?.offsetHeight;
-        if (ch) {
-          mh = promptData?.height || ch;
-        } else {
-          return;
-        }
-      } else if (ui === UI.arg && hasPanel) {
-        ch = (document as any)?.getElementById(ID_PANEL)?.offsetHeight;
-        mh = ch;
-        forceResize = true;
-      } else if (ui === UI.arg && !hasPanel && !scoredChoicesLength && !document.getElementById(ID_LIST)) {
-        ch = 0;
-        mh = 0;
-        forceResize = true;
-      } else if (ui !== UI.arg) {
-        ch = (document as any)?.getElementById(ID_MAIN)?.offsetHeight;
-      }
-
-      if (ui === UI.arg) {
-        forceResize = ch === 0 || Boolean(ch < choicesHeight) || hasPanel;
-      } else if (ui === UI.div) {
-        forceResize = true;
-      } else {
-        forceResize = Boolean(ch > g(prevMh));
-      }
-    } catch (error) {
-      // Handle potential DOM errors gracefully
-    }
-
-    if (topHeight !== prevTopHeight) {
-      forceResize = true;
-      prevTopHeight = topHeight;
-    }
-
-    const logVisible = g(logHTMLAtom)?.length > 0 && g(scriptAtom)?.log !== false;
-    const logHeight = document.getElementById(ID_LOG)?.offsetHeight || 0;
-
-    const computeOut = computeResize({
-      ui,
-      scoredChoicesLength: scoredChoicesLength || 0,
-      choicesHeight,
-      hasPanel,
-      hasPreview,
-      promptData: { height: promptData?.height, baseHeight: PROMPT.HEIGHT.BASE },
-      topHeight,
-      footerHeight,
-      isWindow: g(isWindowAtom),
-      justOpened: Boolean(g(justOpenedAtom)),
-      flaggedValue: g(_flaggedValue),
-      mainHeightCurrent: mh,
-      itemHeight: g(itemHeightAtom),
-      logVisible,
-      logHeight,
-      gridActive: g(gridReadyAtom),
-      prevMainHeight: g(prevMh),
-      placeholderOnly,
-    });
-
-    mh = computeOut.mainHeight;
-    let forceHeight = computeOut.forceHeight;
-
-    if (ui === UI.debugger) {
-      forceHeight = 128;
-    }
-
-    if (mh === 0 && promptData?.preventCollapse) {
-      log.info('🍃 Prevent collapse to zero...');
-      return;
-    }
-
-    log.info(`🍃 mh: ${mh}`, `forceHeight: ${forceHeight}`);
-
-    const data: ResizeData = {
-      id: promptData?.id || 'missing',
-      pid: window.pid || 0,
-      reason,
-      scriptPath: g(_script)?.filePath,
-      placeholderOnly,
-      topHeight,
-      ui,
-      mainHeight: mh + (g(isWindowAtom) ? 24 : 0) + 1,
-      footerHeight,
-      mode: promptData?.mode || Mode.FILTER,
-      hasPanel,
-      hasInput: g(inputAtom)?.length > 0,
-      previewEnabled: g(previewEnabledAtom),
-      open: g(_open),
-      tabIndex: g(_tabIndex),
-      isSplash: g(isSplashAtom),
-      hasPreview,
-      inputChanged: g(_inputChangedAtom),
-      forceResize,
-      forceHeight,
-      isWindow: g(isWindowAtom),
-      justOpened: g(justOpenedAtom) as any,
-      forceWidth: promptData?.width as any,
-      totalChoices: scoredChoicesLength as any,
-      isMainScript: g(isMainScriptAtom) as any,
-    } as ResizeData;
-
-    s(prevMh, mh);
-
-    debounceSendResize.cancel();
-    if (g(justOpenedAtom) && !promptData?.scriptlet) {
-      debounceSendResize(data);
-    } else {
-      sendResize(data);
-    }
+  (_g: Getter, s: Setter, _reason = 'UNSET') => {
+    s(resizeTickAtom, (v) => v + 1);
   },
   RESIZE_DEBOUNCE_MS,
   { leading: true, trailing: true },
@@ -1175,8 +1015,7 @@ export const mainHeightAtom = atom(
     // Skip resize trigger for specific UIs that manage their own dimensions
     const ui = g(uiAtom);
     if ([UI.drop, UI.editor, UI.textarea].includes(ui)) return;
-
-    resize(g, s, 'MAIN_HEIGHT');
+    // Controller will run on _mainHeight change; no explicit call required here.
   },
 );
 

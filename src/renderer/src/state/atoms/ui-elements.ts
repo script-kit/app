@@ -19,6 +19,8 @@ export const choicesHeightAtom = atom(0);
 export const flagsHeightAtom = atom(0);
 // Internal primitive atom for mainHeight
 export const _mainHeight = atom(0);
+// A simple "please recompute resize" signal. Increment to trigger.
+export const resizeTickAtom = atom(0);
 // mainHeightAtom is defined in jotai.ts with complex setter logic
 export const prevMh = atom(0);
 export const logHeightAtom = atom<number>(0);

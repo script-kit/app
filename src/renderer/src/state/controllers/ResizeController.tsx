@@ -29,7 +29,7 @@ import {
 } from '../../jotai';
 
 import { _panelHTML } from '../atoms/preview';
-import { itemHeightAtom, prevMh } from '../atoms/ui-elements';
+import { itemHeightAtom, prevMh, resizeTickAtom } from '../atoms/ui-elements';
 import { _flaggedValue } from '../atoms/actions';
 import { _inputChangedAtom } from '../atoms/input';
 import { _open } from '../atoms/lifecycle';
@@ -50,6 +50,8 @@ export const ResizeController: React.FC = () => {
 
   // Subscribe to the trigger atom. Updates to this atom signal a resize check is needed.
   const mainHeightTrigger = useAtomValue(_mainHeight);
+  // Also re-run when other atoms request a recompute
+  const tick = useAtomValue(resizeTickAtom);
 
   // Define the debounced resize execution using useCallback for a stable reference.
   const executeResize = useCallback(
@@ -241,14 +243,14 @@ export const ResizeController: React.FC = () => {
     [store]
   );
 
-  // Trigger the execution when the mainHeightTrigger value changes
+  // Trigger the execution when the mainHeightTrigger value changes or tick increments
   useEffect(() => {
     executeResize('CONTROLLER_TRIGGER');
     return () => {
       executeResize.cancel();
       debounceSendResize.cancel();
     };
-  }, [executeResize, mainHeightTrigger]);
+  }, [executeResize, mainHeightTrigger, tick]);
 
   return null; // Controller components don't render anything
 };
