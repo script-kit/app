@@ -4,7 +4,7 @@ import detect from 'detect-port';
 import sizeOf from 'image-size';
 import untildify from 'untildify';
 
-import { writeFile } from 'node:fs/promises';
+import { writeFile, unlink } from 'node:fs/promises';
 import http from 'node:http';
 import https from 'node:https';
 import os from 'node:os';
@@ -19,6 +19,7 @@ import {
   dialog,
   globalShortcut,
   nativeImage,
+  powerMonitor,
   screen,
   shell,
 } from 'electron';
@@ -176,6 +177,37 @@ export const formatScriptChoices = (data: Choice[]) => {
 
   return choices;
 };
+
+// Track temp thumbnails to clean up on quit
+const tempThumbnails = new Set<string>();
+app.on('before-quit', async () => {
+  for (const p of tempThumbnails) {
+    try {
+      await unlink(p);
+    } catch (_) {
+      // ignore
+    }
+  }
+  tempThumbnails.clear();
+});
+
+// Clear environment variables cached "until-sleep"
+powerMonitor.on('suspend', () => {
+  const keys = kitState.sleepClearKeys;
+  if (keys && keys.size) {
+    const log = getLog('messages');
+    log.info(`🔐 Clearing ${keys.size} cached env var(s) on sleep`);
+    for (const k of keys) {
+      try {
+        delete process.env[k];
+        if (kitState.kenvEnv) delete (kitState.kenvEnv as any)[k];
+      } catch (e) {
+        log.warn(`Failed clearing env var ${k} on sleep`, e);
+      }
+    }
+    keys.clear();
+  }
+});
 
 export const createMessageMap = (processInfo: ProcessAndPrompt) => {
   const robot = shims['@jitsi/robotjs'];
@@ -731,6 +763,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
               const image = displaySource.thumbnail.toPNG();
               const thumbnailPath = osTmpPath(`display-thumbnail-${id}-${randomUUID()}.png`);
               await writeFile(thumbnailPath, image);
+              tempThumbnails.add(thumbnailPath);
               return { ...display, thumbnailPath };
             }
           } catch (error) {
@@ -1832,12 +1865,17 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // keyboard.config.autoDelayMs =
       //   kitState?.keyboardConfig?.autoDelayMs || 0;
       kitState.isTyping = true;
-      // I can't remember why we do this. Something to do with "nut's" old typing system?
-      const text = typeof textOrKeys === 'string' ? textOrKeys : textOrKeys[0];
+      const text =
+        typeof textOrKeys === 'string'
+          ? textOrKeys
+          : Array.isArray(textOrKeys)
+          ? textOrKeys.join('')
+          : String(textOrKeys ?? '');
+      const delay = Number.isFinite(rate) ? Math.max(0, Math.min(1000, Number(rate))) : undefined;
       try {
-        if (typeof rate === 'number') {
-          log.info(`⌨️ Typing ${text} with delay ${rate}`);
-          shims['@jitsi/robotjs'].typeStringDelayed(text, rate);
+        if (typeof delay === 'number') {
+          log.info(`⌨️ Typing ${text} with delay ${delay}`);
+          shims['@jitsi/robotjs'].typeStringDelayed(text, delay);
         } else {
           log.info(`⌨️ Typing ${text} without delay`);
           shims['@jitsi/robotjs'].typeString(text);
@@ -1856,7 +1894,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
             channel,
           });
         },
-        Math.max(textOrKeys.length, 100),
+        Math.max(text.length, 100),
       );
 
       // END-REMOVE-NUT
@@ -1890,9 +1928,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // keyboard.config.autoDelayMs =
       //   kitState?.keyboardConfig?.autoDelayMs || 0;
       kitState.isTyping = true;
-      const speed = kitState?.kenvEnv?.KIT_TYPING_SPEED;
-      // I can't remember why we do this. Something to do with "nut's" old typing system?
-      const text = typeof value === 'string' ? value : value[0];
+      const envSpeed = kitState?.kenvEnv?.KIT_TYPING_SPEED;
+      const parsedEnv = typeof envSpeed === 'string' ? Number.parseInt(envSpeed, 10) : Number(envSpeed);
+      const speed = Number.isFinite(parsedEnv) ? Math.max(0, Math.min(1000, parsedEnv)) : undefined;
+      const text =
+        typeof value === 'string' ? value : Array.isArray(value) ? value.join('') : String(value ?? '');
       try {
         if (typeof speed === 'number') {
           log.info(`⌨️ Typing ${text} with delay ${speed}`);
@@ -1915,7 +1955,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
             channel,
           });
         },
-        Math.max(value.length, 100),
+        Math.max(text.length, 100),
       );
 
       // END-REMOVE-NUT
