@@ -476,8 +476,16 @@ ${data.error}
 
         if (channel === Channel.MIC_STREAM) {
           const micStreamMessage: any = message;
-          if (micStreamMessage?.state.buffer && !Buffer.isBuffer(micStreamMessage.buffer)) {
-            micStreamMessage.state.value = Buffer.from(Object.values(micStreamMessage.state.buffer) as any);
+          if (micStreamMessage?.state?.buffer && !Buffer.isBuffer(micStreamMessage.state.buffer)) {
+            const b = micStreamMessage.state.buffer;
+            // Accept ArrayBuffer, Uint8Array, or a plain {0:..,1:..} object
+            let u8: Uint8Array;
+            if (b instanceof ArrayBuffer) u8 = new Uint8Array(b);
+            else if (ArrayBuffer.isView(b)) u8 = new Uint8Array(b.buffer, b.byteOffset, b.byteLength);
+            else u8 = Uint8Array.from(Object.values(b as any));
+            micStreamMessage.state.value = Buffer.from(u8);
+            // Optional: drop the original to keep messages small
+            delete micStreamMessage.state.buffer;
           }
 
           child.send(micStreamMessage);

@@ -1014,7 +1014,8 @@ export class KitPrompt {
     // const isMain = scriptPath.includes('.kit') && scriptPath.includes('cli');
     // if (isMain) return;
 
-    if (!pointOnMouseScreen(bounds)) {
+    const centerPoint = { x: bounds.x + Math.floor(bounds.width / 2), y: bounds.y + Math.floor(bounds.height / 2) };
+    if (!pointOnMouseScreen(centerPoint)) {
       return;
     }
 
