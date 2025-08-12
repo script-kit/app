@@ -6,6 +6,7 @@ import {
   scoredFlagsAtom,
   flagsIndexAtom,
   preventSubmitWithoutActionAtom,
+  flaggedChoiceValueAtom,
 } from '../../../jotai';
 // Import from actions.ts for these atoms
 import {
@@ -72,6 +73,44 @@ describe('Actions menu behavior', () => {
     );
 
     // With a selected action, submit should not be prevented
+    expect(store.get(preventSubmitWithoutActionAtom as any)).toBe(false);
+  });
+
+  it('clears focused action and focused flag when the actions menu closes', () => {
+    const base: ScoredChoice[] = [
+      { item: { id: 'a1', name: 'Build Project', value: 'build' }, score: 100, matches: {} },
+      { item: { id: 'a2', name: 'Deploy Service', value: 'deploy' }, score: 95, matches: {} },
+    ];
+
+    // Seed the base list via the scoredFlagsAtom setter
+    store.set(scoredFlagsAtom as any, base);
+
+    // Open actions menu (use the real setter so side-effects are triggered)
+    store.set(flaggedChoiceValueAtom as any, 'actions-open');
+
+    // Select first action
+    store.set(flagsIndexAtom as any, 0);
+
+    // Sanity: action is "build"
+    expect(store.get(focusedFlagValueAtom as any)).toBe('build');
+    expect(store.get(focusedActionAtom as any)).toEqual(
+      expect.objectContaining({ hasAction: true, flag: 'build' }),
+    );
+
+    // Close actions menu
+    store.set(flaggedChoiceValueAtom as any, '');
+
+    // After closing:
+    // - focusedFlagValue should reset
+    // - focusedAction should reset (no hasAction)
+    expect(store.get(focusedFlagValueAtom as any)).toBe('');
+
+    const fa = store.get(focusedActionAtom as any);
+    expect(fa && typeof fa).toBe('object');
+    // Accept either {} or an object without hasAction truthy
+    expect(Boolean((fa as any).hasAction)).toBe(false);
+
+    // And submit prevention should be off (actions menu not open)
     expect(store.get(preventSubmitWithoutActionAtom as any)).toBe(false);
   });
 });
