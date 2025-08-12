@@ -86,23 +86,23 @@ import { showLogWindow } from './window';
 
 import { messagesLog as log } from './logs';
 
-let prevId1: string;
-let prevId2: string;
-let prevResult: boolean;
+const isSamePrompt = (incomingId?: string, currentId?: string) => {
+  return Boolean(incomingId && currentId && incomingId === currentId);
+};
 
-const comparePromptScriptsById = (id1: string, id2: string) => {
-  if (id1 === prevId1 && id2 === prevId2) {
-    return prevResult;
+// --- Helper to keep globalShortcut state sane per child process
+const unregisterShortcutsForPid = (pid: number) => {
+  const shortcuts = childShortcutMap.get(pid);
+  if (shortcuts && shortcuts.length) {
+    for (const acc of shortcuts) {
+      try {
+        globalShortcut.unregister(acc);
+      } catch (e) {
+        log.warn(`Error unregistering shortcut ${acc} for pid ${pid}`, e);
+      }
+    }
+    childShortcutMap.delete(pid);
   }
-
-  const id1Number = id1.slice(0, -2);
-  const id2Number = id2.slice(0, -2);
-
-  prevId1 = id1;
-  prevId2 = id2;
-  prevResult = id1Number === id2Number;
-
-  return prevResult;
 };
 
 // pid: count
@@ -212,7 +212,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       );
     }
 
-    const samePrompt = comparePromptScriptsById(data?.promptId, prompt.id);
+    const samePrompt = isSamePrompt(
+      // many channels include promptId on data; cast keeps TS happy across variants
+      (data as any)?.promptId as string | undefined,
+      processInfo?.prompt?.id as string | undefined,
+    );
     const result = fn(processInfo, data, samePrompt);
 
     if (sendToChild) {
@@ -855,6 +859,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       prompt.hideInstant();
       processes.stampPid(pid);
       processes.removeByPid(pid, 'beforeExit');
+      unregisterShortcutsForPid(pid);
     }),
 
     QUIT_APP: onChildChannel(({ child }, { channel, value }) => {
@@ -1601,6 +1606,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     TERMINATE_PROCESS: onChildChannel(async ({ child }, { channel, value }) => {
       log.warn(`${value}: Terminating process ${value}`);
       processes.removeByPid(value, 'messages value pid cleanup');
+      unregisterShortcutsForPid(value);
     }),
     TERMINATE_ALL_PROCESSES: onChildChannel(async ({ child }, { channel }) => {
       log.warn('Terminating all processes');
@@ -1608,6 +1614,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       activeProcesses.forEach((process) => {
         try {
           processes.removeByPid(process?.pid, 'messages process cleanup');
+          unregisterShortcutsForPid(process?.pid);
         } catch (error) {
           log.error(`Error terminating process ${process?.pid}`, error);
         }
@@ -1716,23 +1723,26 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     REGISTER_GLOBAL_SHORTCUT: onChildChannelOverride(({ child, scriptPath }, { channel, value }) => {
       const properShortcut = convertShortcut(value, scriptPath);
       log.info(`App: registering global shortcut ${value} as ${properShortcut}`);
-      const result = globalShortcut.register(properShortcut, () => {
-        kitState.shortcutPressed = properShortcut;
-        log.info(`Global shortcut: Sending ${value} on ${Channel.GLOBAL_SHORTCUT_PRESSED}`);
-        childSend({
-          channel: Channel.GLOBAL_SHORTCUT_PRESSED,
-          value,
+      let result = true;
+      if (globalShortcut.isRegistered(properShortcut)) {
+        log.warn(`Shortcut ${properShortcut} already registered; reusing existing registration`);
+      } else {
+        result = globalShortcut.register(properShortcut, () => {
+          kitState.shortcutPressed = properShortcut;
+          log.info(`Global shortcut: Sending ${value} on ${Channel.GLOBAL_SHORTCUT_PRESSED}`);
+          childSend({
+            channel: Channel.GLOBAL_SHORTCUT_PRESSED,
+            value,
+          });
         });
-      });
+      }
 
       log.info(`Shortcut ${value}: ${result ? 'success' : 'failure'}}`);
 
       if (result && child?.pid) {
-        if (child?.pid && !childShortcutMap.has(child.pid)) {
-          childShortcutMap.set(child.pid, [properShortcut]);
-        } else {
-          childShortcutMap.get(child.pid)?.push(properShortcut);
-        }
+        const current = childShortcutMap.get(child.pid) || [];
+        if (!current.includes(properShortcut)) current.push(properShortcut);
+        childShortcutMap.set(child.pid, current);
 
         childSend({
           channel,
@@ -1764,7 +1774,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       const properShortcut = convertShortcut(value, scriptPath);
       if (child?.pid && childShortcutMap.has(child.pid)) {
         const shortcuts = childShortcutMap.get(child.pid);
-        const index = shortcuts?.indexOf(value);
+        const index = shortcuts?.indexOf(properShortcut);
         if (typeof index === 'number' && index > -1) {
           shortcuts?.splice(index, 1);
         }

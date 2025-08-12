@@ -485,78 +485,62 @@ const subScriptErrorPath = subscribeKey(kitState, 'scriptErrorPath', (scriptErro
 // TODO: I don't need to return booleans AND set kitState.isSponsor. Pick one.
 export const sponsorCheck = debounce(
   async (feature: string, block = true) => {
-    log.info(`Checking sponsor status... login: ${kitState?.user?.login} ${kitState.isSponsor ? '✅' : '❌'}`);
+    log.info(
+      `Checking sponsor status... login: ${kitState?.user?.login} (current=${kitState.isSponsor ? '✅' : '❌'})`,
+    );
     const isOnline = await online();
-    if (!isOnline || (process.env.KIT_SPONSOR === 'development' && os.userInfo().username === 'johnlindquist')) {
+    // Local dev override
+    if (process.env.KIT_SPONSOR === 'development' && os.userInfo().username === 'johnlindquist') {
       kitState.isSponsor = true;
+      kitStore.set('sponsor', true);
       return true;
     }
 
-    if (!kitState.isSponsor) {
-      let response = null;
-      try {
-        response = await axios.post(`${kitState.url}/api/check-sponsor`, {
-          ...kitState.user,
-          feature,
-        });
-      } catch (error) {
-        log.error('Error checking sponsor status', error);
-        kitState.isSponsor = true;
-        return true;
-      }
+    // If offline, fall back to last-known good; never auto‑elevate on failure
+    if (!isOnline) {
+      const cached = kitStore.get('sponsor');
+      kitState.isSponsor = Boolean(cached);
+      return kitState.isSponsor;
+    }
 
-      // check for axios post error
-      if (!response) {
-        log.error('Error checking sponsor status', response);
-        kitState.isSponsor = true;
-        return true;
-      }
+    try {
+      const response = await axios.post(
+        `${kitState.url}/api/check-sponsor`,
+        { ...kitState.user, feature },
+        { timeout: 5000 },
+      );
 
-      log.info(`Response status: ${response.status}`);
+      const ok =
+        response?.status === 200 &&
+        response?.data &&
+        kitState.user?.node_id &&
+        response.data.id === kitState.user.node_id;
 
-      // check for axios post error
-      if (response.status !== 200) {
-        log.error('Error checking sponsor status', response);
-      }
+      kitState.isSponsor = Boolean(ok);
+      kitStore.set('sponsor', kitState.isSponsor);
 
-      log.info('🕵️‍♀️ Sponsor check response', JSON.stringify(response.data));
+      if (kitState.isSponsor) return true;
+    } catch (error) {
+      log.warn('Sponsor check failed; falling back to cached status.', error);
+      const cached = kitStore.get('sponsor');
+      kitState.isSponsor = Boolean(cached);
+      if (kitState.isSponsor) return true;
+    }
 
-      if (response.data && kitState.user.node_id && response.data.id === kitState.user.node_id) {
-        log.info('User is sponsor');
-        kitState.isSponsor = true;
-        return true;
-      }
-
-      if (response.status !== 200) {
-        log.error('Sponsor check service is down. Granting temp sponsor status');
-        kitState.isSponsor = true;
-        return true;
-      }
-
-      if (block) {
-        kitState.isSponsor = false;
-
-        log.error(`
+    // Not a sponsor (by online check or cache). If blocking, show upsell.
+    if (block) {
+      log.error(`
 -----------------------------------------------------------
 🚨 User attempted to use: ${feature}, but is not a sponsor.
 -----------------------------------------------------------
-        `);
-        emitter.emit(KitEvent.RunPromptProcess, {
-          scriptPath: kitPath('pro', 'sponsor.js'),
-          args: [feature],
-          options: {
-            force: true,
-            trigger: Trigger.App,
-            sponsorCheck: false,
-          },
-        });
-
-        return false;
-      }
-
-      return false;
+      `);
+      emitter.emit(KitEvent.RunPromptProcess, {
+        scriptPath: kitPath('pro', 'sponsor.js'),
+        args: [feature],
+        options: { force: true, trigger: Trigger.App, sponsorCheck: false },
+      });
     }
-    return true;
+    return false;
   },
   2500,
   { leading: true, trailing: false },
