@@ -62,12 +62,14 @@ export default function ActionBar() {
       <div className={`left-container flex flex-row items-center justify-center ${m ? 'pb-px' : 'pb-2px'}`}>
         {actions
           .filter((action) => action.position === 'left')
-          .flatMap((action, i, array) => [
-            // eslint-disable-next-line react/jsx-key
-            <ActionButton key={action.key} {...{ ...action, key: undefined }} />,
-            i < array.length - 1 ? <ActionSeparator key={`${action?.key}-separator`} /> : null,
-            i === array.length - 1 && footer?.length ? <ActionSeparator key={`${action?.key}-separator`} /> : null,
-          ])}
+          .flatMap((action, i, array) => {
+            const { key, ...actionProps } = action;
+            return [
+              <ActionButton key={key} {...actionProps} />,
+              i < array.length - 1 ? <ActionSeparator key={`${key}-separator`} /> : null,
+              i === array.length - 1 && footer?.length ? <ActionSeparator key={`${key}-separator-footer`} /> : null,
+            ];
+          })}
       </div>
       {footer?.length ? (
         <div
@@ -98,16 +100,18 @@ text-opacity-75
           ]}
         </div>
         <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
-          {rightActions.flatMap((action, i, array) => [
-            // eslint-disable-next-line react/jsx-key
-            <ActionButton {...action} />,
-            // eslint-disable-next-line no-nested-ternary
-            i < array.length - 1 ? (
-              <ActionSeparator key={`${action?.key}-separator`} />
-            ) : enterButtonName ? (
-              <ActionSeparator key={`${action?.key}-separator`} />
-            ) : null,
-          ])}
+          {rightActions.flatMap((action, i, array) => {
+            const { key, ...actionProps } = action;
+            return [
+              <ActionButton key={key} {...actionProps} />,
+              // eslint-disable-next-line no-nested-ternary
+              i < array.length - 1 ? (
+                <ActionSeparator key={`${key}-separator`} />
+              ) : enterButtonName ? (
+                <ActionSeparator key={`${key}-separator-enter`} />
+              ) : null,
+            ];
+          })}
         </div>
         <div className="enter-container flex min-w-fit flex-row items-center">
           {enterButtonName ? (

@@ -8,6 +8,7 @@ import {
   choicesAtom,
   flaggedChoiceValueAtom,
   flagsAtom,
+  focusedActionAtom,
   focusedChoiceAtom,
   focusedFlagValueAtom,
   gridReadyAtom,
@@ -26,7 +27,7 @@ import {
 import { createLogger } from '../log-utils';
 
 import { useCallback, useMemo } from 'react';
-import type { HotkeysEvent } from 'react-hotkeys-hook';
+import type { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
 import { hotkeysOptions } from './shared';
 
 const log = createLogger('useShortcuts');
@@ -101,6 +102,7 @@ function isEventShortcut(event: HotkeysEvent, originalShortcutString: string): b
 export default () => {
   const [choices] = useAtom(choicesAtom);
   const [focusedChoice] = useAtom(focusedChoiceAtom);
+  const [, setFocusedAction] = useAtom(focusedActionAtom);
   const [input] = useAtom(inputAtom);
   const [index] = useAtom(indexAtom);
   const [flagValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
@@ -115,7 +117,7 @@ export default () => {
   const [, sendShortcut] = useAtom(sendShortcutAtom);
   const [ui] = useAtom(uiAtom);
   const [previewEnabled, setPreviewEnabled] = useAtom(previewEnabledAtom);
-  const [actionsConfig, setActionsConfig] = useAtom(actionsConfigAtom);
+  const [, setActionsConfig] = useAtom(actionsConfigAtom);
   const hasRightShortcut = useAtomValue(hasRightShortcutAtom);
   const actionsInputFocus = useAtomValue(actionsInputFocusAtom);
   const gridReady = useAtomValue(gridReadyAtom);
@@ -131,18 +133,28 @@ export default () => {
   );
 
   const flagsWithShortcuts = useMemo(() => {
+    log.info('Processing flags for shortcuts', { flags });
     const flagsArray = Object.entries(flags) as [string, { shortcut: string }][];
-    return flagsArray.filter(([_key, value]) => value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter');
+    const filtered = flagsArray.filter(([_key, value]) => value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter');
+    log.info('Flags with shortcuts', { filtered });
+    return filtered;
   }, [flags]);
 
   const flagShortcuts = useMemo(() => {
     const shortcuts: string[] = [];
-    for (const [, value] of flagsWithShortcuts) {
+    for (const [key, value] of flagsWithShortcuts) {
       if (value?.shortcut) {
-        shortcuts.push(convertShortcutToHotkeysFormat(value.shortcut));
+        const converted = convertShortcutToHotkeysFormat(value.shortcut);
+        shortcuts.push(converted);
+        log.info('Registered flag shortcut', { 
+          flag: key, 
+          original: value.shortcut, 
+          converted,
+          hasAction: (value as any)?.hasAction 
+        });
       }
     }
-    log.info('Flag shortcuts', { shortcuts });
+    log.info('All flag shortcuts', { shortcuts, flagsWithShortcuts });
     return shortcuts;
   }, [flagsWithShortcuts]);
 
@@ -160,10 +172,21 @@ export default () => {
     [flagsWithShortcuts],
   );
 
+  const shortcutsToRegister = flagShortcuts.length > 0 ? flagShortcuts.join(',') : 'f19';
+  log.info('Registering flag shortcuts with useHotkeys', { shortcutsToRegister, flagShortcuts });
+  
   useHotkeys(
-    flagShortcuts.length > 0 ? flagShortcuts : ['f19'],
+    shortcutsToRegister,
     (event, handler: HotkeysEvent) => {
-      log.info('Flag shortcut triggered', { event, handler, flagShortcuts });
+      const matchedFlag = flagByHandler(handler);
+      log.info('Flag shortcut triggered', { 
+        event, 
+        handler, 
+        flagShortcuts,
+        matchedFlag,
+        keys: handler?.keys,
+        flags
+      });
       event.preventDefault();
 
       // A shortcut clears the active because a new one is incoming
@@ -179,13 +202,36 @@ export default () => {
 
       const flag = flagByHandler(handler) as string;
       const submitValue = focusedChoice?.value || input;
+      
+      // Check if this flag has an onAction handler
+      const flagData = flags?.[flag];
+      log.info('Flag shortcut handler', { flag, flagData, hasAction: (flagData as any)?.hasAction });
+      
+      if (flagData && (flagData as any)?.hasAction) {
+        // This is an action with an onAction handler
+        const action = {
+          name: flagData?.name ?? flag,
+          flag,
+          value: flag,
+          hasAction: true,
+          shortcut: flagData?.shortcut,
+        };
+        log.info('Setting focusedAction for hasAction flag', { action });
+        console.log('[useShortcuts] Flag action triggered via shortcut', { flag, action, submitValue });
+        setFocusedAction(action as any);
+        // Don't set flaggedValue - let the action be triggered directly
+        submit(submitValue);
+        return;
+      }
+      
+      // Normal flag behavior
       log.info('Submitting flagged value', { flag, submitValue });
       setFlag(flag);
       submit(submitValue);
       setFlag('');
     },
     hotkeysOptions,
-    [flags, input, inputFocus, choices, index, flagValue, flagShortcuts],
+    [flags, input, inputFocus, choices, index, flagValue, flagShortcuts, focusedChoice, setFocusedAction, setFlag, submit],
   );
 
   const onShortcuts = useMemo(() => {
@@ -217,6 +263,11 @@ export default () => {
   useHotkeys(
     onShortcuts,
     (event, handler: HotkeysEvent) => {
+      console.log('[useShortcuts] Prompt shortcut triggered', { 
+        key: handler?.keys?.[0],
+        onShortcuts,
+        promptShortcuts: promptShortcuts.map(s => ({ key: s.key, name: s.name }))
+      });
       log.info('Prompt shortcut triggered', { event, handler, promptShortcuts });
       event.preventDefault();
 
@@ -237,21 +288,41 @@ export default () => {
       }
 
       const found = promptShortcuts.find((ps) => isEventShortcut(handler, ps.key));
+      
+      console.log('[useShortcuts] Checking prompt shortcuts', {
+        key: handler?.keys?.[0],
+        found: found ? { key: found.key, name: (found as any).name, hasAction: (found as any).hasAction } : null,
+        allShortcuts: promptShortcuts.map(s => ({ key: s.key, name: (s as any).name }))
+      });
+      
       if (found) {
         log.info('Matching prompt shortcut found', { shortcut: found });
-        if (found?.flag) {
+        
+        // Check if this is an action with hasAction
+        if ((found as any)?.hasAction) {
+          console.log('[useShortcuts] Found action with hasAction, triggering', { 
+            name: (found as any).name,
+            value: (found as any).value,
+            flag: (found as any).flag
+          });
+          setFocusedAction(found as any);
+          // Don't set flaggedValue - let the action be triggered directly
+          submit(focusedChoice?.value || input);
+        } else if (found?.flag) {
+          console.log('[useShortcuts] Setting flag', { flag: found.flag });
           setFlag(found.flag);
-        }
-        if (found.key) {
+        } else if (found.key) {
+          console.log('[useShortcuts] Sending regular shortcut', { key: found.key });
           log.info('Sending shortcut', { key: found.key });
           sendShortcut(found.key);
         }
       } else {
+        console.log('[useShortcuts] No matching prompt shortcut found');
         log.info('No matching prompt shortcut found');
       }
     },
     hotkeysOptions,
-    [flagValue, promptShortcuts, flagShortcuts, promptData, actionsInputFocus],
+    [flagValue, promptShortcuts, flagShortcuts, promptData, actionsInputFocus, setFocusedAction, submit, focusedChoice, input, setFlag],
   );
 
   useHotkeys(

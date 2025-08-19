@@ -15,24 +15,22 @@ import { cliFromParams, runPromptProcess } from './kit';
 import { kitPath } from '@johnlindquist/kit/core/utils';
 import { app, BrowserWindow } from 'electron';
 import { fileURLToPath } from 'node:url';
+import { getCachedAvatar } from './avatar-cache';
+import { snapshot } from 'valtio';
 
 export function setupDevtoolsHandlers(prompt: KitPrompt) {
   prompt.window.webContents?.on('devtools-opened', () => {
     prompt.devToolsOpening = false;
     prompt.window.removeListener('blur', prompt.onBlur);
-    prompt.makeWindow();
+    // Removed makeWindow() call - no longer needed
     prompt.sendToPrompt(Channel.DEV_TOOLS, true);
   });
 
   prompt.window.webContents?.on('devtools-closed', () => {
     prompt.logSilly('event: devtools-closed');
 
-    if (kitState.isMac && !prompt.isWindow) {
-      prompt.logInfo('👋 setPromptAlwaysOnTop: false, so makeWindow');
-      prompt.makeWindow();
-    } else {
-      prompt.setPromptAlwaysOnTop(false);
-    }
+    // Simplified logic - always set alwaysOnTop to false
+    prompt.setPromptAlwaysOnTop(false);
 
     if (prompt.scriptPath !== getMainScriptPath()) {
       prompt.maybeHide(HideReason.DevToolsClosed);
@@ -43,11 +41,43 @@ export function setupDevtoolsHandlers(prompt: KitPrompt) {
   });
 }
 
+// NEW helper to bootstrap user data
+async function sendBootstrapUser(prompt: KitPrompt) {
+  const u: any = kitState.user;
+  if (!u || typeof u.login !== 'string' || u.login.length === 0) {
+    return; // nothing to preload
+  }
+  let payload = { ...u };
+  try {
+    if (u.avatar_url) {
+      const cached = await getCachedAvatar(u.avatar_url);
+      if (cached) payload.avatar_url = cached;
+    }
+  } catch {
+    // ignore; fall back to whatever is in payload
+  }
+
+  try {
+    // Send directly to this prompt so it has the user before any other late messages
+    prompt.window?.webContents?.send(AppChannel.USER_CHANGED, payload);
+    (prompt as any).__userBootstrapped = true;
+    prompt.logInfo(`[Bootstrap] Sent user data: ${payload.login}`);
+    
+    // Also send sponsor status so the star shows immediately
+    prompt.window?.webContents?.send(AppChannel.KIT_STATE, { isSponsor: kitState.isSponsor });
+    prompt.logInfo(`[Bootstrap] Sent sponsor status: ${kitState.isSponsor}`);
+  } catch (e) {
+    // Swallow: window might be mid-teardown
+  }
+}
+
 export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
   prompt.window.webContents?.on('dom-ready', () => {
     prompt.logInfo('📦 dom-ready');
     prompt.window?.webContents?.setZoomLevel(0);
     prompt.window.webContents?.on('before-input-event', prompt.beforeInputHandler as any);
+    // Bootstrap user data immediately
+    void sendBootstrapUser(prompt);
   });
 
   prompt.window.webContents?.once('did-finish-load', () => {
@@ -68,10 +98,14 @@ export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
       url: kitState.url,
     });
 
-    const user = (prompt as any).snapshot ? (prompt as any).snapshot(kitState.user) : kitState.user;
-    prompt.logInfo(`did-finish-load, setting prompt user to: ${user?.login}`);
-    prompt.sendToPrompt(AppChannel.USER_CHANGED, user);
-    (prompt as any).setKitStateAtom?.({ isSponsor: kitState.isSponsor });
+    const user = snapshot(kitState.user);
+    prompt.logInfo(`did-finish-load, prompt user snapshot: ${user?.login}`);
+    // Avoid duplicate initial user payloads
+    if (!(prompt as any).__userBootstrapped) {
+      prompt.sendToPrompt(AppChannel.USER_CHANGED, user);
+      (prompt as any).__userBootstrapped = true;
+    }
+    prompt.sendToPrompt(AppChannel.KIT_STATE, { isSponsor: kitState.isSponsor });
     emitter.emit(KitEvent.DID_FINISH_LOAD);
 
     const messagesReadyHandler = async (_event, _pid) => {

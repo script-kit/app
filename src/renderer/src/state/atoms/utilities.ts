@@ -7,6 +7,9 @@ import { atom } from 'jotai';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import type { Choice } from '@johnlindquist/kit/types/core';
 
+// Import placeholderTimeoutId from jotai.ts to ensure we're using the same instance
+import { placeholderTimeoutId } from '../../jotai';
+
 // Import dependencies from shared-dependencies to avoid circular imports
 import {
   uiAtom,
@@ -22,9 +25,6 @@ import {
   selectedChoicesAtom,
   choices,
 } from '../shared-dependencies';
-
-// Track placeholder timeout
-let placeholderTimeoutId: NodeJS.Timeout | null = null;
 
 /**
  * Appends text to the current input (text input or editor).

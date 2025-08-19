@@ -6,7 +6,7 @@ import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Range, type editor as monacoEditor, type IDisposable } from 'monaco-editor/esm/vs/editor/editor.api';
+import { Range, type editor as monacoEditor } from 'monaco-editor/esm/vs/editor/editor.api';
 
 const { ipcRenderer } = window.electron;
 import {
@@ -19,16 +19,19 @@ import {
   editorOptions,
   editorSuggestionsAtom,
   flaggedChoiceValueAtom,
-  flagsAtom,
+  focusedFlagValueAtom,
   inputAtom,
   openAtom,
   scrollToAtom,
+  sendShortcutAtom,
   setFlagByShortcutAtom,
+  shortcutStringsAtom,
   submitInputAtom,
+  submitValueAtom,
   uiAtom,
 } from '../jotai';
 
-import { toMonacoKeybindingOrUndefined, isReservedEditorShortcut } from '@renderer/utils/keycodes';
+import { convertStringShortcutToMoncacoNumber } from '@renderer/utils/keycodes';
 import { kitLight, nightOwl } from '../editor-themes';
 
 const registerPropertiesLanguage = (monaco: Monaco) => {
@@ -97,28 +100,8 @@ export default function Editor() {
   const [, setInputValue] = useAtom(inputAtom);
   const [inputValue] = useAtom(inputAtom);
   const setCursorPosition = useSetAtom(editorCursorPosAtom);
-  
-  // Log whenever inputValue changes
-  useEffect(() => {
-    console.log(JSON.stringify({
-      source: 'EDITOR_inputValue_changed',
-      valueLength: inputValue?.length || 0,
-      valuePreview: inputValue?.substring(0, 50) || '',
-      timestamp: Date.now()
-    }));
-  }, [inputValue]);
   const [ui] = useAtom(uiAtom);
   const [options] = useAtom(editorOptions);
-  
-  // Log editor options to check for readOnly or other restrictive settings
-  useEffect(() => {
-    console.log(JSON.stringify({
-      source: 'EDITOR_OPTIONS',
-      options,
-      hasReadOnly: 'readOnly' in (options || {}),
-      readOnlyValue: (options as any)?.readOnly
-    }));
-  }, [options]);
   const [editorSuggestions] = useAtom(editorSuggestionsAtom);
   const editorAppend = useAtomValue(editorAppendAtom);
   const disposeRef = useRef<any>(null);
@@ -225,32 +208,11 @@ export default function Editor() {
     (mountEditor: monacoEditor.IStandaloneCodeEditor, monaco: Monaco) => {
       setEditorRef(mountEditor);
 
-      // Re-enable Cmd+K for Kit command palette (like the old working version)
+      // Remove the cmd/control + k binding
       mountEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
         const value = mountEditor.getModel()?.getValue();
         setFlaggedChoiceValue(value || ui);
       });
-      
-      // TEMPORARY: Add explicit paste handler to work around the issue
-      mountEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, async () => {
-        console.log('[EDITOR] Cmd+V handler triggered');
-        try {
-          const text = await navigator.clipboard.readText();
-          if (text) {
-            const selection = mountEditor.getSelection();
-            if (selection) {
-              mountEditor.executeEdits('manual-paste', [{
-                range: selection,
-                text: text,
-                forceMoveMarkers: true
-              }]);
-            }
-          }
-        } catch (err) {
-          console.error('[EDITOR] Paste failed:', err);
-        }
-      });
-
 
       mountEditor.focus();
 
@@ -346,33 +308,15 @@ export default function Editor() {
 
   const onChange = useCallback(
     (value) => {
-      console.log(JSON.stringify({
-        source: 'MONACO_onChange',
-        valueLength: value?.length || 0,
-        valuePreview: value?.substring(0, 50) || '',
-        timestamp: Date.now()
-      }));
-      
       if (!editor) {
-        console.warn('[MONACO_onChange] No editor, skipping setInputValue');
         return;
       }
       if (!editor?.getModel()) {
-        console.warn('[MONACO_onChange] No model, skipping setInputValue');
         return;
       }
       if (!editor?.getPosition()) {
-        console.warn('[MONACO_onChange] No position, skipping setInputValue');
         return;
       }
-      
-      console.log(JSON.stringify({
-        source: 'MONACO_onChange_calling_setInputValue',
-        valueLength: value?.length || 0,
-        valuePreview: value?.substring(0, 50) || '',
-        timestamp: Date.now()
-      }));
-      
       setCursorPosition(editor?.getModel()?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) || 0);
       setInputValue(value);
     },
@@ -450,9 +394,8 @@ export default function Editor() {
     }
   }, [open, config, editor, ui]);
 
-  let prevAppendDate;
   useEffect(() => {
-    if (editor && editorAppend?.text !== undefined && prevAppendDate !== editorAppend?.date) {
+    if (editor && editorAppend?.text) {
       // set position to the end of the file
       const lineNumber = editor.getModel()?.getLineCount() || 0;
       const column = editor.getModel()?.getLineMaxColumn(lineNumber) || 0;
@@ -466,7 +409,6 @@ export default function Editor() {
         forceMoveMarkers: true,
       };
 
-      log.info('Appending text to editor', { text: editorAppend?.text });
       editor.executeEdits('my-source', [op]);
 
       // if cursor is at the end of the file, scroll to bottom
@@ -476,9 +418,8 @@ export default function Editor() {
       }
 
       channel(Channel.APPEND_EDITOR_VALUE);
-      prevAppendDate = editorAppend?.date;
     }
-  }, [editor, editorAppend]);
+  }, [editor, editorAppend, channel]);
 
   useEffect(() => {
     const getSelectedText = () => {
@@ -583,344 +524,49 @@ export default function Editor() {
 
     ipcRenderer.on(Channel.EDITOR_MOVE_CURSOR, moveCursor);
 
-    const replaceTextRange = (event: any, { start, end, text }: { start: number; end: number; text: string }) => {
-      if (!editor || !editor.getModel()) return;
-      
-      const startPos = editor.getModel()!.getPositionAt(start);
-      const endPos = editor.getModel()!.getPositionAt(end);
-      
-      const range = new Range(
-        startPos.lineNumber, startPos.column,
-        endPos.lineNumber, endPos.column
-      );
-      
-      editor.executeEdits('replace-range', [{
-        identifier: { major: 1, minor: 1 },
-        range,
-        text,
-        forceMoveMarkers: true
-      }]);
-      
-      channel(Channel.EDITOR_REPLACE_RANGE, { 
-        value: editor.getModel()!.getOffsetAt(editor.getPosition()!) 
-      });
-    };
-
-    ipcRenderer.on(Channel.EDITOR_REPLACE_RANGE, replaceTextRange);
-
-    const getLineInfo = (event: any, lineNumber?: number) => {
-      if (!editor || !editor.getModel()) return;
-      
-      const currentLine = lineNumber || editor.getPosition()?.lineNumber || 1;
-      const lineContent = editor.getModel()!.getLineContent(currentLine);
-      const lineLength = lineContent.length;
-      const lineCount = editor.getModel()!.getLineCount();
-      
-      channel(Channel.EDITOR_GET_LINE_INFO, {
-        value: {
-          lineNumber: currentLine,
-          content: lineContent,
-          length: lineLength,
-          totalLines: lineCount,
-          indentation: lineContent.match(/^(\s*)/)?.[1] || ''
-        }
-      });
-    };
-
-    ipcRenderer.on(Channel.EDITOR_GET_LINE_INFO, getLineInfo);
-
-    const findAndReplaceAll = (event: any, { searchText, replaceText, options }: { searchText: string; replaceText: string; options?: { regex?: boolean; matchCase?: boolean; wholeWord?: boolean } }) => {
-      if (!editor || !editor.getModel()) return;
-      
-      const model = editor.getModel()!;
-      const matches = model.findMatches(
-        searchText, 
-        false, // searchOnlyEditableRange
-        options?.regex || false,
-        options?.matchCase || false,
-        options?.wholeWord || false,
-        true // captureMatches
-      );
-      
-      const edits = matches.map(match => ({
-        identifier: { major: 1, minor: 1 },
-        range: match.range,
-        text: replaceText,
-        forceMoveMarkers: true
-      }));
-      
-      editor.executeEdits('find-replace-all', edits);
-      
-      channel(Channel.EDITOR_FIND_REPLACE_ALL, { 
-        value: { replacedCount: matches.length } 
-      });
-    };
-
-    ipcRenderer.on(Channel.EDITOR_FIND_REPLACE_ALL, findAndReplaceAll);
-
-    const getFoldedRegions = () => {
-      if (!editor) return;
-      
-      // Monaco doesn't expose folding state directly, so we'll return empty array for now
-      // In a real implementation, you'd need to access internal folding model
-      channel(Channel.EDITOR_GET_FOLDED_REGIONS, { 
-        value: []
-      });
-    };
-
-    ipcRenderer.on(Channel.EDITOR_GET_FOLDED_REGIONS, getFoldedRegions);
-
-    const setFoldedRegions = (event: any, regions: Array<{ start: number; end: number }>) => {
-      if (!editor) return;
-      
-      // First unfold all
-      editor.getAction('editor.unfoldAll')?.run();
-      
-      // Then fold specified regions
-      regions.forEach(region => {
-        editor.setSelection(new Range(
-          region.start, 1, 
-          region.end, 1
-        ));
-        editor.getAction('editor.fold')?.run();
-      });
-      
-      channel(Channel.EDITOR_SET_FOLDED_REGIONS);
-    };
-
-    ipcRenderer.on(Channel.EDITOR_SET_FOLDED_REGIONS, setFoldedRegions);
-
-    const executeMonacoCommand = async (event: any, { commandId, args }: { commandId: string; args?: any }) => {
-      if (!editor) return;
-      
-      try {
-        const result = await editor.getAction(commandId)?.run(args);
-        
-        channel(Channel.EDITOR_EXECUTE_COMMAND, { 
-          value: { 
-            success: true, 
-            commandId,
-            result 
-          } 
-        });
-      } catch (error: any) {
-        channel(Channel.EDITOR_EXECUTE_COMMAND, { 
-          value: { 
-            success: false, 
-            commandId,
-            error: error.message 
-          } 
-        });
-      }
-    };
-
-    ipcRenderer.on(Channel.EDITOR_EXECUTE_COMMAND, executeMonacoCommand);
-
-    const scrollToPosition = (event: any, position: 'top' | 'center' | 'bottom' | number) => {
-      if (!editor) return;
-      
-      if (typeof position === 'number') {
-        editor.revealLineInCenter(position);
-      } else if (position === 'top') {
-        editor.setScrollPosition({ scrollTop: 0 });
-      } else if (position === 'bottom') {
-        const lineNumber = editor.getModel()?.getLineCount() || 0;
-        const column = (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
-        const pos = { lineNumber, column };
-        editor.setPosition(pos);
-        editor.revealPosition(pos);
-      } else if (position === 'center') {
-        const lineNumber = editor.getModel()?.getLineCount() || 0;
-        editor.revealLineInCenter(Math.floor(lineNumber / 2));
-      }
-      
-      channel(Channel.EDITOR_SCROLL_TO);
-    };
-
-    ipcRenderer.on(Channel.EDITOR_SCROLL_TO, scrollToPosition);
-
-    const scrollToTop = () => {
-      if (!editor) return;
-      editor.revealLine(1);
-      editor.setScrollPosition({ scrollTop: 0 });
-      channel(Channel.EDITOR_SCROLL_TO_TOP);
-    };
-
-    ipcRenderer.on(Channel.EDITOR_SCROLL_TO_TOP, scrollToTop);
-
-    const scrollToBottom = () => {
-      if (!editor || !editor.getModel()) return;
-      const model = editor.getModel();
-      const lineNumber = model.getLineCount();
-      if (lineNumber > 0) {
-        const column = model.getLineMaxColumn(lineNumber);
-        const position = { lineNumber, column };
-        editor.setPosition(position);
-        editor.revealPosition(position, 1); // 1 = ScrollType.Immediate
-      }
-      channel(Channel.EDITOR_SCROLL_TO_BOTTOM);
-    };
-
-    ipcRenderer.on(Channel.EDITOR_SCROLL_TO_BOTTOM, scrollToBottom);
-
-    const getCurrentInput = () => {
-      if (!editor || !editor.getModel()) return;
-      
-      const value = editor.getModel()!.getValue();
-      channel(Channel.EDITOR_GET_CURRENT_INPUT, { value });
-    };
-
-    ipcRenderer.on(Channel.EDITOR_GET_CURRENT_INPUT, getCurrentInput);
-
     return () => {
       ipcRenderer.removeListener(Channel.EDITOR_GET_SELECTION, getSelectedText);
       ipcRenderer.removeListener(Channel.EDITOR_GET_CURSOR_OFFSET, getCursorPosition);
       ipcRenderer.removeListener(Channel.EDITOR_INSERT_TEXT, insertTextAtCursor);
       ipcRenderer.removeListener(Channel.EDITOR_MOVE_CURSOR, moveCursor);
-      ipcRenderer.removeListener(Channel.EDITOR_REPLACE_RANGE, replaceTextRange);
-      ipcRenderer.removeListener(Channel.EDITOR_GET_LINE_INFO, getLineInfo);
-      ipcRenderer.removeListener(Channel.EDITOR_FIND_REPLACE_ALL, findAndReplaceAll);
-      ipcRenderer.removeListener(Channel.EDITOR_GET_FOLDED_REGIONS, getFoldedRegions);
-      ipcRenderer.removeListener(Channel.EDITOR_SET_FOLDED_REGIONS, setFoldedRegions);
-      ipcRenderer.removeListener(Channel.EDITOR_EXECUTE_COMMAND, executeMonacoCommand);
-      ipcRenderer.removeListener(Channel.EDITOR_SCROLL_TO, scrollToPosition);
-      ipcRenderer.removeListener(Channel.EDITOR_SCROLL_TO_TOP, scrollToTop);
-      ipcRenderer.removeListener(Channel.EDITOR_SCROLL_TO_BOTTOM, scrollToBottom);
-      ipcRenderer.removeListener(Channel.EDITOR_GET_CURRENT_INPUT, getCurrentInput);
     };
   }, [editor, channel]);
 
+  const shortcutStrings = useAtomValue(shortcutStringsAtom);
   const appConfig = useAtomValue(appConfigAtom);
-  const flags = useAtomValue(flagsAtom);
+  const sendShortcut = useSetAtom(sendShortcutAtom);
   const setFlagByShortcut = useSetAtom(setFlagByShortcutAtom);
   const submitInput = useSetAtom(submitInputAtom);
 
-  // Track command IDs for cleanup
-  const commandIdsRef = useRef<string[]>([]);
-
   useEffect(() => {
-    console.log(JSON.stringify({
-      source: 'EDITOR_KEYBINDINGS_useEffect',
-      hasAppConfig: !!appConfig,
-      hasEditor: !!editor,
-      hasFlags: !!flags,
-      flagCount: flags ? Object.keys(flags).length : 0,
-      flags: flags ? Object.entries(flags).map(([k, v]) => ({ 
-        key: k, 
-        shortcut: (v as any)?.shortcut,
-        hasAction: (v as any)?.hasAction
-      })) : []
-    }));
+    if (appConfig) {
+      for (const { type, value } of shortcutStrings) {
+        // log.info(`Assigning shortcut`, { type, value });
+        const result = convertStringShortcutToMoncacoNumber(value, appConfig?.isWin);
 
-    if (appConfig && editor && flags) {
-      // Clean up previous commands
-      commandIdsRef.current.forEach(id => {
-        console.log('[EDITOR KEYBINDINGS] Cleaning up command:', id);
-      });
-      commandIdsRef.current = [];
-
-      const disposables: IDisposable[] = [];
-      const isWindows = appConfig?.isWin || false;
-
-      console.log('[EDITOR KEYBINDINGS] Starting registration for flags');
-
-      // ONLY register shortcuts that are defined in the current prompt's flags
-      Object.entries(flags).forEach(([flagKey, flag]) => {
-        const flagData = flag as any;
-        console.log(JSON.stringify({
-          source: 'EDITOR_KEYBINDINGS_processing_flag',
-          flagKey,
-          shortcut: flagData?.shortcut,
-          name: flagData?.name,
-          hasAction: flagData?.hasAction
-        }));
-
-        if (flagData?.shortcut) {
-          // CRITICAL: Skip reserved editor shortcuts (clipboard, undo, etc.)
-          if (isReservedEditorShortcut(flagData.shortcut, true)) {
-            console.warn(JSON.stringify({
-              source: 'EDITOR_KEYBINDINGS_SKIP_RESERVED',
-              shortcut: flagData.shortcut,
-              reason: 'Reserved editor shortcut (clipboard/edit/find operation)'
-            }));
-            return; // Skip this flag entirely
-          }
-          
-          // Use the safe converter that returns undefined for invalid keybindings
-          const keybinding = toMonacoKeybindingOrUndefined(flagData.shortcut, isWindows);
-          
-          console.log('[EDITOR KEYBINDINGS] Converted shortcut:', {
-            shortcut: flagData.shortcut,
-            keybinding,
-            keybindingBinary: keybinding ? keybinding.toString(2) : 'undefined',
-            keybindingHex: keybinding ? '0x' + keybinding.toString(16) : 'undefined',
-            keyCode: keybinding ? (keybinding & 0xFF) : 'N/A',
-            isValid: keybinding !== undefined
-          });
-
-          // Skip if the keybinding couldn't be resolved or would be modifier-only
-          if (keybinding === undefined) {
-            console.warn('[EDITOR KEYBINDINGS] Skipping invalid shortcut:', flagData.shortcut);
-            return;
-          }
-
-          // Use addAction for proper disposal support
-          const actionId = `kit.flag.${flagKey}`;
-          console.log('[EDITOR KEYBINDINGS] Registering action:', {
-            actionId,
-            label: flagData.name || flagKey,
-            keybinding,
-            precondition: 'editorTextFocus && !suggestWidgetVisible && !findWidgetVisible && !renameInputVisible'
-          });
-
-          try {
-            // Use simpler addCommand like the working version did
-            const disposable = editor.addCommand(keybinding, () => {
-              console.log('[EDITOR COMMAND] Triggered!', { 
-                shortcut: flagData.shortcut, 
-                flag: flagKey,
-                timestamp: Date.now()
-              });
-              
-              // setFlagByShortcut will handle setting either focusedActionAtom (for actions with onAction)
-              // or flaggedChoiceValueAtom/focusedFlagValueAtom (for normal flags)
-              setFlagByShortcut(flagData.shortcut);
-              // Always submit - the submitValueAtom will check if it's an action with hasAction
-              submitInput();
-            });
-            
-            console.log('[EDITOR KEYBINDINGS] Successfully registered command:', actionId, 'disposable:', disposable);
-            if (disposable) {
-              disposables.push({ dispose: () => editor.removeCommand(keybinding) });
+        if (result) {
+          editor?.addCommand(result, () => {
+            log.info('🏆', { value, type });
+            if (type === 'shortcut') {
+              sendShortcut(value);
+              return;
             }
-            commandIdsRef.current.push(actionId);
-          } catch (error) {
-            console.error('[EDITOR KEYBINDINGS] Failed to register action:', {
-              actionId,
-              error: error instanceof Error ? error.message : error
-            });
-          }
+            if (type === 'flag') {
+              setFlagByShortcut(value);
+              submitInput();
+              return;
+            }
+
+            if (type === 'action') {
+              setFlagByShortcut(value);
+              submitInput();
+              return;
+            }
+          });
         }
-      });
-
-      console.log('[EDITOR KEYBINDINGS] Registration complete:', {
-        registeredCount: disposables.length,
-        registeredIds: commandIdsRef.current
-      });
-
-      // Cleanup function
-      return () => {
-        console.log('[EDITOR KEYBINDINGS] Cleanup - disposing', disposables.length, 'actions');
-        disposables.forEach(d => {
-          try {
-            d.dispose();
-          } catch (e) {
-            console.error('[EDITOR KEYBINDINGS] Error disposing action:', e);
-          }
-        });
-      };
+      }
     }
-  }, [editor, appConfig, flags, setFlagByShortcut, submitInput]);
+  }, [editor, shortcutStrings, appConfig]);
 
   const theme = kitIsDark ? 'kit-dark' : 'kit-light';
 

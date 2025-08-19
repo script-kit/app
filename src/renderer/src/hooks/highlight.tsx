@@ -35,15 +35,15 @@ const highlightFirstLetters = (name: string, input: string) => {
       return (
         // eslint-disable-next-line react/no-array-index-key
         <React.Fragment key={i}>
-          <span key={i} className={className}>
+          <span className={className}>
             {word[0]}
           </span>
-          {word.slice(1)}
+          <span>{word.slice(1)}</span>
         </React.Fragment>
       );
     }
 
-    return word;
+    return <span key={i}>{word}</span>;
   });
 };
 

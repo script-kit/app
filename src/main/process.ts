@@ -311,11 +311,15 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
 
   const isPrompt = type === ProcessType.Prompt;
   const entry = isPrompt ? KIT_APP_PROMPT : KIT_APP;
+  
+  processLog.info(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:314 - Creating child with entry: ${entry}, exists: ${pathExistsSync(entry)}`);
 
   const env = createEnv();
   // console.log({ env });
   const loaderFileUrl = pathToFileURL(kitPath('build', 'loader.js')).href;
   const beforeChildForkPerfMark = performance.now();
+  processLog.info(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:321 - Forking child: entry=${entry}, args=${JSON.stringify(args)}, cwd=${kitState?.kenvEnv?.KIT_CWD || os.homedir()}`);
+  
   const child = fork(entry, args, {
     silent: true,
     stdio: kitState?.kenvEnv?.KIT_STDIO || 'pipe',
@@ -337,6 +341,32 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
       : {}),
   });
 
+  if (!child || !child.pid) {
+    processLog.error(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:343 - Failed to create child process: entry=${entry}`);
+    throw new Error('Failed to create child process');
+  }
+
+  // Add stdout/stderr logging for idle processes
+  if (isPrompt && (!scriptPath || scriptPath === '')) {
+    processLog.info(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:350 - Setting up stdio handlers for idle process ${child.pid}`);
+    if (child.stdout) {
+      child.stdout.on('data', (data) => {
+        const output = data.toString().trim();
+        if (output) {
+          processLog.info(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:355 - ${child.pid} STDOUT:`, output);
+        }
+      });
+    }
+    if (child.stderr) {
+      child.stderr.on('data', (data) => {
+        const output = data.toString().trim();
+        if (output) {
+          processLog.error(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:362 - ${child.pid} STDERR:`, output);
+        }
+      });
+    }
+  }
+
   const kitLoadingHandler = (data) => {
     if (data?.channel === Channel.KIT_LOADING || data?.channel === Channel.KIT_READY) {
       processLog.info(`${child.pid}: KIT_LOADING ${data?.value} in ${performance.now() - beforeChildForkPerfMark}ms`);
@@ -354,6 +384,14 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
   };
 
   child.on('message', kitReadyHandler);
+  
+  // Debug: Log all messages from child
+  child.on('message', (data) => {
+    processLog.info(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:359 - ${child.pid}: Received message:`, { 
+      channel: data?.channel, 
+      value: data?.value?.substring ? data.value.substring(0, 100) : data?.value 
+    });
+  });
 
   const mainMenuReadyHandler = (data) => {
     if (data?.channel === Channel.MAIN_MENU_READY) {
@@ -368,6 +406,7 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
 
   processLog.info(`
   ${child.pid}: 🚀 Create child process: ${entry} ${args.join(' ')}`);
+  processLog.info(`${child.pid}: Process details - type: ${type}, scriptPath: ${scriptPath || 'none'}, isPrompt: ${isPrompt}, entry: ${entry}`);
 
   let win: BrowserWindow | null = null;
 
@@ -685,13 +724,21 @@ class Processes extends Array<ProcessAndPrompt> {
     });
 
     child.once('disconnect', () => {
-      processLog.info(`${pid}: DISCONNECTED`);
+      processLog.info(`${pid}: DISCONNECTED from process type: ${type}, scriptPath: ${scriptPath || 'idle'}`);
+      processLog.info(`${pid}: Child process state - killed: ${child.killed}, exitCode: ${child.exitCode}, signalCode: ${child.signalCode}`);
       this.stampPid(pid);
       processes.removeByPid(pid, 'process self cleanup');
     });
 
     child.once('exit', (code) => {
-      processLog.info('EXIT', { pid, code });
+      processLog.info(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:705 - Process ${pid} EXIT`, { 
+        pid, 
+        code,
+        type,
+        scriptPath: scriptPath || 'idle',
+        signal: child.signalCode,
+        killed: child.killed 
+      });
       if (id) {
         clearTimeout(id);
       }
@@ -727,9 +774,16 @@ class Processes extends Array<ProcessAndPrompt> {
 
     child.on('error', (error) => {
       if (error?.message?.includes('EPIPE')) {
+        processLog.info(`${pid}: EPIPE error (ignored)`);
         return;
       }
-      processLog.error('ERROR', { pid, error });
+      processLog.error(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:730 - Process ${pid} ERROR:`, { 
+        pid, 
+        error: error?.message || error,
+        stack: error?.stack,
+        type,
+        scriptPath 
+      });
       processLog.error('👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors');
       kitState.status = {
         status: 'warn',

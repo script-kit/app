@@ -41,6 +41,7 @@ export const noScript: Script = {
 export const noChoice: Choice = {
   id: '',
   name: '__app__/no-choice',
+  value: null,
   hasPreview: false,
 };
 

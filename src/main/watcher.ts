@@ -3,6 +3,7 @@ import { lstat, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { getUserJson } from '@johnlindquist/kit/core/db';
 import { Channel, Env } from '@johnlindquist/kit/core/enum';
+import { getCachedAvatar } from './avatar-cache';
 import type { Script, Scriptlet } from '@johnlindquist/kit/types';
 import { Notification, shell } from 'electron';
 import { globby } from 'globby';
@@ -571,9 +572,7 @@ export const checkUserDb = debounce(async (eventName: string) => {
     return;
   }
 
-  kitState.user = currentUser;
-
-  // Only run set-login if login value changed
+  // Snapshot BEFORE mutating kitState.user so we can detect transitions
   const prevLogin = kitState.user?.login;
   const newLogin = currentUser?.login;
   log.info('Login status', {
@@ -585,17 +584,61 @@ export const checkUserDb = debounce(async (eventName: string) => {
     await runScript(kitPath('config', 'set-login'), newLogin || Env.REMOVE);
   }
 
+  // Now update kitState.user with the new data
+  kitState.user = currentUser;
+
   const user = snapshot(kitState.user);
   log.info('Send user.json to prompt', {
     login: user?.login,
     name: user?.name,
   });
 
-  sendToAllPrompts(AppChannel.USER_CHANGED, user);
+  try {
+    // Only broadcast if we have a real user (avoid clearing UI with `{}`)
+    const isValidUser =
+      user && typeof user === 'object' && typeof (user as any).login === 'string' && (user as any).login.length > 0;
+
+    if (!isValidUser) {
+      // User logged out - send clear signal
+      log.info('[USER_CHANGED] User logged out, sending clear signal');
+      sendToAllPrompts(AppChannel.USER_CHANGED, { __clear: true });
+      
+      // Clear kitState.user as well
+      kitState.user = {};
+      
+      // Also clear sponsor status
+      kitState.isSponsor = false;
+      const { setKitStateAtom } = await import('./prompt');
+      setKitStateAtom({ isSponsor: false });
+    } else {
+      // Prefer cached avatar data URL if available, fall back to original URL.
+      let payload = { ...user };
+      if ((user as any).avatar_url) {
+        try {
+          const cached = await getCachedAvatar((user as any).avatar_url);
+          if (cached) payload.avatar_url = cached;
+        } catch (e) {
+          log.warn('[USER_CHANGED] getCachedAvatar failed, using raw avatar_url', e);
+        }
+      }
+
+      // Keep an authoritative, sanitized copy in main
+      kitState.user = payload;
+
+      sendToAllPrompts(AppChannel.USER_CHANGED, payload);
+      log.info('[USER_CHANGED] Broadcasted sanitized user payload');
+    }
+  } catch (e) {
+    log.error('[USER_CHANGED] Failed to prepare/broadcast user payload', e);
+  }
 
   const isSponsor = await sponsorCheck('Login', false);
   log.info(`🔍 Sponsor check result: ${isSponsor ? '✅' : '❌'}`);
   kitState.isSponsor = isSponsor;
+  
+  // Broadcast sponsor status to all prompts
+  const { setKitStateAtom } = await import('./prompt');
+  setKitStateAtom({ isSponsor });
 }, 500);
 
 const triggerRunText = debounce(

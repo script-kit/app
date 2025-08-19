@@ -16,6 +16,7 @@ import {
   userAtom,
 } from '../jotai';
 import { GithubIcon } from './icons';
+import { useCachedAvatar } from '../utils/image-cache';
 
 const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
   const user = useAtomValue(userAtom);
@@ -51,6 +52,7 @@ export default function KitTabs() {
   const itemsRef: any = useRef([]);
   const kitState = useAtomValue(kitStateAtom);
   const user = useAtomValue(userAtom);
+  const cachedAvatarUrl = useCachedAvatar(user?.avatar_url);
   const inputHeight = useAtomValue(inputHeightAtom);
 
   const tabText =
@@ -89,7 +91,11 @@ export default function KitTabs() {
     <>
       {kitState.isSponsor && tabs.includes('Account__') && (
         <>
-          <img alt="avatar" src={user.avatar_url} className="absolute right-[14px] bottom-[4px] z-0 w-6 rounded-full" />
+          <img
+            alt="avatar"
+            src={cachedAvatarUrl || user.avatar_url}
+            className="absolute right-[14px] bottom-[4px] z-0 w-6 rounded-full"
+          />
           <svg
             height="24"
             width="24"

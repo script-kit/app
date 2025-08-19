@@ -218,6 +218,7 @@ export default function App() {
 	const setProcesses = useSetAtom(processesAtom);
 	const [user, setUser] = useAtom(userAtom);
 	const setIsMouseDown = useSetAtom(isMouseDownAtom);
+	const lastUserRef = useRef<any>(null);
 
 	const kitState = useAtomValue(kitStateAtom);
 	const flagValue = useAtomValue(flaggedChoiceValueAtom);
@@ -500,23 +501,60 @@ export default function App() {
 		};
 	}, [chatMessages, ipcGet]);
 
+	// Robust user change handler
+	const userChangedHandler = useCallback(
+		(_evt, data) => {
+			try {
+				// Ignore null/undefined/non-object
+				if (!data || typeof data !== 'object') {
+					log.info('[USER_CHANGED] Ignored: non-object payload');
+					return;
+				}
+
+				// If you need a real "logout", broadcast a special { __clear: true } flag from main
+				if ((data as any).__clear === true) {
+					setUser({});
+					lastUserRef.current = null;
+					log.info('[USER_CHANGED] Cleared user via __clear flag');
+					return;
+				}
+
+				// Ignore empty or invalid users
+				if (typeof (data as any).login !== 'string' || (data as any).login.length === 0) {
+					log.info('[USER_CHANGED] Ignored: empty/invalid user payload');
+					return;
+				}
+
+				// Ignore strictly identical payloads (prevents churn)
+				const prev = lastUserRef.current;
+				const same =
+					prev &&
+					prev.login === data.login &&
+					prev.avatar_url === data.avatar_url; // shallow check is enough here
+				if (same) return;
+
+				setUser(data);
+				lastUserRef.current = data;
+				log.info('[USER_CHANGED] Applied new user payload');
+			} catch (e) {
+				log.warn('[USER_CHANGED] Handler error', e);
+			}
+		},
+		[setUser]
+	);
+
 	useEffect(() => {
 		const processesHandler = (_, data) => {
 			setProcesses(data);
 		};
 		ipcRenderer.on(AppChannel.PROCESSES, processesHandler);
-
-		const userChangedHandler = (_, data) => {
-			// log.info(`${window.pid}: 👩‍💻 User changed`, data?.username);
-			setUser(data);
-		};
-		ipcRenderer.on(AppChannel.USER_CHANGED, userChangedHandler);
+		ipcRenderer.on(AppChannel.USER_CHANGED, userChangedHandler as any);
 
 		return () => {
 			ipcRenderer.removeListener(AppChannel.PROCESSES, processesHandler);
-			ipcRenderer.removeListener(AppChannel.USER_CHANGED, userChangedHandler);
+			ipcRenderer.removeListener(AppChannel.USER_CHANGED, userChangedHandler as any);
 		};
-	}, [setProcesses, setUser]);
+	}, [setProcesses, userChangedHandler]);
 
 	const onMouseDown = useCallback(() => {
 		setIsMouseDown(true);
@@ -538,13 +576,50 @@ export default function App() {
 		}
 	}, [headerRef, setTopRef]);
 
+	// Add a global paste event listener to see if paste events are even reaching us
 	useEffect(() => {
-		document.addEventListener("paste", onPaste);
+		const globalPasteDebugger = (e: ClipboardEvent) => {
+			console.log(JSON.stringify({
+				source: 'GLOBAL_PASTE_DEBUGGER',
+				eventType: e.type,
+				target: e.target?.constructor?.name || 'unknown',
+				defaultPrevented: e.defaultPrevented,
+				bubbles: e.bubbles,
+				cancelable: e.cancelable,
+				currentUI: ui
+			}));
+		};
+
+		// Capture phase listener to catch it early
+		document.addEventListener("paste", globalPasteDebugger, true);
 
 		return () => {
-			document.removeEventListener("paste", onPaste);
+			document.removeEventListener("paste", globalPasteDebugger, true);
 		};
-	}, [onPaste]);
+	}, [ui]);
+
+	useEffect(() => {
+		console.log(JSON.stringify({
+			source: 'App.tsx_paste_listener',
+			ui,
+			action: (ui !== UI.editor && ui !== UI.textarea) ? 'attaching_listener' : 'NOT_attaching_listener'
+		}));
+
+		// Only attach paste listener for non-editor UIs
+		// Editor (Monaco) handles its own paste events
+		if (ui !== UI.editor && ui !== UI.textarea) {
+			document.addEventListener("paste", onPaste);
+
+			return () => {
+				console.log(JSON.stringify({
+					source: 'App.tsx_paste_cleanup',
+					ui,
+					action: 'removing_listener'
+				}));
+				document.removeEventListener("paste", onPaste);
+			};
+		}
+	}, [onPaste, ui]);
 
 	const panelChildRef = useRef<ImperativePanelHandle>(null);
 

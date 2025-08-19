@@ -27,6 +27,7 @@ import { type ProcessAndPrompt, ensureIdleProcess, processes } from './process';
 import { getAssetPath } from '../shared/assets';
 import { noChoice } from '../shared/defaults';
 import { AppChannel, HideReason, Trigger } from '../shared/enums';
+import { getCachedAvatar, clearAvatarCache } from './avatar-cache';
 import type { ResizeData, Survey } from '../shared/types';
 import { runPromptProcess } from './kit';
 import { ipcLog as log } from './logs';
@@ -277,6 +278,15 @@ ${data.error}
     event.sender.send(AppChannel.GET_ASSET, { assetPath });
   });
 
+  // Avatar cache handlers
+  ipcMain.handle(AppChannel.GET_CACHED_AVATAR, async (_event, avatarUrl: string) => {
+    return getCachedAvatar(avatarUrl);
+  });
+
+  ipcMain.handle(AppChannel.CLEAR_AVATAR_CACHE, async () => {
+    return clearAvatarCache();
+  });
+
   ipcMain.on(AppChannel.RESIZE, (_event, resizeData: ResizeData) => {
     const prompt = prompts.get(resizeData.pid);
     // log.info(`>>>>>>>>>>>>> AppChannel.RESIZE`, {
@@ -520,6 +530,17 @@ ${data.error}
               }
             }
           }
+        }
+
+        if (channel === Channel.ACTION) {
+          log.info(`[Main] ACTION received:`, {
+            pid: message.pid,
+            hasAction: message.state?.action !== undefined,
+            actionName: message.state?.action?.name,
+            actionFlag: message.state?.action?.flag,
+            actionValue: message.state?.action?.value,
+          });
+          // Don't return here - let it pass through to child process
         }
 
         if (channel === Channel.ACTIONS_INPUT) {

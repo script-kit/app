@@ -270,7 +270,15 @@ export default () => {
     [Channel.SET_PANEL]: setPanelHTML,
     [Channel.SET_PREVIEW]: setPreviewHTML,
     [Channel.SET_FOOTER]: (html) => setFooter(DOMPurify.sanitize(html)),
-    [Channel.SET_INPUT]: setInput,
+    [Channel.SET_INPUT]: (value) => {
+      console.log(JSON.stringify({
+        source: 'useMessages_Channel.SET_INPUT',
+        valueLength: value?.length || 0,
+        valuePreview: value?.substring(0, 50) || '',
+        timestamp: Date.now()
+      }));
+      setInput(value);
+    },
     [Channel.GET_INPUT]: () => {
       channel(Channel.GET_INPUT, { value: input });
     },

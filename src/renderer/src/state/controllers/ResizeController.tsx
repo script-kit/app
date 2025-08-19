@@ -53,37 +53,39 @@ export const ResizeController: React.FC = () => {
   // Also re-run when other atoms request a recompute
   const tick = useAtomValue(resizeTickAtom);
 
-  // Define the debounced resize execution using useCallback for a stable reference.
+  // Define the resize execution using useCallback for a stable reference.
+  // No longer debounced here since resize() already debounces at the API level
   const executeResize = useCallback(
-    debounce(
-      (reason = 'UNSET') => {
-        // Use store.get() (g) to access state synchronously at the time of execution.
-        const g = store.get;
+    (reason = 'UNSET') => {
+      log.info(`ResizeController.executeResize called with reason: ${reason}`);
+      
+      // Use store.get() (g) to access state synchronously at the time of execution.
+      const g = store.get;
 
-        // --- Start of restored and adapted logic from original resize() ---
+      // --- Start of restored and adapted logic from original resize() ---
 
-        const human = g(promptResizedByHumanAtom);
-        if (human) {
-          g(channelAtom)(Channel.SET_BOUNDS, g(promptBoundsAtom));
-          return;
-        }
+      const human = g(promptResizedByHumanAtom);
+      if (human) {
+        g(channelAtom)(Channel.SET_BOUNDS, g(promptBoundsAtom));
+        return;
+      }
 
-        const active = g(promptActiveAtom);
-        if (!active) return;
+      const active = g(promptActiveAtom);
+      if (!active) return;
 
-        const promptData = g(promptDataAtom) as Partial<PromptData>;
-        if (!promptData?.scriptPath) return;
+      const promptData = g(promptDataAtom) as Partial<PromptData>;
+      if (!promptData?.scriptPath) return;
 
-        const ui = g(uiAtom);
-        const scoredChoicesLength = g(scoredChoicesAtom)?.length;
-        const hasPanel = g(_panelHTML) !== '';
-        let mh = g(mainHeightAtom);
+      const ui = g(uiAtom);
+      const scoredChoicesLength = g(scoredChoicesAtom)?.length;
+      const hasPanel = g(_panelHTML) !== '';
+      let mh = g(mainHeightAtom);
 
-        if (promptData?.grid && document.getElementById(ID_MAIN)?.clientHeight > 10) {
-          return;
-        }
+      if (promptData?.grid && document.getElementById(ID_MAIN)?.clientHeight > 10) {
+        return;
+      }
 
-        const placeholderOnly = promptData?.mode === Mode.FILTER && scoredChoicesLength === 0 && ui === UI.arg;
+      const placeholderOnly = promptData?.mode === Mode.FILTER && scoredChoicesLength === 0 && ui === UI.arg;
 
         // DOM Measurements (Side effects localized here)
         const topHeight = document.getElementById(ID_HEADER)?.offsetHeight || 0;
@@ -233,13 +235,10 @@ export const ResizeController: React.FC = () => {
             debounceSendResize(data);
         } else {
             sendResize(data);
-        }
+      }
 
-        // --- End of restored logic ---
-      },
-      RESIZE_DEBOUNCE_MS,
-      { leading: true, trailing: true }
-    ),
+      // --- End of restored logic ---
+    },
     [store]
   );
 
@@ -247,7 +246,7 @@ export const ResizeController: React.FC = () => {
   useEffect(() => {
     executeResize('CONTROLLER_TRIGGER');
     return () => {
-      executeResize.cancel();
+      // Only debounceSendResize needs cancellation now
       debounceSendResize.cancel();
     };
   }, [executeResize, mainHeightTrigger, tick]);

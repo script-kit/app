@@ -152,17 +152,8 @@ export const showTabsAtom = atom((g) => {
 });
 
 // --- Shortcuts ---
-
-const _shortcuts = atom<Shortcut[]>([]);
-export const shortcutsAtom = atom(
-  (g) => g(_shortcuts),
-  (g, s, a: Shortcut[]) => {
-    const prevShortcuts = g(_shortcuts);
-    if (isEqual(prevShortcuts, a)) return;
-    log.info(`🔥 Setting shortcuts to ${a.length}`, a);
-    s(_shortcuts, a);
-  },
-);
+// Re-export shortcutsAtom from actions.ts to avoid duplication
+export { shortcutsAtom } from './atoms/actions';
 
 export const hasRightShortcutAtom = atom((g) => {
   return !!g(shortcutsAtom).find((s) => s?.key === 'right');

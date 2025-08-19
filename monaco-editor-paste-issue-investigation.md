@@ -1,3 +1,152 @@
+# Monaco Editor Paste Issue Investigation Report
+
+## Issue Summary
+Paste (Cmd+V) stopped working in the Monaco Editor but works in other UIs. Typing works fine, but paste doesn't trigger. Investigation shows significant changes between the working version from commit 52287807 (November 2024) and the current HEAD that may have broken clipboard functionality.
+
+## Investigation Findings
+
+### Key Issue Identified
+**Root Cause**: The shortcut registration system was completely refactored between November 2024 and now, moving from a simpler `shortcutStringsAtom` approach using `addCommand()` to a more complex `flags` atom approach using `addAction()` with preconditions. This change appears to have broken clipboard operations.
+
+### Major Changes Found
+
+#### 1. **Shortcut Registration Method Changed**
+- **November 2024 (Working)**: Used `editor.addCommand()` with simple keybinding numbers
+- **Current (Broken)**: Uses `editor.addAction()` with preconditions and more complex registration
+- **Impact**: The precondition `'editorTextFocus && !suggestWidgetVisible && !findWidgetVisible && !renameInputVisible'` may be preventing paste operations
+
+#### 2. **Atom Structure Completely Changed**
+- **November 2024**: Used `shortcutStringsAtom` that returned a Set of `{type, value}` objects
+- **Current**: Uses `flagsAtom` that returns flag objects with shortcuts
+- **Impact**: Different data flow and processing logic for shortcuts
+
+#### 3. **Monaco Editor Version Upgrade**
+- **November 2024**: Monaco Editor `^0.47.0`
+- **Current**: Monaco Editor `^0.52.2`  
+- **Impact**: API changes or behavior differences in newer Monaco version
+
+#### 4. **Electron Version Major Upgrade**
+- **November 2024**: Electron `^30.1.0`
+- **Current**: Electron `37.2.6`
+- **Impact**: Possible clipboard API changes or permission changes
+
+#### 5. **Reserved Shortcut Blocking Added**
+- **Current**: New `isReservedEditorShortcut()` function blocks clipboard operations (Cmd+V, Cmd+C, etc.)
+- **November 2024**: No such blocking existed
+- **Impact**: System clipboard shortcuts may be incorrectly blocked
+
+### Evidence From Code Analysis
+
+#### Current Problematic Code (editor.tsx lines 234-252):
+```typescript
+// TEMPORARY: Add explicit paste handler to work around the issue
+mountEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, async () => {
+  console.log('[EDITOR] Cmd+V handler triggered');
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text) {
+      const selection = mountEditor.getSelection();
+      if (selection) {
+        mountEditor.executeEdits('manual-paste', [{
+          range: selection,
+          text: text,
+          forceMoveMarkers: true
+        }]);
+      }
+    }
+  } catch (err) {
+    console.error('[EDITOR] Paste failed:', err);
+  }
+});
+```
+
+This temporary workaround proves that:
+1. Cmd+V bindings DO work with `addCommand()`
+2. The clipboard API is accessible
+3. The issue is with the new shortcut registration system
+
+#### Working Code From November 2024:
+```typescript
+useEffect(() => {
+  if (appConfig) {
+    for (const { type, value } of shortcutStrings) {
+      const result = convertStringShortcutToMoncacoNumber(value, appConfig?.isWin);
+      if (result) {
+        editor?.addCommand(result, () => {
+          // Simple, direct command registration
+          if (type === 'flag') {
+            setFlagByShortcut(value);
+            submitInput();
+            return;
+          }
+          // ... other cases
+        });
+      }
+    }
+  }
+}, [editor, shortcutStrings, appConfig]);
+```
+
+## Relevant Files Included
+
+### Current State Files:
+- **src/renderer/src/components/editor.tsx** - Contains broken shortcut registration and temporary paste workaround
+- **src/renderer/src/utils/keycodes.ts** - New keybinding utilities with reserved shortcut blocking
+- **package.json** - Shows Monaco and Electron version upgrades
+
+### Historical Files (November 2024 Working Version):
+- **editor-november-working.tsx** - Working editor component with simple addCommand approach
+- **keycodes-november.ts** - Original keybinding utilities without reserved blocking
+- **jotai-november.ts** - Original shortcutStringsAtom implementation
+- **package-november.json** - Original dependency versions
+
+## Recommended Next Steps
+
+### Immediate Fix Options:
+
+1. **Revert to November Shortcut System** (Recommended)
+   - Restore `shortcutStringsAtom` approach from November version
+   - Use simple `addCommand()` instead of complex `addAction()` with preconditions
+   - Remove reserved shortcut blocking for clipboard operations
+
+2. **Fix Current System**
+   - Modify `isReservedEditorShortcut()` to NOT block clipboard operations in editor context
+   - Review and fix the preconditions in `addAction()` calls
+   - Ensure clipboard shortcuts are never blocked by flag registration
+
+3. **Hybrid Approach**
+   - Keep current flag system for custom shortcuts
+   - Use direct `addCommand()` for system shortcuts (clipboard, etc.)
+   - Ensure clipboard operations bypass all custom shortcut processing
+
+### Investigation Tasks:
+
+1. **Test Monaco Version Compatibility**
+   - Downgrade Monaco to 0.47.0 temporarily to isolate version-related issues
+   - Check Monaco changelog for clipboard/shortcut API changes
+
+2. **Test Electron Version Compatibility**  
+   - Check if Electron 37.x changed clipboard permissions or behavior
+   - Verify clipboard API still works the same way
+
+3. **Debug Preconditions**
+   - Log when `editorTextFocus` is false during paste attempts
+   - Check if widget visibility states are incorrectly preventing paste
+
+## Token Optimization
+- Original investigation scope: ~15+ files
+- Optimized scope: 8 key files 
+- Focus: Paste functionality, shortcut registration, and dependency changes
+- Included both current and historical versions for complete context
+
+---
+
+# Complete File Contents for Expert Analysis
+
+## Current State (HEAD) - Broken Paste
+
+### src/renderer/src/components/editor.tsx
+```typescript
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import type { EditorOptions } from '@johnlindquist/kit/types/kitapp';
 import MonacoEditor, { type Monaco, useMonaco } from '@monaco-editor/react';
@@ -254,23 +403,12 @@ export default function Editor() {
 
       mountEditor.focus();
 
-      // monaco.languages.typescript.typescriptDefaults.addExtraLib(
-      //   `
-      //   declare module 'axios' {
-      //       export interface Foo {
-      //           foo: string;
-      //       }
-      //   }
-      //   `
-      // );
-
+      // ... rest of onMount implementation (config setup, themes, etc.)
+      
       if (typeof config !== 'string') {
         if (config?.language === 'typescript') {
           if (config?.extraLibs?.length) {
             for (const { content, filePath } of config.extraLibs) {
-              // console.log(filePath);
-              // console.log(content);
-
               try {
                 monaco.languages.typescript.typescriptDefaults.addExtraLib(content, filePath);
               } catch (e) {
@@ -299,18 +437,6 @@ export default function Editor() {
         }
       }
 
-      // const model = monaco.editor.createModel(
-      //   `
-      // import { getUserProfile } from './user';
-      // const profile = getUserProfile("some-id");
-      // console.log(profile.firstName);
-      //     `.trim(),
-      //   'typescript',
-      //   monaco.Uri.parse('file:///main.tsx')
-      // );
-
-      // editor.setModel(model);
-
       monaco.editor.setTheme(kitIsDark ? 'kit-dark' : 'kit-light');
 
       mountEditor.layout({
@@ -318,7 +444,6 @@ export default function Editor() {
         height: (containerRef?.current?.offsetHeight || document.body.offsetHeight) - 24,
       });
 
-      // if (typeof global?.exports === 'undefined') global.exports = {};
       mountEditor.focus();
 
       if (mountEditor?.getDomNode()) {
@@ -329,11 +454,8 @@ export default function Editor() {
 
       if ((config as EditorOptions).scrollTo === 'bottom') {
         const column = (mountEditor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
-
         const position = { lineNumber, column };
-        // console.log({ position });
         mountEditor.setPosition(position);
-
         mountEditor.revealPosition(position);
       }
 
@@ -379,416 +501,7 @@ export default function Editor() {
     [editor, setCursorPosition, setInputValue],
   );
 
-  // When inputValue changes, respect scrollTo bottom
-  // Why did I want inputValue to always scrollTo bottom??? I don't remember... :/ Turning it off for now
-  // This was for appending text programmatically!
-  // TODO: Add "autoscroll" option?
-  useEffect(() => {
-    if (editor && (config as EditorOptions).scrollTo === 'bottom') {
-      const lineNumber = editor.getModel()?.getLineCount() || 0;
-
-      const column = (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
-
-      const position = { lineNumber, column };
-      editor.setPosition(position);
-
-      editor.revealPosition(position);
-    }
-  }, [config, editor]);
-
-  useEffect(() => {
-    if (editor && scrollTo) {
-      if (scrollTo === 'bottom') {
-        const lineNumber = editor.getModel()?.getLineCount() || 0;
-
-        const column = (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
-
-        const position = { lineNumber, column };
-        editor.setPosition(position);
-
-        editor.revealPosition(position);
-      }
-
-      if (scrollTo === 'center') {
-        const lineNumber = editor.getModel()?.getLineCount() || 0;
-        editor.revealLineInCenter(Math.floor(lineNumber / 2));
-      }
-
-      if (scrollTo === 'top') {
-        editor.setScrollPosition({ scrollTop: 0 });
-      }
-
-      setScrollTo(null);
-    }
-  }, [editor, scrollTo, setScrollTo]);
-
-  useEffect(() => {
-    if (ui === UI.editor && open && editor) {
-      const lineNumber = editor.getModel()?.getLineCount() || 0;
-
-      if ((config as EditorOptions).scrollTo === 'bottom') {
-        const column = (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
-
-        const position = { lineNumber, column };
-        editor.setPosition(position);
-
-        editor.revealPosition(position);
-      }
-
-      if ((config as EditorOptions).scrollTo === 'center') {
-        editor.revealLineInCenter(Math.floor(lineNumber / 2));
-      }
-
-      if (config?.template) {
-        const contribution = editor.getContribution('snippetController2');
-        if (contribution) {
-          (contribution as any).insert(config.template);
-        }
-      }
-
-      editor.focus();
-    }
-  }, [open, config, editor, ui]);
-
-  let prevAppendDate;
-  useEffect(() => {
-    if (editor && editorAppend?.text !== undefined && prevAppendDate !== editorAppend?.date) {
-      // set position to the end of the file
-      const lineNumber = editor.getModel()?.getLineCount() || 0;
-      const column = editor.getModel()?.getLineMaxColumn(lineNumber) || 0;
-      const range = new Range(lineNumber, column, lineNumber, column);
-
-      const id = { major: 1, minor: 1 };
-      const op = {
-        identifier: id,
-        range,
-        text: editorAppend?.text,
-        forceMoveMarkers: true,
-      };
-
-      log.info('Appending text to editor', { text: editorAppend?.text });
-      editor.executeEdits('my-source', [op]);
-
-      // if cursor is at the end of the file, scroll to bottom
-      const cursorPosition = editor.getPosition();
-      if (cursorPosition?.lineNumber === lineNumber) {
-        editor.revealLine(lineNumber + 1);
-      }
-
-      channel(Channel.APPEND_EDITOR_VALUE);
-      prevAppendDate = editorAppend?.date;
-    }
-  }, [editor, editorAppend]);
-
-  useEffect(() => {
-    const getSelectedText = () => {
-      if (!editor) {
-        return;
-      }
-      const selection = editor.getSelection();
-
-      if (!selection) {
-        return;
-      }
-      const text = editor.getModel()?.getValueInRange(selection);
-      // get the start and end of the selection
-      const start = editor.getModel()?.getOffsetAt(selection.getStartPosition());
-      const end = editor.getModel()?.getOffsetAt(selection.getEndPosition());
-
-      channel(Channel.EDITOR_GET_SELECTION, {
-        value: {
-          text,
-          start,
-          end,
-        },
-      });
-    };
-
-    ipcRenderer.on(Channel.EDITOR_GET_SELECTION, getSelectedText);
-
-    const getCursorPosition = () => {
-      if (!editor) {
-        return;
-      }
-      if (!editor?.getModel()) {
-        return;
-      }
-      if (!editor?.getPosition()) {
-        return;
-      }
-
-      // get the index of the cursor relative to the content
-      const cursorOffset = editor?.getModel()?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) || 0;
-
-      channel(Channel.EDITOR_GET_CURSOR_OFFSET, { value: cursorOffset });
-    };
-
-    ipcRenderer.on(Channel.EDITOR_GET_CURSOR_OFFSET, getCursorPosition);
-
-    const insertTextAtCursor = (event: any, text: string) => {
-      if (!editor) {
-        return;
-      }
-      if (!editor?.getModel()) {
-        return;
-      }
-      if (!editor?.getPosition()) {
-        return;
-      }
-
-      const cursorOffset = editor?.getModel()?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) || 0;
-
-      const position = editor.getModel()?.getPositionAt(cursorOffset);
-      editor.setPosition(position || { lineNumber: 1, column: 1 });
-
-      const id = { major: 1, minor: 1 };
-      const op = {
-        identifier: id,
-        range: new Range(
-          position?.lineNumber || 1,
-          position?.column || 1,
-          position?.lineNumber || 1,
-          position?.column || 1,
-        ),
-        text,
-        forceMoveMarkers: true,
-      };
-
-      editor.executeEdits('my-source', [op]);
-
-      const newCursorOffset =
-        editor?.getModel()?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) || 0;
-
-      channel(Channel.EDITOR_INSERT_TEXT, { value: newCursorOffset });
-    };
-
-    ipcRenderer.on(Channel.EDITOR_INSERT_TEXT, insertTextAtCursor);
-
-    const moveCursor = (event: any, offset: number) => {
-      if (!editor) {
-        return;
-      }
-      if (!editor?.getModel()) {
-        return;
-      }
-
-      const position = editor.getModel()?.getPositionAt(offset);
-      editor.setPosition(position || { lineNumber: 1, column: 1 });
-
-      const newCursorOffset =
-        editor?.getModel()?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) || 0;
-
-      channel(Channel.EDITOR_MOVE_CURSOR, { value: newCursorOffset });
-    };
-
-    ipcRenderer.on(Channel.EDITOR_MOVE_CURSOR, moveCursor);
-
-    const replaceTextRange = (event: any, { start, end, text }: { start: number; end: number; text: string }) => {
-      if (!editor || !editor.getModel()) return;
-      
-      const startPos = editor.getModel()!.getPositionAt(start);
-      const endPos = editor.getModel()!.getPositionAt(end);
-      
-      const range = new Range(
-        startPos.lineNumber, startPos.column,
-        endPos.lineNumber, endPos.column
-      );
-      
-      editor.executeEdits('replace-range', [{
-        identifier: { major: 1, minor: 1 },
-        range,
-        text,
-        forceMoveMarkers: true
-      }]);
-      
-      channel(Channel.EDITOR_REPLACE_RANGE, { 
-        value: editor.getModel()!.getOffsetAt(editor.getPosition()!) 
-      });
-    };
-
-    ipcRenderer.on(Channel.EDITOR_REPLACE_RANGE, replaceTextRange);
-
-    const getLineInfo = (event: any, lineNumber?: number) => {
-      if (!editor || !editor.getModel()) return;
-      
-      const currentLine = lineNumber || editor.getPosition()?.lineNumber || 1;
-      const lineContent = editor.getModel()!.getLineContent(currentLine);
-      const lineLength = lineContent.length;
-      const lineCount = editor.getModel()!.getLineCount();
-      
-      channel(Channel.EDITOR_GET_LINE_INFO, {
-        value: {
-          lineNumber: currentLine,
-          content: lineContent,
-          length: lineLength,
-          totalLines: lineCount,
-          indentation: lineContent.match(/^(\s*)/)?.[1] || ''
-        }
-      });
-    };
-
-    ipcRenderer.on(Channel.EDITOR_GET_LINE_INFO, getLineInfo);
-
-    const findAndReplaceAll = (event: any, { searchText, replaceText, options }: { searchText: string; replaceText: string; options?: { regex?: boolean; matchCase?: boolean; wholeWord?: boolean } }) => {
-      if (!editor || !editor.getModel()) return;
-      
-      const model = editor.getModel()!;
-      const matches = model.findMatches(
-        searchText, 
-        false, // searchOnlyEditableRange
-        options?.regex || false,
-        options?.matchCase || false,
-        options?.wholeWord || false,
-        true // captureMatches
-      );
-      
-      const edits = matches.map(match => ({
-        identifier: { major: 1, minor: 1 },
-        range: match.range,
-        text: replaceText,
-        forceMoveMarkers: true
-      }));
-      
-      editor.executeEdits('find-replace-all', edits);
-      
-      channel(Channel.EDITOR_FIND_REPLACE_ALL, { 
-        value: { replacedCount: matches.length } 
-      });
-    };
-
-    ipcRenderer.on(Channel.EDITOR_FIND_REPLACE_ALL, findAndReplaceAll);
-
-    const getFoldedRegions = () => {
-      if (!editor) return;
-      
-      // Monaco doesn't expose folding state directly, so we'll return empty array for now
-      // In a real implementation, you'd need to access internal folding model
-      channel(Channel.EDITOR_GET_FOLDED_REGIONS, { 
-        value: []
-      });
-    };
-
-    ipcRenderer.on(Channel.EDITOR_GET_FOLDED_REGIONS, getFoldedRegions);
-
-    const setFoldedRegions = (event: any, regions: Array<{ start: number; end: number }>) => {
-      if (!editor) return;
-      
-      // First unfold all
-      editor.getAction('editor.unfoldAll')?.run();
-      
-      // Then fold specified regions
-      regions.forEach(region => {
-        editor.setSelection(new Range(
-          region.start, 1, 
-          region.end, 1
-        ));
-        editor.getAction('editor.fold')?.run();
-      });
-      
-      channel(Channel.EDITOR_SET_FOLDED_REGIONS);
-    };
-
-    ipcRenderer.on(Channel.EDITOR_SET_FOLDED_REGIONS, setFoldedRegions);
-
-    const executeMonacoCommand = async (event: any, { commandId, args }: { commandId: string; args?: any }) => {
-      if (!editor) return;
-      
-      try {
-        const result = await editor.getAction(commandId)?.run(args);
-        
-        channel(Channel.EDITOR_EXECUTE_COMMAND, { 
-          value: { 
-            success: true, 
-            commandId,
-            result 
-          } 
-        });
-      } catch (error: any) {
-        channel(Channel.EDITOR_EXECUTE_COMMAND, { 
-          value: { 
-            success: false, 
-            commandId,
-            error: error.message 
-          } 
-        });
-      }
-    };
-
-    ipcRenderer.on(Channel.EDITOR_EXECUTE_COMMAND, executeMonacoCommand);
-
-    const scrollToPosition = (event: any, position: 'top' | 'center' | 'bottom' | number) => {
-      if (!editor) return;
-      
-      if (typeof position === 'number') {
-        editor.revealLineInCenter(position);
-      } else if (position === 'top') {
-        editor.setScrollPosition({ scrollTop: 0 });
-      } else if (position === 'bottom') {
-        const lineNumber = editor.getModel()?.getLineCount() || 0;
-        const column = (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
-        const pos = { lineNumber, column };
-        editor.setPosition(pos);
-        editor.revealPosition(pos);
-      } else if (position === 'center') {
-        const lineNumber = editor.getModel()?.getLineCount() || 0;
-        editor.revealLineInCenter(Math.floor(lineNumber / 2));
-      }
-      
-      channel(Channel.EDITOR_SCROLL_TO);
-    };
-
-    ipcRenderer.on(Channel.EDITOR_SCROLL_TO, scrollToPosition);
-
-    const scrollToTop = () => {
-      if (!editor) return;
-      editor.revealLine(1);
-      editor.setScrollPosition({ scrollTop: 0 });
-      channel(Channel.EDITOR_SCROLL_TO_TOP);
-    };
-
-    ipcRenderer.on(Channel.EDITOR_SCROLL_TO_TOP, scrollToTop);
-
-    const scrollToBottom = () => {
-      if (!editor || !editor.getModel()) return;
-      const model = editor.getModel();
-      const lineNumber = model.getLineCount();
-      if (lineNumber > 0) {
-        const column = model.getLineMaxColumn(lineNumber);
-        const position = { lineNumber, column };
-        editor.setPosition(position);
-        editor.revealPosition(position, 1); // 1 = ScrollType.Immediate
-      }
-      channel(Channel.EDITOR_SCROLL_TO_BOTTOM);
-    };
-
-    ipcRenderer.on(Channel.EDITOR_SCROLL_TO_BOTTOM, scrollToBottom);
-
-    const getCurrentInput = () => {
-      if (!editor || !editor.getModel()) return;
-      
-      const value = editor.getModel()!.getValue();
-      channel(Channel.EDITOR_GET_CURRENT_INPUT, { value });
-    };
-
-    ipcRenderer.on(Channel.EDITOR_GET_CURRENT_INPUT, getCurrentInput);
-
-    return () => {
-      ipcRenderer.removeListener(Channel.EDITOR_GET_SELECTION, getSelectedText);
-      ipcRenderer.removeListener(Channel.EDITOR_GET_CURSOR_OFFSET, getCursorPosition);
-      ipcRenderer.removeListener(Channel.EDITOR_INSERT_TEXT, insertTextAtCursor);
-      ipcRenderer.removeListener(Channel.EDITOR_MOVE_CURSOR, moveCursor);
-      ipcRenderer.removeListener(Channel.EDITOR_REPLACE_RANGE, replaceTextRange);
-      ipcRenderer.removeListener(Channel.EDITOR_GET_LINE_INFO, getLineInfo);
-      ipcRenderer.removeListener(Channel.EDITOR_FIND_REPLACE_ALL, findAndReplaceAll);
-      ipcRenderer.removeListener(Channel.EDITOR_GET_FOLDED_REGIONS, getFoldedRegions);
-      ipcRenderer.removeListener(Channel.EDITOR_SET_FOLDED_REGIONS, setFoldedRegions);
-      ipcRenderer.removeListener(Channel.EDITOR_EXECUTE_COMMAND, executeMonacoCommand);
-      ipcRenderer.removeListener(Channel.EDITOR_SCROLL_TO, scrollToPosition);
-      ipcRenderer.removeListener(Channel.EDITOR_SCROLL_TO_TOP, scrollToTop);
-      ipcRenderer.removeListener(Channel.EDITOR_SCROLL_TO_BOTTOM, scrollToBottom);
-      ipcRenderer.removeListener(Channel.EDITOR_GET_CURRENT_INPUT, getCurrentInput);
-    };
-  }, [editor, channel]);
+  // ... rest of component implementation (scroll effects, IPC handlers, etc.)
 
   const appConfig = useAtomValue(appConfigAtom);
   const flags = useAtomValue(flagsAtom);
@@ -948,3 +661,154 @@ measure-my-height
     </div>
   );
 }
+```
+
+### Current Key Dependencies (package.json)
+```json
+{
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "electron": "37.2.6",
+    "monaco-editor": "^0.52.2"
+  }
+}
+```
+
+## Historical State (November 2024) - Working Paste
+
+### editor-november-working.tsx (Key Sections)
+```typescript
+// Working shortcut registration from November 2024
+import {
+  // ... other imports
+  shortcutStringsAtom,  // <- This was the key atom
+  sendShortcutAtom,
+  setFlagByShortcutAtom,
+  // ...
+} from '../jotai';
+
+import { convertStringShortcutToMoncacoNumber } from '@renderer/utils/keycodes';
+
+export default function Editor() {
+  // ... component setup
+
+  const onMount = useCallback(
+    (mountEditor: monacoEditor.IStandaloneCodeEditor, monaco: Monaco) => {
+      setEditorRef(mountEditor);
+
+      // Simple, working command registration for Cmd+K
+      mountEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
+        const value = mountEditor.getModel()?.getValue();
+        setFlaggedChoiceValue(value || ui);
+      });
+
+      // NO SPECIAL PASTE HANDLER NEEDED - it worked naturally!
+      
+      mountEditor.focus();
+      // ... rest of mount logic
+    },
+    [config, containerRef, kitIsDark],
+  );
+
+  // WORKING SHORTCUT REGISTRATION SYSTEM:
+  const shortcutStrings = useAtomValue(shortcutStringsAtom);
+  const appConfig = useAtomValue(appConfigAtom);
+  const sendShortcut = useSetAtom(sendShortcutAtom);
+  const setFlagByShortcut = useSetAtom(setFlagByShortcutAtom);
+  const submitInput = useSetAtom(submitInputAtom);
+
+  useEffect(() => {
+    if (appConfig) {
+      for (const { type, value } of shortcutStrings) {
+        // Simple conversion without blocking
+        const result = convertStringShortcutToMoncacoNumber(value, appConfig?.isWin);
+
+        if (result) {
+          // SIMPLE addCommand - no preconditions, no action complexity
+          editor?.addCommand(result, () => {
+            log.info('🏆', { value, type });
+            if (type === 'shortcut') {
+              sendShortcut(value);
+              return;
+            }
+            if (type === 'flag') {
+              setFlagByShortcut(value);
+              submitInput();
+              return;
+            }
+            if (type === 'action') {
+              setFlagByShortcut(value);
+              submitInput();
+              return;
+            }
+          });
+        }
+      }
+    }
+  }, [editor, shortcutStrings, appConfig]);
+
+  // ... rest of component
+}
+```
+
+### jotai-november.ts (shortcutStringsAtom)
+```typescript
+// Working shortcut atom from November 2024
+export const shortcutStringsAtom: Atom<
+  Set<{
+    type: 'shortcut' | 'action' | 'flag';
+    value: string;
+  }>
+> = atom((g) => {
+  const shortcuts = g(shortcutsAtom);
+  const actions = g(actionsAtom);
+  const flags = g(flagsAtom);
+  
+  function transformKeys(items, keyName, type) {
+    return items
+      .map((item) => {
+        const key = item[keyName];
+        if (key) {
+          const value = key.replaceAll(' ', '+');
+          return {
+            type,
+            value,
+          };
+        }
+        return false;
+      })
+      .filter(Boolean);
+  }
+
+  const actionsThatArentShortcuts = actions.filter((a) => !shortcuts.find((s) => s.key === a.key));
+
+  const shortcutKeys = transformKeys(shortcuts, 'key', 'shortcut');
+  const actionKeys = transformKeys(actionsThatArentShortcuts, 'key', 'action');
+  const flagKeys = transformKeys(Object.values(flags), 'shortcut', 'flag');
+
+  const shortcutStrings = new Set([...shortcutKeys, ...actionKeys, ...flagKeys]);
+  return shortcutStrings;
+});
+```
+
+### Working Dependencies (November 2024)
+```json
+{
+  "dependencies": {
+    "@monaco-editor/react": "^4.6.0",
+    "electron": "^30.1.0",
+    "monaco-editor": "^0.47.0"
+  }
+}
+```
+
+## Key Differences Summary
+
+| Aspect | November 2024 (Working) | Current (Broken) |
+|--------|-------------------------|------------------|
+| Shortcut Registration | `editor.addCommand()` | `editor.addAction()` with preconditions |
+| Data Source | `shortcutStringsAtom` → Set of {type, value} | `flagsAtom` → Complex flag objects |
+| Blocking Logic | None - all shortcuts processed | `isReservedEditorShortcut()` blocks clipboard ops |
+| Monaco Version | 0.47.0 | 0.52.2 |
+| Electron Version | 30.1.0 | 37.2.6 |
+| Paste Handling | Native Monaco behavior | Manual workaround required |

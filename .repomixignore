@@ -1,7 +1,87 @@
-# Add patterns to ignore here, one per line
-# Example:
-# *.log
-# tmp/
+# Investigation and analysis files (39,898 + 25,073 + 17,153 + 8,685 + 6,711 + 11,730 tokens)
+*-investigation.md
+*-analysis.md
+*-bundle.md
+*-issue*.md
+avatar-cache-investigation.md
+avatar-display-issue-investigation.md
+circular-dependency-investigation.md
+circular-deps-refactor-issue.md
+typescript-issue-bundle.md
+issue-bundle.md
+issue-expanded.md
+
+# Backup and temporary files (22,603 tokens)
+*.backup
+*.bak
+*.tmp
+src/renderer/src/jotai.ts.backup
+
+# Test files and testing utilities (massive token reduction)
+**/*.test.ts
+**/*.test.tsx
+**/*.test.js
+**/*.spec.ts
+**/*.spec.tsx
+**/*.bench.ts
+test/
+tests/
+__tests__/
+**/__tests__/
+**/test-utils.ts
+**/test-*.ts
+**/testing.ts
+src/main/chokidar-test-utils.ts
+
+# Documentation and markdown files (except essential ones)
+*.md
+!README.md
+!CLAUDE.md
+!ARCHITECTURE.md
+
+# Patch files and development artifacts
+*.patch
+*.diff
+
+# Development scripts and utilities
+scripts/
+bench/
+diagrams/
+
+# Build and configuration directories
+.github/
+.husky/
+.repomix/
+
+# Configuration files with large token counts
+safelist.txt
+repomix.config.json
+vite-dev*.sh
+until_done.zsh
+repomix-clipboard.sh
+
+# Development and IDE files
+.cursorrules
+.editorconfig
+.eslintignore
+.eslintrc.cjs
+.gitattributes
+.gitignore
+.npmrc
+.prettierrc
+biome.json
+postcss.config.js
+release.config.js
+stop.txt
+
+# TypeScript configuration files
+tsconfig.*.json
+!tsconfig.json
+
+# Vitest configuration
+vitest.*.config.ts
+
+# Previous ignore patterns
 assets/
 .claude/
 .cursor/
@@ -10,6 +90,124 @@ assets/
 investigations/
 issues/
 postmortem/
-prompts/
+; prompts/
 refactors/
 
+# Additional aggressive optimizations to reach sub-50k tokens
+# SVG and media files (11,390 tokens)
+**/*.svg
+svg/
+
+# Large individual source files that may not be core to understanding
+src/main/messages.ts
+src/main/install.ts
+src/main/watcher.ts
+src/main/tray.ts
+src/main/vscode-search.ts
+src/main/health-monitor.ts
+src/main/mcp-http-server.ts
+src/renderer/src/jotai.ts
+
+# Component directories that are UI-heavy
+src/renderer/src/components/
+src/renderer/src/hooks/
+src/renderer/src/effects/
+
+# State management (can be inferred from other files)
+src/renderer/src/state/
+
+# Utility directories
+src/renderer/src/utils/
+src/shared/
+src/test-utils/
+
+# Build and configuration files
+src/build/
+build.ts
+jest.setup.ts
+tailwind.config.js
+
+# Additional development files
+src/dev-app-update.yml
+src/.yarnrc.yml
+
+# Further aggressive optimization - exclude large remaining files
+# Large prompt-related files (13,979 + many prompt.* files)
+; src/main/prompt.ts
+; src/main/prompt.*.ts
+
+# Large process file (10,433 tokens)
+src/main/process.ts
+
+# Large index file (9,843 tokens)
+src/main/index.ts
+
+# Large renderer app file (6,105 tokens)
+src/renderer/src/App.tsx
+src/renderer/src/AppWidget.tsx
+
+# Large IPC file (5,569 tokens)
+src/main/ipc.ts
+
+# Other large files
+src/main/search.ts
+src/main/tick.ts
+src/main/pty.ts
+src/main/show.ts
+src/main/shortcuts.ts
+src/main/server.ts
+src/main/editor-themes.ts
+src/renderer/src/editor-themes.ts
+
+# Setup and installation files
+src/main/setup/
+
+# Additional renderer files
+src/renderer/src/audio-hooks.ts
+src/renderer/src/term.tsx
+src/renderer/src/webcam.tsx
+src/renderer/src/speech-to-text.tsx
+
+# Package configuration
+package.json
+CLAUDE.md
+
+# Final push to reach sub-50k tokens
+# Exclude remaining large files
+src/main/kit.ts
+src/main/state.ts
+src/main/prompts.ts
+src/main/chokidar.ts
+src/main/logs.ts
+src/main/mcp-parameter-extractor.ts
+src/main/mcp-server.ts
+src/main/helpers.ts
+src/main/io.ts
+src/main/update.ts
+src/main/watcher-manager.ts
+src/main/invoke-pty.ts
+src/main/pty-utils.ts
+src/main/compare.ts
+src/main/schedule.ts
+src/main/system-events.ts
+src/main/window.ts
+src/main/handleScript.ts
+src/main/shims.ts
+src/main/get-port.ts
+src/main/visibility.ts
+src/main/process-scanner.ts
+src/main/process-window-coordinator.ts
+src/main/watch.ts
+
+# Exclude state directories
+src/main/state/
+src/main/install/
+
+# Exclude remaining renderer files
+src/renderer/state/
+src/renderer/src/log-utils.ts
+
+# Exclude large configuration
+.repomixignore
+README.md
+ARCHITECTURE.md
