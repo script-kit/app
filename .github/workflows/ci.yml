@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node: [22.9.0]
+        node: [22.17.1]
 
     runs-on: ${{ matrix.os }}
 

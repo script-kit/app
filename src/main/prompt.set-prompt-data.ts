@@ -91,6 +91,14 @@ export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Pr
     promptData.keyword = prompt.kitSearch.keyword || prompt.kitSearch.keyword;
   }
 
+  // Send user data BEFORE prompt data only if we haven't bootstrapped this prompt yet
+  const userSnapshot = (await import('valtio')).snapshot(kitState.user);
+  prompt.logInfo(`Early user data considered: ${userSnapshot?.login || 'not logged in'}`);
+  if (!(prompt as any).__userBootstrapped) {
+    prompt.sendToPrompt(AppChannel.USER_CHANGED, userSnapshot);
+    (prompt as any).__userBootstrapped = true;
+  }
+  
   prompt.sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
 
   const isMainScript = getMainScriptPath() === promptData.scriptPath;
@@ -106,7 +114,6 @@ export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Pr
   if (!isMainScript) {
     applyPromptDataBounds(prompt.window, promptData);
   }
-  prompt.sendToPrompt(AppChannel.USER_CHANGED, (await import('valtio')).snapshot(kitState.user));
 
   if (kitState.hasSnippet) {
     const timeout = prompt.script?.snippetdelay || 0;

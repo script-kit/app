@@ -35,7 +35,7 @@ const FALLBACK_NO_CHOICE: Choice = {
 
 // Verify the import and select the safe fallback at module initialization time.
 let safeNoChoice = noChoice;
-if (!safeNoChoice || typeof safeNoChoice !== 'object' || !safeNoChoice.id) {
+if (!safeNoChoice || typeof safeNoChoice !== 'object' || safeNoChoice.id === undefined) {
   console.error('CRITICAL: noChoice import failed or is invalid in appState.ts. Using hardcoded fallback.', { importedValue: noChoice });
   safeNoChoice = FALLBACK_NO_CHOICE;
 }

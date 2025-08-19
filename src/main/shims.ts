@@ -73,7 +73,7 @@ const createShim = <T extends keyof Shims>(packageName: T, depth = 0): Shims[T] 
         if (depth > 0) {
           log.error(
             `The shim for ${packageName} appears to get accessed deeply with '${prop}', indicating ` +
-              'that platform checks are missing.',
+            'that platform checks are missing.',
           );
         }
 

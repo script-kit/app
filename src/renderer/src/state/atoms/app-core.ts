@@ -26,7 +26,7 @@ export const kitConfigAtom = atom({
   mainScriptPath: '',
 });
 
-export const userAtom = atom<UserDb>({});
+export const userAtom = atom<Partial<UserDb>>({});
 
 export const _kitStateAtom = atom({
   isSponsor: false,

@@ -21,38 +21,23 @@ export function IPCController() {
   const state = useAtomValue(appStateLiteAtom);
   const prevStateRef = useRef<typeof state>();
 
-  // Handle state changes - send to main process when state changes
+  // Track state changes for debugging but don't auto-send
   useEffect(() => {
-    try {
-      // Skip if channel is paused
-      if (pauseChannel) return;
-
-      // Skip if state hasn't actually changed
-      if (prevStateRef.current && JSON.stringify(prevStateRef.current) === JSON.stringify(state)) {
-        return;
-      }
-
-      // Don't send state updates before we have a prompt
-      if (!promptData?.id) return;
-
-      // Debug: Log the state we're about to send
-      if (!state.focused) {
-        console.error('WARNING: state.focused is undefined!', state);
-      }
-      
-      const appMessage: AppMessage = {
-        channel: Channel.APP_STATE_CHANGED,
-        pid: pid || 0,
-        promptId: promptData.id,
-        state,
-      };
-
-      sendChannel(Channel.APP_STATE_CHANGED, appMessage);
-      prevStateRef.current = state;
-    } catch (error) {
-      console.error('Error in IPCController state change handler:', error);
+    // Skip if state hasn't actually changed
+    if (prevStateRef.current && JSON.stringify(prevStateRef.current) === JSON.stringify(state)) {
+      return;
     }
-  }, [state, pauseChannel, pid, promptData]);
+
+    // Debug: Log significant state changes
+    if (!state.focused && prevStateRef.current?.focused) {
+      console.warn('State.focused became undefined', { 
+        prev: prevStateRef.current?.focused,
+        current: state.focused 
+      });
+    }
+
+    prevStateRef.current = state;
+  }, [state]);
 
   // Handle outbox messages - send any queued messages
   useEffect(() => {
@@ -75,13 +60,31 @@ export function IPCController() {
             let finalState = { ...state, ...override };
             // Protect focused from being unset by override
             if (!finalState.focused) finalState.focused = state.focused;
+            
+            // Debug logging for action messages
+            if (message.channel === Channel.ACTION && override.action) {
+              console.log('[IPCController] Sending ACTION with:', {
+                channel: message.channel,
+                actionName: override.action?.name,
+                actionFlag: override.action?.flag,
+                actionValue: override.action?.value,
+                hasAction: finalState.action !== undefined
+              });
+            }
+            
             const appMessage: AppMessage = {
               channel: message.channel,
               pid: pid || 0,
               promptId: promptData?.id || '',
               state: finalState,
             };
-            sendChannel(message.channel, appMessage);
+            // Validate before sending to prevent undefined errors
+            // Note: pid can be 0 and promptId can be empty for some messages like ON_INIT
+            if (appMessage.channel && appMessage.pid !== undefined && appMessage.state) {
+              sendChannel(message.channel, appMessage);
+            } else {
+              console.error('Invalid appMessage in outbox, skipping send:', appMessage);
+            }
             continue;
           }
           // Unknown shape – ignore (or log)

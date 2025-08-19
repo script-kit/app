@@ -51,7 +51,7 @@ export const _focused = atom<Choice | null>(
   (g) => {
     const focused = g(_focusedInternal);
     // Ensure we never return null/undefined - always return a valid Choice object
-    if (!focused || typeof focused !== 'object' || !focused.id) {
+    if (!focused || typeof focused !== 'object' || focused.id === undefined) {
       console.warn('_focused atom: Internal focused value is invalid, using noChoice fallback', focused);
       return noChoice as Choice;
     }

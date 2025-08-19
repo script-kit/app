@@ -1629,7 +1629,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       sendToPrompt(Channel.SET_FORM, data.value);
     },
     SET_FLAGS: onChildChannel(({ child }, { channel, value, promptId }, samePrompt) => {
-      const { flags, options } = value;
+      // Guard against empty/false flags from SDK
+      const rawFlags = value?.flags;
+      const flags = rawFlags && typeof rawFlags === 'object' ? rawFlags : {};
+      const options = value?.options || {};
+      
       if (samePrompt) {
         log.info('⛳️ SET_FLAGS', Object.keys(flags));
         setFlags(prompt, flags as any);

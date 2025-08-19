@@ -1,5 +1,6 @@
 import type { PromptBounds } from '@johnlindquist/kit/types/core';
 import type { Rectangle } from 'electron';
+import { screen } from 'electron';
 
 import { promptLog as log } from './logs';
 import { prompts } from './prompts';
@@ -48,7 +49,7 @@ export const clearPromptTimers = async () => {
 
 export const clearPromptCacheFor = async (scriptPath: string) => {
     try {
-        const displays = require('electron').screen.getAllDisplays();
+        const displays = screen.getAllDisplays();
         for await (const display of displays) {
             if (promptState?.screens?.[display.id]?.[scriptPath]) {
                 delete promptState.screens[display.id][scriptPath];

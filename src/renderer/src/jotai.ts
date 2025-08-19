@@ -983,7 +983,8 @@ export const flagsIndexAtom = atom(
 // Keep the same API so existing call sites keep compiling,
 // but the only action is to request the controller to recompute.
 export const resize = debounce(
-  (_g: Getter, s: Setter, _reason = 'UNSET') => {
+  (_g: Getter, s: Setter, reason = 'UNSET') => {
+    console.log(`jotai.resize: incrementing resizeTickAtom, reason: ${reason}`);
     s(resizeTickAtom, (v) => v + 1);
   },
   RESIZE_DEBOUNCE_MS,
@@ -1181,11 +1182,16 @@ export const submitValueAtom = atom(
       return;
     }
 
-    // Only dispatch ACTION when the actions menu is actually open.
-    // This prevents stale focusedAction from firing after the menu was closed.
-    const actionsMenuOpen = Boolean(g(flaggedChoiceValueAtom));
-    if (actionsMenuOpen && (action as FlagsWithKeys).hasAction) {
-      s(pushIpcMessageAtom, { channel: Channel.ACTION, state: {} });
+    // Check if we have an action with hasAction handler
+    // The action can be triggered either from the actions menu or via shortcut
+    if ((action as FlagsWithKeys)?.hasAction) {
+      console.log('[submitValueAtom] Sending ACTION with action:', action);
+      s(pushIpcMessageAtom, { channel: Channel.ACTION, state: { action } });
+      
+      // Clear the action so subsequent submits work normally
+      s(focusedActionAtom, {} as any);
+      
+      // Clear the actions menu if it was open
       if (action?.close && g(flaggedChoiceValueAtom)) {
         log.info('👋 Closing actions');
         s(flaggedChoiceValueAtom, '');
@@ -1262,6 +1268,33 @@ export const submitValueAtom = atom(
 export const submitInputAtom = atom(null, (g, s) => {
   const input = g(inputAtom);
   s(submitValueAtom, input);
+});
+
+// Helper atom action to set a flag based on its defined shortcut string
+export const setFlagByShortcutAtom = atom(null, (g, s, a: string) => {
+  const flags = g(flagsAtom);
+  const flagKey = Object.keys(flags).find((key) => flags[key]?.shortcut === a);
+  log.info(`🏴‍☠️ Setting flag by shortcut: ${flagKey}`);
+  if (flagKey) {
+    const flagData = flags[flagKey];
+    // Check if this is an action with onAction handler
+    if ((flagData as any)?.hasAction) {
+      // Set the focused action for actions with onAction handlers
+      const action = {
+        name: flagData?.name ?? flagKey,
+        flag: flagKey,
+        value: flagKey,
+        hasAction: true,
+        shortcut: flagData?.shortcut,
+      };
+      console.log('[setFlagByShortcutAtom] Action with onAction detected:', action);
+      s(focusedActionAtom, action as any);
+    } else {
+      // Normal flag behavior
+      s(flaggedChoiceValueAtom, flagKey);
+      s(focusedFlagValueAtom, flagKey);
+    }
+  }
 });
 
 export const escapeAtom = atom((g) => {
@@ -1534,23 +1567,37 @@ export const topHeightAtom = atom(
 export const onPasteAtom = atom((g) => {
   // Create a closure that captures the setter via a writable atom
   const setter = atom(null, (_g, s, event: ClipboardEvent) => {
-    if (g(uiAtom) === UI.editor) {
-      event.preventDefault(); // Assuming we want to handle paste manually or let Monaco handle it
+    const currentUI = g(uiAtom);
+    console.log(JSON.stringify({
+      source: 'onPasteAtom_setter',
+      currentUI,
+      action: currentUI !== UI.editor ? 'sending_ON_PASTE' : 'letting_Monaco_handle'
+    }));
+    
+    // Don't prevent paste in editor - let Monaco handle it naturally
+    if (currentUI !== UI.editor) {
+      // Only send ON_PASTE for non-editor UIs
+      s(pushIpcMessageAtom, { channel: Channel.ON_PASTE, state: {} });
     }
-    s(pushIpcMessageAtom, { channel: Channel.ON_PASTE, state: {} });
   });
   
   // Return a function that can be called with the event
   return (event: ClipboardEvent) => {
-    // We need to access the setter somehow. Since we can't use hooks here,
-    // we'll keep the original pattern but use pushIpcMessageAtom inside
-    if (g(uiAtom) === UI.editor) {
-      event.preventDefault();
+    const currentUI = g(uiAtom);
+    console.log(JSON.stringify({
+      source: 'onPasteAtom',
+      eventType: event.type,
+      currentUI,
+      action: currentUI !== UI.editor ? 'sending_ON_PASTE' : 'NOT_preventing_default'
+    }));
+    
+    // Don't prevent paste in editor - let Monaco handle it naturally
+    if (currentUI !== UI.editor) {
+      // Only send ON_PASTE for non-editor UIs
+      const channel = g(channelAtom);
+      channel(Channel.ON_PASTE);
     }
-    // This is a limitation - we can't directly call setter from here
-    // Let's use the channelAtom as before for these special cases
-    const channel = g(channelAtom);
-    channel(Channel.ON_PASTE);
+    // For editor, do nothing - let the default paste behavior work
   };
 });
 

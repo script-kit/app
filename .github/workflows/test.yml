@@ -45,7 +45,7 @@ jobs:
       - name: Install Node, pnpm and Yarn
         uses: actions/setup-node@v4
         with:
-          node-version: 22.9.0
+          node-version: 22.17.1
 
       - name: Set up Python
         uses: actions/setup-python@v5

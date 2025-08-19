@@ -13,12 +13,16 @@ const log = createLogger('prompt.options.ts');
 export const OFFSCREEN_X = -10000;
 export const OFFSCREEN_Y = -10000;
 
+export type PromptWindowMode = 'panel' | 'window';
+
 /**
  * Get window options for creating prompts
- * @param isSplashScreen - If true, creates a regular window instead of a panel for the splash screen
- *                         This allows users to minimize/background the window during installation
+ * @param arg - Can be boolean (backward compat) or PromptWindowMode
+ *              boolean true or 'window' creates a standard window
+ *              boolean false or 'panel' creates a panel window
  */
-export const getPromptOptions = (isSplashScreen = false) => {
+export const getPromptOptions = (arg: boolean | PromptWindowMode = false) => {
+  const useStandardWindow = arg === true || arg === 'window';
   const width = PROMPT.WIDTH.BASE;
   const height = PROMPT.HEIGHT.BASE;
   // const currentScreen = getCurrentScreenFromMouse();
@@ -40,8 +44,8 @@ export const getPromptOptions = (isSplashScreen = false) => {
   if (kitState?.kenvEnv?.KIT_FRAME) {
     frame = kitState.kenvEnv.KIT_FRAME === 'true';
   }
-  // Show frame for splash screen to provide window controls
-  if (isSplashScreen) {
+  // Standard windows always get OS chrome & controls
+  if (useStandardWindow) {
     frame = true;
   }
 
@@ -105,7 +109,7 @@ export const getPromptOptions = (isSplashScreen = false) => {
 
   // Log all of the conditional options:
   log.info('Prompt Options:', {
-    isSplashScreen,
+    mode: useStandardWindow ? 'window' : 'panel',
     gpu: kitState.gpuEnabled,
     backgroundThrottling,
     hasShadow,
@@ -135,32 +139,38 @@ export const getPromptOptions = (isSplashScreen = false) => {
       preload: fileURLToPath(new URL('../preload/index.mjs', import.meta.url)),
       webSecurity: false,
     },
-    minimizable: isSplashScreen,
-    maximizable: false,
+    minimizable: useStandardWindow,
+    maximizable: useStandardWindow,
     movable: true,
-    skipTaskbar: !isSplashScreen,
+    skipTaskbar: !useStandardWindow,
     width,
     height,
     minWidth: MIN_WIDTH,
     minHeight: PROMPT.INPUT.HEIGHT.XS,
-    transparent,
+    // transparent,
     x,
     y,
     backgroundColor,
-    backgroundMaterial,
+    // backgroundMaterial,
     thickFrame,
     roundedCorners,
-    focusable: kitState.isLinux || isSplashScreen,
-    type: isSplashScreen ? undefined : 'panel',
+    focusable: kitState.isLinux || useStandardWindow,
+    type: useStandardWindow ? undefined : 'panel',
+    visualEffectState: 'followWindow',
+    // Panel-specific options for macOS to avoid NSWindow warnings
+    ...(kitState.isMac && !useStandardWindow ? {
+      alwaysOnTop: false,  // Don't set alwaysOnTop in constructor for panels
+      titleBarStyle: undefined,  // Ensure no title bar style conflicts
+    } : {}),
   } as BrowserWindowConstructorOptions;
 
   if (kitState.isMac) {
-    // Don't apply vibrancy for splash screen window
-    if (!isSplashScreen) {
+    // Only give panel vibrancy to panel mode
+    if (!useStandardWindow) {
       options.vibrancy = 'popover';
-      options.visualEffectState = 'active';
-      options.backgroundColor = kitState.kenvEnv.KIT_BACKGROUND_COLOR || '#00000000';
-      options.transparent = true;
+      options.visualEffectState = 'followWindow';
+      // options.backgroundColor = kitState.kenvEnv.KIT_BACKGROUND_COLOR || '#00000000';
+      // options.transparent = true;
     }
   }
 
