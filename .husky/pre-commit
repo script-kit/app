@@ -19,4 +19,4 @@ if [ -n "$result" ]; then
   echo "⚠️  Tests may have failed. Consider fixing tests."
 fi
 
-echo "✅ Pre-commit checks passed!"
+echo "✅ Pre-commit checks passed"
