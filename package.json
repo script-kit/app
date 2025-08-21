@@ -143,7 +143,7 @@
   "dependencies": {
     "@jitsi/robotjs": "^0.6.16",
     "@johnlindquist/clipboard": "^0.1.38",
-    "@johnlindquist/kit": "link:/Users/johnlindquist/.kit",
+    "@johnlindquist/kit": "^4.2.1",
     "@modelcontextprotocol/sdk": "^1.13.3",
     "@pnpm/exec": "^2.0.0",
     "@rollup/plugin-commonjs": "^28.0.6",

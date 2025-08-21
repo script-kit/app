@@ -54,13 +54,13 @@ export const actionsInputAtom = atom(
     const filtered = !q
       ? base
       : base.filter((sc) => {
-          const it: any = sc?.item || {};
-          const name = (it.name || '').toLowerCase();
-          const desc = (it.description || '').toLowerCase();
-          const id = (it.id || '').toLowerCase();
-          const val = (typeof it.value === 'string' ? it.value : '').toLowerCase();
-          return name.includes(q) || desc.includes(q) || id.includes(q) || val.includes(q);
-        });
+        const it: any = sc?.item || {};
+        const name = (it.name || '').toLowerCase();
+        const desc = (it.description || '').toLowerCase();
+        const id = (it.id || '').toLowerCase();
+        const val = (typeof it.value === 'string' ? it.value : '').toLowerCase();
+        return name.includes(q) || desc.includes(q) || id.includes(q) || val.includes(q);
+      });
     const h = calcVirtualListHeight(filtered as any, g(actionsItemHeightAtom), MAX_VLIST_HEIGHT);
     s(flagsHeightAtom, h);
   },
@@ -87,21 +87,10 @@ export const flagsIndex = atom(0);
 const _focusedFlag = atom('');
 export const focusedFlagValueAtom = atom(
   (g) => g(_focusedFlag),
-  (g, s, a: string) => {
-    if (a !== g(_focusedFlag)) {
-      s(_focusedFlag, a);
-      const flags = g(flagsAtom);
-      const flag = flags[a];
-      // Set focusedActionAtom with hasAction and flag properties
-      if (flag && a) {
-        s(focusedActionAtom, { ...flag, hasAction: true, flag: a } as Action);
-      } else {
-        s(focusedActionAtom, {} as Action);
-      }
-    }
+  (_g, s, a: string) => {
+    s(_focusedFlag, a);
   },
 );
-
 export const focusedActionAtom = atom<Action>({} as Action);
 
 // --- Shortcuts ---
