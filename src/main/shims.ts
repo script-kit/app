@@ -23,9 +23,8 @@ const nmp = 'node-mac-permissions' as const;
 const nwm = '@johnlindquist/node-window-manager' as const;
 const mcl = '@johnlindquist/mac-clipboard-listener' as const;
 const mf = '@johnlindquist/mac-frontmost' as const;
-const mpw = '@johnlindquist/mac-panel-window' as const;
 // Object.keys(packageJson.optionalDependencies)
-export const optionalDependencies = [robot, uiohook, nmp, nwm, mcl, mf, mpw] as const;
+export const optionalDependencies = [robot, uiohook, nmp, nwm, mcl, mf] as const;
 export type OptionalDependency = (typeof optionalDependencies)[number];
 
 // IMPORTANT: You must manually update this map when adding new optional dependencies to optional-dependencies.json
@@ -33,8 +32,8 @@ export const supportMap: Partial<Record<Target, OptionalDependency[]>> = {
   // Consider restoring uiohook once the github actions runner supports bash
   'win32-arm64': [robot, nwm],
   'win32-x64': [robot, uiohook, nwm],
-  'darwin-arm64': [robot, uiohook, nmp, nwm, mcl, mf, mpw],
-  'darwin-x64': [robot, uiohook, nmp, nwm, mcl, mf, mpw],
+  'darwin-arm64': [robot, uiohook, nmp, nwm, mcl, mf],
+  'darwin-x64': [robot, uiohook, nmp, nwm, mcl, mf],
   'linux-arm64': [robot],
   'linux-x64': [robot, uiohook],
 } as const;
@@ -59,7 +58,6 @@ interface Shims {
   //@ts-ignore This import might not work, depending on the platform
   [mcl]: typeof import('@johnlindquist/mac-clipboard-listener');
   //@ts-ignore This import might not work, depending on the platform
-  [mpw]: typeof import('@johnlindquist/mac-panel-window');
   //@ts-ignore This import might not work, depending on the platform
 }
 
@@ -88,7 +86,6 @@ const shims: Shims = {
   [nmp]: createShim('node-mac-permissions'),
   [nwm]: createShim('@johnlindquist/node-window-manager'),
   [mf]: createShim('@johnlindquist/mac-frontmost'),
-  [mpw]: createShim('@johnlindquist/mac-panel-window'),
   [mcl]: createShim('@johnlindquist/mac-clipboard-listener'),
 };
 

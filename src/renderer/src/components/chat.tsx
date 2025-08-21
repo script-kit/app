@@ -30,6 +30,7 @@ import { FaChevronDown } from "react-icons/fa";
 import {
 	channelAtom,
 	chatMessageSubmitAtom,
+	addChatMessageAtom,
 	containerClassNameAtom,
 	inputAtom,
 	placeholderAtom,
@@ -637,10 +638,11 @@ export function Chat() {
 	const [currentMessage, setCurrentMessage] = useAtom(inputAtom);
 
 	// Create messages state array
-	const [messages, setMessages] = useAtom(chatMessagesWithEffect);
+	const [messages] = useAtom(chatMessagesWithEffect);
 	const [promptData] = useAtom(promptDataAtom);
 
 	const submitMessage = useSetAtom(chatMessageSubmitAtom);
+	const addChatMessage = useSetAtom(addChatMessageAtom);
 	const [placeholder] = useAtom(placeholderAtom);
 	const [channel] = useAtom(channelAtom);
 	const [ui] = useAtom(uiAtom);
@@ -710,17 +712,17 @@ export function Chat() {
 			// const validHtml = checkValidHtml(currentMessage);
 			// Escape html characters if invalid
 			const text = escapeHtml(currentMessage);
-			const updatedMessages = [
-				...messages,
-				{
-					position: "right",
-					type: "text",
-					text,
-				},
-			] as MessageType[];
+			const message = {
+				position: "right",
+				type: "text",
+				text,
+			} as MessageType;
 
-			setMessages(updatedMessages);
-			const index = updatedMessages.length - 1;
+			// Add via atom to trigger per-message IPC send
+			addChatMessage(message);
+
+			// Compute index based on previous messages length
+			const index = messages.length;
 			submitMessage({ text, index });
 			setCurrentMessage("");
 			if (clearRef.current) {
@@ -731,7 +733,6 @@ export function Chat() {
 			currentMessage,
 			messages,
 			setCurrentMessage,
-			setMessages,
 			submitMessage,
 			isComposing,
 		],

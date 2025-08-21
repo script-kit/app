@@ -938,6 +938,8 @@ export const flagsIndexAtom = atom(
     const flagValue = g(flaggedChoiceValueAtom);
     if (!flagValue) {
       s(focusedFlagValueAtom, '');
+      // When the actions menu is not open, ensure no focused action remains
+      s(focusedActionAtom, {} as any);
       return;
     }
 
@@ -976,6 +978,29 @@ export const flagsIndexAtom = atom(
 
     const focusedFlag = (choice as Choice)?.value;
     s(focusedFlagValueAtom, focusedFlag);
+
+    // If the selected flag represents an action (hasAction), set focusedAction so submits trigger ACTION
+    try {
+      const flags = g(flagsAtom);
+      const flagData: any = flags?.[focusedFlag as keyof typeof flags];
+      if (flagData && flagData.hasAction) {
+        const action = {
+          name: flagData?.name ?? (focusedFlag as string),
+          flag: focusedFlag,
+          value: focusedFlag,
+          hasAction: true,
+          shortcut: flagData?.shortcut,
+        } as any;
+        s(focusedActionAtom, action);
+      } else {
+        // Clear focusedAction if current selection is not an action
+        s(focusedActionAtom, {} as any);
+      }
+    } catch (e) {
+      // Be resilient; never throw from state setter
+      console.error('Error setting focusedAction from flagsIndexAtom', e);
+      s(focusedActionAtom, {} as any);
+    }
   },
 );
 

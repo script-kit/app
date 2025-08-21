@@ -116,9 +116,6 @@ export function blurPromptFlow(prompt: KitPrompt) {
   prompt.logInfo(`${prompt.pid}: blurPrompt`);
   if (prompt.window.isDestroyed()) return;
   if (prompt.window) {
-    // if (kitState.isMac) {
-    //     shims['@johnlindquist/mac-panel-window'].blurInstant(prompt.window);
-    // }
     prompt.window.blur();
   }
 }

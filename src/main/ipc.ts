@@ -658,6 +658,34 @@ ${child?.pid} 📝 Submitting...
             //   });
             // }
             if (child?.channel && child.connected) {
+              // Back-compat for chat channels: child expects top-level `value`
+              if (
+                [
+                  Channel.CHAT_ADD_MESSAGE,
+                  Channel.CHAT_PUSH_TOKEN,
+                  Channel.CHAT_SET_MESSAGE,
+                ].includes(channel as any)
+              ) {
+                try {
+                  const msg: any = message as any;
+                  const hadTopValue = msg.value !== undefined;
+                  const stateValue = msg?.state?.value;
+                  if (!hadTopValue && stateValue !== undefined) {
+                    msg.value = stateValue;
+                  }
+                  log.info(`[Main IPC] forwarding ${channel}`, {
+                    pid: message.pid,
+                    promptId: message.promptId,
+                    hadTopValue,
+                    hasStateValue: stateValue !== undefined,
+                    valueType: typeof (msg.value),
+                    textLen: typeof (msg.value?.text) === 'string' ? msg.value.text.length : undefined,
+                  });
+                } catch (e) {
+                  log.warn(`[Main IPC] chat forward log error for ${channel}`, e);
+                }
+              }
+
               child?.send(message);
             } else {
               log.warn(`${prompt.pid}: Child not connected: ${channel}`, message);

@@ -4,6 +4,9 @@
  */
 
 import { atom } from 'jotai';
+import { Channel } from '@johnlindquist/kit/core/enum';
+import { AppChannel } from '../../../../shared/enums';
+import { channelAtom } from '../shared-dependencies';
 import type { MessageType } from 'react-chat-elements';
 import { createLogger } from '../../log-utils';
 
@@ -29,6 +32,31 @@ export const addChatMessageAtom = atom(null, (g, s, a: MessageType) => {
   const index = updated.length - 1;
   (a as MessageTypeWithIndex).index = index;
   s(chatMessagesAtom, updated);
+
+  // Use shared channel sender; value will be adapted in main for child consumption
+  const send = g(channelAtom);
+  log.info('CHAT_ADD_MESSAGE send', {
+    index,
+    hasText: Boolean((a as any)?.text),
+    textLen: ((a as any)?.text || '').length,
+    type: (a as any)?.type,
+  });
+  send(Channel.CHAT_ADD_MESSAGE, { value: a });
+
+  try {
+    const { ipcRenderer } = window.electron;
+    ipcRenderer.send(AppChannel.LOG, {
+      level: 'info',
+      message: {
+        src: 'chat.ts',
+        event: 'CHAT_ADD_MESSAGE',
+        index,
+        hasText: Boolean((a as any)?.text),
+        textLen: ((a as any)?.text || '').length,
+        type: (a as any)?.type,
+      },
+    });
+  } catch {}
 });
 
 export const chatPushTokenAtom = atom(null, (g, s, a: string) => {
@@ -47,6 +75,29 @@ export const chatPushTokenAtom = atom(null, (g, s, a: string) => {
     lastMessage.index = index;
     
     s(chatMessagesAtom, messages);
+
+    // Stream token update via shared channel sender
+    const send = g(channelAtom);
+    log.info('CHAT_PUSH_TOKEN send', {
+      index,
+      appendLen: a.length,
+      totalTextLen: ((lastMessage.text || '') as string).length,
+    });
+    send(Channel.CHAT_PUSH_TOKEN, { value: lastMessage });
+
+    try {
+      const { ipcRenderer } = window.electron;
+      ipcRenderer.send(AppChannel.LOG, {
+        level: 'info',
+        message: {
+          src: 'chat.ts',
+          event: 'CHAT_PUSH_TOKEN',
+          index,
+          appendLen: a.length,
+          totalTextLen: ((lastMessage.text || '') as string).length,
+        },
+      });
+    } catch {}
   } catch (error) {
     log.error("Error pushing chat token", error);
     // Reset if something goes fundamentally wrong with the structure
@@ -65,14 +116,41 @@ export const setChatMessageAtom = atom(null, (g, s, a: { index: number; message:
       messages[messageIndex] = a.message;
       (a.message as MessageTypeWithIndex).index = messageIndex;
       s(chatMessagesAtom, messages);
+
+      // Notify via shared channel sender
+      const send = g(channelAtom);
+      log.info('CHAT_SET_MESSAGE send', {
+        index: messageIndex,
+        hasText: Boolean((a.message as any)?.text),
+        textLen: ((a.message as any)?.text || '').length,
+        type: (a.message as any)?.type,
+      });
+      send(Channel.CHAT_SET_MESSAGE, { value: a.message });
+
+      try {
+        const { ipcRenderer } = window.electron;
+        ipcRenderer.send(AppChannel.LOG, {
+          level: 'info',
+          message: {
+            src: 'chat.ts',
+            event: 'CHAT_SET_MESSAGE',
+            index: messageIndex,
+            hasText: Boolean((a.message as any)?.text),
+            textLen: ((a.message as any)?.text || '').length,
+            type: (a.message as any)?.type,
+          },
+        });
+      } catch {}
     }
   } catch (error) {
     log.error("Error setting chat message", error);
   }
 });
 
-export const chatMessageSubmitAtom = atom(null, (_g, _s, _a: { text: string; index: number }) => {
-  // Will be wired to channel later
+export const chatMessageSubmitAtom = atom(null, (g, _s, a: { text: string; index: number }) => {
+  const send = g(channelAtom);
+  // Send ON_SUBMIT through channelAtom for consistency with other IPC sends
+  send(Channel.ON_SUBMIT, { text: a.text, index: a.index });
 });
 
 export const preventChatScrollAtom = atom(false);
