@@ -92,7 +92,12 @@ export const focusedFlagValueAtom = atom(
       s(_focusedFlag, a);
       const flags = g(flagsAtom);
       const flag = flags[a];
-      s(focusedActionAtom, flag || {});
+      // Set focusedActionAtom with hasAction and flag properties
+      if (flag && a) {
+        s(focusedActionAtom, { ...flag, hasAction: true, flag: a } as Action);
+      } else {
+        s(focusedActionAtom, {} as Action);
+      }
     }
   },
 );

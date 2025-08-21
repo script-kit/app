@@ -45,6 +45,15 @@ vi.mock('electron', () => ({
 vi.mock('electron-context-menu', () => ({
   default: vi.fn(() => ({})),
 }));
+vi.mock('@johnlindquist/kit/core/utils', () => ({
+  kenvPath: vi.fn((subpath?: string) => subpath ? `/tmp/.kenv/${subpath}` : '/tmp/.kenv'),
+  kitPath: vi.fn((subpath?: string) => subpath ? `/tmp/.kit/${subpath}` : '/tmp/.kit'),
+  tmpClipboardDir: '/tmp/clipboard',
+  getTrustedKenvsKey: vi.fn(() => 'trusted-kenvs'),
+  defaultGroupNameClassName: vi.fn(() => 'default-group'),
+  defaultGroupClassName: vi.fn(() => 'default-group-class'),
+  getLogFromScriptPath: vi.fn((scriptPath: string) => `/tmp/logs/${scriptPath}.log`),
+}));
 vi.mock('node-pty', () => ({
   spawn: vi.fn(() => ({
     on: vi.fn(),

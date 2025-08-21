@@ -121,6 +121,14 @@ vi.mock('./log-utils', () => ({
   })),
 }));
 
+vi.mock('./logs', () => ({
+  mainLog: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), verbose: vi.fn() },
+  scriptLog: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), verbose: vi.fn() },
+  watcherLog: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), verbose: vi.fn() },
+  promptLog: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), verbose: vi.fn() },
+  keymapLog: { info: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() },
+}));
+
 // Import the module after mocks are set up
 import {
   type Background,

@@ -3,14 +3,35 @@ import { handleScript } from './handleScript';
 import { runPromptProcess } from './kit';
 
 // Mock dependencies
-vi.mock('./kit');
-vi.mock('./logs');
-vi.mock('./main-script');
-vi.mock('./process');
-vi.mock('./server/server-utils');
+vi.mock('./kit', () => ({
+  runPromptProcess: vi.fn(),
+}));
+vi.mock('./logs', () => ({
+  mcpLog: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+vi.mock('./main-script', () => ({
+  getMainScriptPath: vi.fn(() => '/main/script.js'),
+}));
+vi.mock('./process', () => ({
+  spawnShebang: vi.fn(),
+}));
+vi.mock('./server/server-utils', () => ({
+  getApiKey: vi.fn(() => 'test-api-key'),
+}));
 vi.mock('@johnlindquist/kit/core/utils', () => ({
   parseScript: vi.fn().mockResolvedValue({}),
-  resolveToScriptPath: vi.fn().mockReturnValue('/test/script.js')
+  resolveToScriptPath: vi.fn().mockReturnValue('/test/script.js'),
+  kenvPath: vi.fn((subpath?: string) => subpath ? `/tmp/.kenv/${subpath}` : '/tmp/.kenv'),
+  kitPath: vi.fn((subpath?: string) => subpath ? `/tmp/.kit/${subpath}` : '/tmp/.kit'),
+  tmpClipboardDir: '/tmp/clipboard',
+  getTrustedKenvsKey: vi.fn(() => 'trusted-kenvs'),
+  defaultGroupNameClassName: vi.fn(() => 'default-group'),
+  defaultGroupClassName: vi.fn(() => 'default-group-class'),
 }));
 
 describe('handleScript - Launch Context Detection', () => {

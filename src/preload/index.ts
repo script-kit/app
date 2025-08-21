@@ -8,6 +8,16 @@ import { ipcRenderer, webFrame, webUtils } from 'electron';
 import log from 'electron-log';
 log.transports.console.level = false;
 
+// Extend Window interface
+declare global {
+  interface Window {
+    options: any;
+    widgetId?: string;
+    send: (channel: string, data?: any) => void;
+    onSetState?: (state: any) => void;
+  }
+}
+
 // Custom APIs for renderer
 const api = {
   path,

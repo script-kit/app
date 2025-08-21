@@ -171,6 +171,10 @@ vi.mock('@johnlindquist/kit/core/utils', async () => {
     kenvPath: (...parts: string[]) => path.join(process.env.KENV!, ...parts),
     userDbPath: path.resolve(process.env.KIT!, 'db', 'user.json'),
     getTrustedKenvsKey: () => 'KENV_TRUST_MAP',
+    tmpClipboardDir: '/tmp/clipboard',
+    defaultGroupNameClassName: vi.fn(() => 'default-group'),
+    defaultGroupClassName: vi.fn(() => 'default-group-class'),
+    getLogFromScriptPath: vi.fn((scriptPath: string) => `/tmp/logs/${scriptPath}.log`),
   };
 });
 

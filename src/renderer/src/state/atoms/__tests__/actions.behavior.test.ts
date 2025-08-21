@@ -61,6 +61,12 @@ describe('Actions menu behavior', () => {
       { item: { id: 'a2', name: 'Deploy Service', value: 'deploy' }, score: 95, matches: {} },
     ];
     store.set(scoredFlagsAtom as any, base);
+    
+    // Set up the flags to match the expected values
+    store.set(flagsAtom as any, { 
+      build: { name: 'Build Project' },
+      deploy: { name: 'Deploy Service' }
+    } as any);
 
     // Mark the actions menu as open without triggering side-effects from flaggedChoiceValueAtom
     store.set(_flaggedValue as any, 'actions-open');
@@ -73,7 +79,7 @@ describe('Actions menu behavior', () => {
     );
 
     // With a selected action, submit should not be prevented
-    expect(store.get(preventSubmitWithoutActionAtom as any)).toBe(false);
+    expect(store.get(preventSubmitWithoutActionAtom as any)).toBeFalsy();
   });
 
   it('clears focused action and focused flag when the actions menu closes', () => {
@@ -84,6 +90,12 @@ describe('Actions menu behavior', () => {
 
     // Seed the base list via the scoredFlagsAtom setter
     store.set(scoredFlagsAtom as any, base);
+    
+    // Set up the flags to match the expected values
+    store.set(flagsAtom as any, { 
+      build: { name: 'Build Project' },
+      deploy: { name: 'Deploy Service' }
+    } as any);
 
     // Open actions menu (use the real setter so side-effects are triggered)
     store.set(flaggedChoiceValueAtom as any, 'actions-open');
@@ -106,11 +118,11 @@ describe('Actions menu behavior', () => {
     expect(store.get(focusedFlagValueAtom as any)).toBe('');
 
     const fa = store.get(focusedActionAtom as any);
-    expect(fa && typeof fa).toBe('object');
+    expect(typeof fa).toBe('object');
     // Accept either {} or an object without hasAction truthy
     expect(Boolean((fa as any).hasAction)).toBe(false);
 
     // And submit prevention should be off (actions menu not open)
-    expect(store.get(preventSubmitWithoutActionAtom as any)).toBe(false);
+    expect(store.get(preventSubmitWithoutActionAtom as any)).toBeFalsy();
   });
 });

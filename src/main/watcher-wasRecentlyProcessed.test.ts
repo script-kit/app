@@ -8,7 +8,15 @@ vi.mock('valtio/utils');
 vi.mock('electron', () => ({
   Notification: vi.fn(),
   app: {
-    getPath: vi.fn(),
+    getPath: vi.fn((name: string) => {
+      switch (name) {
+        case 'userData': return '/Users/test/Library/Application Support/ScriptKit';
+        case 'downloads': return '/Users/test/Downloads';
+        case 'home': return '/Users/test';
+        case 'logs': return '/Users/test/Library/Logs/ScriptKit';
+        default: return '/Users/test';
+      }
+    }),
   },
   shell: {
     openPath: vi.fn(),

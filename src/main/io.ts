@@ -140,9 +140,10 @@ export const expectBackspaces = (count: number): Promise<void> => {
     let isResolved = false;
 
     // Set up timeout to reject after 5 seconds to prevent memory leaks
-    const timeoutId = setTimeout(() => {
+    const timeoutId = global.setTimeout(() => {
       isResolved = true;
       backspaceResolve = null;
+      global.clearTimeout(timeoutId);
       reject(new Error('Backspace timeout...'));
     }, 5000);
 
@@ -150,7 +151,7 @@ export const expectBackspaces = (count: number): Promise<void> => {
     backspaceResolve = () => {
       if (!isResolved) {
         isResolved = true;
-        clearTimeout(timeoutId);
+        global.clearTimeout(timeoutId);
         backspaceResolve = null;
         resolve();
       }

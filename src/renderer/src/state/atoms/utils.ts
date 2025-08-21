@@ -11,7 +11,7 @@ const { ipcRenderer } = window.electron;
 
 // --- Search and UI State ---
 export const searchDebounceAtom = atom(true);
-export const topRefAtom = atom<null | HTMLDivElement>(null);
+export const topRefAtom = atom<null | HTMLDivElement, [HTMLDivElement | null], void>(null);
 export const resetIdAtom = atom(Math.random());
 export const mainElementIdAtom = atom<string>('');
 export const scrollToAtom = atom<'top' | 'bottom' | 'center' | null>(null);
@@ -24,9 +24,9 @@ export const miniShortcutsVisibleAtom = atom((_g) => {
 });
 
 // --- File Path Bounds ---
-const emptyFilePathBounds: FilePathBounds = { 
-  bounds: { x: 0, y: 0, width: 0, height: 0 }, 
-  filePath: '' 
+const emptyFilePathBounds: FilePathBounds = {
+  bounds: { x: 0, y: 0, width: 0, height: 0 },
+  filePath: ''
 };
 export const filePathBoundsAtom = atom<FilePathBounds>(emptyFilePathBounds);
 export const initialResizeAtom = atom<ResizeData | null>(null);
@@ -38,7 +38,7 @@ export const createAssetAtom = (...parts: string[]) =>
       ipcRenderer.once(AppChannel.GET_ASSET, (_event, { assetPath }) => {
         resolve(assetPath);
       });
-      
+
       ipcRenderer.send(AppChannel.GET_ASSET, { parts });
     });
   });
@@ -49,4 +49,4 @@ const listProcessesActionAtom = atom(() => null);
 const signInActionAtom = atom(() => null);
 const actionsButtonActionAtom = atom(() => ({} as any));
 const shouldActionButtonShowOnInputAtom = atom(() => false);
-export const setFlagByShortcutAtom = atom(null, () => {});
+export const setFlagByShortcutAtom = atom(null, () => { });

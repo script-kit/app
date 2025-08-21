@@ -24,5 +24,10 @@
       "Bash(gemini:*)"
     ],
     "deny": []
+  },
+
+  "statusLine": {
+    "type": "command",
+    "command": "npx -y @owloops/claude-powerline@latest --style=powerline"
   }
 }

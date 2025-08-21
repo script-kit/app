@@ -4,9 +4,16 @@ import { startTestMcpServer } from './mcp-test-bootstrap';
 // Mock electron and heavy services to avoid Electron dependency
 import { vi } from 'vitest';
 
+// Mock process.resourcesPath before importing any modules that might use it
+const originalProcess = process;
+vi.stubGlobal('process', {
+  ...originalProcess,
+  resourcesPath: '/path/to/resources',
+});
+
 vi.mock('electron', () => ({
   default: {},
-  app: { isPackaged: true, getPath: () => '/tmp', getVersion: () => '1.0.0' },
+  app: { isPackaged: false, getPath: () => '/tmp', getVersion: () => '1.0.0' },
   nativeTheme: { shouldUseDarkColors: false },
 }));
 

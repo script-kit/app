@@ -5,6 +5,19 @@ import { createApp } from 'petite-vue';
 import React, { type ErrorInfo, Suspense, useEffect, useLayoutEffect, useState, useRef } from 'react';
 import { AppChannel } from '../../shared/enums';
 
+// Extend Window interface for electron and widget properties
+declare global {
+  interface Window {
+    electron: {
+      ipcRenderer: any;
+    };
+    ipcRenderer: any;
+    options: any;
+    widgetId?: string;
+    onSetState?: (state: any) => void;
+  }
+}
+
 const { ipcRenderer } = window.electron;
 window.ipcRenderer = ipcRenderer;
 
