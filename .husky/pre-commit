@@ -13,10 +13,10 @@ fi
 
 # Run tests if they exist and pass quickly
 echo "🧪 Running tests..."
-pnpm test --run 2>/dev/null
-if [ $? -ne 0 ]; then
-  echo "⚠️  Tests failed or not configured. Consider fixing tests."
-  # Don't block commit for now since tests might not be fully set up
+result=$(pnpm test 2>/dev/null || true)
+
+if [ -n "$result" ]; then
+  echo "⚠️  Tests may have failed. Consider fixing tests."
 fi
 
 echo "✅ Pre-commit checks passed!"
