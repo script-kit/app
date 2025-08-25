@@ -88,9 +88,11 @@ export const openActionsOverlayAtom = atom(
     s(actionsOverlaySourceAtom, source);
     if (typeof flag === 'string') s(_flaggedValue, flag);
     s(actionsOverlayOpenAtom, true);
-    // Reset selection to top and ensure list will scroll into view
-    s(flagsIndex, 0);
-    s(flagsRequiresScrollAtom, -1);
+    // Reset selection and ensure list will scroll into view via flagsIndexAtom setter
+    const base = g(scoredFlags);
+    let firstActionable = base.findIndex((sc) => !sc?.item?.skip);
+    if (firstActionable < 0) firstActionable = -1; // none actionable
+    s(flagsRequiresScrollAtom, firstActionable);
   },
 );
 
@@ -108,13 +110,7 @@ export const actionsInputAtom = atom(
     // 1) store new filter
     s(_actionsInputAtom, a);
 
-    // 2) reset selection to the top of the (newly filtered) list
-    s(flagsIndex, 0);
-
-    // 3) request scroll so the first item is visible
-    s(flagsRequiresScrollAtom, -1);
-
-    // 4) update Actions list height to match the filtered list
+    // 2) compute filtered list and reset selection to first actionable
     const base = g(scoredFlags);
     const q = (a || '').toLowerCase().trim();
     const filtered = !q
@@ -127,6 +123,20 @@ export const actionsInputAtom = atom(
         const val = (typeof it.value === 'string' ? it.value : '').toLowerCase();
         return name.includes(q) || desc.includes(q) || id.includes(q) || val.includes(q);
       });
+
+    // First actionable index (skip group headers)
+    let firstActionable = 0;
+    for (let i = 0; i < filtered.length; i++) {
+      if (!filtered?.[i]?.item?.skip) {
+        firstActionable = i;
+        break;
+      }
+    }
+
+    // 3) request scroll; the ActionsList effect will call flagsIndexAtom setter
+    s(flagsRequiresScrollAtom, firstActionable);
+
+    // 4) update Actions list height to match the filtered list
     const h = calcVirtualListHeight(filtered as any, g(actionsItemHeightAtom), MAX_VLIST_HEIGHT);
     s(flagsHeightAtom, h);
   },
@@ -194,7 +204,9 @@ export const actionsConfigAtom = atom(
 export const setScoredFlagsAtom = atom(null, (_g, s, a: ScoredChoice[]) => {
   unstable_batchedUpdates(() => {
     s(scoredFlags, a);
-    s(flagsIndex, 0);
+    // Defer to flagsIndexAtom by requesting a scroll/index update to first actionable (or -1 if none)
+    const firstActionable = a.findIndex((sc) => !sc?.item?.skip);
+    s(flagsRequiresScrollAtom, firstActionable >= 0 ? firstActionable : -1);
   });
 });
 

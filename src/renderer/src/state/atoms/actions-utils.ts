@@ -13,6 +13,7 @@ import {
   shortcutsAtom,
   enterLastPressedAtom,
   editorHistory,
+  focusedChoiceAtom,
 } from '../shared-dependencies';
 import { pushIpcMessageAtom } from '../selectors/ipcOutbound';
 
@@ -28,7 +29,9 @@ export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
     s(enterLastPressedAtom, new Date());
   } else {
     // Otherwise, send it as a shortcut event.
-    s(pushIpcMessageAtom, { channel: Channel.SHORTCUT, state: { shortcut } });
+    const focused = g(focusedChoiceAtom);
+    const scriptOverride = focused?.value ? { script: focused.value } : {};
+    s(pushIpcMessageAtom, { channel: Channel.SHORTCUT, state: { shortcut, ...scriptOverride } });
   }
 });
 

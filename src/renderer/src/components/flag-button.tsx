@@ -1,6 +1,7 @@
 import type { Script } from '@johnlindquist/kit/types/core';
 import parse from 'html-react-parser';
 import { useAtom, useAtomValue } from 'jotai';
+import useListNav from '../hooks/useListNav';
 import React, { useCallback, useEffect, useState, type DragEvent } from 'react';
 const { ipcRenderer } = window.electron;
 
@@ -39,6 +40,15 @@ function FlagButton({ index: buttonIndex, style, data: { choices } }: ChoiceButt
   const input = useAtomValue(inputAtom);
   const [, setSubmitValue] = useAtom(submitValueAtom);
   const [focusedChoice] = useAtom(focusedChoiceAtom);
+  
+  // Unified hover routing through nav engine
+  const nav = useListNav({
+    id: 'actions-overlay',
+    getCount: () => choices.length,
+    getIndex: () => index,
+    setIndex: (next) => setIndex(next),
+    loop: true,
+  });
 
   // Get the text after the last file separator
   const base = (input || '').split(/[\\/]/).pop() || '';
@@ -48,15 +58,19 @@ function FlagButton({ index: buttonIndex, style, data: { choices } }: ChoiceButt
   const onClick = useCallback(
     (e) => {
       e.preventDefault();
+      // Route index update through the unified nav for observability
+      try {
+        nav.dispatch({ type: 'CLICK', index: buttonIndex });
+      } catch {}
       setSubmitValue(focusedChoice?.value);
     },
-    [focusedChoice, setSubmitValue],
+    [focusedChoice, setSubmitValue, buttonIndex, nav],
   );
   const onMouseOver = useCallback(() => {
     if (mouseEnabled) {
-      setIndex(buttonIndex);
+      nav.dispatch({ type: 'HOVER', index: buttonIndex });
     }
-  }, [buttonIndex, mouseEnabled, setIndex]);
+  }, [buttonIndex, mouseEnabled, nav]);
 
   const [imageFail, setImageFail] = useState(false);
   const ui = useAtomValue(uiAtom);
@@ -120,7 +134,7 @@ function FlagButton({ index: buttonIndex, style, data: { choices } }: ChoiceButt
       }}
       className={`
       text-text-base
-      ${index === buttonIndex && !choice?.disableSubmit ? 'bg-ui-bg' : ''}
+      ${index === buttonIndex && !choice?.disableSubmit && !choice?.skip ? 'bg-ui-bg' : ''}
         flex
         h-16
         w-full

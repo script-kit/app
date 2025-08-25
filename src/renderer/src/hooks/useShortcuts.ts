@@ -28,7 +28,7 @@ import {
 } from '../jotai';
 import { createLogger } from '../log-utils';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import type { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
 import { hotkeysOptions } from './shared';
 
@@ -80,25 +80,16 @@ function getKey(event: HotkeysEvent) {
   return key;
 }
 
-function isEventShortcut(event: HotkeysEvent, originalShortcutString: string): boolean {
-  const eventKeyChar = getKey(event); // This will be '.', ',', '/', or other chars
-
-  const shortcutParts = originalShortcutString.split('+');
-  const shortcutKeyDefinitionPart = shortcutParts.pop() as string; // This could be 'period', 'comma', 'slash', or a char like 'o'
-
-  // Normalize the shortcut key part to the expected character using the reverse map
-  const expectedCharFromShortcut =
-    KEYWORD_TO_CHAR_MAP[shortcutKeyDefinitionPart.toLowerCase()] || shortcutKeyDefinitionPart;
-
-  const modifiersMatch =
-    event.mod === (originalShortcutString.includes('mod') || originalShortcutString.includes('cmd')) &&
-    event.shift === originalShortcutString.includes('shift') &&
-    event.alt === originalShortcutString.includes('alt') &&
-    event.ctrl === originalShortcutString.includes('ctrl') &&
-    event.meta === originalShortcutString.includes('meta');
-
-  // log.debug(`isEventShortcut: eventKeyChar='${eventKeyChar}', expectedCharFromShortcut='${expectedCharFromShortcut}', modMatch=${modifiersMatch}`);
-  return modifiersMatch && eventKeyChar === expectedCharFromShortcut;
+function normalizeEventToKey(domEvent: KeyboardEvent): string {
+  const parts: string[] = [];
+  // treat mod = meta on mac or ctrl on others
+  if (domEvent.metaKey || domEvent.ctrlKey) parts.push('mod');
+  if (domEvent.shiftKey) parts.push('shift');
+  if (domEvent.altKey) parts.push('alt');
+  const rawKey = (domEvent.key || '').toLowerCase();
+  const keyPart = KEYWORD_TO_CHAR_MAP[rawKey] ? KEYWORD_TO_CHAR_MAP[rawKey] : rawKey;
+  parts.push(keyPart);
+  return parts.join('+');
 }
 
 export default () => {
@@ -150,11 +141,11 @@ export default () => {
       if (value?.shortcut) {
         const converted = convertShortcutToHotkeysFormat(value.shortcut);
         shortcuts.push(converted);
-        log.info('Registered flag shortcut', { 
-          flag: key, 
-          original: value.shortcut, 
+        log.info('Registered flag shortcut', {
+          flag: key,
+          original: value.shortcut,
           converted,
-          hasAction: (value as any)?.hasAction 
+          hasAction: (value as any)?.hasAction
         });
       }
     }
@@ -162,13 +153,24 @@ export default () => {
     return shortcuts;
   }, [flagsWithShortcuts]);
 
-  const flagByHandler = useCallback(
-    (event: HotkeysEvent) => {
-      // log.info('Checking flag shortcuts', { event, flagsWithShortcuts });
+  const promptMap = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const ps of promptShortcuts) {
+      if (ps?.key) {
+        const k = convertShortcutToHotkeysFormat(ps.key).toLowerCase();
+        m.set(k, ps);
+      }
+    }
+    return m;
+  }, [promptShortcuts]);
+
+  const flagByEvent = useCallback(
+    (evt: KeyboardEvent) => {
       for (const [flag, value] of flagsWithShortcuts) {
-        if (isEventShortcut(event, value.shortcut)) {
-          // log.info('Flag shortcut matched', { flag, shortcut: value.shortcut });
-          return flag;
+        if (value?.shortcut) {
+          const evKey = normalizeEventToKey(evt);
+          const expected = convertShortcutToHotkeysFormat(value.shortcut).toLowerCase();
+          if (evKey === expected) return flag;
         }
       }
       return null;
@@ -176,16 +178,79 @@ export default () => {
     [flagsWithShortcuts],
   );
 
-  const shortcutsToRegister = flagShortcuts.length > 0 ? flagShortcuts.join(',') : 'f19';
+  // Fallback: capture meta/ctrl shortcut keys at the document level to ensure reliability
+  useEffect(() => {
+    const flagsMap = new Map<string, string>();
+    for (const [flag, value] of flagsWithShortcuts) {
+      if (value?.shortcut) {
+        flagsMap.set(convertShortcutToHotkeysFormat(value.shortcut).toLowerCase(), flag);
+      }
+    }
+
+    const onKeyDown = (ev: KeyboardEvent) => {
+      // Only handle modifier shortcuts to avoid interfering with typing
+      if (!(ev.metaKey || ev.ctrlKey)) return;
+      const evKey = normalizeEventToKey(ev);
+
+      // Prompt-level shortcut takes precedence
+      const foundPrompt = promptMap.get(evKey);
+      if (foundPrompt) {
+        ev.preventDefault();
+        // Use same behavior as the prompt shortcut handler
+        if ((foundPrompt as any)?.hasAction) {
+          setFocusedAction(foundPrompt as any);
+          submit(focusedChoice?.value || input);
+          return;
+        }
+        if ((foundPrompt as any)?.flag) {
+          setFlag((foundPrompt as any).flag);
+          // Do not clear the flag here. The IPC outbox merges state at send time,
+          // and submitValueAtom will clear flags after sending.
+          submit(focusedChoice?.value || input);
+          return;
+        }
+        // Otherwise send as regular prompt shortcut
+        sendShortcut(foundPrompt.key);
+        return;
+      }
+
+      // Flag-level shortcut (if not shadowed by prompt shortcut)
+      const flag = flagsMap.get(evKey);
+      if (flag) {
+        ev.preventDefault();
+        // Normal flag behavior: set flag and submit current value
+        // Do not clear the flag here; submitValueAtom will clear it post-send.
+        setFlag(flag);
+        submit(focusedChoice?.value || input);
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
+  }, [flagsWithShortcuts, promptMap, focusedChoice, input, setFocusedAction, setFlag, submit]);
+
+  // Prompt shortcuts should take precedence over flag shortcuts when keys collide
+  const promptConverted = useMemo(() => new Set(
+    (promptShortcuts || [])
+      .filter(ps => ps?.key)
+      .map(ps => convertShortcutToHotkeysFormat(ps.key))
+  ), [promptShortcuts]);
+
+  const filteredFlagShortcuts = useMemo(
+    () => flagShortcuts.filter(k => !promptConverted.has(k)),
+    [flagShortcuts, promptConverted]
+  );
+
+  const shortcutsToRegister = filteredFlagShortcuts.length > 0 ? filteredFlagShortcuts.join(',') : 'f19';
   log.info('Registering flag shortcuts with useHotkeys', { shortcutsToRegister, flagShortcuts });
-  
+
   useHotkeys(
     shortcutsToRegister,
     (event, handler: HotkeysEvent) => {
-      const matchedFlag = flagByHandler(handler);
-      log.info('Flag shortcut triggered', { 
-        event, 
-        handler, 
+      const matchedFlag = flagByEvent(event as unknown as KeyboardEvent);
+      log.info('Flag shortcut triggered', {
+        event,
+        handler,
         flagShortcuts,
         matchedFlag,
         keys: handler?.keys,
@@ -206,11 +271,11 @@ export default () => {
 
       const flag = flagByHandler(handler) as string;
       const submitValue = focusedChoice?.value || input;
-      
+
       // Check if this flag has an onAction handler
       const flagData = flags?.[flag];
       log.info('Flag shortcut handler', { flag, flagData, hasAction: (flagData as any)?.hasAction });
-      
+
       if (flagData && (flagData as any)?.hasAction) {
         // This is an action with an onAction handler
         const action = {
@@ -227,47 +292,36 @@ export default () => {
         submit(submitValue);
         return;
       }
-      
+
       // Normal flag behavior
       log.info('Submitting flagged value', { flag, submitValue });
+      // Do not clear the flag immediately; the queued IPC message needs it.
+      // submitValueAtom will clear focusedFlagValueAtom after sending.
       setFlag(flag);
       submit(submitValue);
-      setFlag('');
     },
     hotkeysOptions,
-    [flags, input, inputFocus, choices, index, overlayOpen, flagShortcuts, focusedChoice, setFocusedAction, setFlag, submit],
+    [flags, input, inputFocus, choices, index, overlayOpen, filteredFlagShortcuts, focusedChoice, setFocusedAction, setFlag, submit, flagByEvent],
   );
 
   const onShortcuts = useMemo(() => {
-    let onShortcuts = 'f19';
-    if (promptShortcuts.length > 0) {
-      let keys = '';
-      for (const ps of promptShortcuts) {
-        if (ps?.key) {
-          const k = convertShortcutToHotkeysFormat(ps.key);
-
-          // log.info(`Comparing ${ps.key} to ${flagShortcuts}`);
-          if (flagShortcuts.includes(k)) {
-            // log.warn('Prompt shortcut is a duplicated of a flag shortcut. Ignoring flag shortcut', { ps });
-          } else {
-            keys += `${k},`;
-          }
-        }
-      }
-      if (keys.length > 0) {
-        // Remove the last comma
-        onShortcuts = keys.slice(0, -1);
-        // log.info('All flags and shortcuts', { flagShortcuts, onShortcuts });
-      }
-    }
-    log.info('On shortcuts', { onShortcuts, promptShortcuts, flagShortcuts });
-    return onShortcuts;
-  }, [promptShortcuts, flagShortcuts]);
+    // Deduplicate and normalize prompt shortcuts, to avoid repeated keys breaking registration
+    const keys = Array.from(
+      new Set(
+        (promptShortcuts || [])
+          .filter(ps => ps?.key)
+          .map(ps => convertShortcutToHotkeysFormat(ps.key))
+      )
+    );
+    const result = keys.length > 0 ? keys.join(',') : 'f19';
+    log.info('On shortcuts', { result, promptShortcutsCount: promptShortcuts.length });
+    return result;
+  }, [promptShortcuts]);
 
   useHotkeys(
     onShortcuts,
     (event, handler: HotkeysEvent) => {
-      console.log('[useShortcuts] Prompt shortcut triggered', { 
+      console.log('[useShortcuts] Prompt shortcut triggered', {
         key: handler?.keys?.[0],
         onShortcuts,
         promptShortcuts: promptShortcuts.map(s => ({ key: s.key, name: s.name }))
@@ -291,20 +345,21 @@ export default () => {
         return;
       }
 
-      const found = promptShortcuts.find((ps) => isEventShortcut(handler, ps.key));
-      
+      const evKey = normalizeEventToKey(event as unknown as KeyboardEvent);
+      const found = promptMap.get(evKey);
+
       console.log('[useShortcuts] Checking prompt shortcuts', {
         key: handler?.keys?.[0],
         found: found ? { key: found.key, name: (found as any).name, hasAction: (found as any).hasAction } : null,
         allShortcuts: promptShortcuts.map(s => ({ key: s.key, name: (s as any).name }))
       });
-      
+
       if (found) {
         log.info('Matching prompt shortcut found', { shortcut: found });
-        
+
         // Check if this is an action with hasAction
         if ((found as any)?.hasAction) {
-          console.log('[useShortcuts] Found action with hasAction, triggering', { 
+          console.log('[useShortcuts] Found action with hasAction, triggering', {
             name: (found as any).name,
             value: (found as any).value,
             flag: (found as any).flag
@@ -326,7 +381,7 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [overlayOpen, promptShortcuts, flagShortcuts, promptData, actionsInputFocus, setFocusedAction, submit, focusedChoice, input, setFlag],
+    [overlayOpen, promptShortcuts, flagShortcuts, promptData, actionsInputFocus, setFocusedAction, submit, focusedChoice, input, setFlag, promptMap],
   );
 
   useHotkeys(

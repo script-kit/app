@@ -958,6 +958,16 @@ export const flagsIndexAtom = atom(
       return;
     }
 
+    // Defensive: if no actionable items exist, clear focused flag/action and avoid focusing headers
+    const anyActionable = cs.some((c) => !c?.item?.skip);
+    if (!anyActionable) {
+      // Keep index stable but ensure no focused value/action
+      s(focusedFlagValueAtom, '');
+      s(focusedActionAtom, {} as any);
+      s(flagsIndex, a < 0 ? 0 : a >= cs.length ? 0 : a);
+      return;
+    }
+
     const clampedIndex = a < 0 ? cs.length - 1 : a >= cs.length ? 0 : a;
 
     const list = g(flagsListAtom);
@@ -1261,6 +1271,18 @@ export const submitValueAtom = atom(
     }
 
     const { channel, override } = decideSubmit(decisionCtx as any, value);
+    try {
+      // Verbose logging to trace submission decisions and payloads
+      console.log('[submitValueAtom] decision', {
+        ui,
+        hasAction: decisionCtx.hasAction,
+        overlayOpen: decisionCtx.overlayOpen,
+        flag: decisionCtx.flag,
+        valueType: typeof value,
+        channel,
+        override,
+      });
+    } catch {}
     s(pushIpcMessageAtom, { channel, state: override });
 
     // Clear state for action submissions

@@ -16,6 +16,7 @@ import {
   scoredChoicesAtom,
 } from '../jotai';
 import ChoiceButton from './button';
+import useListNav from '../hooks/useListNav';
 import { createLogger } from '../log-utils';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { hotkeysOptions } from '@renderer/hooks/shared';
@@ -44,6 +45,15 @@ export default function ChoiceList({ width, height }: ListProps) {
   const setMouseEnabled = useSetAtom(mouseEnabledAtom);
   const gridReady = useAtomValue(gridReadyAtom);
   const containerClassName = useAtomValue(containerClassNameAtom);
+
+  // Unified nav adapter for grid: we compute the target index and dispatch SET
+  const nav = useListNav({
+    id: 'choices-grid',
+    getCount: () => choices.length,
+    getIndex: () => index,
+    setIndex: (next) => setIndex(next),
+    loop: true,
+  });
 
   const handleListRef = useCallback(
     (node) => {
@@ -203,7 +213,7 @@ ${containerClassName}
       }
 
       if (newIndex !== index) {
-        setIndex(newIndex);
+        nav.dispatch({ type: 'SET', index: newIndex, source: 'key' });
       }
     },
     hotkeysOptions,
@@ -215,7 +225,7 @@ ${containerClassName}
       gridReady,
       choices.length,
       index,
-      setIndex,
+      nav,
       setMouseEnabled,
     ],
   );

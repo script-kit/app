@@ -9,6 +9,9 @@ import {
   directionAtom,
   actionsOverlayOpenAtom,
   flagsIndexAtom,
+  scoredFlagsAtom,
+  flagsHeightAtom,
+  actionsItemHeightAtom,
   indexAtom,
   inputFocusAtom,
   mouseEnabledAtom,
@@ -16,9 +19,10 @@ import {
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
+import useListNav from './useListNav';
 
 export default () => {
-  const [index, setIndex] = useAtom(indexAtom);
+  const [index] = useAtom(indexAtom);
   const [flagsIndex, setFlagsIndex] = useAtom(flagsIndexAtom);
   const [, setMouseEnabled] = useAtom(mouseEnabledAtom);
   const [channel] = useAtom(channelAtom);
@@ -27,6 +31,19 @@ export default () => {
   const [shortcuts] = useAtom(shortcutsAtom);
   const [, setDirection] = useAtom(directionAtom);
   const overlayOpen = useAtomValue(actionsOverlayOpenAtom);
+  const flags = useAtomValue(scoredFlagsAtom);
+  // For page size calculation
+  const flagsHeight = useAtomValue(flagsHeightAtom);
+  const actionsItemHeight = useAtomValue(actionsItemHeightAtom);
+
+  // Unified navigation for the overlay list
+  const nav = useListNav({
+    id: 'actions-overlay',
+    getCount: () => flags.length,
+    getIndex: () => flagsIndex,
+    setIndex: (next) => setFlagsIndex(next),
+    loop: true,
+  });
 
   // useEffect(() => {
   //   const list = document.getElementById('list');
@@ -46,14 +63,14 @@ export default () => {
       setDirection(-1);
 
       if (overlayOpen) {
-        setFlagsIndex(flagsIndex - 1);
+        nav.moveUp();
       } else {
         // setIndex(index - 1);
         // channel(Channel.UP);
       }
     },
     hotkeysOptions,
-    [index, flagsIndex, channel, inputFocus, actionsInputFocus, shortcuts, overlayOpen],
+    [index, flagsIndex, channel, inputFocus, actionsInputFocus, shortcuts, overlayOpen, nav],
   );
 
   useHotkeys(
@@ -67,14 +84,14 @@ export default () => {
       setDirection(1);
 
       if (overlayOpen) {
-        setFlagsIndex(flagsIndex + 1);
+        nav.moveDown();
       } else {
         // setIndex(index + 1);
         // channel(Channel.DOWN);
       }
     },
     hotkeysOptions,
-    [index, flagsIndex, channel, inputFocus, actionsInputFocus, shortcuts, overlayOpen],
+    [index, flagsIndex, channel, inputFocus, actionsInputFocus, shortcuts, overlayOpen, nav],
   );
 
   useHotkeys(
@@ -101,5 +118,36 @@ export default () => {
     },
     hotkeysOptions,
     [channel, inputFocus, actionsInputFocus, shortcuts],
+  );
+
+  // PageUp / PageDown within overlay
+  useHotkeys(
+    'pageup',
+    (event) => {
+      if (!(inputFocus || actionsInputFocus)) return;
+      if (!overlayOpen) return;
+      event.preventDefault();
+      setMouseEnabled(0);
+      setDirection(-1);
+      const page = Math.max(1, Math.floor(flagsHeight / Math.max(1, actionsItemHeight)));
+      nav.pageUp(page);
+    },
+    hotkeysOptions,
+    [inputFocus, actionsInputFocus, overlayOpen, flagsHeight, actionsItemHeight, nav],
+  );
+
+  useHotkeys(
+    'pagedown',
+    (event) => {
+      if (!(inputFocus || actionsInputFocus)) return;
+      if (!overlayOpen) return;
+      event.preventDefault();
+      setMouseEnabled(0);
+      setDirection(1);
+      const page = Math.max(1, Math.floor(flagsHeight / Math.max(1, actionsItemHeight)));
+      nav.pageDown(page);
+    },
+    hotkeysOptions,
+    [inputFocus, actionsInputFocus, overlayOpen, flagsHeight, actionsItemHeight, nav],
   );
 };

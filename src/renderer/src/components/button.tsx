@@ -4,6 +4,7 @@ import type { ScoredChoice } from '../../../shared/types';
 import log from 'electron-log';
 import parse from 'html-react-parser';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import useListNav from '../hooks/useListNav';
 import React, { useCallback, useEffect, useState, type DragEvent, useMemo, useRef } from 'react';
 const { ipcRenderer } = window.electron;
 
@@ -307,6 +308,10 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
     (e) => {
       log.info(`Clicked choice: ${choice?.id}`);
       e.preventDefault();
+      // Route index update through the unified nav for observability
+      try {
+        nav.dispatch({ type: 'CLICK', index: buttonIndex });
+      } catch {}
       if (choice?.info || choice?.skip) {
         return;
       }
@@ -369,6 +374,15 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
 
   const buttonRef = useRef<HTMLButtonElement>(null);
 
+  // Unified hover routing via nav engine
+  const nav = useListNav({
+    id: 'choices-list',
+    getCount: () => choices.length,
+    getIndex: () => index,
+    setIndex: (next) => setIndex(next),
+    loop: true,
+  });
+
   return (
     // biome-ignore lint/a11y/useKeyWithMouseEvents: <explanation>
     <button
@@ -385,7 +399,7 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
       className={`
         choice
         text-text-base
-        ${index === buttonIndex && !choice?.disableSubmit ? choice?.focusedClassName || 'bg-ui-bg' : ''}
+        ${index === buttonIndex && !choice?.disableSubmit && !choice?.skip ? choice?.focusedClassName || 'bg-ui-bg' : ''}
             flex
             h-16
             w-full
@@ -403,8 +417,12 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
             ${index === buttonIndex ? 'opacity-100' : `opacity-90 ${overlayOpen ? 'opacity-30' : ''}`}
         `}
       onClick={onClick}
-      onMouseEnter={onMouseEnter}
-      onMouseOver={onMouseEnter}
+      onMouseEnter={() => {
+        if (mouseEnabled) nav.dispatch({ type: 'HOVER', index: buttonIndex });
+      }}
+      onMouseOver={() => {
+        if (mouseEnabled) nav.dispatch({ type: 'HOVER', index: buttonIndex });
+      }}
     >
       {choice?.html ? (
         parse(choice.html, {

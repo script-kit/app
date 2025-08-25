@@ -41,6 +41,7 @@ export {
   // Choice atoms
   selectedChoicesAtom,
   choices,
+  focusedChoiceAtom,
   
   // Editor history
   editorHistory,
