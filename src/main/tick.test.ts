@@ -164,20 +164,18 @@ vi.mock('@johnlindquist/kit/core/db', () => ({
 }));
 
 // Store callbacks at module level for vi.mock to access
-let snippetCallback: ((value: string) => void) | undefined;
+const moduleCallbacks: { snippet?: (value: string) => void } = {};
 
-vi.mock('valtio/utils', () => {
-  return {
-    subscribeKey: vi.fn((state, key, callback) => {
-      // Store the callback for testing
-      if (key === 'snippet') {
-        snippetCallback = callback;
-      }
-      // Return a mock unsubscribe function
-      return () => { };
-    }),
-  };
-});
+vi.mock('valtio/utils', () => ({
+  subscribeKey: vi.fn((state, key, callback) => {
+    // Store the callback for later use
+    if (key === 'snippet') {
+      moduleCallbacks.snippet = callback;
+    }
+    // Return a mock unsubscribe function
+    return () => { };
+  }),
+}))
 
 // Import after mocks
 import {
@@ -418,7 +416,9 @@ New content`;
       snippetMap.set(',,', { filePath: '/test/snippet.js', postfix: false, txt: false });
 
       kitState.snippet = ',,';
-      if (snippetCallback) await snippetCallback(',,');
+      if (moduleCallbacks.snippet) {
+        await moduleCallbacks.snippet(',,');
+      }
 
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
@@ -437,7 +437,7 @@ New content`;
       snippetMap.set('test', { filePath: '/test/snippet.js', postfix: false, txt: false });
 
       kitState.snippet = 'test';
-      if (snippetCallback) await snippetCallback('test');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('test');
 
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
@@ -451,7 +451,7 @@ New content`;
       snippetMap.set('fix', { filePath: '/test/postfix.js', postfix: true, txt: false });
 
       kitState.snippet = 'prefixTextfix';
-      if (snippetCallback) await snippetCallback('prefixTextfix');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('prefixTextfix');
 
       expect(deleteText).toHaveBeenCalledWith('prefixTextfix');
       expect(emitter.emit).toHaveBeenCalledWith(
@@ -467,7 +467,7 @@ New content`;
       snippetMap.set('txt', { filePath: '/test/snippet.txt', postfix: false, txt: true });
 
       kitState.snippet = 'txt';
-      if (snippetCallback) await snippetCallback('txt');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('txt');
 
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
@@ -483,7 +483,7 @@ New content`;
       snippetMap.set(',,', { filePath: '/test/snippet.js', postfix: false, txt: false });
 
       kitState.snippet = ',,';
-      if (snippetCallback) await snippetCallback(',,');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet(',,');
 
       expect(deleteText).not.toHaveBeenCalled();
       expect(emitter.emit).toHaveBeenCalled();
@@ -493,7 +493,7 @@ New content`;
       snippetMap.set('bad', null as any);
 
       kitState.snippet = 'bad';
-      if (snippetCallback) await snippetCallback('bad');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('bad');
 
       expect(tickLog.warn).toHaveBeenCalledWith(
         expect.stringContaining('Snippet key "bad" found in index but not in map')
@@ -505,14 +505,14 @@ New content`;
       snippetMap.set('test', { filePath: '/test/snippet.js', postfix: false, txt: false });
 
       kitState.snippet = 'test_';
-      if (snippetCallback) await snippetCallback('test_');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('test_');
 
       expect(kitState.snippet).toBe('');
     });
 
     it('should not trigger snippets shorter than 2 characters', async () => {
       kitState.snippet = 't';
-      if (snippetCallback) await snippetCallback('t');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('t');
 
       expect(emitter.emit).not.toHaveBeenCalled();
     });
@@ -523,7 +523,7 @@ New content`;
 
       // First trigger 'te'
       kitState.snippet = 'te';
-      if (snippetCallback) await snippetCallback('te');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('te');
 
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
@@ -536,7 +536,7 @@ New content`;
 
       // Then trigger 'test'
       kitState.snippet = 'test';
-      if (snippetCallback) await snippetCallback('test');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('test');
 
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
@@ -559,7 +559,7 @@ New content`;
 
       // Test that both snippets can be triggered
       kitState.snippet = ',,';
-      if (snippetCallback) snippetCallback(',,');
+      if (moduleCallbacks.snippet) moduleCallbacks.snippet(',,');
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
         expect.objectContaining({ scriptPath: '/test/1.js' })
@@ -568,7 +568,7 @@ New content`;
       vi.clearAllMocks();
 
       kitState.snippet = ';;';
-      if (snippetCallback) snippetCallback(';;');
+      if (moduleCallbacks.snippet) moduleCallbacks.snippet(';;');
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
         expect.objectContaining({ scriptPath: '/test/2.js' })
@@ -585,7 +585,7 @@ New content`;
 
       // Both end with 'est', should both be findable
       kitState.snippet = 'test';
-      if (snippetCallback) snippetCallback('test');
+      if (moduleCallbacks.snippet) moduleCallbacks.snippet('test');
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
         expect.objectContaining({ scriptPath: '/test/1.js' })
@@ -594,7 +594,7 @@ New content`;
       vi.clearAllMocks();
 
       kitState.snippet = 'fastest';
-      if (snippetCallback) snippetCallback('fastest');
+      if (moduleCallbacks.snippet) moduleCallbacks.snippet('fastest');
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
         expect.objectContaining({ scriptPath: '/test/2.js' })
@@ -609,10 +609,10 @@ New content`;
 
       // Rapid typing
       kitState.snippet = 'aa';
-      if (snippetCallback) await snippetCallback('aa');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('aa');
 
       kitState.snippet = 'bb';
-      if (snippetCallback) await snippetCallback('bb');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('bb');
 
       expect(emitter.emit).toHaveBeenCalledTimes(2);
       expect(emitter.emit).toHaveBeenNthCalledWith(1,
@@ -629,7 +629,7 @@ New content`;
       snippetMap.set('!@', { filePath: '/test/special.js', postfix: false, txt: false });
 
       kitState.snippet = '!@';
-      if (snippetCallback) await snippetCallback('!@');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('!@');
 
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
@@ -642,7 +642,7 @@ New content`;
       snippetMap.set(',,', { filePath: '/test/snippet.js', postfix: false, txt: false });
 
       kitState.snippet = ',,';
-      if (snippetCallback) await snippetCallback(',,');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet(',,');
 
       // The ioEvent function should prevent this, but the subscribeKey callback
       // doesn't check isTyping, so we need to verify the behavior
@@ -657,7 +657,7 @@ New content`;
       });
 
       kitState.snippet = 'note';
-      if (snippetCallback) await snippetCallback('note');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('note');
 
       // Should still use paste-snippet.js for .txt files
       expect(emitter.emit).toHaveBeenCalledWith(
@@ -674,23 +674,23 @@ New content`;
 
       // Build up the snippet character by character
       kitState.snippet = 'h';
-      if (snippetCallback) await snippetCallback('h');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('h');
       expect(emitter.emit).not.toHaveBeenCalled();
 
       kitState.snippet = 'he';
-      if (snippetCallback) await snippetCallback('he');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('he');
       expect(emitter.emit).not.toHaveBeenCalled();
 
       kitState.snippet = 'hel';
-      if (snippetCallback) await snippetCallback('hel');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('hel');
       expect(emitter.emit).not.toHaveBeenCalled();
 
       kitState.snippet = 'hell';
-      if (snippetCallback) await snippetCallback('hell');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('hell');
       expect(emitter.emit).not.toHaveBeenCalled();
 
       kitState.snippet = 'hello';
-      if (snippetCallback) await snippetCallback('hello');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('hello');
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
         expect.objectContaining({ scriptPath: '/test/hello.js' })
@@ -702,7 +702,7 @@ New content`;
       snippetScriptChanged({ filePath: '/test/1.js', snippet: 'aa', kenv: '' } as Script);
 
       kitState.snippet = 'aa';
-      if (snippetCallback) await snippetCallback('aa');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('aa');
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
         expect.objectContaining({ scriptPath: '/test/1.js' })
@@ -715,7 +715,7 @@ New content`;
 
       // Try to trigger it again - should not work
       kitState.snippet = 'aa';
-      if (snippetCallback) await snippetCallback('aa');
+      if (moduleCallbacks.snippet) await moduleCallbacks.snippet('aa');
       expect(emitter.emit).not.toHaveBeenCalled();
     });
   });

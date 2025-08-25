@@ -18,7 +18,7 @@ import {
   editorCursorPosAtom,
   editorOptions,
   editorSuggestionsAtom,
-  flaggedChoiceValueAtom,
+  openActionsOverlayAtom,
   flagsAtom,
   inputAtom,
   openAtom,
@@ -124,7 +124,7 @@ export default function Editor() {
   const disposeRef = useRef<any>(null);
   const [scrollTo, setScrollTo] = useAtom(scrollToAtom);
   const [channel] = useAtom(channelAtom);
-  const [flaggedChoiceValue, setFlaggedChoiceValue] = useAtom(flaggedChoiceValueAtom);
+  const openOverlay = useSetAtom(openActionsOverlayAtom);
 
   const m = useMonaco();
 
@@ -228,7 +228,7 @@ export default function Editor() {
       // Re-enable Cmd+K for Kit command palette (like the old working version)
       mountEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
         const value = mountEditor.getModel()?.getValue();
-        setFlaggedChoiceValue(value || ui);
+        openOverlay({ source: 'editor', flag: (value || ui) as any });
       });
       
       // TEMPORARY: Add explicit paste handler to work around the issue

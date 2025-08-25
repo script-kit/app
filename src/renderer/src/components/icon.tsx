@@ -9,7 +9,8 @@ import {
   isMainScriptAtom,
   runMainScriptAtom,
   sendActionAtom,
-  flaggedChoiceValueAtom,
+  actionsOverlayOpenAtom,
+  closeActionsOverlayAtom,
   uiAtom,
 } from '../jotai';
 
@@ -43,12 +44,13 @@ export function IconButton() {
   const isMainScript = useAtomValue(isMainScriptAtom);
   const runMainProcess = useAtomValue(runMainScriptAtom);
   const sendAction = useSetAtom(sendActionAtom);
-  const [flagValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
+  const overlayOpen = useAtomValue(actionsOverlayOpenAtom);
+  const closeOverlay = useSetAtom(closeActionsOverlayAtom);
   const flagsOptions = useAtomValue(actionsConfigAtom);
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [ui] = useAtom(uiAtom);
 
-  const isActionActive = flagValue && flagsOptions?.active === 'Script Kit Support';
+  const isActionActive = overlayOpen && flagsOptions?.active === 'Script Kit Support';
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -57,13 +59,10 @@ export function IconButton() {
         return;
       }
 
-      log.info({
-        isMainScript,
-        flagValue,
-      });
+      log.info({ isMainScript, overlayOpen });
       if (isMainScript) {
-        if (flagValue) {
-          setFlagValue('');
+        if (overlayOpen) {
+          closeOverlay();
         } else {
           sendAction({ name: 'Support' });
         }
@@ -71,7 +70,7 @@ export function IconButton() {
         runMainProcess();
       }
     },
-    [isMainScript, flagValue, setFlagValue, sendAction, runMainProcess, ui],
+    [isMainScript, overlayOpen, closeOverlay, sendAction, runMainProcess, ui],
   );
 
   if (lazyIcon.state === 'hasError') {

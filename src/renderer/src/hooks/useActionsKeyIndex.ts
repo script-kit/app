@@ -7,7 +7,7 @@ import {
   actionsInputFocusAtom,
   channelAtom,
   directionAtom,
-  flaggedChoiceValueAtom,
+  actionsOverlayOpenAtom,
   flagsIndexAtom,
   indexAtom,
   inputFocusAtom,
@@ -26,7 +26,7 @@ export default () => {
   const [actionsInputFocus] = useAtom(actionsInputFocusAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
   const [, setDirection] = useAtom(directionAtom);
-  const flagValue = useAtomValue(flaggedChoiceValueAtom);
+  const overlayOpen = useAtomValue(actionsOverlayOpenAtom);
 
   // useEffect(() => {
   //   const list = document.getElementById('list');
@@ -45,7 +45,7 @@ export default () => {
       setMouseEnabled(0);
       setDirection(-1);
 
-      if (flagValue) {
+      if (overlayOpen) {
         setFlagsIndex(flagsIndex - 1);
       } else {
         // setIndex(index - 1);
@@ -53,7 +53,7 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [index, flagsIndex, channel, inputFocus, actionsInputFocus, shortcuts, flagValue],
+    [index, flagsIndex, channel, inputFocus, actionsInputFocus, shortcuts, overlayOpen],
   );
 
   useHotkeys(
@@ -66,7 +66,7 @@ export default () => {
       setMouseEnabled(0);
       setDirection(1);
 
-      if (flagValue) {
+      if (overlayOpen) {
         setFlagsIndex(flagsIndex + 1);
       } else {
         // setIndex(index + 1);
@@ -74,7 +74,7 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [index, flagsIndex, channel, inputFocus, actionsInputFocus, shortcuts, flagValue],
+    [index, flagsIndex, channel, inputFocus, actionsInputFocus, shortcuts, overlayOpen],
   );
 
   useHotkeys(

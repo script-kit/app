@@ -1,12 +1,14 @@
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
   actionsConfigAtom,
   actionsInputFocusAtom,
   channelAtom,
   choicesAtom,
-  flaggedChoiceValueAtom,
+  actionsOverlayOpenAtom,
+  openActionsOverlayAtom,
+  closeActionsOverlayAtom,
   flagsAtom,
   focusedActionAtom,
   focusedChoiceAtom,
@@ -105,7 +107,9 @@ export default () => {
   const [, setFocusedAction] = useAtom(focusedActionAtom);
   const [input] = useAtom(inputAtom);
   const [index] = useAtom(indexAtom);
-  const [flagValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
+  const overlayOpen = useAtomValue(actionsOverlayOpenAtom);
+  const openOverlay = useSetAtom(openActionsOverlayAtom);
+  const closeOverlay = useSetAtom(closeActionsOverlayAtom);
   const [flags] = useAtom(flagsAtom);
   const [, setFlag] = useAtom(focusedFlagValueAtom);
   const [, submit] = useAtom(submitValueAtom);
@@ -231,7 +235,7 @@ export default () => {
       setFlag('');
     },
     hotkeysOptions,
-    [flags, input, inputFocus, choices, index, flagValue, flagShortcuts, focusedChoice, setFocusedAction, setFlag, submit],
+    [flags, input, inputFocus, choices, index, overlayOpen, flagShortcuts, focusedChoice, setFocusedAction, setFlag, submit],
   );
 
   const onShortcuts = useMemo(() => {
@@ -322,7 +326,7 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [flagValue, promptShortcuts, flagShortcuts, promptData, actionsInputFocus, setFocusedAction, submit, focusedChoice, input, setFlag],
+    [overlayOpen, promptShortcuts, flagShortcuts, promptData, actionsInputFocus, setFocusedAction, submit, focusedChoice, input, setFlag],
   );
 
   useHotkeys(
@@ -357,7 +361,7 @@ export default () => {
       choices,
       index,
       selectionStart,
-      flagValue,
+      overlayOpen,
       channel,
       flagShortcuts,
       promptShortcuts,
@@ -367,24 +371,24 @@ export default () => {
   useHotkeys(
     'mod+k,mod+shift+p',
     () => {
-      log.info('mod+k or mod+shift+p pressed', { ui, inputFocus, choicesLength: choices.length, flagValue });
+      log.info('mod+k or mod+shift+p pressed', { ui, inputFocus, choicesLength: choices.length, overlayOpen });
       if (ui === UI.arg && !inputFocus) {
         log.info('Ignoring shortcut: UI is arg and input not focused');
         return;
       }
 
-      if (flagValue) {
-        log.info('Clearing flag value');
-        setFlagValue('');
+      if (overlayOpen) {
+        log.info('Closing actions overlay');
+        closeOverlay();
       } else if (choices.length > 0) {
-        log.info('Setting flag value to focused choice', { name: focusedChoice?.name });
-        setFlagValue(focusedChoice?.value);
+        log.info('Opening actions overlay for focused choice', { name: focusedChoice?.name });
+        openOverlay({ source: 'choice', flag: (focusedChoice?.value as any) });
       } else {
-        log.info('Setting flag value to input or UI', { input, ui });
-        setFlagValue(ui === UI.arg ? input : ui);
+        log.info('Opening actions overlay for input/ui', { input, ui });
+        openOverlay({ source: ui === UI.arg ? 'input' : 'ui', flag: (ui === UI.arg ? input : ui) as any });
       }
     },
     hotkeysOptions,
-    [input, inputFocus, choices, index, selectionStart, flagValue, channel, flagShortcuts, promptShortcuts, ui],
+    [input, inputFocus, choices, index, selectionStart, overlayOpen, channel, flagShortcuts, promptShortcuts, ui, openOverlay, closeOverlay, focusedChoice],
   );
 };

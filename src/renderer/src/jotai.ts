@@ -146,6 +146,12 @@ import {
   headerHiddenAtom,
   footerHiddenAtom,
   actionsConfigAtom,
+  // Actions overlay clarity atoms
+  actionsOverlayOpenAtom,
+  openActionsOverlayAtom,
+  closeActionsOverlayAtom,
+  pendingFlagAtom,
+  actionsOverlaySourceAtom,
   onInputSubmitAtom,
   defaultActionsIdAtom,
   hasRightShortcutAtom,
@@ -175,6 +181,7 @@ import { arraysEqual, colorUtils, dataUtils, domUtils } from './utils/state-util
 import { removeTopBorderOnFirstItem, calcVirtualListHeight } from './state/utils';
 import { advanceIndexSkipping } from './state/skip-nav';
 import { computeResize } from './state/resize/compute';
+import { decideSubmit } from './state/submit/dispatcher';
 import {
   SCROLL_THROTTLE_MS,
   PREVIEW_THROTTLE_MS,
@@ -727,7 +734,8 @@ export const scoredChoicesAtom = atom(
 export const indexAtom = atom(
   (g) => g(_indexAtom),
   (g, s, a: number) => {
-    if (g(flaggedChoiceValueAtom) || g(submittedAtom)) return;
+    // When the actions overlay is open, freeze the choices index
+    if (g(actionsOverlayOpenAtom) || g(submittedAtom)) return;
 
     const cs = g(choices);
     if (cs.length === 0) {
@@ -935,8 +943,9 @@ export const scoredFlagsAtom = atom(
 export const flagsIndexAtom = atom(
   (g) => g(flagsIndex),
   (g, s, a: number) => {
-    const flagValue = g(flaggedChoiceValueAtom);
-    if (!flagValue) {
+    // Only respond to index changes while the actions overlay is open
+    const overlayOpen = g(actionsOverlayOpenAtom);
+    if (!overlayOpen) {
       s(focusedFlagValueAtom, '');
       // When the actions menu is not open, ensure no focused action remains
       s(focusedActionAtom, {} as any);
@@ -1140,7 +1149,8 @@ export const enterButtonNameAtom = atom<string>((g) => {
 
 export const enterButtonDisabledAtom = atom<boolean>((g) => {
   if (g(uiAtom) === UI.splash || g(submittedAtom)) return true;
-  if (g(flaggedChoiceValueAtom)) return false; // Usually enabled when actions menu is open
+  // When the actions overlay is open, the Enter button remains enabled to run the selected action/flag
+  if (g(actionsOverlayOpenAtom)) return false;
   if (g(disableSubmitAtom)) return true;
   const enterButtonName = g(enterButtonNameAtom);
   if (enterButtonName === '') return true;
@@ -1207,22 +1217,13 @@ export const submitValueAtom = atom(
       return;
     }
 
-    // Check if we have an action with hasAction handler
-    // The action can be triggered either from the actions menu or via shortcut
-    if ((action as FlagsWithKeys)?.hasAction) {
-      console.log('[submitValueAtom] Sending ACTION with action:', action);
-      s(pushIpcMessageAtom, { channel: Channel.ACTION, state: { action } });
-      
-      // Clear the action so subsequent submits work normally
-      s(focusedActionAtom, {} as any);
-      
-      // Clear the actions menu if it was open
-      if (action?.close && g(flaggedChoiceValueAtom)) {
-        log.info('👋 Closing actions');
-        s(flaggedChoiceValueAtom, '');
-      }
-      return;
-    }
+    // Decide submission path using dispatcher (ACTION vs VALUE_SUBMITTED)
+    const decisionCtx = {
+      hasAction: Boolean((action as FlagsWithKeys)?.hasAction),
+      action,
+      overlayOpen: g(actionsOverlayOpenAtom),
+      flag,
+    };
 
     s(onInputSubmitAtom, {});
     s(promptActiveAtom, false);
@@ -1259,8 +1260,18 @@ export const submitValueAtom = atom(
       value = '';
     }
 
-    const valueSubmitted = { value, flag };
-    s(pushIpcMessageAtom, { channel: Channel.VALUE_SUBMITTED, state: valueSubmitted });
+    const { channel, override } = decideSubmit(decisionCtx as any, value);
+    s(pushIpcMessageAtom, { channel, state: override });
+
+    // Clear state for action submissions
+    if (channel === Channel.ACTION) {
+      // Keep focusedActionAtom intact so repeated Enter from overlay retriggers ACTION.
+      if ((action as any)?.close && g(actionsOverlayOpenAtom)) {
+        s(closeActionsOverlayAtom as any, null as any);
+      }
+      // Don't mark as submitted for ACTION; allow repeated triggers
+      return;
+    }
 
     s(loadingAtom, false);
     if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
@@ -1464,7 +1475,7 @@ export const hasActionsAtom = atom((g) => {
 export const actionsAtom = atom((g) => {
   const flags = g(flagsAtom);
   const shortcuts = g(shortcutsAtom);
-  const disabled = g(flaggedChoiceValueAtom); // Disabled if the actions menu is already open
+  const disabled = g(actionsOverlayOpenAtom); // Disabled if the actions menu is already open
 
   const flagActions = Object.entries(flags).map(([key, flag]) => {
     const f = flag as any;
@@ -1498,12 +1509,12 @@ export const actionsAtom = atom((g) => {
 });
 
 export const preventSubmitWithoutActionAtom = atom((g) => {
-  const flaggedValue = g(flaggedChoiceValueAtom);
+  const overlayOpen = g(actionsOverlayOpenAtom);
   const focusedAction = g(focusedActionAtom);
   const hasFlagSelected = !!g(focusedFlagValueAtom);
   // Allow submit if a flag is selected (legacy flow) OR an action object exists
   // Only prevent when actions menu is open AND neither is present.
-  return flaggedValue && !hasFlagSelected && Object.keys(focusedAction || {}).length === 0;
+  return overlayOpen && !hasFlagSelected && Object.keys(focusedAction || {}).length === 0;
 });
 
 export const actionsPlaceholderAtom = atom((g) => {

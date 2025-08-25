@@ -3,11 +3,11 @@ import { useAtom, useAtomValue } from 'jotai';
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import React, { useCallback } from 'react';
-import { flaggedChoiceValueAtom, inputHeightAtom, selectedAtom } from '../jotai';
+import { closeActionsOverlayAtom, inputHeightAtom, selectedAtom } from '../jotai';
 import { IconSwapper } from './iconswapper';
 
 export default function Selected() {
-  const [flagValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
+  const closeOverlay = useSetAtom(closeActionsOverlayAtom);
   const [selected] = useAtom(selectedAtom);
   const inputHeight = useAtomValue(inputHeightAtom);
 
@@ -22,9 +22,9 @@ export default function Selected() {
   const onClick = useCallback(
     (e) => {
       e.preventDefault();
-      setFlagValue('');
+      closeOverlay();
     },
-    [setFlagValue],
+    [closeOverlay],
   );
 
   return (

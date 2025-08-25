@@ -10,7 +10,7 @@ import {
   enterButtonDisabledAtom,
   enterLastPressedAtom,
   enterPressedAtom,
-  flaggedChoiceValueAtom,
+  actionsOverlayOpenAtom,
   focusedChoiceAtom,
   focusedFlagValueAtom,
   hasFocusedChoiceAtom,
@@ -33,7 +33,7 @@ export default () => {
   const [promptData] = useAtom(promptDataAtom);
   const [panelHTML] = useAtom(panelHTMLAtom);
   const [, setFlag] = useAtom(focusedFlagValueAtom);
-  const [flagValue] = useAtom(flaggedChoiceValueAtom);
+  const overlayOpen = useAtomValue(actionsOverlayOpenAtom);
   const [cmd] = useAtom(cmdAtom);
   const [ui] = useAtom(uiAtom);
   const emitEnter = useSetAtom(enterPressedAtom);
@@ -51,7 +51,7 @@ export default () => {
         [UI.editor, UI.textarea, UI.drop, UI.splash, UI.term, UI.drop, UI.form, UI.emoji, UI.fields, UI.chat].includes(
           ui,
         ) &&
-        !flagValue
+        !overlayOpen
       ) {
         return;
       }
@@ -79,13 +79,13 @@ export default () => {
         return;
       }
 
-      if (focusedChoice?.text && !flagValue) {
+      if (focusedChoice?.text && !overlayOpen) {
         log.info('submitting focused choice: ', { focusedChoice });
         submit(focusedChoice);
         return;
       }
 
-      if (focusedChoice?.scriptlet && !flagValue) {
+      if (focusedChoice?.scriptlet && !overlayOpen) {
         // If any of the choice inputs are empty, don't submit
         if (choiceInputs.some((input) => input === '') || choiceInputs?.length !== focusedChoice?.inputs?.length) {
           setInvalidateChoiceInputs(true);
@@ -95,13 +95,13 @@ export default () => {
         return;
       }
 
-      if (promptData?.multiple && !flagValue) {
+      if (promptData?.multiple && !overlayOpen) {
         toggleSelectedChoice(focusedChoice?.id as string);
         return;
       }
 
       if (promptData?.strict && panelHTML?.length === 0) {
-        if ((choices.length > 0 && hasFocusedChoice) || flagValue) {
+        if ((choices.length > 0 && hasFocusedChoice) || overlayOpen) {
           // log.info(`submitting focused choice: ${focusedChoice?.value}`);
           submit(focusedChoice?.value);
           return;
@@ -125,7 +125,7 @@ export default () => {
     [
       submit,
       focusedChoice,
-      flagValue,
+      overlayOpen,
       choiceInputs,
       setInvalidateChoiceInputs,
       toggleSelectedChoice,

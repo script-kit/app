@@ -3,7 +3,7 @@ import type { Choice, Script } from '@johnlindquist/kit/types/core';
 import type { ScoredChoice } from '../../../shared/types';
 import log from 'electron-log';
 import parse from 'html-react-parser';
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import React, { useCallback, useEffect, useState, type DragEvent, useMemo, useRef } from 'react';
 const { ipcRenderer } = window.electron;
 
@@ -12,7 +12,9 @@ import {
   _modifiers,
   buttonDescriptionFontSizeAtom,
   buttonNameFontSizeAtom,
-  flaggedChoiceValueAtom,
+  actionsOverlayOpenAtom,
+  openActionsOverlayAtom,
+  closeActionsOverlayAtom,
   indexAtom,
   inputAtom,
   isMouseDownAtom,
@@ -247,7 +249,9 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
 
   const [isMouseDown] = useAtom(isMouseDownAtom);
-  const [flaggedValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
+  const overlayOpen = useAtomValue(actionsOverlayOpenAtom);
+  const openOverlay = useSetAtom(openActionsOverlayAtom);
+  const closeOverlay = useSetAtom(closeActionsOverlayAtom);
   const [modifiers] = useAtom(_modifiers);
   const [modifierDescription, setModifierDescription] = useState('');
   const [buttonNameFontSize] = useAtom(buttonNameFontSizeAtom);
@@ -269,13 +273,13 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
       log.info(`Right clicked choice: ${choice?.id}`);
       event.preventDefault();
       event.stopPropagation();
-      if (flaggedValue) {
-        setFlagValue('');
+      if (overlayOpen) {
+        closeOverlay();
       } else {
-        setFlagValue(choice?.value ? choice?.value : choice);
+        openOverlay({ source: 'choice', flag: (choice?.value ? choice?.value : (choice as any)) as any });
       }
     },
-    [choice, setFlagValue, flaggedValue],
+    [choice, overlayOpen, openOverlay, closeOverlay],
   );
 
   const untrustedClick = useCallback((e) => {
@@ -396,7 +400,7 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
             outline-none
             focus:outline-none
             ${choice?.className}
-            ${index === buttonIndex ? 'opacity-100' : `opacity-90 ${flaggedValue ? 'opacity-30' : ''}`}
+            ${index === buttonIndex ? 'opacity-100' : `opacity-90 ${overlayOpen ? 'opacity-30' : ''}`}
         `}
       onClick={onClick}
       onMouseEnter={onMouseEnter}

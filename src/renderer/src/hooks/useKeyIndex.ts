@@ -5,7 +5,7 @@ import { useHotkeys } from 'react-hotkeys-hook';
 import {
   channelAtom,
   directionAtom,
-  flaggedChoiceValueAtom,
+  actionsOverlayOpenAtom,
   flagsIndexAtom,
   gridReadyAtom,
   indexAtom,
@@ -24,7 +24,7 @@ export default () => {
   const [inputFocus] = useAtom(inputFocusAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
   const [, setDirection] = useAtom(directionAtom);
-  const flagValue = useAtomValue(flaggedChoiceValueAtom);
+  const overlayOpen = useAtomValue(actionsOverlayOpenAtom);
   const gridReady = useAtomValue(gridReadyAtom);
 
   // useEffect(() => {
@@ -48,7 +48,7 @@ export default () => {
       setMouseEnabled(0);
       setDirection(-1);
 
-      if (flagValue) {
+      if (overlayOpen) {
         // setFlagsIndex(flagsIndex - 1);
       } else {
         setIndex(index - 1);
@@ -56,7 +56,7 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [index, flagsIndex, channel, inputFocus, shortcuts, flagValue, gridReady],
+    [index, flagsIndex, channel, inputFocus, shortcuts, overlayOpen, gridReady],
   );
 
   useHotkeys(
@@ -72,7 +72,7 @@ export default () => {
       setMouseEnabled(0);
       setDirection(1);
 
-      if (flagValue) {
+      if (overlayOpen) {
         // setFlagsIndex(flagsIndex + 1);
       } else {
         setIndex(index + 1);
@@ -80,7 +80,7 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [index, flagsIndex, channel, inputFocus, shortcuts, flagValue, gridReady],
+    [index, flagsIndex, channel, inputFocus, shortcuts, overlayOpen, gridReady],
   );
 
   useHotkeys(

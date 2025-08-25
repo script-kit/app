@@ -34,6 +34,72 @@ export const flagsAtom = atom(
 export const _flaggedValue = atom<Choice | string>('');
 // export const flaggedChoiceValueAtom = atom((g) => g(_flaggedValue)); // Complex version with computed properties is in jotai.ts
 
+/**
+ * Actions Overlay — explicit, readable atoms
+ *
+ * Historically the project used a single "flaggedChoiceValueAtom" (string | Choice)
+ * both to indicate that the overlay is open (truthy) and to carry a payload
+ * that might later be submitted as a flag. This conflation made the flow hard
+ * to reason about. The atoms below separate visibility from payload and provide
+ * clear intents for opening/closing the overlay.
+ */
+
+// True when the Actions overlay is visible
+export const actionsOverlayOpenAtom = atom(
+  (g) => Boolean(g(_flaggedValue)),
+  (g, s, open: boolean) => {
+    const currentlyOpen = Boolean(g(_flaggedValue));
+    if (open === currentlyOpen) return;
+    if (open) {
+      // Preserve any existing payload, otherwise use a sentinel string
+      const existing = g(_flaggedValue);
+      const value = existing || 'actions-open';
+      s(_flaggedValue, value);
+    } else {
+      // Closing must fully reset selection state to avoid stray submits
+      s(_flaggedValue, '');
+      s(focusedFlagValueAtom, '');
+      s(focusedActionAtom, {} as any);
+      s(_actionsInputAtom, '');
+    }
+  },
+);
+
+// Human-friendly reason for why/where the overlay was opened
+export const actionsOverlaySourceAtom = atom<'choice' | 'input' | 'ui' | ''>('');
+
+// Pending flag payload associated with the overlay (stringy form)
+export const pendingFlagAtom = atom(
+  (g) => {
+    const v = g(_flaggedValue);
+    if (typeof v === 'string') return v;
+    return (v as any)?.value ?? '';
+  },
+  (_g, s, flag: string) => {
+    s(_flaggedValue, flag);
+  },
+);
+
+// Helper setter to open the overlay with optional source + preset flag
+export const openActionsOverlayAtom = atom(
+  null,
+  (g, s, payload: { source?: 'choice' | 'input' | 'ui'; flag?: string } = {}) => {
+    const { source = '', flag } = payload;
+    s(actionsOverlaySourceAtom, source);
+    if (typeof flag === 'string') s(_flaggedValue, flag);
+    s(actionsOverlayOpenAtom, true);
+    // Reset selection to top and ensure list will scroll into view
+    s(flagsIndex, 0);
+    s(flagsRequiresScrollAtom, -1);
+  },
+);
+
+// Helper setter to close and clear overlay-related state
+export const closeActionsOverlayAtom = atom(null, (g, s) => {
+  s(actionsOverlayOpenAtom, false);
+  s(actionsOverlaySourceAtom, '');
+});
+
 // --- Actions Input ---
 export const _actionsInputAtom = atom('');
 export const actionsInputAtom = atom(

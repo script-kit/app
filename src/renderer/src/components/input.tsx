@@ -25,7 +25,7 @@ import {
   choiceInputsAtom,
   enterButtonDisabledAtom,
   enterButtonNameAtom,
-  flaggedChoiceValueAtom,
+  actionsOverlayOpenAtom,
   flagsAtom,
   focusedChoiceAtom,
   footerHiddenAtom,
@@ -238,7 +238,7 @@ function MainInput() {
 
   const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(_miniShortcutsHoveredAtom);
   const flags = useAtomValue(flagsAtom);
-  const [flagValue] = useAtom(flaggedChoiceValueAtom);
+  const overlayOpen = useAtomValue(actionsOverlayOpenAtom);
 
   const [pendingInput, setPendingInput] = useState('');
   const cached = useAtomValue(cachedAtom);
@@ -411,7 +411,7 @@ function MainInput() {
             ...(submitted && { caretColor: 'transparent' }),
           } as any
         }
-        disabled={submitted || promptData?.scriptlet || flagValue}
+        disabled={submitted || promptData?.scriptlet || overlayOpen}
         className={`
 
 bg-transparent tracking-normal text-text-base placeholder-text-base
@@ -422,7 +422,7 @@ focus:outline-none
 focus:border-none
 border-none
 ${fontSize}
-${(submitted || flagValue) && 'text-opacity-50'}
+${(submitted || overlayOpen) && 'text-opacity-50'}
 
 max-w-full  pl-4 pr-0 py-0 ring-0 ring-opacity-0
 focus:ring-0
@@ -462,7 +462,7 @@ export default function Input() {
   const focusedChoice = useAtomValue(focusedChoiceAtom);
   const action = useAtomValue(signInActionAtom);
   const sendAction = useSetAtom(sendActionAtom);
-  const [flagValue] = useAtom(flaggedChoiceValueAtom);
+  const overlayOpen = useAtomValue(actionsOverlayOpenAtom);
 
   const onClick = useCallback(
     (event) => {
@@ -572,7 +572,7 @@ export default function Input() {
                   shortcut="⏎"
                   value="enter"
                   flag=""
-                  disabled={enterButtonDisabled || flagValue}
+                  disabled={enterButtonDisabled || overlayOpen}
                 />
               ) : null}
               <ActionSeparator key="options-separator" />

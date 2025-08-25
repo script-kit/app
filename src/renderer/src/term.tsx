@@ -13,7 +13,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import {
   appBoundsAtom,
   darkAtom,
-  flaggedChoiceValueAtom,
+  actionsOverlayOpenAtom,
   hasPreviewAtom,
   promptDataAtom,
   sendShortcutAtom,
@@ -74,7 +74,7 @@ export default function Terminal() {
   const sendShortcut = useSetAtom(sendShortcutAtom);
   const [hasPreview] = useAtom(hasPreviewAtom);
   const [fontFamily] = useAtom(termFontAtom);
-  const [flagValue] = useAtom(flaggedChoiceValueAtom);
+  const overlayOpen = useAtomValue(actionsOverlayOpenAtom);
   const [termOutput, setTermOutput] = useAtom(termOutputAtom);
 
   const serializeAddonRef = useRef<SerializeAddon | null>(null);
@@ -209,10 +209,10 @@ export default function Terminal() {
   }, []);
 
   useEffect(() => {
-    if (!flagValue) {
+    if (!overlayOpen) {
       xtermRef.current?.terminal?.focus();
     }
-  }, [flagValue]);
+  }, [overlayOpen]);
 
   const appBounds = useAtomValue(appBoundsAtom);
 

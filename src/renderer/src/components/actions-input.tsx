@@ -23,7 +23,7 @@ import {
   scoredFlagsAtom,
   enterButtonDisabledAtom,
   enterButtonNameAtom,
-  flaggedChoiceValueAtom,
+  actionsOverlayOpenAtom,
 } from '../jotai';
 import { EnterButton } from './actionenterbutton';
 import { ActionSeparator } from './actionseparator';
@@ -162,7 +162,7 @@ export default function ActionsInput() {
 
   const enterButtonName = useAtomValue(enterButtonNameAtom);
   const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
-  const [flagValue] = useAtom(flaggedChoiceValueAtom);
+  const overlayOpen = useAtomValue(actionsOverlayOpenAtom);
 
   return (
     <div

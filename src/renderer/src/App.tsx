@@ -39,7 +39,7 @@ import {
 	channelAtom,
 	cssAtom,
 	domUpdatedAtom,
-	flaggedChoiceValueAtom,
+	actionsOverlayOpenAtom,
 	focusedElementAtom,
 	footerHiddenAtom,
 	headerHiddenAtom,
@@ -221,7 +221,7 @@ export default function App() {
 	const lastUserRef = useRef<any>(null);
 
 	const kitState = useAtomValue(kitStateAtom);
-	const flagValue = useAtomValue(flaggedChoiceValueAtom);
+	const overlayOpen = useAtomValue(actionsOverlayOpenAtom);
 	const termConfig = useAtomValue(termConfigAtom);
 	const headerHidden = useAtomValue(headerHiddenAtom);
 	const footerHidden = useAtomValue(footerHiddenAtom);
@@ -808,7 +808,7 @@ text-text-base
 							id="main"
 							className="min-h-[1px] w-full flex-1 overflow-y-hidden"
 						>
-							{flagValue && <ActionsList key="ActionsList" />}
+							{overlayOpen && <ActionsList key="ActionsList" />}
 							<PanelGroup
 								direction="horizontal"
 								autoSaveId={script.filePath}

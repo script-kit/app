@@ -1,10 +1,11 @@
 import { UI } from '@johnlindquist/kit/core/enum';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
   escapeAtom,
-  flaggedChoiceValueAtom,
+  actionsOverlayOpenAtom,
+  closeActionsOverlayAtom,
   isReadyAtom,
   promptDataAtom,
   runMainScriptAtom,
@@ -21,7 +22,8 @@ const log = createLogger('useEscape.ts');
 export default () => {
   const [sendEscape] = useAtom(escapeAtom);
   const [isReady] = useAtom(isReadyAtom);
-  const [flagValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
+  const overlayOpen = useAtomValue(actionsOverlayOpenAtom);
+  const closeOverlay = useSetAtom(closeActionsOverlayAtom);
 
   const [ui] = useAtom(uiAtom);
   const [runMainScript] = useAtom(runMainScriptAtom);
@@ -36,16 +38,16 @@ export default () => {
       log.info('Pressed escape!', {
         script: script?.filePath,
         promptData: promptData?.scriptPath,
-        flagValue,
+        overlayOpen,
       });
-      if (shortcuts?.find((s) => s.key === 'escape') && !flagValue) {
+      if (shortcuts?.find((s) => s.key === 'escape') && !overlayOpen) {
         log.info(`Ignoring escape because of shortcut ${shortcuts?.find((s) => s.key === 'escape')}`);
         return;
       }
 
-      if (flagValue) {
-        log.info(`Resetting flag value ${flagValue}`);
-        setFlagValue('');
+      if (overlayOpen) {
+        log.info(`Closing actions overlay`);
+        closeOverlay();
         return;
       }
       if (isReady && ui === UI.splash) {
@@ -71,6 +73,6 @@ export default () => {
       preventDefault: true,
       scopes: 'global',
     },
-    [flagValue, isReady, ui, runMainScript, shortcuts, promptData, script],
+    [overlayOpen, isReady, ui, runMainScript, shortcuts, promptData, script, closeOverlay],
   );
 };

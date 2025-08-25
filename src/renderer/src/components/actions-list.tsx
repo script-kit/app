@@ -6,7 +6,7 @@ import type { ChoiceButtonProps } from '../../../shared/types';
 import {
   actionsInputHeightAtom,
   actionsItemHeightAtom,
-  flaggedChoiceValueAtom,
+  closeActionsOverlayAtom,
   flagsHeightAtom,
   flagsIndexAtom,
   flagsListAtom,
@@ -144,7 +144,7 @@ export default function ActionsList() {
   const inputHeight = useAtomValue(actionsInputHeightAtom);
   const actionsHeight = useAtomValue(flagsHeightAtom);
   const [prevFocusedElement] = useAtom(focusedElementAtom);
-  const setFlagValue = useSetAtom(flaggedChoiceValueAtom);
+  const closeOverlay = useSetAtom(closeActionsOverlayAtom);
   const componentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -152,7 +152,7 @@ export default function ActionsList() {
 
     const handleClickOutside = (event: MouseEvent) => {
       if (componentRef.current && !componentRef.current.contains(event.target as Node)) {
-        setFlagValue('');
+        closeOverlay();
       }
     };
 
@@ -164,7 +164,7 @@ export default function ActionsList() {
         prevFocusedElement.focus();
       }
     };
-  }, [prevFocusedElement, setFlagValue]);
+  }, [prevFocusedElement, closeOverlay]);
 
   const containerStyle = useMemo(
     () => ({
