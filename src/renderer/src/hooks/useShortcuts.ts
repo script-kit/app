@@ -87,7 +87,9 @@ function normalizeEventToKey(domEvent: KeyboardEvent): string {
   if (domEvent.shiftKey) parts.push('shift');
   if (domEvent.altKey) parts.push('alt');
   const rawKey = (domEvent.key || '').toLowerCase();
-  const keyPart = KEYWORD_TO_CHAR_MAP[rawKey] ? KEYWORD_TO_CHAR_MAP[rawKey] : rawKey;
+  // Convert punctuation characters to react-hotkeys keywords so they
+  // match keys produced by convertShortcutToHotkeysFormat (e.g. comma, period, slash)
+  const keyPart = KEY_REPLACEMENT_MAP[rawKey] ? KEY_REPLACEMENT_MAP[rawKey] : rawKey;
   parts.push(keyPart);
   return parts.join('+');
 }
@@ -179,7 +181,11 @@ export default () => {
   );
 
   // Fallback: capture meta/ctrl shortcut keys at the document level to ensure reliability
+  // Guard: if we have prompt or flag shortcuts registered via useHotkeys, skip the fallback
   useEffect(() => {
+    if ((promptShortcuts?.length || 0) > 0 || flagsWithShortcuts.length > 0) {
+      return; // useHotkeys will handle all configured shortcuts
+    }
     const flagsMap = new Map<string, string>();
     for (const [flag, value] of flagsWithShortcuts) {
       if (value?.shortcut) {
@@ -227,7 +233,7 @@ export default () => {
 
     document.addEventListener('keydown', onKeyDown, true);
     return () => document.removeEventListener('keydown', onKeyDown, true);
-  }, [flagsWithShortcuts, promptMap, focusedChoice, input, setFocusedAction, setFlag, submit]);
+  }, [flagsWithShortcuts, promptMap, focusedChoice, input, setFocusedAction, setFlag, submit, promptShortcuts]);
 
   // Prompt shortcuts should take precedence over flag shortcuts when keys collide
   const promptConverted = useMemo(() => new Set(
@@ -269,7 +275,7 @@ export default () => {
         return;
       }
 
-      const flag = flagByHandler(handler) as string;
+      const flag = matchedFlag as string;
       const submitValue = focusedChoice?.value || input;
 
       // Check if this flag has an onAction handler
