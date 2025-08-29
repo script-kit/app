@@ -376,7 +376,7 @@ export default () => {
     [WindowChannel.SET_LAST_LOG_LINE]: setLastLogLine,
     [WindowChannel.SET_LOG_VALUE]: setLogValue,
     [WindowChannel.SET_EDITOR_LOG_MODE]: setEditorLogMode,
-    [AppChannel.TRIGGER_RESIZE]: triggerResize,
+    [AppChannel.TRIGGER_RESIZE]: () => triggerResize('MAIN_ACK'),
   };
 
   useEffect(() => {

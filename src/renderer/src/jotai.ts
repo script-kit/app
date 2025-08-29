@@ -1035,13 +1035,15 @@ export const resize = debounce(
   { leading: true, trailing: true },
 );
 
+// Route all external triggers through the scheduler for reason coalescing
+import { scheduleResizeAtom } from './state/resize/scheduler';
 export const triggerResizeAtom = atom(null, (g, s, reason: string) => {
-  resize(g, s, `TRIGGER_RESIZE: ${reason}`);
+  s(scheduleResizeAtom, reason || 'UNKNOWN');
 });
 
 export const domUpdatedAtom = atom(null, (g, s) => {
   return debounce((reason = '') => {
-    resize(g, s, reason);
+    s(scheduleResizeAtom, reason || 'DOM');
   }, PREVIEW_THROTTLE_MS);
 });
 

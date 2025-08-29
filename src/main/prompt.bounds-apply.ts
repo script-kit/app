@@ -1,4 +1,5 @@
 import { Channel } from '@johnlindquist/kit/core/enum';
+import { AppChannel } from '../shared/enums';
 import type { Rectangle } from 'electron';
 import { getCurrentScreen, getCurrentScreenFromBounds, isBoundsWithinDisplayById } from './screen';
 import { prompts } from './prompts';
@@ -132,6 +133,10 @@ export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reaso
 
   applyWindowBounds(prompt.window, prompt.id, finalBounds, prompt.sendToPrompt as any);
   prompt.promptBounds = { id: prompt.id, ...prompt.window.getBounds() } as any;
-};
 
+  try {
+    // Hint renderer to perform a single post-apply measurement if needed
+    prompt.sendToPrompt(AppChannel.TRIGGER_RESIZE, undefined);
+  } catch {}
+};
 
