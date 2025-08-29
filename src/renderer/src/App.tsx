@@ -18,6 +18,13 @@ import {
 } from "react-resizable-panels";
 import AutoSizer from "react-virtualized-auto-sizer";
 const { ipcRenderer, webFrame } = window.electron;
+// Enable debug resize logs via localStorage.DEBUG_RESIZE = 'true'
+if (typeof window !== 'undefined') {
+  try {
+    // default false unless explicitly set
+    (window as any).DEBUG_RESIZE = localStorage.getItem('DEBUG_RESIZE') === 'true';
+  } catch {}
+}
 import { Channel, UI } from "@johnlindquist/kit/core/enum";
 import ActionBar from "./components/actionbar";
 import Console from "./components/console";
@@ -250,6 +257,7 @@ export default function App() {
 	const [zoomLevel, setZoom] = useAtom(zoomAtom);
 
 	const channel = useAtomValue(channelAtom);
+	const scheduleResize = useSetAtom(triggerResizeAtom);
 
 	const domUpdated = useSetAtom(domUpdatedAtom);
 	const setAppBounds = useSetAtom(appBoundsAtom);
@@ -576,6 +584,13 @@ export default function App() {
 		}
 	}, [headerRef, setTopRef]);
 
+	// Ensure overlay has enough height by scheduling a resize on open/close
+	useEffect(() => {
+		try {
+			scheduleResize('ACTIONS_OVERLAY');
+		} catch {}
+	}, [overlayOpen, scheduleResize]);
+
 	// Add a global paste event listener to see if paste events are even reaching us
 	useEffect(() => {
 		const globalPasteDebugger = (e: ClipboardEvent) => {
@@ -634,8 +649,10 @@ export default function App() {
 			) {
 				panelChildRef.current?.resize(promptData?.previewWidthPercent);
 			}
+			// schedule a resize to re-measure layout post split change
+			scheduleResize('PANEL_SPLIT');
 		}, 250),
-		[promptData?.previewWidthPercent, panelChildRef?.current],
+		[promptData?.previewWidthPercent, panelChildRef?.current, scheduleResize],
 	);
 
 	// useEffect(() => {

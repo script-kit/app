@@ -24,6 +24,7 @@ import {
 } from './jotai';
 
 import { AppChannel } from '../../shared/enums';
+import { triggerResizeAtom } from './jotai';
 import XTerm from './components/xterm';
 import { AttachIPCAddon } from './term-attach-ipc-addon';
 
@@ -76,6 +77,7 @@ export default function Terminal() {
   const [fontFamily] = useAtom(termFontAtom);
   const overlayOpen = useAtomValue(actionsOverlayOpenAtom);
   const [termOutput, setTermOutput] = useAtom(termOutputAtom);
+  const triggerResize = useSetAtom(triggerResizeAtom);
 
   const serializeAddonRef = useRef<SerializeAddon | null>(null);
   const attachAddonRef = useRef<AttachIPCAddon | null>(null);
@@ -120,6 +122,8 @@ export default function Terminal() {
         if (fitRef.current) {
           fitRef.current.fit();
         }
+        // After initial fits, schedule a TERM reason measurement to stabilize layout
+        triggerResize('TERM');
       }, 250);
     });
   }, []);
@@ -236,6 +240,8 @@ export default function Terminal() {
         return;
       }
       ipcRenderer.send(AppChannel.TERM_RESIZE, dimensions);
+      // Container changed size; request a follow-up measurement for layout
+      triggerResize('TERM');
     }, 150),
   );
 

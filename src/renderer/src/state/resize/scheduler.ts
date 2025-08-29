@@ -3,6 +3,7 @@ import { atom } from 'jotai';
 import { createLogger } from '../../log-utils';
 import { resizeTickAtom } from '../atoms/ui-elements';
 import { ResizeReason, reasonName } from './reasons';
+import { devToolsOpenAtom } from '../atoms/ui-elements';
 
 const log = createLogger('resize-scheduler');
 
@@ -11,6 +12,9 @@ export const resizePendingMaskAtom = atom<number>(ResizeReason.NONE);
 
 // Epoch counter for logical batches (not strictly enforced yet)
 export const resizeEpochAtom = atom<number>(0);
+
+// Simple inflight flag to prevent duplicate sends until MAIN_ACK processed
+export const resizeInflightAtom = atom<boolean>(false);
 
 // Debug flag on window
 declare global {
@@ -47,11 +51,20 @@ export const scheduleResizeAtom = atom(null, (g, s, reason: ResizeReason | strin
   }
 
   const epoch = g(resizeEpochAtom);
-  if (window.DEBUG_RESIZE) {
+  const debug = typeof window !== 'undefined' && (window as any).DEBUG_RESIZE;
+  if (debug) {
     log.info(`scheduleResize: epoch=${epoch} reason=${typeof reason === 'string' ? reason : reasonName(bit)} mask=${reasonName(next)}`);
   }
+
+  // Optional devtools gate: if enabled and devtools open, skip scheduling (keeps mask for later)
+  try {
+    const gateDevtools = typeof window !== 'undefined' && ((window as any).RESIZE_GATE_DEVTOOLS === true || localStorage.getItem('RESIZE_GATE_DEVTOOLS') === 'true');
+    if (gateDevtools && g(devToolsOpenAtom)) {
+      if (debug) log.info('scheduleResize: gated by devtools (RESIZE_GATE_DEVTOOLS=true && devToolsOpen)');
+      return;
+    }
+  } catch {}
 
   // Nudge the controller via the existing tick primitive. The controller is already debounced downstream.
   s(resizeTickAtom, (v) => v + 1);
 });
-

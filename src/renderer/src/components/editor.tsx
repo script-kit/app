@@ -27,6 +27,7 @@ import {
   submitInputAtom,
   uiAtom,
 } from '../jotai';
+import { triggerResizeAtom } from '../jotai';
 
 import { toMonacoKeybindingOrUndefined, isReservedEditorShortcut } from '@renderer/utils/keycodes';
 import { kitLight, nightOwl } from '../editor-themes';
@@ -125,6 +126,7 @@ export default function Editor() {
   const [scrollTo, setScrollTo] = useAtom(scrollToAtom);
   const [channel] = useAtom(channelAtom);
   const openOverlay = useSetAtom(openActionsOverlayAtom);
+  const triggerResize = useSetAtom(triggerResizeAtom);
 
   const m = useMonaco();
 
@@ -318,6 +320,9 @@ export default function Editor() {
         height: (containerRef?.current?.offsetHeight || document.body.offsetHeight) - 24,
       });
 
+      // After initial layout, request a single EDITOR measurement to stabilize layout math
+      triggerResize('EDITOR');
+
       // if (typeof global?.exports === 'undefined') global.exports = {};
       mountEditor.focus();
 
@@ -340,8 +345,8 @@ export default function Editor() {
       if ((config as EditorOptions).scrollTo === 'center') {
         mountEditor.revealLineInCenter(Math.floor(lineNumber / 2));
       }
-    },
-    [config, containerRef, kitIsDark],
+  },
+    [config, containerRef, kitIsDark, triggerResize],
   );
 
   const onChange = useCallback(

@@ -16,6 +16,8 @@ import {
   ID_HEADER, ID_FOOTER, ID_MAIN, ID_PANEL, ID_LIST, ID_LOG
 } from '../dom-ids';
 import { createLogger } from '../../log-utils';
+import { resizeInflightAtom } from '../resize/scheduler';
+import { actionsOverlayOpenAtom } from '../../jotai';
 
 // Import from facade for gradual migration
 import {
@@ -47,6 +49,7 @@ export const ResizeController: React.FC = () => {
   const store = useStore();
   // Use ref to replace the module-level variable prevTopHeight
   const prevTopHeightRef = useRef(0);
+  const lastSigRef = useRef<string>('');
 
   // Subscribe to the trigger atom. Updates to this atom signal a resize check is needed.
   const mainHeightTrigger = useAtomValue(_mainHeight);
@@ -186,6 +189,23 @@ export const ResizeController: React.FC = () => {
         mh = computeOut.mainHeight;
         let forceHeight = computeOut.forceHeight;
 
+        // If actions overlay is open, ensure window is at least default/base height
+        try {
+          const overlayOpen = g(actionsOverlayOpenAtom) as boolean;
+          if (overlayOpen) {
+            const baseHeight = (promptData?.height && promptData.height > PROMPT.HEIGHT.BASE)
+              ? (promptData.height as number)
+              : PROMPT.HEIGHT.BASE;
+            const minMain = Math.max(0, baseHeight - topHeight - footerHeight);
+            if (mh < minMain) {
+              log.info(`Actions overlay open: enforcing min main height ${minMain} (was ${mh})`);
+              mh = minMain;
+              // Signal that we should apply programmatically to avoid user-guard issues
+              forceResize = true;
+            }
+          }
+        } catch {}
+
         if (ui === UI.debugger) {
             forceHeight = 128;
         }
@@ -226,21 +246,48 @@ export const ResizeController: React.FC = () => {
             isMainScript: g(isMainScriptAtom) as any,
         } as ResizeData;
 
+        // Short-circuit if signature is unchanged (avoid redundant sends)
+        try {
+          const sigObj = { ui, mh, topHeight, footerHeight, hasPanel, hasPreview };
+          const sig = JSON.stringify(sigObj);
+          const justOpened = Boolean(g(justOpenedAtom));
+          if (!justOpened && sig === lastSigRef.current) {
+            log.info('ResizeController: signature unchanged; skipping send');
+            return;
+          }
+          lastSigRef.current = sig;
+        } catch {}
+
         // State update for prevMh atom (replaces s(prevMh, mh))
         store.set(prevMh, mh);
 
-        // Send resize IPC
+        // Inflight guard: avoid duplicate sends until MAIN_ACK clears it
+        // Exception: allow urgent shrink or forced resizes to pass through
+        const inflight = g(resizeInflightAtom);
+        const prevMain = g(prevMh);
+        const urgentShrink = mh < prevMain;
+        if (inflight && !(urgentShrink || forceResize || forceHeight)) {
+          log.info('ResizeController: inflight true, skipping send (no urgent shrink/force)');
+          return;
+        }
+
+        // Mark inflight and send resize IPC
+        store.set(resizeInflightAtom, true);
         debounceSendResize.cancel();
         if (g(justOpenedAtom) && !promptData?.scriptlet) {
-            debounceSendResize(data);
+          debounceSendResize(data);
         } else {
-            sendResize(data);
-      }
+          sendResize(data);
+        }
+        // Failsafe: clear inflight if no ACK arrives
+        setTimeout(() => {
+          try { store.set(resizeInflightAtom, false); } catch {}
+        }, 300);
 
       // --- End of restored logic ---
-    },
-    [store]
-  );
+  },
+  [store]
+);
 
   // Trigger the execution when the mainHeightTrigger value changes or tick increments
   useEffect(() => {

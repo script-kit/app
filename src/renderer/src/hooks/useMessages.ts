@@ -107,6 +107,7 @@ import { createLogger } from '../log-utils';
 const log = createLogger('useMessages.ts');
 
 import { AppChannel, WindowChannel } from '../../../shared/enums';
+import { resizeInflightAtom } from '../state/resize/scheduler';
 
 export function ansiRegex({ onlyFirst = false } = {}) {
   const pattern = [
@@ -195,6 +196,7 @@ export default () => {
   const [micConfig, setMicConfig] = useAtom(micConfigAtom);
   const setTermExit = useSetAtom(termExitAtom);
   const setDevToolsOpen = useSetAtom(devToolsOpenAtom);
+  const setResizeInflight = useSetAtom(resizeInflightAtom);
   const scrollToIndex = useAtomValue(scrollToIndexAtom);
   const setPreloaded = useSetAtom(preloadedAtom);
   const setTriggerKeyword = useSetAtom(triggerKeywordAtom);
@@ -296,14 +298,22 @@ export default () => {
     [Channel.SET_ENTER]: setEnter,
     [Channel.SET_READY]: setReady,
     [Channel.SET_SUBMIT_VALUE]: setSubmitValue,
-    [Channel.SET_TAB_INDEX]: setTabIndex,
-    [Channel.SET_PROMPT_DATA]: setPromptData,
+    [Channel.SET_TAB_INDEX]: (idx) => {
+      setTabIndex(idx);
+      // Tabs can change visible content height; request a measurement
+      triggerResize('TABS');
+    },
+    [Channel.SET_PROMPT_DATA]: (data) => {
+      setPromptData(data);
+      triggerResize('UI');
+    },
     [Channel.SET_SPLASH_BODY]: setSplashBody,
     [Channel.SET_SPLASH_HEADER]: setSplashHeader,
     [Channel.SET_SPLASH_PROGRESS]: setSplashProgress,
     [Channel.SET_THEME]: debounce((theme) => {
       log.verbose(`${window.pid}: 🐠 Channel.SET_THEME`, theme);
       setTheme(theme);
+      triggerResize('THEME');
     }, 50),
     [Channel.SET_TEMP_THEME]: setTempTheme,
     [Channel.VALUE_INVALID]: setValueInvalid,
@@ -376,7 +386,11 @@ export default () => {
     [WindowChannel.SET_LAST_LOG_LINE]: setLastLogLine,
     [WindowChannel.SET_LOG_VALUE]: setLogValue,
     [WindowChannel.SET_EDITOR_LOG_MODE]: setEditorLogMode,
-    [AppChannel.TRIGGER_RESIZE]: () => triggerResize('MAIN_ACK'),
+    [AppChannel.TRIGGER_RESIZE]: () => {
+      try { (window as any).DEBUG_RESIZE && console.log('[RESIZE] MAIN_ACK'); } catch {}
+      setResizeInflight(false);
+      triggerResize('MAIN_ACK');
+    },
   };
 
   useEffect(() => {
@@ -441,6 +455,8 @@ export default () => {
         document.documentElement.style.setProperty(data?.name, data?.value);
         // eslint-disable-next-line no-void
         void document.body.offsetHeight;
+        // Theme variable changes can impact layout; schedule measurement
+        triggerResize('THEME');
       } catch (e) {
         log.error('Error changing CSS variable:', e);
       }
@@ -460,6 +476,8 @@ export default () => {
 
     const handleZoom = (_, data) => {
       setZoom(data);
+      // Zoom affects measured bounds; schedule a resize with explicit reason
+      triggerResize('ZOOM');
     };
 
     if (ipcRenderer.listenerCount(AppChannel.ZOOM) === 0) {
