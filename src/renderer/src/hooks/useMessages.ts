@@ -253,7 +253,11 @@ export default () => {
     [Channel.SET_PROMPT_BOUNDS]: setPromptBounds,
     [Channel.SET_SCRIPT]: setScript,
     [Channel.SET_CHOICES_CONFIG]: setChoicesConfig,
-    [Channel.SET_SCORED_CHOICES]: setScoredChoices,
+    [Channel.SET_SCORED_CHOICES]: (data) => {
+      setScoredChoices(data);
+      // Choices swap can change list height significantly; ensure we measure promptly
+      triggerResize('CHOICES');
+    },
     [Channel.SET_SELECTED_CHOICES]: setSelectedChoices,
     [Channel.TOGGLE_ALL_SELECTED_CHOICES]: toggleAllSelectedChoices,
     [Channel.SET_SCORED_FLAGS]: setScoredFlags,
@@ -575,6 +579,7 @@ export default () => {
     const handleSetCachedMainScoredChoices = (_, data) => {
       log.info(`[SCRIPTS RENDER] Renderer ${window.pid} received legacy SET_CACHED_MAIN_SCORED_CHOICES`);
       setCachedMainScoredChoices(data);
+      triggerResize('CHOICES');
     };
 
     if (ipcRenderer.listenerCount(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES) === 0) {

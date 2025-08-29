@@ -1,19 +1,30 @@
 import React from 'react';
 
 export function highlight(string: string, matches: [number, number][], className: string) {
-  const substrings = [];
+  const parts: React.ReactNode[] = [];
   let previousEnd = 0;
 
   if (matches?.length) {
-    for (const [start, end] of matches) {
+    matches.forEach(([start, end], i) => {
       const prefix = string.substring(previousEnd, start);
-      const match = <mark className={className}>{string.substring(start, end)}</mark>;
-
-      substrings.push(prefix, match);
+      if (prefix) {
+        parts.push(
+          <span key={`t-${previousEnd}-${i}`}>{prefix}</span>,
+        );
+      }
+      parts.push(
+        <mark key={`m-${start}-${end}-${i}`} className={className}>
+          {string.substring(start, end)}
+        </mark>,
+      );
       previousEnd = end;
-    }
+    });
   }
-  substrings.push(string.substring(previousEnd));
 
-  return <span>{React.Children.toArray(substrings)}</span>;
+  const tail = string.substring(previousEnd);
+  if (tail || parts.length === 0) {
+    parts.push(<span key={`t-${previousEnd}-tail`}>{tail}</span>);
+  }
+
+  return <span>{parts}</span>;
 }

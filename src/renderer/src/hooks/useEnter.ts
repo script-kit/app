@@ -6,6 +6,7 @@ import { HotkeyCallback, useHotkeys } from 'react-hotkeys-hook';
 import {
   choiceInputsAtom,
   choicesAtom,
+  scoredChoicesAtom,
   cmdAtom,
   enterButtonDisabledAtom,
   enterLastPressedAtom,
@@ -27,8 +28,9 @@ import { hotkeysOptions } from './shared';
 
 export default () => {
   const [choices] = useAtom(choicesAtom);
+  const scoredChoices = useAtomValue(scoredChoicesAtom);
   const [input] = useAtom(inputAtom);
-  const [index] = useAtom(indexAtom);
+  const [index, setIndex] = useAtom(indexAtom);
   const [, submit] = useAtom(submitValueAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [panelHTML] = useAtom(panelHTMLAtom);
@@ -58,6 +60,26 @@ export default () => {
       event?.preventDefault();
 
       if (enterButtonDisabled) {
+        // Attempt fallback even if disabled: strict + no focus but choices exist
+        if (
+          promptData?.strict &&
+          !overlayOpen &&
+          (panelHTML?.length ?? 0) === 0 &&
+          choices.length > 0 &&
+          !hasFocusedChoice
+        ) {
+          try {
+            const firstIdx = (scoredChoices || []).findIndex(
+              (c: any) => c?.item && !c.item.skip && !c.item.info,
+            );
+            if (firstIdx >= 0) {
+              const first = scoredChoices[firstIdx]?.item as any;
+              setIndex(firstIdx);
+              submit(first?.scriptlet ? first : first?.value);
+              return;
+            }
+          } catch {}
+        }
         return;
       }
 
@@ -101,10 +123,27 @@ export default () => {
       }
 
       if (promptData?.strict && panelHTML?.length === 0) {
-        if ((choices.length > 0 && hasFocusedChoice) || overlayOpen) {
-          // log.info(`submitting focused choice: ${focusedChoice?.value}`);
-          submit(focusedChoice?.value);
-          return;
+        if (overlayOpen) {
+          // Overlay flow handled elsewhere
+        } else if (choices.length > 0) {
+          if (hasFocusedChoice) {
+            submit(focusedChoice?.value);
+            return;
+          }
+
+          // Fallback: no focused choice yet but we have results.
+          // Select the first actionable scored choice and submit it.
+          try {
+            const firstIdx = (scoredChoices || []).findIndex(
+              (c: any) => c?.item && !c.item.skip && !c.item.info,
+            );
+            if (firstIdx >= 0) {
+              const first = scoredChoices[firstIdx]?.item as any;
+              setIndex(firstIdx);
+              submit(first?.scriptlet ? first : first?.value);
+              return;
+            }
+          } catch {}
         }
       }
 

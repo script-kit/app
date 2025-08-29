@@ -202,10 +202,35 @@ export function FocusController() {
 
   React.useEffect(() => {
     const listChanged = !arraysEqual(prevIdsRef.current, ids);
-    
+
     // Only intervene when the choice list changes, not when index changes due to navigation
     if (!listChanged) {
       prevIdsRef.current = ids;
+      return;
+    }
+
+    // Fast-path: first population from empty → non-empty while typing
+    // If there was no previous list and we have actionable choices now, but no valid index yet,
+    // anchor focus to the first actionable row. This avoids a visual highlight without a functional selection.
+    if ((prevIdsRef.current?.length || 0) === 0 && ids.length > 0 && (index == null || index < 0)) {
+      const fa = firstActionableIndex(choices);
+      const next = fa < 0 ? 0 : fa;
+      setIndex(next);
+      if (next >= 0 && next < choices.length) {
+        const choice = choices[next]?.item;
+        if (choice) setFocusedChoice(choice);
+      } else {
+        setFocusedChoice(undefined as any);
+      }
+      // Ensure the first item is in view on initial population
+      setRequiresScroll(next);
+      prevIdsRef.current = ids;
+      if ((window as any).DEBUG_FOCUS) {
+        console.log('[FocusController]', {
+          reason: 'initial-population',
+          nextIndex: next,
+        });
+      }
       return;
     }
 

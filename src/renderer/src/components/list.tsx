@@ -250,6 +250,14 @@ ${containerClassName}
     setScrollTimeout(newTimeout);
   }, [index, scrollTimeout, setIsScrolling]);
 
+  // Parity guard: if the list has just populated and no functional index exists yet,
+  // default to the first row so visuals and state cannot diverge.
+  useEffect(() => {
+    if (choices.length > 0 && (index == null || index < 0)) {
+      setIndex(0);
+    }
+  }, [choices.length, index, setIndex]);
+
   return (
     <div id="list" style={{ width }} className="list-component flex flex-col w-full overflow-y-hidden">
       {gridReady ? (

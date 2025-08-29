@@ -201,7 +201,7 @@ function QuickInputs() {
   }
 
   return focusedChoice.inputs.map((placeholder, i) => (
-    <ResizableInput key={placeholder} index={i} placeholder={placeholder} />
+    <ResizableInput key={`${placeholder}-${i}`} index={i} placeholder={placeholder} />
   ));
 }
 
@@ -585,7 +585,7 @@ export default function Input() {
                   if (action?.visible) {
                     return [
                       // eslint-disable-next-line react/jsx-key
-                      <ActionButton {...action} />,
+                      <ActionButton {...action} key={`${action?.key}-button`} />,
                       // eslint-disable-next-line no-nested-ternary
                       i < array.length - 1 ? (
                         <ActionSeparator key={`${action?.key}-separator`} />
