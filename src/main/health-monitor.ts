@@ -2,6 +2,7 @@
 import { BrowserWindow, app } from 'electron';
 import { healthLog } from './logs';
 import { kitState } from './state';
+import { envNumber } from './env.utils';
 
 // A generic type for recursively nested numeric metric values.
 type UnitString = `${number} MB` | `${number} ms`;
@@ -182,8 +183,9 @@ export class HealthMonitor {
 
   constructor(intervalInSeconds = 120) {
     try {
-      // Allow override from environment; default to 120 seconds.
-      this.interval = (Number(kitState.kenvEnv?.KIT_HEALTH_CHECK_INTERVAL) || intervalInSeconds) * 1000;
+      // Allow override from environment; default to 120 seconds. Clamp to [10s, 3600s].
+      const seconds = envNumber('KIT_HEALTH_CHECK_INTERVAL', intervalInSeconds, { min: 10, max: 3600 });
+      this.interval = seconds * 1000;
       this.startMonitoring();
     } catch (error) {
       healthLog.error('HealthMonitor constructor error', error);

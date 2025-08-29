@@ -480,3 +480,25 @@ export const getAccessibilityAuthorized = async () => {
 
   return true;
 };
+
+/**
+ * Clears any environment variables that were cached with duration 'until-sleep'.
+ * Removes keys from both process.env and kitState.kenvEnv, and empties the Set.
+ * Returns the number of keys cleared.
+ */
+export function clearSleepCachedEnvVars(): number {
+  const keys = kitState.sleepClearKeys;
+  if (!keys || keys.size === 0) return 0;
+  let cleared = 0;
+  for (const key of keys) {
+    try {
+      delete process.env[key];
+      if (kitState.kenvEnv) delete (kitState.kenvEnv as any)[key];
+      cleared += 1;
+    } catch {
+      // ignore
+    }
+  }
+  keys.clear();
+  return cleared;
+}

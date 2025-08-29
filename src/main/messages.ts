@@ -42,6 +42,7 @@ import {
   getSchedule,
   kitConfig,
   kitState,
+  clearSleepCachedEnvVars,
   kitStore,
   preloadChoicesMap,
   sponsorCheck,
@@ -58,6 +59,7 @@ import { show, showDevTools, showWidget } from './show';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { getAssetPath } from '../shared/assets';
 import { AppChannel, Trigger } from '../shared/enums';
+import { conditionalRestore, takeClipboardSnapshot, writeTextEnsure } from './clipboard-transaction';
 import { stripAnsi } from './ansi';
 import { getClipboardHistory, removeFromClipboardHistory, syncClipboardStore } from './clipboard';
 import { displayError } from './error';
@@ -257,19 +259,10 @@ app.on('before-quit', async () => {
 
 // Clear environment variables cached "until-sleep"
 powerMonitor.on('suspend', () => {
-  const keys = kitState.sleepClearKeys;
-  if (keys && keys.size) {
-    const log = getLog('messages');
-    log.info(`🔐 Clearing ${keys.size} cached env var(s) on sleep`);
-    for (const k of keys) {
-      try {
-        delete process.env[k];
-        if (kitState.kenvEnv) delete (kitState.kenvEnv as any)[k];
-      } catch (e) {
-        log.warn(`Failed clearing env var ${k} on sleep`, e);
-      }
-    }
-    keys.clear();
+  const log = getLog('messages');
+  const cleared = clearSleepCachedEnvVars();
+  if (cleared) {
+    log.info(`🔐 Cleared ${cleared} cached env var(s) on sleep`);
   }
 });
 
@@ -2084,22 +2077,48 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
           // REMOVE-NUT
           const modifier = getModifier();
-          log.info(`COPYING with ${modifier}+c`);
-          const beforeText = clipboard.readText();
-          shims['@jitsi/robotjs'].keyTap('c', modifier);
+          const beforeText = (() => {
+            try {
+              return clipboard.readText();
+            } catch {
+              return '';
+            }
+          })();
 
-          let afterText = clipboard.readText();
-          const maxTries = 5;
+          const copyPollMs = Number.parseInt(String(kitState?.kenvEnv?.KIT_COPY_POLL_MS || '75'), 10) || 75;
+          const copyMaxTries = Number.parseInt(String(kitState?.kenvEnv?.KIT_COPY_MAX_TRIES || '10'), 10) || 10;
+
+          // Attempt primary copy combo
+          log.info(`COPY: sending ${modifier}+c`);
+          try { shims['@jitsi/robotjs'].keyTap('c', modifier); } catch {}
+
+          let afterText = '';
           let tries = 0;
-          while (beforeText === afterText && tries < maxTries) {
-            afterText = clipboard.readText();
+          while (tries < copyMaxTries) {
+            try { afterText = clipboard.readText(); } catch { afterText = ''; }
+            if (afterText !== beforeText && afterText !== '') break;
+            await new Promise((r) => setTimeout(r, copyPollMs));
             tries++;
-            log.info('Retrying copy', { tries, afterText });
-            await new Promise((resolve) => setTimeout(resolve, 100));
           }
 
-          childSend({ channel, value });
+          // Fallback: Ctrl+Insert on Win/Linux if unchanged
+          if (afterText === beforeText) {
+            const useCtrlInsert = !kitState.isMac;
+            if (useCtrlInsert) {
+              log.info('COPY: fallback Ctrl+Insert');
+              try { shims['@jitsi/robotjs'].keyTap('insert', ['control']); } catch {}
+              tries = 0;
+              while (tries < copyMaxTries) {
+                try { afterText = clipboard.readText(); } catch { afterText = ''; }
+                if (afterText !== beforeText && afterText !== '') break;
+                await new Promise((r) => setTimeout(r, copyPollMs));
+                tries++;
+              }
+            }
+          }
 
+          // Respond; SDK does its own clipboard read. We only ack.
+          childSend({ channel, value });
           // END-REMOVE-NUT
         },
         50,
@@ -2307,27 +2326,63 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     SET_SELECTED_TEXT: onChildChannelOverride(
       debounce(
         async ({ child }, { channel, value }) => {
-          const text = value?.text;
-          const hide = value?.hide;
+          const text: string = (value?.text ?? '') as string;
+          const hide = Boolean(value?.hide);
+          const method = (value?.method as 'clipboard' | 'typing' | 'auto') || 'clipboard';
+          const restoreDelay = Number.parseInt(String(kitState?.kenvEnv?.KIT_SET_SELECTED_TEXT_RESTORE_DELAY || '250'), 10) || 250;
+          const writeTimeout = Number.parseInt(String(kitState?.kenvEnv?.KIT_SET_SELECTED_TEXT_WRITE_TIMEOUT || '500'), 10) || 500;
+          const pastePollWait = Number.parseInt(String(kitState?.kenvEnv?.KIT_SET_SELECTED_TEXT_PASTE_WAIT || '10'), 10) || 10;
 
           if (hide && kitState.isMac && app?.dock && app?.dock?.isVisible()) {
             app?.dock?.hide();
           }
 
-          const prevText = clipboard.readText();
-          log.info(`${child.pid}: SET SELECTED TEXT`, text?.slice(0, 3) + '...', prevText?.slice(0, 3) + '...');
-          await clipboard.writeText(text);
-
-          robot.keyTap('v', getModifier());
-          setTimeout(() => {
+          // Typing method avoids clipboard entirely
+          if (method === 'typing') {
+            try {
+              shims['@jitsi/robotjs'].typeString(text);
+            } catch (e) {
+              log.warn('SET_SELECTED_TEXT typing failed; falling back to clipboard', e);
+            }
             kitState.snippet = '';
             childSend({ channel, value });
-            log.info(`SET SELECTED TEXT DONE with ${channel}`, text?.slice(0, 3) + '...');
-            setTimeout(() => {
-              log.info(`RESTORING CLIPBOARD with ${channel}`, prevText?.slice(0, 3) + '...');
-              clipboard.writeText(prevText);
-            }, 250);
-          }, 10);
+            return;
+          }
+
+          // Clipboard method with conditional restore
+          const prev = takeClipboardSnapshot();
+          log.info(`${child.pid}: SET_SELECTED_TEXT (clipboard)`, text?.slice(0, 3) + '...');
+          await writeTextEnsure(text, writeTimeout);
+
+          // Paste using platform-appropriate accelerator, with Linux fallback
+          try {
+            const mod = getModifier();
+            robot.keyTap('v', mod);
+            if (kitState.isLinux) {
+              // Some Linux apps prefer Shift+Insert for paste
+              setTimeout(() => {
+                try { robot.keyTap('insert', ['shift']); } catch {}
+              }, 35);
+            }
+          } catch {}
+
+          // Acknowledge quickly, then attempt a conditional restore later
+          setTimeout(async () => {
+            try {
+              kitState.snippet = '';
+              childSend({ channel, value });
+              log.info(`SET_SELECTED_TEXT DONE with ${channel}`, text?.slice(0, 3) + '...');
+              // Only restore if clipboard still contains our text after a delay
+              setTimeout(async () => {
+                const restored = await conditionalRestore(prev, text, 0);
+                if (!restored) {
+                  log.info('SET_SELECTED_TEXT: skipped clipboard restore (changed by user/app)');
+                }
+              }, restoreDelay);
+            } catch (e) {
+              log.warn('SET_SELECTED_TEXT finalize error', e);
+            }
+          }, pastePollWait);
         },
         50,
         { leading: true, trailing: false },

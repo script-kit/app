@@ -113,7 +113,7 @@ import { startSK } from './sk';
 import { cacheSnippets } from './snippet-cache';
 import { snippetsSelfCheck } from './snippet-heal';
 import { optionalSetupScript } from './spawn';
-import { cacheKitScripts, getThemes, kitState, kitStore, subs } from './state';
+import { cacheKitScripts, getThemes, kitState, kitStore, subs, clearSleepCachedEnvVars } from './state';
 import { systemEventsSelfCheck } from './system-events';
 import { TrackEvent, trackEvent } from './track';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
@@ -459,13 +459,9 @@ const systemEvents = () => {
     }
 
     // Clear environment variables marked for sleep-clear
-    if (kitState.sleepClearKeys && kitState.sleepClearKeys.size > 0) {
-      log.info(`🔐 Clearing ${kitState.sleepClearKeys.size} cached environment variables on sleep`);
-      for (const key of kitState.sleepClearKeys) {
-        delete process.env[key];
-        delete kitState.kenvEnv[key];
-      }
-      kitState.sleepClearKeys.clear();
+    const cleared = clearSleepCachedEnvVars();
+    if (cleared) {
+      log.info(`🔐 Cleared ${cleared} cached environment variable(s) on sleep`);
     }
 
     kitState.suspended = true;

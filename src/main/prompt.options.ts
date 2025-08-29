@@ -5,6 +5,7 @@ import { getAssetPath } from '../shared/assets';
 import { MIN_WIDTH } from '../shared/defaults';
 import { getCurrentScreen } from './screen';
 import { kitState } from './state';
+import { envBool, envNumber } from './env.utils';
 
 import { createLogger } from './log-utils';
 
@@ -30,29 +31,17 @@ export const getPromptOptions = (arg: boolean | PromptWindowMode = false) => {
   const { width: screenWidth, height: screenHeight } = currentScreen.workAreaSize;
   const { x: workX, y: workY } = currentScreen.workArea;
 
-  let backgroundThrottling = true;
-  if (kitState?.kenvEnv?.KIT_BACKGROUND_THROTTLE) {
-    backgroundThrottling = kitState.kenvEnv.KIT_BACKGROUND_THROTTLE === 'true';
-  }
+  const backgroundThrottling = envBool('KIT_BACKGROUND_THROTTLE', true);
 
-  let hasShadow = true;
-  if (kitState?.kenvEnv?.KIT_SHADOW) {
-    hasShadow = kitState.kenvEnv.KIT_SHADOW === 'true';
-  }
+  const hasShadow = envBool('KIT_SHADOW', true);
 
-  let frame = false;
-  if (kitState?.kenvEnv?.KIT_FRAME) {
-    frame = kitState.kenvEnv.KIT_FRAME === 'true';
-  }
+  let frame = envBool('KIT_FRAME', false);
   // Standard windows always get OS chrome & controls
   if (useStandardWindow) {
     frame = true;
   }
 
-  let transparent = false;
-  if (kitState?.kenvEnv?.KIT_TRANSPARENT) {
-    transparent = kitState.kenvEnv.KIT_TRANSPARENT === 'true';
-  }
+  const transparent = envBool('KIT_TRANSPARENT', false);
 
   let x = Math.round(screenWidth / 2 - width / 2 + workX);
   // TODO: Windows prompt behavior
@@ -60,9 +49,7 @@ export const getPromptOptions = (arg: boolean | PromptWindowMode = false) => {
   //   x = OFFSCREEN_X;
   // }
 
-  if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_X) {
-    x = Number.parseInt(kitState?.kenvEnv?.KIT_PROMPT_INITIAL_X);
-  }
+  x = envNumber('KIT_PROMPT_INITIAL_X', x);
 
   let y = Math.round(workY + screenHeight / 8);
 
@@ -71,9 +58,7 @@ export const getPromptOptions = (arg: boolean | PromptWindowMode = false) => {
   //   y = OFFSCREEN_Y;
   // }
 
-  if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_Y) {
-    y = Number.parseInt(kitState?.kenvEnv?.KIT_PROMPT_INITIAL_Y);
-  }
+  y = envNumber('KIT_PROMPT_INITIAL_Y', y);
 
   let show = false;
 
@@ -82,9 +67,7 @@ export const getPromptOptions = (arg: boolean | PromptWindowMode = false) => {
   //   show = true;
   // }
 
-  if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_SHOW === 'true') {
-    show = true;
-  }
+  show = envBool('KIT_PROMPT_INITIAL_SHOW', show);
 
   let backgroundColor: BrowserWindowConstructorOptions['backgroundColor'] = '#00000000';
   if (kitState?.kenvEnv?.KIT_BACKGROUND_COLOR) {
@@ -97,15 +80,9 @@ export const getPromptOptions = (arg: boolean | PromptWindowMode = false) => {
       .KIT_BACKGROUND_MATERIAL as BrowserWindowConstructorOptions['backgroundMaterial'];
   }
 
-  let roundedCorners: BrowserWindowConstructorOptions['roundedCorners'] = true;
-  if (kitState?.kenvEnv?.KIT_ROUNDED_CORNERS === 'false') {
-    roundedCorners = false;
-  }
+  const roundedCorners: BrowserWindowConstructorOptions['roundedCorners'] = envBool('KIT_ROUNDED_CORNERS', true);
 
-  let thickFrame: BrowserWindowConstructorOptions['thickFrame'] = true;
-  if (kitState?.kenvEnv?.KIT_THICK_FRAME === 'false') {
-    thickFrame = false;
-  }
+  const thickFrame: BrowserWindowConstructorOptions['thickFrame'] = envBool('KIT_THICK_FRAME', true);
 
   // Log all of the conditional options:
   log.info('Prompt Options:', {
