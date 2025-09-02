@@ -45,6 +45,10 @@ export const appendInputAtom = atom(null, (g, s, a: string) => {
 export const valueInvalidAtom = atom(null, (g, s, a: string) => {
   if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
 
+  // Re-enable prompt interactions after a validation failure
+  s(promptActiveAtom, true);
+  // Allow subsequent submissions (submitValueAtom guards on submittedAtom)
+  s(submittedAtom, false);
   s(processingAtom, false);
   s(inputAtom, '');
   s(_inputChangedAtom, false);
