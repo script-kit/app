@@ -246,29 +246,31 @@ export const ResizeController: React.FC = () => {
             isMainScript: g(isMainScriptAtom) as any,
         } as ResizeData;
 
+        // IMPORTANT: capture previous main height BEFORE updating prevMh to detect urgent shrink correctly
+        const prevMain = g(prevMh);
+        const urgentShrink = mh < prevMain;
+
         // Short-circuit if signature is unchanged (avoid redundant sends)
+        // Note: only apply this optimization when not inflight OR when not an urgent shrink
         try {
           const sigObj = { ui, mh, topHeight, footerHeight, hasPanel, hasPreview };
           const sig = JSON.stringify(sigObj);
           const justOpened = Boolean(g(justOpenedAtom));
-          if (!justOpened && sig === lastSigRef.current) {
+          const inflight = g(resizeInflightAtom);
+          if (!justOpened && !urgentShrink && sig === lastSigRef.current) {
             log.info('ResizeController: signature unchanged; skipping send');
             return;
           }
-          lastSigRef.current = sig;
         } catch {}
-
-        // State update for prevMh atom (replaces s(prevMh, mh))
-        store.set(prevMh, mh);
 
         // Inflight guard: avoid duplicate sends until MAIN_ACK clears it
         // Exception: allow urgent shrink or forced resizes to pass through
-        const inflight = g(resizeInflightAtom);
-        const prevMain = g(prevMh);
-        const urgentShrink = mh < prevMain;
-        if (inflight && !(urgentShrink || forceResize || forceHeight)) {
-          log.info('ResizeController: inflight true, skipping send (no urgent shrink/force)');
-          return;
+        {
+          const inflight = g(resizeInflightAtom);
+          if (inflight && !(urgentShrink || forceResize || forceHeight)) {
+            log.info('ResizeController: inflight true, skipping send (no urgent shrink/force)');
+            return;
+          }
         }
 
         // Mark inflight and send resize IPC
@@ -279,6 +281,13 @@ export const ResizeController: React.FC = () => {
         } else {
           sendResize(data);
         }
+
+        // Now that we actually sent, update prevMh and lastSig to reflect committed state
+        try {
+          store.set(prevMh, mh);
+          const sigObj = { ui, mh, topHeight, footerHeight, hasPanel, hasPreview };
+          lastSigRef.current = JSON.stringify(sigObj);
+        } catch {}
         // Failsafe: clear inflight if no ACK arrives
         setTimeout(() => {
           try { store.set(resizeInflightAtom, false); } catch {}

@@ -94,7 +94,7 @@ export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
       assetPath: getAssetPath(),
       version: getVersion(),
       isDark: kitState.isDark,
-      searchDebounce: kitState.kenvEnv?.KIT_SEARCH_DEBOUNCE !== 'false',
+      searchDebounce: container.getConfig().isSearchDebounceEnabled(),
       termFont: container.getConfig().getTerminalFont(),
       url: kitState.url,
     });

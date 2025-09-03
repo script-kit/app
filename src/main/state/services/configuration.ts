@@ -39,6 +39,8 @@ export interface ConfigurationService {
   getPnpmPath(): string | undefined;
   /** GitHub Script Kit token (GITHUB_SCRIPTKIT_TOKEN). */
   getGithubScriptkitToken(): string | undefined;
+  /** Enable search debounce (KIT_SEARCH_DEBOUNCE !== 'false'). */
+  isSearchDebounceEnabled(): boolean;
 }
 
 /**
@@ -125,5 +127,10 @@ export class KitStateConfigurationAdapter implements ConfigurationService {
 
   getGithubScriptkitToken(): string | undefined {
     return (kitState?.kenvEnv as any)?.GITHUB_SCRIPTKIT_TOKEN || undefined;
+  }
+
+  isSearchDebounceEnabled(): boolean {
+    const raw = (kitState?.kenvEnv as any)?.KIT_SEARCH_DEBOUNCE;
+    return String(raw).toLowerCase() !== 'false';
   }
 }
