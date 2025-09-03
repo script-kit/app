@@ -93,19 +93,7 @@ import { messagesLog as log } from './logs';
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 const IMAGE_REQUEST_TIMEOUT_MS = 7000;    // 7 seconds
 
-// Guard list: only these keys may be mutated via SET_KIT_STATE
-const MUTABLE_KITSTATE_KEYS = new Set<string>([
-  'resizePaused',
-  'hiddenByUser',
-  'tabIndex',
-  'shortcutsPaused',
-  'snippet',
-  'typedText',
-  'tempTheme',
-  'appearance',
-  'status',
-  'shortcutPressed',
-]);
+import { applyKitStatePatch } from './state/kitstate-guards';
 
 // Limit what we expose over IPC to child processes
 const sanitizeKitStateForIpc = () => {
@@ -994,15 +982,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     }),
     SET_KIT_STATE: onChildChannel((_processInfo, data) => {
       log.info('SET_KIT_STATE', data?.value);
-      // Only allow a known-safe subset of kitState fields to be mutated via IPC
-      for (const [key, value] of Object.entries(data?.value)) {
-        if (MUTABLE_KITSTATE_KEYS.has(key)) {
-          log.info(`Setting kitState.${key} to`, value);
-          (kitState as any)[key] = value;
-        } else {
-          log.warn(`Blocked attempt to set disallowed kitState key: ${key}`);
-        }
-      }
+      applyKitStatePatch(data?.value as any);
     }),
 
     TERMINATE_PROMPT: onChildChannel(({ child }, { channel, value }) => {

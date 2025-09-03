@@ -14,6 +14,7 @@ import { KitEvent, emitter } from '../shared/events';
 import { readdir, remove } from './cjs-exports';
 import { updateLog } from './logs';
 import { forceQuit, kitState, online } from './state';
+import { container } from './state/services/container';
 import { getVersion, storeVersion } from './version';
 
 export const kitIgnore = () => {
@@ -23,7 +24,7 @@ export const kitIgnore = () => {
 };
 
 export const checkForUpdates = async () => {
-  if (kitState.kenvEnv.KIT_DISABLE_AUTO_UPDATE) {
+  if (container.getConfig().isAutoUpdateDisabled()) {
     updateLog.info('Auto update disabled. Skipping check...');
     return;
   }

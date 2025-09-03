@@ -1,5 +1,3 @@
-import { kitState } from '../state';
+import { container } from '../state/services/container';
 
-export const getApiKey = (): string => {
-  return kitState.kenvEnv?.KIT_API_KEY || '';
-};
+export const getApiKey = (): string => container.getConfig().getApiKey();
