@@ -15,6 +15,7 @@ import { readdir, remove } from './cjs-exports';
 import { updateLog } from './logs';
 import { forceQuit, kitState, online } from './state';
 import { container } from './state/services/container';
+import { notification } from './state/services/notification';
 import { getVersion, storeVersion } from './version';
 
 export const kitIgnore = () => {
@@ -138,10 +139,7 @@ export const configureAutoUpdate = async () => {
   autoUpdater.on('update-available', async (updateAvailableInfo) => {
     updateInfo = updateAvailableInfo;
 
-    kitState.status = {
-      status: 'update',
-      message: `Downloading update ${updateAvailableInfo.version}...`,
-    };
+    notification.setUpdate(`Downloading update ${updateAvailableInfo.version}...`);
     updateLog.info('Update available.', updateAvailableInfo);
 
     const version = getVersion();
@@ -169,15 +167,8 @@ export const configureAutoUpdate = async () => {
 
   autoUpdater.on('update-downloaded', async () => {
     kitState.updateDownloaded = true;
-    kitState.status = {
-      status: 'default',
-      message: '',
-    };
-
-    kitState.status = {
-      status: 'success',
-      message: '',
-    };
+    notification.setDefault();
+    notification.setSuccess('');
 
     updateLog.info('⬇️ Update downloaded');
 
@@ -187,10 +178,7 @@ export const configureAutoUpdate = async () => {
   });
 
   autoUpdater.on('update-not-available', (info) => {
-    kitState.status = {
-      status: 'default',
-      message: '',
-    };
+    notification.setDefault();
 
     updateLog.info('Update not available...');
     updateLog.info(info);
@@ -236,10 +224,7 @@ export const configureAutoUpdate = async () => {
     //   status: 'default',
     //   message: '',
     // };
-    kitState.status = {
-      status: 'warn',
-      message: 'Auto-updater error. Check logs..',
-    };
+    notification.setWarn('Auto-updater error. Check logs..');
 
     kitState.updateDownloaded = false;
 
@@ -269,10 +254,7 @@ export const configureAutoUpdate = async () => {
       return;
     }
 
-    kitState.status = {
-      status: 'busy',
-      message: 'Checking for update...',
-    };
+    notification.setBusy('Checking for update...');
     kitState.manualUpdateCheck = true;
     await checkForUpdates();
   });

@@ -42,6 +42,7 @@ import { prompts } from './prompts';
 // import { startServer, stopServer } from './server';
 import { getMcpPort, getServerPort } from './serverTrayUtils';
 import { forceQuit, kitState, subs } from './state';
+import { notification } from './state/services/notification';
 import { getVersion } from './version';
 
 let tray: Tray | null = null;
@@ -810,10 +811,7 @@ export const openMenu = debounce(
       contextMenu.once('menu-will-close', () => {
         log.info('🎨 menu-will-close Closing tray menu...');
         if (!kitState.starting && kitState.trayScripts.length === 0) {
-          kitState.status = {
-            status: 'default',
-            message: '',
-          };
+          notification.setDefault();
         }
 
         kitState.trayOpen = false;
@@ -962,10 +960,7 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
           ? 'Applying Update to SDK. Please Wait...'
           : 'Starting...';
 
-      kitState.status = {
-        status: 'busy',
-        message,
-      };
+      notification.setBusy(message);
 
       if (kitState.trayOpen) {
         kitState.trayOpen = false;

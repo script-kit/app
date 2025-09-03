@@ -47,6 +47,7 @@ import { invoke } from './invoke-pty';
 import { createIdlePty } from './pty';
 
 import { processLog as log } from './logs';
+import { notification } from './state/services/notification';
 import { container } from './state/services/container';
 
 export type ProcessAndPrompt = ProcessInfo & {
@@ -784,10 +785,7 @@ class Processes extends Array<ProcessAndPrompt> {
         scriptPath 
       });
       processLog.error('👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors');
-      kitState.status = {
-        status: 'warn',
-        message: '',
-      };
+      notification.setWarn('');
 
       setTrayScriptError(pid);
       processes.removeByPid(pid);
