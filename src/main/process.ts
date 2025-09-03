@@ -511,9 +511,7 @@ export const ensureIdleProcess = () => {
       'All processes',
       all.map((p) => `${p.pid}: ${p.scriptPath || 'idle'}`),
     );
-    const requiredIdleProcesses = kitState?.kenvEnv?.KIT_IDLE_PROCESSES
-      ? Number.parseInt(kitState.kenvEnv.KIT_IDLE_PROCESSES)
-      : 1;
+    const requiredIdleProcesses = require('./state/services/container').container.getConfig().getIdleProcesses();
     const missingProcesses = requiredIdleProcesses - idles.length;
     if (missingProcesses > 0) {
       processLog.info(`Adding ${missingProcesses} idle process(es)`);

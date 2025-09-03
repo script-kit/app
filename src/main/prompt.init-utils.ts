@@ -129,11 +129,13 @@ export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
 
     ipcMain.once(AppChannel.MESSAGES_READY, messagesReadyHandler as any);
 
-    if (kitState.kenvEnv?.KIT_MIC) {
-      prompt.sendToPrompt(AppChannel.SET_MIC_ID, kitState.kenvEnv.KIT_MIC);
-    }
-    if (kitState.kenvEnv?.KIT_WEBCAM) {
-      prompt.sendToPrompt(AppChannel.SET_WEBCAM_ID, kitState.kenvEnv.KIT_WEBCAM);
+    {
+      const { container } = require('./state/services/container');
+      const cfg = container.getConfig();
+      const mic = cfg.getMicId();
+      const cam = cfg.getWebcamId();
+      if (mic) prompt.sendToPrompt(AppChannel.SET_MIC_ID, mic);
+      if (cam) prompt.sendToPrompt(AppChannel.SET_WEBCAM_ID, cam);
     }
   });
 
@@ -235,5 +237,4 @@ export function setupWindowLifecycleHandlers(prompt: KitPrompt) {
     (prompt as any).emojiActive = false;
   });
 }
-
 

@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import log from 'electron-log';
 import { disableOldAutoLaunch } from './launch';
-import { kitState } from './state';
+import { container } from './state/services/container';
 
 export const checkOpenAtLogin = () => {
   try {
@@ -10,7 +10,7 @@ export const checkOpenAtLogin = () => {
       return;
     }
 
-    const openAtLoginEnabled = kitState.kenvEnv.KIT_OPEN_AT_LOGIN !== 'false';
+    const openAtLoginEnabled = container.getConfig().isOpenAtLoginEnabled();
     const { openAtLogin } = app.getLoginItemSettings();
 
     if (openAtLogin !== openAtLoginEnabled) {

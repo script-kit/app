@@ -1200,7 +1200,7 @@ const checkKit = async () => {
     log.info('👍 Trusting kenvs at startup', trustedKenvs);
     kitState.trustedKenvs = trustedKenvs;
 
-    if (kitState.kenvEnv.KIT_AUTOSTART_SERVER === 'true') {
+    if (require('./state/services/container').container.getConfig().isAutoStartServer()) {
       log.info('🚀 Starting server (KIT_AUTOSTART_SERVER=true)');
       startServer();
     }

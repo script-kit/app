@@ -1,11 +1,11 @@
 import { type Rectangle, desktopCapturer, screen } from 'electron';
 import { kitState } from './state';
+import { container } from './state/services/container';
 
 export const getCurrentScreen = () => {
-  if (kitState?.kenvEnv?.KIT_DISPLAY) {
-    const display = screen.getAllDisplays().find((d) => {
-      return d.id === Number(kitState.kenvEnv.KIT_DISPLAY);
-    });
+  const overrideId = container.getConfig().getDisplayId();
+  if (overrideId != null) {
+    const display = screen.getAllDisplays().find((d) => d.id === overrideId);
 
     if (display) {
       return display;
