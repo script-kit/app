@@ -88,6 +88,7 @@ import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { showLogWindow } from './window';
 
 import { messagesLog as log } from './logs';
+import { sanitizeKitStateForIpc } from './state/kitstate-sanitize';
 
 // Centralize magic numbers
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -95,22 +96,7 @@ const IMAGE_REQUEST_TIMEOUT_MS = 7000;    // 7 seconds
 
 import { applyKitStatePatch } from './state/kitstate-guards';
 
-// Limit what we expose over IPC to child processes
-const sanitizeKitStateForIpc = () => {
-  const s: any = snapshot(kitState);
-  // Remove sensitive / heavy fields
-  delete s.kenvEnv;            // env variables may contain secrets
-  delete s.user;               // PII and identifiers
-  delete s.KIT_NODE_PATH;      // internal paths
-  delete s.PNPM_KIT_NODE_PATH; // internal paths
-  delete s.keymap;             // large and not needed by most callers
-  delete s.sleepClearKeys;     // internal housekeeping
-  // If needed, reduce 'notifications' to last few items
-  if (Array.isArray(s.notifications) && s.notifications.length > 25) {
-    s.notifications = s.notifications.slice(-25);
-  }
-  return s;
-};
+// Limit what we expose over IPC to child processes (now centralized)
 
 const isSamePrompt = (incomingId?: string, currentId?: string) => {
   return Boolean(incomingId && currentId && incomingId === currentId);
