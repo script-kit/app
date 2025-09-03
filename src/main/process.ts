@@ -112,7 +112,8 @@ export const updateTheme = async () => {
   //   isDarkNative: nativeTheme.shouldUseDarkColors ? 'true' : 'false',
   // });
 
-  const themePath = kitState.isDark ? kitState.kenvEnv?.KIT_THEME_DARK : kitState.kenvEnv?.KIT_THEME_LIGHT;
+  const { container } = require('./state/services/container');
+  const themePath = container.getConfig().getThemePath(kitState.isDark ? 'dark' : 'light');
 
   if (themePath && pathExistsSync(themePath)) {
     processLog.info(`▓ ${kitState.isDark ? 'true' : 'false'} 👀 Theme path: ${themePath}`);

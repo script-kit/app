@@ -33,6 +33,8 @@ export interface ConfigurationService {
   isDockDisabled(): boolean;
   /** Terminal font for renderer/term (KIT_TERM_FONT or default 'monospace'). */
   getTerminalFont(): string;
+  /** Theme path for light or dark mode (KIT_THEME_LIGHT/KIT_THEME_DARK). */
+  getThemePath(mode: 'light' | 'dark'): string | undefined;
 }
 
 /**
@@ -106,5 +108,10 @@ export class KitStateConfigurationAdapter implements ConfigurationService {
 
   getTerminalFont(): string {
     return (kitState?.kenvEnv as any)?.KIT_TERM_FONT || 'monospace';
+  }
+
+  getThemePath(mode: 'light' | 'dark'): string | undefined {
+    const env = (kitState?.kenvEnv as any) || {};
+    return mode === 'dark' ? env.KIT_THEME_DARK : env.KIT_THEME_LIGHT;
   }
 }
