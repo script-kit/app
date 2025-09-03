@@ -7,6 +7,7 @@ import { widgetState } from '../shared/widget';
 import { windowsState } from '../shared/windows';
 import { prompts } from './prompts';
 import { kitState, promptState } from './state';
+import { container } from './state/services/container';
 
 let hideIntervalId: NodeJS.Timeout | null = null;
 
@@ -38,7 +39,7 @@ export const hideDock = debounce(() => {
 }, 200);
 
 export const showDock = () => {
-  if (kitState.kenvEnv?.KIT_DOCK === 'false') {
+  if (container.getConfig().isDockDisabled()) {
     return;
   }
   if (!kitState.isMac) {

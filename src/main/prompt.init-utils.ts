@@ -94,7 +94,7 @@ export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
       version: getVersion(),
       isDark: kitState.isDark,
       searchDebounce: kitState.kenvEnv?.KIT_SEARCH_DEBOUNCE !== 'false',
-      termFont: kitState.kenvEnv?.KIT_TERM_FONT || 'monospace',
+      termFont: require('./state/services/container').container.getConfig().getTerminalFont(),
       url: kitState.url,
     });
 
@@ -237,4 +237,3 @@ export function setupWindowLifecycleHandlers(prompt: KitPrompt) {
     (prompt as any).emojiActive = false;
   });
 }
-

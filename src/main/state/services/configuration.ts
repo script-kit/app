@@ -23,6 +23,16 @@ export interface ConfigurationService {
   getMicId(): string | undefined;
   /** Preferred webcam device id (KIT_WEBCAM). */
   getWebcamId(): string | undefined;
+  /** Prompt background color (KIT_BACKGROUND_COLOR). */
+  getBackgroundColor(): string | undefined;
+  /** Prompt background material (KIT_BACKGROUND_MATERIAL). */
+  getBackgroundMaterial(): string | undefined;
+  /** Preferred prompt width (KIT_WIDTH). */
+  getPreferredPromptWidth(): number | undefined;
+  /** Returns true if dock should be disabled (KIT_DOCK === 'false'). */
+  isDockDisabled(): boolean;
+  /** Terminal font for renderer/term (KIT_TERM_FONT or default 'monospace'). */
+  getTerminalFont(): string;
 }
 
 /**
@@ -73,5 +83,28 @@ export class KitStateConfigurationAdapter implements ConfigurationService {
 
   getWebcamId(): string | undefined {
     return (kitState?.kenvEnv as any)?.KIT_WEBCAM || undefined;
+  }
+
+  getBackgroundColor(): string | undefined {
+    return (kitState?.kenvEnv as any)?.KIT_BACKGROUND_COLOR || undefined;
+  }
+
+  getBackgroundMaterial(): string | undefined {
+    return (kitState?.kenvEnv as any)?.KIT_BACKGROUND_MATERIAL || undefined;
+  }
+
+  getPreferredPromptWidth(): number | undefined {
+    const raw = (kitState?.kenvEnv as any)?.KIT_WIDTH;
+    if (!raw) return undefined;
+    const n = Number.parseInt(String(raw), 10);
+    return Number.isFinite(n) ? n : undefined;
+  }
+
+  isDockDisabled(): boolean {
+    return String((kitState?.kenvEnv as any)?.KIT_DOCK).toLowerCase() === 'false';
+  }
+
+  getTerminalFont(): string {
+    return (kitState?.kenvEnv as any)?.KIT_TERM_FONT || 'monospace';
   }
 }

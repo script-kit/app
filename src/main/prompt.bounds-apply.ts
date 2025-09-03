@@ -4,6 +4,7 @@ import type { Rectangle } from 'electron';
 import { getCurrentScreen, getCurrentScreenFromBounds, isBoundsWithinDisplayById } from './screen';
 import { prompts } from './prompts';
 import { kitState } from './state';
+import { container } from './state/services/container';
 import { adjustBoundsToAvoidOverlap, ensureMinWindowHeight, getTitleBarHeight } from './prompt.bounds-utils';
 import { setPromptBounds as applyWindowBounds } from './prompt.window-utils';
 
@@ -108,9 +109,8 @@ export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reaso
     newBounds.height = screenHeight;
   }
 
-  if (kitState?.kenvEnv?.KIT_WIDTH) {
-    newBounds.width = Number.parseInt(kitState?.kenvEnv?.KIT_WIDTH, 10);
-  }
+  const prefWidth = container.getConfig().getPreferredPromptWidth();
+  if (prefWidth) newBounds.width = prefWidth;
 
   prompt.logInfo(`${prompt.pid}: Apply ${prompt.scriptName}: setBounds reason: ${reason}`, newBounds);
 
@@ -139,4 +139,3 @@ export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reaso
     prompt.sendToPrompt(AppChannel.TRIGGER_RESIZE, undefined);
   } catch {}
 };
-

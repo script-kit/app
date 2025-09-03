@@ -5,6 +5,7 @@ import { getAssetPath } from '../shared/assets';
 import { MIN_WIDTH } from '../shared/defaults';
 import { getCurrentScreen } from './screen';
 import { kitState } from './state';
+import { container } from './state/services/container';
 import { envBool, envNumber } from './env.utils';
 
 import { createLogger } from './log-utils';
@@ -70,15 +71,12 @@ export const getPromptOptions = (arg: boolean | PromptWindowMode = false) => {
   show = envBool('KIT_PROMPT_INITIAL_SHOW', show);
 
   let backgroundColor: BrowserWindowConstructorOptions['backgroundColor'] = '#00000000';
-  if (kitState?.kenvEnv?.KIT_BACKGROUND_COLOR) {
-    backgroundColor = kitState.kenvEnv.KIT_BACKGROUND_COLOR;
-  }
+  const cfgBg = container.getConfig().getBackgroundColor();
+  if (cfgBg) backgroundColor = cfgBg;
 
   let backgroundMaterial: BrowserWindowConstructorOptions['backgroundMaterial'] = 'acrylic';
-  if (kitState?.kenvEnv?.KIT_BACKGROUND_MATERIAL) {
-    backgroundMaterial = kitState.kenvEnv
-      .KIT_BACKGROUND_MATERIAL as BrowserWindowConstructorOptions['backgroundMaterial'];
-  }
+  const cfgMaterial = container.getConfig().getBackgroundMaterial();
+  if (cfgMaterial) backgroundMaterial = cfgMaterial as BrowserWindowConstructorOptions['backgroundMaterial'];
 
   const roundedCorners: BrowserWindowConstructorOptions['roundedCorners'] = envBool('KIT_ROUNDED_CORNERS', true);
 
