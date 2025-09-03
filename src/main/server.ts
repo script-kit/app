@@ -10,6 +10,7 @@ import { serverLog as log } from './logs';
 import { mcpService } from './mcp-service';
 import { getServerPort } from './serverTrayUtils';
 import { kitState } from './state';
+import { container } from './state/services/container';
 
 let serverInstance: https.Server | null = null;
 let bonjour: Bonjour | null = null;
@@ -380,7 +381,7 @@ export const startServer = () => {
       name: 'Kit Server',
       type: 'http',
       port: getServerPort(),
-      host: (kitState.kenvEnv.KIT_BONJOUR_HOST as string | undefined) || 'kit.local',
+      host: container.getConfig().getBonjourHost(),
     });
 
     service.on('up', () => {

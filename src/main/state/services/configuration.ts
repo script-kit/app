@@ -9,6 +9,8 @@ export interface ConfigurationService {
   getApiKey(): string;
   /** Returns true if auto-updates should be disabled (KIT_DISABLE_AUTO_UPDATE). */
   isAutoUpdateDisabled(): boolean;
+  /** Returns the Bonjour host to publish under (KIT_BONJOUR_HOST), defaults to 'kit.local'. */
+  getBonjourHost(): string;
 }
 
 /**
@@ -24,5 +26,9 @@ export class KitStateConfigurationAdapter implements ConfigurationService {
     const val = (kitState?.kenvEnv as any)?.KIT_DISABLE_AUTO_UPDATE;
     // Treat any truthy value or 'true' string as disabled
     return Boolean(val) && String(val).toLowerCase() !== 'false';
+  }
+
+  getBonjourHost(): string {
+    return (kitState?.kenvEnv as any)?.KIT_BONJOUR_HOST || 'kit.local';
   }
 }
