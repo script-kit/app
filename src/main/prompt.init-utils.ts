@@ -4,6 +4,7 @@ import { HideReason } from '../shared/enums';
 import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
 import { kitState } from './state';
 import { AppChannel } from '../shared/enums';
+import { container } from './state/services/container';
 import { getAssetPath } from '../shared/assets';
 import os from 'node:os';
 import path from 'node:path';
@@ -94,7 +95,7 @@ export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
       version: getVersion(),
       isDark: kitState.isDark,
       searchDebounce: kitState.kenvEnv?.KIT_SEARCH_DEBOUNCE !== 'false',
-      termFont: require('./state/services/container').container.getConfig().getTerminalFont(),
+      termFont: container.getConfig().getTerminalFont(),
       url: kitState.url,
     });
 
@@ -130,7 +131,6 @@ export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
     ipcMain.once(AppChannel.MESSAGES_READY, messagesReadyHandler as any);
 
     {
-      const { container } = require('./state/services/container');
       const cfg = container.getConfig();
       const mic = cfg.getMicId();
       const cam = cfg.getWebcamId();

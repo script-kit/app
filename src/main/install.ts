@@ -48,6 +48,7 @@ import electronLog from 'electron-log';
 import { getAssetPath } from '../shared/assets';
 import { compareCollections, logDifferences } from './compare';
 import { getAllShellEnvs } from './env-utils';
+import { container } from './state/services/container';
 import { createForkOptions } from './fork.options';
 import { showInfo } from './info';
 import { createLogger } from './log-utils';
@@ -146,7 +147,7 @@ export const showSplash = async () => {
       version: getVersion(),
       isDark: kitState.isDark,
       searchDebounce: kitState.kenvEnv?.KIT_SEARCH_DEBOUNCE !== 'false',
-      termFont: require('./state/services/container').container.getConfig().getTerminalFont(),
+      termFont: container.getConfig().getTerminalFont(),
       url: kitState.url,
     };
     log.info('Sending app config to splash screen', appConfig);

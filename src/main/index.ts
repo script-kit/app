@@ -118,6 +118,7 @@ import { systemEventsSelfCheck } from './system-events';
 import { TrackEvent, trackEvent } from './track';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { getStoredVersion, getVersion, storeVersion } from './version';
+import { container } from './state/services/container';
 import { prepQuitWindow } from './window/utils';
 
 // TODO: Read a settings file to get the KENV/KIT paths
@@ -1200,12 +1201,12 @@ const checkKit = async () => {
     log.info('👍 Trusting kenvs at startup', trustedKenvs);
     kitState.trustedKenvs = trustedKenvs;
 
-    if (require('./state/services/container').container.getConfig().isAutoStartServer()) {
+    if (container.getConfig().isAutoStartServer()) {
       log.info('🚀 Starting server (KIT_AUTOSTART_SERVER=true)');
       startServer();
     }
 
-    if (require('./state/services/container').container.getConfig().getGithubScriptkitToken()) {
+    if (container.getConfig().getGithubScriptkitToken()) {
       const userExists = existsSync(kitPath('db', 'user.json'));
       if (userExists) {
         log.info('🔑 ~/.kit/db/user.json already exists');

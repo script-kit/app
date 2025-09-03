@@ -1,6 +1,7 @@
 import { exec, execFile } from 'node:child_process';
 import { constants, accessSync, createWriteStream } from 'node:fs';
 import { existsSync } from 'node:fs';
+import { container } from '../state/services/container';
 import { chmod, mkdtemp, rm, symlink, unlink } from 'node:fs/promises';
 import { arch, platform } from 'node:os';
 import { tmpdir } from 'node:os';
@@ -246,7 +247,6 @@ export const existsAndIsExecutable = (filePath: string | undefined): boolean => 
 };
 
 export const findPnpmBin = async (): Promise<string> => {
-  const { container } = require('../state/services/container');
   const override = container.getConfig().getPnpmPath();
   if (override) {
     log.info(`Checking KIT_PNPM: ${override}`);

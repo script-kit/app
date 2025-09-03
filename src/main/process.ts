@@ -47,6 +47,7 @@ import { invoke } from './invoke-pty';
 import { createIdlePty } from './pty';
 
 import { processLog as log } from './logs';
+import { container } from './state/services/container';
 
 export type ProcessAndPrompt = ProcessInfo & {
   prompt: KitPrompt;
@@ -112,7 +113,6 @@ export const updateTheme = async () => {
   //   isDarkNative: nativeTheme.shouldUseDarkColors ? 'true' : 'false',
   // });
 
-  const { container } = require('./state/services/container');
   const themePath = container.getConfig().getThemePath(kitState.isDark ? 'dark' : 'light');
 
   if (themePath && pathExistsSync(themePath)) {
@@ -512,7 +512,7 @@ export const ensureIdleProcess = () => {
       'All processes',
       all.map((p) => `${p.pid}: ${p.scriptPath || 'idle'}`),
     );
-    const requiredIdleProcesses = require('./state/services/container').container.getConfig().getIdleProcesses();
+    const requiredIdleProcesses = container.getConfig().getIdleProcesses();
     const missingProcesses = requiredIdleProcesses - idles.length;
     if (missingProcesses > 0) {
       processLog.info(`Adding ${missingProcesses} idle process(es)`);
