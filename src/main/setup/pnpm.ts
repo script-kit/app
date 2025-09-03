@@ -246,11 +246,13 @@ export const existsAndIsExecutable = (filePath: string | undefined): boolean => 
 };
 
 export const findPnpmBin = async (): Promise<string> => {
-  if (kitState?.kenvEnv?.KIT_PNPM) {
-    log.info(`Checking KIT_PNPM: ${kitState.kenvEnv.KIT_PNPM}`);
-    if (existsSync(kitState.kenvEnv.KIT_PNPM)) {
-      log.info(`Found pnpm at KIT_PNPM: ${kitState.kenvEnv.KIT_PNPM}`);
-      return kitState.kenvEnv.KIT_PNPM;
+  const { container } = require('../state/services/container');
+  const override = container.getConfig().getPnpmPath();
+  if (override) {
+    log.info(`Checking KIT_PNPM: ${override}`);
+    if (existsSync(override)) {
+      log.info(`Found pnpm at KIT_PNPM: ${override}`);
+      return override;
     }
   }
 

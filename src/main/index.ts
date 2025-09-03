@@ -1205,7 +1205,7 @@ const checkKit = async () => {
       startServer();
     }
 
-    if (kitState.kenvEnv?.GITHUB_SCRIPTKIT_TOKEN) {
+    if (require('./state/services/container').container.getConfig().getGithubScriptkitToken()) {
       const userExists = existsSync(kitPath('db', 'user.json'));
       if (userExists) {
         log.info('🔑 ~/.kit/db/user.json already exists');

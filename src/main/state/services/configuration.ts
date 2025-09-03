@@ -35,6 +35,10 @@ export interface ConfigurationService {
   getTerminalFont(): string;
   /** Theme path for light or dark mode (KIT_THEME_LIGHT/KIT_THEME_DARK). */
   getThemePath(mode: 'light' | 'dark'): string | undefined;
+  /** Absolute path to pnpm binary override (KIT_PNPM). */
+  getPnpmPath(): string | undefined;
+  /** GitHub Script Kit token (GITHUB_SCRIPTKIT_TOKEN). */
+  getGithubScriptkitToken(): string | undefined;
 }
 
 /**
@@ -113,5 +117,13 @@ export class KitStateConfigurationAdapter implements ConfigurationService {
   getThemePath(mode: 'light' | 'dark'): string | undefined {
     const env = (kitState?.kenvEnv as any) || {};
     return mode === 'dark' ? env.KIT_THEME_DARK : env.KIT_THEME_LIGHT;
+  }
+
+  getPnpmPath(): string | undefined {
+    return (kitState?.kenvEnv as any)?.KIT_PNPM || undefined;
+  }
+
+  getGithubScriptkitToken(): string | undefined {
+    return (kitState?.kenvEnv as any)?.GITHUB_SCRIPTKIT_TOKEN || undefined;
   }
 }
