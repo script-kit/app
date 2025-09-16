@@ -1134,8 +1134,29 @@ export class KitPrompt {
     const currentBounds = this.window.getBounds();
 
     this.logInfo(`📐 Resize main height: ${resizeData.mainHeight}`);
+    this.logInfo('📏 ResizeData summary', {
+      id: resizeData.id,
+      pid: resizeData.pid,
+      ui: resizeData.ui,
+      mode: resizeData.mode,
+      topHeight: resizeData.topHeight,
+      footerHeight: resizeData.footerHeight,
+      hasPanel: resizeData.hasPanel,
+      hasPreview: resizeData.hasPreview,
+      placeholderOnly: resizeData.placeholderOnly,
+      totalChoices: resizeData.totalChoices,
+      forceResize: resizeData.forceResize,
+      forceHeight: resizeData.forceHeight,
+      forceWidth: resizeData.forceWidth,
+      isMainScript: resizeData.isMainScript,
+      isWindow: resizeData.isWindow,
+      justOpened: resizeData.justOpened,
+      reason: resizeData.reason,
+      scriptPath: resizeData.scriptPath,
+    });
 
     const targetDimensions = this.calculateTargetDimensions(resizeData, currentBounds);
+    this.logInfo('📐 Calculated targetDimensions', targetDimensions);
 
     // Skip resize if dimensions haven't changed
     if (currentBounds.height === targetDimensions.height && currentBounds.width === targetDimensions.width) {
@@ -1143,8 +1164,12 @@ export class KitPrompt {
     }
 
     const cachedBounds = resizeData.isMainScript ? getCurrentScreenPromptCache(getMainScriptPath()) : undefined;
+    if (cachedBounds) {
+      this.logInfo('🗂️ Using cachedBounds for position/width defaults', cachedBounds);
+    }
 
     const targetPosition = this.calculateTargetPosition(currentBounds, targetDimensions, cachedBounds);
+    this.logInfo('🎯 Calculated targetPosition', targetPosition);
 
     const bounds: Rectangle = { ...targetPosition, ...targetDimensions };
 

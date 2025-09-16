@@ -18,12 +18,14 @@ import {
 } from "react-resizable-panels";
 import AutoSizer from "react-virtualized-auto-sizer";
 const { ipcRenderer, webFrame } = window.electron;
-// Enable debug resize logs via localStorage.DEBUG_RESIZE = 'true'
+// Enable debug resize logs by default, allow opt-out via localStorage.DEBUG_RESIZE = 'false'
 if (typeof window !== 'undefined') {
   try {
-    // default false unless explicitly set
-    (window as any).DEBUG_RESIZE = localStorage.getItem('DEBUG_RESIZE') === 'true';
-  } catch {}
+    const stored = localStorage.getItem('DEBUG_RESIZE');
+    (window as any).DEBUG_RESIZE = stored ? stored === 'true' : true;
+  } catch {
+    (window as any).DEBUG_RESIZE = true;
+  }
 }
 import { Channel, UI } from "@johnlindquist/kit/core/enum";
 import ActionBar from "./components/actionbar";

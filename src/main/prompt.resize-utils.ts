@@ -19,16 +19,25 @@ export function calculateTargetDimensions(
         hasPreview,
         forceHeight,
         forceWidth,
+        // Note: hasInput previously gated shrinking below base for main script,
+        // but that blocked legitimate initial shrinks when choices are small.
+        // Prefer placeholderOnly/totalChoices instead.
         hasInput,
         isMainScript,
-    } = resizeData;
+        placeholderOnly,
+        totalChoices,
+    } = resizeData as ResizeData & { placeholderOnly?: boolean; totalChoices?: number };
 
     const getCachedDimensions = (): Partial<Pick<Rectangle, 'width' | 'height'>> => {
         if (!isMainScript) return {};
         const cachedBounds = getCurrentScreenPromptCache(getMainScriptPath());
+        // Use cached height only when we're effectively in a placeholder state (no actionable content yet).
+        // When choices are present, prefer the measured target height so the window can shrink immediately.
+        const choicesCount = typeof totalChoices === 'number' ? totalChoices : 0;
+        const useCachedHeight = Boolean(placeholderOnly) || choicesCount === 0;
         return {
             width: cachedBounds?.width || getDefaultWidth(),
-            height: hasInput ? undefined : cachedBounds?.height || PROMPT.HEIGHT.BASE,
+            height: useCachedHeight ? (cachedBounds?.height || PROMPT.HEIGHT.BASE) : undefined,
         };
     };
 
@@ -52,8 +61,22 @@ export function calculateTargetDimensions(
 
     const heightLessThanBase = height < PROMPT.HEIGHT.BASE;
 
-    if ((isMainScript && !hasInput && heightLessThanBase) || ([UI.term, UI.editor].includes(ui) && heightLessThanBase)) {
+    // Keep terminal/editor at least base height
+    if ([UI.term, UI.editor].includes(ui) && heightLessThanBase) {
         height = PROMPT.HEIGHT.BASE;
+    }
+
+    // Main menu behavior:
+    // Allow shrinking below base when there are actionable choices (or any choices),
+    // and no placeholder-only state. This restores prior behavior where main could
+    // shrink to fit small lists on initial choice swaps.
+    if (isMainScript && heightLessThanBase) {
+        const choicesCount = typeof totalChoices === 'number' ? totalChoices : 0;
+        const isPlaceholder = Boolean(placeholderOnly);
+        const allowShrink = choicesCount > 0 && !isPlaceholder;
+        if (!allowShrink) {
+            height = PROMPT.HEIGHT.BASE;
+        }
     }
 
     if (hasPreview) {
@@ -75,5 +98,3 @@ export function calculateTargetPosition(
     const newY = cachedBounds?.y ?? currentBounds.y;
     return { x: newX, y: newY };
 }
-
-

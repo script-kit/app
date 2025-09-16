@@ -1,6 +1,6 @@
 // src/renderer/src/state/controllers/ResizeController.tsx
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useLayoutEffect, useRef, useCallback, useEffect } from 'react';
 import { useAtomValue, useStore } from 'jotai';
 import { debounce } from 'lodash-es';
 
@@ -45,16 +45,35 @@ const { ipcRenderer } = window.electron;
 const sendResize = (data: ResizeData) => ipcRenderer.send(AppChannel.RESIZE, data);
 const debounceSendResize = debounce(sendResize, SEND_RESIZE_DEBOUNCE_MS);
 
+const isDebugResizeEnabled = (): boolean => {
+  try {
+    return Boolean((window as any).DEBUG_RESIZE);
+  } catch {
+    return false;
+  }
+};
+
 export const ResizeController: React.FC = () => {
   const store = useStore();
   // Use ref to replace the module-level variable prevTopHeight
   const prevTopHeightRef = useRef(0);
   const lastSigRef = useRef<string>('');
+  const lastPromptIdRef = useRef<string | undefined>(undefined);
+  const lastScriptPathRef = useRef<string | undefined>(undefined);
+  const recheckCountsRef = useRef<Record<string, number>>({});
+  const lastChoicesLengthRef = useRef<number | undefined>(undefined);
+  const pendingChoicesTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastChoicesScheduleKeyRef = useRef<string>('');
 
   // Subscribe to the trigger atom. Updates to this atom signal a resize check is needed.
   const mainHeightTrigger = useAtomValue(_mainHeight);
   // Also re-run when other atoms request a recompute
   const tick = useAtomValue(resizeTickAtom);
+
+  // Ensure we run at least once on each new prompt/script even if heights are identical.
+  const promptDataForKey = useAtomValue(promptDataAtom) as Partial<PromptData> | undefined;
+  const scriptForKey = useAtomValue(scriptAtom) as any;
+  const promptChangeKey = `${promptDataForKey?.id ?? ''}|${scriptForKey?.filePath ?? ''}`;
 
   // Define the resize execution using useCallback for a stable reference.
   // No longer debounced here since resize() already debounces at the API level
@@ -78,11 +97,43 @@ export const ResizeController: React.FC = () => {
 
       const promptData = g(promptDataAtom) as Partial<PromptData>;
       if (!promptData?.scriptPath) return;
+      const currentPromptId = promptData?.id as string | undefined;
+      const currentScriptPath = g(_script)?.filePath as string | undefined;
+
+      // Reset signature dedupe across distinct prompts/scripts so initial sends aren't skipped
+      if (
+        lastPromptIdRef.current !== currentPromptId ||
+        lastScriptPathRef.current !== currentScriptPath
+      ) {
+        log.info(`ResizeController: prompt/script changed. Resetting signature. prevPromptId=${lastPromptIdRef.current} prevScript=${lastScriptPathRef.current} -> promptId=${currentPromptId} script=${currentScriptPath}`);
+        lastSigRef.current = '';
+        lastPromptIdRef.current = currentPromptId;
+        lastScriptPathRef.current = currentScriptPath;
+        lastChoicesLengthRef.current = undefined;
+        lastChoicesScheduleKeyRef.current = '';
+        if (pendingChoicesTimeoutRef.current) {
+          clearTimeout(pendingChoicesTimeoutRef.current);
+          pendingChoicesTimeoutRef.current = null;
+        }
+      }
 
       const ui = g(uiAtom);
       const scoredChoicesLength = g(scoredChoicesAtom)?.length;
+      const currentChoicesLength =
+        typeof scoredChoicesLength === 'number' ? scoredChoicesLength : undefined;
+      const previousChoicesLength = lastChoicesLengthRef.current;
+      const debug = isDebugResizeEnabled();
       const hasPanel = g(_panelHTML) !== '';
       let mh = g(mainHeightAtom);
+
+      log.info(`ResizeController: context`, {
+        promptId: currentPromptId,
+        scriptPath: currentScriptPath,
+        ui,
+        scoredChoicesLength,
+        hasPanel,
+        prevMh: g(prevMh),
+      });
 
       if (promptData?.grid && document.getElementById(ID_MAIN)?.clientHeight > 10) {
         return;
@@ -96,10 +147,64 @@ export const ResizeController: React.FC = () => {
 
         const hasPreview = g(previewCheckAtom);
         const choicesHeight = g(choicesHeightAtom);
+        const listHeight = document.getElementById(ID_LIST)?.offsetHeight || 0;
+        const choicesReady = g(choicesReadyAtom);
+        const prevMainHeightValue = g(prevMh);
+        const shrinkAgainstPrevMain =
+          ui === UI.arg &&
+          !choicesReady &&
+          typeof currentChoicesLength === 'number' &&
+          prevMainHeightValue > 0 &&
+          choicesHeight >= 0 &&
+          choicesHeight < prevMainHeightValue;
+        const shrinkAgainstPrevChoices =
+          ui === UI.arg &&
+          !choicesReady &&
+          typeof previousChoicesLength === 'number' &&
+          typeof currentChoicesLength === 'number' &&
+          currentChoicesLength < previousChoicesLength &&
+          choicesHeight >= 0;
+        const allowPreReadyShrink = shrinkAgainstPrevChoices || shrinkAgainstPrevMain;
+
+        if (debug) {
+          try {
+            log.info('ResizeController: choice measurements', {
+              scoredChoicesLength,
+              prevScoredChoicesLength: lastChoicesLengthRef.current,
+              choicesHeight,
+              listHeight,
+              diffVirtualVsDom: choicesHeight - listHeight,
+              choicesReady,
+              allowPreReadyShrink,
+              shrinkAgainstPrevChoices,
+              shrinkAgainstPrevMain,
+              prevMainHeightValue,
+            });
+          } catch {}
+        }
+
+        log.info(`ResizeController: DOM measures`, { topHeight, footerHeight, hasPreview, choicesHeight });
 
         // Calculate Main Height (mh) based on UI state
         if (ui === UI.arg) {
-          if (!g(choicesReadyAtom)) return;
+          if (!choicesReady && !allowPreReadyShrink) {
+            if (debug) {
+              log.info('ResizeController: choices not ready, skipping resize', {
+                scoredChoicesLength,
+                previousChoicesLength,
+                currentChoicesLength,
+                choicesHeight,
+                listHeight,
+                prevMainHeightValue,
+                shrinkAgainstPrevChoices,
+                shrinkAgainstPrevMain,
+              });
+            }
+            if (typeof currentChoicesLength === 'number') {
+              lastChoicesLengthRef.current = currentChoicesLength;
+            }
+            return;
+          }
 
           if (choicesHeight > PROMPT.HEIGHT.BASE) {
             log.info(`🍃 choicesHeight: ${choicesHeight} > PROMPT.HEIGHT.BASE: ${PROMPT.HEIGHT.BASE}`);
@@ -109,13 +214,25 @@ export const ResizeController: React.FC = () => {
             log.info(`🍃 choicesHeight: ${choicesHeight} <= PROMPT.HEIGHT.BASE: ${PROMPT.HEIGHT.BASE}`);
             mh = choicesHeight;
           }
+
+          if (allowPreReadyShrink && debug) {
+            log.info('ResizeController: overriding choicesReady guard for shrink', {
+              mh,
+              choicesHeight,
+              prevMainHeightValue,
+              previousChoicesLength,
+              currentChoicesLength,
+              shrinkAgainstPrevChoices,
+              shrinkAgainstPrevMain,
+            });
+          }
         }
 
         if (mh === 0 && hasPanel) {
           mh = Math.max(g(itemHeightAtom), g(mainHeightAtom));
         }
 
-        let forceResize = false;
+        let forceResize = Boolean(allowPreReadyShrink);
         let ch = 0;
 
         // Complex DOM measurement based on UI type (Verbatim from original)
@@ -143,12 +260,14 @@ export const ResizeController: React.FC = () => {
             }
 
             if (ui === UI.arg) {
-                forceResize = ch === 0 || Boolean(ch < choicesHeight) || hasPanel;
+                const argForce = ch === 0 || Boolean(ch < choicesHeight) || hasPanel;
+                forceResize = forceResize || argForce;
             } else if (ui === UI.div) {
                 forceResize = true;
             } else {
                 // Use the prevMh atom for comparison (as in the original code)
-                forceResize = Boolean(ch > g(prevMh));
+                const nonArgForce = Boolean(ch > g(prevMh));
+                forceResize = forceResize || nonArgForce;
             }
         } catch (error) {
             log.error('DOM measurement error during resize', error);
@@ -189,6 +308,8 @@ export const ResizeController: React.FC = () => {
         mh = computeOut.mainHeight;
         let forceHeight = computeOut.forceHeight;
 
+        log.info(`ResizeController: computeResize output`, { mainHeight: mh, forceHeight, forceResizeCompute: computeOut.forceResize });
+
         // If actions overlay is open, ensure window is at least default/base height
         try {
           const overlayOpen = g(actionsOverlayOpenAtom) as boolean;
@@ -222,7 +343,7 @@ export const ResizeController: React.FC = () => {
             id: promptData?.id || 'missing',
             pid: (window as any).pid || 0,
             reason,
-            scriptPath: g(_script)?.filePath,
+            scriptPath: currentScriptPath,
             placeholderOnly,
             topHeight,
             ui,
@@ -257,18 +378,32 @@ export const ResizeController: React.FC = () => {
           const sig = JSON.stringify(sigObj);
           const justOpened = Boolean(g(justOpenedAtom));
           const inflight = g(resizeInflightAtom);
+          log.info('ResizeController: signature check', {
+            sig,
+            lastSig: lastSigRef.current,
+            justOpened,
+            inflight,
+            urgentShrink,
+          });
           if (!justOpened && !urgentShrink && sig === lastSigRef.current) {
             log.info('ResizeController: signature unchanged; skipping send');
             return;
           }
-        } catch {}
+        } catch (e) {
+          log.info('ResizeController: signature check error', { message: (e as Error)?.message });
+        }
 
         // Inflight guard: avoid duplicate sends until MAIN_ACK clears it
         // Exception: allow urgent shrink or forced resizes to pass through
         {
           const inflight = g(resizeInflightAtom);
           if (inflight && !(urgentShrink || forceResize || forceHeight)) {
-            log.info('ResizeController: inflight true, skipping send (no urgent shrink/force)');
+            log.info('ResizeController: inflight true, skipping send (no urgent shrink/force)', {
+              inflight,
+              urgentShrink,
+              forceResize,
+              forceHeight,
+            });
             return;
           }
         }
@@ -277,8 +412,10 @@ export const ResizeController: React.FC = () => {
         store.set(resizeInflightAtom, true);
         debounceSendResize.cancel();
         if (g(justOpenedAtom) && !promptData?.scriptlet) {
+          log.info('ResizeController: sending debounced resize', { pid: data.pid, id: data.id, mainHeight: data.mainHeight, reason: data.reason });
           debounceSendResize(data);
         } else {
+          log.info('ResizeController: sending resize', { pid: data.pid, id: data.id, mainHeight: data.mainHeight, reason: data.reason });
           sendResize(data);
         }
 
@@ -288,10 +425,91 @@ export const ResizeController: React.FC = () => {
           const sigObj = { ui, mh, topHeight, footerHeight, hasPanel, hasPreview };
           lastSigRef.current = JSON.stringify(sigObj);
         } catch {}
+
+        try {
+          const prevChoicesLength = lastChoicesLengthRef.current;
+          const nextChoicesLength = typeof scoredChoicesLength === 'number' ? scoredChoicesLength : 0;
+          lastChoicesLengthRef.current = nextChoicesLength;
+          const choicesChanged =
+            typeof prevChoicesLength === 'number' && prevChoicesLength !== nextChoicesLength;
+          if (choicesChanged) {
+            const direction = nextChoicesLength < prevChoicesLength ? 'SHRINK' : 'GROW';
+            const scheduleKey = `${currentPromptId ?? ''}|${nextChoicesLength}|${direction}`;
+            if (lastChoicesScheduleKeyRef.current !== scheduleKey) {
+              if (pendingChoicesTimeoutRef.current) {
+                clearTimeout(pendingChoicesTimeoutRef.current);
+                pendingChoicesTimeoutRef.current = null;
+              }
+              lastChoicesScheduleKeyRef.current = scheduleKey;
+              const delay = direction === 'SHRINK' ? 48 : 96;
+              if (debug) {
+                log.info('ResizeController: scheduling follow-up for choices length change', {
+                  direction,
+                  delay,
+                  from: prevChoicesLength,
+                  to: nextChoicesLength,
+                  scheduleKey,
+                });
+              }
+              pendingChoicesTimeoutRef.current = setTimeout(() => {
+                pendingChoicesTimeoutRef.current = null;
+                if (lastChoicesScheduleKeyRef.current === scheduleKey) {
+                  lastChoicesScheduleKeyRef.current = '';
+                }
+                try {
+                  executeResize(`CHOICES_LENGTH_${direction}`);
+                } catch (error) {
+                  if (debug) {
+                    log.info('ResizeController: follow-up resize threw', {
+                      message: (error as Error)?.message,
+                    });
+                  }
+                }
+              }, delay);
+            }
+            if (debug) {
+              log.info('ResizeController: recorded choices length change', {
+                prevChoicesLength,
+                nextChoicesLength,
+                direction,
+                scheduleKey,
+              });
+            }
+          }
+          if (!choicesChanged && debug) {
+            log.info('ResizeController: choices length unchanged after send', {
+              prevChoicesLength,
+              nextChoicesLength,
+            });
+          }
+        } catch {}
+
+        // For just-opened arg UI, schedule a couple of quick rechecks to pick up
+        // late-arriving small choice heights and ensure shrink applies even if
+        // initial measurements were taken early.
+        try {
+          const isArg = ui === UI.arg;
+          const isJustOpened = Boolean(g(justOpenedAtom));
+          const key = `${currentPromptId ?? ''}`;
+          if (isArg && isJustOpened) {
+            const count = recheckCountsRef.current[key] || 0;
+            if (count < 2) {
+              recheckCountsRef.current[key] = count + 1;
+              const delay = count === 0 ? 50 : 120; // two quick passes
+              log.info('ResizeController: scheduling recheck', { delayMs: delay, attempt: recheckCountsRef.current[key], promptId: key });
+              setTimeout(() => {
+                try { executeResize('RECHECK'); } catch {}
+              }, delay);
+            }
+          } else if (!isJustOpened && currentPromptId) {
+            // Reset recheck counts once prompt settles
+            recheckCountsRef.current[currentPromptId] = 0;
+          }
+        } catch {}
         // Failsafe: clear inflight if no ACK arrives
         setTimeout(() => {
-          try { store.set(resizeInflightAtom, false); } catch {}
-        }, 300);
+        try { store.set(resizeInflightAtom, false); } catch {}
+      }, 300);
 
       // --- End of restored logic ---
   },
@@ -299,13 +517,32 @@ export const ResizeController: React.FC = () => {
 );
 
   // Trigger the execution when the mainHeightTrigger value changes or tick increments
-  useEffect(() => {
+  // Use layout effect so DOM measurements + IPC happen before paint
+  useLayoutEffect(() => {
+    log.info('ResizeController: tick/mainHeight trigger');
     executeResize('CONTROLLER_TRIGGER');
     return () => {
       // Only debounceSendResize needs cancellation now
       debounceSendResize.cancel();
     };
   }, [executeResize, mainHeightTrigger, tick]);
+
+  // Also trigger once when the prompt/script changes to avoid missing the first shrink
+  useLayoutEffect(() => {
+    log.info('ResizeController: promptChangeKey trigger', { promptChangeKey });
+    executeResize('PROMPT_CHANGED');
+    // no cleanup needed
+  }, [executeResize, promptChangeKey]);
+
+  useEffect(() => {
+    return () => {
+      if (pendingChoicesTimeoutRef.current) {
+        clearTimeout(pendingChoicesTimeoutRef.current);
+        pendingChoicesTimeoutRef.current = null;
+      }
+      lastChoicesScheduleKeyRef.current = '';
+    };
+  }, []);
 
   return null; // Controller components don't render anything
 };

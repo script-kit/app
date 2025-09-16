@@ -205,6 +205,14 @@ import {
 const { ipcRenderer } = window.electron;
 const log = createLogger('jotai.ts');
 
+const isDebugResizeEnabled = (): boolean => {
+  try {
+    return Boolean((window as any).DEBUG_RESIZE);
+  } catch {
+    return false;
+  }
+};
+
 // =================================================================================================
 // COMPLEX WIRING LOGIC
 // This section contains the complex atom wiring that couldn't be easily extracted
@@ -716,9 +724,37 @@ export const scoredChoicesAtom = atom(
     }
 
     const itemHeight = g(itemHeightAtom);
+    const prevVirtualHeight = g(choicesHeightAtom);
     const choicesHeight = calcVirtualListHeight(cs as any, itemHeight, MAX_VLIST_HEIGHT);
 
+    if (isDebugResizeEnabled()) {
+      try {
+        log.info('jotai: calcVirtualListHeight', {
+          prevVirtualHeight,
+          nextVirtualHeight: choicesHeight,
+          itemHeight,
+          choicesLength: cs.length,
+          promptId: g(promptDataAtom)?.id,
+          ui: g(uiAtom),
+        });
+      } catch {}
+    }
+
     s(choicesHeightAtom, choicesHeight);
+    try {
+      // Nudge the resize scheduler explicitly when choices height changes so the controller runs,
+      // even if _mainHeight hasn't changed yet.
+      s(scheduleResizeAtom, 'CHOICES_HEIGHT');
+      if (isDebugResizeEnabled()) {
+        try {
+          log.info('jotai: scheduleResize after choices height set', {
+            prevVirtualHeight,
+            nextVirtualHeight: choicesHeight,
+            choicesLength: cs.length,
+          });
+        } catch {}
+      }
+    } catch {}
 
     // Adjust main height based on UI mode
     const ui = g(uiAtom);
