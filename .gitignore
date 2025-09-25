@@ -79,3 +79,4 @@ test-*.js
 src/main/*-summary.md
 src/main/*-tests.md
 *.tsbuildinfo
+.dist-app
