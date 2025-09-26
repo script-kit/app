@@ -126,8 +126,8 @@ const runPnpm = async (
 };
 
 async function stageAppPayload() {
-  console.log(`🧹 Preparing staging directory at ${stagingPath}`);
-  await fsExtra.emptyDir(stagingPath);
+	console.log(`🧹 Preparing staging directory at ${stagingPath}`);
+	await fsExtra.emptyDir(stagingPath);
 
   console.log("📄 Preparing package.json and lockfiles for isolated install");
   const packageJsonPath = "package.json";
@@ -214,6 +214,17 @@ async function stageAppPayload() {
 		}
 	}
 
+	console.log("📁 Materializing symlinks in node_modules for packaging");
+	const nodeModulesPath = path.join(stagingPath, "node_modules");
+	const materializedPath = `${nodeModulesPath}.materialized`;
+	await fsExtra.copy(nodeModulesPath, materializedPath, {
+		dereference: true,
+		errorOnExist: false,
+	});
+	await fsExtra.remove(nodeModulesPath);
+	await fsExtra.move(materializedPath, nodeModulesPath, { overwrite: true });
+	await fsExtra.remove(path.join(nodeModulesPath, ".pnpm"));
+
 	return stagingPath;
 }
 
@@ -255,15 +266,9 @@ const config: Configuration = {
 		output: path.resolve("release"),
 		buildResources: path.resolve("build"),
 	},
-	asar: false,
+	asar: true,
 	asarUnpack,
 	files: ["**/*"],
-	extraResources: [
-		{
-			from: path.join(stagedAppPath, "node_modules"),
-			to: "app/node_modules",
-		},
-	],
 	nsis: {
 		oneClick: false,
 		perMachine: false,
@@ -339,6 +344,7 @@ try {
 			`Optional dependencies before: ${JSON.stringify(pkg.optionalDependencies, null, 2)}`,
 		);
 	}
+	await fsExtra.remove(config.directories.output as string);
 	const result = await build({
 		config,
 		publish,
