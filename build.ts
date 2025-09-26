@@ -223,7 +223,10 @@ async function stageAppPayload() {
 	});
 	await fsExtra.remove(nodeModulesPath);
 	await fsExtra.move(materializedPath, nodeModulesPath, { overwrite: true });
-	await fsExtra.remove(path.join(nodeModulesPath, ".pnpm"));
+	await fsExtra.copy(path.join(process.cwd(), "node_modules", "pnpm"), path.join(nodeModulesPath, "pnpm"), {
+		dereference: true,
+		errorOnExist: false,
+	});
 
 	return stagingPath;
 }
