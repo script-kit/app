@@ -76,6 +76,9 @@ jobs:
     steps:
       - name: Checkout git repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Debug - Echo kit_tag from previous job
         run: |
