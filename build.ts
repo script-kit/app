@@ -217,26 +217,35 @@ async function stageAppPayload() {
 	}
 
 	console.log("🔨 Rebuilding native modules against Electron", electronVersion);
-	await runPnpm(
-		[
-			"exec",
-			"electron-rebuild",
-			"--version",
-			electronVersion,
-			"--arch",
-			arch,
-			"--platform",
-			platform,
-			"--force",
-		],
-		{
-			cwd: stagingPath,
-			env: {
-				HUSKY: "0",
-				HUSKY_SKIP_INSTALL: "1",
+	try {
+		await runPnpm(
+			[
+				"exec",
+				"electron-rebuild",
+				"--version",
+				electronVersion,
+				"--arch",
+				arch,
+				"--platform",
+				platform,
+				"--force",
+				"--module-dir",
+				stagingPath,
+			],
+			{
+				cwd: process.cwd(),
+				env: {
+					HUSKY: "0",
+					HUSKY_SKIP_INSTALL: "1",
+				},
 			},
-		},
-	);
+		);
+	} catch (error) {
+		console.warn(
+			"⚠️  electron-rebuild failed from staging; relying on electron-builder's native rebuild",
+			error,
+		);
+	}
 
 	console.log("📁 Materializing symlinks in node_modules for packaging");
   const nodeModulesPath = path.join(stagingPath, "node_modules");
@@ -286,16 +295,16 @@ switch (platform) {
 // Note: electron-builder automatically loads electron-builder.yml if it exists
 // The yml config will be merged with the config object below
 const config: Configuration = {
-  appId: "app.scriptkit", // Updated appId from package.json
-  artifactName: "${productName}-macOS-${version}-${arch}.${ext}",
-  productName: "Script Kit", // Updated productName from package.json
-  directories: {
-    output: path.resolve("release"),
-    buildResources: path.resolve("build"),
-  },
-  asar: true,
-  asarUnpack,
-  files: ["**/*"],
+	appId: "app.scriptkit", // Updated appId from package.json
+	artifactName: "${productName}-macOS-${version}-${arch}.${ext}",
+	productName: "Script Kit", // Updated productName from package.json
+	directories: {
+		output: path.resolve("release"),
+		buildResources: path.resolve("build"),
+	},
+	asar: false,
+	asarUnpack,
+	files: ["**/*"],
   nsis: {
     oneClick: false,
     perMachine: false,
