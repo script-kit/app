@@ -207,16 +207,38 @@ async function stageAppPayload() {
     }
   }
 
-  for (const pkg of requiredRuntimePackages) {
-    const pkgPath = modulePath(pkg);
-    if (!(await fsExtra.pathExists(pkgPath))) {
-      throw new Error(
-        `Required runtime package '${pkg}' is missing from staging directory at ${pkgPath}`,
-      );
-    }
-  }
+	for (const pkg of requiredRuntimePackages) {
+		const pkgPath = modulePath(pkg);
+		if (!(await fsExtra.pathExists(pkgPath))) {
+			throw new Error(
+				`Required runtime package '${pkg}' is missing from staging directory at ${pkgPath}`,
+			);
+		}
+	}
 
-  console.log("📁 Materializing symlinks in node_modules for packaging");
+	console.log("🔨 Rebuilding native modules against Electron", electronVersion);
+	await runPnpm(
+		[
+			"exec",
+			"electron-rebuild",
+			"--version",
+			electronVersion,
+			"--arch",
+			arch,
+			"--platform",
+			platform,
+			"--force",
+		],
+		{
+			cwd: stagingPath,
+			env: {
+				HUSKY: "0",
+				HUSKY_SKIP_INSTALL: "1",
+			},
+		},
+	);
+
+	console.log("📁 Materializing symlinks in node_modules for packaging");
   const nodeModulesPath = path.join(stagingPath, "node_modules");
   const materializedPath = `${nodeModulesPath}.materialized`;
   await fsExtra.copy(nodeModulesPath, materializedPath, {

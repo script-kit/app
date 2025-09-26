@@ -78,7 +78,56 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          fetch-tags: true
+
+      - name: Sync tags with remote
+        run: |
+          git fetch origin --tags --force
+
+      - name: Remove orphaned higher version tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          git fetch origin --prune
+
+          last_branch_tag=$(git tag -l 'v*' --merged origin/main --sort=-v:refname | head -n1 || true)
+          if [ -z "$last_branch_tag" ]; then
+            last_branch_version="0.0.0"
+          else
+            last_branch_version="${last_branch_tag#v}"
+          fi
+
+          has_origin_next=0
+          if git show-ref --verify --quiet refs/remotes/origin/next; then
+            has_origin_next=1
+          fi
+
+          version_gt() {
+            [ "$1" != "$2" ] && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1)" = "$1" ]
+          }
+
+          while IFS= read -r tag; do
+            tag_version="${tag#v}"
+
+            if ! version_gt "$tag_version" "$last_branch_version"; then
+              continue
+            fi
+
+            tag_commit=$(git rev-list -n1 "$tag" || true)
+
+            if [ -n "$tag_commit" ] && git merge-base --is-ancestor "$tag_commit" origin/main; then
+              continue
+            fi
+
+            if [ "$has_origin_next" -eq 1 ] && [ -n "$tag_commit" ] && git merge-base --is-ancestor "$tag_commit" origin/next; then
+              continue
+            fi
+
+            echo "Removing orphaned tag $tag (commit $tag_commit)"
+            git push origin ":refs/tags/$tag"
+            git tag -d "$tag" || true
+          done < <(git tag -l 'v*' --sort=-v:refname)
 
       - name: Debug - Echo kit_tag from previous job
         run: |
