@@ -21,11 +21,12 @@
       "mcp__deepwiki__ask_question",
       "Bash(npx tsc:*)",
       "Bash(mkdir:*)",
-      "Bash(gemini:*)"
+      "Bash(gemini:*)",
+      "WebFetch(domain:into.md)",
+      "Bash(search:*)"
     ],
     "deny": []
   },
-
   "statusLine": {
     "type": "command",
     "command": "npx -y @owloops/claude-powerline@latest --style=powerline"
