@@ -885,23 +885,44 @@ export default function Editor() {
 
           try {
             // Use simpler addCommand like the working version did
-            const disposable = editor.addCommand(keybinding, () => {
-              console.log('[EDITOR COMMAND] Triggered!', { 
-                shortcut: flagData.shortcut, 
+            const commandId = editor.addCommand(keybinding, () => {
+              console.log('[EDITOR COMMAND] Triggered!', {
+                shortcut: flagData.shortcut,
                 flag: flagKey,
                 timestamp: Date.now()
               });
-              
+
               // setFlagByShortcut will handle setting either focusedActionAtom (for actions with onAction)
               // or flaggedChoiceValueAtom/focusedFlagValueAtom (for normal flags)
               setFlagByShortcut(flagData.shortcut);
               // Always submit - the submitValueAtom will check if it's an action with hasAction
               submitInput();
             });
-            
-            console.log('[EDITOR KEYBINDINGS] Successfully registered command:', actionId, 'disposable:', disposable);
-            if (disposable) {
-              disposables.push({ dispose: () => editor.removeCommand(keybinding) });
+
+            console.log('[EDITOR KEYBINDINGS] Successfully registered command:', actionId, 'commandId:', commandId);
+            if (commandId) {
+              const editorAny = editor as any;
+
+              const disposeCommand = () => {
+                try {
+                  if (typeof editorAny.removeCommand === 'function') {
+                    editorAny.removeCommand(commandId);
+                    return;
+                  }
+
+                  const keybindingService = editorAny?._standaloneKeybindingService;
+                  if (keybindingService?.removeDynamicKeybinding) {
+                    keybindingService.removeDynamicKeybinding(commandId);
+                  }
+                } catch (disposeError) {
+                  console.error('[EDITOR KEYBINDINGS] Failed to dispose command:', {
+                    commandId,
+                    error: disposeError instanceof Error ? disposeError.message : disposeError,
+                  });
+                }
+              };
+
+              disposables.push({ dispose: disposeCommand });
             }
             commandIdsRef.current.push(actionId);
           } catch (error) {
