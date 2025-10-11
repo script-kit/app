@@ -123,7 +123,8 @@ export default function Log() {
       const lineNumber = mountEditor.getModel()?.getLineCount() || 0;
 
       if ((config as EditorOptions).scrollTo === 'bottom') {
-        const column = (mountEditor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+        const lineContent = mountEditor?.getModel()?.getLineContent(lineNumber) ?? '';
+        const column = lineContent.length + 1;
 
         const position = { lineNumber, column };
         // console.log({ position });

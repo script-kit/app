@@ -333,7 +333,8 @@ export default function Editor() {
       const lineNumber = mountEditor.getModel()?.getLineCount() || 0;
 
       if ((config as EditorOptions).scrollTo === 'bottom') {
-        const column = (mountEditor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+        const lineContent = mountEditor?.getModel()?.getLineContent(lineNumber) ?? '';
+        const column = lineContent.length + 1;
 
         const position = { lineNumber, column };
         // console.log({ position });
@@ -392,7 +393,8 @@ export default function Editor() {
     if (editor && (config as EditorOptions).scrollTo === 'bottom') {
       const lineNumber = editor.getModel()?.getLineCount() || 0;
 
-      const column = (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+      const lineContent = editor?.getModel()?.getLineContent(lineNumber) ?? '';
+      const column = lineContent.length + 1;
 
       const position = { lineNumber, column };
       editor.setPosition(position);
@@ -406,7 +408,8 @@ export default function Editor() {
       if (scrollTo === 'bottom') {
         const lineNumber = editor.getModel()?.getLineCount() || 0;
 
-        const column = (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+        const lineContent = editor?.getModel()?.getLineContent(lineNumber) ?? '';
+        const column = lineContent.length + 1;
 
         const position = { lineNumber, column };
         editor.setPosition(position);
@@ -432,7 +435,8 @@ export default function Editor() {
       const lineNumber = editor.getModel()?.getLineCount() || 0;
 
       if ((config as EditorOptions).scrollTo === 'bottom') {
-        const column = (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+        const lineContent = editor?.getModel()?.getLineContent(lineNumber) ?? '';
+        const column = lineContent.length + 1;
 
         const position = { lineNumber, column };
         editor.setPosition(position);
@@ -730,7 +734,8 @@ export default function Editor() {
         editor.setScrollPosition({ scrollTop: 0 });
       } else if (position === 'bottom') {
         const lineNumber = editor.getModel()?.getLineCount() || 0;
-        const column = (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+        const lineContent = editor?.getModel()?.getLineContent(lineNumber) ?? '';
+        const column = lineContent.length + 1;
         const pos = { lineNumber, column };
         editor.setPosition(pos);
         editor.revealPosition(pos);
