@@ -2,11 +2,16 @@ import path from 'node:path';
 import { KIT_FIRST_PATH, kenvPath, kitDotEnvPath, kitPath } from '@johnlindquist/kit/core/utils';
 import { app } from 'electron';
 import { snapshot } from 'valtio';
+import { getCleanShellEnv } from './shell';
 import { kitState, kitStore } from './state';
 import { getVersion } from './version';
 
 export const createEnv = (): Readonly<Partial<Record<string, string>>> => {
   const PATH = KIT_FIRST_PATH + path.delimiter + process?.env?.PATH;
+
+  // Get cached clean shell environment for external applications
+  const cleanShellEnv = getCleanShellEnv();
+  const kitCleanShellEnv = cleanShellEnv ? JSON.stringify(cleanShellEnv.env) : '';
 
   return {
     ...process.env,
@@ -21,6 +26,7 @@ export const createEnv = (): Readonly<Partial<Record<string, string>>> => {
     PATH,
     KIT_APP_PATH: app.getAppPath(),
     KIT_ACCESSIBILITY: kitState.isMac && kitStore.get('accessibilityAuthorized') ? 'true' : 'false',
+    KIT_CLEAN_SHELL_ENV: kitCleanShellEnv, // Clean shell env for external apps
     ...snapshot(kitState.kenvEnv),
   };
 };

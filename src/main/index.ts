@@ -106,7 +106,7 @@ import { startServer } from './server';
 import { startSettings as setupSettings } from './settings';
 import { type NpmConfig, setNpmrcConfig } from './setup/npm';
 import { getPnpmPath } from './setup/pnpm';
-import { loadShellEnv } from './shell';
+import { loadAndCacheShellEnv, loadShellEnv } from './shell';
 import shims, { loadSupportedOptionalLibraries } from './shims';
 import { handleKeymapChange, registerKillLatestShortcut, shortcutsSelfCheck, updateMainShortcut } from './shortcuts';
 import { startSK } from './sk';
@@ -1251,6 +1251,7 @@ const startHealthMonitor = async () => {
 
 app
   .whenReady()
+  .then(loadAndCacheShellEnv) // Cache clean shell env BEFORE Kit modifications
   .then(loadShellEnv)
   .then(loadSupportedOptionalLibraries)
   .then(async () => {
