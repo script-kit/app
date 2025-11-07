@@ -111,6 +111,7 @@ import { IPCController } from "./state/controllers/IPCController";
 import { FocusController } from "./state/controllers/FocusController";
 import { ChoicesController } from "./state/controllers/ChoicesController";
 import { UIController } from "./state/controllers/UIController";
+import { ScrollController } from "./state/scroll/ScrollController";
 
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
@@ -695,6 +696,7 @@ export default function App() {
 			<FocusController />
 			<ChoicesController />
 			<UIController />
+			<ScrollController />
 			{
 				<div
 					id="main-container"

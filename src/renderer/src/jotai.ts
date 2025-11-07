@@ -29,6 +29,9 @@ import { unstable_batchedUpdates } from 'react-dom';
 // Import all modularized atoms
 export * from './state/atoms';
 
+// Import unified scroll service
+import { scrollRequestAtom } from './state/scroll';
+
 // Import specific atoms we need to wire
 import {
   _open,
@@ -110,7 +113,6 @@ import {
   listAtom,
   flagsListAtom,
   scrollToIndexAtom,
-  requiresScrollAtom,
   promptBoundsAtom,
   isWindowAtom,
   justOpenedAtom,
@@ -158,8 +160,6 @@ import {
   previewEnabledAtom,
   previewCheckAtom,
   promptResizedByHumanAtom,
-  scrollToItemAtom,
-  flagsRequiresScrollAtom,
   currentChoiceHeightsAtom,
   prevMh,
   cachedAtom,
@@ -248,7 +248,6 @@ export const openAtom = atom(
       s(progressAtom, 0);
       s(editorConfigAtom, {});
       s(promptDataAtom, null);
-      s(requiresScrollAtom, -1);
       s(pidAtom, 0);
       s(_chatMessagesAtom, []);
       s(runningAtom, false);
@@ -686,6 +685,8 @@ export const scoredChoicesAtom = atom(
       const defaultChoiceId = g(defaultChoiceIdAtom);
       const prevIndex = g(prevIndexAtom);
       const input = g(inputAtom);
+      const gridReady = g(gridReadyAtom);
+      const scrollContext = gridReady ? 'choices-grid' : 'choices-list';
 
       if (defaultValue || defaultChoiceId) {
         const i = cs.findIndex(
@@ -697,24 +698,45 @@ export const scoredChoicesAtom = atom(
           if (foundChoice?.id) {
             s(indexAtom, i);
             s(focusedChoiceAtom, foundChoice);
-            s(requiresScrollAtom, i);
+            s(scrollRequestAtom, {
+              context: scrollContext,
+              target: i,
+              reason: 'default-value',
+            });
           }
         }
         s(defaultValueAtom, '');
         s(defaultChoiceIdAtom, '');
       } else if (input.length > 0) {
-        s(requiresScrollAtom, g(requiresScrollAtom) > 0 ? 0 : -1);
+        // When user types, scroll to top
+        s(scrollRequestAtom, {
+          context: scrollContext,
+          target: 0,
+          reason: 'choices-updated',
+        });
         if (changed) {
           s(indexAtom, 0);
         }
       } else if (prevIndex && !g(selectedAtom)) {
-        let adjustForGroup = prevIndex;
-        if (cs?.[prevIndex - 1]?.item?.skip) {
-          adjustForGroup -= 1;
+        // Restore previous position unless choices were preloaded
+        if (!wereChoicesPreloaded) {
+          let adjustForGroup = prevIndex;
+          if (cs?.[prevIndex - 1]?.item?.skip) {
+            adjustForGroup -= 1;
+          }
+          s(scrollRequestAtom, {
+            context: scrollContext,
+            target: adjustForGroup,
+            reason: 'restore',
+          });
         }
-        s(requiresScrollAtom, wereChoicesPreloaded ? -1 : adjustForGroup);
-      } else {
-        s(requiresScrollAtom, wereChoicesPreloaded ? -1 : 0);
+      } else if (!wereChoicesPreloaded) {
+        // Scroll to top for new choices
+        s(scrollRequestAtom, {
+          context: scrollContext,
+          target: 0,
+          reason: 'choices-updated',
+        });
       }
     } else {
       s(focusedChoiceAtom, noChoice);
@@ -782,13 +804,14 @@ export const indexAtom = atom(
     const clampedIndex = a < 0 ? cs.length - 1 : a >= cs.length ? 0 : a;
 
     const list = g(listAtom);
-    const requiresScroll = g(requiresScrollAtom);
     const direction = g(directionAtom);
 
     let calcIndex = clampedIndex;
     let choice = cs?.[calcIndex]?.item;
 
-    if (choice?.id === prevChoiceIndexId) return;
+    // Removed early return that was causing scroll to be skipped
+    // when wrapping to the same choice ID
+    // if (choice?.id === prevChoiceIndexId) return;
 
     if (g(allSkipAtom)) {
       s(focusedChoiceAtom, noChoice);
@@ -810,11 +833,24 @@ export const indexAtom = atom(
     }
 
     const gridReady = g(gridReadyAtom);
-    if (list && !gridReady) {
+    if (list || gridReady) {
+      // Determine context based on grid mode
+      const scrollContext = gridReady ? 'choices-grid' : 'choices-list';
+
+      // Always scroll to keep focused item visible, matching old requiresScroll === -1 behavior
       if (cs[0]?.item?.skip && calcIndex === 1) {
-        s(scrollToItemAtom, { index: 0, reason: 'indexAtom - skip adjustment' });
-      } else if (requiresScroll === -1) {
-        s(scrollToItemAtom, { index: calcIndex, reason: 'indexAtom - requiresScroll === -1' });
+        s(scrollRequestAtom, {
+          context: scrollContext,
+          target: 0,
+          reason: 'skip-adjustment',
+        });
+      } else {
+        // Always scroll on navigation to keep focused item in view
+        s(scrollRequestAtom, {
+          context: scrollContext,
+          target: calcIndex,
+          reason: 'navigation',
+        });
       }
     }
 
@@ -1007,7 +1043,6 @@ export const flagsIndexAtom = atom(
     const clampedIndex = a < 0 ? cs.length - 1 : a >= cs.length ? 0 : a;
 
     const list = g(flagsListAtom);
-    const requiresScroll = g(flagsRequiresScrollAtom);
     const direction = g(directionAtom);
 
     let calcIndex = clampedIndex;
@@ -1022,12 +1057,22 @@ export const flagsIndexAtom = atom(
       s(flagsIndex, calcIndex);
     }
 
+    // Request scroll via unified scroll service
     if (list) {
-      if (requiresScroll === -1) {
-        list.scrollToItem(calcIndex);
-      }
+      // Always scroll to keep focused item visible, matching old requiresScroll === -1 behavior
       if (cs[0]?.item?.skip && calcIndex === 1) {
-        list.scrollToItem(0);
+        s(scrollRequestAtom, {
+          context: 'flags-list',
+          target: 0,
+          reason: 'skip-adjustment',
+        });
+      } else {
+        // Always scroll on navigation to keep focused item in view
+        s(scrollRequestAtom, {
+          context: 'flags-list',
+          target: calcIndex,
+          reason: 'navigation',
+        });
       }
     }
 

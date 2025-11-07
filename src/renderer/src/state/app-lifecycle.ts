@@ -32,7 +32,7 @@ import { editorConfigAtom } from './atoms/editor';
 import { promptData } from './prompt-data';
 // Import from facade for gradual migration
 import { promptDataAtom } from './facade';
-import { requiresScrollAtom, scrollToIndexAtom } from './ui-layout';
+import { scrollToIndexAtom } from './ui-layout';
 import { _chatMessagesAtom } from './atoms/chat';
 import { miniShortcutsHoveredAtom } from './utils';
 import { audioDotAtom, webcamStreamAtom } from './atoms/media';
@@ -64,7 +64,6 @@ export const openAtom = atom(
       s(progressAtom, 0);
       s(editorConfigAtom, {});
       s(promptData, null);
-      s(requiresScrollAtom, -1);
       s(pidAtom, 0);
       s(_chatMessagesAtom, []);
       s(runningAtom, false);

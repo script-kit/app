@@ -12,9 +12,9 @@ import {
   listAtom,
   mouseEnabledAtom,
   promptDataAtom,
-  requiresScrollAtom,
   scoredChoicesAtom,
 } from '../jotai';
+import { registerScrollRefAtom, gridDimensionsAtom, setScrollingAtom } from '../state/scroll';
 import ChoiceButton from './button';
 import useListNav from '../hooks/useListNav';
 import { createLogger } from '../log-utils';
@@ -32,7 +32,6 @@ function calculateColumnWidth(totalWidth: number, columnCount: number, cellGap: 
   return Math.max(calculatedColumnWidth, 1);
 }
 
-let previousIndex = 0;
 export default function ChoiceList({ width, height }: ListProps) {
   const listRef = useRef<null | List>(null);
   const [choices] = useAtom(scoredChoicesAtom);
@@ -40,7 +39,6 @@ export default function ChoiceList({ width, height }: ListProps) {
   const itemHeight = useAtomValue(itemHeightAtom);
   const promptData = useAtomValue(promptDataAtom);
   const [list, setList] = useAtom(listAtom);
-  const [requiresScroll, setRequiresScroll] = useAtom(requiresScrollAtom);
   const [isScrolling, setIsScrolling] = useAtom(isScrollingAtom);
   const setMouseEnabled = useSetAtom(mouseEnabledAtom);
   const gridReady = useAtomValue(gridReadyAtom);
@@ -55,38 +53,24 @@ export default function ChoiceList({ width, height }: ListProps) {
     loop: true,
   });
 
+  const registerScrollRef = useSetAtom(registerScrollRefAtom);
+  const setGridDimensions = useSetAtom(gridDimensionsAtom);
+  const setScrolling = useSetAtom(setScrollingAtom);
+
   const handleListRef = useCallback(
     (node) => {
       if (node) {
         setList(node);
         listRef.current = node;
+        // Register with scroll service
+        registerScrollRef({ context: gridReady ? 'choices-grid' : 'choices-list', ref: node });
       }
     },
-    [setList],
+    [setList, registerScrollRef, gridReady],
   );
 
-  useEffect(() => {
-    if (!listRef?.current || promptData?.grid) return;
-
-    const scroll = () => {
-      if (requiresScroll === -1) return;
-
-      setIndex(requiresScroll);
-      log.verbose(`📜 Scrolling to ${requiresScroll}`);
-
-      if (listRef.current) {
-        listRef.current.scrollToItem(requiresScroll, requiresScroll > 0 ? 'auto' : 'start');
-      }
-    };
-
-    scroll();
-    requestAnimationFrame(() => {
-      if (listRef?.current) {
-        scroll();
-        setRequiresScroll(-1);
-      }
-    });
-  }, [requiresScroll, choices.length, setIndex, setRequiresScroll, promptData?.grid]);
+  // REMOVED: Old scroll effect that watched requiresScrollAtom
+  // Scrolling is now handled by the unified scroll service
 
   useEffect(() => {
     if (!listRef?.current) return;
@@ -143,7 +127,30 @@ ${containerClassName}
     };
   }, [choices.length, width, promptData?.columnWidth, promptData?.rowHeight, promptData?.columns, CELL_GAP]);
 
+  // Register grid dimensions with scroll service
+  useEffect(() => {
+    if (gridReady && gridDimensions) {
+      setGridDimensions({
+        columnCount: gridDimensions.columnCount,
+        rowHeight: gridDimensions.rowHeight,
+        columnWidth: gridDimensions.columnWidth,
+      });
+    }
+  }, [gridReady, gridDimensions, setGridDimensions]);
+
   const gridRef = useRef<Grid>(null);
+
+  // Register grid ref with scroll service
+  useEffect(() => {
+    if (gridRef?.current && gridReady) {
+      registerScrollRef({ context: 'choices-grid', ref: gridRef.current });
+      gridRef.current.resetAfterIndices({
+        columnIndex: 0,
+        rowIndex: 0,
+        shouldForceUpdate: true,
+      });
+    }
+  }, [gridRef.current, gridReady, registerScrollRef]);
 
   useEffect(() => {
     if (gridRef?.current) {
@@ -167,16 +174,6 @@ ${containerClassName}
 
   const currentColumn = index % gridDimensions.columnCount;
   const currentRow = Math.floor(index / gridDimensions.columnCount);
-
-  if (gridReady && gridRef?.current && index !== previousIndex) {
-    gridRef.current.scrollToItem({
-      align: 'auto',
-      columnIndex: currentColumn,
-      rowIndex: currentRow,
-    });
-  }
-
-  previousIndex = index;
 
   useHotkeys(
     ['up', 'down', 'left', 'right'],

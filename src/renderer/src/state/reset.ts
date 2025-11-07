@@ -16,7 +16,6 @@ import {
   progressAtom,
   editorConfigAtom,
   promptData,
-  requiresScrollAtom,
   pidAtom,
   _chatMessagesAtom,
   runningAtom,
@@ -47,7 +46,6 @@ export function resetPromptState(g: Getter, s: Setter) {
   s(progressAtom, 0);
   s(editorConfigAtom, {} as any);
   s(promptData, null as any);
-  s(requiresScrollAtom, -1);
   s(pidAtom, 0);
   s(_chatMessagesAtom, [] as any);
   s(runningAtom, false);

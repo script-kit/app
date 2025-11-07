@@ -8,14 +8,14 @@ import {
   inputAtom,                 // string
 } from '../../jotai';
 
-import { 
-  _indexAtom, 
+import {
+  _indexAtom,
   defaultValueAtom,
-  defaultChoiceIdAtom, 
+  defaultChoiceIdAtom,
   prevIndexAtom,
   selectedAtom
 } from '../atoms/choices';
-import { requiresScrollAtom } from '../atoms/scrolling';
+import { scrollRequestAtom } from '../scroll';
 import { advanceIndexSkipping } from '../skip-nav';
 import type { Choice, ScoredChoice } from '../../../../shared/types';
 
@@ -191,7 +191,7 @@ export function FocusController() {
   const selected = useAtomValue(selectedAtom);
   const wereChoicesPreloaded = getWereChoicesPreloaded();
 
-  const [requiresScroll, setRequiresScroll] = useAtom(requiresScrollAtom);
+  const setScrollRequest = useSetAtom(scrollRequestAtom);
   const setFocusedChoice = useSetAtom(focusedChoiceAtom);
   const [index, setIndex] = useAtom(_indexAtom);
   const prevIdsRef = React.useRef<string[]>(ids);
@@ -223,7 +223,13 @@ export function FocusController() {
         setFocusedChoice(undefined as any);
       }
       // Ensure the first item is in view on initial population
-      setRequiresScroll(next);
+      if (next >= 0) {
+        setScrollRequest({
+          context: 'choices-list',
+          target: next,
+          reason: 'default-value',
+        });
+      }
       prevIdsRef.current = ids;
       if ((window as any).DEBUG_FOCUS) {
         console.log('[FocusController]', {
@@ -253,9 +259,13 @@ export function FocusController() {
 
     // Short-circuit if nothing is changing
     if (nextIndex === (index ?? -1)) {
-      // Adjust typing scroll hint like main (when user types we want the "top" in view)
-      if ((input?.length ?? 0) > 0) {
-        setRequiresScroll(requiresScroll > 0 ? 0 : -1);
+      // When user types, ensure the top is in view
+      if ((input?.length ?? 0) > 0 && nextIndex >= 0) {
+        setScrollRequest({
+          context: 'choices-list',
+          target: 0,
+          reason: 'user-navigation',
+        });
       }
       prevIdsRef.current = ids;
       return;
@@ -271,8 +281,14 @@ export function FocusController() {
       setFocusedChoice(undefined as any);
     }
 
-    // Coordinate scroll
-    setRequiresScroll(scrollTo);
+    // Coordinate scroll via unified scroll service
+    if (scrollTo >= 0) {
+      setScrollRequest({
+        context: 'choices-list',
+        target: scrollTo,
+        reason: 'focus-decision',
+      });
+    }
 
     // Keep last seen list signature
     prevIdsRef.current = ids;
@@ -300,8 +316,7 @@ export function FocusController() {
     index,
     setIndex,
     setFocusedChoice,
-    requiresScroll,
-    setRequiresScroll,
+    setScrollRequest,
     prevFocusedChoiceId,
   ]);
 

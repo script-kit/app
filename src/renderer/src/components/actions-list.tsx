@@ -10,11 +10,11 @@ import {
   flagsHeightAtom,
   flagsIndexAtom,
   flagsListAtom,
-  flagsRequiresScrollAtom,
   focusedElementAtom,
   isFlagsScrollingAtom,
   scoredFlagsAtom,
 } from '../jotai';
+import { registerScrollRefAtom } from '../state/scroll';
 import ActionsInput from './actions-input';
 import FlagButton from './flag-button';
 
@@ -25,39 +25,25 @@ function InnerList({ height }: { height: number }) {
   const [index, onIndexChange] = useAtom(flagsIndexAtom);
   const itemHeight = useAtomValue(actionsItemHeightAtom);
   const [list, setList] = useAtom(flagsListAtom);
-  const [requiresScroll, setRequiresScroll] = useAtom(flagsRequiresScrollAtom);
   const [isScrolling, setIsScrolling] = useAtom(isFlagsScrollingAtom);
+  const registerScrollRef = useSetAtom(registerScrollRefAtom);
 
   const handleFlagsRef = useCallback(
     (node) => {
       if (node) {
         setList(node);
         flagsRef.current = node;
+        // Register with scroll service
+        registerScrollRef({ context: 'flags-list', ref: node });
       }
     },
-    [setList],
+    [setList, registerScrollRef],
   );
 
   const itemData = useMemo(() => ({ choices }), [choices]);
 
-  useEffect(() => {
-    if (!flagsRef.current) return;
-
-    const scroll = () => {
-      if (requiresScroll === -1) return;
-
-      onIndexChange(requiresScroll);
-      flagsRef.current?.scrollToItem(requiresScroll, requiresScroll > 0 ? 'auto' : 'start');
-    };
-
-    scroll();
-    requestAnimationFrame(() => {
-      if (flagsRef.current) {
-        scroll();
-        setRequiresScroll(-1);
-      }
-    });
-  }, [requiresScroll, choices.length, onIndexChange, setRequiresScroll]);
+  // REMOVED: Old scroll effect that watched flagsRequiresScrollAtom
+  // Scrolling is now handled by the unified scroll service
 
   useEffect(() => {
     if (!flagsRef.current) return;

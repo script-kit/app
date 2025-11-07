@@ -9,7 +9,7 @@ import { atom } from 'jotai';
 import { isEqual } from 'lodash-es';
 import { unstable_batchedUpdates } from 'react-dom';
 import { createLogger } from '../../log-utils';
-import { flagsRequiresScrollAtom } from './scrolling';
+import { scrollRequestAtom } from '../scroll';
 import { actionsItemHeightAtom, flagsHeightAtom } from './ui-elements';
 import { calcVirtualListHeight } from '../utils';
 import { MAX_VLIST_HEIGHT } from '../constants';
@@ -92,7 +92,13 @@ export const openActionsOverlayAtom = atom(
     const base = g(scoredFlags);
     let firstActionable = base.findIndex((sc) => !sc?.item?.skip);
     if (firstActionable < 0) firstActionable = -1; // none actionable
-    s(flagsRequiresScrollAtom, firstActionable);
+    if (firstActionable >= 0) {
+      s(scrollRequestAtom, {
+        context: 'flags-list',
+        target: firstActionable,
+        reason: 'overlay-opened',
+      });
+    }
   },
 );
 
@@ -134,7 +140,11 @@ export const actionsInputAtom = atom(
     }
 
     // 3) request scroll; the ActionsList effect will call flagsIndexAtom setter
-    s(flagsRequiresScrollAtom, firstActionable);
+    s(scrollRequestAtom, {
+      context: 'flags-list',
+      target: firstActionable,
+      reason: 'filter-changed',
+    });
 
     // 4) update Actions list height to match the filtered list
     const h = calcVirtualListHeight(filtered as any, g(actionsItemHeightAtom), MAX_VLIST_HEIGHT);
@@ -206,7 +216,13 @@ export const setScoredFlagsAtom = atom(null, (_g, s, a: ScoredChoice[]) => {
     s(scoredFlags, a);
     // Defer to flagsIndexAtom by requesting a scroll/index update to first actionable (or -1 if none)
     const firstActionable = a.findIndex((sc) => !sc?.item?.skip);
-    s(flagsRequiresScrollAtom, firstActionable >= 0 ? firstActionable : -1);
+    if (firstActionable >= 0) {
+      s(scrollRequestAtom, {
+        context: 'flags-list',
+        target: firstActionable,
+        reason: 'flags-updated',
+      });
+    }
   });
 });
 
