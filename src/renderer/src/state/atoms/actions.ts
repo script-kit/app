@@ -5,7 +5,7 @@
 
 import type { Action, FlagsObject, Shortcut, ActionsConfig, Choice } from '@johnlindquist/kit/types/core';
 import type { ScoredChoice } from '../../../../shared/types';
-import { atom } from 'jotai';
+import { atom, type Getter } from 'jotai';
 import { isEqual } from 'lodash-es';
 import { unstable_batchedUpdates } from 'react-dom';
 import { createLogger } from '../../log-utils';
@@ -13,8 +13,31 @@ import { scrollRequestAtom } from '../scroll';
 import { actionsItemHeightAtom, flagsHeightAtom } from './ui-elements';
 import { calcVirtualListHeight } from '../utils';
 import { MAX_VLIST_HEIGHT } from '../constants';
+import { promptData } from './ui';
+import { pidAtom } from './app-core';
 
 const log = createLogger('actions.ts');
+
+type ScopedFlagState = {
+  sessionKey: string;
+  value: string;
+  version: number;
+};
+
+const getFlagSessionKey = (g: Getter) => {
+  const promptId = g(promptData)?.id ?? '';
+  const pid = g(pidAtom) ?? 0;
+  return `${promptId}::${pid}`;
+};
+
+const emptyFlagState: ScopedFlagState = { sessionKey: '', value: '', version: 0 };
+
+const _consumedFlagState = atom<{ sessionKey: string; version: number }>({
+  sessionKey: '',
+  version: 0,
+});
+
+export const lastConsumedFlagMetaAtom = atom((g) => g(_consumedFlagState));
 
 // --- Flags Configuration ---
 const _flagsAtom = atom<FlagsObject>({});
@@ -45,6 +68,21 @@ export const _flaggedValue = atom<Choice | string>('');
  */
 
 // True when the Actions overlay is visible
+export const resetActionsOverlayStateAtom = atom(
+  null,
+  (g, s) => {
+    s(_flaggedValue, '');
+    s(focusedFlagValueAtom, '');
+    s(focusedActionAtom, {} as any);
+    s(_actionsInputAtom, '');
+    s(flagsIndex, 0);
+    s(markFlagConsumedAtom as any, {
+      sessionKey: getFlagSessionKey(g),
+      version: 0,
+    } as any);
+  },
+);
+
 export const actionsOverlayOpenAtom = atom(
   (g) => Boolean(g(_flaggedValue)),
   (g, s, open: boolean) => {
@@ -57,10 +95,7 @@ export const actionsOverlayOpenAtom = atom(
       s(_flaggedValue, value);
     } else {
       // Closing must fully reset selection state to avoid stray submits
-      s(_flaggedValue, '');
-      s(focusedFlagValueAtom, '');
-      s(focusedActionAtom, {} as any);
-      s(_actionsInputAtom, '');
+      s(resetActionsOverlayStateAtom as any, null);
     }
   },
 );
@@ -88,11 +123,37 @@ export const openActionsOverlayAtom = atom(
     s(actionsOverlaySourceAtom, source);
     if (typeof flag === 'string') s(_flaggedValue, flag);
     s(actionsOverlayOpenAtom, true);
-    // Reset selection and ensure list will scroll into view via flagsIndexAtom setter
+    // Reset selection and ensure list will scroll into view
     const base = g(scoredFlags);
     let firstActionable = base.findIndex((sc) => !sc?.item?.skip);
     if (firstActionable < 0) firstActionable = -1; // none actionable
     if (firstActionable >= 0) {
+      const firstChoice = base[firstActionable]?.item;
+
+      // Set the index AND focused atoms (mimics flagsIndexAtom setter behavior)
+      s(flagsIndex, firstActionable);
+
+      // Set focused flag and action
+      const focusedFlag = (firstChoice as Choice)?.value;
+      s(focusedFlagValueAtom, focusedFlag);
+
+      // If it's an action, set focusedActionAtom
+      const flags = g(flagsAtom);
+      const flagData: any = flags?.[focusedFlag as keyof typeof flags];
+      if (flagData && flagData.hasAction) {
+        const action = {
+          name: flagData?.name ?? (focusedFlag as string),
+          flag: focusedFlag,
+          value: focusedFlag,
+          hasAction: true,
+          shortcut: flagData?.shortcut,
+        } as any;
+        s(focusedActionAtom, action);
+      } else {
+        s(focusedActionAtom, {} as any);
+      }
+
+      // Request scroll
       s(scrollRequestAtom, {
         context: 'flags-list',
         target: firstActionable,
@@ -139,7 +200,39 @@ export const actionsInputAtom = atom(
       }
     }
 
-    // 3) request scroll; the ActionsList effect will call flagsIndexAtom setter
+    // 3) Set the index AND focused atoms (mimics flagsIndexAtom setter behavior)
+    const firstChoice = filtered[firstActionable]?.item;
+    s(flagsIndex, firstActionable);
+
+    // Only update focused flag/action if the overlay is open
+    // This prevents the "Actions" button from highlighting when promptDataAtom resets the input
+    if (g(actionsOverlayOpenAtom)) {
+      // Set focused flag and action
+      const focusedFlag = (firstChoice as Choice)?.value;
+      s(focusedFlagValueAtom, focusedFlag);
+
+      // If it's an action, set focusedActionAtom
+      const flags = g(flagsAtom);
+      const flagData: any = flags?.[focusedFlag as keyof typeof flags];
+      if (flagData && flagData.hasAction) {
+        const action = {
+          name: flagData?.name ?? (focusedFlag as string),
+          flag: focusedFlag,
+          value: focusedFlag,
+          hasAction: true,
+          shortcut: flagData?.shortcut,
+        } as any;
+        s(focusedActionAtom, action);
+      } else {
+        s(focusedActionAtom, {} as any);
+      }
+    } else {
+      // Ensure they are cleared if overlay is closed
+      s(focusedFlagValueAtom, '');
+      s(focusedActionAtom, {} as any);
+    }
+
+    // Request scroll
     s(scrollRequestAtom, {
       context: 'flags-list',
       target: firstActionable,
@@ -170,14 +263,51 @@ export const scoredFlags = atom([] as ScoredChoice[]);
 export const flagsIndex = atom(0);
 // export const flagsIndexAtom = atom((g) => g(flagsIndex)); // Complex version with computed properties is in jotai.ts
 
-const _focusedFlag = atom('');
+const _focusedFlag = atom<ScopedFlagState>(emptyFlagState);
 export const focusedFlagValueAtom = atom(
-  (g) => g(_focusedFlag),
-  (_g, s, a: string) => {
-    s(_focusedFlag, a);
+  (g) => {
+    const scoped = g(_focusedFlag);
+    const currentSessionKey = getFlagSessionKey(g);
+    if (!scoped) return '';
+    return scoped.sessionKey === currentSessionKey ? scoped.value : '';
+  },
+  (g, s, a: string) => {
+    const currentSessionKey = getFlagSessionKey(g);
+    const prev = g(_focusedFlag);
+    const nextVersion =
+      a && a.length > 0
+        ? prev.sessionKey === currentSessionKey
+          ? prev.version + 1
+          : 1
+        : 0;
+    s(_focusedFlag, {
+      sessionKey: currentSessionKey,
+      value: a,
+      version: nextVersion,
+    });
   },
 );
 export const focusedActionAtom = atom<Action>({} as Action);
+
+export const focusedFlagMetaAtom = atom((g) => {
+  const scoped = g(_focusedFlag);
+  const currentSessionKey = getFlagSessionKey(g);
+  if (!scoped || scoped.sessionKey !== currentSessionKey) {
+    return { sessionKey: currentSessionKey, version: 0 };
+  }
+  return { sessionKey: scoped.sessionKey, version: scoped.version };
+});
+
+export const markFlagConsumedAtom = atom(
+  null,
+  (g, s, meta?: { sessionKey: string; version: number }) => {
+    const source = meta ?? g(_focusedFlag);
+    s(_consumedFlagState, {
+      sessionKey: source?.sessionKey || '',
+      version: source?.version || 0,
+    });
+  },
+);
 
 // --- Shortcuts ---
 const _shortcuts = atom<Shortcut[]>([]);

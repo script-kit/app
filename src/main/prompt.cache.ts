@@ -20,7 +20,7 @@ export const writePromptState = (
     scriptPath: string,
     bounds: PromptBounds,
 ) => {
-    if (!(prompt && prompt?.isDestroyed())) return;
+    if (!prompt || prompt.isDestroyed()) return;
     // Only save when input is clear - enforced by caller
     log.verbose('writePromptState', { screenId, scriptPath, bounds });
 
@@ -64,5 +64,4 @@ export const clearPromptCacheFor = async (scriptPath: string) => {
     if (preloadPromptDataMap.has(scriptPath)) preloadPromptDataMap.delete(scriptPath);
     if (preloadPreviewMap.has(scriptPath)) preloadPreviewMap.delete(scriptPath);
 };
-
 

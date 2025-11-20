@@ -90,6 +90,12 @@ export const handleProcessGoneImpl = (prompt: any): void => {
     prompt.logInfo(`Process ${prompt.pid} is gone. Cleaning up prompt.`);
     stopProcessMonitoringImpl(prompt);
     prompt.clearLongRunningMonitor();
+
+    if (prompt.processConnectionLostTimeout) {
+        clearTimeout(prompt.processConnectionLostTimeout);
+        prompt.processConnectionLostTimeout = undefined;
+    }
+
     prompt.boundToProcess = false;
     if (!prompt.isDestroyed()) {
         prompt.close('ProcessGone - force close');
@@ -102,8 +108,12 @@ export const handleProcessGoneImpl = (prompt: any): void => {
             }, 100);
         }
     }
-    processes.removeByPid(prompt.pid, 'process gone - prompt cleanup');
+    const processStillTracked = processes.getByPid?.(prompt.pid);
+    if (processStillTracked) {
+        processes.removeByPid(prompt.pid, 'process gone - prompt cleanup');
+    } else {
+        prompt.logInfo?.(`Skip removeByPid for ${prompt.pid}: process already cleaned up`);
+    }
     prompt.resetState();
 };
-
 

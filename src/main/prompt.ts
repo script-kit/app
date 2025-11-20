@@ -446,9 +446,16 @@ export class KitPrompt {
 
 
   boundToProcess = false;
-  private processConnectionLost = false;
+  processConnectionLost = false;
+  processConnectionLostTimeout?: NodeJS.Timeout;
 
   bindToProcess = (pid: number) => {
+    if (this.processConnectionLostTimeout) {
+      clearTimeout(this.processConnectionLostTimeout);
+      this.processConnectionLostTimeout = undefined;
+    }
+    this.processConnectionLost = false;
+
     if (this.boundToProcess) {
       return;
     }

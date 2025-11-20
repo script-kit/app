@@ -31,6 +31,7 @@ export * from './state/atoms';
 
 // Import unified scroll service
 import { scrollRequestAtom } from './state/scroll';
+import { hasFreshFlag } from './state/submit/flagFreshness';
 
 // Import specific atoms we need to wire
 import {
@@ -69,6 +70,9 @@ import {
   scoredFlags,
   flagsIndex,
   focusedFlagValueAtom,
+  focusedFlagMetaAtom,
+  lastConsumedFlagMetaAtom,
+  markFlagConsumedAtom,
   focusedActionAtom,
   shortcutsAtom,
   _ui,
@@ -152,6 +156,7 @@ import {
   actionsOverlayOpenAtom,
   openActionsOverlayAtom,
   closeActionsOverlayAtom,
+  resetActionsOverlayStateAtom,
   pendingFlagAtom,
   actionsOverlaySourceAtom,
   onInputSubmitAtom,
@@ -484,9 +489,9 @@ export const promptDataAtom = atom(
     s(pushIpcMessageAtom, {
       channel: Channel.SET_PROMPT_DATA,
       args: [{
-      messageId: (a as any).messageId,
-      ui: a.ui,
-    }],
+        messageId: (a as any).messageId,
+        ui: a.ui,
+      }],
     });
 
     s(promptReadyAtom, true);
@@ -683,14 +688,19 @@ export const scoredChoicesAtom = atom(
 
       const defaultValue: any = g(defaultValueAtom);
       const defaultChoiceId = g(defaultChoiceIdAtom);
+      const selected = g(selectedAtom);
       const prevIndex = g(prevIndexAtom);
       const input = g(inputAtom);
       const gridReady = g(gridReadyAtom);
       const scrollContext = gridReady ? 'choices-grid' : 'choices-list';
 
-      if (defaultValue || defaultChoiceId) {
+      if (defaultValue || defaultChoiceId || selected) {
         const i = cs.findIndex(
-          (c) => c.item?.id === defaultChoiceId || c.item?.value === defaultValue || c.item?.name === defaultValue,
+          (c) =>
+            c.item?.id === defaultChoiceId ||
+            c.item?.value === defaultValue ||
+            c.item?.name === defaultValue ||
+            (selected && (c.item?.value === selected || c.item?.name === selected)),
         );
 
         if (i !== -1) {
@@ -707,6 +717,8 @@ export const scoredChoicesAtom = atom(
         }
         s(defaultValueAtom, '');
         s(defaultChoiceIdAtom, '');
+        // We don't clear selectedAtom here because it might be needed for other logic
+        // or it might be cleared when prompt data changes
       } else if (input.length > 0) {
         // When user types, scroll to top
         s(scrollRequestAtom, {
@@ -759,7 +771,7 @@ export const scoredChoicesAtom = atom(
           promptId: g(promptDataAtom)?.id,
           ui: g(uiAtom),
         });
-      } catch {}
+      } catch { }
     }
 
     s(choicesHeightAtom, choicesHeight);
@@ -774,9 +786,9 @@ export const scoredChoicesAtom = atom(
             nextVirtualHeight: choicesHeight,
             choicesLength: cs.length,
           });
-        } catch {}
+        } catch { }
       }
-    } catch {}
+    } catch { }
 
     // Adjust main height based on UI mode
     const ui = g(uiAtom);
@@ -897,13 +909,11 @@ export const flaggedChoiceValueAtom = atom(
     s(_flaggedValue, a);
 
     if (a === '') {
+      s(resetActionsOverlayStateAtom as any, null);
       s(selectedAtom, '');
       s(choicesConfigAtom, g(prevChoicesConfig));
       s(indexAtom, g(prevIndexAtom));
       s(actionsInputAtom, '');
-      // Critical: fully clear any lingering action/flag selection when closing actions
-      s(focusedFlagValueAtom, '');
-      s(focusedActionAtom, {} as any);
     } else {
       s(selectedAtom, typeof a === 'string' ? a : (a as Choice)?.name);
       s(prevIndexAtom, g(indexAtom));
@@ -922,12 +932,12 @@ const findMatchPositions = (text: string, query: string): [number, number][] => 
   const lowerText = text.toLowerCase();
   const lowerQuery = query.toLowerCase();
   let index = lowerText.indexOf(lowerQuery);
-  
+
   while (index !== -1) {
     positions.push([index, index + query.length]);
     index = lowerText.indexOf(lowerQuery, index + 1);
   }
-  
+
   return positions;
 };
 
@@ -938,7 +948,7 @@ export const scoredFlagsAtom = atom(
     const input = (g(actionsInputAtom) || '').toLowerCase().trim();
     const base = g(scoredFlags);
     if (!input) return base;
-    
+
     // Client-side filter with match position calculation for highlighting
     return base
       .filter((sc) => {
@@ -958,7 +968,7 @@ export const scoredFlagsAtom = atom(
         // Calculate match positions for highlighting
         const it: any = sc?.item || {};
         const matches: any = {};
-        
+
         // Check name field for matches
         if (it.name) {
           const nameMatches = findMatchPositions(it.name, input);
@@ -966,7 +976,7 @@ export const scoredFlagsAtom = atom(
             matches.slicedName = nameMatches;
           }
         }
-        
+
         // Check tag field for matches
         if (it.tag) {
           const tagMatches = findMatchPositions(it.tag, input);
@@ -974,7 +984,7 @@ export const scoredFlagsAtom = atom(
             matches.tag = tagMatches;
           }
         }
-        
+
         // Check description field for matches
         if (it.description) {
           const descMatches = findMatchPositions(it.description, input);
@@ -982,7 +992,7 @@ export const scoredFlagsAtom = atom(
             matches.description = descMatches;
           }
         }
-        
+
         return {
           ...sc,
           matches
@@ -1290,6 +1300,9 @@ export const submitValueAtom = atom(
     const flag = g(focusedFlagValueAtom);
     const action = g(focusedActionAtom);
     const enter = g(enterAtom);
+    const flagMeta = g(focusedFlagMetaAtom);
+    const lastConsumedFlagMeta = g(lastConsumedFlagMetaAtom);
+    const overlayOpen = g(actionsOverlayOpenAtom);
 
     const allowEmptyEnterUIs = [UI.term, UI.drop, UI.hotkey];
     const isInAllowedEmptyUI = allowEmptyEnterUIs.includes(ui);
@@ -1311,11 +1324,20 @@ export const submitValueAtom = atom(
     }
 
     // Decide submission path using dispatcher (ACTION vs VALUE_SUBMITTED)
+    const flagIsFresh = hasFreshFlag({
+      flag,
+      overlayOpen,
+      flagMeta,
+      lastConsumed: lastConsumedFlagMeta,
+    });
+
+    const effectiveFlag = flagIsFresh ? flag : undefined;
+
     const decisionCtx = {
       hasAction: Boolean((action as FlagsWithKeys)?.hasAction),
       action,
-      overlayOpen: g(actionsOverlayOpenAtom),
-      flag,
+      overlayOpen,
+      flag: effectiveFlag,
     };
 
     s(onInputSubmitAtom, {});
@@ -1365,8 +1387,12 @@ export const submitValueAtom = atom(
         channel,
         override,
       });
-    } catch {}
+    } catch { }
     s(pushIpcMessageAtom, { channel, state: override });
+
+    if (effectiveFlag) {
+      s(markFlagConsumedAtom as any, null as any);
+    }
 
     // Clear state for action submissions
     if (channel === Channel.ACTION) {
@@ -1432,6 +1458,7 @@ export const setFlagByShortcutAtom = atom(null, (g, s, a: string) => {
       s(focusedActionAtom, action as any);
     } else {
       // Normal flag behavior
+      s(focusedActionAtom, {} as any);
       s(flaggedChoiceValueAtom, flagKey);
       s(focusedFlagValueAtom, flagKey);
     }
@@ -1714,14 +1741,14 @@ export const onPasteAtom = atom((g) => {
       currentUI,
       action: currentUI !== UI.editor ? 'sending_ON_PASTE' : 'letting_Monaco_handle'
     }));
-    
+
     // Don't prevent paste in editor - let Monaco handle it naturally
     if (currentUI !== UI.editor) {
       // Only send ON_PASTE for non-editor UIs
       s(pushIpcMessageAtom, { channel: Channel.ON_PASTE, state: {} });
     }
   });
-  
+
   // Return a function that can be called with the event
   return (event: ClipboardEvent) => {
     const currentUI = g(uiAtom);
@@ -1731,7 +1758,7 @@ export const onPasteAtom = atom((g) => {
       currentUI,
       action: currentUI !== UI.editor ? 'sending_ON_PASTE' : 'NOT_preventing_default'
     }));
-    
+
     // Don't prevent paste in editor - let Monaco handle it naturally
     if (currentUI !== UI.editor) {
       // Only send ON_PASTE for non-editor UIs

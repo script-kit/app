@@ -44,5 +44,15 @@ describe('Actions overlay helpers', () => {
     expect(Boolean(fa?.hasAction)).toBe(false);
     expect(store.get(actionsInputAtom)).toBe('');
   });
-});
 
+  it('clears any pending flag payload when overlay closes after selection', () => {
+    store.set(openActionsOverlayAtom as any, { source: 'ui' });
+    store.set(pendingFlagAtom as any, 'build');
+    store.set(focusedFlagValueAtom as any, 'build');
+
+    store.set(closeActionsOverlayAtom as any, null);
+
+    expect(store.get(pendingFlagAtom)).toBe('');
+    expect(store.get(focusedFlagValueAtom)).toBe('');
+  });
+});

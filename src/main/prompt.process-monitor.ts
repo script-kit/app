@@ -22,8 +22,29 @@ export function checkProcessAlive(prompt: any, force = false) {
     if (prompt.processConnectionLost) {
       prompt.logInfo?.(`Process ${prompt.pid} reconnected or was temporarily unavailable`);
       prompt.processConnectionLost = false;
+      if (prompt.processConnectionLostTimeout) {
+        clearTimeout(prompt.processConnectionLostTimeout);
+        prompt.processConnectionLostTimeout = undefined;
+      }
     }
-  } catch {
+  } catch (error: any) {
+    const errno = (error as NodeJS.ErrnoException)?.code;
+    if (errno && errno !== 'ESRCH') {
+      prompt.logWarn?.('checkProcessAlive: non-ESRCH error when probing process', {
+        pid: prompt.pid,
+        code: errno,
+        message: error?.message,
+      });
+      return;
+    }
+    if (errno !== 'ESRCH') {
+      prompt.logWarn?.('checkProcessAlive: unknown error when probing process', {
+        pid: prompt.pid,
+        message: error?.message,
+      });
+      return;
+    }
+
     if (!prompt.processConnectionLost) {
       prompt.logInfo?.(`Process ${prompt.pid} is no longer running. Setting connection lost flag.`);
       prompt.processConnectionLost = true;
@@ -31,15 +52,19 @@ export function checkProcessAlive(prompt: any, force = false) {
       prompt.notifyProcessConnectionLost?.();
     }
 
-    setTimeout(() => {
+    if (prompt.processConnectionLostTimeout) {
+      clearTimeout(prompt.processConnectionLostTimeout);
+    }
+
+    prompt.processConnectionLostTimeout = setTimeout(() => {
       if (prompt.processConnectionLost && prompt.boundToProcess) {
         prompt.logInfo?.(`Auto-cleaning up disconnected prompt after timeout: PID ${prompt.pid}`);
         // Inline logic similar to handleProcessGone minimal behavior
         try {
           processes.removeByPid(prompt.pid, 'process gone - prompt cleanup');
-        } catch { }
-        prompt.handleProcessGone?.();
+        } catch {}
       }
+      prompt.processConnectionLostTimeout = undefined;
     }, 30000);
   }
 }
@@ -77,5 +102,4 @@ export function listenForProcessExit(prompt: any) {
     emitter.off(KitEvent.ProcessGone, processGoneHandler);
   });
 }
-
 

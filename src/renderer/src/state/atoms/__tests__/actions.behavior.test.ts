@@ -16,6 +16,7 @@ import {
   focusedActionAtom,
   _flaggedValue,
 } from '../actions';
+import { promptData } from '../ui';
 
 describe('Actions menu behavior', () => {
   let store: ReturnType<typeof createStore>;
@@ -124,5 +125,23 @@ describe('Actions menu behavior', () => {
 
     // And submit prevention should be off (actions menu not open)
     expect(store.get(preventSubmitWithoutActionAtom as any)).toBeFalsy();
+  });
+
+  it('scopes focused flag state to the active prompt session', () => {
+    store.set(promptData as any, { id: 'prompt-one' } as any);
+    store.set(focusedFlagValueAtom as any, 'build');
+    expect(store.get(focusedFlagValueAtom as any)).toBe('build');
+
+    // Switching to a new prompt should clear the previous flag implicitly
+    store.set(promptData as any, { id: 'prompt-two' } as any);
+    expect(store.get(focusedFlagValueAtom as any)).toBe('');
+
+    // Setting a new flag in the new prompt should work normally
+    store.set(focusedFlagValueAtom as any, 'deploy');
+    expect(store.get(focusedFlagValueAtom as any)).toBe('deploy');
+
+    // Returning to the previous prompt id should not resurrect the old flag
+    store.set(promptData as any, { id: 'prompt-one' } as any);
+    expect(store.get(focusedFlagValueAtom as any)).toBe('');
   });
 });

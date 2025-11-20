@@ -33,6 +33,9 @@ export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Pr
       shell: (promptData as any)?.shell || '',
       promptId: prompt.id || '',
       env: promptData.env || {},
+      args: (promptData as any)?.args || [],
+      closeOnExit: typeof (promptData as any)?.closeOnExit === 'boolean' ? (promptData as any).closeOnExit : undefined,
+      pid: prompt.pid,
     };
     prompt.sendToPrompt(AppChannel.SET_TERM_CONFIG, termConfig);
     createPty(prompt);
@@ -140,5 +143,4 @@ export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Pr
     prompt.focusPrompt();
   }
 };
-
 

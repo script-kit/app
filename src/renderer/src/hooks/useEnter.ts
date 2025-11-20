@@ -60,26 +60,6 @@ export default () => {
       event?.preventDefault();
 
       if (enterButtonDisabled) {
-        // Attempt fallback even if disabled: strict + no focus but choices exist
-        if (
-          promptData?.strict &&
-          !overlayOpen &&
-          (panelHTML?.length ?? 0) === 0 &&
-          choices.length > 0 &&
-          !hasFocusedChoice
-        ) {
-          try {
-            const firstIdx = (scoredChoices || []).findIndex(
-              (c: any) => c?.item && !c.item.skip && !c.item.info,
-            );
-            if (firstIdx >= 0) {
-              const first = scoredChoices[firstIdx]?.item as any;
-              setIndex(firstIdx);
-              submit(first?.scriptlet ? first : first?.value);
-              return;
-            }
-          } catch {}
-        }
         return;
       }
 
@@ -125,25 +105,11 @@ export default () => {
       if (promptData?.strict && panelHTML?.length === 0) {
         if (overlayOpen) {
           // Overlay flow handled elsewhere
-        } else if (choices.length > 0) {
-          if (hasFocusedChoice) {
-            submit(focusedChoice?.value);
-            return;
-          }
-
-          // Fallback: no focused choice yet but we have results.
-          // Select the first actionable scored choice and submit it.
-          try {
-            const firstIdx = (scoredChoices || []).findIndex(
-              (c: any) => c?.item && !c.item.skip && !c.item.info,
-            );
-            if (firstIdx >= 0) {
-              const first = scoredChoices[firstIdx]?.item as any;
-              setIndex(firstIdx);
-              submit(first?.scriptlet ? first : first?.value);
-              return;
-            }
-          } catch {}
+        } else if (choices.length > 0 && hasFocusedChoice) {
+          // focusedChoiceAtom is now derived from index, always in sync
+          // No race condition possible - focusedChoice is always correct
+          submit(focusedChoice?.value);
+          return;
         }
       }
 

@@ -71,6 +71,10 @@ export interface TermConfig {
   command?: string;
   cwd?: string;
   env?: Record<string, string>;
+  shell?: string | boolean;
+  args?: string[];
+  closeOnExit?: boolean;
+  pid?: number;
   [key: string]: unknown;
 }
 

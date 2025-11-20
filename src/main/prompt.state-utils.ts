@@ -17,8 +17,7 @@ export const writePromptState = (
     scriptPath: string,
     bounds: PromptBounds,
 ): void => {
-    // Preserve original guard logic exactly (no behavior change)
-    if (!(prompt.window && prompt?.isDestroyed())) {
+    if (!prompt.window || prompt.isDestroyed()) {
         return;
     }
     if (prompt.kitSearch.input !== '' || prompt.kitSearch.inputRegex) {
@@ -47,5 +46,4 @@ export const writePromptState = (
     }
     (promptState as any).screens[screenId][scriptPath] = bounds;
 };
-
 

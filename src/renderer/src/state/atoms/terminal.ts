@@ -12,6 +12,9 @@ export const termConfigDefaults: TermConfig = {
   env: {},
   shell: '',
   promptId: '',
+  args: [],
+  closeOnExit: true,
+  pid: 0,
 };
 
 const termConfig = atom<TermConfig>(termConfigDefaults);

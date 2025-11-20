@@ -303,6 +303,7 @@ export default () => {
       log.info('Submitting flagged value', { flag, submitValue });
       // Do not clear the flag immediately; the queued IPC message needs it.
       // submitValueAtom will clear focusedFlagValueAtom after sending.
+      setFocusedAction({} as any);
       setFlag(flag);
       submit(submitValue);
     },
@@ -375,6 +376,7 @@ export default () => {
           submit(focusedChoice?.value || input);
         } else if (found?.flag) {
           console.log('[useShortcuts] Setting flag', { flag: found.flag });
+          setFocusedAction({} as any);
           setFlag(found.flag);
         } else if (found.key) {
           console.log('[useShortcuts] Sending regular shortcut', { key: found.key });

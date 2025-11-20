@@ -35,7 +35,10 @@ export type ScrollReason =
   | 'user-navigation'      // User keyboard/mouse navigation
   | 'programmatic'         // Programmatic API call
   | 'restore'              // Restoring previous state
-  | 'skip-adjustment';     // Adjusted for skip items
+  | 'skip-adjustment'      // Adjusted for skip items
+  | 'overlay-opened'       // Actions overlay opened
+  | 'filter-changed'       // Actions filter changed
+  | 'flags-updated';       // Flags list updated
 
 /**
  * Scroll request encapsulates all information needed to perform a scroll

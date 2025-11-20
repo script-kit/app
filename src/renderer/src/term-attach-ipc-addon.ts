@@ -13,7 +13,10 @@ export class AttachIPCAddon implements ITerminalAddon {
   private config: TermConfig;
 
   constructor(config: TermConfig) {
-    this.config = config;
+    this.config = {
+      pid: typeof window !== 'undefined' ? (window as any)?.pid : undefined,
+      ...config,
+    };
   }
 
   public activate(terminal: Terminal): void {
