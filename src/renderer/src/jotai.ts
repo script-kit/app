@@ -32,6 +32,9 @@ export * from './state/atoms';
 // Import unified scroll service
 import { scrollRequestAtom } from './state/scroll';
 import { hasFreshFlag } from './state/submit/flagFreshness';
+import { sendAppMessage, sendChannel } from './state/services/ipc';
+import { cancelSpeech, pickColor } from './state/services/platform';
+import { appendChoiceIdToHistory } from './state/services/storage';
 
 // Import specific atoms we need to wire
 import {
@@ -203,11 +206,9 @@ import {
   ID_MAIN,
   ID_LIST,
   ID_PANEL,
-  ID_WEBCAM,
   ID_LOG,
 } from './state/dom-ids';
 
-const { ipcRenderer } = window.electron;
 const log = createLogger('jotai.ts');
 
 const isDebugResizeEnabled = (): boolean => {
@@ -223,13 +224,65 @@ const isDebugResizeEnabled = (): boolean => {
 // This section contains the complex atom wiring that couldn't be easily extracted
 // =================================================================================================
 
-let placeholderTimeoutId: NodeJS.Timeout;
-let choicesPreloaded = false;
-let wereChoicesPreloaded = false;
-let wasPromptDataPreloaded = false;
-let prevFocusedChoiceId = 'prevFocusedChoiceId';
-let prevChoiceIndexId = 'prevChoiceIndexId';
-let prevTopHeight = 0;
+const choicesPreloadedAtom = atom(false);
+const wereChoicesPreloadedAtom = atom(false);
+const domUpdatedDebouncedAtom = atom<((reason?: string) => void) | null>(null);
+const spinnerTimeoutIdAtom = atom<NodeJS.Timeout | null>(null);
+
+export const spinnerControlAtom = atom(
+  null,
+  (g, s, action: 'start' | 'stop') => {
+    const existing = g(spinnerTimeoutIdAtom);
+    if (existing) {
+      clearTimeout(existing);
+      s(spinnerTimeoutIdAtom, null);
+    }
+
+    if (action === 'stop') {
+      s(loadingAtom, false);
+      s(processingAtom, false);
+      return;
+    }
+
+    const id = setTimeout(() => {
+      s(loadingAtom, true);
+      s(processingAtom, true);
+      s(spinnerTimeoutIdAtom, null);
+    }, PROCESSING_SPINNER_DELAY_MS);
+
+    s(spinnerTimeoutIdAtom, id);
+  },
+);
+
+const resetPromptOnClose = (g: Getter, s: Setter) => {
+  s(resizeCompleteAtom, false);
+  s(lastScriptClosed, g(_script).filePath);
+  s(closedInput, g(_inputAtom));
+  s(_panelHTML, '');
+  s(formHTMLAtom, '');
+  s(logHTMLAtom, '');
+  s(flagsAtom, {});
+  s(_flaggedValue, '');
+  s(loadingAtom, false);
+  s(progressAtom, 0);
+  s(editorConfigAtom, {});
+  s(promptDataAtom, null);
+  s(pidAtom, 0);
+  s(_chatMessagesAtom, []);
+  s(runningAtom, false);
+  s(_miniShortcutsHoveredAtom, false);
+  s(logLinesAtom, []);
+  s(audioDotAtom, false);
+  s(disableSubmitAtom, false);
+  g(scrollToIndexAtom)(0);
+  s(termConfigAtom, {});
+  s(spinnerControlAtom, 'stop');
+
+  const stream = g(webcamStreamAtom);
+  if (stream) {
+    s(webcamStreamAtom, null);
+  }
+};
 
 // --- Open/Close Lifecycle with Reset ---
 export const openAtom = atom(
@@ -240,39 +293,7 @@ export const openAtom = atom(
     s(mouseEnabledAtom, 0);
 
     if (g(_open) && a === false) {
-      // Reset prompt state on close
-      s(resizeCompleteAtom, false);
-      s(lastScriptClosed, g(_script).filePath);
-      s(closedInput, g(_inputAtom));
-      s(_panelHTML, '');
-      s(formHTMLAtom, '');
-      s(logHTMLAtom, '');
-      s(flagsAtom, {});
-      s(_flaggedValue, '');
-      s(loadingAtom, false);
-      s(progressAtom, 0);
-      s(editorConfigAtom, {});
-      s(promptDataAtom, null);
-      s(pidAtom, 0);
-      s(_chatMessagesAtom, []);
-      s(runningAtom, false);
-      s(_miniShortcutsHoveredAtom, false);
-      s(logLinesAtom, []);
-      s(audioDotAtom, false);
-      s(disableSubmitAtom, false);
-      g(scrollToIndexAtom)(0);
-      s(termConfigAtom, {});
-
-      // Cleanup media streams
-      const stream = g(webcamStreamAtom);
-      if (stream && 'getTracks' in stream) {
-        (stream as MediaStream).getTracks().forEach((track) => track.stop());
-        s(webcamStreamAtom, null);
-        const webcamEl = document.getElementById(ID_WEBCAM) as HTMLVideoElement;
-        if (webcamEl) {
-          webcamEl.srcObject = null;
-        }
-      }
+      resetPromptOnClose(g, s);
     }
     s(_open, a);
   },
@@ -353,10 +374,8 @@ export const promptDataAtom = atom(
     s(isHiddenAtom, false);
     const prevPromptData = g(promptData);
 
-    wasPromptDataPreloaded = Boolean(prevPromptData?.preload && !a.preload);
-    log.info(
-      `${pid}: 👀 Preloaded: ${a.scriptPath} ${wasPromptDataPreloaded} Keyword: ${a.keyword}`,
-    );
+    const wasPromptDataPreloaded = Boolean(prevPromptData?.preload && !a.preload);
+    log.info(`${pid}: 👀 Preloaded: ${a.scriptPath} ${wasPromptDataPreloaded} Keyword: ${a.keyword}`);
 
     if (!prevPromptData && a) {
       s(justOpenedAtom, true);
@@ -379,11 +398,7 @@ export const promptDataAtom = atom(
     s(submittedAtom, false);
 
     // Clear loading timeout when new prompt opens
-    if (placeholderTimeoutId) {
-      clearTimeout(placeholderTimeoutId);
-      s(loadingAtom, false);
-      s(processingAtom, false);
-    }
+    s(spinnerControlAtom, 'stop');
 
     if (a.ui === UI.term) {
       const b: any = a;
@@ -483,6 +498,9 @@ export const promptDataAtom = atom(
     }
 
     s(promptData, a);
+    try {
+      s(scheduleResizeAtom, ResizeReason.UI);
+    } catch {}
 
     s(pushIpcMessageAtom, { channel: Channel.ON_INIT, state: {} });
 
@@ -555,8 +573,9 @@ export const inputAtom = atom(
 export const choicesConfigAtom = atom(
   (g) => g(choicesConfig),
   (g, s, a: { preload: boolean }) => {
-    wereChoicesPreloaded = !a?.preload && choicesPreloaded;
-    choicesPreloaded = a?.preload;
+    const wasPreloaded = g(choicesPreloadedAtom);
+    s(wereChoicesPreloadedAtom, !a?.preload && wasPreloaded);
+    s(choicesPreloadedAtom, !!a?.preload);
     s(directionAtom, 1);
 
     const promptData = g(promptDataAtom);
@@ -640,7 +659,6 @@ export const scoredChoicesAtom = atom(
     s(choicesReadyAtom, true);
     s(cachedAtom, false);
     s(loadingAtom, false);
-    prevFocusedChoiceId = 'prevFocusedChoiceId';
 
     const csIds = cs.map((c) => c.item.id) as string[];
     const prevIds = g(prevScoredChoicesIdsAtom);
@@ -731,7 +749,7 @@ export const scoredChoicesAtom = atom(
         }
       } else if (prevIndex && !g(selectedAtom)) {
         // Restore previous position unless choices were preloaded
-        if (!wereChoicesPreloaded) {
+        if (!g(wereChoicesPreloadedAtom)) {
           let adjustForGroup = prevIndex;
           if (cs?.[prevIndex - 1]?.item?.skip) {
             adjustForGroup -= 1;
@@ -742,7 +760,7 @@ export const scoredChoicesAtom = atom(
             reason: 'restore',
           });
         }
-      } else if (!wereChoicesPreloaded) {
+      } else if (!g(wereChoicesPreloadedAtom)) {
         // Scroll to top for new choices
         s(scrollRequestAtom, {
           context: scrollContext,
@@ -821,10 +839,6 @@ export const indexAtom = atom(
     let calcIndex = clampedIndex;
     let choice = cs?.[calcIndex]?.item;
 
-    // Removed early return that was causing scroll to be skipped
-    // when wrapping to the same choice ID
-    // if (choice?.id === prevChoiceIndexId) return;
-
     if (g(allSkipAtom)) {
       s(focusedChoiceAtom, noChoice);
       if (!g(promptDataAtom)?.preview) {
@@ -837,8 +851,6 @@ export const indexAtom = atom(
       calcIndex = advanceIndexSkipping(clampedIndex, direction, cs as any);
       choice = cs[calcIndex]?.item;
     }
-
-    prevChoiceIndexId = choice?.id || 'prevChoiceIndexId';
 
     if (g(_indexAtom) !== calcIndex) {
       s(_indexAtom, calcIndex);
@@ -875,14 +887,6 @@ export const indexAtom = atom(
     }
   },
 );
-
-// --- Focused Choice with Throttling ---
-// Throttled focus logic moved to ChoicesController
-// The controller handles:
-// - Throttling focus changes
-// - Updating preview HTML
-// - Sending IPC messages
-// - Managing prevFocusedChoiceId
 
 export const focusedChoiceAtom = atom(
   (g) => g(_focused),
@@ -1128,14 +1132,25 @@ export const resize = debounce(
 
 // Route all external triggers through the scheduler for reason coalescing
 import { scheduleResizeAtom } from './state/resize/scheduler';
+import { ResizeReason } from './state/resize/reasons';
 export const triggerResizeAtom = atom(null, (g, s, reason: string) => {
   s(scheduleResizeAtom, reason || 'UNKNOWN');
 });
 
-export const domUpdatedAtom = atom(null, (g, s) => {
-  return debounce((reason = '') => {
-    s(scheduleResizeAtom, reason || 'DOM');
-  }, PREVIEW_THROTTLE_MS);
+export const domUpdatedAtom = atom(null, (g, s, reason = '') => {
+  let debounced = g(domUpdatedDebouncedAtom);
+  if (!debounced) {
+    debounced = debounce(
+      (r = '') => {
+        s(scheduleResizeAtom, r || 'DOM');
+      },
+      PREVIEW_THROTTLE_MS,
+      { leading: true, trailing: true },
+    );
+    s(domUpdatedDebouncedAtom, debounced);
+  }
+
+  debounced(reason);
 });
 
 // Override mainHeightAtom with complex setter that triggers resize
@@ -1183,7 +1198,7 @@ export const channelAtom = atom((g) => {
       },
     };
 
-    ipcRenderer.send(channel, appMessage);
+    sendAppMessage(channel, appMessage);
   };
 });
 
@@ -1352,17 +1367,7 @@ export const submitValueAtom = atom(
     if (fid) {
       const key = g(promptDataAtom)?.key;
       if (key) {
-        try {
-          const prevIds = JSON.parse(localStorage.getItem(key) || '[]');
-          const index = prevIds.indexOf(fid);
-          if (index > -1) {
-            prevIds.splice(index, 1);
-          }
-          prevIds.unshift(fid);
-          localStorage.setItem(key, JSON.stringify(prevIds));
-        } catch (e) {
-          log.error("Failed to update localStorage history", e);
-        }
+        appendChoiceIdToHistory(key, fid);
       }
     }
 
@@ -1405,12 +1410,7 @@ export const submitValueAtom = atom(
     }
 
     s(loadingAtom, false);
-    if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
-
-    placeholderTimeoutId = setTimeout(() => {
-      s(loadingAtom, true);
-      s(processingAtom, true);
-    }, PROCESSING_SPINNER_DELAY_MS);
+    s(spinnerControlAtom, 'start');
 
     s(submittedAtom, true);
     s(closedInput, g(inputAtom));
@@ -1420,15 +1420,7 @@ export const submitValueAtom = atom(
     s(prevIndexAtom, 0);
     s(_submitValue, value);
 
-    const stream = g(webcamStreamAtom);
-    if (stream && 'getTracks' in stream) {
-      (stream as MediaStream).getTracks().forEach((track) => track.stop());
-      s(webcamStreamAtom, null);
-      const webcamEl = document.getElementById('webcam') as HTMLVideoElement;
-      if (webcamEl) {
-        webcamEl.srcObject = null;
-      }
-    }
+    s(webcamStreamAtom, null);
   },
 );
 
@@ -1467,11 +1459,7 @@ export const setFlagByShortcutAtom = atom(null, (g, s, a: string) => {
 
 export const escapeAtom = atom((g) => {
   return () => {
-    // Stop any ongoing speech synthesis
-    const synth = window.speechSynthesis;
-    if (synth.speaking) {
-      synth.cancel();
-    }
+    cancelSpeech();
 
     log.info('👋 Sending Channel.ESCAPE');
     // Use channelAtom directly for this special case (like onPasteAtom/onDropAtom)
@@ -1494,7 +1482,7 @@ export const changeAtom = atom((g) => (data: any) => {
 
 // This atom returns a function for compatibility with icon.tsx
 export const runMainScriptAtom = atom(() => () => {
-  ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
+  sendChannel(AppChannel.RUN_MAIN_SCRIPT);
 });
 
 export const toggleSelectedChoiceAtom = atom(null, (g, s, id: string) => {
@@ -1529,27 +1517,21 @@ export { valueInvalidAtom, preventSubmitAtom } from './state/atoms/utilities';
 // This atom returns a function for compatibility with useMessages.ts
 export const colorAtom = atom((g) => {
   return async () => {
-    try {
-      // @ts-ignore -- EyeDropper API might not be in standard TS types yet
-      const eyeDropper = new EyeDropper();
-      const { sRGBHex } = await eyeDropper.open();
+    const sRGBHex = await pickColor();
+    if (!sRGBHex) return '';
 
-      const color = colorUtils.convertColor(sRGBHex);
-      const channel = Channel.GET_COLOR;
-      const pid = g(pidAtom);
+    const color = colorUtils.convertColor(sRGBHex);
+    const channel = Channel.GET_COLOR;
+    const pid = g(pidAtom);
 
-      const appMessage = {
-        channel,
-        pid: pid || 0,
-        value: color,
-      };
+    const appMessage = {
+      channel,
+      pid: pid || 0,
+      value: color,
+    };
 
-      ipcRenderer.send(channel, appMessage);
-      return color;
-    } catch (error) {
-      // User cancelled or EyeDropper failed
-      return '';
-    }
+    sendChannel(channel, appMessage);
+    return color;
   };
 });
 
@@ -1711,12 +1693,12 @@ const promptBoundsDefault = {
 };
 
 export const clearCacheAtom = atom(null, (_g, s) => {
-  s(cachedMainPromptDataAtom, {});
+  s(cachedMainPromptDataAtom, null as any);
   s(cachedMainScoredChoicesAtom, []);
   s(cachedMainPreviewAtom, '');
   s(cachedMainShortcutsAtom, []);
   s(cachedMainFlagsAtom, {});
-  s(promptDataAtom, {} as PromptData);
+  s(promptDataAtom, null);
   s(scoredChoicesAtom, []);
   s(promptBoundsAtom, promptBoundsDefault);
 });
@@ -1724,10 +1706,11 @@ export const clearCacheAtom = atom(null, (_g, s) => {
 const _topHeight = atom(88);
 export const topHeightAtom = atom(
   (g) => g(_topHeight),
-  (g, s) => {
-    const resizeComplete = g(resizeCompleteAtom);
-    if (!resizeComplete) return;
-    resize(g, s, 'TOP_HEIGHT');
+  (g, s, newHeight: number) => {
+    s(_topHeight, newHeight);
+    if (g(resizeCompleteAtom)) {
+      resize(g, s, 'TOP_HEIGHT');
+    }
   },
 );
 
@@ -1790,6 +1773,3 @@ export const onDropAtom = atom((g) => {
     channel(Channel.ON_DROP, { drop });
   };
 });
-
-// Export remaining helper functions and constants for compatibility
-export { placeholderTimeoutId };

@@ -27,6 +27,7 @@ export {
   promptActiveAtom,
   submittedAtom,
   processingAtom,
+  loadingAtom,
   
   // Editor atoms
   editorAppendAtom,

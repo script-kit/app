@@ -30,7 +30,19 @@ export const getCurrentScreenPromptCache = (
   const currentScreen = getCurrentScreen();
   const screenId = String(currentScreen.id);
 
-  const savedPromptBounds = promptState?.screens?.[screenId]?.[scriptPath];
+  let savedPromptBounds = promptState?.screens?.[screenId]?.[scriptPath];
+
+  // Fallback: if nothing stored for the current screen, try any screen entry for this script.
+  if (!savedPromptBounds && promptState?.screens) {
+    for (const [sid, scripts] of Object.entries(promptState.screens)) {
+      const candidate = (scripts as any)?.[scriptPath];
+      if (candidate) {
+        savedPromptBounds = candidate;
+        log.info(`📱 Fallback bounds found on screen ${sid} for ${scriptPath}`, candidate);
+        break;
+      }
+    }
+  }
 
   if (savedPromptBounds) {
     log.info(`📱 Screen: ${screenId}: `, savedPromptBounds);
@@ -117,5 +129,4 @@ export const pointOnMouseScreen = ({ x, y }: { x: number; y: number }) => {
     y < mouseScreen.bounds.y + mouseScreen.bounds.height;
   return onMouseScreen;
 };
-
 

@@ -1,7 +1,9 @@
 import { computeResize, type ComputeResizeInput, type ComputeResizeOutput } from '../resize/compute';
 import { PROMPT } from '@johnlindquist/kit/core/enum';
 
-export type ResizeResult = ComputeResizeOutput;
+export type ResizeResult = ComputeResizeOutput & {
+  urgentShrink: boolean;
+};
 
 /**
  * Pure service function that performs resize calculations.
@@ -18,6 +20,7 @@ export function performResize(input: any): ResizeResult {
     promptData: {
       height: input.promptData?.height,
       baseHeight: PROMPT.HEIGHT.BASE,
+      preventCollapse: input.promptData?.preventCollapse,
     },
     topHeight: input.topHeight,
     footerHeight: input.footerHeight,
@@ -32,6 +35,51 @@ export function performResize(input: any): ResizeResult {
     prevMainHeight: input.prevMainHeight,
     placeholderOnly: input.placeholderOnly,
   };
-  
-  return computeResize(computeInput);
+
+  const base = computeResize(computeInput);
+
+  let mainHeight = base.mainHeight;
+  let forceHeight = base.forceHeight;
+  let forceResize = base.forceResize;
+
+  // Enforce minimum height when overlay is open
+  if (input.overlayOpen) {
+    const baseHeight =
+      (input.promptData?.height && input.promptData.height > PROMPT.HEIGHT.BASE)
+        ? (input.promptData.height as number)
+        : PROMPT.HEIGHT.BASE;
+    const minMain = Math.max(0, baseHeight - input.topHeight - input.footerHeight);
+    if (mainHeight < minMain) {
+      mainHeight = minMain;
+      forceResize = true;
+    }
+  }
+
+  // Prevent collapse when script opts out
+  if (mainHeight === 0 && input.promptData?.preventCollapse) {
+    const fallbackMain = Math.max(
+      input.mainHeightCurrent || 0,
+      Math.max(
+        0,
+        (input.promptData?.height ?? PROMPT.HEIGHT.BASE) -
+          input.topHeight -
+          input.footerHeight,
+      ),
+    );
+    mainHeight = fallbackMain;
+    forceResize = true;
+  }
+
+  const urgentShrink =
+    input.prevMainHeight > 0 &&
+    mainHeight > 0 &&
+    mainHeight < input.prevMainHeight &&
+    !input.placeholderOnly;
+
+  return {
+    mainHeight,
+    forceHeight,
+    forceResize,
+    urgentShrink,
+  };
 }

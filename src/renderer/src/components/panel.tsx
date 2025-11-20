@@ -57,11 +57,11 @@ export default function Panel() {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useResizeObserver(panelRef, (entry) => {
-    domUpdated()('Panel useResizeObserver');
+    domUpdated('Panel useResizeObserver');
   });
 
   useLayoutEffect(() => {
-    domUpdated()('Panel useLayoutEffect');
+    domUpdated('Panel useLayoutEffect');
 
     return () => {
       // domUpdated()(`Panel useLayoutEffect cleanup`);

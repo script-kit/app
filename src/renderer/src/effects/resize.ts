@@ -11,7 +11,6 @@ import {
     boundsAtom,
     promptResizedByHumanAtom,
     _mainHeight,
-    resizeTickAtom,
     // CRITICAL: Add missing dependencies identified in the ResizeController logic:
     logHTMLAtom,      // Log visibility/content affects height
     scriptAtom,       // Script properties (e.g., 'log: false') affect layout
@@ -23,9 +22,8 @@ import {
 } from '../jotai';
 
 import { _panelHTML } from "../state/atoms/preview";
-import { createLogger } from '../log-utils';
-
-const log = createLogger('resize-effect');
+import { scheduleResizeAtom } from '../state/resize/scheduler';
+import { ResizeReason } from '../state/resize/reasons';
 
 // Observe geometry-related atoms and trigger a state update for ResizeController.
 export const unobserveResize = observe((get, set) => {
@@ -54,18 +52,5 @@ export const unobserveResize = observe((get, set) => {
     // dependency changes. This avoids relying on setting _mainHeight to the same
     // value (which may not notify) and ensures the controller runs at least once
     // after choice swaps and readiness flips.
-    set(resizeTickAtom, (v) => {
-      const next = v + 1;
-      try {
-        log.info('resize-effect: bump resizeTickAtom', {
-          next,
-          ui: get(uiAtom),
-          promptId: get(promptDataAtom)?.id,
-          choicesReady: get(choicesReadyAtom),
-          choicesHeight: get(choicesHeightAtom),
-          hasPanel: get(_panelHTML) !== '',
-        });
-      } catch {}
-      return next;
-    });
+    set(scheduleResizeAtom, ResizeReason.DOM);
 });

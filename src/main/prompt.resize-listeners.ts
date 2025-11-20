@@ -1,4 +1,3 @@
-import { debounce } from 'lodash-es';
 import type { KitPrompt } from './prompt';
 import { Channel } from '@johnlindquist/kit/core/enum';
 import { screen } from 'electron';
@@ -29,20 +28,16 @@ export function setupResizeAndMoveListeners(prompt: KitPrompt) {
         });
     }
 
-    const willMoveHandler = debounce(
-        () => {
-            prompt.logSilly('event: will-move');
-            (kitState as any).modifiedByUser = true;
-        },
-        250,
-        { leading: true },
-    );
+    const willMoveHandler = () => {
+        prompt.logSilly('event: will-move');
+        (kitState as any).modifiedByUser = true;
+    };
 
-    const onMoved = debounce(() => {
+    const onMoved = () => {
         prompt.logSilly('event: onMove');
         (prompt as any).modifiedByUser = false;
         prompt.saveCurrentPromptBounds();
-    }, 250);
+    };
 
     prompt.window.on('will-move', willMoveHandler);
     prompt.window.on('resized', onResized);
@@ -61,5 +56,4 @@ export function setupResizeAndMoveListeners(prompt: KitPrompt) {
         });
     }
 }
-
 

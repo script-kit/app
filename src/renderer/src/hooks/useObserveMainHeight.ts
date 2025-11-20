@@ -1,39 +1,29 @@
 import useResizeObserver from '@react-hook/resize-observer';
 import { useAtom } from 'jotai';
-import { debounce } from 'lodash-es';
-import { type RefObject, useRef } from 'react';
+import { useCallback, useRef, type RefObject } from 'react';
 import { mainHeightAtom, openAtom } from '../jotai';
 
 export default <T extends HTMLElement = HTMLElement>(selector = '') => {
-  const containerRef = useRef<T>();
+  const containerRef = useRef<T | null>(null);
   const [, setMainHeight] = useAtom(mainHeightAtom);
   const [isOpen] = useAtom(openAtom);
 
-  const update = debounce(() => {
-    if (!isOpen) {
-      return;
-    }
-    const wrapper: any = document?.querySelector(selector);
-    // console.log(`>>> Update`);
+  const update = useCallback(() => {
+    if (!isOpen) return;
 
-    if (wrapper) {
-      const styleHeightString = wrapper?.style?.height;
-      if (styleHeightString) {
-        const styleHeight = Number.parseInt(styleHeightString.replace('px', ''), 10);
-        // console.log(`${selector} style height: ${styleHeight}`);
-        setMainHeight(styleHeight);
-      } else {
-        const elHeight = wrapper?.offsetHeight;
+    const wrapper =
+      (selector ? document.querySelector<HTMLElement>(selector) : null) ??
+      (containerRef.current as HTMLElement | null);
 
-        // console.log(`${selector} el height: ${elHeight}`);
-        setMainHeight(elHeight);
-      }
-    }
-  }, 100);
+    if (!wrapper) return;
 
-  // useLayoutEffect(update, []);
+    const height = wrapper.offsetHeight;
+    if (!Number.isFinite(height)) return;
+
+    setMainHeight((prev) => (prev === height ? prev : height));
+  }, [isOpen, selector, setMainHeight]);
+
   useResizeObserver(containerRef as RefObject<HTMLElement>, update);
-  // useEffect(update, [heightChanged]);
 
   return containerRef;
 };

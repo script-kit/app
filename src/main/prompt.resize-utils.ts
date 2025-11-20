@@ -19,14 +19,11 @@ export function calculateTargetDimensions(
         hasPreview,
         forceHeight,
         forceWidth,
-        // Note: hasInput previously gated shrinking below base for main script,
-        // but that blocked legitimate initial shrinks when choices are small.
-        // Prefer placeholderOnly/totalChoices instead.
-        hasInput,
+        forceResize = false,
         isMainScript,
         placeholderOnly,
         totalChoices,
-    } = resizeData as ResizeData & { placeholderOnly?: boolean; totalChoices?: number };
+    } = resizeData;
 
     const getCachedDimensions = (): Partial<Pick<Rectangle, 'width' | 'height'>> => {
         if (!isMainScript) return {};
@@ -46,8 +43,21 @@ export function calculateTargetDimensions(
     const maxHeight = Math.max(PROMPT.HEIGHT.BASE, currentBounds.height);
     const targetHeight = topHeight + mainHeight + footerHeight;
 
-    let width = cachedWidth || forceWidth || currentBounds.width;
-    let height = cachedHeight || forceHeight || Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
+    const baseWidth = cachedWidth ?? currentBounds.width;
+    const baseHeight = Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
+
+    let width = baseWidth;
+    let height = baseHeight;
+
+    if (typeof forceHeight === 'number') {
+        height = forceResize ? forceHeight : Math.max(baseHeight, forceHeight);
+    } else if (typeof cachedHeight === 'number') {
+        height = cachedHeight;
+    }
+
+    if (typeof forceWidth === 'number') {
+        width = forceResize ? forceWidth : Math.max(baseWidth, forceWidth);
+    }
 
     if (isSplash) {
         return {
@@ -83,7 +93,9 @@ export function calculateTargetDimensions(
         if (!isMainScript) {
             width = Math.max(getDefaultWidth(), width);
         }
-        height = currentBounds.height < PROMPT.HEIGHT.BASE ? PROMPT.HEIGHT.BASE : currentBounds.height;
+
+        const minPreviewHeight = PROMPT.HEIGHT.BASE;
+        height = Math.max(currentBounds.height, minPreviewHeight, height);
     }
 
     return { width, height };

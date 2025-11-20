@@ -425,14 +425,14 @@ export default function App() {
 					for (const addedNode of Array.from(mutation.addedNodes)) {
 						const addedElement = addedNode as Element;
 						if (idsToWatch.includes(addedElement.id)) {
-							domUpdated()(`${addedElement.id} added to DOM`);
+							domUpdated(`${addedElement.id} added to DOM`);
 						}
 					}
 
 					for (const removedNode of Array.from(mutation.removedNodes)) {
 						const removedElement = removedNode as Element;
 						if (removedElement.id === "panel-simplebar") {
-							domUpdated()(`${removedElement.id} removed from DOM`);
+							domUpdated(`${removedElement.id} removed from DOM`);
 						}
 					}
 				}

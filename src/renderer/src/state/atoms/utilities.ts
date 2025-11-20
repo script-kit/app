@@ -7,9 +7,6 @@ import { atom } from 'jotai';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import type { Choice } from '@johnlindquist/kit/types/core';
 
-// Import placeholderTimeoutId from jotai.ts to ensure we're using the same instance
-import { placeholderTimeoutId } from '../../jotai';
-
 // Import dependencies from shared-dependencies to avoid circular imports
 import {
   uiAtom,
@@ -24,6 +21,7 @@ import {
   submittedAtom,
   selectedChoicesAtom,
   choices,
+  loadingAtom,
 } from '../shared-dependencies';
 
 /**
@@ -43,12 +41,11 @@ export const appendInputAtom = atom(null, (g, s, a: string) => {
  * Handles validation failure by clearing input and showing hint.
  */
 export const valueInvalidAtom = atom(null, (g, s, a: string) => {
-  if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
-
   // Re-enable prompt interactions after a validation failure
   s(promptActiveAtom, true);
   // Allow subsequent submissions (submitValueAtom guards on submittedAtom)
   s(submittedAtom, false);
+  s(loadingAtom, false);
   s(processingAtom, false);
   s(inputAtom, '');
   s(_inputChangedAtom, false);
@@ -67,8 +64,8 @@ export const valueInvalidAtom = atom(null, (g, s, a: string) => {
  */
 export const preventSubmitAtom = atom(null, (_g, s, _a: string) => {
   s(promptActiveAtom, true);
-  if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
   s(submittedAtom, false);
+  s(loadingAtom, false);
   s(processingAtom, false);
   s(_inputChangedAtom, false);
 });

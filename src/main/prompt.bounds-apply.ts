@@ -1,12 +1,14 @@
 import { Channel } from '@johnlindquist/kit/core/enum';
 import { AppChannel } from '../shared/enums';
 import type { Rectangle } from 'electron';
-import { getCurrentScreen, getCurrentScreenFromBounds, isBoundsWithinDisplayById } from './screen';
+import { screen as electronScreen } from 'electron';
+import { getCurrentScreen, getCurrentScreenFromBounds, isBoundsWithinDisplayById, isBoundsWithinDisplays } from './screen';
 import { prompts } from './prompts';
 import { kitState } from './state';
 import { container } from './state/services/container';
 import { adjustBoundsToAvoidOverlap, ensureMinWindowHeight, getTitleBarHeight } from './prompt.bounds-utils';
 import { setPromptBounds as applyWindowBounds } from './prompt.window-utils';
+import { OFFSCREEN_X, OFFSCREEN_Y } from './prompt.options';
 
 export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reason = ''): void => {
   if (!prompt?.window || prompt.window.isDestroyed()) {
@@ -18,10 +20,12 @@ export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reaso
     return;
   }
   const currentBounds = prompt.window.getBounds();
-  const widthNotChanged = bounds?.width && Math.abs((bounds.width as number) - currentBounds.width) < 4;
-  const heightNotChanged = bounds?.height && Math.abs((bounds.height as number) - currentBounds.height) < 4;
-  const xNotChanged = bounds?.x && Math.abs((bounds.x as number) - currentBounds.x) < 4;
-  const yNotChanged = bounds?.y && Math.abs((bounds.y as number) - currentBounds.y) < 4;
+  const closeEnough = (target: number | undefined, current: number) =>
+    typeof target === 'number' ? Math.abs(target - current) < 4 : true;
+  const widthNotChanged = closeEnough(bounds?.width, currentBounds.width);
+  const heightNotChanged = closeEnough(bounds?.height, currentBounds.height);
+  const xNotChanged = closeEnough(bounds?.x, currentBounds.x);
+  const yNotChanged = closeEnough(bounds?.y, currentBounds.y);
 
   let sameXAndYAsAnotherPrompt = false;
   for (const p of prompts) {
@@ -34,7 +38,12 @@ export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reaso
     }
   }
 
+  const reasonUpper = (reason || '').toUpperCase();
+  const isPromptChangeReason =
+    reasonUpper.includes('PROMPT') || reasonUpper.includes('INIT');
+
   const noChange =
+    !isPromptChangeReason &&
     heightNotChanged &&
     widthNotChanged &&
     xNotChanged &&
@@ -46,6 +55,13 @@ export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reaso
     prompt.logInfo('📐 No change in bounds, ignoring', {
       currentBounds,
       bounds,
+      reason,
+      widthNotChanged,
+      heightNotChanged,
+      xNotChanged,
+      yNotChanged,
+      sameXAndYAsAnotherPrompt,
+      promptsFocused: prompts.focused,
     });
     return;
   }
@@ -58,6 +74,7 @@ export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reaso
   const boundsScreen = getCurrentScreenFromBounds(prompt.window?.getBounds());
   const mouseScreen = getCurrentScreen();
   const boundsOnMouseScreen = isBoundsWithinDisplayById(bounds as Rectangle, mouseScreen.id);
+  const cachedWithinAnyDisplay = isBoundsWithinDisplays(bounds as Rectangle);
 
   prompt.logInfo(
     `${prompt.pid}: boundsScreen.id ${boundsScreen.id} mouseScreen.id ${mouseScreen.id} boundsOnMouseScreen ${boundsOnMouseScreen ? 'true' : 'false'} isVisible: ${prompt.isVisible() ? 'true' : 'false'}`,
@@ -69,9 +86,40 @@ export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reaso
     currentScreen = mouseScreen;
   }
 
+  // Prefer an explicit screenId from cached bounds (multi-display) if present.
+  const boundsScreenId = (bounds as any)?.screenId;
+  let targetScreen = currentScreen;
+  let targetScreenFound = false;
+  if (boundsScreenId !== undefined) {
+    const target = electronScreen.getAllDisplays().find((d) => String(d.id) === String(boundsScreenId));
+    if (target) {
+      targetScreenFound = true;
+      targetScreen = target;
+      prompt.logInfo('🖥️ Using target screen from cached bounds', { targetScreenId: target.id });
+    } else {
+      prompt.logInfo('🖥️ Cached screen not found, will recenter on mouse screen', { boundsScreenId });
+      targetScreen = mouseScreen;
+    }
+  }
+
   const { x, y, width, height } = { ...currentBounds, ...bounds } as Rectangle;
-  const { x: workX, y: workY } = currentScreen.workArea;
-  const { width: screenWidth, height: screenHeight } = currentScreen.workAreaSize;
+  const { x: workX, y: workY } = targetScreen.workArea;
+  const { width: screenWidth, height: screenHeight } = targetScreen.workAreaSize;
+
+  prompt.logInfo('🛰️ Bounds debug', {
+    reason,
+    incoming: bounds,
+    currentBounds,
+    boundsScreenId,
+    targetScreenId: targetScreen.id,
+    workX,
+    workY,
+    screenWidth,
+    screenHeight,
+    boundsOnMouseScreen,
+    cachedWithinAnyDisplay,
+    targetScreenFound,
+  });
 
   const newBounds: Rectangle = {
     x: typeof bounds?.x === 'number' ? (bounds.x as number) : currentBounds.x,
@@ -81,10 +129,6 @@ export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reaso
   } as Rectangle;
 
   const xIsNumber = typeof x === 'number';
-
-  if (!boundsOnMouseScreen) {
-    prompt.window.center();
-  }
 
   if (xIsNumber && x < workX) {
     newBounds.x = workX;
@@ -107,6 +151,67 @@ export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reaso
   if (height && (height as number) > screenHeight) {
     newBounds.y = workY;
     newBounds.height = screenHeight;
+  }
+
+  const missingPosition = typeof bounds?.x !== 'number' || typeof bounds?.y !== 'number';
+  const isDefaultPosition =
+    currentBounds.x === 0 ||
+    currentBounds.y === 0 ||
+    currentBounds.x === OFFSCREEN_X ||
+    currentBounds.y === OFFSCREEN_Y;
+  const isZeroPosition = bounds?.x === 0 && bounds?.y === 0;
+  const targetFitsCachedScreen =
+    targetScreenFound && isBoundsWithinDisplayById(newBounds, targetScreen.id);
+  const isAtWorkOrigin =
+    Math.abs(newBounds.x - workX) < 4 && Math.abs(newBounds.y - workY) < 4;
+
+  // Center only when we truly lack a position (initial show/prompt change) or the window sits at defaults/zero.
+  if (
+    missingPosition ||
+    isDefaultPosition ||
+    (isPromptChangeReason && isZeroPosition) ||
+    !boundsOnMouseScreen ||
+    !cachedWithinAnyDisplay ||
+    (targetScreenFound && !targetFitsCachedScreen) ||
+    (isPromptChangeReason && isAtWorkOrigin)
+  ) {
+    prompt.logInfo('📍 Recentering because missing position', {
+      missingPosition,
+      isPromptChangeReason,
+      isDefaultPosition,
+      isZeroPosition,
+      isAtWorkOrigin,
+      boundsOnMouseScreen,
+      cachedWithinAnyDisplay,
+      targetScreenFound,
+      targetFitsCachedScreen,
+      workX,
+      workY,
+      screenWidth,
+      screenHeight,
+      newWidth: newBounds.width,
+      newHeight: newBounds.height,
+    });
+    newBounds.x = Math.round(workX + (screenWidth - newBounds.width) / 2);
+    newBounds.y = Math.round(workY + screenHeight / 8);
+  }
+
+  // If the proposed bounds fall off the current screen, recenter on the current screen.
+  const fitsOnCurrent = isBoundsWithinDisplayById(newBounds, targetScreen.id);
+  const fitsAny = isBoundsWithinDisplays(newBounds);
+  if (!fitsOnCurrent || !fitsAny) {
+    prompt.logInfo('📍 Recentering because bounds off-screen', {
+      fitsOnCurrent,
+      fitsAny,
+      currentScreenId: currentScreen.id,
+      proposed: newBounds,
+      workX,
+      workY,
+      screenWidth,
+      screenHeight,
+    });
+    newBounds.x = Math.round(workX + (screenWidth - newBounds.width) / 2);
+    newBounds.y = Math.round(workY + screenHeight / 8);
   }
 
   const prefWidth = container.getConfig().getPreferredPromptWidth();

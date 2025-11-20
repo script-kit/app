@@ -38,12 +38,11 @@ export const writePromptState = (
     if (!bounds.width) {
         return;
     }
-    if (!bounds.x) {
+    if (!bounds.x && bounds.x !== 0) {
         return;
     }
-    if (!bounds.y) {
+    if (!bounds.y && bounds.y !== 0) {
         return;
     }
     (promptState as any).screens[screenId][scriptPath] = bounds;
 };
-
