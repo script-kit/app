@@ -1,46 +1,22 @@
 /* eslint-disable prettier/prettier */
-const defaultTheme = require('tailwindcss/defaultTheme');
 const colors = require('tailwindcss/colors');
 
 const { lightBlue, coolGray, blueGray, trueGray, warmGray, ...safeColors } = colors;
 
-const colorVar = (name, opacityName) => (v) => {
-  const { opacityVariable, opacityValue } = v;
-
-  // Get the color value
-  const color = `var(--color-${name})`;
-
-  // Determine the alpha value
-  let alpha;
-
-  // opacityName example: 'ui-bg-opacity'
+// In Tailwind v4, color functions work differently
+// We use a simpler approach that returns the color-mix string directly
+const colorVar = (name, opacityName) => {
+  // For string opacity names (CSS variable references)
   if (typeof opacityName === 'string') {
-    alpha = `calc(var(--${opacityName}) * 100%)`;
+    return `color-mix(in srgb, var(--color-${name}) calc(var(--${opacityName}) * 100%), transparent)`;
   }
-  // opacityValue example: var(--ui-bg-opacity)
-  else if (typeof opacityValue === 'string') {
-    if (opacityValue.startsWith('var')) {
-      alpha = `calc(${opacityValue} * 100%)`;
-    } else {
-      alpha = `${Math.round(Number.parseFloat(opacityValue) * 100)}%`;
-    }
-  } else if (typeof opacityValue === 'undefined') {
-    alpha = '100%';
-  } else if (typeof opacityName === 'number') {
-    if (opacityName < 1) {
-      alpha = Math.round(opacityName * 100);
-    } else {
-      alpha = opacityName;
-    }
-    alpha = `${alpha}%`;
-  } else if (typeof opacityName === 'undefined') {
-    alpha = '100%';
+  // For numeric opacity values
+  if (typeof opacityName === 'number') {
+    const alpha = opacityName < 1 ? Math.round(opacityName * 100) : opacityName;
+    return `color-mix(in srgb, var(--color-${name}) ${alpha}%, transparent)`;
   }
-
-  // Return the color with alpha
-  const colorWithAlpha = `color-mix(in srgb, var(--color-${name}) ${alpha}, transparent)`;
-
-  return colorWithAlpha;
+  // Default: full opacity - just return the CSS variable
+  return `var(--color-${name})`;
 };
 
 const round = (num) =>
@@ -86,18 +62,10 @@ const safeListStartsWith = [
 
 /* eslint-disable global-require */
 module.exports = {
-  mode: process.env.NODE_ENV === 'development' ? 'jit' : '',
+  // In Tailwind v4, content paths are auto-detected, but we keep them for explicit source configuration
   content: ['./src/**/*.html', './src/**/*.tsx', './src/*.ts', './safelist.txt'],
-  safelist: [
-    {
-      pattern: new RegExp(`^(${safeListStartsWith.join('|')})`),
-    },
-  ],
-  variants: {
-    extend: {
-      borderWidth: ['hover'],
-    },
-  },
+  // Note: safelist is not supported in v4, use @source inline() in CSS instead if needed
+  // Note: mode and variants are deprecated in v4 (JIT is always on, variants are always available)
   theme: {
     // Add your custom filter here
     dropShadow: {
@@ -105,7 +73,6 @@ module.exports = {
       'secondary-glow': '0 0 10px var(--color-secondary)',
     },
     colors: {
-      ...defaultTheme.colors,
       ...safeColors,
       gray: colors.stone,
       primary: colorVar('primary'),
@@ -166,9 +133,9 @@ module.exports = {
         'pulse-emoji': 'pulse-emoji 1.5s ease-in-out infinite',
         'spin-pulse': 'spin-pulse 1.2s linear infinite',
       },
-      backgroundImage: (theme) => ({
+      backgroundImage: {
         'random-shapes': "url('/src/svg/ui/random-shapes.svg')",
-      }),
+      },
       fontFamily: {
         sans: ['var(--sans-font)'],
         serif: ['var(--serif-font)'],
@@ -238,27 +205,28 @@ module.exports = {
       fontSize: {
         xxs: ['0.65rem', '0.75rem'],
       },
-      typography: (theme) => ({
+      typography: {
         DEFAULT: {
           css: {
-            '--tw-prose-headings': theme('colors.text.base'),
-            '--tw-prose-code': theme('colors.text.base'),
-            '--tw-prose-quotes': theme('colors.text.base'),
-            '--tw-prose-links': theme('colors.text.base'),
-            '--tw-prose-pre-code': theme('colors.text.base'),
+            // Use CSS variables directly instead of theme() for v4 compatibility
+            '--tw-prose-headings': 'var(--color-text)',
+            '--tw-prose-code': 'var(--color-text)',
+            '--tw-prose-quotes': 'var(--color-text)',
+            '--tw-prose-links': 'var(--color-text)',
+            '--tw-prose-pre-code': 'var(--color-text)',
             '--tw-prose-pre-bg': 'transparent',
-            '--tw-prose-bold': theme('colors.text.base'),
-            '--tw-prose-italic': theme('colors.text.base'),
+            '--tw-prose-bold': 'var(--color-text)',
+            '--tw-prose-italic': 'var(--color-text)',
             thead: {
-              borderBottomColor: theme('colors.ui-border'),
+              borderBottomColor: colorVar('secondary', 'ui-border-opacity'),
             },
             tr: {
-              borderBottomColor: theme('colors.ui-border'),
+              borderBottomColor: colorVar('secondary', 'ui-border-opacity'),
             },
             maxWidth: '100%',
-            color: theme('colors.text.base'),
+            color: 'var(--color-text)',
             a: {
-              color: theme('colors.primary'),
+              color: 'var(--color-primary)',
             },
             code: {
               padding: '1px 3px',
@@ -288,18 +256,18 @@ module.exports = {
               margin: '0 .75rem 0 .5rem',
             },
             'input:focus': {
-              border: `1px solid ${theme('colors.text.base')}`,
+              border: '1px solid var(--color-text)',
             },
             'input:focus-visible': {
-              outline: `1px solid ${theme('colors.text.base')}`,
+              outline: '1px solid var(--color-text)',
             },
             'input:not([type]),select': {
-              border: `1px solid ${theme('colors.text.base')}`,
-              color: theme('colors.text.base'),
+              border: '1px solid var(--color-text)',
+              color: 'var(--color-text)',
               padding: '0 2rem 0 0.5rem',
             },
             'input:checked': {
-              color: theme('colors.text.base'),
+              color: 'var(--color-text)',
               outline: 'none',
             },
             'input[type="checkbox"]': {
@@ -310,7 +278,7 @@ module.exports = {
               marginRight: '.5rem',
             },
             'input[type="submit"]': {
-              outline: `1px solid ${theme('colors.text.base')}`,
+              outline: '1px solid var(--color-text)',
               padding: '0.25rem .5rem',
             },
             'input[type="submit"]:hover': {
@@ -321,11 +289,12 @@ module.exports = {
               marginBottom: '.25rem',
             },
             'ul > li::marker': {
-              color: theme('colors.text.fade'),
+              // text.fade doesn't exist in config, using a semi-transparent text color
+              color: 'color-mix(in srgb, var(--color-text) 50%, transparent)',
             },
             blockquote: {
               padding: '1rem',
-              borderLeft: `2px solid ${theme('colors.primary')}`,
+              borderLeft: '2px solid var(--color-primary)',
               fontWeight: '400',
               fontStyle: 'normal',
             },
@@ -351,13 +320,15 @@ module.exports = {
             h1: {
               fontSize: em(24, 16),
               fontWeight: '600',
-              fontFamily: theme('fontFamily.ui').join(', '),
+              // Use CSS variable directly for v4 compatibility
+              fontFamily: 'var(--ui-font)',
               textTransform: 'none',
             },
             h2: {
               fontSize: em(18, 16),
               fontWeight: 'bold',
-              fontFamily: theme('fontFamily.ui').join(', '),
+              // Use CSS variable directly for v4 compatibility
+              fontFamily: 'var(--ui-font)',
               textTransform: 'none',
             },
             h3: {
@@ -371,7 +342,7 @@ module.exports = {
             },
           },
         },
-      }),
+      },
     },
   },
   plugins: [require('@tailwindcss/forms'), require('@tailwindcss/typography')],

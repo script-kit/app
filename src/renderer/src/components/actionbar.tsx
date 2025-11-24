@@ -77,9 +77,8 @@ export default function ActionBar() {
         flex-1
         items-center px-2
 text-sm font-medium
-${textContrast}
+text-primary/75
 truncate
-text-opacity-75
       `}
         >
           <div className="min-w-0 truncate pb-px" dangerouslySetInnerHTML={{ __html: footer }} />

@@ -1,3 +1,4 @@
+@import 'tailwindcss';
 @import '@fontsource/jetbrains-mono';
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/500.css';
@@ -13,25 +14,29 @@
 @import 'animate.css/animate.min.css';
 /* @import 'monaco-editor/min/vs/editor/editor.main.css'; */
 
-/*
-Favicon gradient
-<stop stop-color="#FFE86F" />
-<stop offset=".333" stop-color="#FED533" />
-<stop offset=".714" stop-color="#FFB800" />
-<stop offset="1" stop-color="#FFA800" /> */
+/* Load Tailwind config - must be after @import statements */
+@config '../../../../tailwind.config.js';
 
-/* @import '../node_modules/highlight.js/styles/solarized-light.css'; */
-/* .hljs {
-  background: rgba(0, 0, 0, 0.2);
-} */ /* FBBF24 */ /* 4F46E5 */
-/* --color-primary: 79, 70, 229; indigo*/
-/* This will get written to ~/.kit/db/theme.json on first pass */
+/* Tailwind v4 @theme - Semantic color tokens */
+@theme {
+  --color-text-base: var(--color-text);
+  --color-ui-bg: color-mix(in srgb, var(--color-secondary) calc(var(--ui-bg-opacity) * 100%), transparent);
+  --color-ui-border: color-mix(in srgb, var(--color-secondary) calc(var(--ui-border-opacity) * 100%), transparent);
+}
+
+/* Tailwind v4: bg-opacity-base sets background with dynamic opacity from theme */
+@utility bg-opacity-base {
+  background-color: color-mix(in oklab, var(--color-background, #0f0f0f) calc(var(--opacity, 0.5) * 100%), transparent);
+}
+
+/* Default CSS variables (overridden by theme.ts) */
 html {
   @apply h-screen min-h-screen;
   --color-text: #FFFFFF;
   --color-primary: #FBBF24;
   --color-secondary: #343434;
   --color-background: #0F0F0F;
+  --opacity: 0.5;
   --ui-bg-opacity: 0.05;
   --ui-border-opacity: 0.15;
   /* Check useThemeDetector... */
@@ -49,24 +54,9 @@ html {
   --toastify-toast-max-height: 40px;
 }
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* * {
-  outline: red solid 1px;
-} */
-
 img:before {
   content: ' ';
 }
-
-/* img:after {
-  content: '🙈 missing image';
-  @apply text-xxs;
-  @apply font-mono;
-  @apply break-words;
-} */
 
 body {
   @apply text-text-base dark:text-white;
@@ -74,7 +64,6 @@ body {
   @apply overflow-hidden;
   @apply h-screen min-h-screen;
   @apply overflow-y-hidden;
-  /* --tw-bg-opacity: 0.3; */
 }
 
 #root {
@@ -104,7 +93,7 @@ body {
 }
 
 .log .simplebar-scrollbar:before {
-  @apply bg-secondary bg-opacity-60 opacity-100;
+  @apply bg-secondary/60 opacity-100;
 }
 
 *:not(textarea):not(.scrollbar):not(.chat-scrollbar)::-webkit-scrollbar {
@@ -481,21 +470,21 @@ body {
 }
 
 .emoji-picker-react .emoji button:hover {
-  @apply bg-bg-base bg-opacity-50;
+  @apply bg-bg-base/50;
 }
 
 .emoji-picker-react .emoji button:focus {
-  @apply bg-bg-base bg-opacity-90;
+  @apply bg-bg-base/90;
   @apply outline outline-1 outline-bg-base;
 }
 
 button.epr-emoji:focus > * {
-  @apply bg-primary/40 !important;
+  @apply bg-primary/40!;
 }
 
 .prose > pre {
   @apply m-0 p-0;
-  @apply bg-text-base bg-opacity-0;
+  @apply bg-text-base/0;
   @apply min-h-8;
 }
 
@@ -503,8 +492,8 @@ code.hljs {
   @apply block;
   @apply py-4 pl-4 pr-4;
   @apply leading-snug;
-  @apply bg-text-base bg-opacity-5;
-  @apply border border-bg-base border-opacity-10;
+  @apply bg-text-base/5;
+  @apply border border-bg-base/10;
   @apply rounded;
   @apply my-4;
   @apply text-sm;
@@ -512,7 +501,7 @@ code.hljs {
   white-space: break-spaces;
 }
 .sponsor-button{
-  @apply shadow-xl shadow-primary/25 text-bg-base font-bold px-3 py-3.5 no-underline rounded bg-primary bg-opacity-100 hover:opacity-80
+  @apply shadow-xl shadow-primary/25 text-bg-base font-bold px-3 py-3.5 no-underline rounded bg-primary hover:opacity-80
 }
 
 .hljs-copy-wrapper {
@@ -527,13 +516,13 @@ code.hljs {
   @apply -mb-4 font-mono font-bold text-sm pl-2 opacity-60;
 }
 .hljs-copy-button {
-  @apply text-text-base text-opacity-25 dark:text-white dark:text-opacity-25;
+  @apply text-text-base/25 dark:text-white/25;
   @apply right-1 top-1 mt-0.5 h-5 w-5;
   position: absolute;
 }
 
 .hljs-copy-button:hover {
-  @apply text-text-base text-opacity-50 dark:text-white dark:text-opacity-50;
+  @apply text-text-base/50 dark:text-white/50;
 }
 
 .dark .prose > pre,
@@ -556,7 +545,7 @@ code.hljs {
 .hljs-copy-checked::after {
   content: '✓';
   @apply absolute;
-  @apply text-text-base text-opacity-50 dark:text-white dark:text-opacity-50;
+  @apply text-text-base/50 dark:text-white/50;
   @apply right-2 top-1;
   @apply text-xs;
 }
@@ -578,11 +567,11 @@ ul {
   /* Styles for keyboard shortcut */
   @apply text-text-base;
   @apply font-mono text-sm font-bold;
-  @apply bg-bg-base bg-opacity-10;
+  @apply bg-bg-base/10;
   @apply rounded;
   @apply px-1;
   @apply border;
-  @apply border-bg-base border-opacity-25;
+  @apply border-bg-base/25;
 }
 
 .prose code::before,
@@ -591,7 +580,7 @@ code::after {
 }
 
 .prose .hljs {
-  @apply text-text-base text-opacity-80;
+  @apply text-text-base/80;
   @apply font-mono font-normal;
 }
 
@@ -601,13 +590,13 @@ code::after {
 
 .kit-chat-input,
 .kit-chat-input > textarea {
-  @apply border-t-1 bg-bg-base bg-opacity-0 px-2 text-text-base outline-none placeholder:text-text-base placeholder:text-opacity-25;
+  @apply border-t-1 bg-bg-base/0 px-2 text-text-base outline-none placeholder:text-text-base/25;
   @apply min-h-11;
 }
 
 .rce-input,
 .rce-input:focus {
-  @apply rounded-sm bg-bg-base bg-opacity-0 text-text-base outline-none ring-0 ring-opacity-0 focus:outline-none focus:ring-0 focus:ring-primary focus:ring-opacity-25;
+  @apply rounded-sm bg-bg-base/0 text-text-base outline-none ring-0 focus:outline-none focus:ring-0 focus:ring-primary/25;
 }
 
 .kit-chat-submit {
@@ -620,12 +609,12 @@ code::after {
 
 .rce-mbox:has(.left) {
   /* inverted with half opacity */
-  @apply ml-6 mr-24 bg-bg-base bg-opacity-0 text-text-base;
+  @apply ml-6 mr-24 bg-bg-base/0 text-text-base;
 }
 
 .rce-mbox:has(.right) {
   /* inverted with half opacity */
-  @apply ml-24 mr-6 bg-text-base bg-opacity-10 text-text-base;
+  @apply ml-24 mr-6 bg-text-base/10 text-text-base;
 }
 
 .rce-mbox:has(.left),
@@ -633,11 +622,11 @@ code::after {
   user-select: text;
   min-width: 1rem;
   min-height: 1.5rem;
-  @apply whitespace-pre-wrap px-2.5 text-opacity-90;
+  @apply whitespace-pre-wrap px-2.5 opacity-90;
   @apply shadow-sm;
   @apply focus:shadow-md;
   @apply px-3 py-1;
-  @apply border border-text-base border-opacity-15;
+  @apply border border-text-base/15;
 
   /* Set the max width to full - 3rem */
   max-width: calc(100% - 8rem);
@@ -665,7 +654,7 @@ code::after {
   @apply focus:border-none;
 }
 .rce-mbox:has([tabIndex]:focus) {
-  @apply border border-primary border-opacity-75;
+  @apply border border-primary/75;
 }
 
 .kit-form input,
@@ -673,15 +662,15 @@ code::after {
 .kit-form select,
 .kit-form button {
   @apply ring-0 focus:ring-0;
-  @apply outline-0 outline-primary !important;
-  @apply border-text-base/15 !important;
-  @apply focus:border-primary/75 !important;
+  @apply outline-0! outline-primary!;
+  @apply border-text-base/15!;
+  @apply focus:border-primary/75!;
   @apply bg-bg-base/0;
   /* make !important */
 }
 
 .rce-mbox code.language-markdown {
-  @apply text-text-base text-opacity-90;
+  @apply text-text-base/90;
   @apply font-mono font-normal;
   @apply text-xs;
   @apply px-4 py-2;
@@ -690,7 +679,7 @@ code::after {
 
 .Toastify__toast {
   @apply px-4;
-  @apply mb-1 !important;
+  @apply mb-1!;
 }
 
 .Toastify__toast-container--top-right {
@@ -698,12 +687,12 @@ code::after {
 }
 
 .Toastify__toast-container--bottom-right {
-  @apply right-2 bottom-2 !important;
+  @apply right-2! bottom-2!;
 }
 
 /* Conditional style if another element exists */
 body:has(#footer) .Toastify__toast-container--bottom-right {
-  @apply bottom-8 !important;
+  @apply bottom-8!;
 }
 
 @media (max-height: 48px) {
@@ -819,7 +808,7 @@ body:has(#footer) .Toastify__toast-container--bottom-right {
 }
 
 .kit-mbox > .rce-mbox {
-  @apply border-none !important;
+  @apply border-none!;
 }
 
 .kit-mbox-copied:hover::before,
@@ -911,34 +900,36 @@ body:has(#footer) .Toastify__toast-container--bottom-right {
 } */
 
 pre > code {
-  @apply text-xs !important;
+  @apply text-xs!;
 }
 
 .epr-emoji-category-label {
-  @apply bg-ui-bg !important;
+  @apply bg-ui-bg!;
 }
 
 .monaco-editor {
-  @apply outline-none !important;
+  @apply outline-none!;
 }
 
 .monaco-editor .inputarea {
-  @apply bg-ui-bg !important;
+  @apply bg-ui-bg!;
   /* Remove all borders and outlines */
-  @apply border-none !important;
-  @apply outline-none !important;
+  @apply border-none!;
+  @apply outline-none!;
   /* Remove ring */
-  @apply ring-0 !important;
+  @apply ring-0!;
 }
 
 .font-normal-medium {
   font-weight: 450;
 }
 
-.draggable{
+/* Define draggable utilities for v4 */
+@utility draggable {
   -webkit-app-region: drag;
 }
-.no-drag {
+
+@utility no-drag {
   -webkit-app-region: no-drag;
 }
 

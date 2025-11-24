@@ -162,13 +162,12 @@ ${currentInput === '' && invalidateChoiceInputs ? 'outline-primary/50 focus:outl
 border-none
 overflow-hidden
 tracking-normal
-text-text-base placeholder-text-base
-placeholder-opacity-25
+text-text-base placeholder-text-base/25
 placeholder:tracking-normal
 bg-secondary/5
 rounded-md
 text-md
-${submitted && 'text-opacity-50'}
+${submitted && 'text-text-base/50'}
 outline-none
 outline-hidden pr-1
 mt-0.5
@@ -414,19 +413,17 @@ function MainInput() {
         disabled={submitted || promptData?.scriptlet || overlayOpen}
         className={`
 
-bg-transparent tracking-normal text-text-base placeholder-text-base
-placeholder-opacity-25
+bg-transparent tracking-normal text-text-base placeholder-text-base/25
 placeholder:tracking-normal
 outline-none
 focus:outline-none
 focus:border-none
 border-none
 ${fontSize}
-${(submitted || overlayOpen) && 'text-opacity-50'}
+${(submitted || overlayOpen) && 'text-text-base/50'}
 
-max-w-full  pl-4 pr-0 py-0 ring-0 ring-opacity-0
+max-w-full  pl-4 pr-0 py-0 ring-0
 focus:ring-0
-focus:ring-opacity-0
 
 ${promptData?.inputClassName || ''}
 `}

@@ -44,8 +44,7 @@ w-full
 flex-row items-center border-b-2
 border-primary
 pb-[3px]
-text-sm text-primary
-text-opacity-90
+text-sm text-primary/90
     hover:cursor-pointer
     `}
     >

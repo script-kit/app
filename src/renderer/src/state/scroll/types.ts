@@ -5,8 +5,6 @@
  * All scrolling operations go through this type-safe API.
  */
 
-import type { GridOnScrollProps } from 'react-window';
-
 /**
  * Scroll context identifies which scrollable area to target
  */

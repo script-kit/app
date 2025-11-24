@@ -40,7 +40,7 @@ export function LoginButton() {
   text-sm
 
   font-medium
-  text-primary text-opacity-25 outline-none
+  text-primary/25 outline-none
   transition-opacity duration-200 ease-out ${bg}  ${textContrast}`}
       onClick={onClick}
       // blur on mouse down

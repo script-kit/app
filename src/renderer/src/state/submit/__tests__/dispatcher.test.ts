@@ -17,11 +17,11 @@ describe('submit dispatcher', () => {
     expect((d as any).override).toEqual({ value: 'value', flag: 'flag' });
   });
 
-  it('returns VALUE_SUBMITTED without flag when overlay closed and no action', () => {
+  it('returns VALUE_SUBMITTED with flag when overlay closed and no action', () => {
     const ctx = { hasAction: false, action: {}, overlayOpen: false, flag: 'flag' } as any;
     const d = decideSubmit(ctx, 'value');
     expect(d.channel).toBe(Channel.VALUE_SUBMITTED);
-    expect((d as any).override).toEqual({ value: 'value' });
+    expect((d as any).override).toEqual({ value: 'value', flag: 'flag' });
   });
 });
 

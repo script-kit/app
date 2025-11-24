@@ -1,14 +1,12 @@
 import { PROMPT } from '@johnlindquist/kit/core/enum';
 import type { Choice, Script } from '@johnlindquist/kit/types/core';
-import type { ScoredChoice } from '../../../shared/types';
+import type { ChoiceButtonProps, ScoredChoice } from '../../../shared/types';
 import log from 'electron-log';
 import parse from 'html-react-parser';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import useListNav from '../hooks/useListNav';
 import React, { useCallback, useEffect, useState, type DragEvent, useMemo, useRef } from 'react';
 const { ipcRenderer } = window.electron;
-
-import type { ChoiceButtonProps } from '../../../shared/types';
 import {
   _modifiers,
   buttonDescriptionFontSizeAtom,
@@ -17,7 +15,6 @@ import {
   openActionsOverlayAtom,
   closeActionsOverlayAtom,
   indexAtom,
-  inputAtom,
   isMouseDownAtom,
   isScrollingAtom,
   mouseEnabledAtom,
@@ -70,7 +67,7 @@ const ChoiceName = React.memo(({ scoredChoice, input, base, buttonNameFontSize, 
   }, [choice, input, base]);
   return (
     <div className={`${buttonNameFontSize} truncate ${choice?.nameClassName}`}>
-      {highlight(memoizedChoiceName, scoredChoice?.matches?.slicedName, 'bg-primary bg-opacity-5 text-primary')}
+      {highlight(memoizedChoiceName, scoredChoice?.matches?.slicedName, 'bg-primary/5 text-primary')}
       {choice?.nameHTML && parse(choice?.nameHTML)}
     </div>
   );
@@ -109,7 +106,7 @@ const ChoiceDescription = React.memo(
                 ? highlight(
                     choice.description || '',
                     scoredChoice?.matches?.description,
-                    'bg-primary bg-opacity-5 text-primary',
+                    'bg-primary/5 text-primary',
                   )
                 : choice?.description}
           </div>
@@ -170,15 +167,14 @@ const ChoiceButtonContent = React.memo(
 
                             justify-center
                             rounded
-                            bg-text-base
-                            bg-opacity-10
+                            bg-text-base/10
                             fill-current
 
         text-xs
             font-bold text-primary/90
             transition
             ease-in
-            hover:bg-opacity-20 hover:text-primary/90
+            hover:bg-text-base/20 hover:text-primary/90
 
 
             `}
@@ -243,7 +239,7 @@ const ChoiceButtonContent = React.memo(
   },
 );
 
-function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceButtonProps) {
+function ChoiceButton({ index: buttonIndex, style, choices, input }: ChoiceButtonProps) {
   const scoredChoice = choices[buttonIndex];
   const choice = scoredChoice?.item;
   const [index, setIndex] = useAtom(indexAtom);
@@ -257,7 +253,6 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
   const [modifierDescription, setModifierDescription] = useState('');
   const [buttonNameFontSize] = useAtom(buttonNameFontSizeAtom);
   const [buttonDescriptionFontSize] = useAtom(buttonDescriptionFontSizeAtom);
-  const input = useAtomValue(inputAtom);
   const [, setSubmitValue] = useAtom(submitValueAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [, toggleSelectedChoice] = useAtom(toggleSelectedChoiceAtom);
@@ -469,7 +464,7 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
                     ? highlight(
                         choice.tag,
                         scoredChoice?.matches?.tag,
-                        'bg-text-base bg-opacity-0 text-primary text-opacity-100',
+                        'bg-text-base/0 text-primary',
                       )
                     : ''}
 
@@ -485,7 +480,7 @@ function ChoiceButton({ index: buttonIndex, style, data: { choices } }: ChoiceBu
                 className={`
                     mx-1 h-6 rounded-full
                     border-2
-                    border-bg-base border-opacity-50
+                    border-bg-base/50
                     `}
                 src={choice?.icon}
               />

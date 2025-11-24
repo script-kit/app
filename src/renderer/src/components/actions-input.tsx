@@ -195,15 +195,14 @@ export default function ActionsInput() {
             }
             disabled={submitted}
             className={`
-      flex-1 bg-transparent tracking-normal text-text-base placeholder-text-base
-      placeholder-opacity-25 outline-none
+      flex-1 bg-transparent tracking-normal text-text-base placeholder-text-base/25
+      outline-none
       placeholder:tracking-normal
       focus:outline-none
       ${fontSize}
       h-full
-      max-w-full border-none px-4 py-0 ring-0 ring-opacity-0
+      max-w-full border-none px-4 py-0 ring-0
       focus:border-none focus:ring-0
-      focus:ring-opacity-0
       `}
             onChange={onChange}
             onKeyDown={onKeyDown}

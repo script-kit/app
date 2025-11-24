@@ -13,7 +13,7 @@ import { debounce } from 'lodash-es';
 import { AppChannel } from '../shared/enums';
 import type { ScoredChoice } from '../shared/types';
 import { createScoredChoice, createAsTypedChoice, structuredClone } from './helpers';
-import { searchLog as log } from './logs';
+import { searchLog as log, perf } from './logs';
 import { cacheChoices } from './messages';
 import type { KitPrompt } from './prompt';
 import { kitCache, kitState } from './state';
@@ -21,9 +21,14 @@ import { searchChoices, scoreChoice, isExactMatch, startsWithQuery, clearFuzzyCa
 
 
 export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'normal') => {
-  // log.info(`${prompt.pid}: ${reason}: Invoke search: '${rawInput}'`);
+  const endPerfInvokeSearch = perf.start('invokeSearch', {
+    input: rawInput,
+    choiceCount: prompt.kitSearch.choices.length,
+    reason: _reason,
+  });
 
   if (prompt.ui !== UI.arg) {
+    endPerfInvokeSearch();
     return;
   }
 
@@ -37,6 +42,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
 
   if (prompt.kitSearch.choices.length === 0) {
     setScoredChoices(prompt, [], 'prompt.kitSearch.choices.length === 0');
+    endPerfInvokeSearch();
     return;
   }
 
@@ -97,6 +103,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
       setScoredChoices(prompt, results, 'transformedInput === "" && results.length > 0');
     }
 
+    endPerfInvokeSearch();
     return;
   }
 
@@ -339,6 +346,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     combinedResults.push(...asTypedChoices);
 
     setScoredChoices(prompt, combinedResults, 'prompt.kitSearch.hasGroup');
+    endPerfInvokeSearch();
   } else if (resultLength === 0) {
     // VS Code fuzzy search returned no results, show miss/info choices
     const fallbackResults: ScoredChoice[] = [];
@@ -353,6 +361,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     fallbackResults.push(...asTypedChoices);
 
     setScoredChoices(prompt, fallbackResults, 'resultLength === 0');
+    endPerfInvokeSearch();
   } else {
     // Non-grouped results - already sorted by VS Code algorithm
     const infoChoices = result.filter(r => r.item.info);
@@ -391,6 +400,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     combinedResults.push(...asTypedChoices);
 
     setScoredChoices(prompt, combinedResults, 'resultLength > 0');
+    endPerfInvokeSearch();
   }
 };
 
@@ -629,6 +639,11 @@ export const setChoices = (
 };
 
 export const setScoredChoices = (prompt: KitPrompt, choices: ScoredChoice[], reason = 'default') => {
+  const endPerfSetScoredChoices = perf.start('setScoredChoices', {
+    choiceCount: choices.length,
+    reason,
+  });
+
   log.verbose(`${prompt.pid}: ${reason} 🎼 Scored choices count: ${choices.length}`);
 
   const sendToPrompt = prompt.sendToPrompt;
@@ -645,6 +660,8 @@ export const setScoredChoices = (prompt: KitPrompt, choices: ScoredChoice[], rea
     );
     sendToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, choices);
   }
+
+  endPerfSetScoredChoices();
 };
 
 export const setScoredFlags = (prompt: KitPrompt, choices: ScoredChoice[] = []) => {

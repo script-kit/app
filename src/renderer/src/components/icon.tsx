@@ -24,12 +24,12 @@ const loadableIconAtom = loadable(createAssetAtom('svg', 'logo.svg'));
 const transition = { duration: 0.0, ease: 'easeInOut' };
 
 const bg = `
-bg-text-base bg-opacity-0
-hover:bg-opacity-10
-focus:bg-opacity-20
+bg-text-base/0
+hover:bg-text-base/10
+focus:bg-text-base/20
 `;
 
-const textContrast = 'text-primary text-opacity-90';
+const textContrast = 'text-primary/90';
 const iconContext = {
   className: 'animate-spin-pulse text-primary -z-10 absolute',
   style: {
@@ -108,13 +108,13 @@ export function IconButton() {
       rounded
       py-1
       px-1.5
-      ${isMouseDown ? 'hover:bg-opacity-20' : ''}
+      ${isMouseDown ? 'hover:bg-text-base/20' : ''}
       ${textContrast}
 
       ${bg}
 
       transition-all duration-200 ease-in-out
-  ${isActionActive ? 'bg-opacity-10' : ''}
+  ${isActionActive ? 'bg-text-base/10' : ''}
 
       `}
           xmlns="http://www.w3.org/2000/svg"

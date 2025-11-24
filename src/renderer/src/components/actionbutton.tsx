@@ -69,8 +69,8 @@ export function ActionButton(action: Action) {
 
   outline-none
   transition-opacity duration-200 ease-out
-  ${action?.disabled ? 'text-primary text-opacity-25' : `${bg} ${textContrast}`}
-  ${isActionActive ? 'bg-opacity-10' : ''}
+  ${action?.disabled ? 'text-primary/25' : `${bg} ${textContrast}`}
+  ${isActionActive ? 'bg-text-base/10' : ''}
   `}
       onClick={action?.onClick ?? onClick}
       // blur on mouse down
@@ -95,7 +95,7 @@ export function ActionButton(action: Action) {
 
           bg-ui-bg
           leading-none
-          hover:border-opacity-10
+          hover:border-ui-border/10
 
           `}
             >

@@ -167,23 +167,28 @@ describe('VisibilityController', () => {
     });
 
     it('should reset escape count after timeout', async () => {
+      // Use fake timers to avoid real 350ms delay
+      vi.useFakeTimers();
+
       const prompt = createMockPrompt();
       visibilityController.handleFocus(prompt);
-      
+
       // Press escape twice
       visibilityController.handleEscape(prompt, false);
       visibilityController.handleEscape(prompt, false);
-      
+
       let state = visibilityController.getState(prompt.window.id);
       expect(state?.escapeCount).toBe(2);
-      
-      // Wait for timeout (> 300ms)
-      await new Promise(resolve => setTimeout(resolve, 350));
-      
+
+      // Advance fake timers past the 300ms timeout threshold
+      await vi.advanceTimersByTimeAsync(350);
+
       // Press escape again - should reset to 1
       visibilityController.handleEscape(prompt, false);
       state = visibilityController.getState(prompt.window.id);
       expect(state?.escapeCount).toBe(1);
+
+      vi.useRealTimers();
     });
   });
 

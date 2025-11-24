@@ -13,8 +13,60 @@ vi.stubGlobal('process', {
 
 vi.mock('electron', () => ({
   default: {},
-  app: { isPackaged: false, getPath: () => '/tmp', getVersion: () => '1.0.0' },
-  nativeTheme: { shouldUseDarkColors: false },
+  app: {
+    isPackaged: false,
+    getPath: () => '/tmp',
+    getVersion: () => '1.0.0',
+    getName: () => 'ScriptKit',
+    on: vi.fn(),
+    once: vi.fn(),
+    removeListener: vi.fn(),
+    removeAllListeners: vi.fn(),
+  },
+  BrowserWindow: Object.assign(vi.fn().mockImplementation(() => ({
+    loadURL: vi.fn(),
+    on: vi.fn(),
+    once: vi.fn(),
+    removeListener: vi.fn(),
+    removeAllListeners: vi.fn(),
+    close: vi.fn(),
+    destroy: vi.fn(),
+    show: vi.fn(),
+    hide: vi.fn(),
+    focus: vi.fn(),
+    blur: vi.fn(),
+    webContents: {
+      on: vi.fn(),
+      once: vi.fn(),
+      removeListener: vi.fn(),
+      removeAllListeners: vi.fn(),
+      send: vi.fn(),
+      executeJavaScript: vi.fn(),
+    },
+  })), {
+    getAllWindows: vi.fn(() => []),
+  }),
+  Notification: vi.fn().mockImplementation(() => ({
+    show: vi.fn(),
+    close: vi.fn(),
+    on: vi.fn(),
+  })),
+  nativeTheme: {
+    shouldUseDarkColors: false,
+    on: vi.fn(),
+    once: vi.fn(),
+  },
+  powerMonitor: {
+    on: vi.fn(),
+    once: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    removeAllListeners: vi.fn(),
+  },
+}));
+
+vi.mock('electron-context-menu', () => ({
+  default: vi.fn(),
 }));
 
 // Provide synthetic script list for registration

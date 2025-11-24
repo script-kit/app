@@ -1,15 +1,16 @@
 import { hotkeysOptions } from '@renderer/hooks/shared';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { VariableSizeGrid as Grid, type GridOnItemsRenderedProps, VariableSizeList as List } from 'react-window';
-import type { ChoiceButtonProps, ListProps } from '../../../shared/types';
+import { Grid, List, useGridCallbackRef, useListCallbackRef, type GridImperativeAPI, type ListImperativeAPI, type RowComponentProps, type CellComponentProps } from 'react-window';
+import type { ListProps, ScoredChoice } from '../../../shared/types';
 import useListNav from '../hooks/useListNav';
 import {
   containerClassNameAtom,
   directionAtom,
   gridReadyAtom,
   indexAtom,
+  inputAtom,
   isScrollingAtom,
   itemHeightAtom,
   listAtom,
@@ -33,10 +34,82 @@ function calculateColumnWidth(totalWidth: number, columnCount: number, cellGap: 
   return Math.max(calculatedColumnWidth, 1);
 }
 
+// Row props type for List
+interface ChoiceListRowProps {
+  choices: ScoredChoice[];
+  input: string;
+}
+
+// Cell props type for Grid
+interface ChoiceGridCellProps {
+  choices: ScoredChoice[];
+  input: string;
+  gridDimensions: {
+    columnCount: number;
+    rowCount: number;
+    columnWidth: number;
+    rowHeight: number;
+  };
+  cellGap: number;
+  currentRow: number;
+  renderedProps: {
+    visibleRowStartIndex: number;
+    visibleRowStopIndex: number;
+  } | null;
+}
+
+// Row height function for List - gets index and rowProps
+function getRowHeight(index: number, { choices }: ChoiceListRowProps, defaultHeight: number): number {
+  return choices?.[index]?.item?.height || defaultHeight;
+}
+
+// Row component for List (v2 API)
+function ListRowComponent({ index, style, choices, input }: RowComponentProps<ChoiceListRowProps>): ReactElement {
+  return <ChoiceButton index={index} style={style} choices={choices} input={input} />;
+}
+
+// Cell component for Grid (v2 API)
+function GridCellComponent({
+  columnIndex,
+  rowIndex,
+  style,
+  choices,
+  input,
+  gridDimensions,
+  cellGap,
+  currentRow,
+  renderedProps
+}: CellComponentProps<ChoiceGridCellProps>): ReactElement | null {
+  const index = rowIndex * gridDimensions.columnCount + columnIndex;
+
+  if (index >= choices.length || !renderedProps) {
+    return null;
+  }
+
+  const focusedOnLastRow = currentRow === renderedProps.visibleRowStopIndex;
+  const gappedStyle: CSSProperties = {
+    ...style,
+    left: columnIndex === 0 ? style.left : Number(style.left) + columnIndex * cellGap,
+    top:
+      Number(style.top) +
+      (rowIndex -
+        (focusedOnLastRow ? renderedProps.visibleRowStopIndex - 1 : renderedProps.visibleRowStartIndex)) *
+        cellGap,
+    width: Number(style.width) - cellGap,
+    height: Number(style.height) - cellGap,
+  };
+
+  return <ChoiceButton index={index} style={gappedStyle} choices={choices} input={input} />;
+}
+
 export default function ChoiceList({ width, height }: ListProps) {
-  const listRef = useRef<null | List>(null);
+  // v2 API: use callback refs for imperative API
+  const [listApi, setListApi] = useListCallbackRef();
+  const [gridApi, setGridApi] = useGridCallbackRef();
+
   const [choices] = useAtom(scoredChoicesAtom);
   const [index, setIndex] = useAtom(indexAtom);
+  const input = useAtomValue(inputAtom);
   const itemHeight = useAtomValue(itemHeightAtom);
   const promptData = useAtomValue(promptDataAtom);
   const [list, setList] = useAtom(listAtom);
@@ -58,53 +131,46 @@ export default function ChoiceList({ width, height }: ListProps) {
   const setGridDimensions = useSetAtom(gridDimensionsAtom);
   const setScrolling = useSetAtom(setScrollingAtom);
 
-  const handleListRef = useCallback(
-    (node) => {
-      if (node) {
-        setList(node);
-        listRef.current = node;
-        // Register with scroll service
-        registerScrollRef({ context: gridReady ? 'choices-grid' : 'choices-list', ref: node });
-      }
-    },
-    [setList, registerScrollRef, gridReady],
-  );
-
-  // REMOVED: Old scroll effect that watched requiresScrollAtom
-  // Scrolling is now handled by the unified scroll service
-
+  // Register list ref with scroll service when it changes
   useEffect(() => {
-    if (!listRef?.current) return;
-    if (typeof listRef.current.resetAfterIndex === 'function') {
-      listRef.current.resetAfterIndex(0);
+    if (listApi && !gridReady) {
+      // Create a wrapper object compatible with the scroll service
+      const scrollWrapper = {
+        scrollToItem: (index: number, align?: string) => {
+          listApi.scrollToRow({ index, align: (align as any) || 'auto' });
+        },
+      };
+      setList(scrollWrapper as any);
+      registerScrollRef({ context: 'choices-list', ref: scrollWrapper });
     }
-  }, [choices.length]);
+  }, [listApi, gridReady, setList, registerScrollRef]);
+
+  // Register grid ref with scroll service when it changes
+  useEffect(() => {
+    if (gridApi && gridReady) {
+      // Create a wrapper object compatible with the scroll service
+      const scrollWrapper = {
+        scrollToItem: ({ rowIndex, columnIndex, align }: { rowIndex: number; columnIndex: number; align?: string }) => {
+          gridApi.scrollToCell({ rowIndex, columnIndex, rowAlign: (align as any) || 'auto', columnAlign: (align as any) || 'auto' });
+        },
+      };
+      registerScrollRef({ context: 'choices-grid', ref: scrollWrapper });
+    }
+  }, [gridApi, gridReady, registerScrollRef]);
 
   const [scrollTimeout, setScrollTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  const itemData = useMemo(
-    () => ({
-      choices,
-    }),
-    [choices],
-  );
-
-  const commonProps = useMemo(
-    () => ({
-      width,
-      height,
-      itemData,
-      className: `
+  const listClassName = useMemo(
+    () => `
       ${gridReady ? 'grid' : 'list'}
       ${isScrolling ? 'scrollbar' : ''}
 wrapper
-bg-opacity-20
+bg-bg-base/20
 px-0
 text-text-base outline-none focus:border-none focus:outline-none
 ${containerClassName}
     `,
-    }),
-    [width, height, itemData, gridReady, isScrolling, containerClassName],
+    [gridReady, isScrolling, containerClassName],
   );
 
   const CELL_GAP = promptData?.gridGap ? promptData.gridGap / 2 : 0;
@@ -139,42 +205,33 @@ ${containerClassName}
     }
   }, [gridReady, gridDimensions, setGridDimensions]);
 
-  const gridRef = useRef<Grid>(null);
-
   // Tracks whether we've already resolved the initial index for the current prompt.
   const hasResolvedInitialIndexRef = useRef(false);
   const lastPromptKeyRef = useRef<string | null>(null);
 
-  // Register grid ref with scroll service
-  useEffect(() => {
-    if (gridRef?.current && gridReady) {
-      registerScrollRef({ context: 'choices-grid', ref: gridRef.current });
-      gridRef.current.resetAfterIndices({
-        columnIndex: 0,
-        rowIndex: 0,
-        shouldForceUpdate: true,
-      });
-    }
-  }, [gridRef.current, gridReady, registerScrollRef]);
-
-  useEffect(() => {
-    if (gridRef?.current) {
-      gridRef.current.resetAfterIndices({
-        columnIndex: 0,
-        rowIndex: 0,
-        shouldForceUpdate: true,
-      });
-    }
-  }, [choices, promptData?.columnWidth, promptData?.rowHeight]);
-
-  const columnWidthCallback = useCallback(
-    (index: number) => choices[index]?.item?.width || gridDimensions?.columnWidth,
-    [choices, gridDimensions?.columnWidth],
+  // Column width function for Grid - v2 API passes cellProps
+  const columnWidthFn = useCallback(
+    (columnIndex: number, cellProps: ChoiceGridCellProps) => {
+      const index = columnIndex; // For column-based sizing
+      return cellProps.choices[index]?.item?.width || cellProps.gridDimensions.columnWidth;
+    },
+    [],
   );
 
-  const rowHeightCallback = useCallback(
-    (index: number) => choices[index]?.item?.height || gridDimensions.rowHeight,
-    [choices, gridDimensions.rowHeight],
+  // Row height function for Grid - v2 API passes cellProps
+  const rowHeightFn = useCallback(
+    (rowIndex: number, cellProps: ChoiceGridCellProps) => {
+      return cellProps.gridDimensions.rowHeight;
+    },
+    [],
+  );
+
+  // Row height function for List - v2 API passes rowProps
+  const listRowHeightFn = useCallback(
+    (index: number, rowProps: ChoiceListRowProps) => {
+      return rowProps.choices?.[index]?.item?.height || itemHeight;
+    },
+    [itemHeight],
   );
 
   const currentColumn = index % gridDimensions.columnCount;
@@ -232,7 +289,21 @@ ${containerClassName}
     ],
   );
 
-  const [renderedProps, setRenderedProps] = useState<GridOnItemsRenderedProps>();
+  const [renderedProps, setRenderedProps] = useState<{
+    visibleRowStartIndex: number;
+    visibleRowStopIndex: number;
+  } | null>(null);
+
+  // v2 API: onCellsRendered callback receives visible and all cells info
+  const handleCellsRendered = useCallback(
+    (visibleCells: { columnStartIndex: number; columnStopIndex: number; rowStartIndex: number; rowStopIndex: number }) => {
+      setRenderedProps({
+        visibleRowStartIndex: visibleCells.rowStartIndex,
+        visibleRowStopIndex: visibleCells.rowStopIndex,
+      });
+    },
+    [],
+  );
 
   const handleScroll = useCallback(() => {
     if (index === 0 || index === 1) {
@@ -341,55 +412,66 @@ ${containerClassName}
     hasResolvedInitialIndexRef.current = true;
   }, [choices, promptData, setIndex]);
 
+  // v2 row props for List
+  const rowProps: ChoiceListRowProps = useMemo(() => ({ choices, input }), [choices, input]);
+
+  // v2 cell props for Grid
+  const cellProps: ChoiceGridCellProps = useMemo(
+    () => ({
+      choices,
+      input,
+      gridDimensions,
+      cellGap: CELL_GAP,
+      currentRow,
+      renderedProps,
+    }),
+    [choices, input, gridDimensions, CELL_GAP, currentRow, renderedProps],
+  );
+
+  // Style with explicit dimensions for v2
+  const listStyle: CSSProperties = useMemo(
+    () => ({
+      width: '100%',
+      height,
+    }),
+    [height],
+  );
+
+  const gridStyle: CSSProperties = useMemo(
+    () => ({
+      width,
+      height,
+    }),
+    [width, height],
+  );
+
   return (
     <div id="list" style={{ width }} className="list-component flex flex-col w-full overflow-y-hidden">
       {gridReady ? (
-        <Grid
-          {...commonProps}
-          onItemsRendered={setRenderedProps}
-          ref={gridRef}
-          height={height}
+        <Grid<ChoiceGridCellProps>
+          gridRef={setGridApi}
+          cellComponent={GridCellComponent}
+          cellProps={cellProps}
+          className={listClassName}
+          style={gridStyle}
           columnCount={gridDimensions.columnCount}
           rowCount={gridDimensions.rowCount}
-          columnWidth={columnWidthCallback}
-          rowHeight={rowHeightCallback}
-          width={width}
-        >
-          {({ columnIndex, rowIndex, style, data }) => {
-            const index = rowIndex * gridDimensions.columnCount + columnIndex;
-            if (index >= choices.length || !renderedProps) {
-              return null;
-            }
-
-            const focusedOnLastRow = currentRow === renderedProps.visibleRowStopIndex;
-            const gappedStyle = {
-              ...style,
-              left: columnIndex === 0 ? style.left : Number(style.left) + columnIndex * CELL_GAP,
-              top:
-                Number(style.top) +
-                (rowIndex -
-                  (focusedOnLastRow ? renderedProps.visibleRowStopIndex - 1 : renderedProps.visibleRowStartIndex)) *
-                  CELL_GAP,
-              width: Number(style.width) - CELL_GAP,
-              height: Number(style.height) - CELL_GAP,
-            };
-
-            return <ChoiceButton index={index} style={gappedStyle} data={data} />;
-          }}
-        </Grid>
-      ) : (
-        <List
-          {...commonProps}
-          ref={handleListRef}
+          columnWidth={gridDimensions.columnWidth}
+          rowHeight={gridDimensions.rowHeight}
+          onCellsRendered={handleCellsRendered}
           overscanCount={2}
-          itemCount={choices?.length || 0}
-          itemSize={(i) => choices?.[i]?.item?.height || itemHeight}
-          onScroll={handleScroll}
-          itemKey={(i, data) => data?.choices?.[i]?.item?.id || i}
-          width="100%"
-        >
-          {ChoiceButton}
-        </List>
+        />
+      ) : (
+        <List<ChoiceListRowProps>
+          listRef={setListApi}
+          rowComponent={ListRowComponent}
+          rowProps={rowProps}
+          className={listClassName}
+          style={listStyle}
+          rowCount={choices?.length || 0}
+          rowHeight={listRowHeightFn}
+          overscanCount={2}
+        />
       )}
     </div>
   );

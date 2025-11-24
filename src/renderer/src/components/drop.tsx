@@ -85,9 +85,8 @@ export default function Drop() {
         flex
         h-full flex-col  items-center
         text-xl  text-text-base
-        outline-none ring-0
-        ring-opacity-0 transition duration-500 ease-in-out
-        focus:outline-none focus:ring-0 focus:ring-opacity-0 ${dropReady ? 'opacity-75 shadow-inner' : 'opacity-25'}
+        outline-none ring-0 transition duration-500 ease-in-out
+        focus:outline-none focus:ring-0 ${dropReady ? 'opacity-75 shadow-inner' : 'opacity-25'}
       `}
         placeholder={placeholder}
         onDragEnter={onDragEnter}

@@ -172,9 +172,9 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
       }
       className={`
       hotkey-component
-      h-16 w-full border-none  bg-transparent py-0 pl-4   text-xl text-text-base placeholder-text-base
-  placeholder-opacity-40 outline-none ring-0 ring-opacity-0 focus:border-none focus:outline-none
-  focus:ring-0 focus:ring-opacity-0`}
+      h-16 w-full border-none  bg-transparent py-0 pl-4   text-xl text-text-base placeholder-text-base/40
+  outline-none ring-0 focus:border-none focus:outline-none
+  focus:ring-0`}
       onKeyDown={onKeyDown}
       onKeyUp={onKeyUp}
       placeholder={placeholder || DEFAULT_PLACEHOLDER}

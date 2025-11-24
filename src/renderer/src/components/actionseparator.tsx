@@ -14,13 +14,11 @@ export function ActionSeparator() {
       className={`
       ${!m && 'mt-px'}
       flex items-center justify-center
-      bg-opacity-0
       p-0.5
       text-center font-mono
       text-sm  font-medium
       leading-none
-      text-primary
-      text-opacity-10
+      text-primary/10
 `}
     >
       |

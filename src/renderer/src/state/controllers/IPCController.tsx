@@ -61,38 +61,12 @@ export function IPCController() {
             // Protect focused from being unset by override
             if (!finalState.focused) finalState.focused = state.focused;
             
-            // Debug logging for action messages
-            if (message.channel === Channel.ACTION && override.action) {
-              console.log('[IPCController] Sending ACTION with:', {
-                channel: message.channel,
-                actionName: override.action?.name,
-                actionFlag: override.action?.flag,
-                actionValue: override.action?.value,
-                hasAction: finalState.action !== undefined
-              });
-            }
-            
             const appMessage: AppMessage = {
               channel: message.channel,
               pid: pid || 0,
               promptId: promptData?.id || '',
               state: finalState,
             };
-            // Extra diagnostics for VALUE_SUBMITTED with flags and general outbox sends
-            try {
-              if (message.channel === Channel.VALUE_SUBMITTED) {
-                console.log('[IPCController] Sending VALUE_SUBMITTED', {
-                  hasFlag: Boolean(finalState?.flag),
-                  flag: finalState?.flag,
-                  valueType: typeof finalState?.value,
-                });
-              } else {
-                console.log('[IPCController] Sending message', {
-                  channel: message.channel,
-                  hasAction: Boolean((finalState as any)?.action),
-                });
-              }
-            } catch {}
             // Validate before sending to prevent undefined errors
             // Note: pid can be 0 and promptId can be empty for some messages like ON_INIT
             if (appMessage.channel && appMessage.pid !== undefined && appMessage.state) {

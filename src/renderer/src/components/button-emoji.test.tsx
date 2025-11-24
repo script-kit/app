@@ -29,8 +29,12 @@ describe('ChoiceButton emoji display', () => {
   const createButtonProps = (choice: any): ChoiceButtonProps => ({
     index: 0,
     style: {},
-    data: {
-      choices: [createScoredChoice(choice)]
+    choices: [createScoredChoice(choice)],
+    input: '',
+    ariaAttributes: {
+      'aria-posinset': 1,
+      'aria-setsize': 1,
+      role: 'listitem' as const
     }
   })
 

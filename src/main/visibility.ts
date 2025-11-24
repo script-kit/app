@@ -63,6 +63,12 @@ class VisibilityController {
       return;
     }
 
+    // Check if DevTools are being opened (shortcut pressed but not yet opened)
+    if (prompt.devToolsOpening) {
+      log.info('🙈 Ignoring blur - DevTools are being opened');
+      return;
+    }
+
     if (prompt.window.webContents.isDevToolsOpened()) {
       log.info('🙈 Ignoring blur - DevTools are open');
       return;

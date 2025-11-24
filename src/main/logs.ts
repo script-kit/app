@@ -320,3 +320,6 @@ export const {
 type EnsureExhaustive<T> = keyof T extends never ? true : never;
 // If rest is not empty, this assignment will cause a compile-time error.
 const _exhaustivenessCheck: EnsureExhaustive<typeof rest> = true;
+
+// Re-export perf logging utility (separate module with specialized API)
+export { perf, perfLogPath } from './perf';

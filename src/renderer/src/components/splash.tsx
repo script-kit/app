@@ -19,7 +19,7 @@ import {
 
 const Spinner = () => (
   <svg
-    className="h-6 w-6 animate-spin text-text-base text-opacity-75"
+    className="h-6 w-6 animate-spin text-text-base/75"
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
@@ -73,7 +73,7 @@ function Aside() {
         <div className="relative">
           <img src={iconUrl} className="mb-2 w-24" alt="Script Kit Icon" />
           {progress !== 100 && (
-            <div className="absolute right-0 top-0 rounded-full bg-bg-base bg-opacity-80 p-2 backdrop-blur-lg">
+            <div className="absolute right-0 top-0 rounded-full bg-bg-base/80 p-2 backdrop-blur-lg">
               <Spinner />
             </div>
           )}
@@ -86,7 +86,7 @@ function Aside() {
         {progress === 100 && (
           <div className="flex flex-col px-4 pt-3">
             <button
-              className="rounded-md border border-text-base border-opacity-25 bg-primary bg-opacity-90 px-5 py-2 font-semibold text-bg-base shadow-md shadow-primary/25 transition-all duration-200 hover:bg-opacity-100 hover:shadow-primary/50"
+              className="rounded-md border border-text-base/25 bg-primary/90 px-5 py-2 font-semibold text-bg-base shadow-md shadow-primary/25 transition-all duration-200 hover:bg-primary hover:shadow-primary/50"
               type="button"
               onClick={() => {
                 runMainScript();
@@ -96,16 +96,16 @@ function Aside() {
                 <>
                   <span>🚀 Launch with</span>
                   <div>
-                    <kbd className="rounded-md border-secondary bg-primary bg-opacity-25 p-1">~/.kit/kar</kbd>
+                    <kbd className="rounded-md border-secondary bg-primary/25 p-1">~/.kit/kar</kbd>
                   </div>
                 </>
               ) : (
                 <>
                   Launch with{' '}
                   <span className="text-sm">
-                    <kbd className="rounded-md bg-primary bg-opacity-25 p-1">{appConfig?.isMac ? 'CMD' : 'CTRL'}</kbd>
+                    <kbd className="rounded-md bg-primary/25 p-1">{appConfig?.isMac ? 'CMD' : 'CTRL'}</kbd>
                     <kbd>+</kbd>
-                    <kbd className="rounded-md bg-primary bg-opacity-25 p-1">;</kbd>
+                    <kbd className="rounded-md bg-primary/25 p-1">;</kbd>
                     {!appConfig?.isWin && (
                       <p className="text-xs font-mono">
                         <hr className="my-1" />
@@ -213,7 +213,7 @@ export default function Splash() {
                 </p>
               )}
             </legend>
-            <div className="flex flex-col rounded-md  border border-text-base border-opacity-25 focus:border-opacity-100">
+            <div className="flex flex-col rounded-md  border border-text-base/25 focus:border-text-base">
               <textarea
                 tabIndex={0}
                 ref={questionRef}
@@ -225,7 +225,7 @@ export default function Splash() {
                 id="answer"
                 required={contact && !subscribe}
                 placeholder="Type your answer here..."
-                className="w-full rounded-md border-none bg-text-base bg-opacity-5 px-5 py-3 text-lg placeholder-text-base placeholder-opacity-25 "
+                className="w-full rounded-md border-none bg-text-base/5 px-5 py-3 text-lg placeholder-text-base/25"
                 rows={5}
               />
             </div>
@@ -238,7 +238,7 @@ export default function Splash() {
                     checked={contact}
                     onChange={(e) => setContact(e?.target?.checked)}
                     id="contact"
-                    className="rounded-sm border border-text-base  border-opacity-25 bg-text-base bg-opacity-5 "
+                    className="rounded-sm border border-text-base/25 bg-text-base/5"
                   />
                   <label htmlFor="contact" className="pl-2">
                     Contact me with an example of my script idea
@@ -254,7 +254,7 @@ export default function Splash() {
                       checked={subscribe}
                       onChange={(e) => setSubscribe(e?.target?.checked)}
                       id="subscribe"
-                      className="rounded-sm border border-text-base  border-opacity-25 bg-text-base bg-opacity-5 "
+                      className="rounded-sm border border-text-base/25 bg-text-base/5"
                     />
                     <label htmlFor="subscribe" className="pl-2">
                       Receive Script Kit Tips, Tricks, and News
@@ -263,7 +263,7 @@ export default function Splash() {
                 </div>
               )}
               {hideEmail ? null : (
-                <div className="my-3 rounded-md border border-text-base border-opacity-25 bg-text-base  bg-opacity-5">
+                <div className="my-3 rounded-md border border-text-base/25 bg-text-base/5">
                   <label
                     className={`absolute px-5 py-3 ${
                       emailRequired ? "after:absolute after:text-primary after:content-['*']" : ''
@@ -279,7 +279,7 @@ export default function Splash() {
                     value={email}
                     type="email"
                     id="email"
-                    className="w-full rounded-md border-none bg-transparent px-5 py-3 pl-20 placeholder-text-base placeholder-opacity-25"
+                    className="w-full rounded-md border-none bg-transparent px-5 py-3 pl-20 placeholder-text-base/25"
                     placeholder="you@company.com"
                   />
                 </div>
@@ -289,7 +289,7 @@ export default function Splash() {
             <div className="flex w-full flex-row justify-between pt-2">
               <button
                 type="submit"
-                className="h-10 rounded-md border border-text-base border-opacity-25 bg-primary bg-opacity-90 px-5 py-2 font-medium text-bg-base transition-all hover:bg-opacity-100 hover:shadow-primary/25"
+                className="h-10 rounded-md border border-text-base/25 bg-primary/90 px-5 py-2 font-medium text-bg-base transition-all hover:bg-primary hover:shadow-primary/25"
               >
                 {isSubmitting ? <Spinner /> : 'Send'}
               </button>

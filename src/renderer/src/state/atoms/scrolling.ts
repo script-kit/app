@@ -5,11 +5,17 @@
  */
 
 import { atom } from 'jotai';
-import type { VariableSizeList } from 'react-window';
+
+// v2 compatible scroll interface - works with wrappers created by components
+interface ScrollableListRef {
+  scrollToItem: (index: number, align?: string) => void;
+  resetAfterIndex?: (index: number) => void;
+}
 
 // Still in use by components for storing list references
-export const listAtom = atom<null | VariableSizeList>(null);
-export const flagsListAtom = atom<null | VariableSizeList>(null);
+// v2: Uses wrapper interface instead of VariableSizeList type
+export const listAtom = atom<null | ScrollableListRef>(null);
+export const flagsListAtom = atom<null | ScrollableListRef>(null);
 
 // Still in use for scroll state tracking
 export const isScrollingAtom = atom(false);

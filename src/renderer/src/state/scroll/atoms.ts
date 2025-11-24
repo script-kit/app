@@ -11,7 +11,6 @@
  */
 
 import { atom } from 'jotai';
-import type { VariableSizeList, VariableSizeGrid } from 'react-window';
 import type {
   ScrollContext,
   ScrollRequest,
@@ -19,6 +18,11 @@ import type {
   GridScrollParams,
 } from './types';
 import { createLogger } from '../../log-utils';
+
+// v2 compatible scroll interface - works with wrappers created by components
+interface ScrollableRef {
+  scrollToItem: (indexOrParams: number | { rowIndex: number; columnIndex: number; align?: string }, align?: string) => void;
+}
 
 const log = createLogger('scroll');
 
@@ -53,11 +57,12 @@ function markScrollEnd(context: ScrollContext, reason: string) {
 
 /**
  * Storage for refs to all scrollable components
+ * v2: Uses ScrollableRef wrapper interface instead of specific VariableSizeList/Grid types
  */
 export const scrollRefsAtom = atom<{
-  'choices-list': VariableSizeList | null;
-  'choices-grid': VariableSizeGrid | null;
-  'flags-list': VariableSizeList | null;
+  'choices-list': ScrollableRef | null;
+  'choices-grid': ScrollableRef | null;
+  'flags-list': ScrollableRef | null;
 }>({
   'choices-list': null,
   'choices-grid': null,
@@ -202,27 +207,26 @@ export const executeScrollAtom = atom(
 
     try {
       // Execute scroll based on context type
+      // v2: Both list and grid use scrollToItem with wrapper interface
       if (context === 'choices-grid') {
         // Grid requires row/column calculation
-        const grid = ref as VariableSizeGrid;
         const gridDimensions = get(gridDimensionsAtom);
         const columnCount = gridDimensions.columnCount || 1;
 
-        const params: GridScrollParams = {
+        const params = {
           rowIndex: Math.floor(request.target / columnCount),
           columnIndex: request.target % columnCount,
           align: request.align || 'auto',
         };
 
-        grid.scrollToItem(params);
+        ref.scrollToItem(params);
 
         log.verbose(
           `📜 [ScrollService] Executed: grid → row ${params.rowIndex}, col ${params.columnIndex} (${request.reason})`
         );
       } else {
         // List scrolling
-        const list = ref as VariableSizeList;
-        list.scrollToItem(request.target, request.align || 'auto');
+        ref.scrollToItem(request.target, request.align || 'auto');
 
         log.verbose(
           `📜 [ScrollService] Executed: ${context} → index ${request.target} (${request.reason})`

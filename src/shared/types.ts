@@ -15,10 +15,50 @@ export interface ScoredChoice {
 export interface ChoiceButtonData {
   choices: ScoredChoice[];
 }
-export interface ChoiceButtonProps {
+
+// Legacy v1 props (for compatibility during migration)
+export interface ChoiceButtonPropsV1 {
   data: ChoiceButtonData;
   index: number;
   style: any;
+}
+
+// v2 react-window props for List rowComponent
+export interface ChoiceButtonProps {
+  choices: ScoredChoice[];
+  index: number;
+  style: React.CSSProperties;
+  input: string;
+  ariaAttributes: {
+    'aria-posinset': number;
+    'aria-setsize': number;
+    role: 'listitem';
+  };
+}
+
+// v2 react-window props for Grid cellComponent
+export interface GridCellProps {
+  choices: ScoredChoice[];
+  columnIndex: number;
+  rowIndex: number;
+  style: React.CSSProperties;
+  ariaAttributes: {
+    'aria-colindex': number;
+    role: 'gridcell';
+  };
+  // Additional props for grid calculations
+  gridDimensions: {
+    columnCount: number;
+    rowCount: number;
+    columnWidth: number;
+    rowHeight: number;
+  };
+  cellGap: number;
+  currentRow: number;
+  renderedProps: {
+    visibleRowStartIndex: number;
+    visibleRowStopIndex: number;
+  } | null;
 }
 export interface ListProps {
   width: number;

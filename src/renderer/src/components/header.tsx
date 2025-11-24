@@ -33,8 +33,8 @@ const TopRightButton = () => {
         // add the hand pointer cursor
         className="
         primary -mr-2 -mt-0.5 flex cursor-pointer flex-row items-center
-        rounded-md bg-text-base bg-opacity-10 font-bold text-primary
-        hover:bg-opacity-20
+        rounded-md bg-text-base/10 font-bold text-primary
+        hover:bg-text-base/20
 
         "
       >

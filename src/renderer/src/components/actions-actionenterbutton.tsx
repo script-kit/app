@@ -58,7 +58,7 @@ export function ActionsEnterButton(action: Action) {
   font-medium
 
   outline-none
-  ${action?.disabled ? 'text-primary text-opacity-25' : `${bg} ${textContrast}`}
+  ${action?.disabled ? 'text-primary/25' : `${bg} ${textContrast}`}
   `}
       onClick={onClick}
       onMouseOut={(e) => e.currentTarget.blur()}
@@ -82,7 +82,7 @@ export function ActionsEnterButton(action: Action) {
           bg-ui-bg
           leading-none
           hover:cursor-pointer
-          hover:border-opacity-10
+          hover:border-ui-border/10
 
           `}
             >

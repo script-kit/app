@@ -1,9 +1,9 @@
 #!/bin/sh
 
-# Pre-commit hook to run validation checks
+# Pre-commit hook - fast checks only (<10 seconds)
 echo "🔍 Running pre-commit checks..."
 
-# Check for circular dependencies
+# Check for circular dependencies (fast, ~2s)
 echo "🔄 Checking for circular dependencies..."
 pnpm check:circular
 if [ $? -ne 0 ]; then
@@ -11,12 +11,5 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# Run tests if they exist and pass quickly
-echo "🧪 Running tests..."
-result=$(pnpm test 2>/dev/null || true)
-
-if [ -n "$result" ]; then
-  echo "⚠️  Tests may have failed. Consider fixing tests."
-fi
-
 echo "✅ Pre-commit checks passed"
+echo "💡 Run 'pnpm test:fast' manually for quick test verification"

@@ -5,7 +5,7 @@ import useListNav from '../hooks/useListNav';
 import React, { useCallback, useEffect, useState, type DragEvent } from 'react';
 const { ipcRenderer } = window.electron;
 
-import type { ChoiceButtonProps } from '../../../shared/types';
+import type { ChoiceButtonProps, ScoredChoice } from '../../../shared/types';
 import {
   _modifiers,
   actionsButtonDescriptionFontSizeAtom,
@@ -25,7 +25,7 @@ import { UI } from '@johnlindquist/kit/core/enum';
 import { AppChannel } from '../../../shared/enums';
 import { highlight } from './utils';
 
-function FlagButton({ index: buttonIndex, style, data: { choices } }: ChoiceButtonProps) {
+function FlagButton({ index: buttonIndex, style, choices }: ChoiceButtonProps) {
   const scoredChoice = choices[buttonIndex];
   const choice = scoredChoice?.item;
   const [index, setIndex] = useAtom(flagsIndexAtom);
@@ -188,7 +188,7 @@ function FlagButton({ index: buttonIndex, style, data: { choices } }: ChoiceButt
                 {highlight(
                   choice.name?.replace(/{\s*input\s*}/g, input).replace(/{\s*base\s*}/g, base),
                   scoredChoice?.matches?.slicedName,
-                  'bg-primary bg-opacity-5 text-primary',
+                  'bg-primary/5 text-primary',
                 )}
               </div>
               {/* Description */}
@@ -223,7 +223,7 @@ function FlagButton({ index: buttonIndex, style, data: { choices } }: ChoiceButt
                         ? highlight(
                             choice.tag,
                             scoredChoice?.matches?.tag,
-                            'bg-text-base bg-opacity-0 text-primary text-opacity-100',
+                            'bg-text-base/0 text-primary',
                           )
                         : ''}
                   </div>
@@ -235,7 +235,7 @@ function FlagButton({ index: buttonIndex, style, data: { choices } }: ChoiceButt
                     className={`
     mx-1 h-6 rounded-full
     border-2
-    border-bg-base border-opacity-50
+    border-bg-base/50
     `}
                     src={choice?.icon}
                   />

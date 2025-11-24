@@ -1,8 +1,8 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type CSSProperties } from 'react';
 import AutoSizer from 'react-virtualized-auto-sizer';
-import { VariableSizeList as List } from 'react-window';
-import type { ChoiceButtonProps } from '../../../shared/types';
+import { List, useListCallbackRef, type RowComponentProps, type ListImperativeAPI } from 'react-window';
+import type { ScoredChoice } from '../../../shared/types';
 import {
   actionsInputHeightAtom,
   actionsItemHeightAtom,
@@ -18,9 +18,20 @@ import { registerScrollRefAtom } from '../state/scroll';
 import ActionsInput from './actions-input';
 import FlagButton from './flag-button';
 
+// Row props type for List v2 API
+interface FlagsListRowProps {
+  choices: ScoredChoice[];
+}
+
+// Row component for List (v2 API)
+function FlagsRowComponent({ index, style, choices }: RowComponentProps<FlagsListRowProps>): ReactElement {
+  return <FlagButton index={index} style={style} choices={choices} />;
+}
+
 function InnerList({ height }: { height: number }) {
-  const flagsRef = useRef<null | List>(null);
-  const innerRef = useRef(null);
+  // v2 API: use callback ref for imperative API
+  const [listApi, setListApi] = useListCallbackRef();
+
   const [choices] = useAtom(scoredFlagsAtom);
   const [index, onIndexChange] = useAtom(flagsIndexAtom);
   const itemHeight = useAtomValue(actionsItemHeightAtom);
@@ -28,31 +39,23 @@ function InnerList({ height }: { height: number }) {
   const [isScrolling, setIsScrolling] = useAtom(isFlagsScrollingAtom);
   const registerScrollRef = useSetAtom(registerScrollRefAtom);
 
-  const handleFlagsRef = useCallback(
-    (node) => {
-      if (node) {
-        setList(node);
-        flagsRef.current = node;
-        // Register with scroll service
-        registerScrollRef({ context: 'flags-list', ref: node });
-      }
-    },
-    [setList, registerScrollRef],
-  );
-
-  const itemData = useMemo(() => ({ choices }), [choices]);
-
-  // REMOVED: Old scroll effect that watched flagsRequiresScrollAtom
-  // Scrolling is now handled by the unified scroll service
-
+  // Register list ref with scroll service when it changes
   useEffect(() => {
-    if (!flagsRef.current) return;
-
-    const needsReset = choices.some((c) => c?.item?.height !== itemHeight);
-    if (needsReset) {
-      flagsRef.current?.resetAfterIndex(0);
+    if (listApi) {
+      // Create a wrapper object compatible with the scroll service
+      const scrollWrapper = {
+        scrollToItem: (index: number, align?: string) => {
+          listApi.scrollToRow({ index, align: (align as any) || 'auto' });
+        },
+        // Legacy method name alias
+        resetAfterIndex: () => {
+          // v2 doesn't need this - it handles sizing automatically
+        },
+      };
+      setList(scrollWrapper as any);
+      registerScrollRef({ context: 'flags-list', ref: scrollWrapper });
     }
-  }, [choices.length, itemHeight]);
+  }, [listApi, setList, registerScrollRef]);
 
   // When the flags list is first populated, choose a sensible initial index
   // based on any per-choice selected flag, falling back to the first item.
@@ -89,21 +92,14 @@ function InnerList({ height }: { height: number }) {
     setScrollTimeout(newTimeout);
   }, [index, scrollTimeout, setIsScrolling]);
 
-  const itemSize = useMemo(() => {
-    // Pre-calculate all item sizes to avoid repeated calculations
-    const sizes = new Map<number, number>();
-    return (i: number) => {
-      if (sizes.has(i)) {
-        return sizes.get(i)!;
-      }
-      const maybeHeight = choices?.[i]?.item?.height;
-      const height = typeof maybeHeight === 'number' ? maybeHeight : itemHeight;
-      sizes.set(i, height);
-      return height;
-    };
-  }, [choices, itemHeight]);
-
-  const itemKey = useCallback((i: number, data: ChoiceButtonProps['data']) => data?.choices?.[i]?.item?.id || i, []);
+  // v2 API: row height function receives index and rowProps
+  const rowHeightFn = useCallback(
+    (i: number, rowProps: FlagsListRowProps) => {
+      const maybeHeight = rowProps.choices?.[i]?.item?.height;
+      return typeof maybeHeight === 'number' ? maybeHeight : itemHeight;
+    },
+    [itemHeight],
+  );
 
   const listClassName = useMemo(
     () => `
@@ -116,22 +112,29 @@ function InnerList({ height }: { height: number }) {
     [isScrolling],
   );
 
+  // v2 row props
+  const rowProps: FlagsListRowProps = useMemo(() => ({ choices }), [choices]);
+
+  // Style with explicit dimensions for v2
+  const listStyle: CSSProperties = useMemo(
+    () => ({
+      width: '100%',
+      height,
+    }),
+    [height],
+  );
+
   return (
-    <List
-      width="100%"
-      height={height}
-      ref={handleFlagsRef}
-      innerRef={innerRef}
-      overscanCount={2}
-      onScroll={handleScroll}
-      itemCount={choices?.length || 0}
-      itemSize={itemSize}
-      itemKey={itemKey}
-      itemData={itemData}
+    <List<FlagsListRowProps>
+      listRef={setListApi}
+      rowComponent={FlagsRowComponent}
+      rowProps={rowProps}
       className={listClassName}
-    >
-      {FlagButton}
-    </List>
+      style={listStyle}
+      rowCount={choices?.length || 0}
+      rowHeight={rowHeightFn}
+      overscanCount={2}
+    />
   );
 }
 

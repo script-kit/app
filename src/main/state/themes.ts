@@ -5,6 +5,7 @@ export const scriptKitTheme = `
     --opacity-mac: 0.25;
     --opacity-win: 0.5;
     --opacity-other: 0.5;
+    --opacity: 0.5;
     --color-text: #ffffffee;
     --color-primary: #fbbf24ee;
     --color-secondary: #ffffff;
@@ -24,6 +25,7 @@ export const scriptKitLightTheme = `
     --opacity-mac: 0.5;
     --opacity-win: 0.9;
     --opacity-other: 0.9;
+    --opacity: 0.9;
     --color-text: #2C2C2C;
     --color-primary: #2F86D3;
     --color-secondary: #2F86D3;

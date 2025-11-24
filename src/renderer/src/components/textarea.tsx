@@ -42,9 +42,9 @@ export default function TextArea() {
         text-md
         h-full min-h-64
         w-full border-none  bg-transparent py-4 pl-4
-         text-text-base placeholder-black
-        placeholder-opacity-40 outline-none ring-0 ring-opacity-0 focus:border-none focus:outline-none
-        focus:ring-0 focus:ring-opacity-0
+         text-text-base placeholder-black/40
+        outline-none ring-0 focus:border-none focus:outline-none
+        focus:ring-0
         `}
       />
     </div>

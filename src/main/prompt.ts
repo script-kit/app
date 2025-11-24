@@ -75,7 +75,7 @@ import { isDevToolsShortcut, computeShouldCloseOnInitialEscape } from './prompt.
 import { isCloseCombo } from './prompt.input-utils';
 import type { ScriptRunMeta } from './script-lifecycle';
 
-import { promptLog as log, themeLog } from './logs';
+import { promptLog as log, themeLog, perf } from './logs';
 import { handleBlurVisibility } from './prompt.visibility-utils';
 import { applyPromptBounds } from './prompt.bounds-apply';
 import { setPromptDataImpl } from './prompt.set-prompt-data';
@@ -573,6 +573,18 @@ export class KitPrompt {
   };
 
   onBlur = () => {
+    // Early check: if DevTools are being opened or already open, ignore blur entirely
+    if (this.devToolsOpening) {
+      this.logInfo('🙈 Blur ignored early - DevTools are being opened');
+      return;
+    }
+
+    // Also check if DevTools are already open (handles race conditions)
+    if (this.window.webContents?.isDevToolsOpened()) {
+      this.logInfo('🙈 Blur ignored early - DevTools are already open');
+      return;
+    }
+
     // Register blur operation
     const blurOpId = processWindowCoordinator.registerOperation(
       this.pid,
@@ -745,48 +757,6 @@ export class KitPrompt {
     
     if (this.windowMode === 'window') this.window.setTitle('Script Kit');
 
-    // In development, wrap webContents.send to capture serialization issues from any sender
-    if (process.env.NODE_ENV === 'development') {
-      try {
-        const originalSend = this.window.webContents.send.bind(this.window.webContents);
-        (this.window.webContents as any).send = (channel: unknown, data?: unknown) => {
-          // Validate structured cloneability before actually sending
-          try {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore Node 18+ provides structuredClone; Electron main also supports it
-            structuredClone?.(data);
-          } catch (cloneError) {
-            const err = cloneError as Error;
-            const summarize = (value: unknown) => {
-              const t = typeof value;
-              if (value === null || t !== 'object') return { type: t, preview: String(value) };
-              try {
-                const ctor = (value as any)?.constructor?.name || 'object';
-                const keys = Object.keys(value as any).slice(0, 20);
-                const sample: Record<string, string> = {};
-                for (const k of keys) {
-                  const v = (value as any)[k];
-                  sample[k] = typeof v === 'object' ? ((v as any)?.constructor?.name || 'object') : typeof v;
-                }
-                return { type: ctor, keys, sampleTypes: sample };
-              } catch {
-                return { type: 'object', note: 'Could not inspect keys' };
-              }
-            };
-            this.logError('webContents.send: Failed to serialize arguments', {
-              channel: String(channel),
-              message: err?.message,
-              dataSummary: summarize(data),
-            });
-            throw cloneError;
-          }
-          return originalSend(String(channel), data);
-        };
-      } catch (error) {
-        this.logWarn('Failed to wrap webContents.send for dev diagnostics', { error: (error as Error)?.message });
-      }
-    }
-
     // Register window creation
     const createOpId = processWindowCoordinator.registerOperation(
       this.pid,
@@ -799,6 +769,13 @@ export class KitPrompt {
     this.window.webContents.ipc.on(AppChannel.GET_KIT_CONFIG, getKitConfig);
 
     this.sendToPrompt = (channel: Channel | AppChannel, data) => {
+      // Calculate data size for perf logging (approximate)
+      const dataSize = data && typeof data === 'object' && Array.isArray(data) ? data.length : 1;
+      const endPerfSendToPrompt = perf.start('sendToPrompt', {
+        channel: String(channel),
+        dataSize,
+      });
+
       log.silly(`sendToPrompt: ${String(channel)}`, data);
 
       // Log [SCRIPTS RENDER] events
@@ -825,12 +802,14 @@ export class KitPrompt {
 
       if (!this?.window || this?.window?.isDestroyed()) {
         this.logError('sendToPrompt: Window is destroyed. Skipping sendToPrompt.');
+        endPerfSendToPrompt();
         return;
       }
 
       if (this?.window?.webContents?.send) {
         if (!channel) {
           this.logError('channel is undefined', { data });
+          endPerfSendToPrompt();
           return;
         }
         try {
@@ -861,6 +840,8 @@ export class KitPrompt {
           });
         }
       }
+
+      endPerfSendToPrompt();
     };
 
     // mark handlers as used to satisfy linter after extraction
@@ -948,6 +929,7 @@ export class KitPrompt {
     // Intercept DevTools keyboard shortcuts to set flag before blur happens
     this.window.webContents?.on('before-input-event', (_event, input) => {
       if (isDevToolsShortcut(input)) {
+        this.logInfo(`🔧 DevTools shortcut detected: meta=${input.meta}, alt=${input.alt}, shift=${input.shift}, key=${input.key}`);
         this.devToolsOpening = true;
         // Reset flag after a short delay
         setTimeout(() => {
@@ -2147,6 +2129,7 @@ export class KitPrompt {
     setupWindowLifecycleHandlers(this);
     this.window.webContents?.on('before-input-event', (_event, input: Input) => {
       if (isDevToolsShortcut(input)) {
+        this.logInfo(`🔧 DevTools shortcut detected (reinit): meta=${input.meta}, alt=${input.alt}, shift=${input.shift}, key=${input.key}`);
         this.devToolsOpening = true;
         setTimeout(() => { this.devToolsOpening = false; }, 200);
       }
