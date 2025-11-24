@@ -34,8 +34,7 @@ export const prompts = {
       if (prompt.window) {
         prompt.window.on('focus', () => {
           try {
-            this.focused = prompt;
-            this.prevFocused = null;
+            this.setFocusedPrompt(prompt, 'idle-window-focus');
             promptLog.info(`${prompt.pid}: Focusing on prompt from prompts handler ${prompt.id}`);
           } catch (error) {
             promptLog.error(`Error handling focus event for prompt ${prompt.pid}:`, error);
@@ -44,7 +43,7 @@ export const prompts = {
 
         prompt.window.on('blur', () => {
           try {
-            this.prevFocused = prompt;
+            this.handleWindowBlur(prompt, 'idle-window-blur');
             promptLog.info(`${prompt.pid}: Blurred prompt from prompts handler ${prompt.id}`);
           } catch (error) {
             promptLog.error(`Error handling blur event for prompt ${prompt.pid}:`, error);
@@ -106,6 +105,51 @@ export const prompts = {
    */
   focused: null as KitPrompt | null,
   prevFocused: null as KitPrompt | null,
+
+  /**
+   * Centralized focus management so the rest of the app has a single source of truth.
+   */
+  setFocusedPrompt: function (prompt: KitPrompt | null, reason = 'unknown') {
+    if (prompt === this.focused) {
+      return;
+    }
+
+    const previous = this.focused;
+    if (previous && previous !== prompt) {
+      this.prevFocused = previous;
+    }
+
+    this.focused = prompt;
+    this.lastFocused = prompt;
+
+    if (prompt) {
+      promptLog.info(
+        `${prompt.pid}: 🔆 setFocusedPrompt(${reason}) focused=${prompt.id} prevFocused=${this.prevFocused?.id}`,
+      );
+    } else {
+      promptLog.info(`🔆 setFocusedPrompt(${reason}) cleared (no focused prompt)`);
+    }
+  },
+
+  /**
+   * Called from window blur handlers to keep prevFocused in sync.
+   */
+  handleWindowBlur: function (prompt: KitPrompt, reason = 'blur') {
+    if (this.focused === prompt) {
+      this.focused = null;
+    }
+
+    // Only overwrite prevFocused if it wasn't already pointing somewhere else
+    if (!this.prevFocused || this.prevFocused === prompt) {
+      this.prevFocused = prompt;
+    }
+
+    promptLog.info(
+      `${prompt.pid}: 🌫 handleWindowBlur(${reason}) focused=${this.focused?.id || 'none'} prevFocused=${
+        this.prevFocused?.id || 'none'
+      }`,
+    );
+  },
 
   /**
    * Attaches the idle prompt to a process with the given PID.

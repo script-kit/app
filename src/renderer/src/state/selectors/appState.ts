@@ -66,7 +66,7 @@ export const appStateLiteAtom = atom<AppState>((g) => {
       count: g(choicesAtom)?.length || 0,
       name: g(nameAtom),
       description: g(descriptionAtom),
-      script: g(_script),
+      script: g(_script).script,
       value: g(_submitValue),
       submitted: g(submittedAtom),
       cursor: g(editorCursorPosAtom),

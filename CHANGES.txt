@@ -1,0 +1,32 @@
+Files Modified:
+===============
+
+1. app/src/main/prompts.ts
+   - Added setFocusedPrompt() helper method (lines 113-133)
+   - Added handleWindowBlur() helper method (lines 135-153)
+   - Updated idle prompt focus handler to use setFocusedPrompt() (line 37)
+   - Updated idle prompt blur handler to use handleWindowBlur() (line 46)
+
+2. app/src/main/prompt.ts
+   - Updated window.on('focus') to sync prompts.focused (lines 933-955)
+   - Updated onBlur() to sync with handleWindowBlur() (lines 583-594)
+   - Added Kit-to-Kit window detection in onBlur() (lines 612-627)
+   - Strengthened cmd+w validation in beforeInputHandler (lines 2002-2050)
+   - Added event.preventDefault() for cmd+w (line 2042)
+
+3. app/src/main/shortcuts.ts
+   - Added BrowserWindow import (line 2)
+   - Added triple-validation for main shortcut toggle (lines 368-395)
+   - Added focus state consistency check and logging (lines 389-394)
+
+Build Status:
+=============
+✅ TypeScript compilation: PASSED (no errors)
+✅ All changes implemented successfully
+✅ Ready for testing
+
+Next Steps:
+===========
+1. Run: cd app && pnpm dev
+2. Test cmd+w behavior (see FOCUS_BLUR_CMD_W_FIX_SUMMARY.md for test plan)
+3. Monitor logs for focus state warnings

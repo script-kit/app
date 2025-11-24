@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { VariableSizeList as List } from 'react-window';
 import type { ChoiceButtonProps } from '../../../shared/types';
@@ -47,12 +47,27 @@ function InnerList({ height }: { height: number }) {
 
   useEffect(() => {
     if (!flagsRef.current) return;
-    
-    const needsReset = choices.some(c => c?.item?.height !== itemHeight);
+
+    const needsReset = choices.some((c) => c?.item?.height !== itemHeight);
     if (needsReset) {
       flagsRef.current?.resetAfterIndex(0);
     }
   }, [choices.length, itemHeight]);
+
+  // When the flags list is first populated, choose a sensible initial index
+  // based on any per-choice selected flag, falling back to the first item.
+  useEffect(() => {
+    if (!choices?.length) return;
+
+    if (typeof index === 'number' && index >= 0 && index < choices.length) {
+      return;
+    }
+
+    const selectedIndex = choices.findIndex((c) => c?.item?.selected === true);
+    const nextIndex = selectedIndex >= 0 ? selectedIndex : 0;
+
+    onIndexChange(nextIndex);
+  }, [choices, index, onIndexChange]);
 
   const [scrollTimeout, setScrollTimeout] = useState<NodeJS.Timeout | null>(null);
 
@@ -74,27 +89,21 @@ function InnerList({ height }: { height: number }) {
     setScrollTimeout(newTimeout);
   }, [index, scrollTimeout, setIsScrolling]);
 
-  const itemSize = useMemo(
-    () => {
-      // Pre-calculate all item sizes to avoid repeated calculations
-      const sizes = new Map<number, number>();
-      return (i: number) => {
-        if (sizes.has(i)) {
-          return sizes.get(i)!;
-        }
-        const maybeHeight = choices?.[i]?.item?.height;
-        const height = typeof maybeHeight === 'number' ? maybeHeight : itemHeight;
-        sizes.set(i, height);
-        return height;
-      };
-    },
-    [choices, itemHeight],
-  );
+  const itemSize = useMemo(() => {
+    // Pre-calculate all item sizes to avoid repeated calculations
+    const sizes = new Map<number, number>();
+    return (i: number) => {
+      if (sizes.has(i)) {
+        return sizes.get(i)!;
+      }
+      const maybeHeight = choices?.[i]?.item?.height;
+      const height = typeof maybeHeight === 'number' ? maybeHeight : itemHeight;
+      sizes.set(i, height);
+      return height;
+    };
+  }, [choices, itemHeight]);
 
-  const itemKey = useCallback(
-    (i: number, data: ChoiceButtonProps['data']) => data?.choices?.[i]?.item?.id || i,
-    [],
-  );
+  const itemKey = useCallback((i: number, data: ChoiceButtonProps['data']) => data?.choices?.[i]?.item?.id || i, []);
 
   const listClassName = useMemo(
     () => `
@@ -143,7 +152,7 @@ export default function ActionsList() {
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       if (prevFocusedElement instanceof HTMLElement) {

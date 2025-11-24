@@ -4,7 +4,9 @@ import { debounce } from 'lodash-es';
 import { useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { toast } from 'react-toastify';
+
 const { ipcRenderer } = window.electron;
+
 import { Channel } from '@johnlindquist/kit/core/enum';
 import type { Choice } from '@johnlindquist/kit/types';
 import type { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
@@ -53,8 +55,8 @@ import {
   kitStateAtom,
   lastLogLineAtom,
   loadingAtom,
-  logValueAtom,
   logoAtom,
+  logValueAtom,
   micConfigAtom,
   micIdAtom,
   micStreamEnabledAtom,
@@ -102,8 +104,9 @@ import {
   webcamIdAtom,
   zoomAtom,
 } from '../jotai';
-
 import { createLogger } from '../log-utils';
+import type { ScriptState } from '../state/atoms/script-state';
+
 const log = createLogger('useMessages.ts');
 
 import { AppChannel, WindowChannel } from '../../../shared/enums';
@@ -122,7 +125,7 @@ export default () => {
   const [pid, setPid] = useAtom(pidAtom);
   const [, setAppConfig] = useAtom(appConfigAtom);
   const [, setOpen] = useAtom(openAtom);
-  const [script, setScript] = useAtom(scriptAtom);
+  const setScript = useSetAtom(scriptAtom);
   const [, setHint] = useAtom(hintAtom);
   const [, setPanelHTML] = useAtom(panelHTMLAtom);
   const appendLogLine = useSetAtom(appendToLogHTMLAtom);
@@ -241,6 +244,34 @@ export default () => {
     options?: Parameters<typeof toast>[1];
   };
 
+  const handleSetScript = (payload: any) => {
+    if (!payload) return;
+
+    const { script, runId, pid, source } = payload || {};
+
+    setScript((prev) => {
+      if (prev.runId && runId && prev.runId !== runId) {
+        log.info('[renderer] Dropping SET_SCRIPT for stale runId', {
+          currentRunId: prev.runId,
+          incomingRunId: runId,
+        });
+        return prev;
+      }
+
+      const next: ScriptState = {
+        ...prev,
+        script: script ?? prev.script,
+        runId: runId ?? prev.runId,
+        pid: typeof pid === 'number' ? pid : prev.pid,
+        source: (source ?? prev.source) as ScriptState['source'],
+        status: script ? 'running' : prev.status,
+        error: script ? null : prev.error,
+      };
+
+      return next;
+    });
+  };
+
   const messageMap: ChannelAtomMap = {
     [Channel.SET_SHORTCODES]: setShortcodes,
     [Channel.APP_CONFIG]: setAppConfig,
@@ -251,7 +282,7 @@ export default () => {
     },
     [Channel.DEV_TOOLS]: setDevToolsOpen,
     [Channel.SET_PROMPT_BOUNDS]: setPromptBounds,
-    [Channel.SET_SCRIPT]: setScript,
+    [Channel.SET_SCRIPT]: handleSetScript,
     [Channel.SET_CHOICES_CONFIG]: setChoicesConfig,
     [Channel.SET_SCORED_CHOICES]: (data) => {
       setScoredChoices(data);
@@ -277,12 +308,14 @@ export default () => {
     [Channel.SET_PREVIEW]: setPreviewHTML,
     [Channel.SET_FOOTER]: (html) => setFooter(DOMPurify.sanitize(html)),
     [Channel.SET_INPUT]: (value) => {
-      console.log(JSON.stringify({
-        source: 'useMessages_Channel.SET_INPUT',
-        valueLength: value?.length || 0,
-        valuePreview: value?.substring(0, 50) || '',
-        timestamp: Date.now()
-      }));
+      console.log(
+        JSON.stringify({
+          source: 'useMessages_Channel.SET_INPUT',
+          valueLength: value?.length || 0,
+          valuePreview: value?.substring(0, 50) || '',
+          timestamp: Date.now(),
+        }),
+      );
       setInput(value);
     },
     [Channel.GET_INPUT]: () => {
@@ -391,7 +424,9 @@ export default () => {
     [WindowChannel.SET_LOG_VALUE]: setLogValue,
     [WindowChannel.SET_EDITOR_LOG_MODE]: setEditorLogMode,
     [AppChannel.TRIGGER_RESIZE]: () => {
-      try { (window as any).DEBUG_RESIZE && console.log('[RESIZE] MAIN_ACK'); } catch {}
+      try {
+        (window as any).DEBUG_RESIZE && console.log('[RESIZE] MAIN_ACK');
+      } catch {}
       setResizeInflight(false);
       triggerResize('MAIN_ACK');
     },
@@ -555,13 +590,16 @@ export default () => {
       ipcRenderer.on(AppChannel.FORCE_RENDER, handleForceRender);
     }
 
-    const handleSetCachedMainState = (_, data: {
-      choices: any[];
-      shortcuts: any[];
-      scriptFlags: any;
-      preview: string;
-      timestamp: number;
-    }) => {
+    const handleSetCachedMainState = (
+      _,
+      data: {
+        choices: any[];
+        shortcuts: any[];
+        scriptFlags: any;
+        preview: string;
+        timestamp: number;
+      },
+    ) => {
       log.info(`[SCRIPTS RENDER] Renderer ${window.pid} received atomic state update at ${data.timestamp}`);
       // Update all state atomically
       setCachedMainScoredChoices(data.choices);

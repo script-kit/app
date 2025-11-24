@@ -63,7 +63,7 @@ export const ResizeController: React.FC = () => {
   // Ensure we run at least once on each new prompt/script even if heights are identical.
   const promptDataForKey = useAtomValue(promptDataAtom) as Partial<PromptData> | undefined;
   const scriptForKey = useAtomValue(scriptAtom) as any;
-  const promptChangeKey = `${promptDataForKey?.id ?? ''}|${scriptForKey?.filePath ?? ''}`;
+  const promptChangeKey = `${promptDataForKey?.id ?? ''}|${scriptForKey?.script?.filePath ?? ''}`;
 
   // Define the resize execution using useCallback for a stable reference.
   // Called by scheduleResizeExecution to run at most once per animation frame
@@ -85,7 +85,7 @@ export const ResizeController: React.FC = () => {
       if (!promptData?.scriptPath) return;
 
       const currentPromptId = promptData.id as string | undefined;
-      const currentScriptPath = g(_script)?.filePath as string | undefined;
+      const currentScriptPath = g(_script)?.script?.filePath as string | undefined;
 
       if (
         lastPromptIdRef.current !== currentPromptId ||

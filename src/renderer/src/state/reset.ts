@@ -33,7 +33,7 @@ import { ID_WEBCAM } from './dom-ids';
 // Keep order identical to the existing close branch; no behavior changes.
 export function resetPromptState(g: Getter, s: Setter) {
   s(resizeCompleteAtom, false);
-  s(lastScriptClosed, g(_script).filePath);
+  s(lastScriptClosed, g(_script).script?.filePath || '');
   s(closedInput, g(_inputAtom)); // use _inputAtom instead of non-existent _promptDataInternal
   s(_panelHTML, '');
   s(formHTMLAtom, '');

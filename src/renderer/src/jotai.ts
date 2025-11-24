@@ -17,7 +17,6 @@ import type {
   Choice,
   FlagsWithKeys,
   PromptData,
-  Script,
 } from '@johnlindquist/kit/types/core';
 import type {
   AppMessage,
@@ -25,6 +24,7 @@ import type {
 import { type Getter, type Setter, atom } from 'jotai';
 import { debounce, throttle } from 'lodash-es';
 import { unstable_batchedUpdates } from 'react-dom';
+import type { ScriptState } from './state/atoms/script-state';
 
 // Import all modularized atoms
 export * from './state/atoms';
@@ -256,7 +256,7 @@ export const spinnerControlAtom = atom(
 
 const resetPromptOnClose = (g: Getter, s: Setter) => {
   s(resizeCompleteAtom, false);
-  s(lastScriptClosed, g(_script).filePath);
+  s(lastScriptClosed, g(_script).script?.filePath || '');
   s(closedInput, g(_inputAtom));
   s(_panelHTML, '');
   s(formHTMLAtom, '');
@@ -311,39 +311,49 @@ export const exitAtom = atom(
 // --- Script Atom with Complex Logic ---
 export const scriptAtom = atom(
   (g) => g(_script),
-  (g, s, a: Script) => {
-    s(lastKeyDownWasModifierAtom, false);
+  (g, s, update: ScriptState | Partial<ScriptState> | ((prev: ScriptState) => ScriptState)) => {
+    const prev = g(_script);
+    const next =
+      typeof update === 'function'
+        ? (update as (prev: ScriptState) => ScriptState)(prev)
+        : { ...prev, ...update };
+    const scriptChanged = next.script !== prev.script;
 
-    const mainScriptPath = g(kitConfigAtom).mainScriptPath;
-    const isMainScript = a?.filePath === mainScriptPath;
-    const prevScript = g(_script);
+    if (scriptChanged) {
+      s(lastKeyDownWasModifierAtom, false);
 
-    s(isMainScriptAtom, isMainScript);
-    s(backToMainAtom, prevScript?.filePath !== mainScriptPath && isMainScript);
-    s(promptReadyAtom, false);
+      const mainScriptPath = g(kitConfigAtom).mainScriptPath;
+      const isMainScript = next.script?.filePath === mainScriptPath;
+      const prevWasMain = prev.script?.filePath === mainScriptPath;
 
-    if (!isMainScript) {
-      s(choicesConfigAtom, { preload: false });
-      const preloaded = g(preloadedAtom);
-      log.info(`${g(pidAtom)}: Preloaded? ${preloaded ? 'YES' : 'NO'}`);
+      s(isMainScriptAtom, isMainScript);
+      s(backToMainAtom, !prevWasMain && isMainScript);
+      s(promptReadyAtom, false);
 
-      if (!preloaded) {
-        s(_previewHTML, '');
+      if (!isMainScript) {
+        s(choicesConfigAtom, { preload: false });
+        const preloaded = g(preloadedAtom);
+        log.info(`${g(pidAtom)}: Preloaded? ${preloaded ? 'YES' : 'NO'}`);
+
+        if (!preloaded) {
+          s(_previewHTML, '');
+        }
       }
+
+      s(preloadedAtom, false);
+      if (next.script?.tabs) {
+        s(tabsAtom, next.script?.tabs || []);
+      }
+
+      s(mouseEnabledAtom, 0);
+      s(processingAtom, false);
+      s(loadingAtom, false);
+      s(progressAtom, 0);
+      s(logoAtom, next.script?.logo || '');
+      s(tempThemeAtom, g(themeAtom));
     }
 
-    s(preloadedAtom, false);
-    if (a?.tabs) {
-      s(tabsAtom, a?.tabs || []);
-    }
-
-    s(mouseEnabledAtom, 0);
-    s(_script, a);
-    s(processingAtom, false);
-    s(loadingAtom, false);
-    s(progressAtom, 0);
-    s(logoAtom, a?.logo || '');
-    s(tempThemeAtom, g(themeAtom));
+    s(_script, next);
   },
 );
 
@@ -445,9 +455,9 @@ export const promptDataAtom = atom(
     s(footerHiddenAtom, !!a.footerClassName?.includes('hidden'));
     s(containerClassNameAtom, a.containerClassName || '');
 
-    const script = g(scriptAtom);
-    const promptDescription = a.description || (a.name ? '' : script?.description || '');
-    const promptName = a.name || script?.name || '';
+    const scriptState = g(scriptAtom);
+    const promptDescription = a.description || (a.name ? '' : scriptState?.script?.description || '');
+    const promptName = a.name || scriptState?.script?.name || '';
     s(descriptionAtom, promptDescription || promptName);
     s(nameAtom, promptDescription ? promptName : promptDescription);
 
@@ -1217,7 +1227,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     count: g(choicesAtom).length || 0,
     name: g(nameAtom),
     description: g(descriptionAtom),
-    script: g(_script),
+    script: g(_script).script,
     value: g(_submitValue),
     submitted: g(submittedAtom),
     cursor: g(editorCursorPosAtom),

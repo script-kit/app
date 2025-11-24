@@ -64,7 +64,7 @@ export const resizeInputsAtom = atom((g) => {
 
   const script = g(scriptAtom);
   const logHTML = g(logHTMLAtom);
-  const logVisible = logHTML?.length > 0 && script?.log !== false;
+  const logVisible = logHTML?.length > 0 && script?.script?.log !== false;
 
   const choicesReady = g(choicesReadyAtom);
   return {

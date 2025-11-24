@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { app, shell } from 'electron';
 
+import { randomUUID } from 'node:crypto';
 import { fork } from 'node:child_process';
 import minimist from 'minimist';
 import { pathExistsSync, readJson } from './cjs-exports';
@@ -28,6 +29,7 @@ import { prompts } from './prompts';
 import { setShortcodes } from './search';
 import { getKitScript, kitCache, kitState, kitStore, sponsorCheck } from './state';
 import { TrackEvent, trackEvent } from './track';
+import { createRunMeta } from './script-lifecycle';
 
 app.on('second-instance', (_event, argv) => {
   log.info('second-instance', argv);
@@ -200,11 +202,12 @@ export const runPromptProcess = async (
     },
 ): Promise<ProcessInfo | null> => {
   const chainId = Math.random().toString(36).slice(2, 10);
+  const runId = randomUUID();
   if (!kitState.ready) {
     log.warn(`[SC_CHAIN ${chainId}] Kit not ready. Ignoring prompt process:`, { promptScriptPath, args, options });
     return null;
   }
-  log.info(`[SC_CHAIN ${chainId}] runPromptProcess:start`, { promptScriptPath, args, options });
+  log.info(`[SC_CHAIN ${chainId}] runPromptProcess:start`, { promptScriptPath, args, options, runId });
   // log.info(`->>> Prompt script path: ${promptScriptPath}`);
 
   const count = prompts.getVisiblePromptCount();
@@ -234,6 +237,7 @@ export const runPromptProcess = async (
   log.info(`[SC_CHAIN ${chainId}] pickedIdlePrompt`, {
     pid: promptInfo?.pid,
     scriptPath: promptInfo?.scriptPath,
+    runId,
   });
 
   promptInfo.launchedFromMain = isMain;
@@ -241,6 +245,10 @@ export const runPromptProcess = async (
     kitState.hasOpenedMainMenu = true;
   }
   const { prompt, pid, child } = promptInfo;
+  const runMeta = createRunMeta(pid, runId);
+  promptInfo.runId = runId;
+  promptInfo.runStartedAt = runMeta.startedAt;
+  prompt?.setActiveRun(runMeta);
 
   const isSplash = prompt.ui === UI.splash;
   log.info(`>>>
@@ -318,6 +326,9 @@ export const runPromptProcess = async (
   }
   if (!script) {
     log.error(`[SC_CHAIN ${chainId}] Couldn't find script, blocking run: `, promptScriptPath);
+    prompt.clearActiveRun();
+    promptInfo.runId = undefined;
+    promptInfo.runStartedAt = undefined;
     return null;
   }
   const visible = prompt?.isVisible();
@@ -328,7 +339,12 @@ export const runPromptProcess = async (
     setShortcodes(prompt, kitCache.scripts);
   }
 
-  const status = await prompt.setScript(script, pid, options?.force);
+  const status = await prompt.setScript(script, {
+    pid,
+    runId,
+    source: 'runtime',
+    force: options?.force,
+  });
   log.info(`[SC_CHAIN ${chainId}] afterSetScript`, { status });
   if (status === 'denied') {
     log.info(`[SC_CHAIN ${chainId}] deniedUIControl ${path.basename(promptScriptPath)}`);
@@ -364,6 +380,8 @@ export const runPromptProcess = async (
         name: script?.name,
         headers: options?.headers,
         scriptlet,
+        runId,
+        runStartedAt: runMeta.startedAt,
       },
     });
     log.info(`[SC_CHAIN ${chainId}] afterChildSend:success`, { pid });

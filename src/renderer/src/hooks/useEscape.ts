@@ -36,7 +36,7 @@ export default () => {
     'escape',
     (_event) => {
       log.info('Pressed escape!', {
-        script: script?.filePath,
+        script: script?.script?.filePath,
         promptData: promptData?.scriptPath,
         overlayOpen,
       });
@@ -51,19 +51,19 @@ export default () => {
         return;
       }
       if (isReady && ui === UI.splash) {
-        log.info(`Running main script ${script?.filePath}`);
+        log.info(`Running main script ${script?.script?.filePath}`);
         runMainScript();
         return;
       }
 
       if (isReady || ui !== UI.splash) {
-        log.info(`Sending escape for ${script?.filePath}`);
+        log.info(`Sending escape for ${script?.script?.filePath}`);
         sendEscape();
         setRunning(false);
         return;
       }
 
-      log.info(`No action for escape ${script?.filePath}...`);
+      log.info(`No action for escape ${script?.script?.filePath}...`);
     },
     {
       enabled: true,

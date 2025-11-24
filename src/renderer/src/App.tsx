@@ -680,7 +680,7 @@ export default function App() {
 	//   [promptData?.previewWidthPercent],
 	// );
 
-	const logVisible = logHTML?.length > 0 && scriptAtom?.log !== "false";
+	const logVisible = logHTML?.length > 0 && script?.script?.log !== 'false';
 
 	useEffect(() => {
 		const cleanup = unobserveResize();
@@ -832,7 +832,7 @@ text-text-base
 							{overlayOpen && <ActionsList key="ActionsList" />}
 							<PanelGroup
 								direction="horizontal"
-								autoSaveId={script.filePath}
+								autoSaveId={script?.script?.filePath}
 								className={`flex h-full w-full flex-row
 ${showTabs ? "border-t border-ui-border" : ""}
 

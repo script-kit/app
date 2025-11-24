@@ -120,14 +120,14 @@ vi.mock('electron-log', () => ({
 }));
 
 vi.mock('electron-store', () => {
-  const MockStore = vi.fn().mockImplementation(() => ({
-    get: vi.fn(),
-    set: vi.fn(),
-    delete: vi.fn(),
-    clear: vi.fn(),
-    has: vi.fn(() => false),
-    store: {},
-  }));
+  class MockStore {
+    get = vi.fn();
+    set = vi.fn();
+    delete = vi.fn();
+    clear = vi.fn();
+    has = vi.fn(() => false);
+    store = {};
+  }
   return { default: MockStore };
 });
 

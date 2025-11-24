@@ -51,7 +51,7 @@ export const openAtom = atom(
     // Handling closure side effects
     if (g(_open) && a === false) {
       s(resizeCompleteAtom, false);
-      s(lastScriptClosed, (g(_script) as any).filePath);
+      s(lastScriptClosed, (g(_script) as any).script?.filePath || '');
 
       // Resetting various states on close
       s(closedInput, g(_inputAtom));

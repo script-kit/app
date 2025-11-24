@@ -73,6 +73,7 @@ import {
 import { writePromptState } from './prompt.state-utils';
 import { isDevToolsShortcut, computeShouldCloseOnInitialEscape } from './prompt.focus-utils';
 import { isCloseCombo } from './prompt.input-utils';
+import type { ScriptRunMeta } from './script-lifecycle';
 
 import { promptLog as log, themeLog } from './logs';
 import { handleBlurVisibility } from './prompt.visibility-utils';
@@ -109,6 +110,14 @@ export const pointOnMouseScreen = utilPointOnMouseScreen as (p: Point) => boolea
 // moved to prompt.state-utils.ts
 
 export type ScriptTrigger = 'startup' | 'shortcut' | 'prompt' | 'background' | 'schedule' | 'snippet';
+export type ScriptSource = 'runtime' | 'preload' | 'user';
+
+export type SetScriptMeta = {
+  pid?: number;
+  runId?: string;
+  source?: ScriptSource;
+  force?: boolean;
+};
 
 let boundsCheck: any = null;
 const topTimeout: any = null;
@@ -307,6 +316,7 @@ export class KitPrompt {
   actionsOpen = false;
   wasActionsJustOpen = false;
   devToolsOpening = false;
+  private _activeRun?: ScriptRunMeta;
 
   private longRunningThresholdMs = 60000; // 1 minute default
 
@@ -316,6 +326,18 @@ export class KitPrompt {
     return (performance.now() - this.birthTime) / 1000 + 's';
   };
   preloaded = '';
+
+  get activeRun() {
+    return this._activeRun;
+  }
+
+  setActiveRun(run: ScriptRunMeta | undefined) {
+    this._activeRun = run;
+  }
+
+  clearActiveRun() {
+    this._activeRun = undefined;
+  }
 
   get scriptName() {
     return this?.scriptPath?.split('/')?.pop() || '';
@@ -558,6 +580,19 @@ export class KitPrompt {
       this.window.id
     );
 
+    // Keep prompts registry in sync with actual window blur
+    try {
+      if (typeof (prompts as any).handleWindowBlur === 'function') {
+        (prompts as any).handleWindowBlur(this, 'window-blur');
+      } else if (prompts.focused === this) {
+        // Fallback for older builds
+        prompts.focused = null;
+        prompts.prevFocused = this;
+      }
+    } catch (error) {
+      this.logWarn('Error updating prompts focus state on blur', error);
+    }
+
     if (this.windowMode === 'window') {
       this.logInfo('Standard window blurred - keeping window open');
       if (this.window.isVisible()) {
@@ -573,6 +608,23 @@ export class KitPrompt {
       emojiActive: this.emojiActive,
       focusedEmojiActive: prompts?.focused?.emojiActive,
     });
+
+    // If blur immediately goes to another Kit prompt window, keep this panel open
+    try {
+      const focusedWindow = BrowserWindow.getFocusedWindow();
+      if (focusedWindow) {
+        const focusedPrompt = [...prompts].find((p) => p.window === focusedWindow) || null;
+        if (focusedPrompt && focusedPrompt !== this) {
+          this.logInfo(
+            `Blurred because another Kit prompt (${focusedPrompt.pid}:${focusedPrompt.scriptName}) is now focused - keeping this panel open`,
+          );
+          processWindowCoordinator.completeOperation(blurOpId);
+          return;
+        }
+      }
+    } catch (error) {
+      this.logWarn('Error checking focused Kit window on blur', error);
+    }
 
     // Use visibility controller to handle blur
     handleBlurVisibility(this);
@@ -909,9 +961,21 @@ export class KitPrompt {
     // lifecycle handlers moved
 
     this.window.on('focus', () => {
-      this.logInfo('👓 Focus bounds:');
+      this.logInfo('👓 Prompt window focused');
 
-      // Use visibility controller to handle focus
+      // Keep prompts registry in sync with actual window focus
+      try {
+        if (typeof (prompts as any).setFocusedPrompt === 'function') {
+          (prompts as any).setFocusedPrompt(this, 'window-focus');
+        } else {
+          // Fallback for older builds if needed
+          prompts.focused = this;
+        }
+      } catch (error) {
+        this.logWarn('Error updating prompts focus state on focus', error);
+      }
+
+      // Use visibility controller to handle focus-related visibility
       handleBlurVisibility(this);
 
       if (!kitState.isLinux) {
@@ -1493,6 +1557,7 @@ export class KitPrompt {
     this.ui = UI.arg;
     this.count = 0;
     this.id = '';
+    this.clearActiveRun();
 
     // Clear long-running monitor when resetting
     this.clearLongRunningMonitor();
@@ -1531,10 +1596,41 @@ export class KitPrompt {
 
   scriptSet = false;
 
-  setScript = (script: Script, pid: number, _force = false): 'denied' | 'allowed' => {
+  setScript = (script: Script, meta: SetScriptMeta = {}): 'denied' | 'allowed' => {
+    const { pid, runId, source = 'runtime' } = meta;
+    const targetPid = pid ?? this.pid;
+    const activeRun = this._activeRun;
     const { preview, scriptlet, inputs, tag, ...serializableScript } = script as Scriptlet;
 
-    log.info(`${this.pid}: setScript`, serializableScript, JSON.stringify(script));
+    log.info(`${this.pid}: setScript`, serializableScript, {
+      runId: runId ?? activeRun?.runId,
+      source,
+    });
+
+    if (activeRun) {
+      if (targetPid && activeRun.pid !== targetPid) {
+        this.logWarn('[Prompt.setScript] Dropping script from mismatched pid', {
+          expected: activeRun.pid,
+          received: targetPid,
+        });
+        return 'denied';
+      }
+
+      if (runId && activeRun.runId !== runId) {
+        this.logWarn('[Prompt.setScript] Dropping script from mismatched runId', {
+          expected: activeRun.runId,
+          received: runId,
+        });
+        return 'denied';
+      }
+
+      if (source === 'preload') {
+        this.logInfo('[Prompt.setScript] Ignoring preload script during active run', {
+          activeRunId: activeRun.runId,
+        });
+        return 'denied';
+      }
+    }
 
     if (typeof script?.prompt === 'boolean' && script.prompt === false) {
       this.hideInstant();
@@ -1543,8 +1639,10 @@ export class KitPrompt {
     }
 
     this.scriptSet = true;
-    this.logInfo(`${this.pid}: ${pid} setScript`, serializableScript, {
+    this.logInfo(`${this.pid}: ${targetPid} setScript`, serializableScript, {
       preloaded: this.preloaded || 'none',
+      runId: runId ?? activeRun?.runId,
+      source,
     });
     performance.mark('script');
     kitState.resizePaused = false;
@@ -1553,29 +1651,19 @@ export class KitPrompt {
     this.cacheScriptPreview = cache;
     this.cacheScriptPromptData = cache;
 
-    // if (script.filePath === prevScriptPath && pid === prevPid) {
-    //   // Using a keyboard shortcut to launch a script will hit this scenario
-    //   // Because the app will call `setScript` immediately, then the process will call it too
-    //   this.logInfo(`${this.pid}: Script already set. Ignore`);
-    //   return 'denied';
-    // }
-
-    // prevScriptPath = script.filePath;
-    // prevPid = pid;
-
-    // const { prompt } = processes.find((p) => p.pid === pid) as ProcessAndPrompt;
-    // if (!prompt) return 'denied';
-
-    this.sendToPrompt(Channel.SET_PID, pid);
+    this.sendToPrompt(Channel.SET_PID, targetPid);
 
     this.scriptPath = serializableScript.filePath;
     kitState.hasSnippet = Boolean(serializableScript?.snippet || serializableScript?.expand);
-    // if (promptScript?.filePath === script?.filePath) return;
 
     this.script = serializableScript;
 
-    // this.logInfo(`${this.pid}: sendToPrompt: ${Channel.SET_SCRIPT}`, serializableScript);
-    this.sendToPrompt(Channel.SET_SCRIPT, serializableScript);
+    this.sendToPrompt(Channel.SET_SCRIPT, {
+      script: serializableScript,
+      runId: runId ?? activeRun?.runId ?? null,
+      pid: targetPid ?? null,
+      source,
+    });
 
     // Now that we have the script name and path, start long-running monitoring if bound to a process
     if (this.boundToProcess && this.pid) {
@@ -1911,21 +1999,53 @@ export class KitPrompt {
       this.handleEscapePress();
     }
 
+    // Treat both ESC + "close combos" (including Cmd/Ctrl+W) as potential closes
+    const isCmdOrCtrlW =
+      input.type === 'keyDown' &&
+      (isW || input.code === 'KeyW') &&
+      (kitState.isMac ? input.meta : input.control) &&
+      !input.shift &&
+      !input.alt;
+
+    const isCloseShortcut = isCloseCombo(input as any, kitState.isMac) || isCmdOrCtrlW;
+
     const shouldCloseOnInitialEscape = this.shouldClosePromptOnInitialEscape(isEscape);
     // this.logInfo(`${this.pid}: shouldCloseOnInitialEscape: ${shouldCloseOnInitialEscape}`);
-    if (isCloseCombo(input as any, kitState.isMac) || shouldCloseOnInitialEscape) {
+    if (isCloseShortcut || shouldCloseOnInitialEscape) {
+      // For Cmd/Ctrl+W, only close when this prompt truly has focus
+      if (isCmdOrCtrlW) {
+        const windowIsFocused = this.window?.isFocused();
+        const electronFocused = BrowserWindow.getFocusedWindow();
+        const registryFocusedIsThis = !prompts.focused || prompts.focused === this;
+        const actuallyFocused =
+          !!windowIsFocused && electronFocused === this.window && registryFocusedIsThis;
+
+        if (!actuallyFocused) {
+          this.logInfo('Ignoring Cmd/Ctrl+W because prompt is not actually focused', {
+            windowIsFocused,
+            electronFocusedId: electronFocused?.id,
+            registryFocusedIsThis,
+          });
+          return;
+        }
+      }
+
       this.logInfo(`${this.pid}: Closing prompt window`);
-      if (isW) {
+
+      if (isCmdOrCtrlW) {
         this.logInfo(`Closing prompt window with ${kitState.isMac ? '⌘' : '⌃'}+w`);
       } else if (isEscape) {
         this.logInfo('Closing prompt window with escape');
       }
+
+      // Stop the key from reaching the renderer / default handlers
+      _event.preventDefault();
+
       this.hideAndRemoveProcess();
       // I don't think these are needed anymore, but leaving them in for now
       this.logInfo(`✋ Removing process because of escape ${this.pid}`);
 
       // emitter.emit(KitEvent.KillProcess, this.pid);
-      // event.preventDefault();
       return;
     }
   };
@@ -2052,7 +2172,12 @@ export class KitPrompt {
     this.setOpacity(opacity);
 
     // Re-send script & prompt data (with current state merged)
-    if (this.scriptSet && this.script) this.setScript(this.script as any, this.pid);
+    if (this.scriptSet && this.script) {
+      this.setScript(this.script as any, {
+        pid: this.pid,
+        runId: this._activeRun?.runId,
+      });
+    }
     if (currentPromptData) {
       // Update our stored promptData with the current state
       this.promptData = currentPromptData;

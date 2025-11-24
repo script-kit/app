@@ -89,6 +89,7 @@ import { showLogWindow } from './window';
 
 import { messagesLog as log } from './logs';
 import { sanitizeKitStateForIpc } from './state/kitstate-sanitize';
+import { isMatchingRun } from './script-lifecycle';
 
 // Centralize magic numbers
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -1030,7 +1031,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       pInfo.prompt?.sendToPrompt(Channel.SET_PROMPT_DATA, {
         ui: UI.debugger,
       });
-      await pInfo.prompt?.setScript(data.value, pInfo.pid);
+      await pInfo.prompt?.setScript(data.value, {
+        pid: pInfo.pid,
+        runId: pInfo.runId,
+        source: 'runtime',
+      });
       // // wait 1000ms for script to start
       await new Promise((resolve) => setTimeout(resolve, 1000));
       pInfo?.child?.send({
@@ -1054,6 +1059,16 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       // "app-run" will invoke "SET_SCRIPT"
       // TODO: Attempting to preload on SET_SCRIPT causes weird resizing issues
       // Need to figure out initBounds, jotai's resize/hasPreview preload
+      const incomingRunId = (data as any)?.runId ?? (data as any)?.value?.runId;
+      const activeRun = prompt.activeRun;
+      if (activeRun && !isMatchingRun(activeRun, processInfo.pid, incomingRunId ?? null)) {
+        log.warn('[main] Dropping SET_SCRIPT from stale run', {
+          pid: processInfo.pid,
+          incomingRunId,
+          activeRun: activeRun.runId,
+        });
+        return;
+      }
       const filePath = data?.value?.filePath;
 
       if (prompt.preloaded && getMainScriptPath() === filePath) {
@@ -1109,7 +1124,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         });
       }
 
-      await prompt?.setScript(data.value, processInfo.pid);
+      await prompt?.setScript(data.value, {
+        pid: processInfo.pid,
+        runId: incomingRunId ?? processInfo.runId,
+        source: 'runtime',
+      });
     }),
     SET_STATUS: onChildChannel((_, data) => {
       if (data?.value) {

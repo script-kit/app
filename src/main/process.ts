@@ -55,6 +55,8 @@ export type ProcessAndPrompt = ProcessInfo & {
   promptId?: string;
   launchedFromMain: boolean;
   preventChannels?: Set<Channel>;
+  runId?: string;
+  runStartedAt?: number;
 };
 
 // TODO: Reimplement SET_PREVIEW

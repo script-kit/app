@@ -1,7 +1,10 @@
+import { hotkeysOptions } from '@renderer/hooks/shared';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { VariableSizeList as List, VariableSizeGrid as Grid, type GridOnItemsRenderedProps } from 'react-window';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useHotkeys } from 'react-hotkeys-hook';
+import { VariableSizeGrid as Grid, type GridOnItemsRenderedProps, VariableSizeList as List } from 'react-window';
 import type { ChoiceButtonProps, ListProps } from '../../../shared/types';
+import useListNav from '../hooks/useListNav';
 import {
   containerClassNameAtom,
   directionAtom,
@@ -14,12 +17,10 @@ import {
   promptDataAtom,
   scoredChoicesAtom,
 } from '../jotai';
-import { registerScrollRefAtom, gridDimensionsAtom, setScrollingAtom } from '../state/scroll';
-import ChoiceButton from './button';
-import useListNav from '../hooks/useListNav';
 import { createLogger } from '../log-utils';
-import { useHotkeys } from 'react-hotkeys-hook';
-import { hotkeysOptions } from '@renderer/hooks/shared';
+import { gridDimensionsAtom, registerScrollRefAtom, setScrollingAtom } from '../state/scroll';
+import ChoiceButton from './button';
+
 const log = createLogger('List.tsx');
 
 function calculateColumnWidth(totalWidth: number, columnCount: number, cellGap: number, providedColumnWidth?: number) {
@@ -140,6 +141,10 @@ ${containerClassName}
 
   const gridRef = useRef<Grid>(null);
 
+  // Tracks whether we've already resolved the initial index for the current prompt.
+  const hasResolvedInitialIndexRef = useRef(false);
+  const lastPromptKeyRef = useRef<string | null>(null);
+
   // Register grid ref with scroll service
   useEffect(() => {
     if (gridRef?.current && gridReady) {
@@ -247,13 +252,94 @@ ${containerClassName}
     setScrollTimeout(newTimeout);
   }, [index, scrollTimeout, setIsScrolling]);
 
-  // Parity guard: if the list has just populated and no functional index exists yet,
-  // default to the first row so visuals and state cannot diverge.
+  // Resolve the initial index once we have any selection/focus hints.
+  // This avoids locking in index 0 when choices arrive before promptData.
   useEffect(() => {
-    if (choices.length > 0 && (index == null || index < 0)) {
-      setIndex(0);
+    if (!choices.length) return;
+
+    // Detect prompt changes so we can re-run for a new script.
+    const promptKey = promptData?.id || promptData?.key || null;
+    if (lastPromptKeyRef.current !== promptKey) {
+      hasResolvedInitialIndexRef.current = false;
+      lastPromptKeyRef.current = promptKey;
     }
-  }, [choices.length, index, setIndex]);
+
+    // If we've already resolved for this prompt, don't touch the index again.
+    if (hasResolvedInitialIndexRef.current) return;
+
+    const getIndexByPredicate = (predicate: (item: any) => boolean) =>
+      choices.findIndex((choice) => choice?.item && predicate(choice.item));
+
+    // Do we have any hints at all yet?
+    const hasChoiceSelected = getIndexByPredicate((item) => item.selected === true) >= 0;
+
+    const hasPromptHint =
+      !!promptData?.focusedId || !!promptData?.defaultChoiceId || !!promptData?.focused || !!promptData?.selected;
+
+    log.info('[INITIAL_INDEX_DEBUG] Checking hints', {
+      promptId: promptData?.id,
+      hasChoiceSelected,
+      hasPromptHint,
+      promptDataSelected: promptData?.selected,
+      promptDataFocused: promptData?.focused,
+      promptDataFocusedId: promptData?.focusedId,
+      promptDataDefaultChoiceId: promptData?.defaultChoiceId,
+      choicesWithSelected: choices.filter((c) => c?.item?.selected).map((c) => c?.item?.name),
+      totalChoices: choices.length,
+    });
+
+    // If no hints exist yet, don't commit to an index.
+    // Wait for promptData or choices to change again.
+    if (!hasChoiceSelected && !hasPromptHint) {
+      log.info('[INITIAL_INDEX_DEBUG] No hints yet, waiting...');
+      return;
+    }
+
+    let nextIndex = -1;
+
+    // 1. Per-choice selected flag
+    if (hasChoiceSelected) {
+      nextIndex = getIndexByPredicate((item) => item.selected === true);
+    }
+
+    // 2. PromptData.focusedId
+    if (nextIndex < 0 && promptData?.focusedId) {
+      nextIndex = getIndexByPredicate((item) => item.id === promptData.focusedId);
+    }
+
+    // 3. PromptData.defaultChoiceId
+    if (nextIndex < 0 && promptData?.defaultChoiceId) {
+      nextIndex = getIndexByPredicate((item) => item.id === promptData.defaultChoiceId);
+    }
+
+    // 4. Legacy string-based hints (focused / selected)
+    const legacyKeys: string[] = [];
+    if (promptData?.focused) legacyKeys.push(promptData.focused);
+    if (promptData?.selected) legacyKeys.push(promptData.selected);
+
+    if (nextIndex < 0 && legacyKeys.length) {
+      for (const key of legacyKeys) {
+        nextIndex = getIndexByPredicate((item) => item.name === key || item.value === key || item.id === key);
+        if (nextIndex >= 0) break;
+      }
+    }
+
+    // If hints exist but none match, we intentionally do NOT override whatever
+    // index the nav system has already chosen. Just mark as resolved.
+    if (nextIndex < 0) {
+      log.info('[INITIAL_INDEX_DEBUG] Hints exist but no match found, keeping current index');
+      hasResolvedInitialIndexRef.current = true;
+      return;
+    }
+
+    log.info('[INITIAL_INDEX_DEBUG] Resolved to index', {
+      nextIndex,
+      choiceName: choices[nextIndex]?.item?.name,
+    });
+
+    setIndex(nextIndex);
+    hasResolvedInitialIndexRef.current = true;
+  }, [choices, promptData, setIndex]);
 
   return (
     <div id="list" style={{ width }} className="list-component flex flex-col w-full overflow-y-hidden">

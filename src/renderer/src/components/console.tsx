@@ -10,7 +10,7 @@ import { AppChannel } from '../../../shared/enums';
 import { logHTMLAtom, logHeightAtom, scriptAtom } from '../jotai';
 
 export default function Console() {
-  const [script, setScript] = useAtom(scriptAtom);
+  const [script] = useAtom(scriptAtom);
   const containerRef: RefObject<any> = useRef(null);
   const divRef: RefObject<any> = useRef(null);
   const [mouseOver, setMouseOver] = useState(false);
@@ -19,7 +19,7 @@ export default function Console() {
   const [logHeight, setLogHeight] = useAtom(logHeightAtom);
 
   const editLog = useCallback(() => {
-    ipcRenderer.send(AppChannel.OPEN_SCRIPT_LOG, script);
+    ipcRenderer.send(AppChannel.OPEN_SCRIPT_LOG, script.script);
   }, [script]);
 
   useResizeObserver(divRef, (entry) => {
@@ -74,7 +74,7 @@ export default function Console() {
           {parse(`${logHTML}`)}
         </div>
       </SimpleBar>
-      {!script.name?.startsWith('error') && (
+      {!script.script?.name?.startsWith('error') && (
         <PencilAltIcon
           className={`
         absolute

@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { globalShortcut } from 'electron';
+import { globalShortcut, BrowserWindow } from 'electron';
 import { debounce } from 'lodash-es';
 import { subscribeKey } from 'valtio/utils';
 
@@ -365,17 +365,33 @@ export const updateMainShortcut = (shortcut?: string) => {
 
     log.info(`🏡 Main shortcut pressed. Focused prompt script: ${prompts?.focused?.scriptPath}`);
 
-    if (isFocusedPromptMainScript) {
-      if (prompts?.focused?.isFocused() && prompts?.focused?.isVisible()) {
+    if (isFocusedPromptMainScript && prompts.focused) {
+      const win = prompts.focused.window;
+      const electronFocused = BrowserWindow.getFocusedWindow();
+
+      const windowIsFocused = !!win && !win.isDestroyed() && win.isFocused();
+      const windowIsVisible = !!win && !win.isDestroyed() && win.isVisible();
+      const electronThinksFocused = !!win && electronFocused === win;
+
+      const actuallyFocused = windowIsFocused && windowIsVisible && electronThinksFocused;
+
+      if (actuallyFocused) {
         log.info(
           '🔍 Main shortcut pressed while focused prompt main script. Hiding focused prompt.',
-          prompts.focused?.id,
-          prompts.focused?.pid,
+          prompts.focused.id,
+          prompts.focused.pid,
         );
-        processes.removeByPid(prompts.focused?.pid, 'shortcuts focused prompt cleanup');
+        processes.removeByPid(prompts.focused.pid, 'shortcuts focused prompt cleanup');
         prompts.focused = null;
         return;
       }
+
+      log.info('⚠️ Main shortcut: main menu prompt is marked focused but window focus is inconsistent', {
+        windowIsFocused,
+        windowIsVisible,
+        electronThinksFocused,
+        electronFocusedId: electronFocused?.id,
+      });
     }
 
     log.info(`
