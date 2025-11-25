@@ -1,7 +1,6 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type CSSProperties } from 'react';
-import AutoSizer from 'react-virtualized-auto-sizer';
-import { List, useListCallbackRef, type RowComponentProps, type ListImperativeAPI } from 'react-window';
+import { List, useListCallbackRef, type RowComponentProps } from 'react-window';
 import type { ScoredChoice } from '../../../shared/types';
 import {
   actionsInputHeightAtom,
@@ -11,6 +10,7 @@ import {
   flagsIndexAtom,
   flagsListAtom,
   focusedElementAtom,
+  inputAtom,
   isFlagsScrollingAtom,
   scoredFlagsAtom,
 } from '../jotai';
@@ -21,11 +21,12 @@ import FlagButton from './flag-button';
 // Row props type for List v2 API
 interface FlagsListRowProps {
   choices: ScoredChoice[];
+  input: string;
 }
 
 // Row component for List (v2 API)
-function FlagsRowComponent({ index, style, choices }: RowComponentProps<FlagsListRowProps>): ReactElement {
-  return <FlagButton index={index} style={style} choices={choices} />;
+function FlagsRowComponent({ index, style, choices, input }: RowComponentProps<FlagsListRowProps>): ReactElement {
+  return <FlagButton index={index} style={style} choices={choices} input={input} />;
 }
 
 function InnerList({ height }: { height: number }) {
@@ -35,6 +36,7 @@ function InnerList({ height }: { height: number }) {
   const [choices] = useAtom(scoredFlagsAtom);
   const [index, onIndexChange] = useAtom(flagsIndexAtom);
   const itemHeight = useAtomValue(actionsItemHeightAtom);
+  const input = useAtomValue(inputAtom);
   const [list, setList] = useAtom(flagsListAtom);
   const [isScrolling, setIsScrolling] = useAtom(isFlagsScrollingAtom);
   const registerScrollRef = useSetAtom(registerScrollRefAtom);
@@ -113,7 +115,7 @@ function InnerList({ height }: { height: number }) {
   );
 
   // v2 row props
-  const rowProps: FlagsListRowProps = useMemo(() => ({ choices }), [choices]);
+  const rowProps: FlagsListRowProps = useMemo(() => ({ choices, input }), [choices, input]);
 
   // Style with explicit dimensions for v2
   const listStyle: CSSProperties = useMemo(
@@ -196,13 +198,11 @@ export default function ActionsList() {
       style={containerStyle}
     >
       <ActionsInput />
-      <div className="flex h-full">
-        <div className="flex-1">
-          <AutoSizer disableWidth={true} className="w-full">
-            {({ height }) => <InnerList height={height + 2} />}
-          </AutoSizer>
+      {actionsHeight > 0 && (
+        <div className="flex-1" style={{ height: actionsHeight }}>
+          <InnerList height={actionsHeight} />
         </div>
-      </div>
+      )}
     </div>
   );
 }
