@@ -1885,8 +1885,9 @@ export class KitPrompt {
     this.logInfo(`${this.pid}: 🧹 Clearing cached main menu content`);
     if (this.window && !this.window.isDestroyed()) {
       this.sendToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, []);
-      this.sendToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, '');
-      this.sendToPrompt(Channel.SET_PREVIEW, '');
+      // Use closedDiv to signal "no preview" - empty string still shows the preview panel
+      this.sendToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, closedDiv);
+      this.sendToPrompt(Channel.SET_PREVIEW, closedDiv);
     }
   };
 
