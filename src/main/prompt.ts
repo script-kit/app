@@ -1238,14 +1238,21 @@ export class KitPrompt {
       // Still show the prompt if requested, even though dimensions match
       // But first ensure position is correct (may be at workarea origin from moveToMouseScreen)
       if (shouldShowAfterResize) {
-        const targetPosition = this.calculateTargetPosition(currentBounds, targetDimensions, undefined);
-        // Only apply position if it changed significantly (avoid unnecessary setBounds calls)
-        if (Math.abs(currentBounds.x - targetPosition.x) > 5 || Math.abs(currentBounds.y - targetPosition.y) > 5) {
-          this.logInfo('🎤 Showing prompt (dimensions unchanged, repositioning)...', {
+        // Check if window is at workarea origin (from moveToMouseScreen) and needs centering
+        const mouseScreen = this.getCurrentScreenFromMouse();
+        const { x: workX, y: workY } = mouseScreen.workArea;
+        const { width: screenWidth, height: screenHeight } = mouseScreen.workAreaSize;
+        const isAtWorkOrigin = Math.abs(currentBounds.x - workX) < 4 && Math.abs(currentBounds.y - workY) < 4;
+
+        if (isAtWorkOrigin) {
+          // Center the window on the screen
+          const centeredX = Math.round(workX + (screenWidth - targetDimensions.width) / 2);
+          const centeredY = Math.round(workY + screenHeight / 8);
+          this.logInfo('🎤 Showing prompt (dimensions unchanged, centering from work origin)...', {
             from: { x: currentBounds.x, y: currentBounds.y },
-            to: targetPosition,
+            to: { x: centeredX, y: centeredY },
           });
-          this.setBounds({ ...targetPosition, ...targetDimensions }, 'REPOSITION_BEFORE_SHOW');
+          this.setBounds({ x: centeredX, y: centeredY, ...targetDimensions }, 'CENTER_BEFORE_SHOW');
         } else {
           this.logInfo('🎤 Showing prompt (dimensions unchanged)...');
         }
