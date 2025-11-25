@@ -194,10 +194,10 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             arch: x64
-          - os: macos-13
+          - os: macos-15-intel
             platform: mac
             arch: x64
-          - os: macos-13
+          - os: macos-15
             platform: mac
             arch: arm64
     steps:
@@ -263,11 +263,11 @@ jobs:
         run: |
           echo "Starting dependency installation..."
           sudo apt-get update
-          sudo apt-get install -y pkg-config libx11-dev libxkbfile-dev libxtst-dev libxrandr-dev libxt-dev make gcc libpng++-dev g++-10
+          sudo apt-get install -y pkg-config libx11-dev libxkbfile-dev libxtst-dev libxrandr-dev libxt-dev make gcc libpng++-dev g++-11
 
           echo "Setting g++ alternatives..."
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
-          sudo update-alternatives --set g++ /usr/bin/g++-10
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100
+          sudo update-alternatives --set g++ /usr/bin/g++-11
           echo "g++ version:"
           g++ --version
 
