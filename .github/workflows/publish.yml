@@ -330,6 +330,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ELECTRON_BUILD_ARCH: x64
           ELECTRON_BUILD_PLATFORM: win32
+          NODE_OPTIONS: --max-old-space-size=8192
         run: |
           cat ./package.json
           pnpm vite-prebuild
@@ -349,6 +350,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ELECTRON_BUILD_ARCH: arm64
           ELECTRON_BUILD_PLATFORM: win32
+          NODE_OPTIONS: --max-old-space-size=8192
 
       - name: Publish linux x64
         if: matrix.platform == 'linux' && matrix.arch == 'x64'
@@ -360,6 +362,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ELECTRON_BUILD_ARCH: x64
           ELECTRON_BUILD_PLATFORM: linux
+          NODE_OPTIONS: --max-old-space-size=8192
 
         run: |
           echo "=== LINUX X64 BUILD START ==="
@@ -384,6 +387,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ELECTRON_BUILD_ARCH: arm64
           ELECTRON_BUILD_PLATFORM: linux
+          NODE_OPTIONS: --max-old-space-size=8192
 
         run: |
           echo "=== LINUX ARM64 BUILD DIAGNOSTICS ==="
