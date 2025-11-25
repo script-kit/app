@@ -245,6 +245,7 @@ export const runPromptProcess = async (
     kitState.hasOpenedMainMenu = true;
   }
   const { prompt, pid, child } = promptInfo;
+  log.info(`🔑🔑🔑 runPromptProcess: pid=${pid}, promptScriptPath="${promptScriptPath}", isMain=${isMain}, prompt.initMain=${prompt.initMain}, prompt.scriptPath="${prompt.scriptPath}"`);
   const runMeta = createRunMeta(pid, runId);
   promptInfo.runId = runId;
   promptInfo.runStartedAt = runMeta.startedAt;
@@ -265,6 +266,9 @@ export const runPromptProcess = async (
   if (isMain) {
     log.info(`${pid}: 🏠 Main script: ${promptScriptPath}`);
     log.info(`[SC_CHAIN ${chainId}] mainInitBoundsAndShow`);
+    // Initialize main menu data (cached choices, preview, etc.) for instant display
+    prompt.initMain = true;
+    prompt.initMainPrompt('runPromptProcess-isMain');
     prompt.initMainBounds();
     prompt.initShowPrompt();
   } else if (options.trigger === Trigger.Snippet) {

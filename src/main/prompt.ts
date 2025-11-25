@@ -298,7 +298,7 @@ export class KitPrompt {
   id = '';
   pid = 0;
   windowMode: PromptWindowMode = 'panel'; // default
-  initMain = true;
+  initMain = false;
   script = noScript;
   scriptPath = '';
   allowResize = true;
@@ -709,6 +709,7 @@ export class KitPrompt {
   };
 
   initMainPrompt = (reason = 'unknown') => {
+    this.logInfo(`🚀🚀🚀 initMainPrompt CALLED: reason="${reason}", scriptPath="${this.scriptPath}", initMain=${this.initMain}`);
     this.initPromptData();
     this.initMainChoices();
     this.initMainPreview();
@@ -1857,8 +1858,10 @@ export class KitPrompt {
 
   attemptPreload = debounce(
     (promptScriptPath: string, show = true, init = true) => {
+      this.logInfo(`🏋️🏋️🏋️ attemptPreload CALLED: promptScriptPath="${promptScriptPath}", current prompt.scriptPath="${this.scriptPath}", prompt.initMain=${this.initMain}`);
       const isMainScript = getMainScriptPath() === promptScriptPath;
       if (!promptScriptPath || isMainScript) {
+        this.logInfo(`🏋️ attemptPreload: EARLY RETURN - promptScriptPath empty or isMainScript`);
         return;
       }
       // log out all the keys of preloadPromptDataMap

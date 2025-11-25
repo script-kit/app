@@ -678,7 +678,7 @@ class Processes extends Array<ProcessAndPrompt> {
       throw new Error('Child process has no pid');
     }
 
-    const prompt = prompts.attachIdlePromptToProcess('➕ add process', child.pid);
+    const prompt = prompts.attachIdlePromptToProcess('➕ add process', child.pid, scriptPath);
 
     processLog.info(`${child.pid}: 👶 Create child ${type} process: ${child.pid}`, scriptPath, args);
 

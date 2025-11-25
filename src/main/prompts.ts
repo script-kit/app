@@ -1,3 +1,4 @@
+import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
 import { promptLog } from './logs';
 import { processes } from './process';
 import { KitPrompt } from './prompt';
@@ -197,7 +198,7 @@ export const prompts = {
     }
     this.idle = idlePrompt;
   },
-  attachIdlePromptToProcess(reason: string, pid: number): KitPrompt {
+  attachIdlePromptToProcess(reason: string, pid: number, scriptPath?: string): KitPrompt {
     const idleSet = this.idle !== null;
     const runId = Math.random().toString(36).substring(2, 15);
     promptLog.info(
@@ -230,7 +231,19 @@ export const prompts = {
     promptMap.set(pid, prompt);
 
     if (idleSet) {
-      prompt.initMainPrompt('attachIdlePromptToProcess');
+      // Only initialize main menu data for main script, not for idle or other scripts
+      const isMainScript = scriptPath && scriptPath === getMainScriptPath();
+      promptLog.info(`${runId}: 🔗 attachIdlePromptToProcess scriptPath=${scriptPath}, isMainScript=${isMainScript}`);
+      if (isMainScript) {
+        prompt.initMain = true;
+        prompt.initMainPrompt('attachIdlePromptToProcess');
+      } else {
+        // For idle processes or non-main scripts, DON'T call initMainPrompt
+        // initMain is already false by default, but explicitly set it for clarity
+        prompt.initMain = false;
+        promptLog.info(`${runId}: 🔗 Set prompt.initMain=false for idle/non-main script`);
+        prompt.initTheme();
+      }
     }
 
     // Always schedule creation of a new idle prompt to ensure we have one ready
