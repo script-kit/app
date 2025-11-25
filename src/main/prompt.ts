@@ -1886,6 +1886,7 @@ export class KitPrompt {
     if (this.window && !this.window.isDestroyed()) {
       this.sendToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, []);
       this.sendToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, '');
+      this.sendToPrompt(Channel.SET_PREVIEW, '');
     }
   };
 
