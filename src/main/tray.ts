@@ -388,6 +388,14 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
   });
 
   toolsSubmenu.push({
+    label: 'Reveal Logs Folder (for Support)',
+    click: () => {
+      // Opens the logs directory in Finder/Explorer
+      shell.showItemInFolder(mainLogPath);
+    },
+  });
+
+  toolsSubmenu.push({
     type: 'separator' as const,
   });
 
