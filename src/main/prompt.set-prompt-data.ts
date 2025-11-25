@@ -130,7 +130,44 @@ export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Pr
   const shouldShow = promptData?.show !== false;
   if (!visible && shouldShow) {
     prompt.logInfo(`${prompt.id}: Prompt not visible but should show`);
-    if (!prompt.firstPrompt) {
+
+    // Check if we have explicit dimensions that will cause a resize
+    // In these cases, wait for resize before showing to avoid flash
+    const hasExplicitDimensions =
+      typeof promptData?.width === 'number' ||
+      typeof promptData?.height === 'number' ||
+      typeof promptData?.inputHeight === 'number';
+
+    // Compare against current bounds to see if resize is actually needed
+    const currentBounds = prompt.window?.getBounds();
+    const targetWidth = promptData?.width ?? currentBounds?.width;
+    const targetHeight = promptData?.height ?? promptData?.inputHeight ?? currentBounds?.height;
+    const significantSizeDifference = currentBounds && (
+      Math.abs(currentBounds.width - targetWidth) > 20 ||
+      Math.abs(currentBounds.height - targetHeight) > 20
+    );
+
+    const shouldDeferShow = hasExplicitDimensions && significantSizeDifference;
+
+    prompt.logInfo(`${prompt.id}: shouldDeferShow=${shouldDeferShow}`, {
+      hasExplicitDimensions,
+      significantSizeDifference,
+      currentBounds: currentBounds ? { w: currentBounds.width, h: currentBounds.height } : null,
+      target: { w: targetWidth, h: targetHeight },
+    });
+
+    if (shouldDeferShow) {
+      prompt.showAfterNextResize = true;
+      // Safety fallback: if resize doesn't happen within 200ms, show anyway
+      // This handles edge cases like resize being disabled or already at target size
+      setTimeout(() => {
+        if (prompt.showAfterNextResize && !prompt.window?.isDestroyed()) {
+          prompt.logWarn(`${prompt.id}: showAfterNextResize fallback triggered`);
+          prompt.showAfterNextResize = false;
+          prompt.showPrompt();
+        }
+      }, 200);
+    } else if (!prompt.firstPrompt) {
       prompt.showPrompt();
     } else {
       prompt.showAfterNextResize = true;

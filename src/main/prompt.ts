@@ -1169,17 +1169,19 @@ export class KitPrompt {
   }
 
   resize = async (resizeData: ResizeData) => {
-    if (!this.shouldApplyResize(resizeData)) {
-      return;
-    }
-
-    // refactor: removed prevResizeData tracking
-
+    // Always check showAfterNextResize first, even if we skip the actual resize
+    // This ensures the prompt shows even when resize is disabled (e.g., on Linux)
     if (this.showAfterNextResize) {
       this.logInfo('🎤 Showing prompt after next resize...');
       this.showAfterNextResize = false;
       this.showPrompt();
     }
+
+    if (!this.shouldApplyResize(resizeData)) {
+      return;
+    }
+
+    // refactor: removed prevResizeData tracking
 
     if (resizeData.reason === 'SETTLE') {
       setTimeout(() => this.handleSettle(), 50);
