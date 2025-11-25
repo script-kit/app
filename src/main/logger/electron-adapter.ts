@@ -72,10 +72,12 @@ export type TimerEndFn = () => number;
 export interface Logger {
   fatal(message: string, errorOrContext?: Error | LogContext, context?: LogContext): void;
   error(message: string, errorOrContext?: Error | LogContext, context?: LogContext): void;
-  warn(message: string, context?: LogContext): void;
-  info(message: string, context?: LogContext): void;
-  debug(message: string, context?: LogContext): void;
-  trace(message: string, context?: LogContext): void;
+  warn(...args: unknown[]): void;
+  info(...args: unknown[]): void;
+  debug(...args: unknown[]): void;
+  trace(...args: unknown[]): void;
+  verbose(...args: unknown[]): void;
+  silly(...args: unknown[]): void;
   child(context: LogContext): Logger;
   startTimer(operationName: string, context?: LogContext): TimerEndFn;
   getLevel(): LogLevel;
@@ -264,7 +266,8 @@ export class FileFormatter {
     output += ` ${message}`;
 
     // Add context (excluding already shown fields)
-    if (context) {
+    // Guard: Only process context if it's actually an object (not a string or primitive)
+    if (context && typeof context === 'object' && !Array.isArray(context)) {
       const { component, ...rest } = context;
       if (Object.keys(rest).length > 0) {
         output += ` ${JSON.stringify(rest)}`;
@@ -528,19 +531,119 @@ export class ElectronLogger implements Logger {
     this.log('error', message, errorOrContext, context);
   }
 
-  warn(message: string, context?: LogContext): void {
+  /**
+   * Warning logging
+   * Accepts multiple arguments like electron-log for backward compatibility
+   */
+  warn(...args: unknown[]): void {
+    // Early exit if level not enabled (avoid formatting work)
+    if (!this.isLevelEnabled('warn') || args.length === 0) return;
+
+    // Check if last argument is a LogContext object
+    const lastArg = args[args.length - 1];
+    const hasContext = lastArg && typeof lastArg === 'object' && !Array.isArray(lastArg) && !(lastArg instanceof Error);
+
+    let context: LogContext | undefined;
+    let messageArgs: unknown[];
+
+    if (hasContext && args.length > 1) {
+      context = lastArg as LogContext;
+      messageArgs = args.slice(0, -1);
+    } else {
+      messageArgs = args;
+    }
+
+    const message = messageArgs.map(arg =>
+      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+    ).join(' ');
+
     this.log('warn', message, context);
   }
 
-  info(message: string, context?: LogContext): void {
+  /**
+   * Info logging
+   * Accepts multiple arguments like electron-log for backward compatibility
+   */
+  info(...args: unknown[]): void {
+    // Early exit if level not enabled (avoid formatting work)
+    if (!this.isLevelEnabled('info') || args.length === 0) return;
+
+    // Check if last argument is a LogContext object
+    const lastArg = args[args.length - 1];
+    const hasContext = lastArg && typeof lastArg === 'object' && !Array.isArray(lastArg) && !(lastArg instanceof Error);
+
+    let context: LogContext | undefined;
+    let messageArgs: unknown[];
+
+    if (hasContext && args.length > 1) {
+      context = lastArg as LogContext;
+      messageArgs = args.slice(0, -1);
+    } else {
+      messageArgs = args;
+    }
+
+    const message = messageArgs.map(arg =>
+      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+    ).join(' ');
+
     this.log('info', message, context);
   }
 
-  debug(message: string, context?: LogContext): void {
+  /**
+   * Debug logging
+   * Accepts multiple arguments like electron-log for backward compatibility
+   */
+  debug(...args: unknown[]): void {
+    // Early exit if level not enabled (avoid formatting work)
+    if (!this.isLevelEnabled('debug') || args.length === 0) return;
+
+    // Check if last argument is a LogContext object
+    const lastArg = args[args.length - 1];
+    const hasContext = lastArg && typeof lastArg === 'object' && !Array.isArray(lastArg) && !(lastArg instanceof Error);
+
+    let context: LogContext | undefined;
+    let messageArgs: unknown[];
+
+    if (hasContext && args.length > 1) {
+      context = lastArg as LogContext;
+      messageArgs = args.slice(0, -1);
+    } else {
+      messageArgs = args;
+    }
+
+    const message = messageArgs.map(arg =>
+      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+    ).join(' ');
+
     this.log('debug', message, context);
   }
 
-  trace(message: string, context?: LogContext): void {
+  /**
+   * Trace logging
+   * Accepts multiple arguments like electron-log for backward compatibility
+   */
+  trace(...args: unknown[]): void {
+    // Early exit if level not enabled (avoid formatting work)
+    if (!this.isLevelEnabled('trace') || args.length === 0) return;
+
+    // Check if last argument is a LogContext object
+    const lastArg = args[args.length - 1];
+    const hasContext = lastArg && typeof lastArg === 'object' && !Array.isArray(lastArg) && !(lastArg instanceof Error);
+
+    let context: LogContext | undefined;
+    let messageArgs: unknown[];
+
+    if (hasContext && args.length > 1) {
+      context = lastArg as LogContext;
+      messageArgs = args.slice(0, -1);
+    } else {
+      messageArgs = args;
+    }
+
+    const message = messageArgs.map(arg =>
+      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+    ).join(' ');
+
     this.log('trace', message, context);
   }
 
@@ -549,7 +652,8 @@ export class ElectronLogger implements Logger {
    * Accepts multiple arguments like electron-log for backward compatibility
    */
   verbose(...args: unknown[]): void {
-    if (args.length === 0) return;
+    // Early exit if level not enabled (avoid formatting work)
+    if (!this.isLevelEnabled('debug') || args.length === 0) return;
     const message = args.map(arg =>
       typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
     ).join(' ');
@@ -561,7 +665,8 @@ export class ElectronLogger implements Logger {
    * Accepts multiple arguments like electron-log for backward compatibility
    */
   silly(...args: unknown[]): void {
-    if (args.length === 0) return;
+    // Early exit if level not enabled (avoid formatting work)
+    if (!this.isLevelEnabled('trace') || args.length === 0) return;
     const message = args.map(arg =>
       typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
     ).join(' ');
