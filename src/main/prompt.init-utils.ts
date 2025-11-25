@@ -114,9 +114,10 @@ export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
         prompt.logError('📬 Messages ready. Prompt window is destroyed. Not initializing');
         return;
       }
-      prompt.logInfo('📬 Messages ready. ');
+      prompt.logInfo(`📬 Messages ready. initMain=${prompt.initMain}, scriptPath="${prompt.scriptPath}"`);
       prompt.window.on('blur', prompt.onBlur);
 
+      prompt.logInfo(`📬 About to check initMain: ${prompt.initMain}`);
       if (prompt.initMain) prompt.initMainPrompt('messages ready');
 
       prompt.readyEmitter.emit('ready');

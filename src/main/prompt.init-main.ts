@@ -36,6 +36,7 @@ export const initThemeImpl = (prompt: any): void => {
 };
 
 export const initPromptImpl = (prompt: any): void => {
+  prompt.logInfo(`📤📤📤 SENDING INIT_PROMPT to renderer: pid=${prompt.pid}, scriptPath="${prompt.scriptPath}", initMain=${prompt.initMain}`);
   prompt.sendToPrompt(AppChannel.INIT_PROMPT, {});
 };
 

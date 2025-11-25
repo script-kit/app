@@ -1127,6 +1127,7 @@ export const cacheMainMenu = async ({
 
     // Send as single atomic update
     sendToAllPrompts(AppChannel.SET_CACHED_MAIN_STATE, atomicState);
+    log.info(`📤📤📤 BROADCASTING INIT_PROMPT to ALL prompts from install.ts`);
     sendToAllPrompts(AppChannel.INIT_PROMPT, {});
 
     log.info('🧹 Clearing scriptlets and scripts...');

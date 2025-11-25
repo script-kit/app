@@ -361,13 +361,15 @@ export const scriptAtom = atom(
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
+    const pid = g(pidAtom);
+    log.info(`${pid}: 📝📝📝 promptDataAtom SETTER: id="${a?.id}", scriptPath="${a?.scriptPath}", preload=${a?.preload}`);
     if (!a) {
+      log.info(`${pid}: 📝 promptDataAtom: Setting to null`);
       s(promptData, null);
       return;
     }
 
     s(choicesReadyAtom, false);
-    const pid = g(pidAtom);
     s(gridReadyAtom, false);
 
     const isMainScript = a.scriptPath === g(kitConfigAtom).mainScriptPath;
@@ -666,6 +668,8 @@ export const uiAtom = atom(
 export const scoredChoicesAtom = atom(
   (g) => g(choices),
   (g, s, cs: ScoredChoice[] = []) => {
+    const currentPromptData = g(promptData);
+    log.info(`🎯🎯🎯 scoredChoicesAtom SETTER: count=${cs?.length}, first="${cs?.[0]?.item?.name}", currentPromptData.id="${currentPromptData?.id}", currentPromptData.scriptPath="${currentPromptData?.scriptPath}"`);
     s(choicesReadyAtom, true);
     s(cachedAtom, false);
     s(loadingAtom, false);
@@ -1678,8 +1682,9 @@ export const shouldActionButtonShowOnInputAtom = atom((g) => {
 
 // --- Missing atoms that are referenced but not defined ---
 export const initPromptAtom = atom(null, (g, s) => {
-  log.info(`${window.pid}: 🚀 Init prompt`);
+  log.info(`${window.pid}: 🚀🚀🚀 INIT_PROMPT RECEIVED - initPromptAtom triggered`);
   const currentPromptData = g(promptDataAtom);
+  log.info(`${window.pid}: Current promptData.id: "${currentPromptData?.id}", scriptPath: "${currentPromptData?.scriptPath}"`);
   if (currentPromptData?.id) {
     log.info(`🚪 Init prompt skipped. Already initialized as ${currentPromptData?.id}`);
     return;
@@ -1687,11 +1692,13 @@ export const initPromptAtom = atom(null, (g, s) => {
   // Restore state from cache atomically to prevent flicker
   const promptData = g(cachedMainPromptDataAtom) as PromptData;
   const scoredChoices = g(cachedMainScoredChoicesAtom);
+  log.info(`${window.pid}: 🚀 RESTORING FROM CACHE: promptData.id="${promptData?.id}", scoredChoices.length=${scoredChoices?.length}`);
   s(promptDataAtom, promptData);
   s(scoredChoicesAtom, scoredChoices);
   s(previewHTMLAtom, g(cachedMainPreviewAtom));
   s(shortcutsAtom, g(cachedMainShortcutsAtom));
   s(flagsAtom, g(cachedMainFlagsAtom));
+  log.info(`${window.pid}: 🚀 Cache restore complete`);
 });
 
 const promptBoundsDefault = {

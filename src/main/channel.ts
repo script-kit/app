@@ -41,6 +41,9 @@ export const sendToAllPrompts = <K extends keyof ChannelMap>(channel: K | AppCha
     if (prompt && !prompt.isDestroyed() && prompt?.window?.webContents) {
       const ignoreChannelsWhenOpen =
         channel === AppChannel.SET_CACHED_MAIN_PREVIEW || channel === AppChannel.INIT_PROMPT;
+      if (channel === AppChannel.INIT_PROMPT) {
+        log.info(`📤 sendToAllPrompts INIT_PROMPT: pid=${prompt.pid}, scriptPath="${prompt.scriptPath}", willIgnore=${Boolean(prompt.scriptPath && ignoreChannelsWhenOpen)}`);
+      }
       if (prompt.scriptPath && ignoreChannelsWhenOpen) {
         log.info(`${prompt.pid}: 🏋️‍♂️ ignoring: ${channel} on ${prompt.scriptPath}`);
         continue;

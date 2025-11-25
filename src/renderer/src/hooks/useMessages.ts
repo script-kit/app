@@ -341,6 +341,7 @@ export default () => {
       triggerResize('TABS');
     },
     [Channel.SET_PROMPT_DATA]: (data) => {
+      log.info(`${pid}: 📦📦📦 SET_PROMPT_DATA received: id="${data?.id}", scriptPath="${data?.scriptPath}"`);
       setPromptData(data);
       triggerResize('UI');
     },
