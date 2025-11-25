@@ -1,3 +1,210 @@
+# Prompt Window Resize Flash Expert Bundle
+
+## Executive Summary
+
+Script Kit prompts flash at incorrect dimensions before resizing to their correct size. When a user triggers a script via keyboard shortcut that uses `micro()` (a small prompt with limited choices), the window briefly appears at the default height (480px) before shrinking to the correct calculated height (~155px for 3 choices). This creates a jarring visual experience.
+
+The root cause is a complex race condition between multiple code paths that can show the prompt window or set its bounds, with competing timing between:
+1. `setPromptData` → shows prompt via `showAfterNextResize` mechanism
+2. `resize()` → applies correct dimensions from renderer
+3. `attemptPreload` → calls `initBounds()` which resets to cached (wrong) dimensions
+
+### Key Problems:
+
+1. **Race condition in show/resize timing**: The `showPrompt()` call can happen before `setBounds()` applies the correct dimensions, or `initBounds()` can overwrite correct dimensions after resize.
+
+2. **Multiple code paths compete to set bounds**:
+   - `initBounds()` in `prompt.window-flow.ts` uses cached bounds (often 480px height)
+   - `resize()` in `prompt.ts` calculates correct dimensions from renderer content
+   - `attemptPreload()` calls `initBounds()` which can overwrite resize-calculated dimensions
+
+3. **Flag coordination issues**: The `showAfterNextResize` flag is consumed by `resize()` before `attemptPreload` runs, so `skipInitBoundsForResize` was added but timing is still problematic.
+
+### Log Evidence (Timeline of the Bug):
+
+```
+13:55:22.527 - shouldDeferShow=true, sets showAfterNextResize=true
+13:55:22.527 - resize() calculates targetDimensions height:155 ✓
+13:55:22.527 - "dimensions unchanged" check triggers showPrompt() EARLY
+13:55:22.527 - initShowPrompt called (window potentially shown)
+13:55:22.547 - attemptPreload runs (20ms later!)
+13:55:22.548 - initBounds() applies cached height:480 ✗ OVERWRITES!
+13:55:22.555 - "😳 Prompt window shown" at WRONG height
+13:55:22.559 - Another resize finally applies correct height:155
+```
+
+### Required Fixes:
+
+1. **Ensure `showPrompt()` only runs AFTER bounds are definitively set**: The "dimensions unchanged" check at line ~1228 in `prompt.ts` can trigger `showPrompt()` when the first resize event arrives, but `attemptPreload` hasn't run yet.
+
+2. **Prevent `initBounds()` from running when waiting for resize**: The `skipInitBoundsForResize` flag must persist until the resize cycle completes, including after `attemptPreload` runs.
+
+3. **Consider a "bounds lock" mechanism**: When `shouldDeferShow` is true, lock bounds changes until the correct resize is applied and prompt is shown.
+
+### Files Included:
+
+- `app/src/main/prompt.ts`: Core prompt class with `resize()`, `showPrompt()`, `attemptPreload()`, and `skipInitBoundsForResize` flag
+- `app/src/main/prompt.set-prompt-data.ts`: Sets `shouldDeferShow`, `showAfterNextResize`, and `skipInitBoundsForResize`
+- `app/src/main/prompt.window-flow.ts`: Contains `initBoundsFlow()` and `initShowPromptFlow()`
+- `app/src/main/kit.ts`: Entry point that calls `attemptPreload()` for non-main scripts
+- `app/src/main/prompt.bounds-utils.ts`: Bounds application utilities
+- `app/src/renderer/src/state/controllers/ResizeController.tsx`: Renderer-side resize event emitter
+
+### Key Code Locations:
+
+1. **`prompt.ts` line ~1174**: `resize()` function - handles showAfterNextResize
+2. **`prompt.ts` line ~1228**: "dimensions unchanged" early return with showPrompt()
+3. **`prompt.ts` line ~1909**: `attemptPreload` checks `skipInitBoundsForResize`
+4. **`prompt.set-prompt-data.ts` line ~190**: Sets `showAfterNextResize` and `skipInitBoundsForResize`
+5. **`kit.ts` line ~284**: Calls `attemptPreload()` for non-main scripts
+
+---
+[Original packx output follows]
+
+# Packx Output
+
+This file contains 6 filtered files from the repository.
+
+## Files
+
+### app/src/main/prompt.window-flow.ts
+
+```ts
+import path from 'node:path';
+import type { Rectangle } from 'electron';
+import { Channel, PROMPT } from '@johnlindquist/kit/core/enum';
+import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
+import type { KitPrompt } from './prompt';
+import { processWindowCoordinator, WindowOperation } from './process-window-coordinator';
+import { ensureIdleProcess } from './process';
+import { kitState } from './state';
+import { getCurrentScreenPromptCache, getCurrentScreenFromMouse } from './prompt.screen-utils';
+import shims from './shims';
+
+export function initShowPromptFlow(prompt: KitPrompt) {
+  prompt.logInfo(`${prompt.pid}:🎪 initShowPrompt: ${prompt.id} ${prompt.scriptPath}`);
+  if (!kitState.isMac) {
+    if ((kitState?.kenvEnv as any)?.KIT_PROMPT_RESTORE === 'true') {
+      prompt.window?.restore();
+    }
+  }
+
+  prompt.setPromptAlwaysOnTop(true);
+  if (prompt.window && !prompt.window.isDestroyed()) {
+    (prompt as any).handleBlurVisibility?.(prompt);
+  }
+  prompt.focusPrompt();
+  prompt.sendToPrompt(Channel.SET_OPEN, true);
+  const topTimeout = (prompt as any).topTimeout;
+  if (topTimeout) clearTimeout(topTimeout);
+  setTimeout(() => {
+    ensureIdleProcess();
+  }, 10);
+}
+
+export function hideFlow(prompt: KitPrompt) {
+  if (prompt.window.isVisible()) {
+    prompt.hasBeenHidden = true as any;
+  }
+  prompt.logInfo('Hiding prompt window...');
+  if (prompt.window.isDestroyed()) {
+    prompt.logWarn('Prompt window is destroyed. Not hiding.');
+    return;
+  }
+  const hideOpId = processWindowCoordinator.registerOperation(prompt.pid, WindowOperation.Hide, prompt.window.id);
+  (prompt as any).actualHide();
+  processWindowCoordinator.completeOperation(hideOpId);
+}
+
+export function onHideOnceFlow(prompt: KitPrompt, fn: () => void) {
+  let id: null | NodeJS.Timeout = null;
+  if (prompt.window) {
+    const handler = () => {
+      if (id) clearTimeout(id);
+      prompt.window.removeListener('hide', handler);
+      fn();
+    };
+    id = setTimeout(() => {
+      if (!prompt?.window || prompt.window?.isDestroyed()) return;
+      prompt.window?.removeListener('hide', handler);
+    }, 1000);
+    prompt.window?.once('hide', handler);
+  }
+}
+
+export function showPromptFlow(prompt: KitPrompt) {
+  if (prompt.window.isDestroyed()) return;
+  const showOpId = processWindowCoordinator.registerOperation(prompt.pid, WindowOperation.Show, prompt.window.id);
+  initShowPromptFlow(prompt);
+  prompt.sendToPrompt(Channel.SET_OPEN, true);
+  if (!prompt?.window || prompt.window?.isDestroyed()) {
+    processWindowCoordinator.completeOperation(showOpId);
+    return;
+  }
+  prompt.shown = true as any;
+  processWindowCoordinator.completeOperation(showOpId);
+}
+
+export function moveToMouseScreenFlow(prompt: KitPrompt) {
+  if (prompt?.window?.isDestroyed()) {
+    prompt.logWarn('moveToMouseScreen. Window already destroyed', prompt?.id);
+    return;
+  }
+  const mouseScreen = getCurrentScreenFromMouse();
+  prompt.window.setPosition(mouseScreen.workArea.x, mouseScreen.workArea.y);
+}
+
+export function initBoundsFlow(prompt: KitPrompt, forceScriptPath?: string) {
+  if (prompt?.window?.isDestroyed()) {
+    prompt.logWarn('initBounds. Window already destroyed', prompt?.id);
+    return;
+  }
+  const bounds = prompt.window.getBounds();
+  const cacheKey = `${forceScriptPath || (prompt as any).scriptPath}::${(prompt as any).windowMode || 'panel'}`;
+  const cachedBounds = getCurrentScreenPromptCache(cacheKey, {
+    ui: (prompt as any).ui,
+    resize: (prompt as any).allowResize,
+    bounds: { width: bounds.width, height: bounds.height },
+  });
+  const currentBounds = prompt?.window?.getBounds();
+  prompt.logInfo(`${prompt.pid}:${path.basename((prompt as any)?.scriptPath || '')}: ↖ Init bounds: ${(prompt as any).ui} ui`, {
+    currentBounds,
+    cachedBounds,
+  });
+  const { x, y, width, height } = prompt.window.getBounds();
+  if (cachedBounds.width !== width || cachedBounds.height !== height) {
+    prompt.logVerbose(`Started resizing: ${prompt.window?.getSize()}. First prompt?: ${(prompt as any).firstPrompt ? 'true' : 'false'}`);
+    (prompt as any).resizing = true;
+  }
+  if ((prompt as any).promptData?.scriptlet) cachedBounds.height = (prompt as any).promptData?.inputHeight;
+  if (prompt?.window?.isFocused()) {
+    cachedBounds.x = x;
+    cachedBounds.y = y;
+  }
+  (prompt as any).setBounds(cachedBounds, 'initBounds');
+}
+
+export function blurPromptFlow(prompt: KitPrompt) {
+  prompt.logInfo(`${prompt.pid}: blurPrompt`);
+  if (prompt.window.isDestroyed()) return;
+  if (prompt.window) {
+    prompt.window.blur();
+  }
+}
+
+export function initMainBoundsFlow(prompt: KitPrompt) {
+  const cached = getCurrentScreenPromptCache(getMainScriptPath());
+  if (!cached.height || cached.height < PROMPT.HEIGHT.BASE) cached.height = PROMPT.HEIGHT.BASE;
+  (prompt as any).setBounds(cached as Partial<Rectangle>, 'initMainBounds');
+}
+
+
+
+```
+
+### app/src/main/prompt.ts
+
+```ts
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import { ipcMain } from 'electron';
 import type { Choice, PromptBounds, PromptData, Script, Scriptlet } from '@johnlindquist/kit/types/core';
@@ -298,7 +505,7 @@ export class KitPrompt {
   id = '';
   pid = 0;
   windowMode: PromptWindowMode = 'panel'; // default
-  initMain = true;
+  initMain = false;
   script = noScript;
   scriptPath = '';
   allowResize = true;
@@ -1035,20 +1242,10 @@ export class KitPrompt {
 
   onHideOnce = (fn: () => void) => onHideOnceFlow(this, fn);
 
-  // When true, the next resize() call is responsible for showing the window.
   showAfterNextResize = false;
-
-  // Flag used by attemptPreload to decide whether it is allowed to call initBounds().
-  // It is set when deferring show for resize and cleared once the resize / preload
-  // handshake has finished.
+  // Flag to prevent initBounds from overwriting resize-calculated dimensions
+  // Set when deferring show for resize, cleared after the resize-triggered show completes
   skipInitBoundsForResize = false;
-
-  // Hard lock to prevent any initBounds()-driven bounds changes while we are in
-  // a "defer show until resize" cycle. This specifically protects against late
-  // attemptPreload() calls re-applying cached bounds after we've shrunk the
-  // window from the renderer.
-  boundsLockedForResize = false;
-  boundsLockTimeout: NodeJS.Timeout | null = null;
 
   showPrompt = () => showPromptFlow(this);
 
@@ -1196,6 +1393,8 @@ export class KitPrompt {
       if (shouldShowAfterResize) {
         this.logInfo('🎤 Showing prompt (resize skipped)...');
         this.showPrompt();
+        // Clear the flag after showing - initBounds can now run normally
+        this.skipInitBoundsForResize = false;
       }
       return;
     }
@@ -1236,20 +1435,11 @@ export class KitPrompt {
     // Skip resize if dimensions haven't changed
     if (currentBounds.height === targetDimensions.height && currentBounds.width === targetDimensions.width) {
       // Still show the prompt if requested, even though dimensions match
-      // But first ensure position is correct (may be at workarea origin from moveToMouseScreen)
       if (shouldShowAfterResize) {
-        const targetPosition = this.calculateTargetPosition(currentBounds, targetDimensions, undefined);
-        // Only apply position if it changed significantly (avoid unnecessary setBounds calls)
-        if (Math.abs(currentBounds.x - targetPosition.x) > 5 || Math.abs(currentBounds.y - targetPosition.y) > 5) {
-          this.logInfo('🎤 Showing prompt (dimensions unchanged, repositioning)...', {
-            from: { x: currentBounds.x, y: currentBounds.y },
-            to: targetPosition,
-          });
-          this.setBounds({ ...targetPosition, ...targetDimensions }, 'REPOSITION_BEFORE_SHOW');
-        } else {
-          this.logInfo('🎤 Showing prompt (dimensions unchanged)...');
-        }
+        this.logInfo('🎤 Showing prompt (dimensions unchanged)...');
         this.showPrompt();
+        // Clear the flag after showing - initBounds can now run normally
+        this.skipInitBoundsForResize = false;
       }
       return;
     }
@@ -1580,15 +1770,6 @@ export class KitPrompt {
   };
 
   resetState = () => {
-    // Clear any deferred-show / bounds-lock state from the previous run
-    this.showAfterNextResize = false;
-    this.skipInitBoundsForResize = false;
-    if (this.boundsLockTimeout) {
-      clearTimeout(this.boundsLockTimeout);
-      this.boundsLockTimeout = null;
-    }
-    this.boundsLockedForResize = false;
-
     this.boundToProcess = false;
     this.pid = 0;
     this.ui = UI.arg;
@@ -1930,10 +2111,12 @@ export class KitPrompt {
       } else if (cachedPromptData) {
         this.logInfo(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`, { init, show });
 
-        // initBounds will check boundsLockedForResize and skip if we're in a
-        // deferred-show cycle (to prevent cached bounds from overwriting resize dimensions)
-        if (init) {
+        // Skip initBounds if we're waiting for resize to set proper dimensions
+        // This prevents cached bounds from overwriting the correct resize height
+        if (init && !this.skipInitBoundsForResize) {
           this.initBounds(promptScriptPath, show);
+        } else if (this.skipInitBoundsForResize) {
+          this.logInfo(`🏋️‍♂️ Skipping initBounds in attemptPreload - waiting for resize`);
         }
 
         // kitState.preloaded = true;
@@ -2257,3 +2440,1353 @@ export const makeSplashWindow = (_window?: BrowserWindow) => {
   // that doesn't need special handling when closing
   log.info('👋 Splash window close - no special handling needed');
 };
+
+```
+
+### app/src/main/prompt.set-prompt-data.ts
+
+```ts
+import { Channel, UI } from '@johnlindquist/kit/core/enum';
+import type { PromptData } from '@johnlindquist/kit/types/core';
+import { debounce } from 'lodash-es';
+import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
+import { AppChannel } from '../shared/enums';
+import { kitState, preloadPromptDataMap, promptState } from './state';
+import { setFlags } from './search';
+import { createPty } from './pty';
+import { applyPromptDataBounds } from './prompt.bounds-utils';
+import { getCurrentScreen } from './screen';
+
+export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Promise<void> => {
+  prompt.promptData = promptData;
+
+  const setPromptDataHandler = debounce(
+    (_x: unknown, { ui }: { ui: UI }) => {
+      prompt.logInfo(`${prompt.pid}: Received SET_PROMPT_DATA from renderer. ${ui} Ready!`);
+      prompt.refocusPrompt();
+    },
+    100,
+    {
+      leading: true,
+      trailing: false,
+    },
+  );
+
+  prompt.window.webContents.ipc.removeHandler(Channel.SET_PROMPT_DATA);
+  prompt.window.webContents.ipc.once(Channel.SET_PROMPT_DATA, setPromptDataHandler);
+
+  if (promptData.ui === UI.term) {
+    const termConfig = {
+      command: (promptData as any)?.command || '',
+      cwd: promptData.cwd || '',
+      shell: (promptData as any)?.shell || '',
+      promptId: prompt.id || '',
+      env: promptData.env || {},
+      args: (promptData as any)?.args || [],
+      closeOnExit: typeof (promptData as any)?.closeOnExit === 'boolean' ? (promptData as any).closeOnExit : undefined,
+      pid: prompt.pid,
+    };
+    prompt.sendToPrompt(AppChannel.SET_TERM_CONFIG, termConfig);
+    createPty(prompt);
+  }
+
+  prompt.scriptPath = promptData?.scriptPath;
+  prompt.clearFlagSearch();
+  prompt.kitSearch.shortcodes.clear();
+  prompt.kitSearch.triggers.clear();
+  if (promptData?.hint) {
+    for (const trigger of promptData?.hint?.match(/(?<=\[)\w+(?=\])/gi) || []) {
+      prompt.kitSearch.triggers.set(trigger, { name: trigger, value: trigger });
+    }
+  }
+
+  prompt.kitSearch.commandChars = promptData.inputCommandChars || [];
+  prompt.updateShortcodes();
+
+  if (prompt.cacheScriptPromptData && !promptData.preload) {
+    prompt.cacheScriptPromptData = false;
+    promptData.name ||= prompt.script.name || '';
+    promptData.description ||= prompt.script.description || '';
+    prompt.logInfo(`💝 Caching prompt data: ${prompt?.scriptPath}`);
+    preloadPromptDataMap.set(prompt.scriptPath, {
+      ...promptData,
+      input: promptData?.keyword ? '' : promptData?.input || '',
+      keyword: '',
+    });
+  }
+
+  if (promptData.flags && typeof promptData.flags === 'object') {
+    prompt.logInfo(`🏳️‍🌈 Setting flags from setPromptData: ${Object.keys(promptData.flags)}`);
+    setFlags(prompt, promptData.flags);
+  }
+
+  kitState.hiddenByUser = false;
+
+  if (typeof promptData?.alwaysOnTop === 'boolean') {
+    prompt.logInfo(`📌 setPromptAlwaysOnTop from promptData: ${promptData.alwaysOnTop ? 'true' : 'false'}`);
+    prompt.setPromptAlwaysOnTop(promptData.alwaysOnTop, true);
+  }
+
+  if (typeof promptData?.skipTaskbar === 'boolean') {
+    prompt.setSkipTaskbar(promptData.skipTaskbar);
+  }
+
+  prompt.allowResize = promptData?.resize;
+  kitState.shortcutsPaused = promptData.ui === UI.hotkey;
+
+  prompt.logVerbose(`setPromptData ${promptData.scriptPath}`);
+
+  prompt.id = promptData.id;
+  prompt.ui = promptData.ui;
+
+  if (prompt.kitSearch.keyword) {
+    promptData.keyword = prompt.kitSearch.keyword || prompt.kitSearch.keyword;
+  }
+
+  // Send user data BEFORE prompt data only if we haven't bootstrapped this prompt yet
+  const userSnapshot = (await import('valtio')).snapshot(kitState.user);
+  prompt.logInfo(`Early user data considered: ${userSnapshot?.login || 'not logged in'}`);
+  if (!(prompt as any).__userBootstrapped) {
+    prompt.sendToPrompt(AppChannel.USER_CHANGED, userSnapshot);
+    (prompt as any).__userBootstrapped = true;
+  }
+  
+  prompt.sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
+
+  const isMainScript = getMainScriptPath() === promptData.scriptPath;
+
+  // Determine if we need to defer showing for resize BEFORE calling initBounds
+  // This prevents initBounds from overwriting the correct resize dimensions
+  const visible = prompt.isVisible();
+  const shouldShow = promptData?.show !== false;
+
+  // Check if we have explicit dimensions that will cause a resize
+  // In these cases, wait for resize before showing to avoid flash
+  const hasExplicitDimensions =
+    typeof promptData?.width === 'number' ||
+    typeof promptData?.height === 'number' ||
+    typeof promptData?.inputHeight === 'number';
+
+  // Compare against current bounds to see if resize is actually needed
+  const currentBounds = prompt.window?.getBounds();
+  const targetWidth = promptData?.width ?? currentBounds?.width;
+  const targetHeight = promptData?.height ?? promptData?.inputHeight ?? currentBounds?.height;
+  const significantSizeDifference = currentBounds && (
+    Math.abs(currentBounds.width - targetWidth) > 20 ||
+    Math.abs(currentBounds.height - targetHeight) > 20
+  );
+
+  // Check if this script has cached bounds from a previous run
+  // If not, the first resize will establish the correct size
+  const currentScreen = getCurrentScreen();
+  const screenId = String(currentScreen.id);
+  const scriptPath = promptData?.scriptPath;
+  const hasCachedBounds = Boolean(
+    scriptPath &&
+    !isMainScript &&
+    promptState?.screens?.[screenId]?.[scriptPath]
+  );
+
+  // Defer showing when:
+  // 1. Explicit dimensions that differ significantly from current bounds, OR
+  // 2. First run of a non-main script (no cached bounds) - need resize to calculate height
+  const shouldDeferForExplicitDimensions = hasExplicitDimensions && significantSizeDifference;
+  const shouldDeferForFirstRun = !hasCachedBounds && !isMainScript && promptData?.ui === UI.arg;
+  const shouldDeferShow = !visible && shouldShow && (shouldDeferForExplicitDimensions || shouldDeferForFirstRun);
+
+  prompt.logInfo(`${prompt.id}: shouldDeferShow=${shouldDeferShow}`, {
+    visible,
+    shouldShow,
+    hasExplicitDimensions,
+    significantSizeDifference,
+    hasCachedBounds,
+    shouldDeferForExplicitDimensions,
+    shouldDeferForFirstRun,
+    currentBounds: currentBounds ? { w: currentBounds.width, h: currentBounds.height } : null,
+    target: { w: targetWidth, h: targetHeight },
+  });
+
+  // Only call initBounds if NOT deferring for resize
+  // When deferring, let the first resize set the correct dimensions
+  if (prompt.firstPrompt && !isMainScript) {
+    if (shouldDeferShow) {
+      prompt.logInfo(`${prompt.pid} Skipping initBounds - deferring for resize`);
+    } else {
+      prompt.logInfo(`${prompt.pid} Before initBounds`);
+      prompt.initBounds();
+      prompt.logInfo(`${prompt.pid} After initBounds`);
+    }
+    prompt.logInfo(`${prompt.pid} Disabling firstPrompt`);
+    prompt.firstPrompt = false;
+  }
+
+  if (!isMainScript) {
+    applyPromptDataBounds(prompt.window, promptData);
+  }
+
+  if (kitState.hasSnippet) {
+    const timeout = prompt.script?.snippetdelay || 0;
+    await new Promise((r) => setTimeout(r, timeout));
+    kitState.hasSnippet = false;
+  }
+
+  prompt.logInfo(`${prompt.id}: visible ${visible ? 'true' : 'false'} 👀`);
+
+  if (!visible && shouldShow) {
+    prompt.logInfo(`${prompt.id}: Prompt not visible but should show`);
+
+    if (shouldDeferShow) {
+      prompt.showAfterNextResize = true;
+      // Prevent attemptPreload->initBounds from overwriting resize-calculated dimensions
+      prompt.skipInitBoundsForResize = true;
+      // Safety fallback: if resize doesn't happen within 200ms, show anyway
+      // This handles edge cases like resize being disabled or already at target size
+      setTimeout(() => {
+        if (prompt.showAfterNextResize && !prompt.window?.isDestroyed()) {
+          prompt.logWarn(`${prompt.id}: showAfterNextResize fallback triggered`);
+          prompt.showAfterNextResize = false;
+          prompt.skipInitBoundsForResize = false;
+          prompt.showPrompt();
+        }
+      }, 200);
+    } else if (!prompt.firstPrompt) {
+      prompt.showPrompt();
+    } else {
+      prompt.showAfterNextResize = true;
+    }
+  } else if (visible && !shouldShow) {
+    prompt.actualHide();
+  }
+
+  if (!visible && promptData?.scriptPath.includes('.md#')) {
+    prompt.focusPrompt();
+  }
+};
+
+
+```
+
+### app/src/main/prompt.bounds-utils.ts
+
+```ts
+import type { Rectangle, BrowserWindow } from 'electron';
+import { PROMPT } from '@johnlindquist/kit/core/enum';
+import { promptLog as log } from './logs';
+import type { PromptData } from '@johnlindquist/kit/types/core';
+
+export function adjustBoundsToAvoidOverlap(
+    peers: Array<{ id: string; bounds: Rectangle }>,
+    selfId: string,
+    target: Rectangle,
+): Rectangle {
+    const finalBounds = { ...target };
+
+    let hasMatch = true;
+    while (hasMatch) {
+        hasMatch = false;
+        for (const peer of peers) {
+            if (!peer.id || peer.id === selfId) continue;
+
+            const bounds = peer.bounds;
+            if (bounds.x === finalBounds.x) {
+                finalBounds.x += 40;
+                hasMatch = true;
+            }
+            if (bounds.y === finalBounds.y) {
+                finalBounds.y += 40;
+                hasMatch = true;
+            }
+            if (hasMatch) break;
+        }
+    }
+
+    return finalBounds;
+}
+
+export function getTitleBarHeight(window: BrowserWindow): number {
+    const normalBounds = window.getNormalBounds();
+    const contentBounds = window.getContentBounds();
+    const windowBounds = window.getBounds();
+    const size = window.getSize();
+    const contentSize = window.getContentSize();
+    const minimumSize = window.getMinimumSize();
+
+    const titleBarHeight = windowBounds.height - contentBounds.height;
+    log.info('titleBarHeight', {
+        normalBounds,
+        contentBounds,
+        windowBounds,
+        size,
+        contentSize,
+        minimumSize,
+    });
+    return titleBarHeight;
+}
+
+export function ensureMinWindowHeight(height: number, titleBarHeight: number): number {
+    if (height < PROMPT.INPUT.HEIGHT.XS + titleBarHeight) {
+        return PROMPT.INPUT.HEIGHT.XS + titleBarHeight;
+    }
+    return height;
+}
+
+export function applyPromptDataBounds(window: BrowserWindow, promptData: PromptData) {
+    const { x, y, width, height, ui } = promptData as any;
+
+    // Handle position
+    if (x !== undefined || y !== undefined) {
+        const [currentX, currentY] = window?.getPosition() || [];
+        if ((x !== undefined && x !== currentX) || (y !== undefined && y !== currentY)) {
+            window?.setPosition(
+                x !== undefined ? Math.round(Number(x)) : currentX,
+                y !== undefined ? Math.round(Number(y)) : currentY,
+            );
+        }
+    }
+
+    // Only handle size if not UI.arg and dimensions are provided
+    if (ui !== 'arg' && (width !== undefined || height !== undefined)) {
+        const [currentWidth, currentHeight] = window?.getSize() || [];
+        if ((width !== undefined && width !== currentWidth) || (height !== undefined && height !== currentHeight)) {
+            window?.setSize(
+                width !== undefined ? Math.round(Number(width)) : currentWidth,
+                height !== undefined ? Math.round(Number(height)) : currentHeight,
+            );
+        }
+    }
+}
+
+
+
+```
+
+### app/src/main/kit.ts
+
+```ts
+import path from 'node:path';
+import { app, shell } from 'electron';
+
+import { randomUUID } from 'node:crypto';
+import { fork } from 'node:child_process';
+import minimist from 'minimist';
+import { pathExistsSync, readJson } from './cjs-exports';
+
+import type { ProcessInfo } from '@johnlindquist/kit';
+import { Channel, UI } from '@johnlindquist/kit/core/enum';
+import {
+  getLogFromScriptPath,
+  getMainScriptPath,
+  kitPath,
+  parseScript,
+  scriptsDbPath,
+} from '@johnlindquist/kit/core/utils';
+import type { Script } from '@johnlindquist/kit/types/core';
+
+import { refreshScripts } from '@johnlindquist/kit/core/db';
+import { subscribeKey } from 'valtio/utils';
+import { Trigger } from '../shared/enums';
+import { KitEvent, emitter } from '../shared/events';
+import { createForkOptions } from './fork.options';
+import { pathsAreEqual } from './helpers';
+import { errorLog, kitLog as log, mainLogPath } from './logs';
+import { getIdles, processes } from './process';
+import { prompts } from './prompts';
+import { setShortcodes } from './search';
+import { getKitScript, kitCache, kitState, kitStore, sponsorCheck } from './state';
+import { TrackEvent, trackEvent } from './track';
+import { createRunMeta } from './script-lifecycle';
+
+app.on('second-instance', (_event, argv) => {
+  log.info('second-instance', argv);
+  const { _ } = minimist(argv);
+  const [, , argScript, ...argArgs] = _;
+
+  // on windows, the protocol is passed as the argScript
+  const maybeProtocol = argv?.[2];
+  if (maybeProtocol?.startsWith('kit:')) {
+    log.info('Detected kit: protocol:', maybeProtocol);
+    app.emit('open-url', null, maybeProtocol);
+  }
+
+  if (!(argScript && pathExistsSync(argScript))) {
+    log.info(`${argScript} does not exist. Ignoring.`);
+    return;
+  }
+  runPromptProcess(argScript, argArgs, {
+    force: false,
+    trigger: Trigger.Kit,
+    sponsorCheck: false,
+  });
+});
+
+app.on('activate', async (_event, _hasVisibleWindows) => {
+  kitState.isActivated = true;
+  runPromptProcess(getMainScriptPath(), [], {
+    force: true,
+    trigger: Trigger.Kit,
+    sponsorCheck: false,
+  });
+});
+
+// process.on('unhandledRejection', (reason, p) => {
+//   log.warn('Unhandled Rejection at: Promise', p, 'reason:', reason);
+
+//   // application specific logging, throwing an error, or other logic here
+// });
+
+process.on('uncaughtException', (error) => {
+  log.warn(`Uncaught Exception: ${error.message}`);
+  log.warn(error);
+  errorLog.error(`Uncaught Exception: ${error.message}`, error);
+});
+
+emitter.on(
+  KitEvent.RunPromptProcess,
+  (
+    scriptOrScriptAndData:
+      | {
+        scriptPath: string;
+        args: string[];
+        options: {
+          force: boolean;
+          trigger: Trigger;
+          cwd?: string;
+        };
+      }
+      | string,
+  ) => {
+    if (!kitState.ready) {
+      log.warn('Kit not ready. Ignoring prompt process:', scriptOrScriptAndData);
+      if (typeof scriptOrScriptAndData === 'object' && 'scriptPath' in scriptOrScriptAndData) {
+        if (scriptOrScriptAndData.args[2].includes('Shortcut')) {
+          return;
+        }
+        const { scriptPath, args, options } = scriptOrScriptAndData;
+        if (path.basename(scriptPath) === 'info.js') {
+          log.info('Opening main log:', mainLogPath);
+          shell.openPath(mainLogPath);
+
+          app.quit();
+          process.exit(0);
+        }
+      }
+      return;
+    }
+    const { scriptPath, args, options } =
+      typeof scriptOrScriptAndData === 'string'
+        ? {
+          scriptPath: scriptOrScriptAndData,
+          args: [],
+          options: {
+            force: false,
+            trigger: Trigger.Kit,
+            sponsorCheck: true,
+            cwd: '',
+          },
+        }
+        : scriptOrScriptAndData;
+
+    // TODO: Each prompt will need its own "ignoreBlur"
+    // if (isVisible()) {
+    //   kitState.ignoreBlur = false;
+    //   // hideAppIfNoWindows(HideReason.RunPromptProcess);
+    // } else {
+    //   log.info(`Show App: ${scriptPath}`);
+    // }
+
+    log.info('Running prompt process', { scriptPath, args, options });
+    runPromptProcess(scriptPath, args, options);
+  },
+);
+
+emitter.on(KitEvent.RunBackgroundProcess, (scriptPath: string) => {
+  runPromptProcess(scriptPath, [], {
+    force: false,
+    trigger: Trigger.Background,
+    sponsorCheck: false,
+    cwd: '',
+  });
+});
+
+export const getScriptFromDbWithFallback = async (scriptPath: string) => {
+  try {
+    const db = await readJson(scriptsDbPath);
+    const script = db?.scripts?.find((s: Script) => s.filePath === scriptPath);
+    if (script) {
+      log.info(`Found script in db: ${scriptPath}`, script);
+      return script;
+    }
+  } catch (error) {
+    log.warn(error);
+  }
+
+  return await parseScript(scriptPath);
+};
+
+// TODO: Consider removing the "parseScript" and just reading from the scripts db?
+const findScript = async (scriptPath: string) => {
+  if (scriptPath === getMainScriptPath()) {
+    log.info('findScript found main script');
+    return await getKitScript(getMainScriptPath());
+  }
+
+  if (scriptPath.startsWith(kitPath()) && !scriptPath.startsWith(kitPath('tmp'))) {
+    log.info('findScript found kit script');
+    return await getKitScript(scriptPath);
+  }
+
+  let script = kitState.scripts.get(scriptPath);
+  log.info('find script found');
+  if (script) {
+    return script;
+  }
+
+  log.error('find script not found', scriptPath);
+  script = await parseScript(scriptPath);
+  kitState.scripts.set(scriptPath, script);
+  return script;
+};
+
+export const runPromptProcess = async (
+  promptScriptPath: string,
+  args: string[] = [],
+  options: {
+    force: boolean;
+    trigger: Trigger;
+    main?: boolean;
+    headers?: Record<string, string>;
+    sponsorCheck: boolean;
+    cwd?: string;
+  } = {
+      force: false,
+      trigger: Trigger.App,
+      main: false,
+      sponsorCheck: false,
+      headers: {},
+      cwd: '',
+    },
+): Promise<ProcessInfo | null> => {
+  const chainId = Math.random().toString(36).slice(2, 10);
+  const runId = randomUUID();
+  if (!kitState.ready) {
+    log.warn(`[SC_CHAIN ${chainId}] Kit not ready. Ignoring prompt process:`, { promptScriptPath, args, options });
+    return null;
+  }
+  log.info(`[SC_CHAIN ${chainId}] runPromptProcess:start`, { promptScriptPath, args, options, runId });
+  // log.info(`->>> Prompt script path: ${promptScriptPath}`);
+
+  const count = prompts.getVisiblePromptCount();
+  if (count >= 3 && options?.sponsorCheck) {
+    const isSponsor = await sponsorCheck('Unlimited Active Prompts');
+    if (!isSponsor) {
+      prompts.bringAllPromptsToFront();
+      return null;
+    }
+  }
+
+  const isMain = options?.main || pathsAreEqual(promptScriptPath || '', getMainScriptPath());
+
+  if (kitState.isSplashShowing) {
+    emitter.emit(KitEvent.CloseSplash);
+  }
+
+  // readJson(kitPath('db', 'mainShortcuts.json'))
+  //   .then(setShortcuts)
+  //   .catch((error) => {});
+
+  // If the window is already open, interrupt the process with the new script
+
+  // TODO: Handle Schedule/Background/etc without prompts?
+  // Quickly firing schedule processes would create WAY too many prompts
+  const promptInfo = processes.findIdlePromptProcess();
+  log.info(`[SC_CHAIN ${chainId}] pickedIdlePrompt`, {
+    pid: promptInfo?.pid,
+    scriptPath: promptInfo?.scriptPath,
+    runId,
+  });
+
+  promptInfo.launchedFromMain = isMain;
+  if (!kitState.hasOpenedMainMenu && isMain) {
+    kitState.hasOpenedMainMenu = true;
+  }
+  const { prompt, pid, child } = promptInfo;
+  log.info(`🔑🔑🔑 runPromptProcess: pid=${pid}, promptScriptPath="${promptScriptPath}", isMain=${isMain}, prompt.initMain=${prompt.initMain}, prompt.scriptPath="${prompt.scriptPath}"`);
+  const runMeta = createRunMeta(pid, runId);
+  promptInfo.runId = runId;
+  promptInfo.runStartedAt = runMeta.startedAt;
+  prompt?.setActiveRun(runMeta);
+
+  const isSplash = prompt.ui === UI.splash;
+  log.info(`>>>
+
+  ${pid}:${prompt.window?.id}: 🧤 Show and focus ${promptScriptPath}
+
+  <<<`);
+  // if (options?.main) {
+  //   prompt.cacheMainChoices();
+  //   prompt.cacheMainPreview();
+  // }
+
+  prompt.alwaysOnTop = true;
+  if (isMain) {
+    log.info(`${pid}: 🏠 Main script: ${promptScriptPath}`);
+    log.info(`[SC_CHAIN ${chainId}] mainInitBoundsAndShow`);
+    // Initialize main menu data (cached choices, preview, etc.) for instant display
+    prompt.initMain = true;
+    prompt.initMainPrompt('runPromptProcess-isMain');
+    prompt.initMainBounds();
+    prompt.initShowPrompt();
+  } else if (options.trigger === Trigger.Snippet) {
+    log.info(`${pid}: 📝 Snippet trigger: Preparing prompt`);
+    log.info(`[SC_CHAIN ${chainId}] snippetInitBounds`);
+    // For snippets, prepare the prompt bounds but don't show it yet
+    // The script will call setPromptData if it needs to show a prompt
+    prompt.initBounds();
+    // Don't call initShowPrompt() here - let the script decide
+  } else {
+    log.info(`${pid}: 🖱️ Moving prompt to mouse screen`);
+    log.info(`[SC_CHAIN ${chainId}] attemptPreloadAndMoveToMouseScreen`);
+    prompt.attemptPreload(promptScriptPath);
+    prompt.moveToMouseScreen();
+  }
+
+  log.info(`${prompt.pid} 🐣 Alive for ${prompt.lifeTime()}`);
+
+  const idlesLength = getIdles().length;
+  log.info(`🗿 ${idlesLength} idles`);
+
+  if (isSplash && isMain) {
+    log.info('💦 Splash install screen visible. Preload Main Menu...');
+    try {
+      prompt.scriptPath = getMainScriptPath();
+      prompt.preloaded = '';
+    } catch (error) {
+      log.error(error);
+    }
+  }
+
+  // ensureIdleProcess();
+
+  log.info(`🏃‍♀️ Run ${promptScriptPath}`);
+
+  // Add another to the process pool when exhausted.
+
+  // log.info(`${pid}: 🏎 ${promptScriptPath} `);
+  promptInfo.scriptPath = promptScriptPath;
+  promptInfo.date = Date.now();
+
+  trackEvent(TrackEvent.ScriptTrigger, {
+    script: path.basename(promptScriptPath),
+    trigger: options.trigger,
+    force: options.force,
+  });
+
+  const scriptlet = kitState.scriptlets.get(promptScriptPath);
+  if (scriptlet) {
+    log.info('Found scriptlet', { scriptlet });
+  }
+
+  let script: Script | undefined;
+  try {
+    script = scriptlet || (await findScript(promptScriptPath));
+    log.info(`[SC_CHAIN ${chainId}] findScript:success`, { name: script?.name, filePath: script?.filePath });
+  } catch (error) {
+    log.warn(`[SC_CHAIN ${chainId}] findScript:error`, error as any);
+  }
+  if (!script) {
+    log.error(`[SC_CHAIN ${chainId}] Couldn't find script, blocking run: `, promptScriptPath);
+    prompt.clearActiveRun();
+    promptInfo.runId = undefined;
+    promptInfo.runStartedAt = undefined;
+    return null;
+  }
+  const visible = prompt?.isVisible();
+  log.info(`${pid}: ${visible ? '👀 visible' : '🙈 not visible'} before setScript ${script?.name}`);
+  log.info(`[SC_CHAIN ${chainId}] beforeSetScript`, { visible, scriptName: script?.name });
+
+  if (visible) {
+    setShortcodes(prompt, kitCache.scripts);
+  }
+
+  const status = await prompt.setScript(script, {
+    pid,
+    runId,
+    source: 'runtime',
+    force: options?.force,
+  });
+  log.info(`[SC_CHAIN ${chainId}] afterSetScript`, { status });
+  if (status === 'denied') {
+    log.info(`[SC_CHAIN ${chainId}] deniedUIControl ${path.basename(promptScriptPath)}`);
+  }
+
+  // processes.assignScriptToProcess(promptScriptPath, pid);
+  // alwaysOnTop(true);
+  // if (!pathsAreEqual(promptScriptPath || '', getMainScriptPath())) {
+  //   log.info(`Enabling ignore blur: ${promptScriptPath}`);
+  //   kitState.ignoreBlur = true;
+  // }
+
+  const argsWithTrigger = [
+    ...args,
+    '--trigger',
+    options?.trigger ? options.trigger : 'unknown',
+    '--force',
+    options?.force ? 'true' : 'false',
+    '--cwd',
+    options?.cwd || '',
+  ];
+
+  log.info(`[SC_CHAIN ${chainId}] beforeChildSend`, { pid, promptScriptPath, argsWithTrigger });
+  try {
+    child?.send({
+      channel: Channel.VALUE_SUBMITTED,
+      input: '',
+      value: {
+        script: promptScriptPath,
+        args: argsWithTrigger,
+        trigger: options?.trigger,
+        choices: scriptlet ? [scriptlet] : [],
+        name: script?.name,
+        headers: options?.headers,
+        scriptlet,
+        runId,
+        runStartedAt: runMeta.startedAt,
+      },
+    });
+    log.info(`[SC_CHAIN ${chainId}] afterChildSend:success`, { pid });
+  } catch (error) {
+    log.error(`[SC_CHAIN ${chainId}] afterChildSend:error`, error as any);
+  }
+
+  return promptInfo;
+};
+
+export const runScript = (...args: string[]) => {
+  log.info('Run', ...args);
+
+  return new Promise((resolve, reject) => {
+    try {
+      const child = fork(kitPath('run', 'terminal.js'), args, createForkOptions());
+
+      child.on('message', (data) => {
+        const dataString = data.toString();
+        log.info(args[0], dataString);
+      });
+
+      child.on('exit', () => {
+        resolve('success');
+      });
+
+      child.on('error', (error: Error) => {
+        reject(error);
+      });
+    } catch (error) {
+      log.warn(`Failed to run script ${args}`);
+      errorLog.error(`Failed to run script ${args}`, error);
+    }
+  });
+};
+
+subscribeKey(kitState, 'isSponsor', (isSponsor) => {
+  log.info('🎨 Sponsor changed:', isSponsor);
+
+  // Sets the env var for when scripts parse to exclude main sponsor script
+  runScript(kitPath('config', 'toggle-sponsor.js'), isSponsor ? 'true' : 'false');
+
+  kitStore.set('sponsor', isSponsor);
+
+  refreshScripts();
+});
+
+emitter.on(KitEvent.OpenLog, async (scriptPath) => {
+  const logPath = getLogFromScriptPath(scriptPath);
+  await runPromptProcess(kitPath('cli/edit-file.js'), [logPath], {
+    force: true,
+    trigger: Trigger.Kit,
+    sponsorCheck: false,
+  });
+});
+
+emitter.on(KitEvent.OpenScript, async (scriptPath) => {
+  await runPromptProcess(kitPath('cli/edit-file.js'), [scriptPath], {
+    force: true,
+    trigger: Trigger.App,
+    sponsorCheck: false,
+  });
+});
+
+export const cliFromParams = async (cli: string, params: URLSearchParams) => {
+  const name = params.get('name');
+  const newUrl = params.get('url');
+  if (name && newUrl) {
+    await runPromptProcess(kitPath(`cli/${cli}.js`), [name, '--url', newUrl], {
+      force: true,
+      trigger: Trigger.Protocol,
+      sponsorCheck: false,
+    });
+    return true;
+  }
+
+  const content = params.get('content');
+
+  if (content) {
+    await runPromptProcess(kitPath(`cli/${cli}.js`), [name || '', '--content', content], {
+      force: true,
+      trigger: Trigger.Protocol,
+      sponsorCheck: false,
+    });
+    return true;
+  }
+  return false;
+};
+
+```
+
+### app/src/renderer/src/state/controllers/ResizeController.tsx
+
+```tsx
+// src/renderer/src/state/controllers/ResizeController.tsx
+
+import React, { useLayoutEffect, useRef, useCallback, useEffect } from 'react';
+import { useAtomValue, useStore } from 'jotai';
+
+// Import necessary enums, types, constants, and utils
+import { AppChannel } from '../../../../shared/enums';
+import { Channel, Mode, UI, PROMPT } from '@johnlindquist/kit/core/enum';
+import type { ResizeData, PromptData } from '../../../../shared/types';
+import { createLogger } from '../../log-utils';
+import { resizeInflightAtom } from '../resize/scheduler';
+import { resizeInputsAtom } from '../selectors/resizeInputs';
+import { performResize } from '../services/resize';
+
+// Import from facade for gradual migration
+import {
+  _mainHeight, // The trigger atom
+  channelAtom,
+  promptDataAtom,
+  scriptAtom,
+  inputAtom,
+  isSplashAtom,
+  isMainScriptAtom,
+} from '../../jotai';
+
+import { prevMh, resizeTickAtom } from '../atoms/ui-elements';
+import { _inputChangedAtom } from '../atoms/input';
+import { _open } from '../atoms/lifecycle';
+import { _tabIndex } from '../atoms/tabs';
+import { _script } from '../atoms/script-state';
+
+const log = createLogger('ResizeController.ts');
+const { ipcRenderer } = window.electron;
+
+// Restore IPC helpers
+const sendResize = (data: ResizeData) => ipcRenderer.send(AppChannel.RESIZE, data);
+
+const isDebugResizeEnabled = (): boolean => {
+  try {
+    return Boolean((window as any).DEBUG_RESIZE);
+  } catch {
+    return false;
+  }
+};
+
+export const ResizeController: React.FC = () => {
+  const store = useStore();
+  const lastSigRef = useRef<string>('');
+  const framePendingRef = useRef(false);
+  const lastReasonRef = useRef<string>('INIT');
+  const lastPromptIdRef = useRef<string | undefined>(undefined);
+  const lastScriptPathRef = useRef<string | undefined>(undefined);
+  const recheckCountsRef = useRef<Record<string, number>>({});
+  const lastChoicesLengthRef = useRef<number | undefined>(undefined);
+  const pendingChoicesTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastChoicesScheduleKeyRef = useRef<string>('');
+
+  // Subscribe to the trigger atom. Updates to this atom signal a resize check is needed.
+  const mainHeightTrigger = useAtomValue(_mainHeight);
+  // Also re-run when other atoms request a recompute
+  const tick = useAtomValue(resizeTickAtom);
+
+  // Ensure we run at least once on each new prompt/script even if heights are identical.
+  const promptDataForKey = useAtomValue(promptDataAtom) as Partial<PromptData> | undefined;
+  const scriptForKey = useAtomValue(scriptAtom) as any;
+  const promptChangeKey = `${promptDataForKey?.id ?? ''}|${scriptForKey?.script?.filePath ?? ''}`;
+
+  // Define the resize execution using useCallback for a stable reference.
+  // Called by scheduleResizeExecution to run at most once per animation frame
+  const executeResize = useCallback(
+    (reason = 'UNSET') => {
+      log.info(`ResizeController.executeResize called with reason: ${reason}`);
+      const g = store.get;
+      const debug = isDebugResizeEnabled();
+      const input = g(resizeInputsAtom);
+
+      if (input.promptResizedByHuman) {
+        g(channelAtom)(Channel.SET_BOUNDS, input.promptBounds);
+        return;
+      }
+
+      if (!input.promptActive) return;
+
+      const promptData = input.promptData as Partial<PromptData>;
+      if (!promptData?.scriptPath) return;
+
+      const currentPromptId = promptData.id as string | undefined;
+      const currentScriptPath = g(_script)?.script?.filePath as string | undefined;
+
+      if (
+        lastPromptIdRef.current !== currentPromptId ||
+        lastScriptPathRef.current !== currentScriptPath
+      ) {
+        if (debug) {
+          log.info('ResizeController: prompt/script changed', {
+            prevPromptId: lastPromptIdRef.current,
+            prevScript: lastScriptPathRef.current,
+            promptId: currentPromptId,
+            script: currentScriptPath,
+          });
+        }
+        lastSigRef.current = '';
+        lastPromptIdRef.current = currentPromptId;
+        lastScriptPathRef.current = currentScriptPath;
+        lastChoicesLengthRef.current = undefined;
+        lastChoicesScheduleKeyRef.current = '';
+        if (pendingChoicesTimeoutRef.current) {
+          clearTimeout(pendingChoicesTimeoutRef.current);
+          pendingChoicesTimeoutRef.current = null;
+        }
+      }
+
+      const ui = input.ui;
+      const scoredChoicesLength = input.scoredChoicesLength;
+      const choicesHeight = input.choicesHeight;
+      const choicesReady = input.choicesReady;
+      const prevMainHeightValue = input.prevMainHeight;
+      const hasPanel = input.hasPanel;
+
+      if (promptData?.grid && input.mainDomHeight > 10) {
+        return;
+      }
+
+      const currentChoicesLength = scoredChoicesLength;
+      const previousChoicesLength = lastChoicesLengthRef.current;
+
+      const shrinkAgainstPrevMain =
+        ui === UI.arg &&
+        !choicesReady &&
+        prevMainHeightValue > 0 &&
+        choicesHeight >= 0 &&
+        choicesHeight < prevMainHeightValue;
+
+      const shrinkAgainstPrevChoices =
+        ui === UI.arg &&
+        !choicesReady &&
+        typeof previousChoicesLength === 'number' &&
+        currentChoicesLength < previousChoicesLength &&
+        choicesHeight >= 0;
+
+      const allowPreReadyShrink = shrinkAgainstPrevChoices || shrinkAgainstPrevMain;
+
+      if (ui === UI.arg && !choicesReady && !allowPreReadyShrink) {
+        if (typeof currentChoicesLength === 'number') {
+          lastChoicesLengthRef.current = currentChoicesLength;
+        }
+        return;
+      }
+
+      const resizeResult = performResize(input);
+      let mh = resizeResult.mainHeight;
+      let forceHeight = resizeResult.forceHeight;
+      let forceResize = resizeResult.forceResize;
+      const urgentShrink = resizeResult.urgentShrink;
+      const forceWidth =
+        typeof promptData?.width === 'number' ? (promptData.width as number) : undefined;
+
+      if (ui === UI.debugger) {
+        forceHeight = 128;
+      }
+
+      if (mh === 0 && promptData?.preventCollapse) {
+        const fallbackMain = Math.max(
+          input.mainHeightCurrent || 0,
+          Math.max(
+            0,
+            (promptData?.height ?? PROMPT.HEIGHT.BASE) -
+              input.topHeight -
+              input.footerHeight,
+          ),
+        );
+        mh = fallbackMain;
+        forceResize = true;
+      }
+
+      const data: ResizeData = {
+        id: promptData?.id || 'missing',
+        pid: (window as any).pid || 0,
+        reason,
+        scriptPath: currentScriptPath,
+        placeholderOnly: input.placeholderOnly,
+        topHeight: input.topHeight,
+        ui,
+        mainHeight: mh + (input.isWindow ? 24 : 0) + 1,
+        footerHeight: input.footerHeight,
+        mode: promptData?.mode || Mode.FILTER,
+        hasPanel,
+        hasInput: g(inputAtom)?.length > 0,
+        previewEnabled: input.previewEnabled,
+        open: g(_open),
+        tabIndex: g(_tabIndex),
+        isSplash: g(isSplashAtom),
+        hasPreview: input.hasPreview,
+        inputChanged: g(_inputChangedAtom),
+        forceResize,
+        forceHeight,
+        forceWidth,
+        isWindow: input.isWindow,
+        justOpened: input.justOpened as any,
+        totalChoices: scoredChoicesLength as any,
+        isMainScript: g(isMainScriptAtom) as any,
+      } as ResizeData;
+
+      try {
+        const sigObj = {
+          ui,
+          mh,
+          topHeight: input.topHeight,
+          footerHeight: input.footerHeight,
+          hasPanel: input.hasPanel,
+          hasPreview: input.hasPreview,
+          forceHeight: forceHeight || 0,
+          forceWidth: forceWidth || 0,
+        };
+        const sig = JSON.stringify(sigObj);
+        const justOpened = Boolean(input.justOpened);
+        if (
+          !justOpened &&
+          !urgentShrink &&
+          sig === lastSigRef.current &&
+          !forceResize &&
+          !forceHeight &&
+          !forceWidth
+        ) {
+          if (debug) log.info('ResizeController: signature unchanged; skipping send');
+          return;
+        }
+        lastSigRef.current = sig;
+      } catch (e) {
+        if (debug) {
+          log.info('ResizeController: signature check error', {
+            message: (e as Error)?.message,
+          });
+        }
+      }
+
+      const inflight = g(resizeInflightAtom);
+      if (inflight && !(urgentShrink || forceResize || forceHeight || forceWidth)) {
+        if (debug) {
+          log.info('ResizeController: inflight, skipping non-urgent resize', {
+            inflight,
+            urgentShrink,
+            forceResize,
+            forceHeight,
+            forceWidth,
+          });
+        }
+        return;
+      }
+
+      store.set(resizeInflightAtom, true);
+      log.info('ResizeController: sending resize', { pid: data.pid, id: data.id, mainHeight: data.mainHeight, reason: data.reason });
+      sendResize(data);
+      store.set(prevMh, mh);
+
+      try {
+        const prevChoicesLength = lastChoicesLengthRef.current;
+        const nextChoicesLength = typeof scoredChoicesLength === 'number' ? scoredChoicesLength : 0;
+        lastChoicesLengthRef.current = nextChoicesLength;
+        const choicesChanged =
+          typeof prevChoicesLength === 'number' && prevChoicesLength !== nextChoicesLength;
+        if (choicesChanged) {
+          const direction = nextChoicesLength < prevChoicesLength ? 'SHRINK' : 'GROW';
+          const scheduleKey = `${currentPromptId ?? ''}|${nextChoicesLength}|${direction}`;
+          if (lastChoicesScheduleKeyRef.current !== scheduleKey) {
+            if (pendingChoicesTimeoutRef.current) {
+              clearTimeout(pendingChoicesTimeoutRef.current);
+              pendingChoicesTimeoutRef.current = null;
+            }
+            lastChoicesScheduleKeyRef.current = scheduleKey;
+            const delay = direction === 'SHRINK' ? 48 : 96;
+            if (debug) {
+              log.info('ResizeController: scheduling follow-up for choices length change', {
+                direction,
+                delay,
+                from: prevChoicesLength,
+                to: nextChoicesLength,
+                scheduleKey,
+              });
+            }
+            pendingChoicesTimeoutRef.current = setTimeout(() => {
+              pendingChoicesTimeoutRef.current = null;
+              if (lastChoicesScheduleKeyRef.current === scheduleKey) {
+                lastChoicesScheduleKeyRef.current = '';
+              }
+              try {
+                scheduleResizeExecution(`CHOICES_LENGTH_${direction}`);
+              } catch (error) {
+                if (debug) {
+                  log.info('ResizeController: follow-up resize threw', {
+                    message: (error as Error)?.message,
+                  });
+                }
+              }
+            }, delay);
+          }
+          if (debug) {
+            log.info('ResizeController: recorded choices length change', {
+              prevChoicesLength,
+              nextChoicesLength,
+              direction,
+              scheduleKey,
+            });
+          }
+        }
+        if (!choicesChanged && debug) {
+          log.info('ResizeController: choices length unchanged after send', {
+            prevChoicesLength,
+            nextChoicesLength,
+          });
+        }
+      } catch {}
+
+      try {
+        const isArg = ui === UI.arg;
+        const isJustOpened = Boolean(input.justOpened);
+        const key = `${currentPromptId ?? ''}`;
+        if (isArg && isJustOpened) {
+          const count = recheckCountsRef.current[key] || 0;
+          if (count < 2) {
+            recheckCountsRef.current[key] = count + 1;
+            const delay = count === 0 ? 50 : 120;
+            log.info('ResizeController: scheduling recheck', { delayMs: delay, attempt: recheckCountsRef.current[key], promptId: key });
+            setTimeout(() => {
+              try { scheduleResizeExecution('RECHECK'); } catch {}
+            }, delay);
+          }
+        } else if (!isJustOpened && currentPromptId) {
+          recheckCountsRef.current[currentPromptId] = 0;
+        }
+      } catch {}
+
+      setTimeout(() => {
+        try { store.set(resizeInflightAtom, false); } catch {}
+      }, 300);
+    },
+    [store]
+  );
+
+  const scheduleResizeExecution = useCallback(
+    (reason: string) => {
+      lastReasonRef.current = reason;
+      if (framePendingRef.current) return;
+
+      framePendingRef.current = true;
+      requestAnimationFrame(() => {
+        framePendingRef.current = false;
+        executeResize(lastReasonRef.current);
+      });
+    },
+    [executeResize],
+  );
+
+  // Trigger the execution when the mainHeightTrigger value changes or tick increments
+  // Use layout effect so DOM measurements + IPC happen before paint
+  useLayoutEffect(() => {
+    log.info('ResizeController: tick/mainHeight trigger');
+    scheduleResizeExecution('CONTROLLER_TRIGGER');
+  }, [scheduleResizeExecution, mainHeightTrigger, tick]);
+
+  // Also trigger once when the prompt/script changes to avoid missing the first shrink
+  useLayoutEffect(() => {
+    log.info('ResizeController: promptChangeKey trigger', { promptChangeKey });
+    scheduleResizeExecution('PROMPT_CHANGED');
+    // no cleanup needed
+  }, [scheduleResizeExecution, promptChangeKey]);
+
+  useEffect(() => {
+    return () => {
+      if (pendingChoicesTimeoutRef.current) {
+        clearTimeout(pendingChoicesTimeoutRef.current);
+        pendingChoicesTimeoutRef.current = null;
+      }
+      lastChoicesScheduleKeyRef.current = '';
+    };
+  }, []);
+
+  return null; // Controller components don't render anything
+};
+
+export default ResizeController;
+
+```
+
+
+---
+## Implementation Guide
+
+### The Core Problem
+
+The issue is that multiple async operations compete to show the window and set its bounds:
+
+1. `setPromptData` detects `shouldDeferShow=true` and sets flags
+2. Renderer sends resize events with correct calculated dimensions
+3. `resize()` processes events and may call `showPrompt()` on "dimensions unchanged"
+4. `attemptPreload` (debounced 25ms) runs and calls `initBounds()` with CACHED bounds
+5. Window ends up shown at wrong size, then another resize fixes it
+
+### Proposed Solution: Bounds Lock Mechanism
+
+Instead of just flags, implement a "bounds lock" that prevents ANY bounds modification until the deferred show completes:
+
+### Step 1: Add bounds lock state
+
+```typescript
+// File: app/src/main/prompt.ts
+// Location: After line ~1041 (near skipInitBoundsForResize)
+
+showAfterNextResize = false;
+// Flag to prevent initBounds from overwriting resize-calculated dimensions
+skipInitBoundsForResize = false;
+// NEW: Lock that prevents ALL bounds changes until deferred show completes
+boundsLockedForResize = false;
+```
+
+### Step 2: Modify setBounds to respect the lock
+
+```typescript
+// File: app/src/main/prompt.ts
+// Location: In the setBounds method (find it and add check at start)
+
+setBounds = (bounds: Partial<Rectangle>, reason: string) => {
+  // NEW: Skip bounds changes when locked (except from resize with correct dimensions)
+  if (this.boundsLockedForResize && reason !== 'CONTROLLER_TRIGGER' && reason !== 'PROMPT_CHANGED') {
+    this.logInfo(`🔒 Bounds locked, skipping setBounds from: ${reason}`);
+    return;
+  }
+  // ... rest of existing setBounds code
+};
+```
+
+### Step 3: Set lock in setPromptData when deferring
+
+```typescript
+// File: app/src/main/prompt.set-prompt-data.ts
+// Location: Line ~190 (in shouldDeferShow block)
+
+if (shouldDeferShow) {
+  prompt.showAfterNextResize = true;
+  prompt.skipInitBoundsForResize = true;
+  prompt.boundsLockedForResize = true;  // NEW: Lock bounds
+  // Safety fallback...
+  setTimeout(() => {
+    if (prompt.showAfterNextResize && !prompt.window?.isDestroyed()) {
+      prompt.logWarn(`${prompt.id}: showAfterNextResize fallback triggered`);
+      prompt.showAfterNextResize = false;
+      prompt.skipInitBoundsForResize = false;
+      prompt.boundsLockedForResize = false;  // NEW: Unlock
+      prompt.showPrompt();
+    }
+  }, 200);
+}
+```
+
+### Step 4: Clear lock after successful resize-triggered show
+
+```typescript
+// File: app/src/main/prompt.ts
+// Location: In resize() after showPrompt() calls (3 places)
+
+// After each showPrompt() in resize():
+this.showPrompt();
+this.skipInitBoundsForResize = false;
+this.boundsLockedForResize = false;  // NEW: Unlock after show
+```
+
+### Alternative Solution: Delay attemptPreload
+
+A simpler fix might be to delay `attemptPreload` until after the resize cycle:
+
+```typescript
+// File: app/src/main/kit.ts
+// Location: Line ~284
+
+} else {
+  log.info(`${pid}: 🖱️ Moving prompt to mouse screen`);
+  log.info(`[SC_CHAIN ${chainId}] attemptPreloadAndMoveToMouseScreen`);
+  // Delay preload to let resize complete first
+  setTimeout(() => {
+    prompt.attemptPreload(promptScriptPath);
+  }, 50);
+  prompt.moveToMouseScreen();
+}
+```
+
+### Testing
+
+1. Create a test script:
+```typescript
+// Name: Testing Micro Resize
+// Shortcut: opt m
+import "@johnlindquist/kit"
+await micro("Pick one", ["One", "Two", "Three"])
+```
+
+2. Clear any cached bounds:
+   - Delete `~/.kit/db/prompt-state.json` or remove the specific script entry
+
+3. Trigger the script via keyboard shortcut (not from main menu)
+
+4. Watch the window - it should appear at the correct small size immediately
+
+5. Check logs at `~/Library/Logs/ScriptKit/window.log` for:
+   - `shouldDeferShow=true`
+   - `Skipping initBounds` or `🔒 Bounds locked`
+   - `🎤 Showing prompt after resize complete`
+   - NO `initBounds` applying height:480 after resize applies height:155
+
+---
+
+## Instructions For The Next AI Agent
+
+You are reading the "Prompt Window Resize Flash Expert Bundle". This file is self-contained and includes all the context you should assume you have.
+
+Your job:
+
+* Design and describe the minimal, safe changes needed to fully resolve the prompt window flash issue.
+* Operate **only** on the files and code snippets included in this bundle.
+
+When you propose changes, follow these rules strictly:
+
+1. Always provide **precise code snippets** that can be copy-pasted directly into the repo.
+2. Always include **exact file paths** (e.g. `app/src/main/prompt.ts`) and line numbers or clear location descriptions.
+3. Never describe code changes only in prose. Show the full function or block as it should look **after** the change.
+4. Keep instructions **unmistakable and unambiguous**.
+5. Assume you cannot see any files outside this bundle.
+
+### Key Constraints:
+
+- The fix must not break the main menu (which uses `initMain=true` flow)
+- The fix must work for keyboard shortcut triggered scripts
+- The fix must handle both cached and uncached scripts
+- The fix must not introduce race conditions or deadlocks
+
+### The Core Timeline to Fix:
+
+```
+CURRENT (broken):
+setPromptData → showAfterNextResize=true → resize() shows prompt → attemptPreload→initBounds(480px) → FLASH
+
+DESIRED (fixed):
+setPromptData → showAfterNextResize=true → resize() calculates 155px → setBounds(155px) → showPrompt() → NO initBounds override
+```
+
+Work directly with the code and return a clear, step-by-step plan plus exact code edits.

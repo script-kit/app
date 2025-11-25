@@ -106,11 +106,89 @@ export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Pr
   prompt.sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
 
   const isMainScript = getMainScriptPath() === promptData.scriptPath;
+  const visible = prompt.isVisible();
+  const shouldShow = promptData?.show !== false;
 
+  // FAST PATH: Main script never defers - must be instant
+  // Skip all the expensive defer calculations for main menu
+  let shouldDeferShow = false;
+  if (!isMainScript && !visible && shouldShow) {
+    // Only compute defer logic for non-main scripts that need to show
+    const hasExplicitDimensions =
+      typeof promptData?.width === 'number' ||
+      typeof promptData?.height === 'number' ||
+      typeof promptData?.inputHeight === 'number';
+
+    const currentBounds = prompt.window?.getBounds();
+    const targetWidth = promptData?.width ?? currentBounds?.width;
+    const targetHeight = promptData?.height ?? promptData?.inputHeight ?? currentBounds?.height;
+    const significantSizeDifference = currentBounds && (
+      Math.abs(currentBounds.width - targetWidth) > 20 ||
+      Math.abs(currentBounds.height - targetHeight) > 20
+    );
+
+    // Check if this script has cached bounds from a previous run
+    const currentScreen = getCurrentScreen();
+    const screenId = String(currentScreen.id);
+    const scriptPath = promptData?.scriptPath;
+    const hasCachedBounds = Boolean(
+      scriptPath &&
+      promptState?.screens?.[screenId]?.[scriptPath]
+    );
+
+    const shouldDeferForExplicitDimensions = hasExplicitDimensions && significantSizeDifference;
+    const shouldDeferForFirstRun = !hasCachedBounds && promptData?.ui === UI.arg;
+    shouldDeferShow = shouldDeferForExplicitDimensions || shouldDeferForFirstRun;
+
+    prompt.logInfo(`${prompt.id}: shouldDeferShow=${shouldDeferShow}`, {
+      visible,
+      shouldShow,
+      hasExplicitDimensions,
+      significantSizeDifference,
+      hasCachedBounds,
+      shouldDeferForExplicitDimensions,
+      shouldDeferForFirstRun,
+      currentBounds: currentBounds ? { w: currentBounds.width, h: currentBounds.height } : null,
+      target: { w: targetWidth, h: targetHeight },
+    });
+  }
+
+  // If we're deferring the initial show, lock bounds so that any
+  // initBounds() calls (for example from attemptPreload) can't overwrite
+  // the renderer-calculated size while we're waiting on resize().
+  if (shouldDeferShow) {
+    prompt.boundsLockedForResize = true;
+    if (prompt.boundsLockTimeout) {
+      clearTimeout(prompt.boundsLockTimeout);
+    }
+    prompt.boundsLockTimeout = setTimeout(() => {
+      try {
+        if (prompt.window?.isDestroyed?.()) return;
+        prompt.logInfo(`${prompt.id}: boundsLockedForResize timeout – unlocking`);
+        prompt.boundsLockedForResize = false;
+        prompt.boundsLockTimeout = null;
+      } catch {
+        // ignore
+      }
+    }, 500);
+  } else {
+    if (prompt.boundsLockTimeout) {
+      clearTimeout(prompt.boundsLockTimeout);
+      prompt.boundsLockTimeout = null;
+    }
+    prompt.boundsLockedForResize = false;
+  }
+
+  // Only call initBounds if NOT deferring for resize
+  // When deferring, let the first resize set the correct dimensions
   if (prompt.firstPrompt && !isMainScript) {
-    prompt.logInfo(`${prompt.pid} Before initBounds`);
-    prompt.initBounds();
-    prompt.logInfo(`${prompt.pid} After initBounds`);
+    if (shouldDeferShow) {
+      prompt.logInfo(`${prompt.pid} Skipping initBounds - deferring for resize`);
+    } else {
+      prompt.logInfo(`${prompt.pid} Before initBounds`);
+      prompt.initBounds();
+      prompt.logInfo(`${prompt.pid} After initBounds`);
+    }
     prompt.logInfo(`${prompt.pid} Disabling firstPrompt`);
     prompt.firstPrompt = false;
   }
@@ -125,65 +203,22 @@ export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Pr
     kitState.hasSnippet = false;
   }
 
-  const visible = prompt.isVisible();
   prompt.logInfo(`${prompt.id}: visible ${visible ? 'true' : 'false'} 👀`);
 
-  const shouldShow = promptData?.show !== false;
   if (!visible && shouldShow) {
     prompt.logInfo(`${prompt.id}: Prompt not visible but should show`);
 
-    // Check if we have explicit dimensions that will cause a resize
-    // In these cases, wait for resize before showing to avoid flash
-    const hasExplicitDimensions =
-      typeof promptData?.width === 'number' ||
-      typeof promptData?.height === 'number' ||
-      typeof promptData?.inputHeight === 'number';
-
-    // Compare against current bounds to see if resize is actually needed
-    const currentBounds = prompt.window?.getBounds();
-    const targetWidth = promptData?.width ?? currentBounds?.width;
-    const targetHeight = promptData?.height ?? promptData?.inputHeight ?? currentBounds?.height;
-    const significantSizeDifference = currentBounds && (
-      Math.abs(currentBounds.width - targetWidth) > 20 ||
-      Math.abs(currentBounds.height - targetHeight) > 20
-    );
-
-    // Check if this script has cached bounds from a previous run
-    // If not, the first resize will establish the correct size
-    const currentScreen = getCurrentScreen();
-    const screenId = String(currentScreen.id);
-    const scriptPath = promptData?.scriptPath;
-    const hasCachedBounds = Boolean(
-      scriptPath &&
-      !isMainScript &&
-      promptState?.screens?.[screenId]?.[scriptPath]
-    );
-
-    // Defer showing when:
-    // 1. Explicit dimensions that differ significantly from current bounds, OR
-    // 2. First run of a non-main script (no cached bounds) - need resize to calculate height
-    const shouldDeferForExplicitDimensions = hasExplicitDimensions && significantSizeDifference;
-    const shouldDeferForFirstRun = !hasCachedBounds && !isMainScript && promptData?.ui === UI.arg;
-    const shouldDeferShow = shouldDeferForExplicitDimensions || shouldDeferForFirstRun;
-
-    prompt.logInfo(`${prompt.id}: shouldDeferShow=${shouldDeferShow}`, {
-      hasExplicitDimensions,
-      significantSizeDifference,
-      hasCachedBounds,
-      shouldDeferForExplicitDimensions,
-      shouldDeferForFirstRun,
-      currentBounds: currentBounds ? { w: currentBounds.width, h: currentBounds.height } : null,
-      target: { w: targetWidth, h: targetHeight },
-    });
-
     if (shouldDeferShow) {
       prompt.showAfterNextResize = true;
+      // Prevent attemptPreload->initBounds from overwriting resize-calculated dimensions
+      prompt.skipInitBoundsForResize = true;
       // Safety fallback: if resize doesn't happen within 200ms, show anyway
       // This handles edge cases like resize being disabled or already at target size
       setTimeout(() => {
         if (prompt.showAfterNextResize && !prompt.window?.isDestroyed()) {
           prompt.logWarn(`${prompt.id}: showAfterNextResize fallback triggered`);
           prompt.showAfterNextResize = false;
+          prompt.skipInitBoundsForResize = false;
           prompt.showPrompt();
         }
       }, 200);

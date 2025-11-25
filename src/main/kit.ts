@@ -281,6 +281,10 @@ export const runPromptProcess = async (
   } else {
     log.info(`${pid}: 🖱️ Moving prompt to mouse screen`);
     log.info(`[SC_CHAIN ${chainId}] attemptPreloadAndMoveToMouseScreen`);
+    // Pre-emptively lock bounds so that debounced attemptPreload calls cannot
+    // apply cached (wrong) bounds before setPromptData decides whether to defer.
+    // setPromptData will either keep the lock (shouldDeferShow) or clear it.
+    (prompt as any).boundsLockedForResize = true;
     prompt.attemptPreload(promptScriptPath);
     prompt.moveToMouseScreen();
   }

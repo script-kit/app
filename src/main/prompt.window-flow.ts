@@ -87,6 +87,33 @@ export function initBoundsFlow(prompt: KitPrompt, forceScriptPath?: string) {
     prompt.logWarn('initBounds. Window already destroyed', prompt?.id);
     return;
   }
+
+  // During a deferred-show resize cycle we don't want cached bounds (from
+  // attemptPreload or similar) to overwrite the renderer-calculated size.
+  // We only skip when forceScriptPath is provided, which is the preload path.
+  // However, we still apply the POSITION (x, y) so the window isn't stuck at top-left.
+  if ((prompt as any).boundsLockedForResize && forceScriptPath) {
+    const cacheKey = `${forceScriptPath}::${(prompt as any).windowMode || 'panel'}`;
+    const currentBounds = prompt.window.getBounds();
+    const cachedBounds = getCurrentScreenPromptCache(cacheKey, {
+      ui: (prompt as any).ui,
+      resize: (prompt as any).allowResize,
+      bounds: { width: currentBounds.width, height: currentBounds.height },
+    });
+    prompt.logInfo(
+      `${prompt.pid}:${path.basename(forceScriptPath)}: ⏭ initBounds size skipped (boundsLockedForResize=true), applying position only`,
+      { cachedX: cachedBounds.x, cachedY: cachedBounds.y, currentBounds },
+    );
+    // Apply position only, keep current width/height (which may be set by resize)
+    if (typeof cachedBounds.x === 'number' && typeof cachedBounds.y === 'number') {
+      (prompt as any).setBounds(
+        { x: cachedBounds.x, y: cachedBounds.y, width: currentBounds.width, height: currentBounds.height },
+        'initBounds-positionOnly',
+      );
+    }
+    return;
+  }
+
   const bounds = prompt.window.getBounds();
   const cacheKey = `${forceScriptPath || (prompt as any).scriptPath}::${(prompt as any).windowMode || 'panel'}`;
   const cachedBounds = getCurrentScreenPromptCache(cacheKey, {
@@ -95,13 +122,20 @@ export function initBoundsFlow(prompt: KitPrompt, forceScriptPath?: string) {
     bounds: { width: bounds.width, height: bounds.height },
   });
   const currentBounds = prompt?.window?.getBounds();
-  prompt.logInfo(`${prompt.pid}:${path.basename((prompt as any)?.scriptPath || '')}: ↖ Init bounds: ${(prompt as any).ui} ui`, {
-    currentBounds,
-    cachedBounds,
-  });
+  prompt.logInfo(
+    `${prompt.pid}:${path.basename((prompt as any)?.scriptPath || '')}: ↖ Init bounds: ${(prompt as any).ui} ui`,
+    {
+      currentBounds,
+      cachedBounds,
+    },
+  );
   const { x, y, width, height } = prompt.window.getBounds();
   if (cachedBounds.width !== width || cachedBounds.height !== height) {
-    prompt.logVerbose(`Started resizing: ${prompt.window?.getSize()}. First prompt?: ${(prompt as any).firstPrompt ? 'true' : 'false'}`);
+    prompt.logVerbose(
+      `Started resizing: ${prompt.window?.getSize()}. First prompt?: ${
+        (prompt as any).firstPrompt ? 'true' : 'false'
+      }`,
+    );
     (prompt as any).resizing = true;
   }
   if ((prompt as any).promptData?.scriptlet) cachedBounds.height = (prompt as any).promptData?.inputHeight;
