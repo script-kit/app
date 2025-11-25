@@ -17,6 +17,32 @@
 /* Load Tailwind config - must be after @import statements */
 @config '../../../../tailwind.config.js';
 
+/*
+ * =============================================================================
+ * TAILWIND V4 NOTES
+ * =============================================================================
+ *
+ * OPACITY MODIFIERS WITH CSS VARIABLES:
+ * In Tailwind v4, opacity modifiers like `text-primary/60` or `bg-black/50`
+ * do NOT work when the color is defined as a CSS variable reference.
+ *
+ * DOES NOT WORK:
+ *   @theme { --color-text-base: var(--color-text); }
+ *   <div class="text-text-base/60">  <!-- /60 is ignored! -->
+ *
+ * WORKAROUNDS:
+ * 1. Use separate opacity class: `text-text-base opacity-60`
+ * 2. Use @utility with color-mix(): see bg-opacity-base example below
+ * 3. Use --alpha() function in @utility (for custom utilities only)
+ *
+ * References:
+ * - https://tailwindcss.com/docs/colors (--alpha() function)
+ * - https://tailwindcss.com/docs/theme (@theme directive)
+ * - https://github.com/tailwindlabs/tailwindcss/discussions/14827 (color-mix)
+ * - https://github.com/tailwindlabs/tailwindcss/discussions/18124 (custom utilities)
+ * =============================================================================
+ */
+
 /* Tailwind v4 @theme - Semantic color tokens */
 @theme {
   --color-text-base: var(--color-text);
