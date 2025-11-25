@@ -27,19 +27,7 @@ import {
 } from '../jotai';
 import { EnterButton } from './actionenterbutton';
 import { ActionSeparator } from './actionseparator';
-
-const remapModifiers = (m: string) => {
-  if (m === 'Meta') {
-    return ['cmd'];
-  }
-  if (m === 'Control') {
-    return ['control', 'ctrl'];
-  }
-  if (m === 'Alt') {
-    return ['alt', 'option'];
-  }
-  return m.toLowerCase();
-};
+import { remapModifiers } from '../utils/keyboard';
 
 export default function ActionsInput() {
   const inputRef = useRef<HTMLInputElement>(null);

@@ -129,214 +129,66 @@ export const startServer = () => {
     }
   });
 
+  // Shared route handler for script execution
+  const createScriptHandler = (): express.RequestHandler => {
+    return async (req, res, next) => {
+      const scriptPathParts = req.path.split('/').filter(Boolean);
+      const script = scriptPathParts.join('/');
+      let apiKey = '';
+
+      if (req.method === 'POST') {
+        const authHeader = req.headers.authorization || '';
+        apiKey = authHeader.startsWith('Bearer ')
+          ? authHeader.slice(7)
+          : authHeader.includes(' ')
+            ? authHeader.split(' ')[1]
+            : authHeader;
+
+        const bodyScript = req.body?.script || script;
+        const args = req.body?.args || [];
+        const cwd = req.body?.cwd || kenvPath();
+        const mcpResponse = req.body?.mcpResponse;
+        const headers = req.headers as Record<string, string>;
+        log.info({ script: bodyScript, args, cwd });
+
+        try {
+          const result = await handleScript(bodyScript, args, cwd, true, apiKey, { ...headers, 'X-Kit-Server': 'true' }, mcpResponse);
+          if (typeof result.data === 'string') {
+            res.send(result.data);
+          } else if (typeof result.data === 'object') {
+            res.json(result.data);
+          } else {
+            res.send(result?.message || 'No response from script');
+          }
+        } catch (error) {
+          next(error);
+        }
+      } else {
+        const args = (req.query.arg as string[]) || [];
+        const cwd = (req.query.cwd as string) || process.cwd();
+
+        log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
+
+        try {
+          const result = await handleScript(script, args, cwd, true, apiKey, { 'X-Kit-Server': 'true' }, false);
+          if (typeof result.data === 'string') {
+            res.send(result.data);
+          } else {
+            res.json(result);
+          }
+        } catch (error) {
+          next(error);
+        }
+      }
+    };
+  };
+
   // Route handlers - using specific patterns instead of wildcards to avoid path-to-regexp issues
-
-  // Handle root path separately
-  app.all('/', async (req, res, next) => {
-    const script = '';
-    let apiKey = '';
-
-    if (req.method === 'POST') {
-      const authHeader = req.headers.authorization || '';
-      apiKey = authHeader.startsWith('Bearer ')
-        ? authHeader.slice(7)
-        : authHeader.includes(' ')
-          ? authHeader.split(' ')[1]
-          : authHeader;
-
-      const bodyScript = req.body?.script || script;
-      const args = req.body?.args || [];
-      const cwd = req.body?.cwd || kenvPath();
-      const mcpResponse = req.body?.mcpResponse;
-      const headers = req.headers as Record<string, string>;
-      log.info({ script: bodyScript, args, cwd });
-
-      try {
-        const result = await handleScript(bodyScript, args, cwd, true, apiKey, { ...headers, 'X-Kit-Server': 'true' }, mcpResponse);
-        if (typeof result.data === 'string') {
-          res.send(result.data);
-        } else if (typeof result.data === 'object') {
-          res.json(result.data);
-        } else {
-          res.send(result?.message || 'No response from script');
-        }
-      } catch (error) {
-        next(error);
-      }
-    } else {
-      const args = (req.query.arg as string[]) || [];
-      const cwd = (req.query.cwd as string) || process.cwd();
-
-      log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
-
-      try {
-        const result = await handleScript(script, args, cwd, true, apiKey, { 'X-Kit-Server': 'true' }, false);
-        if (typeof result.data === 'string') {
-          res.send(result.data);
-        } else {
-          res.json(result);
-        }
-      } catch (error) {
-        next(error);
-      }
-    }
-  });
-
-  // Handle single-level paths like /script-name
-  app.all('/:script', async (req, res, next) => {
-    const scriptPathParts = req.path.split('/').filter(Boolean);
-    const script = scriptPathParts.join('/');
-    let apiKey = '';
-
-    if (req.method === 'POST') {
-      const authHeader = req.headers.authorization || '';
-      apiKey = authHeader.startsWith('Bearer ')
-        ? authHeader.slice(7)
-        : authHeader.includes(' ')
-          ? authHeader.split(' ')[1]
-          : authHeader;
-
-      const bodyScript = req.body?.script || script;
-      const args = req.body?.args || [];
-      const cwd = req.body?.cwd || kenvPath();
-      const mcpResponse = req.body?.mcpResponse;
-      const headers = req.headers as Record<string, string>;
-      log.info({ script: bodyScript, args, cwd });
-
-      try {
-        const result = await handleScript(bodyScript, args, cwd, true, apiKey, { ...headers, 'X-Kit-Server': 'true' }, mcpResponse);
-        if (typeof result.data === 'string') {
-          res.send(result.data);
-        } else if (typeof result.data === 'object') {
-          res.json(result.data);
-        } else {
-          res.send(result?.message || 'No response from script');
-        }
-      } catch (error) {
-        next(error);
-      }
-    } else {
-      const args = (req.query.arg as string[]) || [];
-      const cwd = (req.query.cwd as string) || process.cwd();
-
-      log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
-
-      try {
-        const result = await handleScript(script, args, cwd, true, apiKey, { 'X-Kit-Server': 'true' }, false);
-        if (typeof result.data === 'string') {
-          res.send(result.data);
-        } else {
-          res.json(result);
-        }
-      } catch (error) {
-        next(error);
-      }
-    }
-  });
-
-  // Handle two-level paths like /folder/script-name
-  app.all('/:folder/:script', async (req, res, next) => {
-    const scriptPathParts = req.path.split('/').filter(Boolean);
-    const script = scriptPathParts.join('/');
-    let apiKey = '';
-
-    if (req.method === 'POST') {
-      const authHeader = req.headers.authorization || '';
-      apiKey = authHeader.startsWith('Bearer ')
-        ? authHeader.slice(7)
-        : authHeader.includes(' ')
-          ? authHeader.split(' ')[1]
-          : authHeader;
-
-      const bodyScript = req.body?.script || script;
-      const args = req.body?.args || [];
-      const cwd = req.body?.cwd || kenvPath();
-      const mcpResponse = req.body?.mcpResponse;
-      const headers = req.headers as Record<string, string>;
-      log.info({ script: bodyScript, args, cwd });
-
-      try {
-        const result = await handleScript(bodyScript, args, cwd, true, apiKey, { ...headers, 'X-Kit-Server': 'true' }, mcpResponse);
-        if (typeof result.data === 'string') {
-          res.send(result.data);
-        } else if (typeof result.data === 'object') {
-          res.json(result.data);
-        } else {
-          res.send(result?.message || 'No response from script');
-        }
-      } catch (error) {
-        next(error);
-      }
-    } else {
-      const args = (req.query.arg as string[]) || [];
-      const cwd = (req.query.cwd as string) || process.cwd();
-
-      log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
-
-      try {
-        const result = await handleScript(script, args, cwd, true, apiKey, { 'X-Kit-Server': 'true' }, false);
-        if (typeof result.data === 'string') {
-          res.send(result.data);
-        } else {
-          res.json(result);
-        }
-      } catch (error) {
-        next(error);
-      }
-    }
-  });
-
-  // Handle three-level paths like /folder/subfolder/script-name
-  app.all('/:folder/:subfolder/:script', async (req, res, next) => {
-    const scriptPathParts = req.path.split('/').filter(Boolean);
-    const script = scriptPathParts.join('/');
-    let apiKey = '';
-
-    if (req.method === 'POST') {
-      const authHeader = req.headers.authorization || '';
-      apiKey = authHeader.startsWith('Bearer ')
-        ? authHeader.slice(7)
-        : authHeader.includes(' ')
-          ? authHeader.split(' ')[1]
-          : authHeader;
-
-      const bodyScript = req.body?.script || script;
-      const args = req.body?.args || [];
-      const cwd = req.body?.cwd || kenvPath();
-      const mcpResponse = req.body?.mcpResponse;
-      const headers = req.headers as Record<string, string>;
-      log.info({ script: bodyScript, args, cwd });
-
-      try {
-        const result = await handleScript(bodyScript, args, cwd, true, apiKey, { ...headers, 'X-Kit-Server': 'true' }, mcpResponse);
-        if (typeof result.data === 'string') {
-          res.send(result.data);
-        } else if (typeof result.data === 'object') {
-          res.json(result.data);
-        } else {
-          res.send(result?.message || 'No response from script');
-        }
-      } catch (error) {
-        next(error);
-      }
-    } else {
-      const args = (req.query.arg as string[]) || [];
-      const cwd = (req.query.cwd as string) || process.cwd();
-
-      log.info('Script:', script, 'Args:', args, 'Cwd:', cwd);
-
-      try {
-        const result = await handleScript(script, args, cwd, true, apiKey, { 'X-Kit-Server': 'true' }, false);
-        if (typeof result.data === 'string') {
-          res.send(result.data);
-        } else {
-          res.json(result);
-        }
-      } catch (error) {
-        next(error);
-      }
-    }
-  });
+  const scriptHandler = createScriptHandler();
+  app.all('/', scriptHandler);
+  app.all('/:script', scriptHandler);
+  app.all('/:folder/:script', scriptHandler);
+  app.all('/:folder/:subfolder/:script', scriptHandler);
 
   // Error handling middleware
   app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

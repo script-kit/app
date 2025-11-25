@@ -5,115 +5,11 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { type ZodObject, type ZodRawShape, z } from 'zod';
+import { z } from 'zod';
 import { mcpService, type MCPScript } from './mcp-service';
 import { getServerPort } from './serverTrayUtils';
-import { mcpLog as log } from "./logs"
-
-
-// Create tool schema based on script args
-function createToolSchema(args: Array<{ name: string; placeholder: string | null }>): ZodObject<ZodRawShape> {
-  const properties: ZodRawShape = {};
-
-  // Create properties for each arg
-  args.forEach((arg, index) => {
-    const argName = `arg${index + 1}`;
-    properties[argName] = z
-      .string()
-      .optional()
-      .describe(arg.placeholder || `Parameter ${index + 1}`);
-  });
-
-  return z.object(properties);
-}
-
-interface ParameterSchema {
-  type: 'string' | 'number' | 'boolean' | 'array' | 'object';
-  description?: string;
-  enum?: string[];
-  pattern?: string;
-  minimum?: number;
-  maximum?: number;
-  required?: boolean;
-  default?: unknown;
-}
-
-
-// Create tool schema from tool() config or params() inputSchema
-function createToolSchemaFromConfig(
-  parameters: Record<string, ParameterSchema>,
-  required?: string[],
-): ZodObject<ZodRawShape> {
-  const properties: ZodRawShape = {};
-
-  for (const [key, param] of Object.entries(parameters)) {
-    let schema: z.ZodTypeAny;
-
-    // Map parameter types to Zod schemas
-    switch (param.type) {
-      case 'string': {
-        schema = z.string();
-        if (param.enum) {
-          schema = z.enum(param.enum as [string, ...string[]]);
-        }
-        if (param.pattern) {
-          schema = (schema as z.ZodString).regex(new RegExp(param.pattern));
-        }
-        break;
-      }
-
-      case 'number': {
-        schema = z.number();
-        if (param.minimum !== undefined) {
-          schema = (schema as z.ZodNumber).min(param.minimum);
-        }
-        if (param.maximum !== undefined) {
-          schema = (schema as z.ZodNumber).max(param.maximum);
-        }
-        break;
-      }
-
-      case 'boolean':
-        schema = z.boolean();
-        break;
-
-      case 'array':
-        // Simple array support for now
-        schema = z.array(z.string());
-        break;
-
-      case 'object':
-        // Simple object support for now
-        schema = z.object({});
-        break;
-
-      default:
-        schema = z.string();
-    }
-
-    // Add description
-    if (param.description) {
-      schema = schema.describe(param.description);
-    }
-
-    // Handle required/optional
-    // Check if this parameter is in the required array (for inputSchema)
-    // or if param.required is false (for toolConfig)
-    const isRequired = required ? required.includes(key) : param.required !== false;
-    if (!isRequired) {
-      schema = schema.optional();
-    }
-
-    // Handle default values
-    if (param.default !== undefined) {
-      schema = schema.default(param.default);
-    }
-
-    properties[key] = schema;
-  }
-
-  return z.object(properties);
-}
+import { mcpLog as log } from './logs';
+import { createToolSchema, createToolSchemaFromConfig, wrapInObject } from './mcp-schema-utils';
 
 export async function startMCPServer() {
   try {
@@ -157,20 +53,17 @@ export async function startMCPServer() {
             registeredTools.add(script.name);
 
             // Create schema based on script type
-            let schema: ZodObject<ZodRawShape>;
+            let schemaShape: Record<string, z.ZodTypeAny>;
             if (script.inputSchema?.properties) {
               // For params() based scripts, convert inputSchema to Zod schema
-              schema = createToolSchemaFromConfig(script.inputSchema.properties, script.inputSchema.required);
+              schemaShape = createToolSchemaFromConfig(script.inputSchema.properties, script.inputSchema.required);
             } else if (script.toolConfig?.parameters) {
               // For tool() based scripts, convert parameters to Zod schema
-              schema = createToolSchemaFromConfig(script.toolConfig.parameters);
+              schemaShape = createToolSchemaFromConfig(script.toolConfig.parameters);
             } else {
               // For traditional arg() based scripts
-              schema = createToolSchema(script.args);
+              schemaShape = createToolSchema(script.args);
             }
-
-            // Register tool with MCP - use raw properties object instead of ZodObject
-            const schemaShape = schema._def.shape();
             mcpServer.tool(script.name, script.description, schemaShape, async (params, _extra) => {
               log.info(`Executing MCP tool: ${script.name}`, params);
 

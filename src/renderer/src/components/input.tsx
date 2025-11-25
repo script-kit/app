@@ -59,19 +59,7 @@ import { EnterButton } from './actionenterbutton';
 import { OptionsButton } from './actionoptionsbutton';
 import { ActionSeparator } from './actionseparator';
 import { IconButton } from './icon';
-
-const remapModifiers = (m: string) => {
-  if (m === 'Meta') {
-    return ['cmd'];
-  }
-  if (m === 'Control') {
-    return ['control', 'ctrl'];
-  }
-  if (m === 'Alt') {
-    return ['alt', 'option'];
-  }
-  return m.toLowerCase();
-};
+import { remapModifiers } from '../utils/keyboard';
 
 const debouncedFocus = debounce(
   (inputRef: RefObject<HTMLInputElement>) => {
