@@ -1,14 +1,42 @@
-/* @ts-nocheck */
-/* eslint-disable no-console */
+/**
+ * Logger exports
+ *
+ * This module provides backward-compatible logger exports that bridge to
+ * the new domain-based logging system. All old category loggers (mainLog,
+ * promptLog, etc.) are now mapped to their respective domain loggers.
+ *
+ * Domain mapping:
+ * - core: main, kit, system, health
+ * - window: window, prompt, widget, theme
+ * - process: process, script, background, worker
+ * - input: keyboard, shortcuts, io, keymap, snippet, scriptlet
+ * - communication: ipc, messages, server, mcp
+ * - scheduling: schedule, tick, watcher, metadataWatcher, chokidar
+ * - terminal: term, console
+ * - diagnostic: debug, error, search, compare, update, processWindowCoordinator
+ */
+
 import fs from "node:fs";
-import * as path from "node:path";
 import { getLogFromScriptPath } from "@johnlindquist/kit/core/utils";
 import { app } from "electron";
 import log, { type FileTransport, type LevelOption } from "electron-log";
 import { subscribeKey } from "valtio/utils";
-import { stripAnsi } from "./ansi";
 import { kitState, subs } from "./state";
 import { TrackEvent, trackEvent } from "./track";
+import {
+  getCoreLogger,
+  getWindowLogger,
+  getProcessLogger,
+  getInputLogger,
+  getCommunicationLogger,
+  getSchedulingLogger,
+  getTerminalLogger,
+  getDiagnosticLogger,
+  initializeDomainLoggers,
+} from "./logger/domain-loggers";
+
+// Initialize domain loggers on import
+initializeDomainLoggers();
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -17,11 +45,15 @@ if (isDev) {
   app.setAppLogsPath(logsPath);
 }
 
-log.info("🚀 Script Kit Starting Up...");
+// Initialize logging system startup message
+getCoreLogger().info("Script Kit Starting Up...");
 
-type logInfoArgs = typeof log.info extends (...args: infer T) => void
-  ? T
-  : never;
+// ============================================================================
+// Legacy Logger Interface
+// ============================================================================
+
+type logInfoArgs = Parameters<typeof log.info>;
+
 export interface Logger {
   info: (...args: logInfoArgs) => void;
   warn: (...args: logInfoArgs) => void;
@@ -36,6 +68,9 @@ type LoggerWithPath = Logger & { logPath: string };
 type LogMap = Map<string, LoggerWithPath>;
 export const logMap: LogMap = new Map<string, LoggerWithPath>();
 
+/**
+ * Get a script-specific logger (for user scripts)
+ */
 export const getLog = (scriptPath: string): LoggerWithPath => {
   const existing = logMap.get(scriptPath);
   if (existing) {
@@ -45,7 +80,7 @@ export const getLog = (scriptPath: string): LoggerWithPath => {
   try {
     const scriptLog = log.create({ logId: scriptPath });
     const logPath = getLogFromScriptPath(scriptPath);
-    log.info(`Log path: ${logPath}`);
+    getCoreLogger().info(`Log path: ${logPath}`);
 
     const fileTransport = scriptLog.transports.file as FileTransport;
     fileTransport.resolvePathFn = () => logPath;
@@ -78,25 +113,24 @@ export const getLog = (scriptPath: string): LoggerWithPath => {
     logMap.set(scriptPath, logger);
     return logger;
   } catch (error) {
-    // Fallback logger using console and removing duplicate "clear" property
-    // Store console methods in variables to prevent Biome from removing them
-    const consoleLog = console.log;
+    // Fallback logger using console
+    const consoleLogFn = console.log;
     const consoleWarn = console.warn;
     const consoleError = console.error;
 
     const fallbackLogger: Logger & { logPath: string } = {
       info: (...args: Parameters<typeof log.info>) =>
-        consoleLog(...args.map(stripAnsi)),
+        consoleLogFn(...args),
       warn: (...args: Parameters<typeof log.warn>) =>
-        consoleWarn(...args.map(stripAnsi)),
+        consoleWarn(...args),
       error: (...args: Parameters<typeof log.error>) =>
-        consoleError(...args.map(stripAnsi)),
+        consoleError(...args),
       verbose: (...args: Parameters<typeof log.verbose>) =>
-        consoleLog(...args.map(stripAnsi)),
+        consoleLogFn(...args),
       debug: (...args: Parameters<typeof log.debug>) =>
-        consoleLog(...args.map(stripAnsi)),
+        consoleLogFn(...args),
       silly: (...args: Parameters<typeof log.silly>) =>
-        consoleLog(...args.map(stripAnsi)),
+        consoleLogFn(...args),
       clear: () => { },
       logPath: "",
     };
@@ -104,222 +138,128 @@ export const getLog = (scriptPath: string): LoggerWithPath => {
   }
 };
 
+/**
+ * Legacy warn function
+ */
 export const warn = (message: string): void => {
-  // TODO: Determine the appropriate prompt for warnings
-  log.warn(message);
+  getCoreLogger().warn(message);
 };
 
-log.transports.console.level = false;
+// ============================================================================
+// Track errors for analytics
+// ============================================================================
 
-if (log.transports.ipc) {
-  log.transports.ipc.level = false;
-}
-
-// Add timestamp to all log entries
-log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}';
-log.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}';
-
-if (process.env.VITE_LOG_LEVEL) {
-  log.info("🪵 Setting log level", process.env.VITE_LOG_LEVEL);
-  log.transports.file.level = process.env.VITE_LOG_LEVEL as LevelOption;
-  log.transports.console.level = false;
-} else if (process.env.NODE_ENV === "production") {
-  log.transports.file.level = "info";
-  log.transports.console.level = false;
-} else {
-  log.transports.file.level = "verbose";
-}
-
-const originalError = log.error.bind(log);
-log.error = (message: string, ...args: logInfoArgs): void => {
-  try {
-    trackEvent(TrackEvent.LogError, { message, args });
-  } catch (error: unknown) { }
-  originalError(message, ...args);
-};
-
+// Subscribe to log level changes
 const subLogLevel = subscribeKey(kitState, "logLevel", (level: LevelOption) => {
-  log.info(`📋 Log level set to: ${level}`);
-  (log.transports.file as FileTransport).level = level;
+  getCoreLogger().info(`Log level set to: ${level}`);
 });
 subs.push(subLogLevel);
 
-function createLogInstance(logId: string): {
-  logInstance: typeof log;
-  logPath: string;
-} {
-  const logPath = path.resolve(app.getPath("logs"), `${logId}.log`);
-  const logInstance = log.create({ logId });
-  const fileTransport = logInstance.transports.file as FileTransport;
-  fileTransport.resolvePathFn = () => logPath;
-  fileTransport.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}';
+// ============================================================================
+// Domain Logger Exports (bridged to new system)
+// ============================================================================
 
-  logInstance.info("🟢 Script Kit Starting Up...");
-  logInstance.info(`${logId} log path: ${logPath}`);
+// Core domain: main, kit, system, health
+export const mainLog = getCoreLogger();
+export const kitLog = getCoreLogger();
+export const systemLog = getCoreLogger();
+export const healthLog = getCoreLogger();
 
-  logInstance.transports.console.level = false;
-  if (logInstance.transports.console) {
-    logInstance.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}';
-  }
-  logInstance.transports.ipc.level = false;
-  logInstance.transports.file.level = kitState.logLevel;
+// Window domain: window, prompt, widget, theme
+export const windowLog = getWindowLogger();
+export const promptLog = getWindowLogger();
+export const widgetLog = getWindowLogger();
+export const themeLog = getWindowLogger();
 
-  return { logInstance, logPath };
-}
+// Process domain: process, script, background, worker
+export const processLog = getProcessLogger();
+export const scriptLog = getProcessLogger();
+export const backgroundLog = getProcessLogger();
+export const workerLog = getProcessLogger();
 
-const logTypes = [
-  "update",
-  "main",
-  "script",
-  "window",
-  "kit",
-  "debug",
-  "console",
-  "worker",
-  "keymap",
-  "shortcuts",
-  "schedule",
-  "snippet",
-  "scriptlet",
-  "watcher",
-  "error",
-  "prompt",
-  "process",
-  "widget",
-  "theme",
-  "health",
-  "system",
-  "background",
-  "server",
-  "search",
-  "ipc",
-  "term",
-  "metadataWatcher",
-  "messages",
-  "mcp",
-  "io",
-  "tick",
-  "keyboard",
-  "chokidar",
-  "compare",
-  "processWindowCoordinator"
-] as const;
+// Input domain: keyboard, shortcuts, io, keymap, snippet, scriptlet
+export const keyboardLog = getInputLogger();
+export const shortcutsLog = getInputLogger();
+export const ioLog = getInputLogger();
+export const keymapLog = getInputLogger();
+export const snippetLog = getInputLogger();
+export const scriptletLog = getInputLogger();
 
-type LogType = (typeof logTypes)[number];
+// Communication domain: ipc, messages, server, mcp
+export const ipcLog = getCommunicationLogger();
+export const messagesLog = getCommunicationLogger();
+export const serverLog = getCommunicationLogger();
+export const mcpLog = getCommunicationLogger();
 
-type LogExports = {
-  [K in LogType as `${K}Log`]: Omit<Logger, "clear">;
-} & {
-  [K in LogType as `${K}LogPath`]: string;
-};
+// Scheduling domain: schedule, tick, watcher, metadataWatcher, chokidar
+export const scheduleLog = getSchedulingLogger();
+export const tickLog = getSchedulingLogger();
+export const watcherLog = getSchedulingLogger();
+export const metadataWatcherLog = getSchedulingLogger();
+export const chokidarLog = getSchedulingLogger();
 
-function createLogExports<T extends readonly LogType[]>(
-  types: T,
-): {
-  [K in T[number]as `${K}Log`]: Omit<Logger, "clear">;
-} & {
-    [K in T[number]as `${K}LogPath`]: string;
-  } {
-  const entries = types.flatMap((logType) => {
-    const { logInstance, logPath } = createLogInstance(logType);
-    return [
-      [`${logType}Log` as const, logInstance],
-      [`${logType}LogPath` as const, logPath],
-    ];
-  });
+// Terminal domain: term, console
+export const termLog = getTerminalLogger();
+export const consoleLog = getTerminalLogger();
 
-  // Build the object from the entries. We use Object.fromEntries and assert that the result satisfies the expected type.
-  return Object.fromEntries(entries) as {
-    [K in T[number]as `${K}Log`]: Omit<Logger, "clear">;
-  } & {
-    [K in T[number]as `${K}LogPath`]: string;
-  };
-}
+// Diagnostic domain: debug, error, search, compare, update, processWindowCoordinator
+export const debugLog = getDiagnosticLogger();
+export const errorLog = getDiagnosticLogger();
+export const searchLog = getDiagnosticLogger();
+export const compareLog = getDiagnosticLogger();
+export const updateLog = getDiagnosticLogger();
+export const processWindowCoordinatorLog = getDiagnosticLogger();
 
-// Now, instead of manually building logExports in a loop, we do:
-// First, create your logExports using your helper function:
-const logExports = createLogExports(logTypes) satisfies LogExports;
+// ============================================================================
+// Log Paths (for compatibility - point to domain log files)
+// ============================================================================
 
-// Then, destructure logExports into individual named exports.
-// We capture any extra keys with ...rest and force that it's empty.
-export const {
-  updateLog,
-  updateLogPath,
-  mainLog,
-  mainLogPath,
-  scriptLog,
-  scriptLogPath,
-  windowLog,
-  windowLogPath,
-  kitLog,
-  kitLogPath,
-  debugLog,
-  debugLogPath,
-  consoleLog,
-  consoleLogPath,
-  workerLog,
-  workerLogPath,
-  keymapLog,
-  keymapLogPath,
-  shortcutsLog,
-  shortcutsLogPath,
-  scheduleLog,
-  scheduleLogPath,
-  snippetLog,
-  snippetLogPath,
-  scriptletLog,
-  scriptletLogPath,
-  watcherLog,
-  watcherLogPath,
-  errorLog,
-  errorLogPath,
-  promptLog,
-  promptLogPath,
-  processLog,
-  processLogPath,
-  widgetLog,
-  widgetLogPath,
-  themeLog,
-  themeLogPath,
-  healthLog,
-  healthLogPath,
-  systemLog,
-  systemLogPath,
-  backgroundLog,
-  backgroundLogPath,
-  serverLog,
-  serverLogPath,
-  searchLog,
-  searchLogPath,
-  ipcLog,
-  ipcLogPath,
-  termLog,
-  termLogPath,
-  metadataWatcherLog,
-  metadataWatcherLogPath,
-  messagesLog,
-  messagesLogPath,
-  mcpLog,
-  mcpLogPath,
-  ioLog,
-  ioLogPath,
-  tickLog,
-  tickLogPath,
-  keyboardLog,
-  keyboardLogPath,
-  chokidarLog,
-  chokidarLogPath,
-  compareLog,
-  compareLogPath,
-  processWindowCoordinatorLog,
-  processWindowCoordinatorLogPath,
-  ...rest
-} = logExports;
+import * as path from "node:path";
 
-// Helper type that enforces no extra keys remain.
-type EnsureExhaustive<T> = keyof T extends never ? true : never;
-// If rest is not empty, this assignment will cause a compile-time error.
-const _exhaustivenessCheck: EnsureExhaustive<typeof rest> = true;
+const logsDir = app.getPath("logs");
+
+export const mainLogPath = path.resolve(logsDir, "core.log");
+export const kitLogPath = path.resolve(logsDir, "core.log");
+export const systemLogPath = path.resolve(logsDir, "core.log");
+export const healthLogPath = path.resolve(logsDir, "core.log");
+
+export const windowLogPath = path.resolve(logsDir, "window.log");
+export const promptLogPath = path.resolve(logsDir, "window.log");
+export const widgetLogPath = path.resolve(logsDir, "window.log");
+export const themeLogPath = path.resolve(logsDir, "window.log");
+
+export const processLogPath = path.resolve(logsDir, "process.log");
+export const scriptLogPath = path.resolve(logsDir, "process.log");
+export const backgroundLogPath = path.resolve(logsDir, "process.log");
+export const workerLogPath = path.resolve(logsDir, "process.log");
+
+export const keyboardLogPath = path.resolve(logsDir, "input.log");
+export const shortcutsLogPath = path.resolve(logsDir, "input.log");
+export const ioLogPath = path.resolve(logsDir, "input.log");
+export const keymapLogPath = path.resolve(logsDir, "input.log");
+export const snippetLogPath = path.resolve(logsDir, "input.log");
+export const scriptletLogPath = path.resolve(logsDir, "input.log");
+
+export const ipcLogPath = path.resolve(logsDir, "communication.log");
+export const messagesLogPath = path.resolve(logsDir, "communication.log");
+export const serverLogPath = path.resolve(logsDir, "communication.log");
+export const mcpLogPath = path.resolve(logsDir, "communication.log");
+
+export const scheduleLogPath = path.resolve(logsDir, "scheduling.log");
+export const tickLogPath = path.resolve(logsDir, "scheduling.log");
+export const watcherLogPath = path.resolve(logsDir, "scheduling.log");
+export const metadataWatcherLogPath = path.resolve(logsDir, "scheduling.log");
+export const chokidarLogPath = path.resolve(logsDir, "scheduling.log");
+
+export const termLogPath = path.resolve(logsDir, "terminal.log");
+export const consoleLogPath = path.resolve(logsDir, "terminal.log");
+
+export const debugLogPath = path.resolve(logsDir, "diagnostic.log");
+export const errorLogPath = path.resolve(logsDir, "diagnostic.log");
+export const searchLogPath = path.resolve(logsDir, "diagnostic.log");
+export const compareLogPath = path.resolve(logsDir, "diagnostic.log");
+export const updateLogPath = path.resolve(logsDir, "diagnostic.log");
+export const processWindowCoordinatorLogPath = path.resolve(logsDir, "diagnostic.log");
 
 // Re-export perf logging utility (separate module with specialized API)
 export { perf, perfLogPath } from './perf';

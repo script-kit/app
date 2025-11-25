@@ -1,39 +1,326 @@
 /**
  * Electron Logger Adapter
  *
- * Bridges the shared logger interface with electron-log.
- * Provides structured logging, redaction, and correlation while
- * leveraging electron-log's file transport capabilities.
+ * Self-contained logger for the Electron app that provides structured logging,
+ * redaction, and correlation while leveraging electron-log's file transport.
+ *
+ * This module is intentionally self-contained to avoid dependency issues
+ * with the SDK's logger module which doesn't export TypeScript declarations.
  */
 
 import log, { type FileTransport, type LevelOption } from 'electron-log';
 import { app } from 'electron';
 import * as path from 'node:path';
-import type {
-  Logger,
-  LogLevel,
-  LogContext,
-  LogEntry,
-  LogTransport,
-  LoggerOptions,
-  TimerEndFn,
-} from '@johnlindquist/kit/core/logger/types';
-import {
-  LOG_LEVEL_PRIORITY,
-} from '@johnlindquist/kit/core/logger/types';
-import {
-  createRedactor,
-  DEFAULT_REDACTION_PATHS,
-} from '@johnlindquist/kit/core/logger/redaction';
-import {
-  getCorrelationId,
-  getParentId,
-} from '@johnlindquist/kit/core/logger/correlation';
-import {
-  JSONFormatter,
-  PrettyFormatter,
-  FileFormatter,
-} from '@johnlindquist/kit/core/logger/formatters';
+
+// ============================================================================
+// Types (self-contained to avoid SDK import issues)
+// ============================================================================
+
+/**
+ * Log levels in order of severity
+ */
+export type LogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
+
+/**
+ * Priority map for log levels (lower = more severe)
+ */
+export const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
+  fatal: 0,
+  error: 1,
+  warn: 2,
+  info: 3,
+  debug: 4,
+  trace: 5,
+};
+
+/**
+ * Context attached to log entries
+ */
+export interface LogContext {
+  [key: string]: unknown;
+  component?: string;
+  pid?: number;
+  correlationId?: string;
+  parentId?: string;
+}
+
+/**
+ * Structured log entry
+ */
+export interface LogEntry {
+  level: LogLevel;
+  message: string;
+  timestamp: string;
+  context?: LogContext;
+  error?: {
+    name: string;
+    message: string;
+    stack?: string;
+    code?: string;
+    cause?: unknown;
+  };
+}
+
+/**
+ * Timer end function type
+ */
+export type TimerEndFn = () => number;
+
+/**
+ * Logger interface
+ */
+export interface Logger {
+  fatal(message: string, errorOrContext?: Error | LogContext, context?: LogContext): void;
+  error(message: string, errorOrContext?: Error | LogContext, context?: LogContext): void;
+  warn(message: string, context?: LogContext): void;
+  info(message: string, context?: LogContext): void;
+  debug(message: string, context?: LogContext): void;
+  trace(message: string, context?: LogContext): void;
+  child(context: LogContext): Logger;
+  startTimer(operationName: string, context?: LogContext): TimerEndFn;
+  getLevel(): LogLevel;
+  setLevel(level: LogLevel): void;
+  isLevelEnabled(level: LogLevel): boolean;
+}
+
+/**
+ * Logger options
+ */
+export interface LoggerOptions {
+  name: string;
+  level?: LogLevel;
+  defaultContext?: LogContext;
+  redaction?: {
+    enabled?: boolean;
+    paths?: string[];
+  };
+}
+
+// ============================================================================
+// Redaction (self-contained)
+// ============================================================================
+
+/**
+ * Default paths to redact
+ */
+export const DEFAULT_REDACTION_PATHS = [
+  'password',
+  'secret',
+  'token',
+  'apiKey',
+  'api_key',
+  'authorization',
+  'auth',
+  'credential',
+  'privateKey',
+  'private_key',
+  'accessToken',
+  'access_token',
+  'refreshToken',
+  'refresh_token',
+  'sessionId',
+  'session_id',
+  'cookie',
+  'ssn',
+  'creditCard',
+  'credit_card',
+  'cardNumber',
+  'card_number',
+  'cvv',
+  'pin',
+];
+
+/**
+ * Redaction configuration
+ */
+export interface RedactionConfig {
+  enabled?: boolean;
+  paths?: string[];
+  replacement?: string;
+}
+
+/**
+ * Check if a key should be redacted
+ */
+function shouldRedact(key: string, paths: string[]): boolean {
+  const lowerKey = key.toLowerCase();
+  return paths.some(path => {
+    const lowerPath = path.toLowerCase();
+    return lowerKey === lowerPath ||
+           lowerKey.includes(lowerPath) ||
+           lowerPath.includes(lowerKey);
+  });
+}
+
+/**
+ * Recursively redact sensitive values in an object
+ */
+function redactObject(obj: unknown, paths: string[], replacement: string): unknown {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (typeof obj === 'string') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => redactObject(item, paths, replacement));
+  }
+
+  if (typeof obj === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (shouldRedact(key, paths)) {
+        result[key] = replacement;
+      } else {
+        result[key] = redactObject(value, paths, replacement);
+      }
+    }
+    return result;
+  }
+
+  return obj;
+}
+
+/**
+ * Create a redactor function
+ */
+export function createRedactor(config: RedactionConfig = {}) {
+  const enabled = config.enabled ?? true;
+  const paths = [...DEFAULT_REDACTION_PATHS, ...(config.paths ?? [])];
+  const replacement = config.replacement ?? '[REDACTED]';
+
+  return {
+    redact: <T>(data: T): T => {
+      if (!enabled) return data;
+      return redactObject(data, paths, replacement) as T;
+    },
+  };
+}
+
+// ============================================================================
+// Correlation (simplified - no AsyncLocalStorage in Electron main process)
+// ============================================================================
+
+let currentCorrelationId: string | undefined;
+let currentParentId: string | undefined;
+
+/**
+ * Get current correlation ID
+ */
+export function getCorrelationId(): string | undefined {
+  return currentCorrelationId;
+}
+
+/**
+ * Get current parent ID
+ */
+export function getParentId(): string | undefined {
+  return currentParentId;
+}
+
+/**
+ * Set correlation context
+ */
+export function setCorrelationContext(correlationId: string, parentId?: string): void {
+  currentCorrelationId = correlationId;
+  currentParentId = parentId;
+}
+
+/**
+ * Clear correlation context
+ */
+export function clearCorrelationContext(): void {
+  currentCorrelationId = undefined;
+  currentParentId = undefined;
+}
+
+// ============================================================================
+// Formatters (self-contained)
+// ============================================================================
+
+/**
+ * Format a log entry as JSON
+ */
+export class JSONFormatter {
+  format(entry: LogEntry): string {
+    return JSON.stringify(entry);
+  }
+}
+
+/**
+ * Format a log entry for file output
+ */
+export class FileFormatter {
+  format(entry: LogEntry): string {
+    const { level, message, timestamp, context, error } = entry;
+    let output = `[${timestamp}] [${level.toUpperCase()}]`;
+
+    if (context?.component) {
+      output += ` [${context.component}]`;
+    }
+
+    output += ` ${message}`;
+
+    // Add context (excluding already shown fields)
+    if (context) {
+      const { component, ...rest } = context;
+      if (Object.keys(rest).length > 0) {
+        output += ` ${JSON.stringify(rest)}`;
+      }
+    }
+
+    // Add error if present
+    if (error) {
+      output += `\n  Error: ${error.name}: ${error.message}`;
+      if (error.stack) {
+        output += `\n  Stack: ${error.stack}`;
+      }
+    }
+
+    return output;
+  }
+}
+
+/**
+ * Format a log entry with colors for console
+ */
+export class PrettyFormatter {
+  private colors: Record<LogLevel, string> = {
+    fatal: '\x1b[41m\x1b[37m', // Red background, white text
+    error: '\x1b[31m',          // Red
+    warn: '\x1b[33m',           // Yellow
+    info: '\x1b[36m',           // Cyan
+    debug: '\x1b[35m',          // Magenta
+    trace: '\x1b[90m',          // Gray
+  };
+
+  private reset = '\x1b[0m';
+
+  format(entry: LogEntry): string {
+    const { level, message, timestamp, context, error } = entry;
+    const color = this.colors[level] || '';
+
+    let output = `${color}[${level.toUpperCase()}]${this.reset}`;
+
+    if (context?.component) {
+      output += ` \x1b[34m[${context.component}]\x1b[0m`;
+    }
+
+    output += ` ${message}`;
+
+    if (error) {
+      output += `\n  ${color}Error: ${error.name}: ${error.message}${this.reset}`;
+    }
+
+    return output;
+  }
+}
+
+// ============================================================================
+// Electron Logger
+// ============================================================================
 
 /**
  * Map our log levels to electron-log levels
@@ -45,18 +332,6 @@ const LEVEL_MAP: Record<LogLevel, LevelOption> = {
   info: 'info',
   debug: 'debug',
   trace: 'silly',
-};
-
-/**
- * Map electron-log levels to our log levels
- */
-const REVERSE_LEVEL_MAP: Record<string, LogLevel> = {
-  error: 'error',
-  warn: 'warn',
-  info: 'info',
-  debug: 'debug',
-  verbose: 'debug',
-  silly: 'trace',
 };
 
 /**
@@ -125,12 +400,9 @@ export class ElectronLogger implements Logger {
       fileTransport.resolvePathFn = () => this.logPath;
       fileTransport.level = LEVEL_MAP[this.level];
 
-      if (this.structured) {
-        // For structured logging, output raw JSON
-        fileTransport.format = '{text}';
-      } else {
-        fileTransport.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}';
-      }
+      // Always use raw text format - our formatter already includes timestamp and level
+      // This prevents duplicate timestamps like: [2025-11-24 20:29:59.298] [info] [2025-11-25T03:29:59.298Z] [INFO]
+      fileTransport.format = '{text}';
     }
 
     // Configure console transport
@@ -187,7 +459,7 @@ export class ElectronLogger implements Logger {
         message: error.message,
         stack: error.stack,
         code: (error as NodeJS.ErrnoException).code,
-        cause: error.cause,
+        cause: (error as any).cause,
       };
     }
 
@@ -270,6 +542,30 @@ export class ElectronLogger implements Logger {
 
   trace(message: string, context?: LogContext): void {
     this.log('trace', message, context);
+  }
+
+  /**
+   * Verbose logging (alias for debug, for electron-log compatibility)
+   * Accepts multiple arguments like electron-log for backward compatibility
+   */
+  verbose(...args: unknown[]): void {
+    if (args.length === 0) return;
+    const message = args.map(arg =>
+      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+    ).join(' ');
+    this.log('debug', message);
+  }
+
+  /**
+   * Silly logging (alias for trace, for electron-log compatibility)
+   * Accepts multiple arguments like electron-log for backward compatibility
+   */
+  silly(...args: unknown[]): void {
+    if (args.length === 0) return;
+    const message = args.map(arg =>
+      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+    ).join(' ');
+    this.log('trace', message);
   }
 
   child(context: LogContext): Logger {

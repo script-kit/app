@@ -19,8 +19,8 @@ import {
   createElectronLogger,
   DOMAIN_CONFIG,
   type ElectronLogger,
+  type LogLevel,
 } from './electron-adapter';
-import type { LogLevel } from '@johnlindquist/kit/core/logger/types';
 
 /**
  * Domain logger instances
