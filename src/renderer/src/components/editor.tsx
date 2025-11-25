@@ -7,6 +7,7 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Range, type editor as monacoEditor, type IDisposable } from 'monaco-editor/esm/vs/editor/editor.api';
+import { initializeMonacoEditor } from '../utils/monaco';
 
 const { ipcRenderer } = window.electron;
 import {
@@ -313,11 +314,13 @@ export default function Editor() {
 
       // editor.setModel(model);
 
-      monaco.editor.setTheme(kitIsDark ? 'kit-dark' : 'kit-light');
-
-      mountEditor.layout({
-        width: containerRef?.current?.offsetWidth || document.body.offsetWidth,
-        height: (containerRef?.current?.offsetHeight || document.body.offsetHeight) - 24,
+      // Initialize common Monaco editor settings
+      initializeMonacoEditor({
+        editor: mountEditor,
+        monaco,
+        containerRef,
+        isDark: kitIsDark,
+        config: config as EditorOptions,
       });
 
       // After initial layout, request a single EDITOR measurement to stabilize layout math
@@ -325,27 +328,6 @@ export default function Editor() {
 
       // if (typeof global?.exports === 'undefined') global.exports = {};
       mountEditor.focus();
-
-      if (mountEditor?.getDomNode()) {
-        ((mountEditor.getDomNode() as HTMLElement).style as any).webkitAppRegion = 'no-drag';
-      }
-
-      const lineNumber = mountEditor.getModel()?.getLineCount() || 0;
-
-      if ((config as EditorOptions).scrollTo === 'bottom') {
-        const lineContent = mountEditor?.getModel()?.getLineContent(lineNumber) ?? '';
-        const column = lineContent.length + 1;
-
-        const position = { lineNumber, column };
-        // console.log({ position });
-        mountEditor.setPosition(position);
-
-        mountEditor.revealPosition(position);
-      }
-
-      if ((config as EditorOptions).scrollTo === 'center') {
-        mountEditor.revealLineInCenter(Math.floor(lineNumber / 2));
-      }
   },
     [config, containerRef, kitIsDark, triggerResize],
   );

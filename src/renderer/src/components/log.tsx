@@ -10,6 +10,7 @@ const { ipcRenderer } = window.electron;
 import { WindowChannel } from '../../../shared/enums';
 import { kitLight, nightOwl } from '../editor-themes';
 import { cmdAtom, darkAtom, editorConfigAtom, editorOptions, editorThemeAtom, shortcutsAtom } from '../jotai';
+import { initializeMonacoEditor } from '../utils/monaco';
 
 const registerLogLanguage = (monaco: Monaco, theme: { foreground: string; background: string }) => {
   monaco.languages.register({ id: 'log' });
@@ -106,36 +107,14 @@ export default function Log() {
 
       // mountEditor.focus();
 
-      monaco.editor.setTheme(isDark ? 'kit-dark' : 'kit-light');
-
-      mountEditor.layout({
-        width: containerRef?.current?.offsetWidth || document.body.offsetWidth,
-        height: (containerRef?.current?.offsetHeight || document.body.offsetHeight) - 24,
+      // Initialize common Monaco editor settings
+      initializeMonacoEditor({
+        editor: mountEditor,
+        monaco,
+        containerRef,
+        isDark,
+        config: config as EditorOptions,
       });
-
-      // if (typeof global?.exports === 'undefined') global.exports = {};
-      // mountEditor.focus();
-
-      if (mountEditor?.getDomNode()) {
-        ((mountEditor.getDomNode() as HTMLElement).style as any).webkitAppRegion = 'no-drag';
-      }
-
-      const lineNumber = mountEditor.getModel()?.getLineCount() || 0;
-
-      if ((config as EditorOptions).scrollTo === 'bottom') {
-        const lineContent = mountEditor?.getModel()?.getLineContent(lineNumber) ?? '';
-        const column = lineContent.length + 1;
-
-        const position = { lineNumber, column };
-        // console.log({ position });
-        mountEditor.setPosition(position);
-
-        mountEditor.revealPosition(position);
-      }
-
-      if ((config as EditorOptions).scrollTo === 'center') {
-        mountEditor.revealLineInCenter(Math.floor(lineNumber / 2));
-      }
 
       ipcRenderer.send(WindowChannel.MOUNTED);
     },
