@@ -489,6 +489,7 @@ jobs:
           ELECTRON_BUILD_ARCH: x64
           ELECTRON_BUILD_PLATFORM: darwin
           DEBUG: electron-notarize
+          NODE_OPTIONS: --max-old-space-size=8192
 
         # Wait 10 minutes to start to avoid signing overlap issues
         run: |
@@ -514,6 +515,7 @@ jobs:
           ELECTRON_BUILD_ARCH: arm64
           ELECTRON_BUILD_PLATFORM: darwin
           DEBUG: electron-notarize
+          NODE_OPTIONS: --max-old-space-size=8192
         run: |
           pnpm vite-prebuild
           pnpm exec kit ./build.ts mac ${{ matrix.arch }} always
