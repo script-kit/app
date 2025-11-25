@@ -39,8 +39,13 @@ export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reaso
   }
 
   const reasonUpper = (reason || '').toUpperCase();
+  // Consider these reasons as "prompt change" events that should trigger recentering
+  // when window is at work area origin (from moveToMouseScreen):
+  // - PROMPT* (PROMPT_CHANGED, etc.)
+  // - INIT* (initBounds, etc.)
+  // - CONTROLLER* (CONTROLLER_TRIGGER from renderer resize)
   const isPromptChangeReason =
-    reasonUpper.includes('PROMPT') || reasonUpper.includes('INIT');
+    reasonUpper.includes('PROMPT') || reasonUpper.includes('INIT') || reasonUpper.includes('CONTROLLER');
 
   const noChange =
     !isPromptChangeReason &&
