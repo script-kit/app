@@ -285,6 +285,8 @@ export const runPromptProcess = async (
     // apply cached (wrong) bounds before setPromptData decides whether to defer.
     // setPromptData will either keep the lock (shouldDeferShow) or clear it.
     (prompt as any).boundsLockedForResize = true;
+    // Clear any cached main menu content to prevent flash when shortcut triggers non-main script
+    prompt.clearCachedMainContent();
     prompt.attemptPreload(promptScriptPath);
     prompt.moveToMouseScreen();
   }

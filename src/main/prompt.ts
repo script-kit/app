@@ -1877,6 +1877,18 @@ export class KitPrompt {
 
   initPrompt = () => { initPromptImpl(this); };
 
+  /**
+   * Clears the cached main menu content from the renderer.
+   * Called when a non-main script is triggered to prevent flash of main menu content.
+   */
+  clearCachedMainContent = () => {
+    this.logInfo(`${this.pid}: 🧹 Clearing cached main menu content`);
+    if (this.window && !this.window.isDestroyed()) {
+      this.sendToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, []);
+      this.sendToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, '');
+    }
+  };
+
   preloadPromptData = (promptData: PromptData) => {
     let input = '';
     if (this.kitSearch.keyword) {
