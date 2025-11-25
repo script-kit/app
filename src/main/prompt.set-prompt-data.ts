@@ -3,10 +3,11 @@ import type { PromptData } from '@johnlindquist/kit/types/core';
 import { debounce } from 'lodash-es';
 import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
 import { AppChannel } from '../shared/enums';
-import { kitState, preloadPromptDataMap } from './state';
+import { kitState, preloadPromptDataMap, promptState } from './state';
 import { setFlags } from './search';
 import { createPty } from './pty';
 import { applyPromptDataBounds } from './prompt.bounds-utils';
+import { getCurrentScreen } from './screen';
 
 export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Promise<void> => {
   prompt.promptData = promptData;
@@ -147,11 +148,30 @@ export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Pr
       Math.abs(currentBounds.height - targetHeight) > 20
     );
 
-    const shouldDeferShow = hasExplicitDimensions && significantSizeDifference;
+    // Check if this script has cached bounds from a previous run
+    // If not, the first resize will establish the correct size
+    const currentScreen = getCurrentScreen();
+    const screenId = String(currentScreen.id);
+    const scriptPath = promptData?.scriptPath;
+    const hasCachedBounds = Boolean(
+      scriptPath &&
+      !isMainScript &&
+      promptState?.screens?.[screenId]?.[scriptPath]
+    );
+
+    // Defer showing when:
+    // 1. Explicit dimensions that differ significantly from current bounds, OR
+    // 2. First run of a non-main script (no cached bounds) - need resize to calculate height
+    const shouldDeferForExplicitDimensions = hasExplicitDimensions && significantSizeDifference;
+    const shouldDeferForFirstRun = !hasCachedBounds && !isMainScript && promptData?.ui === UI.arg;
+    const shouldDeferShow = shouldDeferForExplicitDimensions || shouldDeferForFirstRun;
 
     prompt.logInfo(`${prompt.id}: shouldDeferShow=${shouldDeferShow}`, {
       hasExplicitDimensions,
       significantSizeDifference,
+      hasCachedBounds,
+      shouldDeferForExplicitDimensions,
+      shouldDeferForFirstRun,
       currentBounds: currentBounds ? { w: currentBounds.width, h: currentBounds.height } : null,
       target: { w: targetWidth, h: targetHeight },
     });
