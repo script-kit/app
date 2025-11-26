@@ -75,6 +75,7 @@ import {
   clearPreview,
   getAppearance,
   parseTheme,
+  processManager,
   processes,
   setTheme,
   spawnShebang,

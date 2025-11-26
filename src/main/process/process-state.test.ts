@@ -327,5 +327,123 @@ describe('ProcessStateMachine', () => {
       expect(debug.state).toBe(ProcessState.WindowOperationPending);
       expect(debug.pendingWindowOps).toHaveLength(1);
     });
+
+    it('includes observability metrics', () => {
+      stateMachine.transition({ type: 'SPAWN' });
+      stateMachine.transition({ type: 'READY' });
+
+      const debug = stateMachine.getDebugInfo();
+
+      // Should have timing info
+      expect(debug.createdAt).toBeDefined();
+      expect(debug.totalAge).toBeGreaterThanOrEqual(0);
+      expect(debug.timeInCurrentState).toBeGreaterThanOrEqual(0);
+
+      // Should have transition tracking
+      expect(debug.transitionCount).toBe(2);
+      expect(debug.transitionCounts).toBeDefined();
+      expect(debug.recentTransitions).toBeDefined();
+      expect((debug.recentTransitions as any[]).length).toBe(2);
+    });
+
+    it('tracks transition counts by type', () => {
+      stateMachine.transition({ type: 'SPAWN' });
+      stateMachine.transition({ type: 'READY' });
+      stateMachine.transition({ type: 'WINDOW_OP_START', windowId: 1, operation: 'show' });
+      stateMachine.transition({ type: 'WINDOW_OP_END', windowId: 1 });
+
+      const debug = stateMachine.getDebugInfo();
+      const counts = debug.transitionCounts as Record<string, number>;
+
+      // Should have tracked each successful transition
+      expect(counts['idle->spawning:SPAWN']).toBe(1);
+      expect(counts['spawning->running:READY']).toBe(1);
+      expect(counts['running->window_op_pending:WINDOW_OP_START']).toBe(1);
+      expect(counts['window_op_pending->running:WINDOW_OP_END']).toBe(1);
+    });
+  });
+
+  describe('observability', () => {
+    it('getTimeInCurrentState returns elapsed time in state', async () => {
+      vi.useFakeTimers();
+
+      stateMachine.transition({ type: 'SPAWN' });
+
+      vi.advanceTimersByTime(1000);
+
+      expect(stateMachine.getTimeInCurrentState()).toBe(1000);
+
+      stateMachine.transition({ type: 'READY' });
+      vi.advanceTimersByTime(500);
+
+      expect(stateMachine.getTimeInCurrentState()).toBe(500);
+
+      vi.useRealTimers();
+    });
+
+    it('getTotalAge returns time since creation', async () => {
+      vi.useFakeTimers();
+
+      const initialAge = stateMachine.getTotalAge();
+      expect(initialAge).toBe(0);
+
+      vi.advanceTimersByTime(2000);
+      stateMachine.transition({ type: 'SPAWN' });
+
+      vi.advanceTimersByTime(1000);
+      stateMachine.transition({ type: 'READY' });
+
+      expect(stateMachine.getTotalAge()).toBe(3000);
+
+      vi.useRealTimers();
+    });
+
+    it('getTransitionHistory returns list of transitions', () => {
+      stateMachine.transition({ type: 'SPAWN' });
+      stateMachine.transition({ type: 'READY' });
+      stateMachine.transition({ type: 'STOP', reason: 'test' });
+
+      const history = stateMachine.getTransitionHistory();
+
+      expect(history).toHaveLength(3);
+      expect(history[0].event).toBe('SPAWN');
+      expect(history[1].event).toBe('READY');
+      expect(history[2].event).toBe('STOP');
+    });
+
+    it('limits transition history to MAX_HISTORY_SIZE', () => {
+      // Transition many times to exceed limit
+      for (let i = 0; i < 60; i++) {
+        // Create a new state machine for each loop to avoid state constraints
+        if (i === 0) {
+          stateMachine.transition({ type: 'SPAWN' });
+          stateMachine.transition({ type: 'READY' });
+        }
+        // Bounce between Running and WindowOperationPending
+        stateMachine.transition({ type: 'WINDOW_OP_START', windowId: i, operation: 'test' });
+        stateMachine.transition({ type: 'WINDOW_OP_END', windowId: i });
+      }
+
+      const history = stateMachine.getTransitionHistory();
+
+      // Should be capped at MAX_HISTORY_SIZE (50)
+      expect(history.length).toBeLessThanOrEqual(50);
+    });
+
+    it('records duration of previous state in transitions', async () => {
+      vi.useFakeTimers();
+
+      stateMachine.transition({ type: 'SPAWN' });
+      vi.advanceTimersByTime(100);
+
+      stateMachine.transition({ type: 'READY' });
+
+      const history = stateMachine.getTransitionHistory();
+
+      // Second transition should record time spent in Spawning state
+      expect(history[1].duration).toBe(100);
+
+      vi.useRealTimers();
+    });
   });
 });

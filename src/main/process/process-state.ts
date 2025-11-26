@@ -60,6 +60,18 @@ export type StateChangeCallback = (
 ) => void;
 
 /**
+ * State transition history entry for observability
+ */
+interface TransitionHistoryEntry {
+  timestamp: number;
+  from: ProcessState;
+  to: ProcessState;
+  event: string;
+  duration: number; // Time spent in previous state (ms)
+  success: boolean;
+}
+
+/**
  * State machine for managing process lifecycle
  */
 export class ProcessStateMachine {
@@ -70,7 +82,18 @@ export class ProcessStateMachine {
   private exitCode: number | null = null;
   private stopReason: string | null = null;
 
-  constructor(private readonly pid: number) {}
+  // Observability fields
+  private readonly createdAt: number;
+  private stateEnteredAt: number;
+  private transitionHistory: TransitionHistoryEntry[] = [];
+  private transitionCounts = new Map<string, number>();
+  private static readonly MAX_HISTORY_SIZE = 50;
+
+  constructor(private readonly pid: number) {
+    this.createdAt = Date.now();
+    this.stateEnteredAt = this.createdAt;
+    log.verbose(`[${this.pid}] ProcessStateMachine created`);
+  }
 
   /**
    * Get current state
@@ -186,18 +209,27 @@ export class ProcessStateMachine {
           }
         } else if (event.type === 'FORCE_STOP') {
           // Force stop bypasses window operation protection
-          log.warn(`${this.pid}: Force stopping with ${this.pendingWindowOps.size} pending window ops`);
+          log.warn(
+            `[${this.pid}] Force stopping with ${this.pendingWindowOps.size} pending window ops: ` +
+              `[${Array.from(this.pendingWindowOps.entries()).map(([id, op]) => `${id}:${op}`).join(', ')}]`,
+          );
           this.stopReason = event.reason;
           this.pendingWindowOps.clear();
           this.state = ProcessState.Stopping;
         } else if (event.type === 'STOP') {
           // Regular stop blocked during window operations
           success = false;
-          reason = `Cannot stop process ${this.pid} - ${this.pendingWindowOps.size} window operation(s) pending`;
-          log.warn(reason);
+          reason = `Cannot stop - ${this.pendingWindowOps.size} window operation(s) pending`;
+          log.warn(
+            `[${this.pid}] ${reason}: ` +
+              `[${Array.from(this.pendingWindowOps.entries()).map(([id, op]) => `${id}:${op}`).join(', ')}]`,
+          );
         } else if (event.type === 'EXIT') {
           // Process exited unexpectedly during window op
-          log.warn(`${this.pid}: Process exited during window operations`);
+          log.warn(
+            `[${this.pid}] Unexpected exit during window operations (code: ${event.code}), ` +
+              `clearing ${this.pendingWindowOps.size} pending ops`,
+          );
           this.exitCode = event.code;
           this.pendingWindowOps.clear();
           this.state = ProcessState.Stopped;
@@ -233,18 +265,57 @@ export class ProcessStateMachine {
         break;
     }
 
+    // Track timing
+    const now = Date.now();
+    const stateDuration = now - this.stateEnteredAt;
+
+    // Record transition in history
+    const transitionKey = `${previousState}->${this.state}:${event.type}`;
+    const historyEntry: TransitionHistoryEntry = {
+      timestamp: now,
+      from: previousState,
+      to: this.state,
+      event: event.type,
+      duration: stateDuration,
+      success,
+    };
+    this.transitionHistory.push(historyEntry);
+
+    // Trim history if too large
+    if (this.transitionHistory.length > ProcessStateMachine.MAX_HISTORY_SIZE) {
+      this.transitionHistory.shift();
+    }
+
+    // Update transition counts
+    this.transitionCounts.set(transitionKey, (this.transitionCounts.get(transitionKey) || 0) + 1);
+
     // Notify callbacks on successful state change
     if (success && previousState !== this.state) {
-      log.info(`${this.pid}: State transition: ${previousState} -> ${this.state} (${event.type})`);
+      this.stateEnteredAt = now;
+      const totalAge = now - this.createdAt;
+
+      log.info(
+        `[${this.pid}] ${previousState} → ${this.state} (${event.type}) ` +
+          `[duration: ${stateDuration}ms, total_age: ${totalAge}ms]`,
+      );
+
+      // Log additional context for important transitions
+      if (this.state === ProcessState.Error && this.lastError) {
+        log.error(`[${this.pid}] Error details: ${this.lastError.message}`);
+      }
+      if (this.state === ProcessState.Stopped && this.exitCode !== 0) {
+        log.warn(`[${this.pid}] Non-zero exit code: ${this.exitCode}`);
+      }
+
       for (const callback of this.stateChangeCallbacks) {
         try {
           callback(previousState, this.state, event);
         } catch (error) {
-          log.error(`Error in state change callback:`, error);
+          log.error(`[${this.pid}] Error in state change callback:`, error);
         }
       }
     } else if (!success) {
-      log.verbose(`${this.pid}: Transition rejected: ${reason}`);
+      log.verbose(`[${this.pid}] Transition rejected: ${event.type} from ${previousState} - ${reason}`);
     }
 
     return {
@@ -298,9 +369,38 @@ export class ProcessStateMachine {
   }
 
   /**
+   * Get time spent in current state (ms)
+   */
+  getTimeInCurrentState(): number {
+    return Date.now() - this.stateEnteredAt;
+  }
+
+  /**
+   * Get total age of state machine (ms)
+   */
+  getTotalAge(): number {
+    return Date.now() - this.createdAt;
+  }
+
+  /**
+   * Get transition history
+   */
+  getTransitionHistory(): TransitionHistoryEntry[] {
+    return [...this.transitionHistory];
+  }
+
+  /**
+   * Get transition counts for analytics
+   */
+  getTransitionCounts(): Map<string, number> {
+    return new Map(this.transitionCounts);
+  }
+
+  /**
    * Get debug info
    */
   getDebugInfo(): Record<string, unknown> {
+    const now = Date.now();
     return {
       pid: this.pid,
       state: this.state,
@@ -308,6 +408,20 @@ export class ProcessStateMachine {
       lastError: this.lastError?.message,
       exitCode: this.exitCode,
       stopReason: this.stopReason,
+      // Observability metrics
+      createdAt: this.createdAt,
+      totalAge: now - this.createdAt,
+      timeInCurrentState: now - this.stateEnteredAt,
+      transitionCount: this.transitionHistory.length,
+      transitionCounts: Object.fromEntries(this.transitionCounts),
+      recentTransitions: this.transitionHistory.slice(-10).map((t) => ({
+        from: t.from,
+        to: t.to,
+        event: t.event,
+        duration: t.duration,
+        success: t.success,
+        ago: now - t.timestamp,
+      })),
     };
   }
 }

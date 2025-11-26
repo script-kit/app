@@ -3,6 +3,13 @@
  *
  * Single entry point for process lifecycle management, coordinating
  * the idle pool, IPC routing, heartbeats, state machines, and cleanup.
+ *
+ * This class provides two modes of operation:
+ * 1. Standalone mode: Creates processes directly using fork()
+ * 2. Legacy integration mode: Wraps the existing processes singleton
+ *
+ * During migration, legacy integration mode is used to maintain
+ * backward compatibility with existing code.
  */
 
 import type { ChildProcess } from 'node:child_process';
@@ -23,6 +30,21 @@ import { type IdleProcessPool, idleProcessPool } from './idle-pool';
 import { type IPCMessageRouter, ipcRouter } from './ipc-router';
 import { ProcessState, ProcessStateMachine } from './process-state';
 import type { ProcessAndPromptInfo, ProcessHandle, ProcessMetrics, SpawnOptions } from './types';
+
+/**
+ * Legacy integration type for backward compatibility
+ * This represents the existing Processes class interface
+ */
+interface LegacyProcesses {
+  add: (type: ProcessType, scriptPath?: string, args?: string[], port?: number) => any;
+  removeByPid: (pid: number, reason?: string) => void;
+  getByPid: (pid: number) => any;
+  getAllProcessInfo: () => any[];
+  getActiveProcesses: () => any[];
+  findIdlePromptProcess: () => any;
+  startHeartbeat: () => void;
+  stopHeartbeat: () => void;
+}
 
 /**
  * Managed process entry
@@ -47,12 +69,15 @@ export interface ProcessManagerConfig {
   heartbeatEnabled: boolean;
   /** Idle pool configuration */
   idlePoolSize: number;
+  /** Use legacy processes singleton for backward compatibility */
+  useLegacyProcesses: boolean;
 }
 
 const DEFAULT_CONFIG: ProcessManagerConfig = {
   shutdownTimeout: 5000,
   heartbeatEnabled: true,
   idlePoolSize: 2,
+  useLegacyProcesses: true, // Default to legacy mode during migration
 };
 
 export class ProcessManager {
@@ -64,6 +89,9 @@ export class ProcessManager {
   private pool: IdleProcessPool;
   private heartbeats: HeartbeatManager;
   private router: IPCMessageRouter;
+
+  // Legacy integration (set during initialization)
+  private legacyProcesses: LegacyProcesses | null = null;
 
   constructor(
     config: Partial<ProcessManagerConfig> = {},
@@ -81,6 +109,22 @@ export class ProcessManager {
     this.pool = services?.pool ?? idleProcessPool;
     this.heartbeats = services?.heartbeats ?? heartbeatManager;
     this.router = services?.router ?? ipcRouter;
+  }
+
+  /**
+   * Set the legacy processes singleton for backward compatibility
+   * Call this during app initialization with the processes singleton
+   */
+  setLegacyProcesses(processes: LegacyProcesses): void {
+    this.legacyProcesses = processes;
+    log.info('ProcessManager: Legacy processes integration enabled');
+  }
+
+  /**
+   * Check if legacy mode is active
+   */
+  isLegacyMode(): boolean {
+    return this.config.useLegacyProcesses && this.legacyProcesses !== null;
   }
 
   /**
@@ -102,8 +146,84 @@ export class ProcessManager {
 
   /**
    * Spawn a new process
+   *
+   * In legacy mode, delegates to the existing processes.add() method.
+   * In standalone mode, creates processes directly with full state machine support.
    */
   spawn(type: ProcessType, options: SpawnOptions = {}): ProcessHandle {
+    const { scriptPath = '', args = [], port = 0, cwd } = options;
+
+    // Legacy mode: delegate to existing processes singleton
+    if (this.isLegacyMode()) {
+      return this.spawnLegacy(type, scriptPath, args, port);
+    }
+
+    // Standalone mode: full ProcessManager control
+    return this.spawnStandalone(type, options);
+  }
+
+  /**
+   * Spawn using legacy processes singleton (backward compatibility)
+   */
+  private spawnLegacy(type: ProcessType, scriptPath: string, args: string[], port: number): ProcessHandle {
+    if (!this.legacyProcesses) {
+      throw new Error('Legacy processes not initialized');
+    }
+
+    const processInfo = this.legacyProcesses.add(type, scriptPath, args, port);
+    const pid = processInfo.pid;
+    const child = processInfo.child;
+
+    log.info(`ProcessManager: Spawned process ${pid} via legacy mode (${type}, script: ${scriptPath || 'idle'})`);
+
+    // Create a state machine to track this process (for observability)
+    const state = new ProcessStateMachine(pid);
+    state.transition({ type: 'SPAWN' });
+
+    // Store reference for tracking
+    const managed: ManagedProcess = {
+      pid,
+      child,
+      state,
+      type,
+      scriptPath,
+      startTime: Date.now(),
+      promptInfo: processInfo,
+    };
+    this.processes.set(pid, managed);
+
+    // Return handle that delegates to legacy methods
+    return {
+      pid,
+      child,
+      terminate: (reason?: string) => {
+        this.legacyProcesses?.removeByPid(pid, reason || 'ProcessManager.terminate');
+        this.processes.delete(pid);
+        return Promise.resolve(true);
+      },
+      send: (data: unknown) => {
+        if (child?.connected && !child.killed) {
+          try {
+            child.send(data, (err) => {
+              if (err) {
+                log.warn(`ProcessManager: Send error for ${pid}: ${err.message}`);
+              }
+            });
+            return true;
+          } catch (error) {
+            log.error(`ProcessManager: Failed to send to ${pid}:`, error);
+            return false;
+          }
+        }
+        return false;
+      },
+    };
+  }
+
+  /**
+   * Spawn using standalone mode (full ProcessManager control)
+   */
+  private spawnStandalone(type: ProcessType, options: SpawnOptions): ProcessHandle {
     const { scriptPath = '', args = [], port = 0, cwd } = options;
 
     // Resolve script path if provided
@@ -492,6 +612,84 @@ export class ProcessManager {
   }
 
   /**
+   * Find an idle prompt process (legacy mode)
+   * Returns a process handle for an idle process
+   */
+  findIdleProcess(): ProcessHandle | null {
+    if (this.isLegacyMode() && this.legacyProcesses) {
+      const processInfo = this.legacyProcesses.findIdlePromptProcess();
+      if (processInfo) {
+        return {
+          pid: processInfo.pid,
+          child: processInfo.child,
+          terminate: (reason?: string) => {
+            this.legacyProcesses?.removeByPid(processInfo.pid, reason || 'findIdleProcess.terminate');
+            return Promise.resolve(true);
+          },
+          send: (data: unknown) => {
+            if (processInfo.child?.connected && !processInfo.child.killed) {
+              try {
+                processInfo.child.send(data);
+                return true;
+              } catch {
+                return false;
+              }
+            }
+            return false;
+          },
+        };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Get all process info (legacy mode - for backward compatibility)
+   */
+  getAllProcessInfo(): { type: ProcessType; scriptPath: string; pid: number }[] {
+    if (this.isLegacyMode() && this.legacyProcesses) {
+      return this.legacyProcesses.getAllProcessInfo();
+    }
+    return this.getAll().map((p) => ({
+      type: p.type,
+      scriptPath: p.scriptPath,
+      pid: p.pid,
+    }));
+  }
+
+  /**
+   * Get active processes (legacy mode - for backward compatibility)
+   */
+  getActiveProcessInfo(): any[] {
+    if (this.isLegacyMode() && this.legacyProcesses) {
+      return this.legacyProcesses.getActiveProcesses();
+    }
+    return this.getActive();
+  }
+
+  /**
+   * Get process by PID (legacy mode - for backward compatibility)
+   */
+  getProcessByPid(pid: number): any {
+    if (this.isLegacyMode() && this.legacyProcesses) {
+      return this.legacyProcesses.getByPid(pid);
+    }
+    return this.get(pid);
+  }
+
+  /**
+   * Remove process by PID (legacy mode - for backward compatibility)
+   */
+  removeByPid(pid: number, reason = 'ProcessManager.removeByPid'): void {
+    if (this.isLegacyMode() && this.legacyProcesses) {
+      this.legacyProcesses.removeByPid(pid, reason);
+    } else {
+      this.terminate(pid, reason);
+    }
+    this.processes.delete(pid);
+  }
+
+  /**
    * Get debug info
    */
   getDebugInfo(): Record<string, unknown> {
@@ -512,6 +710,8 @@ export class ProcessManager {
 
     return {
       config: this.config,
+      mode: this.isLegacyMode() ? 'legacy' : 'standalone',
+      legacyProcessesSet: this.legacyProcesses !== null,
       processCount: this.processes.size,
       processes,
       pool: this.pool.getDebugInfo(),

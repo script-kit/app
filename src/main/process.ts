@@ -53,6 +53,7 @@ import { container } from './state/services/container';
 // New architecture services
 import { disposableRegistry } from './process/disposable-registry';
 import { heartbeatManager } from './process/heartbeat-manager';
+import { processManager } from './process/process-manager';
 import { processScanner } from './process-scanner';
 
 export type ProcessAndPrompt = ProcessInfo & {
@@ -1001,6 +1002,15 @@ class Processes extends Array<ProcessAndPrompt> {
 
 export const processes = new Processes();
 processes.startHeartbeat();
+
+// Initialize ProcessManager with legacy processes integration
+processManager.setLegacyProcesses(processes);
+processManager.initialize().catch((err) => {
+  processLog.error('ProcessManager initialization failed:', err);
+});
+
+// Re-export processManager for convenient access
+export { processManager } from './process/process-manager';
 
 // Add periodic cleanup to prevent prompt accumulation
 setInterval(() => {
