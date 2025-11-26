@@ -7,6 +7,9 @@ import { createLogger } from './log-utils';
 
 const log = createLogger('watcher-manager.ts');
 
+// Debounce delay in ms - prevents rapid-fire events from overwhelming the callback
+const DEBOUNCE_DELAY_MS = 100;
+
 type WatcherCallback = (eventName: WatchEvent, filePath: string, source?: WatchSource) => Promise<void>;
 
 interface WatcherInfo {
@@ -23,41 +26,38 @@ export class WatcherManager {
   readonly watchers = new Map<string, WatcherInfo>();
   private options: WatchOptions;
   private callback: WatcherCallback;
+  // Debounce timers per file path to coalesce rapid events
+  private debounceTimers = new Map<string, NodeJS.Timeout>();
 
   constructor(callback: WatcherCallback, options: WatchOptions = { ignoreInitial: true }) {
     this.callback = callback;
     this.options = options;
   }
 
+  /**
+   * Debounce callback for a specific file path.
+   * Coalesces rapid events (e.g., multiple saves) into a single callback.
+   */
+  private debouncedCallback(eventName: WatchEvent, filePath: string): void {
+    // Clear existing timer for this path
+    const existingTimer = this.debounceTimers.get(filePath);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    // Set new timer
+    const timer = setTimeout(() => {
+      this.debounceTimers.delete(filePath);
+      this.callback(eventName, filePath).catch((err) => {
+        log.error(`Error in watcher callback for ${filePath}: ${err}`);
+      });
+    }, DEBOUNCE_DELAY_MS);
+
+    this.debounceTimers.set(filePath, timer);
+  }
+
   private normalizePath(p: string): string {
     return path.normalize(p);
-  }
-
-  private isPathWithinRoot(filePath: string, rootPath: string): boolean {
-    const normalizedFile = this.normalizePath(filePath);
-    const normalizedRoot = this.normalizePath(rootPath);
-    return normalizedFile === normalizedRoot || normalizedFile.startsWith(normalizedRoot + path.sep);
-  }
-
-  private isPathWithinAnyRoot(filePath: string): boolean {
-    for (const { rootPaths } of this.watchers.values()) {
-      for (const rootPath of rootPaths) {
-        if (this.isPathWithinRoot(filePath, rootPath)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  private isPathExplicitlyWatched(filePath: string): boolean {
-    const normalizedPath = this.normalizePath(filePath);
-    for (const { paths } of this.watchers.values()) {
-      if (paths.has(normalizedPath)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   addWatcher(key: string, watcher: FSWatcher, paths: string | string[], options: ChokidarWatchOptions = {}) {
@@ -167,7 +167,17 @@ export class WatcherManager {
       ...options,
     });
 
-    // Set up event handlers
+    // Error handler - prevents uncaught exceptions and enables recovery
+    watcher.on('error', (error: Error) => {
+      log.error(`Watcher error for key "${key}": ${error.message}`);
+      // Attempt to restart the watcher after a brief delay
+      setTimeout(() => {
+        log.info(`Attempting to restart watcher "${key}" after error`);
+        this.restartWatcher(key);
+      }, 1000);
+    });
+
+    // Set up event handlers with debouncing
     watcher.on('all', (eventName: EventName, filePath: string, _stats?: Stats) => {
       const normalizedPath = this.normalizePath(filePath);
 
@@ -188,10 +198,8 @@ export class WatcherManager {
         return;
       }
 
-      // Cast eventName to WatchEvent since we know it's compatible
-      this.callback(eventName as WatchEvent, filePath).catch((err) => {
-        log.error(`Error in watcher callback: ${err}`);
-      });
+      // Use debounced callback to coalesce rapid events
+      this.debouncedCallback(eventName as WatchEvent, filePath);
     });
 
     this.addWatcher(key, watcher, paths, options);
@@ -199,6 +207,12 @@ export class WatcherManager {
   }
 
   async closeAll() {
+    // Clear all pending debounce timers to prevent callbacks after shutdown
+    for (const timer of this.debounceTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.debounceTimers.clear();
+
     const closePromises = Array.from(this.watchers.values()).map(({ watcher }) => watcher.close());
     await Promise.all(closePromises);
     this.watchers.clear();

@@ -2,9 +2,8 @@ import { readdirSync, statSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { FSWatcher } from 'chokidar';
-
-import { kenvChokidarPath, kitChokidarPath, slash } from './path-utils';
 import { chokidarLog as log } from './logs';
+import { kenvChokidarPath, kitChokidarPath, slash } from './path-utils';
 import { WatcherManager } from './watcher-manager';
 
 // Types
@@ -109,14 +108,57 @@ function createSubKenvWatchers(
 
 // Export the manager instance for health monitoring
 let globalManager: WatcherManager | null = null;
+let shutdownHandlersRegistered = false;
 
 export const getWatcherManager = (): WatcherManager | null => globalManager;
+
+/**
+ * Gracefully close all watchers. Called on process termination signals.
+ */
+export const stopWatching = async (): Promise<void> => {
+  if (globalManager) {
+    log.info('🛑 Stopping all watchers...');
+    await globalManager.closeAll();
+    globalManager = null;
+    log.info('✅ All watchers stopped');
+  }
+};
+
+/**
+ * Register process signal handlers for graceful shutdown.
+ * Only registers once to prevent duplicate handlers.
+ */
+const registerShutdownHandlers = (): void => {
+  if (shutdownHandlersRegistered) {
+    return;
+  }
+  shutdownHandlersRegistered = true;
+
+  const handleShutdown = async (signal: string) => {
+    log.info(`Received ${signal}, initiating graceful shutdown...`);
+    await stopWatching();
+  };
+
+  process.on('SIGINT', () => handleShutdown('SIGINT'));
+  process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+
+  // Handle uncaught exceptions - clean up watchers before crash
+  process.on('uncaughtException', async (error) => {
+    log.error(`Uncaught exception: ${error.message}`);
+    await stopWatching();
+  });
+
+  log.info('📋 Shutdown handlers registered');
+};
 
 export const startWatching = (
   callback: WatcherCallback,
   options: WatchOptions = { ignoreInitial: true },
 ): FSWatcher[] => {
   log.info(`🚀 Starting watchers (specific) with ignoreInitial=${options.ignoreInitial ?? false}`);
+
+  // Register shutdown handlers for graceful cleanup
+  registerShutdownHandlers();
 
   const manager = new WatcherManager(callback, options);
   globalManager = manager;
