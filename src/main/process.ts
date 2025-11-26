@@ -50,6 +50,11 @@ import { processLog as log } from './logs';
 import { notification } from './state/services/notification';
 import { container } from './state/services/container';
 
+// New architecture services
+import { disposableRegistry } from './process/disposable-registry';
+import { heartbeatManager } from './process/heartbeat-manager';
+import { processScanner } from './process-scanner';
+
 export type ProcessAndPrompt = ProcessInfo & {
   prompt: KitPrompt;
   promptId?: string;
@@ -629,6 +634,10 @@ class Processes extends Array<ProcessAndPrompt> {
   private heartbeatInterval: NodeJS.Timeout | null = null;
 
   public startHeartbeat() {
+    // Delegate to heartbeatManager for centralized heartbeat management
+    heartbeatManager.start();
+
+    // Also keep legacy interval for backward compatibility during transition
     if (this.heartbeatInterval) {
       return;
     }
@@ -640,6 +649,9 @@ class Processes extends Array<ProcessAndPrompt> {
   }
 
   public stopHeartbeat() {
+    // Delegate to heartbeatManager
+    heartbeatManager.pause();
+
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = null;
@@ -693,6 +705,17 @@ class Processes extends Array<ProcessAndPrompt> {
       launchedFromMain: false,
       preventChannels: new Set<Channel>(HANDLER_CHANNELS),
     } as ProcessAndPrompt;
+
+    // Register with process scanner for tracking
+    processScanner.register(child.pid, {
+      scriptPath,
+      startTime: Date.now(),
+    });
+
+    // Register with heartbeat manager for health monitoring
+    if (type === ProcessType.Prompt) {
+      heartbeatManager.register(child.pid, child, () => prompt?.isVisible() ?? false);
+    }
 
     // prompt.window.on('closed', () => {
     //   info.prompt = null;
@@ -944,6 +967,12 @@ class Processes extends Array<ProcessAndPrompt> {
 
       processesChanged();
     }
+
+    // Unregister from new architecture services
+    heartbeatManager.unregister(pid);
+    processScanner.unregister(pid);
+    processScanner.clearCache();
+    disposableRegistry.disposeScope(`process:${pid}`);
 
     // Ensure coordinator state is cleaned up
     processWindowCoordinator.forceCleanupProcess(pid);

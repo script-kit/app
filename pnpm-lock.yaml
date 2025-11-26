@@ -167,6 +167,12 @@ importers:
       package-up:
         specifier: ^5.0.0
         version: 5.0.0
+      pidtree:
+        specifier: ^0.6.0
+        version: 0.6.0
+      pidusage:
+        specifier: ^4.0.1
+        version: 4.0.1
       pnpm:
         specifier: 10.23.0
         version: 10.23.0
@@ -288,6 +294,9 @@ importers:
       '@types/node-schedule':
         specifier: ^2.1.8
         version: 2.1.8
+      '@types/pidusage':
+        specifier: ^2.0.5
+        version: 2.0.5
       '@types/react':
         specifier: ^19.2.7
         version: 19.2.7
@@ -2121,6 +2130,9 @@ packages:
 
   '@types/node@24.10.1':
     resolution: {integrity: sha512-GNWcUTRBgIRJD5zj+Tq0fKOJ5XZajIiBroOF0yvj2bSU1WvNdYS/dn9UxwsujGW4JX06dnHyjV2y9rRaybH0iQ==}
+
+  '@types/pidusage@2.0.5':
+    resolution: {integrity: sha512-MIiyZI4/MK9UGUXWt0jJcCZhVw7YdhBuTOuqP/BjuLDLZ2PmmViMIQgZiWxtaMicQfAz/kMrZ5T7PKxFSkTeUA==}
 
   '@types/plist@3.0.5':
     resolution: {integrity: sha512-E6OCaRmAe4WDmWNsL/9RMqdkkzDCY1etutkflWk4c+AcjDU07Pcz1fQwTX0TQz+Pxqn9i4L1TU3UFpjnrcDgxA==}
@@ -6363,6 +6375,15 @@ packages:
     resolution: {integrity: sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q==}
     engines: {node: '>=12'}
 
+  pidtree@0.6.0:
+    resolution: {integrity: sha512-eG2dWTVw5bzqGRztnHExczNxt5VGsE6OwTeCG3fdUf9KBsZzO3R5OIIIzWR+iZA0NtZ+RDVdaoE2dK1cn6jH4g==}
+    engines: {node: '>=0.10'}
+    hasBin: true
+
+  pidusage@4.0.1:
+    resolution: {integrity: sha512-yCH2dtLHfEBnzlHUJymR/Z1nN2ePG3m392Mv8TFlTP1B0xkpMQNHAnfkY0n2tAi6ceKO6YWhxYfZ96V4vVkh/g==}
+    engines: {node: '>=18'}
+
   pify@2.3.0:
     resolution: {integrity: sha512-udgsAY+fTnvv7kI7aaxbqwWNb0AHiB0qBO89PZKPkoTmGOgdbrHDKD+0B2X4uTfJ/FT1R09r9gTsjUjNJotuog==}
     engines: {node: '>=0.10.0'}
@@ -9921,6 +9942,8 @@ snapshots:
   '@types/node@24.10.1':
     dependencies:
       undici-types: 7.16.0
+
+  '@types/pidusage@2.0.5': {}
 
   '@types/plist@3.0.5':
     dependencies:
@@ -14974,6 +14997,12 @@ snapshots:
   picomatch@2.3.1: {}
 
   picomatch@4.0.3: {}
+
+  pidtree@0.6.0: {}
+
+  pidusage@4.0.1:
+    dependencies:
+      safe-buffer: 5.2.1
 
   pify@2.3.0: {}
 
