@@ -1,8 +1,8 @@
 import DOMPurify from 'dompurify';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { getDefaultStore, useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { debounce } from 'lodash-es';
 import { useEffect, useState } from 'react';
-import { flushSync } from 'react-dom';
+import { flushSync, unstable_batchedUpdates } from 'react-dom';
 import { toast } from 'react-toastify';
 
 const { ipcRenderer } = window.electron;
@@ -105,7 +105,12 @@ import {
   zoomAtom,
 } from '../jotai';
 import { createLogger } from '../log-utils';
+import { _indexAtom, choices as choicesRawAtom } from '../state/atoms/choices';
+import { editorValueAtom } from '../state/atoms/editor';
+// Internal atoms for direct state manipulation (bypasses side effects in derived atoms)
+import { _inputAtom } from '../state/atoms/input';
 import type { ScriptState } from '../state/atoms/script-state';
+import { _tabIndex } from '../state/atoms/tabs';
 
 const log = createLogger('useMessages.ts');
 
@@ -734,6 +739,159 @@ export default () => {
       ipcRenderer.on(AppChannel.MAKE_WINDOW, handleMakeWindow);
     }
 
+    // --- State Preservation for Window Mode Toggle ---
+    const store = getDefaultStore();
+
+    // Handler for collecting renderer state before window recreation
+    const handleRequestRendererState = (_event: Electron.IpcRendererEvent, payload: { responseChannel: string }) => {
+      log.info('📦 Collecting renderer state for window mode toggle');
+
+      // Get scroll position from the list container
+      const scrollContainer = document.querySelector('[data-virtuoso-scroller="true"]') as HTMLElement | null;
+      const scrollTop = scrollContainer?.scrollTop ?? 0;
+
+      // Collect all relevant state using store.get() (synchronous, no subscriptions)
+      const state = {
+        input: store.get(_inputAtom) ?? '',
+        index: store.get(_indexAtom) ?? 0,
+        selectedChoices: store.get(selectedChoicesAtom) ?? [],
+        tabIndex: store.get(_tabIndex) ?? 0,
+        description: store.get(descriptionAtom) ?? '',
+        previewHTML: store.get(previewHTMLAtom) ?? '',
+        panelHTML: store.get(panelHTMLAtom) ?? '',
+        choices: store.get(choicesRawAtom) ?? [],
+        flags: store.get(flagsAtom) ?? {},
+        editorValue: store.get(editorValueAtom)?.text ?? '',
+        scrollTop,
+        timestamp: Date.now(),
+      };
+
+      log.info('📦 Renderer state collected', {
+        inputLength: state.input?.length,
+        index: state.index,
+        choicesCount: state.choices?.length,
+        hasFlags: Object.keys(state.flags || {}).length > 0,
+        scrollTop: state.scrollTop,
+      });
+
+      // Send back to main process on the provided response channel
+      ipcRenderer.send(payload.responseChannel, state);
+    };
+
+    // Handler for restoring renderer state after window recreation
+    const handleRestoreRendererState = (
+      _event: Electron.IpcRendererEvent,
+      snapshot: {
+        input?: string;
+        index?: number;
+        selectedChoices?: any[];
+        tabIndex?: number;
+        description?: string;
+        previewHTML?: string;
+        panelHTML?: string;
+        choices?: any[];
+        flags?: any;
+        editorValue?: string;
+        scrollTop?: number;
+        timestamp?: number;
+      },
+    ) => {
+      if (!snapshot || !snapshot.timestamp) {
+        log.info('📦 No renderer state to restore');
+        return;
+      }
+
+      log.info('📦 Restoring renderer state', {
+        inputLength: snapshot.input?.length,
+        index: snapshot.index,
+        choicesCount: snapshot.choices?.length,
+        hasFlags: Object.keys(snapshot.flags || {}).length > 0,
+        scrollTop: snapshot.scrollTop,
+      });
+
+      // Batch all updates to prevent cascading re-renders
+      unstable_batchedUpdates(() => {
+        // Restore in dependency order: base state first, then derived state
+
+        // Choices must be restored first since index depends on choices length
+        if (snapshot.choices !== undefined && snapshot.choices.length > 0) {
+          store.set(choicesRawAtom, snapshot.choices);
+        }
+
+        // Input (using internal atom to avoid IPC side effects)
+        if (snapshot.input !== undefined) {
+          store.set(_inputAtom, snapshot.input);
+        }
+
+        // Index (using internal atom to avoid skip logic side effects)
+        if (snapshot.index !== undefined) {
+          store.set(_indexAtom, snapshot.index);
+        }
+
+        // Selected choices
+        if (snapshot.selectedChoices !== undefined) {
+          store.set(selectedChoicesAtom, snapshot.selectedChoices);
+        }
+
+        // Tab index (using internal atom to avoid tab change side effects)
+        if (snapshot.tabIndex !== undefined) {
+          store.set(_tabIndex, snapshot.tabIndex);
+        }
+
+        // Description
+        if (snapshot.description !== undefined) {
+          store.set(descriptionAtom, snapshot.description);
+        }
+
+        // Flags
+        if (snapshot.flags !== undefined) {
+          store.set(flagsAtom, snapshot.flags);
+        }
+
+        // Preview HTML
+        if (snapshot.previewHTML !== undefined) {
+          store.set(previewHTMLAtom, snapshot.previewHTML);
+        }
+
+        // Panel HTML
+        if (snapshot.panelHTML !== undefined) {
+          store.set(panelHTMLAtom, snapshot.panelHTML);
+        }
+
+        // Editor value
+        if (snapshot.editorValue !== undefined && snapshot.editorValue !== '') {
+          store.set(editorValueAtom, {
+            text: snapshot.editorValue,
+            date: new Date().toISOString(),
+          });
+        }
+      });
+
+      // Restore scroll position after DOM updates
+      if (snapshot.scrollTop !== undefined && snapshot.scrollTop > 0) {
+        requestAnimationFrame(() => {
+          const scrollContainer = document.querySelector('[data-virtuoso-scroller="true"]') as HTMLElement | null;
+          if (scrollContainer) {
+            scrollContainer.scrollTop = snapshot.scrollTop!;
+            log.info('📦 Scroll position restored', { scrollTop: snapshot.scrollTop });
+          }
+        });
+      }
+
+      // Trigger resize to ensure proper layout
+      triggerResize('STATE_RESTORE');
+
+      log.info('📦 Renderer state restored successfully');
+    };
+
+    if (ipcRenderer.listenerCount(AppChannel.REQUEST_RENDERER_STATE) === 0) {
+      ipcRenderer.on(AppChannel.REQUEST_RENDERER_STATE, handleRequestRendererState);
+    }
+
+    if (ipcRenderer.listenerCount(AppChannel.RESTORE_RENDERER_STATE) === 0) {
+      ipcRenderer.on(AppChannel.RESTORE_RENDERER_STATE, handleRestoreRendererState);
+    }
+
     return () => {
       log.info(`🔑 Removing message listeners for ${pid}`);
 
@@ -764,6 +922,8 @@ export default () => {
       ipcRenderer.off(AppChannel.CLEAR_CACHE, handleClearCache);
       ipcRenderer.off(AppChannel.FORCE_RENDER, handleForceRender);
       ipcRenderer.off(AppChannel.MAKE_WINDOW, handleMakeWindow);
+      ipcRenderer.off(AppChannel.REQUEST_RENDERER_STATE, handleRequestRendererState);
+      ipcRenderer.off(AppChannel.RESTORE_RENDERER_STATE, handleRestoreRendererState);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pid]);
