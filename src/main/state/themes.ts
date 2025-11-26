@@ -12,7 +12,7 @@ export const scriptKitTheme = `
     --color-background: #0f0f0f;
     --ui-bg-opacity: 0.08;
     --ui-border-opacity: 0.1;
-    --mono-font: JetBrains Mono;
+    --mono-font: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     --sans-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     --serif-font: 'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times', 'serif';
 }
@@ -32,7 +32,7 @@ export const scriptKitLightTheme = `
     --color-background: #ffffff;
     --ui-bg-opacity: 0.15;
     --ui-border-opacity: 0.15;
-    --mono-font: JetBrains Mono;
+    --mono-font: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     --sans-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
     'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     --serif-font: 'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',

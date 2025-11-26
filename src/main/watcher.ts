@@ -857,7 +857,7 @@ export const parseEnvFile = debounce(async () => {
     // Could send a default font here if needed
   }
 
-  const defaultKitMono = 'JetBrains Mono';
+  const defaultKitMono = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
 
   if (envData?.KIT_MONO_FONT) {
     setCSSVariable('--mono-font', envData?.KIT_MONO_FONT || defaultKitMono);

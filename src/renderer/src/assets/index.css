@@ -1,10 +1,8 @@
+/* Font imports are done in index.tsx via JS for proper Vite bundling in production */
+/* DO NOT add @fontsource imports here - they won't bundle font files correctly */
+
 @import 'tailwindcss';
-@import '@fontsource/jetbrains-mono';
-@import '@fontsource/jetbrains-mono/400.css';
-@import '@fontsource/jetbrains-mono/500.css';
-@import '@fontsource/jetbrains-mono/600.css';
-@import '@fontsource/jetbrains-mono/700.css';
-@import '@fontsource/jetbrains-mono/800.css';
+
 @import 'simplebar-react/dist/simplebar.min.css';
 @import '@vscode/codicons/dist/codicon.css';
 @import '@xterm/xterm/css/xterm.css';
@@ -43,11 +41,16 @@
  * =============================================================================
  */
 
-/* Tailwind v4 @theme - Semantic color tokens */
+/* Tailwind v4 @theme - Semantic color tokens and font families */
 @theme {
   --color-text-base: var(--color-text);
   --color-ui-bg: color-mix(in srgb, var(--color-secondary) calc(var(--ui-bg-opacity) * 100%), transparent);
   --color-ui-border: color-mix(in srgb, var(--color-secondary) calc(var(--ui-border-opacity) * 100%), transparent);
+
+  /* Font family declarations for Tailwind v4 */
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-sans: var(--sans-font, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+  --font-serif: var(--serif-font, ui-serif, Georgia, Cambria, "Times New Roman", Times, serif);
 }
 
 /* Tailwind v4: bg-opacity-base sets background with dynamic opacity from theme */
@@ -65,8 +68,8 @@ html {
   --opacity: 0.5;
   --ui-bg-opacity: 0.05;
   --ui-border-opacity: 0.15;
-  /* Check useThemeDetector... */
-  --mono-font: JetBrains Mono;
+  /* Font variables - JetBrains Mono must be quoted for proper font-family */
+  --mono-font: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --sans-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
     'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   --serif-font: 'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
