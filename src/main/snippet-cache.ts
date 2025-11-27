@@ -1,52 +1,37 @@
-// snippet-cache.ts (for example)
+// snippet-cache.ts
+// Uses the unified metadata parser from the SDK for consistency
 
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { kenvPath } from '@johnlindquist/kit/core/utils';
+import { kenvPath, parseSnippetMetadata } from '@johnlindquist/kit/core/utils';
 import log from 'electron-log';
 import { globby } from 'globby';
 import { type SnippetFile, kitState } from './state';
 import { snippetMap } from './tick';
 
 /**
- * Very similar to your existing parseSnippet,
- * but returns the snippetKey, postfix, etc.
+ * Parse snippet metadata using the unified SDK parser.
+ * This ensures consistent behavior between App and SDK.
+ *
+ * @param contents - The snippet file contents
+ * @returns Parsed metadata, snippet key, postfix flag, and body
  */
 export function parseSnippet(contents: string) {
-  const lines = contents.split('\n');
-  const metadata: Record<string, string> = {};
-  let snippetStartIndex = lines.length;
+  const result = parseSnippetMetadata(contents);
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const match = line.match(/^(?:\/\/|#)\s{0,2}([\w-]+):\s*(.*)/);
-    if (match) {
-      const key = match[1].trim().toLowerCase();
-      const value = match[2].trim();
-      metadata[key] = value;
-    } else {
-      snippetStartIndex = i;
-      break;
+  // Log warnings for invalid metadata keys (helps users debug issues)
+  if (result.warnings.length > 0) {
+    for (const warning of result.warnings) {
+      const suggestion = warning.suggestion ? ` ${warning.suggestion}` : '';
+      log.warn(`[parseSnippet] Line ${warning.line}: ${warning.message}${suggestion}`);
     }
   }
 
-  // You can store the snippet body too, if needed:
-  const snippetBody = lines.slice(snippetStartIndex).join('\n');
-
-  // The actual "snippet expand" key could be under "snippet" or "expand"
-  let expandKey = metadata.snippet || metadata.expand;
-  let postfix = false;
-
-  if (expandKey?.startsWith('*')) {
-    postfix = true;
-    expandKey = expandKey.slice(1);
-  }
-
   return {
-    metadata,
-    snippetKey: expandKey || '', // might be empty if no snippet found
-    postfix,
-    snippetBody, // optional
+    metadata: result.metadata as Record<string, string>,
+    snippetKey: result.snippetKey,
+    postfix: result.postfix,
+    snippetBody: result.snippetBody,
   };
 }
 
