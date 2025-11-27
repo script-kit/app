@@ -41,23 +41,35 @@ function InnerList({ height }: { height: number }) {
   const [isScrolling, setIsScrolling] = useAtom(isFlagsScrollingAtom);
   const registerScrollRef = useSetAtom(registerScrollRefAtom);
 
-  // Register list ref with scroll service when it changes
+  // Register list ref with scroll service and flagsListAtom when it changes
+  // The scrollToItem wrapper is called directly from flagsIndexAtom setter (bypassing scrollRequestAtom)
   useEffect(() => {
-    if (listApi) {
-      // Create a wrapper object compatible with the scroll service
-      const scrollWrapper = {
-        scrollToItem: (index: number, align?: string) => {
-          listApi.scrollToRow({ index, align: (align as any) || 'auto' });
-        },
-        // Legacy method name alias
-        resetAfterIndex: () => {
-          // v2 doesn't need this - it handles sizing automatically
-        },
-      };
-      setList(scrollWrapper as any);
-      registerScrollRef({ context: 'flags-list', ref: scrollWrapper });
-    }
+    if (!listApi) return;
+
+    // Create a wrapper object that jotai.ts can call directly
+    const scrollWrapper = {
+      scrollToItem: (idx: number, align?: string) => {
+        listApi.scrollToRow({ index: idx, align: (align || 'auto') as any });
+      },
+      // Legacy method name alias
+      resetAfterIndex: () => {
+        // v2 doesn't need this - it handles sizing automatically
+      },
+    };
+    setList(scrollWrapper as any);
+    registerScrollRef({ context: 'flags-list', ref: scrollWrapper });
   }, [listApi, setList, registerScrollRef]);
+
+  // Scroll to current index whenever listApi becomes available or index changes
+  // This handles the race condition where flagsIndexAtom setter fires before the list mounts
+  useEffect(() => {
+    if (!listApi || typeof index !== 'number' || index < 0 || !choices?.length) {
+      return;
+    }
+
+    // Scroll to bring the focused item into view
+    listApi.scrollToRow({ index, align: 'auto' });
+  }, [listApi, index, choices?.length]);
 
   // When the flags list is first populated, choose a sensible initial index
   // based on any per-choice selected flag, falling back to the first item.
@@ -147,6 +159,12 @@ export default function ActionsList() {
   const closeOverlay = useSetAtom(closeActionsOverlayAtom);
   const componentRef = useRef<HTMLDivElement>(null);
 
+  // Calculate the effective list height
+  // CSS max-h-[80vh] constrains the container, so we need to cap the list height accordingly
+  // Container max = 80vh, minus input height, borders, and padding (~50px buffer)
+  const maxListHeight = Math.floor(window.innerHeight * 0.8) - inputHeight - 50;
+  const effectiveListHeight = Math.min(actionsHeight, Math.max(maxListHeight, 100));
+
   useEffect(() => {
     if (!componentRef.current) return;
 
@@ -168,10 +186,10 @@ export default function ActionsList() {
 
   const containerStyle = useMemo(
     () => ({
-      height: actionsHeight + inputHeight + 2,
+      height: effectiveListHeight + inputHeight + 2,
       minHeight: inputHeight,
     }),
-    [actionsHeight, inputHeight],
+    [effectiveListHeight, inputHeight],
   );
 
   return (
@@ -198,9 +216,9 @@ export default function ActionsList() {
       style={containerStyle}
     >
       <ActionsInput />
-      {actionsHeight > 0 && (
-        <div className="flex-1" style={{ height: actionsHeight }}>
-          <InnerList height={actionsHeight} />
+      {effectiveListHeight > 0 && (
+        <div className="flex-1" style={{ height: effectiveListHeight }}>
+          <InnerList height={effectiveListHeight} />
         </div>
       )}
     </div>

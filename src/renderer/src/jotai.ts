@@ -1085,22 +1085,13 @@ export const flagsIndexAtom = atom(
       s(flagsIndex, calcIndex);
     }
 
-    // Request scroll via unified scroll service
-    if (list) {
-      // Always scroll to keep focused item visible, matching old requiresScroll === -1 behavior
+    // Scroll directly on the list ref - bypassing scrollRequestAtom to avoid race conditions
+    // The flags overlay mounts/unmounts, so the scroll service's async dispatch often misses
+    if (list?.scrollToItem) {
       if (cs[0]?.item?.skip && calcIndex === 1) {
-        s(scrollRequestAtom, {
-          context: 'flags-list',
-          target: 0,
-          reason: 'skip-adjustment',
-        });
+        list.scrollToItem(0, 'auto');
       } else {
-        // Always scroll on navigation to keep focused item in view
-        s(scrollRequestAtom, {
-          context: 'flags-list',
-          target: calcIndex,
-          reason: 'navigation',
-        });
+        list.scrollToItem(calcIndex, 'auto');
       }
     }
 
