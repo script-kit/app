@@ -1,13 +1,19 @@
 // snippet-cache.ts
 // Uses the unified metadata parser from the SDK for consistency
 
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
+import { readFile, stat } from 'node:fs/promises';
 import { kenvPath, parseSnippetMetadata } from '@johnlindquist/kit/core/utils';
 import log from 'electron-log';
 import { globby } from 'globby';
 import { type SnippetFile, kitState } from './state';
-import { snippetMap } from './tick';
+import { snippetMap, updateSnippetPrefixIndex } from './tick';
+
+// Cache to avoid re-parsing unchanged files (matches SDK behavior)
+interface CachedSnippetFile {
+  mtimeMs: number;
+  data: SnippetFile;
+}
+const appSnippetCache = new Map<string, CachedSnippetFile>();
 
 /**
  * Parse snippet metadata using the unified SDK parser.
@@ -37,9 +43,13 @@ export function parseSnippet(contents: string) {
 
 export async function cacheSnippets() {
   try {
-    log.info('[cacheSnippets] Start scanning <kenv>/snippets');
-    const snippetDir = kenvPath('snippets');
-    const snippetFiles = await globby([path.join(snippetDir, '*')], {
+    log.info('[cacheSnippets] Start scanning snippets (recursive, matching SDK behavior)');
+
+    // Match SDK glob patterns: recursive scanning of snippets and kenvs
+    const snippetFiles = await globby([
+      kenvPath('snippets', '**', '*.txt').replaceAll('\\', '/'),
+      kenvPath('kenvs', '*', 'snippets', '**', '*.txt').replaceAll('\\', '/'),
+    ], {
       onlyFiles: true,
       absolute: true,
     });
@@ -48,28 +58,41 @@ export async function cacheSnippets() {
     const newSnippetMap = new Map<string, SnippetFile>();
 
     for await (const filePath of snippetFiles) {
-      let contents: string;
       try {
-        contents = await readFile(filePath, 'utf8');
+        // Check mtime to avoid re-parsing unchanged files (like SDK)
+        const fileStat = await stat(filePath);
+        const currentMtimeMs = fileStat.mtimeMs;
+
+        const cached = appSnippetCache.get(filePath);
+        if (cached && cached.mtimeMs === currentMtimeMs) {
+          // Use cached data
+          newSnippetMap.set(filePath, cached.data);
+          continue;
+        }
+
+        const contents = await readFile(filePath, 'utf8');
+        const { metadata, snippetKey, postfix, snippetBody } = parseSnippet(contents);
+
+        if (!snippetKey) {
+          // no "snippet:" or "expand:" found, skip
+          continue;
+        }
+
+        const snippetData: SnippetFile = {
+          filePath,
+          snippetKey,
+          postfix,
+          rawMetadata: metadata,
+          contents: snippetBody,
+        };
+
+        // Update caches
+        appSnippetCache.set(filePath, { mtimeMs: currentMtimeMs, data: snippetData });
+        newSnippetMap.set(filePath, snippetData);
       } catch (err) {
-        log.warn(`[cacheSnippets] Error reading snippet file: ${filePath}`, err);
+        log.warn(`[cacheSnippets] Error processing snippet file: ${filePath}`, err);
         continue;
       }
-
-      const { metadata, snippetKey, postfix } = parseSnippet(contents);
-
-      if (!snippetKey) {
-        // no "snippet:" or "expand:" found, skip
-        continue;
-      }
-
-      newSnippetMap.set(filePath, {
-        filePath,
-        snippetKey,
-        postfix,
-        rawMetadata: metadata,
-        contents,
-      });
     }
 
     // Assign to kitState
@@ -79,6 +102,9 @@ export async function cacheSnippets() {
     for (const { filePath, snippetKey, postfix } of newSnippetMap.values()) {
       snippetMap.set(snippetKey, { filePath, postfix, txt: true });
     }
+
+    // Rebuild prefix index after updating snippetMap (council recommendation)
+    updateSnippetPrefixIndex();
 
     log.info(`[cacheSnippets] Cached ${newSnippetMap.size} snippet files`);
   } catch (error) {

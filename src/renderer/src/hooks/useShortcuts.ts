@@ -28,70 +28,38 @@ import {
 } from '../jotai';
 import { createLogger } from '../log-utils';
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
 import { hotkeysOptions } from './shared';
+import {
+  toHotkeysFormat,
+  normalizeEventToHotkeysKey,
+  KEY_REPLACEMENT_MAP,
+  KEYWORD_TO_CHAR_MAP,
+} from '../../../shared/shortcuts';
 
 const log = createLogger('useShortcuts');
 
-// Map of characters to react-hotkeys-hook keywords
-const KEY_REPLACEMENT_MAP: Record<string, string> = {
-  '.': 'period',
-  '/': 'slash',
-  ',': 'comma',
-  // Add more character mappings here as needed
-  // '?': 'question',
-  // '!': 'exclamation',
-  // ';': 'semicolon',
-};
-
-// Reverse map for converting keywords back to characters
-const KEYWORD_TO_CHAR_MAP: Record<string, string> = Object.fromEntries(
-  Object.entries(KEY_REPLACEMENT_MAP).map(([char, keyword]) => [keyword, char]),
-);
-
+/**
+ * Convert a shortcut to react-hotkeys format.
+ * Uses the shared module's toHotkeysFormat for consistency.
+ */
 function convertShortcutToHotkeysFormat(shortcut: string): string {
-  // Replace cmd with mod first
-  const converted = shortcut.replace('cmd', 'mod');
-
-  // Replace characters with react-hotkeys-hook keywords
-  const parts = converted.split('+');
-  const lastPart = parts.pop();
-
-  // Use the replacement map to convert characters to keywords
-  const newLastPart = lastPart && KEY_REPLACEMENT_MAP[lastPart] ? KEY_REPLACEMENT_MAP[lastPart] : lastPart;
-
-  return parts.length > 0 ? `${parts.join('+')}+${newLastPart}` : newLastPart || '';
+  return toHotkeysFormat(shortcut);
 }
 
 function getKey(event: HotkeysEvent) {
   const key = event?.keys?.[0];
-  if (key === 'period') {
-    return '.';
-  }
-  if (key === 'comma') {
-    return ',';
-  }
-  if (key === 'slash') {
-    return '/';
-  }
-  // if (key === 'quote') return '"';
-
-  return key;
+  // Convert hotkeys keywords back to characters using the shared map
+  return KEYWORD_TO_CHAR_MAP[key] || key;
 }
 
+/**
+ * Normalize a keyboard event to a hotkeys-format string for matching.
+ * Uses the shared module for consistency.
+ */
 function normalizeEventToKey(domEvent: KeyboardEvent): string {
-  const parts: string[] = [];
-  // treat mod = meta on mac or ctrl on others
-  if (domEvent.metaKey || domEvent.ctrlKey) parts.push('mod');
-  if (domEvent.shiftKey) parts.push('shift');
-  if (domEvent.altKey) parts.push('alt');
-  const rawKey = (domEvent.key || '').toLowerCase();
-  // Convert punctuation characters to react-hotkeys keywords so they
-  // match keys produced by convertShortcutToHotkeysFormat (e.g. comma, period, slash)
-  const keyPart = KEY_REPLACEMENT_MAP[rawKey] ? KEY_REPLACEMENT_MAP[rawKey] : rawKey;
-  parts.push(keyPart);
-  return parts.join('+');
+  return normalizeEventToHotkeysKey(domEvent);
 }
 
 export default () => {
@@ -180,60 +148,10 @@ export default () => {
     [flagsWithShortcuts],
   );
 
-  // Fallback: capture meta/ctrl shortcut keys at the document level to ensure reliability
-  // Guard: if we have prompt or flag shortcuts registered via useHotkeys, skip the fallback
-  useEffect(() => {
-    if ((promptShortcuts?.length || 0) > 0 || flagsWithShortcuts.length > 0) {
-      return; // useHotkeys will handle all configured shortcuts
-    }
-    const flagsMap = new Map<string, string>();
-    for (const [flag, value] of flagsWithShortcuts) {
-      if (value?.shortcut) {
-        flagsMap.set(convertShortcutToHotkeysFormat(value.shortcut).toLowerCase(), flag);
-      }
-    }
-
-    const onKeyDown = (ev: KeyboardEvent) => {
-      // Only handle modifier shortcuts to avoid interfering with typing
-      if (!(ev.metaKey || ev.ctrlKey)) return;
-      const evKey = normalizeEventToKey(ev);
-
-      // Prompt-level shortcut takes precedence
-      const foundPrompt = promptMap.get(evKey);
-      if (foundPrompt) {
-        ev.preventDefault();
-        // Use same behavior as the prompt shortcut handler
-        if ((foundPrompt as any)?.hasAction) {
-          setFocusedAction(foundPrompt as any);
-          submit(focusedChoice?.value || input);
-          return;
-        }
-        if ((foundPrompt as any)?.flag) {
-          setFlag((foundPrompt as any).flag);
-          // Do not clear the flag here. The IPC outbox merges state at send time,
-          // and submitValueAtom will clear flags after sending.
-          submit(focusedChoice?.value || input);
-          return;
-        }
-        // Otherwise send as regular prompt shortcut
-        sendShortcut(foundPrompt.key);
-        return;
-      }
-
-      // Flag-level shortcut (if not shadowed by prompt shortcut)
-      const flag = flagsMap.get(evKey);
-      if (flag) {
-        ev.preventDefault();
-        // Normal flag behavior: set flag and submit current value
-        // Do not clear the flag here; submitValueAtom will clear it post-send.
-        setFlag(flag);
-        submit(focusedChoice?.value || input);
-      }
-    };
-
-    document.addEventListener('keydown', onKeyDown, true);
-    return () => document.removeEventListener('keydown', onKeyDown, true);
-  }, [flagsWithShortcuts, promptMap, focusedChoice, input, setFocusedAction, setFlag, submit, promptShortcuts]);
+  // NOTE: Previously there was a document-level keydown listener here as a "fallback"
+  // It was removed because it was dead code - it only activated when there were NO shortcuts,
+  // but then tried to handle shortcuts (which would be empty). The useHotkeys handlers above
+  // handle all shortcut cases correctly.
 
   // Prompt shortcuts should take precedence over flag shortcuts when keys collide
   const promptConverted = useMemo(() => new Set(

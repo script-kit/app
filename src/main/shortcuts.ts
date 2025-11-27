@@ -17,6 +17,7 @@ import { runMainScript } from './main-script';
 import { processes, spawnShebang } from './process';
 import { prompts } from './prompts';
 import { convertKey, kitState, subs } from './state';
+import { isReservedShortcut } from '../shared/shortcuts';
 
 const registerFail = (shortcut: string, filePath: string) =>
   `# Shortcut Registration Failed
@@ -36,6 +37,14 @@ const mainFail = (shortcut: string, _filePath: string) =>
   `# Failed to Register Main Shortcut
 
 <code>${shortcut}</code> failed to register. May already be registered to another app.`;
+
+const reservedFail = (shortcut: string, filePath: string) =>
+  `# Reserved Shortcut Blocked
+
+<code>${shortcut}</code> is a reserved system shortcut and cannot be registered by scripts.
+
+The script ${path.basename(filePath)} attempted to register this shortcut, but it was blocked to prevent breaking essential OS functionality like copy, paste, undo, etc.
+`;
 
 interface ProcessHandlerOptions {
   debounceMs?: number;
@@ -123,6 +132,13 @@ const createProcessHandler = (fn: () => Promise<void> | void, options: ProcessHa
 };
 
 const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
+  // Security: Block reserved system shortcuts to prevent breaking OS functionality
+  if (isReservedShortcut(shortcut)) {
+    log.warn(`Blocked reserved shortcut: ${shortcut} for ${filePath}`);
+    shortcutInfo(shortcut, filePath, reservedFail);
+    return false;
+  }
+
   try {
     const shortcutAction = createProcessHandler(() => {
       const traceId = Math.random().toString(36).slice(2, 10);

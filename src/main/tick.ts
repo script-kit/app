@@ -407,7 +407,7 @@ export const startClipboardAndKeyboardWatchers = async () => {
 export const snippetMap = new Map<string, SnippetInfo>();
 const snippetPrefixIndex = new Map<string, string[]>();
 
-function updateSnippetPrefixIndex() {
+export function updateSnippetPrefixIndex() {
   snippetPrefixIndex.clear();
   const keys = snippetMap.keys();
   for (const key of keys) {
