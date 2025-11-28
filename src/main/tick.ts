@@ -1,29 +1,25 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Clipboard } from '@johnlindquist/clipboard';
+import { store } from '@johnlindquist/kit/core/db';
+import { kitPath, tmpClipboardDir } from '@johnlindquist/kit/core/utils';
+import type { Script } from '@johnlindquist/kit/types';
 import { format } from 'date-fns';
+import { clipboard } from 'electron';
+import { debounce } from 'lodash-es';
 import { nanoid } from 'nanoid';
 import { Observable, type Subscription } from 'rxjs';
 import { debounceTime, filter, share, switchMap } from 'rxjs/operators';
 import { subscribeKey } from 'valtio/utils';
-
-import { store } from '@johnlindquist/kit/core/db';
-import { kitPath, tmpClipboardDir } from '@johnlindquist/kit/core/utils';
-import type { Script } from '@johnlindquist/kit/types';
-import { debounce } from 'lodash-es';
-
-import { clipboard } from 'electron';
-import { KitEvent, emitter } from '../shared/events';
-import { kitClipboard, kitConfig, kitState, kitStore, subs } from './state';
-
 import { Trigger } from '../shared/enums';
-import { deleteText } from './keyboard';
-
-import { addToClipboardHistory, getClipboardHistory } from './clipboard';
+import { emitter, KitEvent } from '../shared/events';
+import { addToClipboardHistory, detectSecret, getClipboardHistory } from './clipboard';
 import { registerIO } from './io';
-import { snippetLog, tickLog as log } from './logs';
+import { deleteText } from './keyboard';
+import { tickLog as log, snippetLog } from './logs';
 import { prompts } from './prompts';
 import shims from './shims';
+import { kitClipboard, kitConfig, kitState, kitStore, subs } from './state';
 
 type FrontmostApp = {
   localizedName: string;
@@ -43,9 +39,10 @@ const frontmost: any = null;
 
 let prevKey = -1;
 
-// @ts-ignore platform-dependent imports
+// @ts-expect-error platform-dependent imports
 import type { UiohookKey, UiohookKeyboardEvent, UiohookMouseEvent } from 'uiohook-napi';
 import type { SnippetInfo } from '../shared/types';
+
 let uiohookKeyCode: typeof UiohookKey;
 
 const SPACE = '_';
@@ -228,7 +225,6 @@ export const startKeyboardMonitor = async () => {
   }
 };
 
-const maybeSecretRegex = /^(?=.*[0-9])(?=.*[a-zA-Z])[a-zA-Z0-9!@#$%^&*()-_=+{}[\]<>;:,.|~]{5,}$/i;
 export const startClipboardMonitor = async () => {
   if (kitState.kenvEnv?.KIT_CLIPBOARD === 'false') {
     log.info('🔇 Clipboard monitor disabled');
@@ -332,6 +328,7 @@ export const startClipboardMonitor = async () => {
 
       const timestamp = format(new Date(), 'yyyy-MM-dd-hh-mm-ss');
       let maybeSecret = false;
+      let secretRisk: 'none' | 'low' | 'medium' | 'high' = 'none';
       let itemName = '';
       let value = '';
 
@@ -339,16 +336,43 @@ export const startClipboardMonitor = async () => {
         try {
           log.info('Attempting to read image from clipboard...');
           const image = clipboard.readImage('clipboard');
-          const pngImageBuffer = image.toPNG();
-          log.info(`Converted image to PNG. Size: ${pngImageBuffer.length} bytes`);
-          if (pngImageBuffer.length > 20 * 1024 * 1024) {
+
+          // Check if image is empty
+          if (image.isEmpty()) {
+            log.info('Empty image from clipboard. Ignoring...');
+            return;
+          }
+
+          // Try JPEG first for photos (smaller), fall back to PNG for transparency
+          const size = image.getSize();
+          const useJpeg =
+            kitState?.kenvEnv?.KIT_CLIPBOARD_IMAGE_FORMAT === 'jpeg' || (size.width > 800 && size.height > 600);
+          const quality = Number.parseInt(kitState?.kenvEnv?.KIT_CLIPBOARD_IMAGE_QUALITY || '85', 10);
+
+          let imageBuffer: Buffer;
+          let extension: string;
+
+          if (useJpeg) {
+            // JPEG is much smaller for photos (typically 3-10x smaller than PNG)
+            imageBuffer = image.toJPEG(quality);
+            extension = 'jpg';
+            log.info(`Converted to JPEG (quality: ${quality}). Size: ${imageBuffer.length} bytes`);
+          } else {
+            imageBuffer = image.toPNG();
+            extension = 'png';
+            log.info(`Converted to PNG. Size: ${imageBuffer.length} bytes`);
+          }
+
+          if (imageBuffer.length > 20 * 1024 * 1024) {
             log.info('Image size > 20MB. Ignoring...');
             return;
           }
 
-          itemName = `${timestamp}.png`;
+          itemName = `${timestamp}.${extension}`;
           value = path.join(tmpClipboardDir, itemName);
-          await writeFile(value, pngImageBuffer);
+          await writeFile(value, imageBuffer);
+
+          log.info(`📷 Saved clipboard image: ${value} (${Math.round(imageBuffer.length / 1024)}KB)`);
         } catch (error) {
           log.error(error);
           return;
@@ -358,7 +382,9 @@ export const startClipboardMonitor = async () => {
           const txt = clipboard.readText();
           const txtLen = txt.length;
           if (txtLen > (kitState?.kenvEnv?.KIT_CLIPBOARD_MAX_LENGTH || 12800)) {
-            log.info('Ignoring clipboard value > 12800 characters. Increase KIT_CLIPBOARD_MAX_LENGTH to allow larger values.');
+            log.info(
+              'Ignoring clipboard value > 12800 characters. Increase KIT_CLIPBOARD_MAX_LENGTH to allow larger values.',
+            );
             return;
           }
           const ignoreRegex = kitState?.kenvEnv?.KIT_CLIPBOARD_IGNORE_REGEX;
@@ -375,22 +401,41 @@ export const startClipboardMonitor = async () => {
           return;
         }
 
-        maybeSecret = Boolean(
-          (!value.match(/\n/g) && value.match(maybeSecretRegex)) ||
-          (kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX &&
-            value.match(new RegExp(kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX))),
-        );
+        // Use enhanced secret detection with Shannon entropy and pattern matching
+        const secretDetection = detectSecret(value);
+        maybeSecret = secretDetection.maybeSecret;
+        secretRisk = secretDetection.risk;
+
+        // Also check user-defined secret regex
+        if (!maybeSecret && kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX) {
+          try {
+            if (value.match(new RegExp(kitState.kenvEnv.KIT_MAYBE_SECRET_REGEX))) {
+              maybeSecret = true;
+              secretRisk = 'medium';
+            }
+          } catch (e) {
+            log.warn('Invalid KIT_MAYBE_SECRET_REGEX:', e);
+          }
+        }
+
+        if (maybeSecret) {
+          log.info(`🔐 Secret detected (risk: ${secretRisk}): ${secretDetection.matchedPattern || 'entropy-based'}`);
+        }
       }
 
-      const appName = prompts?.prevFocused ? 'Script Kit' : app?.localizedName || 'Unknown';
+      // Extract source application info
+      const sourceApp = prompts?.prevFocused ? 'Script Kit' : app?.localizedName || 'Unknown';
       const clipboardItem = {
         id: nanoid(),
         name: itemName,
-        description: `${appName} - ${timestamp}`,
+        description: `${sourceApp} - ${timestamp}`,
         value,
         type,
         timestamp,
         maybeSecret,
+        secretRisk,
+        sourceApp,
+        pinned: false,
       };
 
       addToClipboardHistory(clipboardItem);
@@ -402,10 +447,111 @@ export const startClipboardAndKeyboardWatchers = async () => {
   await new Promise((resolve) => setTimeout(resolve, 500));
   startClipboardMonitor();
   startKeyboardMonitor();
+  startSnippetHealthCheck();
 };
 
 export const snippetMap = new Map<string, SnippetInfo>();
 const snippetPrefixIndex = new Map<string, string[]>();
+
+// Secure debug logging - sanitizes buffer content to avoid keylogging vulnerabilities
+const SNIPPET_DEBUG = () => kitState.kenvEnv?.KIT_SNIPPET_DEBUG === 'true';
+
+function sanitizedSnippetLog(message: string, bufferLength?: number, lastChar?: string, matchedSnippet?: string) {
+  if (!SNIPPET_DEBUG()) return;
+  const sanitizedInfo: Record<string, unknown> = { message };
+  if (bufferLength !== undefined) sanitizedInfo.bufferLength = bufferLength;
+  if (lastChar !== undefined) sanitizedInfo.lastChar = lastChar.length === 1 ? lastChar : '[multi]';
+  if (matchedSnippet !== undefined) sanitizedInfo.matchedSnippet = matchedSnippet;
+  snippetLog.info('[DEBUG]', sanitizedInfo);
+}
+
+// Shadow detection - warns when a new snippet key would shadow existing keys
+export interface SnippetShadowWarning {
+  type: 'shadows' | 'shadowed_by';
+  newKey: string;
+  existingKey: string;
+  filePath: string;
+}
+
+export function detectSnippetShadows(newKey: string, newFilePath: string): SnippetShadowWarning[] {
+  const warnings: SnippetShadowWarning[] = [];
+
+  for (const [existingKey, existingInfo] of snippetMap) {
+    // Skip if same file (re-registration)
+    if (existingInfo.filePath === newFilePath) continue;
+
+    // Check if new key shadows existing (new is prefix of existing)
+    if (existingKey.startsWith(newKey) && existingKey !== newKey) {
+      warnings.push({
+        type: 'shadows',
+        newKey,
+        existingKey,
+        filePath: existingInfo.filePath,
+      });
+    }
+
+    // Check if new key would be shadowed by existing (existing is prefix of new)
+    if (newKey.startsWith(existingKey) && newKey !== existingKey) {
+      warnings.push({
+        type: 'shadowed_by',
+        newKey,
+        existingKey,
+        filePath: existingInfo.filePath,
+      });
+    }
+  }
+
+  return warnings;
+}
+
+function logSnippetShadowWarnings(warnings: SnippetShadowWarning[]) {
+  for (const warning of warnings) {
+    if (warning.type === 'shadows') {
+      snippetLog.warn(
+        `⚠️ Snippet "${warning.newKey}" will shadow "${warning.existingKey}" - ` +
+          `"${warning.existingKey}" will become unreachable. File: ${warning.filePath}`,
+      );
+    } else {
+      snippetLog.warn(
+        `⚠️ Snippet "${warning.newKey}" is shadowed by existing "${warning.existingKey}" - ` +
+          `"${warning.newKey}" may never trigger. File: ${warning.filePath}`,
+      );
+    }
+  }
+}
+
+// Health check - validates snippet index integrity
+export function validateSnippetIndexIntegrity(): { valid: boolean; orphanedKeys: string[]; missingKeys: string[] } {
+  const orphanedKeys: string[] = [];
+  const missingKeys: string[] = [];
+
+  // Check for keys in prefix index that don't exist in main map
+  for (const [, keys] of snippetPrefixIndex) {
+    for (const key of keys) {
+      if (!snippetMap.has(key)) {
+        orphanedKeys.push(key);
+      }
+    }
+  }
+
+  // Check for keys in main map that aren't in prefix index
+  for (const key of snippetMap.keys()) {
+    const kl = key.length;
+    const prefix = kl === 2 ? key : key.slice(-3);
+    const indexedKeys = snippetPrefixIndex.get(prefix);
+    if (!indexedKeys || !indexedKeys.includes(key)) {
+      missingKeys.push(key);
+    }
+  }
+
+  const valid = orphanedKeys.length === 0 && missingKeys.length === 0;
+
+  if (!valid) {
+    snippetLog.warn('Snippet index integrity check failed:', { orphanedKeys, missingKeys });
+  }
+
+  return { valid, orphanedKeys, missingKeys };
+}
 
 export function updateSnippetPrefixIndex() {
   snippetPrefixIndex.clear();
@@ -438,6 +584,10 @@ export function updateSnippetPrefixIndex() {
 
 const subSnippet = subscribeKey(kitState, 'snippet', async (snippet: string) => {
   const sl = snippet.length;
+
+  // Sanitized debug logging - only logs length and last char, not full buffer (keylog safe)
+  sanitizedSnippetLog('Buffer update', sl, sl > 0 ? snippet.slice(-1) : undefined);
+
   if (sl < 2) {
     return;
   }
@@ -465,9 +615,15 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet: string) => 
     }
   }
 
+  // Sanitized debug log - show number of potential matches, not keys
+  if (potentialSnippetKeys.size > 0) {
+    sanitizedSnippetLog('Potential matches found', sl, snippet.slice(-1), `${potentialSnippetKeys.size} candidates`);
+  }
+
   // Check if the typed text ends with any of the snippet keys
   for (const snippetKey of potentialSnippetKeys) {
     if (snippet.endsWith(snippetKey)) {
+      sanitizedSnippetLog('Snippet matched', sl, snippet.slice(-1), snippetKey);
       log.info(`Running snippet: ${snippetKey}`);
       const script = snippetMap.get(snippetKey);
       if (!script) {
@@ -562,7 +718,17 @@ export const addTextSnippet = async (filePath: string) => {
     }
   }
 
-  const contents = await readFile(filePath, 'utf8');
+  // File system resilience - wrap file read in try/catch
+  let contents: string;
+  try {
+    contents = await readFile(filePath, 'utf8');
+  } catch (error) {
+    // File may have been deleted, moved, or locked - remove from index silently
+    snippetLog.warn(`Failed to read snippet file, removing from index: ${filePath}`, error);
+    updateSnippetPrefixIndex();
+    return;
+  }
+
   const { metadata } = parseSnippet(contents);
 
   let expand = metadata?.snippet || metadata?.expand;
@@ -572,6 +738,13 @@ export const addTextSnippet = async (filePath: string) => {
       postfix = true;
       expand = expand.slice(1);
     }
+
+    // Shadow detection - warn about conflicts before registration
+    const shadows = detectSnippetShadows(expand, filePath);
+    if (shadows.length > 0) {
+      logSnippetShadowWarnings(shadows);
+    }
+
     log.info(`Mapped snippet: ${expand} to ${filePath}`);
     snippetMap.set(expand, {
       filePath,
@@ -618,6 +791,13 @@ export const snippetScriptChanged = (script: Script) => {
       postfix = true;
       exp = exp.slice(1);
     }
+
+    // Shadow detection - warn about conflicts before registration
+    const shadows = detectSnippetShadows(exp, script.filePath);
+    if (shadows.length > 0) {
+      logSnippetShadowWarnings(shadows);
+    }
+
     snippetLog.info(`Mapped snippet: ${exp} to ${script.filePath}`);
     snippetMap.set(exp, {
       filePath: script.filePath,
@@ -646,3 +826,48 @@ export const removeSnippet = (filePath: string) => {
 };
 
 subs.push(subSnippet, subIsTyping);
+
+// Periodic health check - validates snippet index integrity hourly
+const HEALTH_CHECK_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+let healthCheckInterval: ReturnType<typeof setInterval> | null = null;
+
+export function startSnippetHealthCheck() {
+  if (healthCheckInterval) {
+    clearInterval(healthCheckInterval);
+  }
+
+  healthCheckInterval = setInterval(() => {
+    const { valid, orphanedKeys, missingKeys } = validateSnippetIndexIntegrity();
+
+    if (!valid) {
+      snippetLog.warn('Snippet health check: index integrity issues detected, rebuilding index');
+      // Auto-heal by rebuilding the index
+      updateSnippetPrefixIndex();
+
+      // Re-validate after rebuild
+      const recheck = validateSnippetIndexIntegrity();
+      if (recheck.valid) {
+        snippetLog.info('Snippet health check: index rebuilt successfully');
+      } else {
+        snippetLog.error('Snippet health check: index still invalid after rebuild', {
+          orphanedKeys: recheck.orphanedKeys,
+          missingKeys: recheck.missingKeys,
+        });
+      }
+    } else {
+      snippetLog.silly('Snippet health check: index integrity OK');
+    }
+  }, HEALTH_CHECK_INTERVAL_MS);
+
+  // Run initial check on startup (delayed by 30 seconds to let snippets load)
+  setTimeout(() => {
+    validateSnippetIndexIntegrity();
+  }, 30000);
+}
+
+export function stopSnippetHealthCheck() {
+  if (healthCheckInterval) {
+    clearInterval(healthCheckInterval);
+    healthCheckInterval = null;
+  }
+}

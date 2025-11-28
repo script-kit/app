@@ -1,23 +1,53 @@
 import type { Choice } from '@johnlindquist/kit/types/core';
-import type { IMatch, IItemScore } from 'vscode-fuzzy-scorer';
-import { scoreItemFuzzy, prepareQuery, compareItemsByFuzzyScore } from 'vscode-fuzzy-scorer';
-import { searchLog as log } from './logs';
+import type { IItemScore, IMatch } from 'vscode-fuzzy-scorer';
+import { compareItemsByFuzzyScore, prepareQuery, scoreItemFuzzy } from 'vscode-fuzzy-scorer';
 import type { ScoredChoice } from '../shared/types';
+import { getFrecencyScores } from './frecency';
 import { createScoredChoice } from './helpers';
+import { searchLog as log } from './logs';
 
 // Cache for prepared queries
 const queryCache = new Map<string, any>();
 
+// Search cancellation support
+let currentSearchId = 0;
+
+/**
+ * Generate a new search ID for cancellation tracking
+ */
+export function getNextSearchId(): number {
+  return ++currentSearchId;
+}
+
+/**
+ * Check if a search is still current (not cancelled)
+ */
+export function isSearchCurrent(searchId: number): boolean {
+  return searchId === currentSearchId;
+}
+
+// Config for result limiting
+export const SEARCH_CONFIG = {
+  /** Maximum results per category in grouped mode */
+  MAX_RESULTS_PER_GROUP: 50,
+  /** Maximum total results */
+  MAX_TOTAL_RESULTS: 200,
+  /** Filename match weight multiplier (vs full path) */
+  FILENAME_WEIGHT: 2.5,
+  /** Frecency weight (how much frecency affects final score) */
+  FRECENCY_WEIGHT: 0.3,
+};
+
 // Convert IMatch array to our expected format
 function convertMatches(matches: IMatch[] | undefined): Array<[number, number]> | undefined {
   if (!matches || matches.length === 0) return undefined;
-  return matches.map(m => [m.start, m.end]);
+  return matches.map((m) => [m.start, m.end]);
 }
 
 // Split text by both spaces and path separators
 function splitIntoWords(text: string): string[] {
   // Split by spaces, forward slashes, and backslashes
-  return text.split(/[\s\/\\]+/).filter(w => w.length > 0);
+  return text.split(/[\s/\\]+/).filter((w) => w.length > 0);
 }
 
 // Check if query matches as a mnemonic (first letters of words)
@@ -61,16 +91,16 @@ function isSequentialWordMatch(text: string, matches: Array<[number, number]>, q
   let position = 0;
 
   // Split by spaces and path separators, but keep track of positions
-  const parts = text.split(/([\s\/\\]+)/);
+  const parts = text.split(/([\s/\\]+)/);
 
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
-    if (part && !/^[\s\/\\]+$/.test(part)) {
+    if (part && !/^[\s/\\]+$/.test(part)) {
       // This is a word, not a separator
       words.push({
         text: part,
         start: position,
-        end: position + part.length
+        end: position + part.length,
       });
     }
     position += part.length;
@@ -108,8 +138,25 @@ function isSequentialWordMatch(text: string, matches: Array<[number, number]>, q
   return true;
 }
 
-// Score a single choice against a query with independent field matching
-export function scoreChoice(choice: Choice, query: string, searchKeys: string[] = ['name', 'keyword', 'tag']): ScoredChoice | null {
+/**
+ * Extract the filename (basename) from a path
+ */
+function getBasename(path: string): string {
+  const lastSlash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+  return lastSlash >= 0 ? path.substring(lastSlash + 1) : path;
+}
+
+/**
+ * Score a single choice against a query with independent field matching
+ * Improvements:
+ * - Path-aware scoring (filename matches weighted higher than path)
+ * - Better handling of path separators
+ */
+export function scoreChoice(
+  choice: Choice,
+  query: string,
+  searchKeys: string[] = ['name', 'keyword', 'tag'],
+): ScoredChoice | null {
   if (!query || query.trim() === '') {
     // Empty query returns all choices with no highlighting
     return createScoredChoice(choice);
@@ -130,80 +177,141 @@ export function scoreChoice(choice: Choice, query: string, searchKeys: string[] 
   if (choice.name && (searchKeys.includes('name') || searchKeys.includes('slicedName'))) {
     // Ensure name is a string
     const nameStr = typeof choice.name === 'string' ? choice.name : String(choice.name);
-    
-    // Always use the full string for scoring first
-    const nameAccessor = {
-      getItemLabel: (item: any) => typeof item.name === 'string' ? item.name : String(item.name),
-      getItemDescription: () => undefined,
-      getItemPath: () => undefined
-    };
 
-    const nameScore = scoreItemFuzzy(choice, preparedQuery, true, nameAccessor, {});
-    if (nameScore && nameScore.score > 0) {
-      // For paths, apply a penalty if matches are scattered across path separators
-      const isPath = nameStr.includes('/') || nameStr.includes('\\');
+    // Check if this is a path
+    const isPath = nameStr.includes('/') || nameStr.includes('\\');
 
-      if (isPath && nameScore.labelMatch) {
-        // Check if matches span multiple path components without being at word boundaries
-        const pathParts = nameStr.split(/[\/\\]+/);
-        let componentBoundaries: number[] = [0];
-        let pos = 0;
+    if (isPath) {
+      // PATH-AWARE SCORING: Score filename separately from full path
+      const basename = getBasename(nameStr);
+      const basenameStartIndex = nameStr.length - basename.length;
 
-        // Calculate component boundaries
-        for (let i = 0; i < pathParts.length - 1; i++) {
-          pos += pathParts[i].length + 1; // +1 for separator
-          componentBoundaries.push(pos);
+      // Score the basename (filename) with higher weight
+      const basenameAccessor = {
+        getItemLabel: () => basename,
+        getItemDescription: () => undefined,
+        getItemPath: () => undefined,
+      };
+
+      const basenameScore = scoreItemFuzzy({ name: basename }, preparedQuery, true, basenameAccessor, {});
+
+      // Score the full path with lower weight
+      const fullPathAccessor = {
+        getItemLabel: (item: any) => (typeof item.name === 'string' ? item.name : String(item.name)),
+        getItemDescription: () => undefined,
+        getItemPath: () => undefined,
+      };
+
+      const fullPathScore = scoreItemFuzzy(choice, preparedQuery, true, fullPathAccessor, {});
+
+      // Determine best score and matches
+      let bestScore = 0;
+      let nameMatches: Array<[number, number]> | undefined;
+
+      if (basenameScore && basenameScore.score > 0) {
+        // Filename match - apply FILENAME_WEIGHT multiplier
+        bestScore = basenameScore.score * 100 * SEARCH_CONFIG.FILENAME_WEIGHT;
+
+        if (basenameScore.labelMatch?.length) {
+          // Adjust match positions to full path coordinates
+          nameMatches = basenameScore.labelMatch.map(
+            (m) => [m.start + basenameStartIndex, m.end + basenameStartIndex] as [number, number],
+          );
         }
+      }
 
-        // Check if matches respect component boundaries
+      if (fullPathScore && fullPathScore.score > 0) {
+        // Check if full path score is better (for queries that span directories)
+        const pathParts = nameStr.split(/[/\\]+/);
         let crossesComponents = false;
-        for (const match of nameScore.labelMatch) {
-          // Check if this match starts at a component boundary
-          // Check if this match starts at a component boundary
-          // const startsAtBoundary = componentBoundaries.some(b => b === match.start);
 
-          // Check if match spans across components
-          for (const boundary of componentBoundaries) {
-            if (match.start < boundary && match.end > boundary) {
-              crossesComponents = true;
-              break;
+        // Check if matches cross component boundaries
+        if (fullPathScore.labelMatch) {
+          const componentBoundaries: number[] = [0];
+          let pos = 0;
+          for (let i = 0; i < pathParts.length - 1; i++) {
+            pos += pathParts[i].length + 1;
+            componentBoundaries.push(pos);
+          }
+
+          for (const match of fullPathScore.labelMatch) {
+            for (const boundary of componentBoundaries) {
+              if (match.start < boundary && match.end > boundary) {
+                crossesComponents = true;
+                break;
+              }
             }
           }
         }
 
-        // Apply penalty for matches that cross component boundaries
-        const finalPathScore = crossesComponents ? nameScore.score * 50 : nameScore.score * 100;
-        fieldScores.name = finalPathScore;
-        totalScore += finalPathScore;
-      } else {
-        // Non-path scoring
-        const finalScore = nameScore.score * 100;
-        fieldScores.name = finalScore;
-        totalScore += finalScore;
+        // Apply penalty for matches that cross boundaries, but still consider if it's better
+        const adjustedPathScore = crossesComponents ? fullPathScore.score * 50 : fullPathScore.score * 100;
+
+        // Use path matches if they're better than basename matches
+        if (adjustedPathScore > bestScore) {
+          bestScore = adjustedPathScore;
+          nameMatches = fullPathScore.labelMatch?.length ? convertMatches(fullPathScore.labelMatch) : undefined;
+        }
       }
 
-      if (nameScore.labelMatch?.length) {
-        const nameMatches = convertMatches(nameScore.labelMatch);
+      if (bestScore > 0) {
+        fieldScores.name = bestScore;
+        totalScore += bestScore;
+
         if (nameMatches) {
           allMatches.name = nameMatches;
 
           // Handle slicedName
           if (choice.slicedName && choice.name !== choice.slicedName) {
             const sliceLength = choice.slicedName.length;
-            const slicedMatches = nameScore.labelMatch
-              .filter(m => m.start < sliceLength)
-              .map(m => ({
-                start: m.start,
-                end: Math.min(m.end, sliceLength)
-              }));
+            const slicedMatches = nameMatches
+              .filter(([start]) => start < sliceLength)
+              .map(([start, end]) => [start, Math.min(end, sliceLength)] as [number, number]);
             if (slicedMatches.length > 0) {
-              const slicedConverted = convertMatches(slicedMatches);
-              if (slicedConverted) {
-                allMatches.slicedName = slicedConverted;
-              }
+              allMatches.slicedName = slicedMatches;
             }
-          } else if (nameMatches) {
+          } else {
             allMatches.slicedName = nameMatches;
+          }
+        }
+      }
+    } else {
+      // NON-PATH SCORING: Standard scoring for non-path names
+      const nameAccessor = {
+        getItemLabel: (item: any) => (typeof item.name === 'string' ? item.name : String(item.name)),
+        getItemDescription: () => undefined,
+        getItemPath: () => undefined,
+      };
+
+      const nameScore = scoreItemFuzzy(choice, preparedQuery, true, nameAccessor, {});
+      if (nameScore && nameScore.score > 0) {
+        const finalScore = nameScore.score * 100;
+        fieldScores.name = finalScore;
+        totalScore += finalScore;
+
+        if (nameScore.labelMatch?.length) {
+          const nameMatches = convertMatches(nameScore.labelMatch);
+          if (nameMatches) {
+            allMatches.name = nameMatches;
+
+            // Handle slicedName
+            if (choice.slicedName && choice.name !== choice.slicedName) {
+              const sliceLength = choice.slicedName.length;
+              const slicedMatches = nameScore.labelMatch
+                .filter((m) => m.start < sliceLength)
+                .map((m) => ({
+                  start: m.start,
+                  end: Math.min(m.end, sliceLength),
+                }));
+              if (slicedMatches.length > 0) {
+                const slicedConverted = convertMatches(slicedMatches);
+                if (slicedConverted) {
+                  allMatches.slicedName = slicedConverted;
+                }
+              }
+            } else if (nameMatches) {
+              allMatches.slicedName = nameMatches;
+            }
           }
         }
       }
@@ -213,9 +321,9 @@ export function scoreChoice(choice: Choice, query: string, searchKeys: string[] 
   // Score description field - treat it as a label since VS Code scorer has issues with description-only matching
   if (choice.description && searchKeys.includes('description')) {
     const descAccessor = {
-      getItemLabel: (item: any) => typeof item.description === 'string' ? item.description : String(item.description),
+      getItemLabel: (item: any) => (typeof item.description === 'string' ? item.description : String(item.description)),
       getItemDescription: () => undefined,
-      getItemPath: () => undefined
+      getItemPath: () => undefined,
     };
 
     const descScore = scoreItemFuzzy(choice, preparedQuery, true, descAccessor, {});
@@ -233,9 +341,9 @@ export function scoreChoice(choice: Choice, query: string, searchKeys: string[] 
   // Score keyword field as a label
   if (choice.keyword && searchKeys.includes('keyword')) {
     const keywordAccessor = {
-      getItemLabel: (item: any) => typeof item.keyword === 'string' ? item.keyword : String(item.keyword),
+      getItemLabel: (item: any) => (typeof item.keyword === 'string' ? item.keyword : String(item.keyword)),
       getItemDescription: () => undefined,
-      getItemPath: () => undefined
+      getItemPath: () => undefined,
     };
 
     const keywordScore = scoreItemFuzzy(choice, preparedQuery, true, keywordAccessor, {});
@@ -255,9 +363,9 @@ export function scoreChoice(choice: Choice, query: string, searchKeys: string[] 
   // Score tag field as a label
   if (choice.tag && searchKeys.includes('tag')) {
     const tagAccessor = {
-      getItemLabel: (item: any) => typeof item.tag === 'string' ? item.tag : String(item.tag),
+      getItemLabel: (item: any) => (typeof item.tag === 'string' ? item.tag : String(item.tag)),
       getItemDescription: () => undefined,
-      getItemPath: () => undefined
+      getItemPath: () => undefined,
     };
 
     const tagScore = scoreItemFuzzy(choice, preparedQuery, true, tagAccessor, {});
@@ -276,15 +384,15 @@ export function scoreChoice(choice: Choice, query: string, searchKeys: string[] 
 
   // Score any other custom fields that are in searchKeys
   const standardFields = ['name', 'slicedName', 'description', 'keyword', 'tag'];
-  const customFields = searchKeys.filter(key => !standardFields.includes(key));
-  
+  const customFields = searchKeys.filter((key) => !standardFields.includes(key));
+
   for (const fieldName of customFields) {
     const fieldValue = (choice as any)[fieldName];
     if (fieldValue && typeof fieldValue === 'string') {
       const customAccessor = {
-        getItemLabel: (item: any) => typeof item[fieldName] === 'string' ? item[fieldName] : String(item[fieldName]),
+        getItemLabel: (item: any) => (typeof item[fieldName] === 'string' ? item[fieldName] : String(item[fieldName])),
         getItemDescription: () => undefined,
-        getItemPath: () => undefined
+        getItemPath: () => undefined,
       };
 
       const customScore = scoreItemFuzzy(choice, preparedQuery, true, customAccessor, {});
@@ -357,8 +465,29 @@ export function scoreChoice(choice: Choice, query: string, searchKeys: string[] 
   return scoredChoice;
 }
 
-// Search and score all choices
-export const searchChoices = (choices: Choice[], input: string, searchKeys: string[] = ['name', 'keyword', 'tag']) => {
+/**
+ * Search and score all choices with:
+ * - Frecency-boosted scoring (frequency + recency)
+ * - Path-aware scoring (filename matches weighted higher)
+ * - Async cancellation support
+ * - Result limiting
+ */
+export const searchChoices = (
+  choices: Choice[],
+  input: string,
+  searchKeys: string[] = ['name', 'keyword', 'tag'],
+  options: {
+    applyFrecency?: boolean;
+    maxResults?: number;
+    searchId?: number;
+  } = {},
+) => {
+  const {
+    applyFrecency = false, // Disabled by default for backward compatibility
+    maxResults = SEARCH_CONFIG.MAX_TOTAL_RESULTS,
+    searchId,
+  } = options;
+
   log.info(`searchChoices called with ${choices.length} choices and query "${input}"`);
   const results: ScoredChoice[] = [];
 
@@ -374,6 +503,12 @@ export const searchChoices = (choices: Choice[], input: string, searchKeys: stri
     }
     log.info(`Empty query - returning ${results.length} results`);
     return results;
+  }
+
+  // Check for cancellation
+  if (searchId !== undefined && !isSearchCurrent(searchId)) {
+    log.info(`Search ${searchId} cancelled`);
+    return [];
   }
 
   for (let i = 0; i < choices.length; i++) {
@@ -420,9 +555,101 @@ export const searchChoices = (choices: Choice[], input: string, searchKeys: stri
     });
   }
 
-  log.info(`Returning ${results.length} scored results for query "${input}"`);
-  return results;
-}
+  // Apply result limit
+  const limitedResults = maxResults > 0 && results.length > maxResults ? results.slice(0, maxResults) : results;
+
+  // Add truncation indicator if results were limited
+  if (results.length > limitedResults.length) {
+    const truncatedCount = results.length - limitedResults.length;
+    log.info(`Results truncated: showing ${limitedResults.length} of ${results.length} (${truncatedCount} hidden)`);
+  }
+
+  log.info(`Returning ${limitedResults.length} scored results for query "${input}"`);
+  return limitedResults;
+};
+
+/**
+ * Async version of searchChoices that applies frecency scoring
+ * Use this for main menu and file searches where frecency matters
+ */
+export const searchChoicesWithFrecency = async (
+  choices: Choice[],
+  input: string,
+  searchKeys: string[] = ['name', 'keyword', 'tag'],
+  options: {
+    maxResults?: number;
+    searchId?: number;
+  } = {},
+): Promise<ScoredChoice[]> => {
+  const { maxResults = SEARCH_CONFIG.MAX_TOTAL_RESULTS, searchId } = options;
+
+  log.info(`searchChoicesWithFrecency called with ${choices.length} choices and query "${input}"`);
+
+  // Get base search results
+  const results = searchChoices(choices, input, searchKeys, {
+    applyFrecency: false,
+    maxResults: 0, // Don't limit yet, we'll limit after frecency
+    searchId,
+  });
+
+  // Check for cancellation
+  if (searchId !== undefined && !isSearchCurrent(searchId)) {
+    log.info(`Search ${searchId} cancelled before frecency`);
+    return [];
+  }
+
+  // Early return for empty results or empty query
+  if (results.length === 0 || !input || input.trim() === '') {
+    return maxResults > 0 && results.length > maxResults ? results.slice(0, maxResults) : results;
+  }
+
+  // Get frecency scores for all results
+  const choiceIds = results.map((r) => r.item.id).filter(Boolean);
+  const frecencyScores = await getFrecencyScores(choiceIds);
+
+  // Apply frecency boost to scores
+  for (const result of results) {
+    const frecencyMultiplier = frecencyScores.get(result.item.id) || 1.0;
+    // Blend frecency with fuzzy score
+    // Formula: finalScore = fuzzyScore * (1 + FRECENCY_WEIGHT * (frecencyMultiplier - 1))
+    const frecencyBoost = 1 + SEARCH_CONFIG.FRECENCY_WEIGHT * (frecencyMultiplier - 1);
+    result.score = result.score * frecencyBoost;
+    result.frecencyBoost = frecencyMultiplier; // Store for debugging
+  }
+
+  // Re-sort with frecency-boosted scores
+  results.sort((a, b) => {
+    const aIndex = a.originalIndex || 0;
+    const bIndex = b.originalIndex || 0;
+
+    // Sequential matches still have highest priority
+    const aIsSequential = a.isSequentialMatch || false;
+    const bIsSequential = b.isSequentialMatch || false;
+    if (aIsSequential && !bIsSequential) return -1;
+    if (!aIsSequential && bIsSequential) return 1;
+
+    // Starts-with matches still prioritized
+    const aStartsWith = a.item.name?.toLowerCase().startsWith(input.toLowerCase());
+    const bStartsWith = b.item.name?.toLowerCase().startsWith(input.toLowerCase());
+    if (aStartsWith && bStartsWith) {
+      // Both start with query - use frecency-boosted score
+      if (b.score === a.score) return aIndex - bIndex;
+      return b.score - a.score;
+    }
+    if (aStartsWith && !bStartsWith) return -1;
+    if (!aStartsWith && bStartsWith) return 1;
+
+    // Otherwise, sort by frecency-boosted score
+    if (b.score === a.score) return aIndex - bIndex;
+    return b.score - a.score;
+  });
+
+  // Apply result limit
+  const limitedResults = maxResults > 0 && results.length > maxResults ? results.slice(0, maxResults) : results;
+
+  log.info(`Returning ${limitedResults.length} frecency-boosted results for query "${input}"`);
+  return limitedResults;
+};
 
 // Clear the cache (useful when choices change significantly)
 export function clearFuzzyCache(): void {
@@ -432,12 +659,12 @@ export function clearFuzzyCache(): void {
 // Check if a string matches exactly (for exact match detection)
 export function isExactMatch(choice: Choice, query: string): boolean {
   const lowerQuery = query.toLowerCase();
-  
+
   const nameStr = choice.name ? String(choice.name) : '';
   const keywordStr = choice.keyword ? String(choice.keyword) : '';
   const aliasStr = (choice as any).alias ? String((choice as any).alias) : '';
   const triggerStr = (choice as any).trigger ? String((choice as any).trigger) : '';
-  
+
   return (
     nameStr.toLowerCase().startsWith(lowerQuery) ||
     keywordStr.toLowerCase().startsWith(lowerQuery) ||
@@ -457,13 +684,11 @@ export function startsWithQuery(choice: Choice, query: string): boolean {
   const keywordWords = splitIntoWords(keywordStr);
 
   const matchesWordStart =
-    nameWords.some(word => word.toLowerCase().startsWith(lowerQuery)) ||
-    keywordWords.some(word => word.toLowerCase().startsWith(lowerQuery));
+    nameWords.some((word) => word.toLowerCase().startsWith(lowerQuery)) ||
+    keywordWords.some((word) => word.toLowerCase().startsWith(lowerQuery));
 
   // Also check mnemonic matches
-  const matchesMnemonic =
-    isMnemonicMatch(nameStr, query) ||
-    isMnemonicMatch(keywordStr, query);
+  const matchesMnemonic = isMnemonicMatch(nameStr, query) || isMnemonicMatch(keywordStr, query);
 
   return matchesWordStart || matchesMnemonic;
 }
