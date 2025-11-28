@@ -1,4 +1,4 @@
-import { BrowserWindow, app, crashReporter, nativeTheme, powerMonitor, protocol, screen } from 'electron';
+import { app, BrowserWindow, crashReporter, nativeTheme, powerMonitor, protocol, screen } from 'electron';
 import { getCurrentKeyboardLayout, getKeyMap, onDidChangeKeyboardLayout } from 'native-keymap';
 import './env';
 import { exec } from 'node:child_process';
@@ -13,6 +13,7 @@ process.on('SIGINT', () => {
 });
 
 import electronLog from 'electron-log';
+
 electronLog.initialize();
 
 log.info(`Electron executable: ${app.getPath('exe')}`);
@@ -28,48 +29,37 @@ import electronUpdater from 'electron-updater';
 
 const { autoUpdater } = electronUpdater;
 
-import { type SpawnSyncOptions, fork } from 'node:child_process';
-import os from 'node:os';
-import path from 'node:path';
-
+import { fork, type SpawnSyncOptions } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { lstat, readdir } from 'node:fs/promises';
-import semver from 'semver';
-
+import os from 'node:os';
+import path from 'node:path';
+import { setEnvVar } from '@johnlindquist/kit/api/kit';
+import { getPrefsDb } from '@johnlindquist/kit/core/db';
+import { Channel } from '@johnlindquist/kit/core/enum';
 import {
-  KIT_FIRST_PATH,
   getKenvs,
   getMainScriptPath,
+  KIT_FIRST_PATH,
   kenvPath,
   kitPath,
   kitPnpmPath,
   tmpClipboardDir,
   tmpDownloadsDir,
 } from '@johnlindquist/kit/core/utils';
-
-import { setEnvVar } from '@johnlindquist/kit/api/kit';
-import { startMcpHttpServer } from './mcp-http-server';
-
-import { getPrefsDb } from '@johnlindquist/kit/core/db';
 import { debounce, throttle } from 'lodash-es';
+import { rimraf } from 'rimraf';
+import semver from 'semver';
 import { subscribeKey } from 'valtio/utils';
 import { getAssetPath, getReleaseChannel } from '../shared/assets';
-import { clearPromptTimers, logPromptState } from './prompt';
-import { clearPromptCache } from './prompt.cache';
-import { startClipboardAndKeyboardWatchers } from './tick';
-import { checkTray, setupTray } from './tray';
-import { refreshScripts, setupWatchers, teardownWatchers, watchKenvDirectory } from './watcher';
-
-import { Channel } from '@johnlindquist/kit/core/enum';
-import { rimraf } from 'rimraf';
 import { Trigger } from '../shared/enums';
-import { KitEvent, emitter } from '../shared/events';
+import { emitter, KitEvent } from '../shared/events';
 import { reloadApps } from './apps';
 import { pathExists } from './cjs-exports';
 import { syncClipboardStore } from './clipboard';
 import { WindowMonitor } from './debug/window-monitor';
 import { actualHideDock, clearStateTimers } from './dock';
-import { loadKenvEnvironment } from './env-utils';
+import { loadKenvEnvironmentSync } from './env-utils';
 import { displayError } from './error';
 import { createForkOptions } from './fork.options';
 import { HealthMonitor } from './health-monitor';
@@ -97,8 +87,11 @@ import { invoke } from './invoke-pty';
 import { startIpc } from './ipc';
 import { cliFromParams, runPromptProcess } from './kit';
 import { errorLog, logMap, mainLog } from './logs';
+import { startMcpHttpServer } from './mcp-http-server';
 import { destroyAllProcesses, ensureIdleProcess, handleWidgetEvents, processes, setTheme } from './process';
 import { processMonitor } from './process-monitor';
+import { clearPromptTimers, logPromptState } from './prompt';
+import { clearPromptCache } from './prompt.cache';
 import { prompts } from './prompts';
 import { createIdlePty, destroyPtyPool } from './pty';
 import { rescheduleAllScripts, scheduleDownloads, scheduleSelfCheck, sleepSchedule } from './schedule';
@@ -113,13 +106,17 @@ import { startSK } from './sk';
 import { cacheSnippets } from './snippet-cache';
 import { snippetsSelfCheck } from './snippet-heal';
 import { optionalSetupScript } from './spawn';
-import { cacheKitScripts, getThemes, kitState, kitStore, subs, clearSleepCachedEnvVars } from './state';
+import { cacheKitScripts, clearSleepCachedEnvVars, getThemes, kitState, kitStore, subs } from './state';
+import { container } from './state/services/container';
 import { systemEventsSelfCheck } from './system-events';
+import { startClipboardAndKeyboardWatchers } from './tick';
 import { TrackEvent, trackEvent } from './track';
+import { checkTray, setupTray } from './tray';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { getStoredVersion, getVersion, storeVersion } from './version';
-import { container } from './state/services/container';
+import { refreshScripts, setupWatchers, teardownWatchers, watchKenvDirectory } from './watcher';
 import { prepQuitWindow } from './window/utils';
+import { setupMeasurementHandlers } from './measurement';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -147,11 +144,11 @@ for (const envVar of ['KIT', 'KENV']) {
     return;
   }
 
-  // @ts-ignore
+  // @ts-expect-error
   const NativeSecureContext = process.binding('crypto').SecureContext;
   const oldaddRootCerts = NativeSecureContext.prototype.addRootCerts;
   NativeSecureContext.prototype.addRootCerts = function () {
-    // @ts-ignore
+    // @ts-expect-error
     const ret = oldaddRootCerts.apply(this, ...args);
     if (extraca) {
       this.addCACert(extraca);
@@ -208,7 +205,7 @@ log.info('Appending switch: ignore-certificate-errors');
 app.commandLine.appendSwitch('ignore-certificate-errors');
 // if windows, append high-dpi-support and force-device-scale-factor
 
-const envData = loadKenvEnvironment();
+const envData = loadKenvEnvironmentSync();
 // Legacy KIT_DISABLE_GPU
 if ((envData as any).KIT_DISABLE_GPU || envData.KIT_GPU === 'false') {
   app.disableHardwareAcceleration();
@@ -308,7 +305,7 @@ if (process.env.KIT_ENABLE_SOURCEMAPS !== 'false') {
     const sourceMapSupport = require('source-map-support');
     sourceMapSupport.install({
       environment: 'node',
-      handleUncaughtExceptions: false // Let Electron handle these
+      handleUncaughtExceptions: false, // Let Electron handle these
     });
     log.info(`[Perf] Sourcemap support loaded in ${(performance.now() - start).toFixed(2)}ms`);
   } catch (error) {
@@ -793,7 +790,8 @@ const isNewVersion = async () => {
 
   const versionMatch = semver.eq(currentVersion, storedVersion);
   await setupLog(
-    `🤔 Stored version: ${storedVersion} -> Current version: ${currentVersion}. Semver match? ${versionMatch ? 'true' : 'false'
+    `🤔 Stored version: ${storedVersion} -> Current version: ${currentVersion}. Semver match? ${
+      versionMatch ? 'true' : 'false'
     }`,
   );
 
@@ -890,6 +888,10 @@ const checkKit = async () => {
   log.info('Starting IPC...');
   startIpc();
   log.info('IPC started.');
+
+  // Setup measurement handlers
+  setupMeasurementHandlers();
+  log.info('Measurement handlers initialized.');
   // await createPromptWindow();
 
   await setupLog('Prompt window created');
