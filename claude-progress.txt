@@ -10,6 +10,34 @@ Fix grid behavior bugs, performance issues, and architecture debt identified thr
 - Created feature list with 8 features
 - Created init.sh script
 
+### Session 2 - 2025-11-29
+**Completed 7 of 8 features:**
+
+1. ✅ **Fix gap math bug** - Changed `cellGap * (columnCount - 2)` to `cellGap * Math.max(0, columnCount - 1)` to prevent negative gap space when columnCount=1
+
+2. ✅ **Persist gridDimensions** - Already implemented in useEffect at lines 211-219
+
+3. ✅ **Add event.preventDefault()** - Added to arrow key handler to prevent default scroll behavior
+
+4. ✅ **Stabilize hotkey handler** - Introduced refs (indexRef, choicesLengthRef, gridDimensionsRef, gridLoopRef) to avoid recreating handler on every render. Reduced dependency array from 9 items to 3 stable values
+
+5. ✅ **PageUp/PageDown navigation** - Added handler for PageUp/PageDown (jumps ~5 rows) and Home/End (first/last item)
+
+6. ✅ **Home/End navigation** - Combined with PageUp/PageDown in same handler
+
+7. ✅ **Optional loop navigation** - When `promptData.loop` is true, grid wraps at boundaries:
+   - Left at col 0 → last column of same row
+   - Right at last col → first column of same row
+   - Up at row 0 → last row of same column
+   - Down at last row → first row of same column
+
+**Remaining (1 feature):**
+- 🔄 Unify navigation logic into shared reducer/strategy pattern (architecture refactor - larger scope)
+
+**Commits:**
+- `712c4600` - fix(grid): improve grid navigation with bug fixes and new features
+- `031e51d9` - feat(grid): add optional loop navigation for grid boundaries
+
 ---
 ## Guidelines for Agents
 
