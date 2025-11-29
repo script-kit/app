@@ -1,0 +1,108 @@
+{
+  "project": "Script Kit Grid Fixes",
+  "description": "Fix grid behavior bugs, performance issues, and architecture debt identified through deep code review",
+  "features": [
+    {
+      "id": "feature-1",
+      "category": "functional",
+      "description": "Fix gap math bug in calculateColumnWidth (cellGap * (columnCount - 2) goes negative when columnCount=1)",
+      "steps": [
+        "Implement the feature",
+        "Test the feature",
+        "Verify end-to-end functionality"
+      ],
+      "passes": false,
+      "priority": 1
+    },
+    {
+      "id": "feature-2",
+      "category": "functional",
+      "description": "Persist gridDimensions to gridDimensionsAtom after useMemo calculation",
+      "steps": [
+        "Implement the feature",
+        "Test the feature",
+        "Verify end-to-end functionality"
+      ],
+      "passes": false,
+      "priority": 2
+    },
+    {
+      "id": "feature-3",
+      "category": "functional",
+      "description": "Add event.preventDefault() to arrow key handler in grid navigation",
+      "steps": [
+        "Implement the feature",
+        "Test the feature",
+        "Verify end-to-end functionality"
+      ],
+      "passes": false,
+      "priority": 3
+    },
+    {
+      "id": "feature-4",
+      "category": "functional",
+      "description": "Stabilize hotkey handler dependencies using refs instead of recreating on every render",
+      "steps": [
+        "Implement the feature",
+        "Test the feature",
+        "Verify end-to-end functionality"
+      ],
+      "passes": false,
+      "priority": 4
+    },
+    {
+      "id": "feature-5",
+      "category": "functional",
+      "description": "Unify navigation logic into shared reducer/strategy pattern",
+      "steps": [
+        "Implement the feature",
+        "Test the feature",
+        "Verify end-to-end functionality"
+      ],
+      "passes": false,
+      "priority": 5
+    },
+    {
+      "id": "feature-6",
+      "category": "functional",
+      "description": "Add PageUp/PageDown support for grid navigation",
+      "steps": [
+        "Implement the feature",
+        "Test the feature",
+        "Verify end-to-end functionality"
+      ],
+      "passes": false,
+      "priority": 6
+    },
+    {
+      "id": "feature-7",
+      "category": "functional",
+      "description": "Add Home/End key support for grid navigation",
+      "steps": [
+        "Implement the feature",
+        "Test the feature",
+        "Verify end-to-end functionality"
+      ],
+      "passes": false,
+      "priority": 7
+    },
+    {
+      "id": "feature-8",
+      "category": "functional",
+      "description": "Add optional loop navigation when reaching grid boundaries",
+      "steps": [
+        "Implement the feature",
+        "Test the feature",
+        "Verify end-to-end functionality"
+      ],
+      "passes": false,
+      "priority": 8
+    }
+  ],
+  "metadata": {
+    "created": "2025-11-29T20:16:57.451Z",
+    "lastUpdated": "2025-11-29T20:16:57.451Z",
+    "totalFeatures": 8,
+    "passingFeatures": 0
+  }
+}
