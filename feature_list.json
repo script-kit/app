@@ -11,7 +11,7 @@
         "Test the feature",
         "Verify end-to-end functionality"
       ],
-      "passes": false,
+      "passes": true,
       "priority": 1
     },
     {
@@ -23,7 +23,7 @@
         "Test the feature",
         "Verify end-to-end functionality"
       ],
-      "passes": false,
+      "passes": true,
       "priority": 2
     },
     {
@@ -35,7 +35,7 @@
         "Test the feature",
         "Verify end-to-end functionality"
       ],
-      "passes": false,
+      "passes": true,
       "priority": 3
     },
     {
@@ -47,7 +47,7 @@
         "Test the feature",
         "Verify end-to-end functionality"
       ],
-      "passes": false,
+      "passes": true,
       "priority": 4
     },
     {
@@ -71,7 +71,7 @@
         "Test the feature",
         "Verify end-to-end functionality"
       ],
-      "passes": false,
+      "passes": true,
       "priority": 6
     },
     {
@@ -83,7 +83,7 @@
         "Test the feature",
         "Verify end-to-end functionality"
       ],
-      "passes": false,
+      "passes": true,
       "priority": 7
     },
     {
@@ -101,8 +101,8 @@
   ],
   "metadata": {
     "created": "2025-11-29T20:16:57.451Z",
-    "lastUpdated": "2025-11-29T20:16:57.451Z",
+    "lastUpdated": "2025-11-29T20:30:00.000Z",
     "totalFeatures": 8,
-    "passingFeatures": 0
+    "passingFeatures": 6
   }
 }

@@ -1,8 +1,17 @@
 import { hotkeysOptions } from '@renderer/hooks/shared';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from 'react';
+import { type CSSProperties, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { Grid, List, useGridCallbackRef, useListCallbackRef, type GridImperativeAPI, type ListImperativeAPI, type RowComponentProps, type CellComponentProps } from 'react-window';
+import {
+  type CellComponentProps,
+  Grid,
+  type GridImperativeAPI,
+  List,
+  type ListImperativeAPI,
+  type RowComponentProps,
+  useGridCallbackRef,
+  useListCallbackRef,
+} from 'react-window';
 import type { ListProps, ScoredChoice } from '../../../shared/types';
 import useListNav from '../hooks/useListNav';
 import {
@@ -28,7 +37,8 @@ function calculateColumnWidth(totalWidth: number, columnCount: number, cellGap: 
   if (providedColumnWidth) {
     return providedColumnWidth;
   }
-  const totalGapSpace = cellGap * (columnCount - 2);
+  // Fix: (columnCount - 1) gaps between N columns, Math.max prevents negative when columnCount=1
+  const totalGapSpace = cellGap * Math.max(0, columnCount - 1);
   const availableSpace = totalWidth - totalGapSpace;
   const calculatedColumnWidth = availableSpace / columnCount;
   return Math.max(calculatedColumnWidth, 1);
@@ -78,7 +88,7 @@ function GridCellComponent({
   gridDimensions,
   cellGap,
   currentRow,
-  renderedProps
+  renderedProps,
 }: CellComponentProps<ChoiceGridCellProps>): ReactElement | null {
   const index = rowIndex * gridDimensions.columnCount + columnIndex;
 
@@ -92,8 +102,7 @@ function GridCellComponent({
     left: columnIndex === 0 ? style.left : Number(style.left) + columnIndex * cellGap,
     top:
       Number(style.top) +
-      (rowIndex -
-        (focusedOnLastRow ? renderedProps.visibleRowStopIndex - 1 : renderedProps.visibleRowStartIndex)) *
+      (rowIndex - (focusedOnLastRow ? renderedProps.visibleRowStopIndex - 1 : renderedProps.visibleRowStartIndex)) *
         cellGap,
     width: Number(style.width) - cellGap,
     height: Number(style.height) - cellGap,
@@ -137,7 +146,7 @@ export default function ChoiceList({ width, height }: ListProps) {
       // Create a wrapper object compatible with the scroll service
       const scrollWrapper = {
         scrollToItem: (index: number, align?: string) => {
-          listApi.scrollToRow({ index, align: (align as any) || 'auto' });
+          listApi.scrollToRow({ index, align: (align || 'auto') as any });
         },
       };
       setList(scrollWrapper as any);
@@ -151,7 +160,12 @@ export default function ChoiceList({ width, height }: ListProps) {
       // Create a wrapper object compatible with the scroll service
       const scrollWrapper = {
         scrollToItem: ({ rowIndex, columnIndex, align }: { rowIndex: number; columnIndex: number; align?: string }) => {
-          gridApi.scrollToCell({ rowIndex, columnIndex, rowAlign: (align as any) || 'auto', columnAlign: (align as any) || 'auto' });
+          gridApi.scrollToCell({
+            rowIndex,
+            columnIndex,
+            rowAlign: (align || 'auto') as any,
+            columnAlign: (align || 'auto') as any,
+          });
         },
       };
       registerScrollRef({ context: 'choices-grid', ref: scrollWrapper });
@@ -209,22 +223,26 @@ ${containerClassName}
   const hasResolvedInitialIndexRef = useRef(false);
   const lastPromptKeyRef = useRef<string | null>(null);
 
+  // Refs for stable hotkey handler - avoids recreating handler on every render
+  const indexRef = useRef(index);
+  const choicesLengthRef = useRef(choices.length);
+  const gridDimensionsRef = useRef(gridDimensions);
+  useEffect(() => {
+    indexRef.current = index;
+    choicesLengthRef.current = choices.length;
+    gridDimensionsRef.current = gridDimensions;
+  }, [index, choices.length, gridDimensions]);
+
   // Column width function for Grid - v2 API passes cellProps
-  const columnWidthFn = useCallback(
-    (columnIndex: number, cellProps: ChoiceGridCellProps) => {
-      const index = columnIndex; // For column-based sizing
-      return cellProps.choices[index]?.item?.width || cellProps.gridDimensions.columnWidth;
-    },
-    [],
-  );
+  const columnWidthFn = useCallback((columnIndex: number, cellProps: ChoiceGridCellProps) => {
+    const index = columnIndex; // For column-based sizing
+    return cellProps.choices[index]?.item?.width || cellProps.gridDimensions.columnWidth;
+  }, []);
 
   // Row height function for Grid - v2 API passes cellProps
-  const rowHeightFn = useCallback(
-    (rowIndex: number, cellProps: ChoiceGridCellProps) => {
-      return cellProps.gridDimensions.rowHeight;
-    },
-    [],
-  );
+  const rowHeightFn = useCallback((_rowIndex: number, cellProps: ChoiceGridCellProps) => {
+    return cellProps.gridDimensions.rowHeight;
+  }, []);
 
   // Row height function for List - v2 API passes rowProps
   const listRowHeightFn = useCallback(
@@ -234,36 +252,47 @@ ${containerClassName}
     [itemHeight],
   );
 
+  // Computed values for rendering (not used in hotkey handler anymore)
   const currentColumn = index % gridDimensions.columnCount;
   const currentRow = Math.floor(index / gridDimensions.columnCount);
 
+  // Stable hotkey handler using refs - only gridReady, nav, setMouseEnabled are true dependencies
   useHotkeys(
     ['up', 'down', 'left', 'right'],
     (event) => {
       if (!gridReady) return;
 
+      event.preventDefault();
       setMouseEnabled(0);
-      let newIndex = index;
+
+      // Read current values from refs to avoid stale closures
+      const idx = indexRef.current;
+      const dims = gridDimensionsRef.current;
+      const totalChoices = choicesLengthRef.current;
+      const col = idx % dims.columnCount;
+      const row = Math.floor(idx / dims.columnCount);
+
+      let newIndex = idx;
 
       switch (event.key) {
         case 'ArrowLeft':
-          if (currentColumn > 0) {
-            newIndex = currentRow * gridDimensions.columnCount + (currentColumn - 1);
+          if (col > 0) {
+            newIndex = row * dims.columnCount + (col - 1);
           }
           break;
         case 'ArrowRight':
-          if (currentColumn < gridDimensions.columnCount - 1) {
-            newIndex = Math.min(currentRow * gridDimensions.columnCount + (currentColumn + 1), choices.length - 1);
+          if (col < dims.columnCount - 1) {
+            newIndex = Math.min(row * dims.columnCount + (col + 1), totalChoices - 1);
           }
           break;
         case 'ArrowUp':
-          if (currentRow > 0) {
-            newIndex = (currentRow - 1) * gridDimensions.columnCount + currentColumn;
+          if (row > 0) {
+            newIndex = (row - 1) * dims.columnCount + col;
           }
           break;
         case 'ArrowDown':
-          if (currentRow < gridDimensions.rowCount - 1) {
-            newIndex = Math.min(choices.length - 1, (currentRow + 1) * gridDimensions.columnCount + currentColumn);
+          if (row < dims.rowCount - 1) {
+            newIndex = Math.min(totalChoices - 1, (row + 1) * dims.columnCount + col);
           }
           break;
         default:
@@ -271,22 +300,60 @@ ${containerClassName}
           break;
       }
 
-      if (newIndex !== index) {
+      if (newIndex !== idx) {
         nav.dispatch({ type: 'SET', index: newIndex, source: 'key' });
       }
     },
     hotkeysOptions,
-    [
-      currentColumn,
-      currentRow,
-      gridDimensions.columnCount,
-      gridDimensions.rowCount,
-      gridReady,
-      choices.length,
-      index,
-      nav,
-      setMouseEnabled,
-    ],
+    [gridReady, nav, setMouseEnabled], // Stable dependencies only - refs handle the rest
+  );
+
+  // PageUp/PageDown/Home/End navigation for grid
+  useHotkeys(
+    ['pageup', 'pagedown', 'home', 'end'],
+    (event) => {
+      if (!gridReady) return;
+
+      event.preventDefault();
+      setMouseEnabled(0);
+
+      const totalChoices = choicesLengthRef.current;
+      const dims = gridDimensionsRef.current;
+      const idx = indexRef.current;
+      const col = idx % dims.columnCount;
+      const row = Math.floor(idx / dims.columnCount);
+
+      let newIndex = idx;
+
+      switch (event.key) {
+        case 'PageUp': {
+          // Jump up by visible rows (approximately 5 rows)
+          const jumpRows = Math.min(5, row);
+          newIndex = Math.max(0, (row - jumpRows) * dims.columnCount + col);
+          break;
+        }
+        case 'PageDown': {
+          // Jump down by visible rows (approximately 5 rows)
+          const jumpRows = Math.min(5, dims.rowCount - 1 - row);
+          newIndex = Math.min(totalChoices - 1, (row + jumpRows) * dims.columnCount + col);
+          break;
+        }
+        case 'Home':
+          // Go to first item
+          newIndex = 0;
+          break;
+        case 'End':
+          // Go to last item
+          newIndex = totalChoices - 1;
+          break;
+      }
+
+      if (newIndex !== idx) {
+        nav.dispatch({ type: 'SET', index: newIndex, source: 'key' });
+      }
+    },
+    hotkeysOptions,
+    [gridReady, nav, setMouseEnabled],
   );
 
   const [renderedProps, setRenderedProps] = useState<{
@@ -296,7 +363,12 @@ ${containerClassName}
 
   // v2 API: onCellsRendered callback receives visible and all cells info
   const handleCellsRendered = useCallback(
-    (visibleCells: { columnStartIndex: number; columnStopIndex: number; rowStartIndex: number; rowStopIndex: number }) => {
+    (visibleCells: {
+      columnStartIndex: number;
+      columnStopIndex: number;
+      rowStartIndex: number;
+      rowStopIndex: number;
+    }) => {
       setRenderedProps({
         visibleRowStartIndex: visibleCells.rowStartIndex,
         visibleRowStopIndex: visibleCells.rowStopIndex,
