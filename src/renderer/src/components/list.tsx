@@ -227,11 +227,13 @@ ${containerClassName}
   const indexRef = useRef(index);
   const choicesLengthRef = useRef(choices.length);
   const gridDimensionsRef = useRef(gridDimensions);
+  const gridLoopRef = useRef(promptData?.loop ?? false);
   useEffect(() => {
     indexRef.current = index;
     choicesLengthRef.current = choices.length;
     gridDimensionsRef.current = gridDimensions;
-  }, [index, choices.length, gridDimensions]);
+    gridLoopRef.current = promptData?.loop ?? false;
+  }, [index, choices.length, gridDimensions, promptData?.loop]);
 
   // Column width function for Grid - v2 API passes cellProps
   const columnWidthFn = useCallback((columnIndex: number, cellProps: ChoiceGridCellProps) => {
@@ -269,6 +271,7 @@ ${containerClassName}
       const idx = indexRef.current;
       const dims = gridDimensionsRef.current;
       const totalChoices = choicesLengthRef.current;
+      const loop = gridLoopRef.current;
       const col = idx % dims.columnCount;
       const row = Math.floor(idx / dims.columnCount);
 
@@ -278,21 +281,42 @@ ${containerClassName}
         case 'ArrowLeft':
           if (col > 0) {
             newIndex = row * dims.columnCount + (col - 1);
+          } else if (loop) {
+            // Wrap to last column of same row
+            const lastColInRow = Math.min(dims.columnCount - 1, totalChoices - 1 - row * dims.columnCount);
+            newIndex = row * dims.columnCount + lastColInRow;
           }
           break;
         case 'ArrowRight':
-          if (col < dims.columnCount - 1) {
-            newIndex = Math.min(row * dims.columnCount + (col + 1), totalChoices - 1);
+          if (col < dims.columnCount - 1 && row * dims.columnCount + col + 1 < totalChoices) {
+            newIndex = row * dims.columnCount + (col + 1);
+          } else if (loop) {
+            // Wrap to first column of same row
+            newIndex = row * dims.columnCount;
           }
           break;
         case 'ArrowUp':
           if (row > 0) {
             newIndex = (row - 1) * dims.columnCount + col;
+          } else if (loop) {
+            // Wrap to last row, same column (if that cell exists)
+            const lastRow = dims.rowCount - 1;
+            const targetIndex = lastRow * dims.columnCount + col;
+            newIndex = Math.min(targetIndex, totalChoices - 1);
           }
           break;
         case 'ArrowDown':
           if (row < dims.rowCount - 1) {
-            newIndex = Math.min(totalChoices - 1, (row + 1) * dims.columnCount + col);
+            const targetIndex = (row + 1) * dims.columnCount + col;
+            if (targetIndex < totalChoices) {
+              newIndex = targetIndex;
+            } else if (loop) {
+              // Wrap to first row, same column
+              newIndex = col;
+            }
+          } else if (loop) {
+            // Wrap to first row, same column
+            newIndex = col;
           }
           break;
         default:
