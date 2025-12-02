@@ -14,7 +14,7 @@
     "declaration": true,
     "composite": true,
     "incremental": true,
-    
+
     /* Module Resolution */
     "moduleResolution": "bundler",
     "baseUrl": ".",
@@ -26,7 +26,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    
+
     /* Type Checking - Currently relaxed, will tighten over time */
     "strict": false,
     "noImplicitAny": false,
@@ -42,10 +42,10 @@
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    
+
     /* Skip lib check for faster builds */
     "skipLibCheck": true,
-    
+
     /* Interop */
     "isolatedModules": true,
     "types": ["vite/client", "node"]

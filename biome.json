@@ -9,15 +9,15 @@
   "files": {
     "includes": [
       "**",
-      "!**/.cache/**",
-      "!**/.history/**",
-      "!**/.npm-cache/**",
-      "!**/node_modules/**",
-      "!**/.vscode/**",
-      "!**/assets/**",
+      "!**/.cache",
+      "!**/.history",
+      "!**/.npm-cache",
+      "!**/node_modules",
+      "!**/.vscode",
+      "!**/assets",
       "!**/src/main/logs.ts",
-      "!**/dist/**",
-      "!**/out/**"
+      "!**/dist",
+      "!**/out"
     ]
   },
   "linter": {

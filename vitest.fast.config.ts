@@ -1,5 +1,5 @@
-import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vitest/config';
 
 /**
  * Fast test configuration for pre-commit hooks.
