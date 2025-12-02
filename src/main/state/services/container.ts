@@ -9,8 +9,8 @@ class ScriptKitContainer {
   private static _instance: ScriptKitContainer | null = null;
 
   static instance(): ScriptKitContainer {
-    if (!this._instance) this._instance = new ScriptKitContainer();
-    return this._instance;
+    if (!ScriptKitContainer._instance) ScriptKitContainer._instance = new ScriptKitContainer();
+    return ScriptKitContainer._instance;
   }
 
   private _config: ConfigurationService | null = null;
@@ -31,4 +31,3 @@ class ScriptKitContainer {
 }
 
 export const container = ScriptKitContainer.instance();
-

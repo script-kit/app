@@ -65,7 +65,7 @@ await sendResponse({ content: [{ type: 'text', text: 'done' }] })
 
       vi.mocked(getScripts).mockResolvedValue(mockScripts as any);
       vi.mocked(readFile).mockResolvedValue(testScript);
-      
+
       // Add script to mocked kitState
       const { kitState } = await import('./state');
       kitState.scripts.set('test-script', mockScripts[0]);

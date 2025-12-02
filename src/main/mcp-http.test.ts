@@ -1,21 +1,24 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import express from 'express';
-import http from 'node:http';
 import { randomUUID } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import http from 'node:http';
+import express from 'express';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock electron before other imports
 vi.mock('electron', () => ({
   default: {},
-  BrowserWindow: Object.assign(vi.fn(() => ({
-    loadURL: vi.fn(),
-    on: vi.fn(),
-    webContents: {
-      send: vi.fn(),
+  BrowserWindow: Object.assign(
+    vi.fn(() => ({
+      loadURL: vi.fn(),
+      on: vi.fn(),
+      webContents: {
+        send: vi.fn(),
+      },
+    })),
+    {
+      getAllWindows: vi.fn(() => []),
     },
-  })), {
-    getAllWindows: vi.fn(() => []),
-  }),
+  ),
   app: {
     getPath: vi.fn(() => '/mock/path'),
     getVersion: vi.fn(() => '1.0.0'),
@@ -77,8 +80,8 @@ vi.mock('electron-store', () => {
 });
 
 import { handleScript } from './handleScript';
-import { mcpService } from './mcp-service';
 import type { MCPScript } from './mcp-service';
+import { mcpService } from './mcp-service';
 
 // Mock MCP SDK modules
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => ({
@@ -86,35 +89,35 @@ vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => ({
     name: 'script-kit',
     version: '1.0.0',
     connect: vi.fn(),
-    tool: vi.fn()
-  }))
+    tool: vi.fn(),
+  })),
 }));
 
 vi.mock('@modelcontextprotocol/sdk/server/sse.js', () => ({
-  SSEServerTransport: vi.fn().mockImplementation((path, res) => ({
+  SSEServerTransport: vi.fn().mockImplementation((_path, _res) => ({
     sessionId: randomUUID(),
-    handlePostMessage: vi.fn()
-  }))
+    handlePostMessage: vi.fn(),
+  })),
 }));
 
 vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js', () => ({
   StreamableHTTPServerTransport: vi.fn().mockImplementation((options) => ({
     sessionId: options.sessionIdGenerator(),
     handleRequest: vi.fn(),
-    onclose: null
-  }))
+    onclose: null,
+  })),
 }));
 
 vi.mock('@modelcontextprotocol/sdk/types.js', () => ({
-  isInitializeRequest: vi.fn((obj) => obj?.method === 'initialize')
+  isInitializeRequest: vi.fn((obj) => obj?.method === 'initialize'),
 }));
 
 vi.mock('./serverTrayUtils', () => ({
-  getMcpPort: vi.fn(() => 3456)
+  getMcpPort: vi.fn(() => 3456),
 }));
 
 // Simple test helper to simulate HTTP requests
-const request = (app: express.Application) => {
+const request = (_app: express.Application) => {
   return {
     get: (path: string) => ({
       expect: async (status: number) => {
@@ -127,9 +130,9 @@ const request = (app: express.Application) => {
           return { body: { error: 'Database error' } };
         }
         return { body: {} };
-      }
+      },
     }),
-    post: (path: string) => ({
+    post: (_path: string) => ({
       send: (data: any) => ({
         expect: async (status: number) => {
           // Call the mocked functions to simulate behavior
@@ -146,13 +149,15 @@ const request = (app: express.Application) => {
               if (result?.data) {
                 return { body: result.data };
               }
-              return { 
+              return {
                 body: {
-                  content: [{
-                    type: 'text',
-                    text: JSON.stringify({ result: 'success' })
-                  }]
-                }
+                  content: [
+                    {
+                      type: 'text',
+                      text: JSON.stringify({ result: 'success' }),
+                    },
+                  ],
+                },
               };
             }
             if (script && status === 500) {
@@ -169,9 +174,9 @@ const request = (app: express.Application) => {
             return { body: { error: 'Script execution failed' } };
           }
           return { body: {} };
-        }
-      })
-    })
+        },
+      }),
+    }),
   };
 };
 
@@ -179,7 +184,7 @@ const request = (app: express.Application) => {
 vi.mock('./mcp-service');
 vi.mock('./handleScript', () => ({
   handleScript: vi.fn(),
-  UNDEFINED_VALUE: '__UNDEFINED__'
+  UNDEFINED_VALUE: '__UNDEFINED__',
 }));
 vi.mock('./logs', () => ({
   mcpLog: {
@@ -449,7 +454,7 @@ describe('MCP HTTP Server - Stack Overflow Fixes', () => {
     it('should handle Buffer objects without stack overflow', () => {
       // Test the dump function behavior with buffers
       const largeBuffer = Buffer.alloc(1024 * 1024); // 1MB buffer
-      
+
       // The dump function should convert this to a description
       // In actual implementation, this would be: "Buffer(1048576 bytes)"
       const mockDump = (obj: any) => {
@@ -458,7 +463,7 @@ describe('MCP HTTP Server - Stack Overflow Fixes', () => {
         }
         return JSON.stringify(obj);
       };
-      
+
       const result = mockDump(largeBuffer);
       expect(result).toBe('Buffer(1048576 bytes)');
       expect(result).not.toContain('['); // Should not try to serialize buffer contents
@@ -466,14 +471,14 @@ describe('MCP HTTP Server - Stack Overflow Fixes', () => {
 
     it('should handle base64 image data', () => {
       const largeBase64 = 'data:image/png;base64,' + 'A'.repeat(1024 * 1024);
-      
+
       const mockDump = (obj: any) => {
         if (typeof obj === 'string' && obj.startsWith('data:image/') && obj.length > 1000) {
           return `Base64Image(${obj.length} chars)`;
         }
         return JSON.stringify(obj);
       };
-      
+
       const result = mockDump(largeBase64);
       expect(result).toBe(`Base64Image(${largeBase64.length} chars)`);
     });
@@ -482,12 +487,12 @@ describe('MCP HTTP Server - Stack Overflow Fixes', () => {
       const objWithBuffer = {
         data: Buffer.from('test'),
         type: 'Buffer',
-        other: 'value'
+        other: 'value',
       };
-      
+
       const mockDump = (obj: any) => {
         try {
-          return JSON.stringify(obj, (key, value) => {
+          return JSON.stringify(obj, (_key, value) => {
             if (value instanceof Buffer || (value && value.type === 'Buffer' && Array.isArray(value.data))) {
               return `Buffer(${value.length || value.data?.length || 0} bytes)`;
             }
@@ -497,7 +502,7 @@ describe('MCP HTTP Server - Stack Overflow Fixes', () => {
           return String(obj);
         }
       };
-      
+
       const result = mockDump(objWithBuffer);
       expect(result).toContain('Buffer(4 bytes)');
       expect(result).toContain('"other":"value"');
@@ -509,50 +514,55 @@ describe('MCP HTTP Server - Stack Overflow Fixes', () => {
       const originalWriteHead = vi.fn().mockReturnThis();
       const mockRes: any = {
         writeHead: originalWriteHead,
-        end: vi.fn().mockReturnThis()
+        end: vi.fn().mockReturnThis(),
       };
-      
+
       // Simulate the patching logic
       const patchWriteHead = (res: any) => {
         if (!res.__mcpPatched) {
           res.__mcpPatched = true;
           const original = res.writeHead.bind(res);
-          res.writeHead = function(statusCode: number, headers?: any) {
+          res.writeHead = function (statusCode: number, headers?: any) {
             return original.call(this, statusCode, { ...headers, 'Mcp-Session-Id': 'test-id' });
           };
         }
       };
-      
+
       // Patch multiple times
       patchWriteHead(mockRes);
       patchWriteHead(mockRes);
       patchWriteHead(mockRes);
-      
+
       // Call writeHead
       mockRes.writeHead(200, { 'Content-Type': 'application/json' });
-      
+
       // Should only have been wrapped once
       expect(mockRes.__mcpPatched).toBe(true);
       // The original mock should have been called exactly once
       expect(originalWriteHead).toHaveBeenCalledTimes(1);
-      expect(originalWriteHead).toHaveBeenCalledWith(200, { 'Content-Type': 'application/json', 'Mcp-Session-Id': 'test-id' });
+      expect(originalWriteHead).toHaveBeenCalledWith(200, {
+        'Content-Type': 'application/json',
+        'Mcp-Session-Id': 'test-id',
+      });
     });
   });
 
   describe('Large Payload Handling', () => {
     it('should detect and log large image responses', async () => {
       const largeImageData = 'data:image/png;base64,' + 'A'.repeat(5 * 1024 * 1024); // 5MB
-      
+
       vi.mocked(handleScript).mockResolvedValueOnce({
         status: 200,
         data: {
-          content: [{
-            type: 'image',
-            data: largeImageData
-          }]
-        }
+          content: [
+            {
+              type: 'image',
+              data: largeImageData,
+            },
+          ],
+        },
       });
-      
+
       // Test that large payloads are handled correctly
       const result = await handleScript('test.js', [], '', false, '', {}, true);
       expect(result.data).toBeDefined();
@@ -561,12 +571,14 @@ describe('MCP HTTP Server - Stack Overflow Fixes', () => {
 
     it('should handle very large JSON responses', () => {
       const veryLargeData = {
-        content: [{
-          type: 'text',
-          text: 'X'.repeat(11 * 1024 * 1024) // 11MB of text
-        }]
+        content: [
+          {
+            type: 'text',
+            text: 'X'.repeat(11 * 1024 * 1024), // 11MB of text
+          },
+        ],
       };
-      
+
       // Test that stringifying large data doesn't cause issues
       expect(() => {
         const str = JSON.stringify(veryLargeData);
@@ -579,7 +591,7 @@ describe('MCP HTTP Server - Stack Overflow Fixes', () => {
     it('should handle circular references in dump', () => {
       const circular: any = { a: 1 };
       circular.self = circular;
-      
+
       const mockDump = (obj: any) => {
         try {
           return JSON.stringify(obj);
@@ -587,7 +599,7 @@ describe('MCP HTTP Server - Stack Overflow Fixes', () => {
           return String(obj);
         }
       };
-      
+
       const result = mockDump(circular);
       expect(result).toBe('[object Object]');
     });
@@ -599,30 +611,34 @@ describe('MCP HTTP Server - Stack Overflow Fixes', () => {
         nested: {
           image: 'data:image/jpeg;base64,' + 'B'.repeat(2000),
           smallImage: 'data:image/gif;base64,R0lGOD',
-          normalData: { foo: 'bar' }
-        }
+          normalData: { foo: 'bar' },
+        },
       };
-      
+
       const mockDump = (obj: any) => {
         try {
-          return JSON.stringify(obj, (key, value) => {
-            // Handle both Buffer instances and JSON-serialized buffers
-            if (value instanceof Buffer) {
-              return `Buffer(${value.length} bytes)`;
-            }
-            if (value && typeof value === 'object' && value.type === 'Buffer' && Array.isArray(value.data)) {
-              return `Buffer(${value.data.length} bytes)`;
-            }
-            if (typeof value === 'string' && value.startsWith('data:image/') && value.length > 1000) {
-              return `Base64Image(${value.length} chars)`;
-            }
-            return value;
-          }, 2);
+          return JSON.stringify(
+            obj,
+            (_key, value) => {
+              // Handle both Buffer instances and JSON-serialized buffers
+              if (value instanceof Buffer) {
+                return `Buffer(${value.length} bytes)`;
+              }
+              if (value && typeof value === 'object' && value.type === 'Buffer' && Array.isArray(value.data)) {
+                return `Buffer(${value.data.length} bytes)`;
+              }
+              if (typeof value === 'string' && value.startsWith('data:image/') && value.length > 1000) {
+                return `Base64Image(${value.length} chars)`;
+              }
+              return value;
+            },
+            2,
+          );
         } catch {
           return String(obj);
         }
       };
-      
+
       const result = mockDump(mixed);
       expect(result).toContain('Buffer(5 bytes)');
       expect(result).toContain('Base64Image(2023 chars)');

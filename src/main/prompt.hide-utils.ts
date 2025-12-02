@@ -1,7 +1,7 @@
 import { HideReason } from '../shared/enums';
-import { KitEvent, emitter } from '../shared/events';
-import { kitState } from './state';
+import { emitter, KitEvent } from '../shared/events';
 import { invokeSearch } from './search';
+import { kitState } from './state';
 
 export const actualHideImpl = (prompt: any): void => {
   if (!prompt?.window) return;
@@ -52,5 +52,3 @@ export const maybeHideImpl = (prompt: any, reason: string): void => {
     }
   }
 };
-
-

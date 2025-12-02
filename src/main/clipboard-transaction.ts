@@ -47,12 +47,7 @@ export const writeTextEnsure = async (text: string, timeoutMs = 500, pollMs = 25
  * the clipboard still matches the expected value (e.g., the text we wrote).
  * This avoids clobbering user changes that happened after our operation.
  */
-export const conditionalRestore = async (
-  prev: ClipboardSnapshot,
-  expectedText: string,
-  maxWaitMs = 0,
-  pollMs = 50,
-) => {
+export const conditionalRestore = async (prev: ClipboardSnapshot, expectedText: string, maxWaitMs = 0, pollMs = 50) => {
   const until = Date.now() + Math.max(0, maxWaitMs);
   while (Date.now() <= until) {
     const current = safeReadText();
@@ -79,4 +74,3 @@ const safeReadText = () => {
     return '';
   }
 };
-

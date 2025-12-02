@@ -106,7 +106,7 @@ import { startSK } from './sk';
 import { cacheSnippets } from './snippet-cache';
 import { snippetsSelfCheck } from './snippet-heal';
 import { optionalSetupScript } from './spawn';
-import { cacheKitScripts, clearSleepCachedEnvVars, getThemes, kitState, kitStore, subs } from './state';
+import { cacheKitScripts, clearSleepCachedEnvVars, getThemes, kitState, kitStore, subs, updateKenvEnv } from './state';
 import { container } from './state/services/container';
 import { systemEventsSelfCheck } from './system-events';
 import { startClipboardAndKeyboardWatchers } from './tick';
@@ -1194,7 +1194,7 @@ const checkKit = async () => {
     const envKitPath = kenvPath('.env.kit');
     const envKitData = existsSync(envKitPath) ? dotenv.parse(readFileSync(envKitPath)) : {};
     // log.info(`envData`, envPath, envData);
-    kitState.kenvEnv = { ...envData, ...envKitData };
+    updateKenvEnv({ ...envData, ...envKitData });
     const trustedKenvs = (envData?.[kitState.trustedKenvsKey] || '')
       .split(',')
       .filter(Boolean)

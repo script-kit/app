@@ -3,12 +3,11 @@ import { PROMPT } from '@johnlindquist/kit/core/enum';
 import type { BrowserWindowConstructorOptions } from 'electron';
 import { getAssetPath } from '../shared/assets';
 import { MIN_WIDTH } from '../shared/defaults';
+import { envBool, envNumber } from './env.utils';
+import { createLogger } from './log-utils';
 import { getCurrentScreen } from './screen';
 import { kitState } from './state';
 import { container } from './state/services/container';
-import { envBool, envNumber } from './env.utils';
-
-import { createLogger } from './log-utils';
 
 const log = createLogger('prompt.options.ts');
 
@@ -133,10 +132,12 @@ export const getPromptOptions = (arg: boolean | PromptWindowMode = false) => {
     type: useStandardWindow ? undefined : 'panel',
     visualEffectState: 'followWindow',
     // Panel-specific options for macOS to avoid NSWindow warnings
-    ...(kitState.isMac && !useStandardWindow ? {
-      alwaysOnTop: false,  // Don't set alwaysOnTop in constructor for panels
-      titleBarStyle: undefined,  // Ensure no title bar style conflicts
-    } : {}),
+    ...(kitState.isMac && !useStandardWindow
+      ? {
+          alwaysOnTop: false, // Don't set alwaysOnTop in constructor for panels
+          titleBarStyle: undefined, // Ensure no title bar style conflicts
+        }
+      : {}),
   } as BrowserWindowConstructorOptions;
 
   if (kitState.isMac) {

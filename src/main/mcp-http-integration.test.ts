@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('MCP HTTP Server - Stack Overflow Integration Tests', () => {
   describe('Real-world scenarios', () => {
@@ -6,12 +6,14 @@ describe('MCP HTTP Server - Stack Overflow Integration Tests', () => {
       // Simulate a screenshot tool response
       const screenshotResponse = {
         data: {
-          content: [{
-            type: 'image',
-            data: 'data:image/png;base64,' + 'iVBORw0KGgoAAAANSUhEUgAA' + 'A'.repeat(1024 * 1024) // ~1MB image
-          }]
+          content: [
+            {
+              type: 'image',
+              data: 'data:image/png;base64,' + 'iVBORw0KGgoAAAANSUhEUgAA' + 'A'.repeat(1024 * 1024), // ~1MB image
+            },
+          ],
         },
-        status: 200
+        status: 200,
       };
 
       // The dump function should handle this
@@ -21,15 +23,17 @@ describe('MCP HTTP Server - Stack Overflow Integration Tests', () => {
             return `Buffer(${obj.length} bytes)`;
           }
           if (obj && typeof obj === 'object') {
-            const safeObj = JSON.parse(JSON.stringify(obj, (key, value) => {
-              if (value instanceof Buffer || (value && value.type === 'Buffer' && Array.isArray(value.data))) {
-                return `Buffer(${value.length || value.data?.length || 0} bytes)`;
-              }
-              if (typeof value === 'string' && value.startsWith('data:image/') && value.length > 1000) {
-                return `Base64Image(${value.length} chars)`;
-              }
-              return value;
-            }));
+            const safeObj = JSON.parse(
+              JSON.stringify(obj, (_key, value) => {
+                if (value instanceof Buffer || (value && value.type === 'Buffer' && Array.isArray(value.data))) {
+                  return `Buffer(${value.length || value.data?.length || 0} bytes)`;
+                }
+                if (typeof value === 'string' && value.startsWith('data:image/') && value.length > 1000) {
+                  return `Base64Image(${value.length} chars)`;
+                }
+                return value;
+              }),
+            );
             return JSON.stringify(safeObj, null, 2);
           }
           return JSON.stringify(obj, null, 2);
@@ -50,18 +54,21 @@ describe('MCP HTTP Server - Stack Overflow Integration Tests', () => {
       // Simulate DALL-E or similar image generation response
       const aiImageResponse = {
         data: {
-          content: [{
-            type: 'text',
-            text: 'Here is the generated image:'
-          }, {
-            type: 'image',
-            data: 'data:image/jpeg;base64,' + Buffer.alloc(2 * 1024 * 1024, 'B').toString('base64')
-          }]
+          content: [
+            {
+              type: 'text',
+              text: 'Here is the generated image:',
+            },
+            {
+              type: 'image',
+              data: 'data:image/jpeg;base64,' + Buffer.alloc(2 * 1024 * 1024, 'B').toString('base64'),
+            },
+          ],
         },
         metadata: {
           model: 'dall-e-3',
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       };
 
       const dump = (obj: any) => {
@@ -70,15 +77,17 @@ describe('MCP HTTP Server - Stack Overflow Integration Tests', () => {
             return `Buffer(${obj.length} bytes)`;
           }
           if (obj && typeof obj === 'object') {
-            const safeObj = JSON.parse(JSON.stringify(obj, (key, value) => {
-              if (value instanceof Buffer || (value && value.type === 'Buffer' && Array.isArray(value.data))) {
-                return `Buffer(${value.length || value.data?.length || 0} bytes)`;
-              }
-              if (typeof value === 'string' && value.startsWith('data:image/') && value.length > 1000) {
-                return `Base64Image(${value.length} chars)`;
-              }
-              return value;
-            }));
+            const safeObj = JSON.parse(
+              JSON.stringify(obj, (_key, value) => {
+                if (value instanceof Buffer || (value && value.type === 'Buffer' && Array.isArray(value.data))) {
+                  return `Buffer(${value.length || value.data?.length || 0} bytes)`;
+                }
+                if (typeof value === 'string' && value.startsWith('data:image/') && value.length > 1000) {
+                  return `Base64Image(${value.length} chars)`;
+                }
+                return value;
+              }),
+            );
             return JSON.stringify(safeObj, null, 2);
           }
           return JSON.stringify(obj, null, 2);
@@ -89,7 +98,7 @@ describe('MCP HTTP Server - Stack Overflow Integration Tests', () => {
 
       const result = dump(aiImageResponse);
       const parsed = JSON.parse(result);
-      
+
       expect(parsed.data.content[0].text).toBe('Here is the generated image:');
       expect(parsed.data.content[1].data).toMatch(/Base64Image\(\d+ chars\)/);
       expect(parsed.metadata.model).toBe('dall-e-3');
@@ -99,23 +108,28 @@ describe('MCP HTTP Server - Stack Overflow Integration Tests', () => {
       // Simulate a comparison tool that returns multiple images
       const multiImageResponse = {
         data: {
-          content: [{
-            type: 'text',
-            text: 'Comparison results:'
-          }, {
-            type: 'image',
-            data: 'data:image/png;base64,' + 'A'.repeat(500 * 1024), // 500KB
-            caption: 'Before'
-          }, {
-            type: 'image', 
-            data: 'data:image/png;base64,' + 'B'.repeat(500 * 1024), // 500KB
-            caption: 'After'
-          }, {
-            type: 'image',
-            data: 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBA', // Small gif
-            caption: 'Diff indicator'
-          }]
-        }
+          content: [
+            {
+              type: 'text',
+              text: 'Comparison results:',
+            },
+            {
+              type: 'image',
+              data: 'data:image/png;base64,' + 'A'.repeat(500 * 1024), // 500KB
+              caption: 'Before',
+            },
+            {
+              type: 'image',
+              data: 'data:image/png;base64,' + 'B'.repeat(500 * 1024), // 500KB
+              caption: 'After',
+            },
+            {
+              type: 'image',
+              data: 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBA', // Small gif
+              caption: 'Diff indicator',
+            },
+          ],
+        },
       };
 
       const dump = (obj: any) => {
@@ -124,15 +138,17 @@ describe('MCP HTTP Server - Stack Overflow Integration Tests', () => {
             return `Buffer(${obj.length} bytes)`;
           }
           if (obj && typeof obj === 'object') {
-            const safeObj = JSON.parse(JSON.stringify(obj, (key, value) => {
-              if (value instanceof Buffer || (value && value.type === 'Buffer' && Array.isArray(value.data))) {
-                return `Buffer(${value.length || value.data?.length || 0} bytes)`;
-              }
-              if (typeof value === 'string' && value.startsWith('data:image/') && value.length > 1000) {
-                return `Base64Image(${value.length} chars)`;
-              }
-              return value;
-            }));
+            const safeObj = JSON.parse(
+              JSON.stringify(obj, (_key, value) => {
+                if (value instanceof Buffer || (value && value.type === 'Buffer' && Array.isArray(value.data))) {
+                  return `Buffer(${value.length || value.data?.length || 0} bytes)`;
+                }
+                if (typeof value === 'string' && value.startsWith('data:image/') && value.length > 1000) {
+                  return `Base64Image(${value.length} chars)`;
+                }
+                return value;
+              }),
+            );
             return JSON.stringify(safeObj, null, 2);
           }
           return JSON.stringify(obj, null, 2);
@@ -143,7 +159,7 @@ describe('MCP HTTP Server - Stack Overflow Integration Tests', () => {
 
       const result = dump(multiImageResponse);
       const parsed = JSON.parse(result);
-      
+
       expect(parsed.data.content[1].data).toMatch(/Base64Image\(\d+ chars\)/);
       expect(parsed.data.content[1].caption).toBe('Before');
       expect(parsed.data.content[2].data).toMatch(/Base64Image\(\d+ chars\)/);
@@ -156,20 +172,24 @@ describe('MCP HTTP Server - Stack Overflow Integration Tests', () => {
   describe('Performance tests', () => {
     it('should handle very large payloads efficiently', () => {
       const veryLargeResponse = {
-        images: Array(100).fill(null).map((_, i) => ({
-          id: `img-${i}`,
-          data: 'data:image/jpeg;base64,' + 'X'.repeat(100 * 1024), // 100KB each = 10MB total
-          metadata: {
-            width: 1920,
-            height: 1080,
-            format: 'jpeg'
-          }
-        })),
-        buffers: Array(50).fill(null).map((_, i) => ({
-          id: `buf-${i}`,
-          data: Buffer.alloc(50 * 1024), // 50KB each = 2.5MB total
-          type: 'Buffer'
-        }))
+        images: Array(100)
+          .fill(null)
+          .map((_, i) => ({
+            id: `img-${i}`,
+            data: 'data:image/jpeg;base64,' + 'X'.repeat(100 * 1024), // 100KB each = 10MB total
+            metadata: {
+              width: 1920,
+              height: 1080,
+              format: 'jpeg',
+            },
+          })),
+        buffers: Array(50)
+          .fill(null)
+          .map((_, i) => ({
+            id: `buf-${i}`,
+            data: Buffer.alloc(50 * 1024), // 50KB each = 2.5MB total
+            type: 'Buffer',
+          })),
       };
 
       const dump = (obj: any) => {
@@ -178,15 +198,17 @@ describe('MCP HTTP Server - Stack Overflow Integration Tests', () => {
             return `Buffer(${obj.length} bytes)`;
           }
           if (obj && typeof obj === 'object') {
-            const safeObj = JSON.parse(JSON.stringify(obj, (key, value) => {
-              if (value instanceof Buffer || (value && value.type === 'Buffer' && Array.isArray(value.data))) {
-                return `Buffer(${value.length || value.data?.length || 0} bytes)`;
-              }
-              if (typeof value === 'string' && value.startsWith('data:image/') && value.length > 1000) {
-                return `Base64Image(${value.length} chars)`;
-              }
-              return value;
-            }));
+            const safeObj = JSON.parse(
+              JSON.stringify(obj, (_key, value) => {
+                if (value instanceof Buffer || (value && value.type === 'Buffer' && Array.isArray(value.data))) {
+                  return `Buffer(${value.length || value.data?.length || 0} bytes)`;
+                }
+                if (typeof value === 'string' && value.startsWith('data:image/') && value.length > 1000) {
+                  return `Base64Image(${value.length} chars)`;
+                }
+                return value;
+              }),
+            );
             return JSON.stringify(safeObj, null, 2);
           }
           return JSON.stringify(obj, null, 2);

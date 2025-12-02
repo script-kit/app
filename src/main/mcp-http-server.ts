@@ -1,19 +1,19 @@
 import { randomUUID } from 'node:crypto';
-import http from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import http from 'node:http';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { Notification } from 'electron';
-import { z } from 'zod';
-import { KitEvent, emitter } from '../shared/events';
+import type { z } from 'zod';
+import { emitter, KitEvent } from '../shared/events';
+import { debugMCPResponse } from './debug-mcp-response';
 import { handleScript } from './handleScript';
 import { mcpLog as log } from './logs';
-import { mcpService, type MCPScript } from './mcp-service';
-import { getMcpPort } from './serverTrayUtils';
-import { debugMCPResponse } from './debug-mcp-response';
 import { createToolSchema, createToolSchemaFromConfig } from './mcp-schema-utils';
+import { type MCPScript, mcpService } from './mcp-service';
+import { getMcpPort } from './serverTrayUtils';
 
 // -----------------------------
 // Server state
@@ -49,16 +49,18 @@ function dump(obj: unknown) {
     }
     if (obj && typeof obj === 'object') {
       // Create a safe copy that replaces Buffers with descriptions
-      const safeObj = JSON.parse(JSON.stringify(obj, (key, value) => {
-        if (value instanceof Buffer || (value && value.type === 'Buffer' && Array.isArray(value.data))) {
-          return `Buffer(${value.length || value.data?.length || 0} bytes)`;
-        }
-        // Also handle base64 image data in content arrays
-        if (typeof value === 'string' && value.startsWith('data:image/') && value.length > 1000) {
-          return `Base64Image(${value.length} chars)`;
-        }
-        return value;
-      }));
+      const safeObj = JSON.parse(
+        JSON.stringify(obj, (_key, value) => {
+          if (value instanceof Buffer || (value && value.type === 'Buffer' && Array.isArray(value.data))) {
+            return `Buffer(${value.length || value.data?.length || 0} bytes)`;
+          }
+          // Also handle base64 image data in content arrays
+          if (typeof value === 'string' && value.startsWith('data:image/') && value.length > 1000) {
+            return `Base64Image(${value.length} chars)`;
+          }
+          return value;
+        }),
+      );
       return JSON.stringify(safeObj, null, 2);
     }
     return JSON.stringify(obj, null, 2);
@@ -72,16 +74,19 @@ async function createMcpServerForSession(forceRefresh = false): Promise<McpServe
   log.info('Creating new MCP server instance for session…');
   log.debug(`Process PID: ${process.pid}`);
 
-  const server = new McpServer({
-    name: 'script-kit',
-    version: '1.0.0',
-  }, {
-    capabilities: {
-      tools: {
-        listChanged: true  // Enable tools/list_changed notifications
-      }
-    }
-  });
+  const server = new McpServer(
+    {
+      name: 'script-kit',
+      version: '1.0.0',
+    },
+    {
+      capabilities: {
+        tools: {
+          listChanged: true, // Enable tools/list_changed notifications
+        },
+      },
+    },
+  );
 
   await registerToolsForServer(server, forceRefresh);
   const duration = Date.now() - startTime;
@@ -100,7 +105,9 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
 
     if (!forceRefresh && cachedScripts && !cacheExpired) {
       scripts = cachedScripts;
-      log.info(`Using cached MCP scripts (${scripts.length} scripts, age: ${Math.round((now - cacheTimestamp) / 1000)}s)`);
+      log.info(
+        `Using cached MCP scripts (${scripts.length} scripts, age: ${Math.round((now - cacheTimestamp) / 1000)}s)`,
+      );
     } else {
       if (cacheExpired) {
         log.info('Cache expired, refreshing scripts');
@@ -134,173 +141,181 @@ async function registerToolsForServer(server: McpServer, forceRefresh = false) {
         }
 
         // Register tool with this specific MCP server instance
-        server.tool(script.name, script.description || "No description metadata provided", schema, async (params: Record<string, any>) => {
-          log.info(`Executing MCP tool ${script.name}`);
-          log.info(`Raw params: ${Object.keys(params).join(', ')}`);
+        server.tool(
+          script.name,
+          script.description || 'No description metadata provided',
+          schema,
+          async (params: Record<string, any>) => {
+            log.info(`Executing MCP tool ${script.name}`);
+            log.info(`Raw params: ${Object.keys(params).join(', ')}`);
 
-          let ordered: string[] = [];
-          let toolParams: Record<string, any> | null = null;
+            const ordered: string[] = [];
+            let toolParams: Record<string, any> | null = null;
 
-          if (script.inputSchema && script.inputSchema.properties) {
-            // For params() based scripts, pass parameters as-is
-            toolParams = params;
-            log.info(`Using params() parameters for ${script.name}: ${Object.keys(toolParams).join(', ')}`);
-          } else if (script.toolConfig && script.toolConfig.parameters) {
-            // For tool() based scripts, pass parameters as-is
-            toolParams = params;
-            log.info(`Using tool params for ${script.name}: ${Object.keys(toolParams).join(', ')}`);
-          } else {
-            // For traditional arg() scripts, assemble ordered args
-            for (let i = 0; i < script.args.length; i++) {
-              const meta = script.args[i];
-              const key = meta.name?.trim() ? meta.name : `arg${i + 1}`;
-              ordered.push(params[key] ?? UNDEFINED_VALUE);
-            }
-            log.info(`Using ordered args for ${script.name}: [${ordered.length} args]`);
-          }
-
-          try {
-            // ========= NEW CODE (start) =========
-            /**
-             * When we call a script that uses `tool()`, add two headers so the helper
-             * can bypass the interactive prompts:
-             *
-             *   X-MCP-Tool        – the tool's public name
-             *   X-MCP-Parameters  – JSON-string of the argument object
-             */
-            const mcpHeaders: Record<string, string> = {};
-
-            if (toolParams) {
-              mcpHeaders['X-MCP-Tool'] = script.name;
-              mcpHeaders['X-MCP-Parameters'] = JSON.stringify(toolParams);
+            if (script.inputSchema?.properties) {
+              // For params() based scripts, pass parameters as-is
+              toolParams = params;
+              log.info(`Using params() parameters for ${script.name}: ${Object.keys(toolParams).join(', ')}`);
+            } else if (script.toolConfig?.parameters) {
+              // For tool() based scripts, pass parameters as-is
+              toolParams = params;
+              log.info(`Using tool params for ${script.name}: ${Object.keys(toolParams).join(', ')}`);
+            } else {
+              // For traditional arg() scripts, assemble ordered args
+              for (let i = 0; i < script.args.length; i++) {
+                const meta = script.args[i];
+                const key = meta.name?.trim() ? meta.name : `arg${i + 1}`;
+                ordered.push(params[key] ?? UNDEFINED_VALUE);
+              }
+              log.info(`Using ordered args for ${script.name}: [${ordered.length} args]`);
             }
 
-            let result;
             try {
-              result = await handleScript(
-                script.filePath,
-                toolParams ? [] : ordered,     // still pass positional args for arg()
-                process.cwd(),
-                false,                         // checkAccess
-                '',                            // apiKey
-                mcpHeaders,                    // <-- now has the sentinel keys
-                true                           // mcpResponse
-              );
-            } catch (scriptError) {
-              log.error(`Error in handleScript for ${script.name}:`, scriptError);
-              throw scriptError;
-            }
-            // ========= NEW CODE (end) =========
+              // ========= NEW CODE (start) =========
+              /**
+               * When we call a script that uses `tool()`, add two headers so the helper
+               * can bypass the interactive prompts:
+               *
+               *   X-MCP-Tool        – the tool's public name
+               *   X-MCP-Parameters  – JSON-string of the argument object
+               */
+              const mcpHeaders: Record<string, string> = {};
 
-            // handleScript returns { data, status, message }
-            log.info(`handleScript result keys: ${Object.keys(result || {})}`);
+              if (toolParams) {
+                mcpHeaders['X-MCP-Tool'] = script.name;
+                mcpHeaders['X-MCP-Parameters'] = JSON.stringify(toolParams);
+              }
 
-            // Debug the response structure when it contains images
-            if (result?.data && typeof result.data === 'object' && 'content' in result.data) {
-              const content = (result.data as any).content;
-              if (Array.isArray(content)) {
-                const hasImage = content.some((item: any) => item?.type === 'image');
-                if (hasImage) {
-                  log.info('=== Debugging image response ===');
-                  debugMCPResponse(result.data);
-                  log.info('=== End debug ===');
-                }
-                
-                for (const item of content) {
-                  if (item.type === 'image' && item.data && typeof item.data === 'string') {
-                    const sizeInMB = (item.data.length / (1024 * 1024)).toFixed(2);
-                    log.info(`Returning image content: ${sizeInMB}MB`);
+              let result;
+              try {
+                result = await handleScript(
+                  script.filePath,
+                  toolParams ? [] : ordered, // still pass positional args for arg()
+                  process.cwd(),
+                  false, // checkAccess
+                  '', // apiKey
+                  mcpHeaders, // <-- now has the sentinel keys
+                  true, // mcpResponse
+                );
+              } catch (scriptError) {
+                log.error(`Error in handleScript for ${script.name}:`, scriptError);
+                throw scriptError;
+              }
+              // ========= NEW CODE (end) =========
+
+              // handleScript returns { data, status, message }
+              log.info(`handleScript result keys: ${Object.keys(result || {})}`);
+
+              // Debug the response structure when it contains images
+              if (result?.data && typeof result.data === 'object' && 'content' in result.data) {
+                const content = (result.data as any).content;
+                if (Array.isArray(content)) {
+                  const hasImage = content.some((item: any) => item?.type === 'image');
+                  if (hasImage) {
+                    log.info('=== Debugging image response ===');
+                    debugMCPResponse(result.data);
+                    log.info('=== End debug ===');
+                  }
+
+                  for (const item of content) {
+                    if (item.type === 'image' && item.data && typeof item.data === 'string') {
+                      const sizeInMB = (item.data.length / (1024 * 1024)).toFixed(2);
+                      log.info(`Returning image content: ${sizeInMB}MB`);
+                    }
                   }
                 }
               }
-            }
-            if (result?.data && typeof result.data === 'object' && 'content' in result.data) {
-              // Check for large responses without stringifying
-              const content = (result.data as any).content;
-              if (Array.isArray(content)) {
-                let estimatedSize = 0;
-                for (const item of content) {
-                  if (item.type === 'image' && item.data && typeof item.data === 'string') {
-                    estimatedSize += item.data.length;
-                  } else if (item.type === 'text' && item.text && typeof item.text === 'string') {
-                    estimatedSize += item.text.length;
+              if (result?.data && typeof result.data === 'object' && 'content' in result.data) {
+                // Check for large responses without stringifying
+                const content = (result.data as any).content;
+                if (Array.isArray(content)) {
+                  let estimatedSize = 0;
+                  for (const item of content) {
+                    if (item.type === 'image' && item.data && typeof item.data === 'string') {
+                      estimatedSize += item.data.length;
+                    } else if (item.type === 'text' && item.text && typeof item.text === 'string') {
+                      estimatedSize += item.text.length;
+                    }
+                  }
+                  if (estimatedSize > 10 * 1024 * 1024) {
+                    // 10MB threshold
+                    log.warn(`Large response detected: ~${(estimatedSize / (1024 * 1024)).toFixed(2)}MB`);
                   }
                 }
-                if (estimatedSize > 10 * 1024 * 1024) { // 10MB threshold
-                  log.warn(`Large response detected: ~${(estimatedSize / (1024 * 1024)).toFixed(2)}MB`);
-                }
-              }
-              
-              // Return the data directly - the transport will handle serialization
-              log.info('About to return MCP response with content');
-              
-              // Create a completely clean response by reconstructing the content array
-              const cleanContent = [];
-              
-              if (Array.isArray(result.data.content)) {
-                for (const [idx, item] of result.data.content.entries()) {
-                  if (item.type === 'image' && item.data && item.mimeType) {
-                    log.info(`Content[${idx}]: image with ${item.data.length} chars of base64 data`);
-                    // Create a fresh object with no prototype chain
-                    cleanContent.push({
-                      type: 'image',
-                      data: String(item.data), // Ensure it's a primitive string
-                      mimeType: String(item.mimeType)
-                    });
-                  } else if (item.type === 'text' && item.text) {
-                    cleanContent.push({
-                      type: 'text',
-                      text: String(item.text)
-                    });
-                  } else {
-                    // Pass through other types as-is
-                    cleanContent.push(item);
-                  }
-                }
-              }
-              
-              // Create a completely fresh response object
-              const response = Object.create(null);
-              response.content = cleanContent;
-              
-              // Copy any additional properties if they exist
-              if (result.data.isError !== undefined) response.isError = result.data.isError;
-              if (result.data.structuredContent !== undefined) response.structuredContent = result.data.structuredContent;
-              if (result.data._meta !== undefined) response._meta = result.data._meta;
-              
-              return response;
-            }
 
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: typeof result.data === 'string' 
-                    ? result.data 
-                    : (() => {
-                        try {
-                          // Use the safe dump function for non-string data
-                          return dump(result.data);
-                        } catch {
-                          return '[Unable to serialize response]';
-                        }
-                      })(),
-                },
-              ],
-            };
-          } catch (err) {
-            const error = err as Error;
-            log.error(`Error executing script ${script.name}`, error);
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: `Error: ${error.message}`,
-                },
-              ],
-            };
-          }
-        });
+                // Return the data directly - the transport will handle serialization
+                log.info('About to return MCP response with content');
+
+                // Create a completely clean response by reconstructing the content array
+                const cleanContent = [];
+
+                if (Array.isArray(result.data.content)) {
+                  for (const [idx, item] of result.data.content.entries()) {
+                    if (item.type === 'image' && item.data && item.mimeType) {
+                      log.info(`Content[${idx}]: image with ${item.data.length} chars of base64 data`);
+                      // Create a fresh object with no prototype chain
+                      cleanContent.push({
+                        type: 'image',
+                        data: String(item.data), // Ensure it's a primitive string
+                        mimeType: String(item.mimeType),
+                      });
+                    } else if (item.type === 'text' && item.text) {
+                      cleanContent.push({
+                        type: 'text',
+                        text: String(item.text),
+                      });
+                    } else {
+                      // Pass through other types as-is
+                      cleanContent.push(item);
+                    }
+                  }
+                }
+
+                // Create a completely fresh response object
+                const response = Object.create(null);
+                response.content = cleanContent;
+
+                // Copy any additional properties if they exist
+                if (result.data.isError !== undefined) response.isError = result.data.isError;
+                if (result.data.structuredContent !== undefined)
+                  response.structuredContent = result.data.structuredContent;
+                if (result.data._meta !== undefined) response._meta = result.data._meta;
+
+                return response;
+              }
+
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text:
+                      typeof result.data === 'string'
+                        ? result.data
+                        : (() => {
+                            try {
+                              // Use the safe dump function for non-string data
+                              return dump(result.data);
+                            } catch {
+                              return '[Unable to serialize response]';
+                            }
+                          })(),
+                  },
+                ],
+              };
+            } catch (err) {
+              const error = err as Error;
+              log.error(`Error executing script ${script.name}`, error);
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `Error: ${error.message}`,
+                  },
+                ],
+              };
+            }
+          },
+        );
 
         log.info(`Registered MCP tool: ${script.name}`);
         // Log schema keys instead of full objects to avoid verbose output
@@ -345,10 +360,12 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
     if (req.url === '/ready') {
       const isReady = cachedScripts !== null;
       if (isReady) {
-        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res
+          .writeHead(200, { 'Content-Type': 'application/json' })
           .end(JSON.stringify({ ready: true, scripts: cachedScripts?.length || 0 }));
       } else {
-        res.writeHead(503, { 'Content-Type': 'application/json' })
+        res
+          .writeHead(503, { 'Content-Type': 'application/json' })
           .end(JSON.stringify({ ready: false, message: 'Scripts still loading' }));
       }
       return;
@@ -356,16 +373,17 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
 
     // Handle /endpoints to help clients understand available endpoints
     if (req.url === '/endpoints') {
-      res.writeHead(200, { 'Content-Type': 'application/json' })
-        .end(JSON.stringify({
+      res.writeHead(200, { 'Content-Type': 'application/json' }).end(
+        JSON.stringify({
           endpoints: {
             '/mcp': 'StreamableHTTP transport (POST for initialize, GET/DELETE for sessions)',
             '/sse': 'Server-Sent Events transport (GET only)',
             '/messages': 'SSE message endpoint (POST with sessionId)',
             '/health': 'Health check',
-            '/ready': 'Check if scripts are loaded'
-          }
-        }));
+            '/ready': 'Check if scripts are loaded',
+          },
+        }),
+      );
       return;
     }
 
@@ -428,10 +446,7 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
           return;
         }
 
-        await transport.handlePostMessage(
-          req as unknown as IncomingMessage,
-          res as unknown as ServerResponse,
-        );
+        await transport.handlePostMessage(req as unknown as IncomingMessage, res as unknown as ServerResponse);
       } catch (err) {
         log.error('Error handling /messages request', err);
         if (!res.headersSent) {
@@ -459,7 +474,7 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
       if (sid && transports[sid]) {
         transport = transports[sid];
       }
-    } catch { }
+    } catch {}
   }
 
   // Fast-path GET or DELETE for existing sessions (SSE stream & termination)
@@ -564,7 +579,7 @@ async function onRequest(req: IncomingMessage, res: ServerResponse) {
               const sessionIdToUse = transport?.sessionId || newSessionId;
               const finalHeaders = {
                 ...headers,
-                'Mcp-Session-Id': sessionIdToUse
+                'Mcp-Session-Id': sessionIdToUse,
               };
               log.info(`Returning Mcp-Session-Id: ${sessionIdToUse} for initialization`);
               return originalWriteHead.call(this, statusCode, finalHeaders);
@@ -635,22 +650,22 @@ export async function startMcpHttpServer(): Promise<void> {
     testReq.end();
   });
 
-  // Listen for tool changes and notify connected MCP clients
-  emitter.on(KitEvent.MCPToolChanged, async ({ script, action }) => {
+  // Store the event handler so we can properly remove it later
+  mcpToolChangedHandler = async ({ script, action }: { script: any; action: string }) => {
     log.info(`MCP tool ${action}: ${script.name}`);
-    
+
     // Clear the cache to force refresh
     mcpService.clearCache();
     cachedScripts = null; // Clear local cache too
-    
+
     // Check how many sessions we have
     const sessionCount = Object.keys(mcpServers).length;
     const sseCount = Object.keys(sseTransports).length;
     log.info(`Active MCP sessions: ${sessionCount} HTTP, ${sseCount} SSE`);
-    
+
     // Notify all connected MCP clients
     const notifications = [];
-    
+
     // Notify StreamableHTTP sessions
     for (const [sessionId, server] of Object.entries(mcpServers)) {
       if (server && typeof server.sendToolListChanged === 'function') {
@@ -664,7 +679,7 @@ export async function startMcpHttpServer(): Promise<void> {
         }
       }
     }
-    
+
     // Also notify SSE sessions
     for (const sessionId of Object.keys(sseTransports)) {
       const server = mcpServers[sessionId];
@@ -679,33 +694,60 @@ export async function startMcpHttpServer(): Promise<void> {
         }
       }
     }
-    
+
     await Promise.all(notifications);
-    
+
     // Optional: Show system notification
     if (notifications.length > 0) {
       new Notification({
         title: 'Script Kit MCP',
-        body: `Tool "${script.name}" ${action} (${notifications.length} clients notified)`
+        body: `Tool "${script.name}" ${action} (${notifications.length} clients notified)`,
       }).show();
     }
-    
+
     log.info(`Notified ${notifications.length} MCP clients of tool change`);
-  });
+  };
+
+  // Attach the event handler
+  emitter.on(KitEvent.MCPToolChanged, mcpToolChangedHandler);
 }
+
+// Store the event handler reference for proper cleanup
+let mcpToolChangedHandler: ((data: any) => Promise<void>) | null = null;
 
 export function stopMcpHttpServer() {
   if (httpServer) {
+    // Clean up server connections
     httpServer.close(() => {
       log.info('MCP HTTP server stopped');
     });
+
+    // Clean up all active sessions
+    for (const sessionId of Object.keys(mcpServers)) {
+      delete mcpServers[sessionId];
+    }
+
+    for (const sessionId of Object.keys(sseTransports)) {
+      delete sseTransports[sessionId];
+    }
+
+    for (const sessionId of Object.keys(transports)) {
+      delete transports[sessionId];
+    }
+
+    // Reset server state
     httpServer = null;
     mcpStartTime = null;
     mcpRequestCount = 0;
     mcpErrorCount = 0;
-    
-    // Remove event listener
-    emitter.removeAllListeners(KitEvent.MCPToolChanged);
+    cachedScripts = null;
+    cacheTimestamp = 0;
+
+    // Remove the specific event listener using the stored reference
+    if (mcpToolChangedHandler) {
+      emitter.off(KitEvent.MCPToolChanged, mcpToolChangedHandler);
+      mcpToolChangedHandler = null;
+    }
   }
 }
 
@@ -736,11 +778,12 @@ export function getMcpHealth() {
       seconds: uptimeSeconds,
       minutes: uptimeMinutes,
       hours: uptimeHours,
-      formatted: uptimeHours > 0
-        ? `${uptimeHours}h ${uptimeMinutes % 60}m`
-        : uptimeMinutes > 0
-          ? `${uptimeMinutes}m ${uptimeSeconds % 60}s`
-          : `${uptimeSeconds}s`,
+      formatted:
+        uptimeHours > 0
+          ? `${uptimeHours}h ${uptimeMinutes % 60}m`
+          : uptimeMinutes > 0
+            ? `${uptimeMinutes}m ${uptimeSeconds % 60}s`
+            : `${uptimeSeconds}s`,
     },
     requests: mcpRequestCount,
     errors: mcpErrorCount,

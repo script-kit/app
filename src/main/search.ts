@@ -1,6 +1,4 @@
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
-import type { Choice, FlagsWithKeys, Script } from '@johnlindquist/kit/types/core';
-
 import {
   defaultGroupClassName,
   defaultGroupNameClassName,
@@ -8,17 +6,17 @@ import {
   getMainScriptPath,
   groupChoices,
 } from '@johnlindquist/kit/core/utils';
+import type { Choice, FlagsWithKeys, Script } from '@johnlindquist/kit/types/core';
 import { debounce } from 'lodash-es';
 
 import { AppChannel } from '../shared/enums';
 import type { ScoredChoice } from '../shared/types';
-import { createScoredChoice, createAsTypedChoice, structuredClone } from './helpers';
+import { createAsTypedChoice, createScoredChoice, structuredClone } from './helpers';
 import { searchLog as log, perf } from './logs';
 import { cacheChoices } from './messages';
 import type { KitPrompt } from './prompt';
 import { kitCache, kitState } from './state';
-import { searchChoices, scoreChoice, isExactMatch, startsWithQuery, clearFuzzyCache } from './vscode-search';
-
+import { clearFuzzyCache, isExactMatch, scoreChoice, searchChoices, startsWithQuery } from './vscode-search';
 
 export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'normal') => {
   const endPerfInvokeSearch = perf.start('invokeSearch', {
@@ -63,23 +61,23 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     if (!transformedInput || transformedInput === '') return [];
 
     // Find ALL asTyped choices in the original choices
-    const asTypedChoices = prompt.kitSearch.choices.filter(choice => choice?.asTyped === true);
+    const asTypedChoices = prompt.kitSearch.choices.filter((choice) => choice?.asTyped === true);
     if (asTypedChoices.length === 0) return [];
 
     // Check if we should show the "As Typed" options
-    const shouldShowAsTyped = !searchResult || searchResult.length === 0 || !searchResult.some(r => {
-      const { name = '', keyword = '' } = r.item;
-      return (
-        name.toLowerCase() === lowerCaseInput ||
-        keyword.toLowerCase() === lowerCaseInput
-      );
-    });
+    const shouldShowAsTyped =
+      !searchResult ||
+      searchResult.length === 0 ||
+      !searchResult.some((r) => {
+        const { name = '', keyword = '' } = r.item;
+        return name.toLowerCase() === lowerCaseInput || keyword.toLowerCase() === lowerCaseInput;
+      });
 
     if (!shouldShowAsTyped) return [];
 
     // Generate an "as typed" choice for each template
-    return asTypedChoices.map(asTypedChoice =>
-      createScoredChoice(createAsTypedChoice(transformedInput, asTypedChoice))
+    return asTypedChoices.map((asTypedChoice) =>
+      createScoredChoice(createAsTypedChoice(transformedInput, asTypedChoice)),
     );
   };
 
@@ -123,7 +121,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
       resultMap.set(r.item.id, r);
     }
 
-    let groupedResults: ScoredChoice[] = [];
+    const groupedResults: ScoredChoice[] = [];
     const exactMatchGroup: ScoredChoice[] = [];
     const startsWithGroup: ScoredChoice[] = [];
     const otherMatchGroup: ScoredChoice[] = [];
@@ -136,7 +134,12 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     // Process all choices and categorize them
     for (const choice of prompt.kitSearch.choices) {
       // Skip pass group headers - we'll create our own
-      if (choice?.skip && choice?.name?.includes('Pass') && choice?.name?.includes('to...') && choice?.group?.includes('Pass')) {
+      if (
+        choice?.skip &&
+        choice?.name?.includes('Pass') &&
+        choice?.name?.includes('to...') &&
+        choice?.group?.includes('Pass')
+      ) {
         continue;
       }
 
@@ -233,7 +236,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
           className: defaultGroupClassName,
           height: PROMPT.ITEM.HEIGHT.XXXS,
           id: Math.random().toString(),
-        })
+        }),
       );
       // Sort exact matches by original index (they're all exact matches)
       exactMatchGroup.sort((a, b) => {
@@ -258,7 +261,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
             className: defaultGroupClassName,
             height: PROMPT.ITEM.HEIGHT.XXXS,
             id: Math.random().toString(),
-          })
+          }),
         );
       }
       // Sort startsWith matches by original index (they all start with the query)
@@ -283,7 +286,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
           className: defaultGroupClassName,
           height: PROMPT.ITEM.HEIGHT.XXXS,
           id: Math.random().toString(),
-        })
+        }),
       );
 
       // Sort by score, then by original index
@@ -311,7 +314,7 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
           className: defaultGroupClassName,
           height: PROMPT.ITEM.HEIGHT.XXXS,
           id: Math.random().toString(),
-        })
+        }),
       );
       combinedResults.push(...passGroup);
     }
@@ -364,14 +367,14 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     endPerfInvokeSearch();
   } else {
     // Non-grouped results - already sorted by VS Code algorithm
-    const infoChoices = result.filter(r => r.item.info);
-    const normalChoices = result.filter(r => !r.item.info && !r.item.miss && !r.item.skip);
-    const missChoices = result.filter(r => r.item.miss);
+    const infoChoices = result.filter((r) => r.item.info);
+    const normalChoices = result.filter((r) => !r.item.info && !r.item.miss && !r.item.skip);
+    const missChoices = result.filter((r) => r.item.miss);
 
     // Check for pass choices that match regex patterns
     const passChoices: ScoredChoice[] = [];
     for (const choice of prompt.kitSearch.choices) {
-      if (choice?.pass && !result.some(r => r.item.id === choice.id)) {
+      if (choice?.pass && !result.some((r) => r.item.id === choice.id)) {
         if (typeof choice?.pass === 'string' && (choice?.pass as string).startsWith('/')) {
           const lastSlashIndex = choice?.pass.lastIndexOf('/');
           if (lastSlashIndex > 0) {
@@ -403,7 +406,6 @@ export const invokeSearch = (prompt: KitPrompt, rawInput: string, _reason = 'nor
     endPerfInvokeSearch();
   }
 };
-
 
 export const debounceInvokeSearch = debounce(invokeSearch, 100);
 
@@ -462,7 +464,7 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
           height: PROMPT.ITEM.HEIGHT.XXXS,
           id: Math.random().toString(),
         }),
-        ...exactMatchGroup
+        ...exactMatchGroup,
       );
     }
 
@@ -477,9 +479,7 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
     setScoredFlags(prompt, groupedResults);
   } else if (result.length === 0) {
     // No matches, show miss choices
-    const missGroup = prompt.flagSearch.choices
-      .filter(c => c?.miss)
-      .map(createScoredChoice);
+    const missGroup = prompt.flagSearch.choices.filter((c) => c?.miss).map(createScoredChoice);
     setScoredFlags(prompt, missGroup);
   } else {
     // Non-grouped results - already sorted by VS Code algorithm
@@ -649,12 +649,7 @@ export const setScoredChoices = (prompt: KitPrompt, choices: ScoredChoice[], rea
   const sendToPrompt = prompt.sendToPrompt;
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
 
-  if (
-    prompt.isMainMenu &&
-    prompt.kitSearch.input === '' &&
-    !prompt.kitSearch.inputRegex &&
-    choices?.length > 0
-  ) {
+  if (prompt.isMainMenu && prompt.kitSearch.input === '' && !prompt.kitSearch.inputRegex && choices?.length > 0) {
     log.info(
       `${prompt.getLogPrefix()}: Caching main scored choices: ${choices.length}. First choice: ${choices[0]?.item?.name}`,
     );

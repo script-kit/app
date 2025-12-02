@@ -1,4 +1,4 @@
-import { KitEvent, emitter } from '../shared/events';
+import { emitter, KitEvent } from '../shared/events';
 import { processes } from './process';
 
 export function processExists(pid: number): boolean {
@@ -72,7 +72,9 @@ export function checkProcessAlive(prompt: any, force = false) {
 export function startProcessMonitoring(prompt: any) {
   if (!prompt.processMonitoringEnabled || prompt.processMonitorTimer) return;
 
-  prompt.logInfo?.(`Starting process monitoring for PID ${prompt.pid} (checking every ${prompt.processCheckInterval}ms)`);
+  prompt.logInfo?.(
+    `Starting process monitoring for PID ${prompt.pid} (checking every ${prompt.processCheckInterval}ms)`,
+  );
   if (prompt.boundToProcess && prompt.pid) {
     checkProcessAlive(prompt, true);
     prompt.processMonitorTimer = setInterval(() => {
@@ -102,4 +104,3 @@ export function listenForProcessExit(prompt: any) {
     emitter.off(KitEvent.ProcessGone, processGoneHandler);
   });
 }
-

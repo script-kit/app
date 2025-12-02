@@ -5,7 +5,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { kenvPath, parseSnippetMetadata } from '@johnlindquist/kit/core/utils';
 import log from 'electron-log';
 import { globby } from 'globby';
-import { type SnippetFile, kitState } from './state';
+import { kitState, type SnippetFile } from './state';
 import { snippetMap, updateSnippetPrefixIndex } from './tick';
 
 // Cache to avoid re-parsing unchanged files (matches SDK behavior)
@@ -46,13 +46,16 @@ export async function cacheSnippets() {
     log.info('[cacheSnippets] Start scanning snippets (recursive, matching SDK behavior)');
 
     // Match SDK glob patterns: recursive scanning of snippets and kenvs
-    const snippetFiles = await globby([
-      kenvPath('snippets', '**', '*.txt').replaceAll('\\', '/'),
-      kenvPath('kenvs', '*', 'snippets', '**', '*.txt').replaceAll('\\', '/'),
-    ], {
-      onlyFiles: true,
-      absolute: true,
-    });
+    const snippetFiles = await globby(
+      [
+        kenvPath('snippets', '**', '*.txt').replaceAll('\\', '/'),
+        kenvPath('kenvs', '*', 'snippets', '**', '*.txt').replaceAll('\\', '/'),
+      ],
+      {
+        onlyFiles: true,
+        absolute: true,
+      },
+    );
 
     // We'll build a fresh map, then swap it into kitState at the end.
     const newSnippetMap = new Map<string, SnippetFile>();
@@ -91,7 +94,6 @@ export async function cacheSnippets() {
         newSnippetMap.set(filePath, snippetData);
       } catch (err) {
         log.warn(`[cacheSnippets] Error processing snippet file: ${filePath}`, err);
-        continue;
       }
     }
 

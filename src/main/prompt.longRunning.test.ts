@@ -39,15 +39,18 @@ const electronMock = {
     quit: vi.fn(),
     on: vi.fn(),
   },
-  BrowserWindow: Object.assign(vi.fn().mockImplementation(() => ({
-    loadURL: vi.fn(),
-    on: vi.fn(),
-    webContents: {
-      send: vi.fn(),
+  BrowserWindow: Object.assign(
+    vi.fn().mockImplementation(() => ({
+      loadURL: vi.fn(),
+      on: vi.fn(),
+      webContents: {
+        send: vi.fn(),
+      },
+    })),
+    {
+      getAllWindows: vi.fn(() => []),
     },
-  })), {
-    getAllWindows: vi.fn(() => []),
-  }),
+  ),
   Notification: vi.fn().mockImplementation((options) => ({
     options,
     show: vi.fn(),

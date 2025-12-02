@@ -48,7 +48,7 @@ export const startServer = () => {
   app.use(cors());
 
   // Request tracking middleware
-  app.use((req, res, next) => {
+  app.use((_req, res, next) => {
     requestCount++;
     res.on('finish', () => {
       if (res.statusCode >= 400) {
@@ -59,7 +59,7 @@ export const startServer = () => {
   });
 
   // Health check endpoint
-  app.get('/health', (req, res) => {
+  app.get('/health', (_req, res) => {
     const health = getServerHealth();
     res.json(health);
   });
@@ -94,12 +94,12 @@ export const startServer = () => {
       // Prepare execution context
       let scriptArgs = args;
       let headers = {};
-      
+
       // For tool() based scripts, pass parameters via headers
       if (toolParams && mcpScript.toolConfig) {
         headers = {
           'X-MCP-Tool': mcpScript.name,
-          'X-MCP-Parameters': JSON.stringify(toolParams)
+          'X-MCP-Parameters': JSON.stringify(toolParams),
         };
         scriptArgs = []; // No positional args for tool() scripts
       }
@@ -152,7 +152,15 @@ export const startServer = () => {
         log.info({ script: bodyScript, args, cwd });
 
         try {
-          const result = await handleScript(bodyScript, args, cwd, true, apiKey, { ...headers, 'X-Kit-Server': 'true' }, mcpResponse);
+          const result = await handleScript(
+            bodyScript,
+            args,
+            cwd,
+            true,
+            apiKey,
+            { ...headers, 'X-Kit-Server': 'true' },
+            mcpResponse,
+          );
           if (typeof result.data === 'string') {
             res.send(result.data);
           } else if (typeof result.data === 'object') {
@@ -305,11 +313,12 @@ export const getServerHealth = () => {
       seconds: uptimeSeconds,
       minutes: uptimeMinutes,
       hours: uptimeHours,
-      formatted: uptimeHours > 0 
-        ? `${uptimeHours}h ${uptimeMinutes % 60}m` 
-        : uptimeMinutes > 0 
-          ? `${uptimeMinutes}m ${uptimeSeconds % 60}s`
-          : `${uptimeSeconds}s`,
+      formatted:
+        uptimeHours > 0
+          ? `${uptimeHours}h ${uptimeMinutes % 60}m`
+          : uptimeMinutes > 0
+            ? `${uptimeMinutes}m ${uptimeSeconds % 60}s`
+            : `${uptimeSeconds}s`,
     },
     requests: requestCount,
     errors: errorCount,

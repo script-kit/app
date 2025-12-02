@@ -1,8 +1,8 @@
 import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
 import { promptLog } from './logs';
 import { processes } from './process';
-import { KitPrompt } from './prompt';
 import { processWindowCoordinator } from './process-window-coordinator';
+import { KitPrompt } from './prompt';
 
 const promptMap = new Map<number, KitPrompt>();
 

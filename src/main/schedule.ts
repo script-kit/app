@@ -1,9 +1,7 @@
-import schedule, { type Job } from 'node-schedule';
-
 import { getScripts } from '@johnlindquist/kit/core/db';
-
 import { kitPath } from '@johnlindquist/kit/core/utils';
 import type { Script } from '@johnlindquist/kit/types/core';
+import schedule, { type Job } from 'node-schedule';
 import { Trigger } from '../shared/enums';
 import { runPromptProcess, runScript } from './kit';
 import { scheduleLog } from './logs';

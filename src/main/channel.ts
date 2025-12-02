@@ -29,11 +29,13 @@ export const sendToAllPrompts = <K extends keyof ChannelMap>(channel: K | AppCha
   // log.info(`>_ ${channel}`);
 
   // Log [SCRIPTS RENDER] events
-  if (channel === AppChannel.SET_CACHED_MAIN_STATE || 
-      channel === AppChannel.SET_CACHED_MAIN_SCORED_CHOICES ||
-      channel === AppChannel.SET_CACHED_MAIN_SHORTCUTS ||
-      channel === AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS ||
-      channel === AppChannel.SET_CACHED_MAIN_PREVIEW) {
+  if (
+    channel === AppChannel.SET_CACHED_MAIN_STATE ||
+    channel === AppChannel.SET_CACHED_MAIN_SCORED_CHOICES ||
+    channel === AppChannel.SET_CACHED_MAIN_SHORTCUTS ||
+    channel === AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS ||
+    channel === AppChannel.SET_CACHED_MAIN_PREVIEW
+  ) {
     log.info(`[SCRIPTS RENDER] Broadcasting ${String(channel)} to ${prompts.length} prompts`);
   }
 
@@ -42,7 +44,9 @@ export const sendToAllPrompts = <K extends keyof ChannelMap>(channel: K | AppCha
       const ignoreChannelsWhenOpen =
         channel === AppChannel.SET_CACHED_MAIN_PREVIEW || channel === AppChannel.INIT_PROMPT;
       if (channel === AppChannel.INIT_PROMPT) {
-        log.info(`📤 sendToAllPrompts INIT_PROMPT: pid=${prompt.pid}, scriptPath="${prompt.scriptPath}", willIgnore=${Boolean(prompt.scriptPath && ignoreChannelsWhenOpen)}`);
+        log.info(
+          `📤 sendToAllPrompts INIT_PROMPT: pid=${prompt.pid}, scriptPath="${prompt.scriptPath}", willIgnore=${Boolean(prompt.scriptPath && ignoreChannelsWhenOpen)}`,
+        );
       }
       if (prompt.scriptPath && ignoreChannelsWhenOpen) {
         log.info(`${prompt.pid}: 🏋️‍♂️ ignoring: ${channel} on ${prompt.scriptPath}`);
@@ -50,11 +54,13 @@ export const sendToAllPrompts = <K extends keyof ChannelMap>(channel: K | AppCha
       }
       if (channel) {
         // Log [SCRIPTS RENDER] per prompt
-        if (channel === AppChannel.SET_CACHED_MAIN_STATE || 
-            channel === AppChannel.SET_CACHED_MAIN_SCORED_CHOICES ||
-            channel === AppChannel.SET_CACHED_MAIN_SHORTCUTS ||
-            channel === AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS ||
-            channel === AppChannel.SET_CACHED_MAIN_PREVIEW) {
+        if (
+          channel === AppChannel.SET_CACHED_MAIN_STATE ||
+          channel === AppChannel.SET_CACHED_MAIN_SCORED_CHOICES ||
+          channel === AppChannel.SET_CACHED_MAIN_SHORTCUTS ||
+          channel === AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS ||
+          channel === AppChannel.SET_CACHED_MAIN_PREVIEW
+        ) {
           log.info(`[SCRIPTS RENDER] Sending ${String(channel)} to prompt ${prompt.pid}:${prompt.id}`);
         }
         // log.info(`${prompt.pid}: ${prompt.id}: ALL -> ${channel}`);

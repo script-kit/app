@@ -2,7 +2,7 @@ import { kitPath } from '@johnlindquist/kit/core/utils';
 import log from 'electron-log';
 import { debounce } from 'lodash-es';
 import { Trigger } from '../shared/enums';
-import { KitEvent, emitter } from '../shared/events';
+import { emitter, KitEvent } from '../shared/events';
 
 // TODO: use in for TRUSTED KENVS
 export const showInfo = debounce(

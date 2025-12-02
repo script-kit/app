@@ -1,7 +1,6 @@
-import { Channel, Mode, PROMPT, UI } from '@johnlindquist/kit/core/enum';
-import { ProcessType } from '@johnlindquist/kit/core/enum';
+import { Channel, Mode, PROMPT, ProcessType, UI } from '@johnlindquist/kit/core/enum';
 import type { Choice, Script } from '@johnlindquist/kit/types/core';
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import type { ScoredChoice } from '../shared/types';
 import type { KitPrompt } from './prompt';
 

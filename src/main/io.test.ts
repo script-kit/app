@@ -1,4 +1,4 @@
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { expectBackspaces, registerIO, toKey } from './io';
 
 // Mock dependencies
@@ -55,9 +55,9 @@ vi.mock('./state', () => ({
   },
 }));
 
+import shims from './shims';
 // Import after mocks
 import { kitState } from './state';
-import shims from './shims';
 
 describe('Backspace Tracking Tests', () => {
   let clearTimeoutSpy: Mock;
@@ -233,10 +233,12 @@ describe('Backspace Tracking Tests', () => {
       keydownHandler({ keycode: 14, shiftKey: false });
 
       // Handler should still be called
-      expect(mockHandler).toHaveBeenCalledWith(expect.objectContaining({
-        keycode: 14,
-        key: '', // backspace doesn't have a key representation
-      }));
+      expect(mockHandler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          keycode: 14,
+          key: '', // backspace doesn't have a key representation
+        }),
+      );
     });
 
     it('should only count backspaces when expected', async () => {

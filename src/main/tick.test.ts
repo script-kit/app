@@ -1,9 +1,9 @@
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { UiohookKey, UiohookKeyboardEvent, UiohookMouseEvent } from 'uiohook-napi';
 import type { Script } from '@johnlindquist/kit/types/core';
-import type { SnippetInfo } from '../shared/types';
+import type { UiohookKey, UiohookKeyboardEvent, UiohookMouseEvent } from 'uiohook-napi';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { Trigger } from '../shared/enums';
 import { KitEvent } from '../shared/events';
+import type { SnippetInfo } from '../shared/types';
 
 // Mock dependencies
 vi.mock('node:fs/promises', () => ({
@@ -12,9 +12,7 @@ vi.mock('node:fs/promises', () => ({
 }));
 
 vi.mock('@johnlindquist/kit/core/utils', () => ({
-  kitPath: vi.fn((subpath?: string) =>
-    subpath ? `/mock/kit/path/${subpath}` : '/mock/kit/path'
-  ),
+  kitPath: vi.fn((subpath?: string) => (subpath ? `/mock/kit/path/${subpath}` : '/mock/kit/path')),
   tmpClipboardDir: '/tmp/clipboard',
   getTrustedKenvsKey: () => 'KENV_TRUST_MAP',
 }));
@@ -104,7 +102,6 @@ vi.mock('./logs', () => ({
   },
 }));
 
-
 vi.mock('./shims', () => ({
   default: {
     'uiohook-napi': {
@@ -167,29 +164,24 @@ vi.mock('@johnlindquist/kit/core/db', () => ({
 const moduleCallbacks: { snippet?: (value: string) => void } = {};
 
 vi.mock('valtio/utils', () => ({
-  subscribeKey: vi.fn((state, key, callback) => {
+  subscribeKey: vi.fn((_state, key, callback) => {
     // Store the callback for later use
     if (key === 'snippet') {
       moduleCallbacks.snippet = callback;
     }
     // Return a mock unsubscribe function
-    return () => { };
+    return () => {};
   }),
-}))
+}));
 
-// Import after mocks
-import {
-  snippetMap,
-  snippetScriptChanged,
-  addTextSnippet,
-  removeSnippet,
-} from './tick';
-import { kitState, kitConfig } from './state';
-import { deleteText } from './keyboard';
-import { emitter } from '../shared/events';
 import { readFile } from 'node:fs/promises';
-import { tickLog, snippetLog } from './logs';
 import { subscribeKey } from 'valtio/utils';
+import { emitter } from '../shared/events';
+import { deleteText } from './keyboard';
+import { snippetLog, tickLog } from './logs';
+import { kitConfig, kitState } from './state';
+// Import after mocks
+import { addTextSnippet, removeSnippet, snippetMap, snippetScriptChanged } from './tick';
 
 describe('Snippet Detection System', () => {
   let mockUiohookKey: typeof UiohookKey;
@@ -277,7 +269,7 @@ describe('Snippet Detection System', () => {
 
       expect(snippetMap.has(';;')).toBe(false);
       expect(snippetLog.info).toHaveBeenCalledWith(
-        expect.stringContaining('Ignoring /test/untrusted.js // Snippet metadata because it\'s not trusted.')
+        expect.stringContaining("Ignoring /test/untrusted.js // Snippet metadata because it's not trusted."),
       );
     });
 
@@ -429,7 +421,7 @@ New content`;
             force: false,
             trigger: Trigger.Snippet,
           }),
-        })
+        }),
       );
     });
 
@@ -443,7 +435,7 @@ New content`;
         KitEvent.RunPromptProcess,
         expect.objectContaining({
           scriptPath: '/test/snippet.js',
-        })
+        }),
       );
     });
 
@@ -459,7 +451,7 @@ New content`;
         expect.objectContaining({
           scriptPath: '/test/postfix.js',
           args: ['prefixText'],
-        })
+        }),
       );
     });
 
@@ -474,7 +466,7 @@ New content`;
         expect.objectContaining({
           scriptPath: '/mock/kit/path/app/paste-snippet.js',
           args: ['--filePath', '/test/snippet.txt'],
-        })
+        }),
       );
     });
 
@@ -496,7 +488,7 @@ New content`;
       if (moduleCallbacks.snippet) await moduleCallbacks.snippet('bad');
 
       expect(tickLog.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Snippet key "bad" found in index but not in map')
+        expect.stringContaining('Snippet key "bad" found in index but not in map'),
       );
       expect(emitter.emit).not.toHaveBeenCalled();
     });
@@ -529,7 +521,7 @@ New content`;
         KitEvent.RunPromptProcess,
         expect.objectContaining({
           scriptPath: '/test/te.js',
-        })
+        }),
       );
 
       vi.clearAllMocks();
@@ -542,7 +534,7 @@ New content`;
         KitEvent.RunPromptProcess,
         expect.objectContaining({
           scriptPath: '/test/test.js',
-        })
+        }),
       );
     });
   });
@@ -562,7 +554,7 @@ New content`;
       if (moduleCallbacks.snippet) moduleCallbacks.snippet(',,');
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
-        expect.objectContaining({ scriptPath: '/test/1.js' })
+        expect.objectContaining({ scriptPath: '/test/1.js' }),
       );
 
       vi.clearAllMocks();
@@ -571,7 +563,7 @@ New content`;
       if (moduleCallbacks.snippet) moduleCallbacks.snippet(';;');
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
-        expect.objectContaining({ scriptPath: '/test/2.js' })
+        expect.objectContaining({ scriptPath: '/test/2.js' }),
       );
     });
 
@@ -588,7 +580,7 @@ New content`;
       if (moduleCallbacks.snippet) moduleCallbacks.snippet('test');
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
-        expect.objectContaining({ scriptPath: '/test/1.js' })
+        expect.objectContaining({ scriptPath: '/test/1.js' }),
       );
 
       vi.clearAllMocks();
@@ -597,7 +589,7 @@ New content`;
       if (moduleCallbacks.snippet) moduleCallbacks.snippet('fastest');
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
-        expect.objectContaining({ scriptPath: '/test/2.js' })
+        expect.objectContaining({ scriptPath: '/test/2.js' }),
       );
     });
   });
@@ -615,13 +607,15 @@ New content`;
       if (moduleCallbacks.snippet) await moduleCallbacks.snippet('bb');
 
       expect(emitter.emit).toHaveBeenCalledTimes(2);
-      expect(emitter.emit).toHaveBeenNthCalledWith(1,
+      expect(emitter.emit).toHaveBeenNthCalledWith(
+        1,
         KitEvent.RunPromptProcess,
-        expect.objectContaining({ scriptPath: '/test/aa.js' })
+        expect.objectContaining({ scriptPath: '/test/aa.js' }),
       );
-      expect(emitter.emit).toHaveBeenNthCalledWith(2,
+      expect(emitter.emit).toHaveBeenNthCalledWith(
+        2,
         KitEvent.RunPromptProcess,
-        expect.objectContaining({ scriptPath: '/test/bb.js' })
+        expect.objectContaining({ scriptPath: '/test/bb.js' }),
       );
     });
 
@@ -633,7 +627,7 @@ New content`;
 
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
-        expect.objectContaining({ scriptPath: '/test/special.js' })
+        expect.objectContaining({ scriptPath: '/test/special.js' }),
       );
     });
 
@@ -653,7 +647,7 @@ New content`;
       snippetMap.set('note', {
         filePath: '/test/note.txt',
         postfix: false,
-        txt: false  // Note: txt is false but filePath ends with .txt
+        txt: false, // Note: txt is false but filePath ends with .txt
       });
 
       kitState.snippet = 'note';
@@ -665,7 +659,7 @@ New content`;
         expect.objectContaining({
           scriptPath: '/mock/kit/path/app/paste-snippet.js',
           args: ['--filePath', '/test/note.txt'],
-        })
+        }),
       );
     });
 
@@ -693,7 +687,7 @@ New content`;
       if (moduleCallbacks.snippet) await moduleCallbacks.snippet('hello');
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
-        expect.objectContaining({ scriptPath: '/test/hello.js' })
+        expect.objectContaining({ scriptPath: '/test/hello.js' }),
       );
     });
 
@@ -705,7 +699,7 @@ New content`;
       if (moduleCallbacks.snippet) await moduleCallbacks.snippet('aa');
       expect(emitter.emit).toHaveBeenCalledWith(
         KitEvent.RunPromptProcess,
-        expect.objectContaining({ scriptPath: '/test/1.js' })
+        expect.objectContaining({ scriptPath: '/test/1.js' }),
       );
 
       vi.clearAllMocks();

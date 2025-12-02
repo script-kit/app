@@ -1,4 +1,4 @@
-import { type Rectangle, desktopCapturer, screen } from 'electron';
+import { desktopCapturer, type Rectangle, screen } from 'electron';
 import { kitState } from './state';
 import { container } from './state/services/container';
 

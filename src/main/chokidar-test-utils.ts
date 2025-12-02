@@ -1,7 +1,7 @@
 import path from 'node:path';
 import type { FSWatcher } from 'chokidar';
 import { ensureDir, readdir, writeFile } from 'fs-extra';
-import { type WatchEvent, type WatchSource, startWatching } from './chokidar';
+import { startWatching, type WatchEvent, type WatchSource } from './chokidar';
 
 // Constants for test timing - optimized for speed
 export const WATCHER_SETTLE_TIME = 50; // Reduced from 200ms

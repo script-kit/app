@@ -1,6 +1,6 @@
 import { type ZodObject, type ZodRawShape, z } from 'zod';
-import { mcpLog as log } from './logs';
 import { UNDEFINED_VALUE } from './handleScript';
+import { mcpLog as log } from './logs';
 
 export interface ParameterSchema {
   type: 'string' | 'number' | 'boolean' | 'array' | 'object';
@@ -26,7 +26,7 @@ export function createToolSchema(
     const key = arg.name?.trim() ? arg.name : `arg${index + 1}`;
     log.info(`[createToolSchema] arg: ${arg.name} ${arg.placeholder}`);
 
-    let schema = z.string().describe(arg.placeholder || arg.name || `Parameter ${index + 1}`);
+    const schema = z.string().describe(arg.placeholder || arg.name || `Parameter ${index + 1}`);
 
     if (useDefaultValue) {
       shape[key] = schema.default(UNDEFINED_VALUE).optional();

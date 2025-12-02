@@ -24,15 +24,18 @@ vi.mock('electron', () => ({
   nativeTheme: {
     shouldUseDarkColors: false,
   },
-  BrowserWindow: Object.assign(vi.fn(() => ({
-    loadURL: vi.fn(),
-    on: vi.fn(),
-    webContents: {
-      send: vi.fn(),
+  BrowserWindow: Object.assign(
+    vi.fn(() => ({
+      loadURL: vi.fn(),
+      on: vi.fn(),
+      webContents: {
+        send: vi.fn(),
+      },
+    })),
+    {
+      getAllWindows: vi.fn(() => []),
     },
-  })), {
-    getAllWindows: vi.fn(() => []),
-  }),
+  ),
   ipcMain: {
     handle: vi.fn(),
     on: vi.fn(),
@@ -134,32 +137,42 @@ vi.mock('./mcp-service', () => ({
   mcpService: {
     startMCPServer: vi.fn(() => Promise.resolve()),
     stopMCPServer: vi.fn(() => Promise.resolve()),
-    getMCPScripts: vi.fn(() => Promise.resolve([
-      {
-        name: 'test-integration',
-        description: 'Test script for MCP integration',
-        args: [
-          { name: 'name', placeholder: "What's your name?" },
-          { name: 'number', placeholder: 'Pick a number' }
-        ],
-      }
-    ])),
+    getMCPScripts: vi.fn(() =>
+      Promise.resolve([
+        {
+          name: 'test-integration',
+          description: 'Test script for MCP integration',
+          args: [
+            { name: 'name', placeholder: "What's your name?" },
+            { name: 'number', placeholder: 'Pick a number' },
+          ],
+        },
+      ]),
+    ),
   },
 }));
 
 // Mock handleScript
 vi.mock('./handleScript', () => ({
-  handleScript: vi.fn(() => Promise.resolve({
-    content: [{
-      type: 'text',
-      text: JSON.stringify({
-        greeting: 'Hello Alice!',
-        number: 42,
-        doubled: 84,
-        timestamp: new Date().toISOString()
-      }, null, 2)
-    }]
-  })),
+  handleScript: vi.fn(() =>
+    Promise.resolve({
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              greeting: 'Hello Alice!',
+              number: 42,
+              doubled: 84,
+              timestamp: new Date().toISOString(),
+            },
+            null,
+            2,
+          ),
+        },
+      ],
+    }),
+  ),
 }));
 
 import { startServer, stopServer } from './server';

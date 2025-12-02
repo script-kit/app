@@ -1,8 +1,8 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { spawn } from 'child_process';
-import { mcpService } from './mcp-service';
-import { getScripts } from '@johnlindquist/kit/core/db';
+import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { getScripts } from '@johnlindquist/kit/core/db';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mcpService } from './mcp-service';
 
 // Mock dependencies
 vi.mock('@johnlindquist/kit/core/db');
@@ -108,7 +108,7 @@ await editor(JSON.stringify(result, null, 2));`;
     const childProcess = spawn('node', ['/path/to/testing-mcp-tool.js'], { env });
 
     // Capture stdout to verify the result object
-    let stdoutData = '';
+    const stdoutData = '';
     mockChildProcess.stdout.on.mockImplementation((event, callback) => {
       if (event === 'data') {
         // Simulate the console.log outputs from the script
@@ -123,7 +123,7 @@ await editor(JSON.stringify(result, null, 2));`;
     });
 
     // Wait for process to complete
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     // Verify spawn was called with correct environment
     expect(spawn).toHaveBeenCalledWith(
@@ -135,7 +135,7 @@ await editor(JSON.stringify(result, null, 2));`;
             parameters: mcpParameters,
           }),
         }),
-      })
+      }),
     );
   });
 
@@ -186,7 +186,7 @@ console.log("Has all parameter keys:", hasAllKeys);
 
     const scripts = await mcpService.getMCPScripts();
     expect(scripts).toHaveLength(1);
-    
+
     const toolConfig = scripts[0].toolConfig;
     expect(toolConfig).toBeDefined();
     expect(toolConfig.parameters).toHaveProperty('name');

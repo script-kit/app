@@ -211,7 +211,9 @@ export class ProcessStateMachine {
           // Force stop bypasses window operation protection
           log.warn(
             `[${this.pid}] Force stopping with ${this.pendingWindowOps.size} pending window ops: ` +
-              `[${Array.from(this.pendingWindowOps.entries()).map(([id, op]) => `${id}:${op}`).join(', ')}]`,
+              `[${Array.from(this.pendingWindowOps.entries())
+                .map(([id, op]) => `${id}:${op}`)
+                .join(', ')}]`,
           );
           this.stopReason = event.reason;
           this.pendingWindowOps.clear();
@@ -222,7 +224,9 @@ export class ProcessStateMachine {
           reason = `Cannot stop - ${this.pendingWindowOps.size} window operation(s) pending`;
           log.warn(
             `[${this.pid}] ${reason}: ` +
-              `[${Array.from(this.pendingWindowOps.entries()).map(([id, op]) => `${id}:${op}`).join(', ')}]`,
+              `[${Array.from(this.pendingWindowOps.entries())
+                .map(([id, op]) => `${id}:${op}`)
+                .join(', ')}]`,
           );
         } else if (event.type === 'EXIT') {
           // Process exited unexpectedly during window op

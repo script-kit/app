@@ -7,7 +7,6 @@ import { runMainScript } from './main-script';
 import { spawnShebang } from './process';
 import { getApiKey } from './server/server-utils';
 
-
 export const UNDEFINED_VALUE = '__undefined__';
 
 /**
@@ -15,20 +14,26 @@ export const UNDEFINED_VALUE = '__undefined__';
  */
 function determineLaunchContext(headers: Record<string, string>, mcpResponse: boolean): string {
   // Check for MCP context
-  if (mcpResponse || headers['X-MCP-Tool'] || headers['X-MCP-Resource'] || headers['X-MCP-Prompt'] || headers['X-MCP-Parameters']) {
+  if (
+    mcpResponse ||
+    headers['X-MCP-Tool'] ||
+    headers['X-MCP-Resource'] ||
+    headers['X-MCP-Prompt'] ||
+    headers['X-MCP-Parameters']
+  ) {
     return 'mcp';
   }
-  
+
   // Check for socket context
   if (headers['X-Kit-Socket']) {
     return 'socket';
   }
-  
+
   // Check for HTTP server context
   if (headers['X-Kit-Server'] || headers['kit-api-key']) {
     return 'http';
   }
-  
+
   // Default to direct call
   return 'direct';
 }
@@ -92,18 +97,18 @@ export async function handleScript(
   }
   // Determine the launch context for the script
   const launchContext = determineLaunchContext(headers, mcpResponse);
-  
+
   const processInfo = await runPromptProcess(
     scriptPath,
     args.map((s: string) => s.replaceAll('$newline$', '\n')).filter(Boolean),
-    { 
-      force: true, 
-      trigger: Trigger.Kar, 
-      sponsorCheck: false, 
+    {
+      force: true,
+      trigger: Trigger.Kar,
+      sponsorCheck: false,
       headers: {
         ...headers,
-        'X-Kit-Launch-Context': launchContext
-      }
+        'X-Kit-Launch-Context': launchContext,
+      },
     },
   );
 
@@ -122,8 +127,6 @@ export async function handleScript(
 
           // Handle the response from the child process
           const { body, statusCode, headers } = payload.value;
-
-
 
           const message = {
             status: statusCode,
@@ -151,7 +154,7 @@ export async function handleScript(
               }
             }
           }
-          
+
           log.info(`Response received: status=${statusCode}, data=${dataInfo}`);
           processInfo.child.send({ channel: Channel.RESPONSE, value: message });
           resolve(message);

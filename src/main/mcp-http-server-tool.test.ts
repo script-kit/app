@@ -1,8 +1,8 @@
 import { readFile } from 'node:fs/promises';
-import http from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import http from 'node:http';
 import { getScripts } from '@johnlindquist/kit/core/db';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { handleScript, UNDEFINED_VALUE } from './handleScript';
@@ -24,15 +24,18 @@ vi.mock('electron', () => ({
   nativeTheme: {
     shouldUseDarkColors: false,
   },
-  BrowserWindow: Object.assign(vi.fn(() => ({
-    loadURL: vi.fn(),
-    on: vi.fn(),
-    webContents: {
-      send: vi.fn(),
+  BrowserWindow: Object.assign(
+    vi.fn(() => ({
+      loadURL: vi.fn(),
+      on: vi.fn(),
+      webContents: {
+        send: vi.fn(),
+      },
+    })),
+    {
+      getAllWindows: vi.fn(() => []),
     },
-  })), {
-    getAllWindows: vi.fn(() => []),
-  }),
+  ),
   ipcMain: {
     handle: vi.fn(),
     on: vi.fn(),
@@ -59,7 +62,7 @@ vi.mock('node-pty', () => ({
 
 vi.mock('@johnlindquist/kit/core/db');
 vi.mock('node:fs/promises', async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = (await importOriginal()) as any;
   return {
     ...actual,
     readFile: vi.fn(() => Promise.resolve('')),
@@ -89,10 +92,10 @@ vi.mock('./state', () => ({
 // Mock implementation of createToolSchemaFromConfig for testing
 function createToolSchemaFromConfig(parameters: Record<string, any>): Record<string, z.ZodTypeAny> {
   const shape: Record<string, z.ZodTypeAny> = {};
-  
+
   for (const [key, param] of Object.entries(parameters)) {
     let schema: z.ZodTypeAny;
-    
+
     switch (param.type) {
       case 'string':
         schema = z.string();
@@ -103,7 +106,7 @@ function createToolSchemaFromConfig(parameters: Record<string, any>): Record<str
           schema = (schema as z.ZodString).regex(new RegExp(param.pattern));
         }
         break;
-      
+
       case 'number':
         schema = z.number();
         if (param.minimum !== undefined) {
@@ -113,45 +116,45 @@ function createToolSchemaFromConfig(parameters: Record<string, any>): Record<str
           schema = (schema as z.ZodNumber).max(param.maximum);
         }
         break;
-      
+
       case 'boolean':
         schema = z.boolean();
         break;
-      
+
       case 'array':
         schema = z.array(z.string());
         break;
-      
+
       case 'object':
         schema = z.object({});
         break;
-      
+
       default:
         schema = z.string();
     }
-    
+
     if (param.description) {
       schema = schema.describe(param.description);
     }
-    
+
     if (!param.required) {
       schema = schema.optional();
     }
-    
+
     if (param.default !== undefined) {
       schema = schema.default(param.default);
     }
-    
+
     shape[key] = schema;
   }
-  
+
   return shape;
 }
 
 // Mock implementation of createToolSchema for testing
 function createToolSchema(args: Array<{ name: string; placeholder: string | null }>): Record<string, z.ZodTypeAny> {
   const shape: Record<string, z.ZodTypeAny> = {};
-  
+
   for (const [index, arg] of args.entries()) {
     const key = arg.name?.trim() ? arg.name : `arg${index + 1}`;
     shape[key] = z
@@ -160,7 +163,7 @@ function createToolSchema(args: Array<{ name: string; placeholder: string | null
       .default(UNDEFINED_VALUE)
       .optional();
   }
-  
+
   return shape;
 }
 
@@ -175,7 +178,6 @@ describe('MCP HTTP Server Tool Handling', () => {
   });
 
   describe('createToolSchemaFromConfig', () => {
-
     it('should convert string parameters correctly', () => {
       const parameters = {
         simpleString: {
@@ -192,10 +194,10 @@ describe('MCP HTTP Server Tool Handling', () => {
       };
 
       const schema = createToolSchemaFromConfig(parameters);
-      
+
       expect(schema.simpleString).toBeDefined();
       expect(schema.optionalString).toBeDefined();
-      
+
       // Test validation
       const testSchema = z.object(schema);
       const valid = testSchema.safeParse({ simpleString: 'test' });
@@ -215,11 +217,11 @@ describe('MCP HTTP Server Tool Handling', () => {
 
       const schema = createToolSchemaFromConfig(parameters);
       const testSchema = z.object(schema);
-      
+
       const valid = testSchema.safeParse({});
       expect(valid.success).toBe(true);
       expect(valid.data.priority).toBe('medium');
-      
+
       const invalid = testSchema.safeParse({ priority: 'invalid' });
       expect(invalid.success).toBe(false);
     });
@@ -236,10 +238,10 @@ describe('MCP HTTP Server Tool Handling', () => {
 
       const schema = createToolSchemaFromConfig(parameters);
       const testSchema = z.object(schema);
-      
+
       const valid = testSchema.safeParse({ code: 'ABC' });
       expect(valid.success).toBe(true);
-      
+
       const invalid = testSchema.safeParse({ code: 'abc' });
       expect(invalid.success).toBe(false);
     });
@@ -263,11 +265,11 @@ describe('MCP HTTP Server Tool Handling', () => {
 
       const schema = createToolSchemaFromConfig(parameters);
       const testSchema = z.object(schema);
-      
+
       const valid = testSchema.safeParse({ percentage: 50 });
       expect(valid.success).toBe(true);
       expect(valid.data).toEqual({ percentage: 50, count: 1 });
-      
+
       const invalid = testSchema.safeParse({ percentage: 150 });
       expect(invalid.success).toBe(false);
     });
@@ -288,7 +290,7 @@ describe('MCP HTTP Server Tool Handling', () => {
 
       const schema = createToolSchemaFromConfig(parameters);
       const testSchema = z.object(schema);
-      
+
       const valid = testSchema.safeParse({ confirmed: true });
       expect(valid.success).toBe(true);
       expect(valid.data).toEqual({ confirmed: true, enabled: false });
@@ -321,7 +323,7 @@ describe('MCP HTTP Server Tool Handling', () => {
 
       const schema = createToolSchemaFromConfig(parameters);
       const testSchema = z.object(schema);
-      
+
       const valid = testSchema.safeParse({ unknown: 'string value' });
       expect(valid.success).toBe(true);
     });
@@ -335,7 +337,7 @@ describe('MCP HTTP Server Tool Handling', () => {
 
     it('should register tool-based scripts correctly', async () => {
       const { kitState } = await import('./state');
-      
+
       const mockScript = {
         name: 'test-tool',
         command: 'test-tool',
@@ -343,7 +345,7 @@ describe('MCP HTTP Server Tool Handling', () => {
         description: 'Test tool',
         mcp: 'test-tool',
       };
-      
+
       // Add script to mocked kitState
       kitState.scripts.set('test-tool', mockScript);
 
@@ -376,7 +378,7 @@ const result = await tool({
 
       const scripts = await mcpService.getMCPScripts();
       expect(scripts).toHaveLength(1);
-      
+
       const script = scripts[0];
       expect(script.toolConfig).toBeDefined();
       expect(script.toolConfig.parameters).toHaveProperty('message');
@@ -386,7 +388,7 @@ const result = await tool({
 
     it('should register arg-based scripts correctly', async () => {
       const { kitState } = await import('./state');
-      
+
       const mockScript = {
         name: 'arg-script',
         command: 'arg-script',
@@ -394,7 +396,7 @@ const result = await tool({
         description: 'Arg-based script',
         mcp: 'arg-tool',
       };
-      
+
       // Add script to mocked kitState
       kitState.scripts.set('arg-script', mockScript);
 
@@ -413,7 +415,7 @@ const password = await arg({ placeholder: "Enter password", secret: true })`;
 
       const scripts = await mcpService.getMCPScripts();
       expect(scripts).toHaveLength(1);
-      
+
       const script = scripts[0];
       expect(script.toolConfig).toBeUndefined();
       expect(script.args).toHaveLength(2);
@@ -451,18 +453,22 @@ const password = await arg({ placeholder: "Enter password", secret: true })`;
 
       // Mock handleScript to capture the headers passed
       let capturedHeaders: Record<string, string> = {};
-      vi.mocked(handleScript).mockImplementation(async (script, args, cwd, checkAccess, apiKey, headers, mcpResponse) => {
-        capturedHeaders = headers;
-        return {
-          status: 200,
-          data: {
-            content: [{
-              type: 'text',
-              text: 'Success',
-            }],
-          },
-        };
-      });
+      vi.mocked(handleScript).mockImplementation(
+        async (_script, _args, _cwd, _checkAccess, _apiKey, headers, _mcpResponse) => {
+          capturedHeaders = headers;
+          return {
+            status: 200,
+            data: {
+              content: [
+                {
+                  type: 'text',
+                  text: 'Success',
+                },
+              ],
+            },
+          };
+        },
+      );
 
       // Start the server
       await startMcpHttpServer();
@@ -491,7 +497,7 @@ const password = await arg({ placeholder: "Enter password", secret: true })`;
           'X-MCP-Tool': 'header-test',
           'X-MCP-Parameters': JSON.stringify(toolParams),
         },
-        true
+        true,
       );
 
       // Verify headers were passed correctly
@@ -528,56 +534,49 @@ const password = await arg({ placeholder: "Enter password", secret: true })`;
       vi.spyOn(mcpService, 'getMCPScripts').mockResolvedValue([mockScript]);
 
       // Mock handleScript to verify tool parameters are passed correctly
-      vi.mocked(handleScript).mockImplementation(async (script, args, cwd, checkAccess, apiKey, headers, mcpResponse, toolParams) => {
-        // For tool-based scripts, toolParams should contain the parameters
-        if (toolParams && toolParams.operation === 'write') {
+      vi.mocked(handleScript).mockImplementation(
+        async (_script, _args, _cwd, _checkAccess, _apiKey, _headers, _mcpResponse, toolParams) => {
+          // For tool-based scripts, toolParams should contain the parameters
+          if (toolParams && toolParams.operation === 'write') {
+            return {
+              status: 200,
+              data: {
+                content: [
+                  {
+                    type: 'text',
+                    text: `Written: ${toolParams.data}`,
+                  },
+                ],
+              },
+            };
+          }
+
           return {
             status: 200,
             data: {
-              content: [{
-                type: 'text',
-                text: `Written: ${toolParams.data}`,
-              }],
+              content: [
+                {
+                  type: 'text',
+                  text: 'Read operation',
+                },
+              ],
             },
           };
-        }
-        
-        return {
-          status: 200,
-          data: {
-            content: [{
-              type: 'text',
-              text: 'Read operation',
-            }],
-          },
-        };
-      });
+        },
+      );
 
       // Test write operation
-      const writeResult = await handleScript(
-        mockScript.filePath,
-        [],
-        process.cwd(),
-        false,
-        '',
-        {},
-        true,
-        { operation: 'write', data: 'test data' }
-      );
+      const writeResult = await handleScript(mockScript.filePath, [], process.cwd(), false, '', {}, true, {
+        operation: 'write',
+        data: 'test data',
+      });
 
       expect(writeResult.data.content[0].text).toBe('Written: test data');
 
       // Test read operation
-      const readResult = await handleScript(
-        mockScript.filePath,
-        [],
-        process.cwd(),
-        false,
-        '',
-        {},
-        true,
-        { operation: 'read' }
-      );
+      const readResult = await handleScript(mockScript.filePath, [], process.cwd(), false, '', {}, true, {
+        operation: 'read',
+      });
 
       expect(readResult.data.content[0].text).toBe('Read operation');
     });
@@ -647,48 +646,35 @@ const password = await arg({ placeholder: "Enter password", secret: true })`;
       let capturedArgs: any[] = [];
       let capturedToolParams: any = null;
 
-      vi.mocked(handleScript).mockImplementation(async (script, args, cwd, checkAccess, apiKey, headers, mcpResponse, toolParams) => {
-        if (script.includes('tool-script')) {
-          capturedToolParams = toolParams;
-        } else {
-          capturedArgs = args;
-        }
-        
-        return {
-          status: 200,
-          data: {
-            content: [{
-              type: 'text',
-              text: 'Success',
-            }],
-          },
-        };
-      });
+      vi.mocked(handleScript).mockImplementation(
+        async (script, args, _cwd, _checkAccess, _apiKey, _headers, _mcpResponse, toolParams) => {
+          if (script.includes('tool-script')) {
+            capturedToolParams = toolParams;
+          } else {
+            capturedArgs = args;
+          }
+
+          return {
+            status: 200,
+            data: {
+              content: [
+                {
+                  type: 'text',
+                  text: 'Success',
+                },
+              ],
+            },
+          };
+        },
+      );
 
       // Execute tool-based script
-      await handleScript(
-        '/test/tool-script.js',
-        [],
-        process.cwd(),
-        false,
-        '',
-        {},
-        true,
-        { input: 'test value' }
-      );
+      await handleScript('/test/tool-script.js', [], process.cwd(), false, '', {}, true, { input: 'test value' });
 
       expect(capturedToolParams).toEqual({ input: 'test value' });
 
       // Execute arg-based script
-      await handleScript(
-        '/test/arg-script.js',
-        ['test input', 'yes'],
-        process.cwd(),
-        false,
-        '',
-        {},
-        true
-      );
+      await handleScript('/test/arg-script.js', ['test input', 'yes'], process.cwd(), false, '', {}, true);
 
       expect(capturedArgs).toEqual(['test input', 'yes']);
     });
@@ -748,7 +734,7 @@ const password = await arg({ placeholder: "Enter password", secret: true })`;
 
       // Check each parameter has the necessary fields for UI display
       const params = script.toolConfig.parameters;
-      
+
       expect(params.title).toEqual({
         type: 'string',
         description: 'Item title',
@@ -783,7 +769,7 @@ const password = await arg({ placeholder: "Enter password", secret: true })`;
 
       // Verify schema generation preserves all constraints
       const schema = createToolSchemaFromConfig(params);
-      
+
       // The schema should have all parameter keys
       expect(Object.keys(schema)).toEqual(['title', 'priority', 'tags', 'isPublic', 'maxItems']);
     });

@@ -1,21 +1,18 @@
 import { type SpawnOptions, type SpawnSyncReturns, spawn } from 'node:child_process';
 import crypto from 'node:crypto';
+import { lstat, readFile, rename, unlink } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import dotenv from 'dotenv';
-import { clipboard, nativeTheme, shell } from 'electron';
-import { HttpsProxyAgent } from 'hpagent';
-import { debounce } from 'lodash-es';
-import StreamZip from 'node-stream-zip';
-import * as rimraf from 'rimraf';
-
-import { lstat, readFile, rename, unlink } from 'node:fs/promises';
+import { Worker } from 'node:worker_threads';
+import type { Stamp } from '@johnlindquist/kit/core/db';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
+import { backupEnvFile, cleanupOldBackups, restoreEnvFile } from '@johnlindquist/kit/core/env-backup';
+import { cleanupStaleLocks } from '@johnlindquist/kit/core/env-file-lock';
 import {
-  KIT_FIRST_PATH,
   getMainScriptPath,
   isDir,
   isFile,
+  KIT_FIRST_PATH,
   kenvPath,
   kitPath,
   kitPnpmPath,
@@ -23,40 +20,40 @@ import {
 } from '@johnlindquist/kit/core/utils';
 import type { Choice, FlagsObject, Script, Scriptlet, Shortcut, Snippet } from '@johnlindquist/kit/types';
 import { CACHED_GROUPED_SCRIPTS_WORKER, CREATE_BIN_WORKER } from '@johnlindquist/kit/workers';
+import dotenv from 'dotenv';
+import { clipboard, nativeTheme, shell } from 'electron';
+import electronLog from 'electron-log';
+import { HttpsProxyAgent } from 'hpagent';
+import { debounce } from 'lodash-es';
+import StreamZip from 'node-stream-zip';
+import * as rimraf from 'rimraf';
 import * as tar from 'tar';
-import download, { type DownloadOptions } from './download';
-
-import { KitPrompt, destroyPromptWindow, makeSplashWindow } from './prompt';
-
-import { Worker } from 'node:worker_threads';
-import type { Stamp } from '@johnlindquist/kit/core/db';
+import { getAssetPath } from '../shared/assets';
 import { SPLASH_PATH } from '../shared/defaults';
 import { AppChannel } from '../shared/enums';
-import { KitEvent, emitter } from '../shared/events';
+import { emitter, KitEvent } from '../shared/events';
 import { sendToAllPrompts } from './channel';
-import { ensureDir, pathExists, readJson, readdir, writeFile, writeJson } from './cjs-exports';
-import { createScoredChoice, isInDirectory } from './helpers';
-import { mainLogPath, scriptLog, workerLog } from './logs';
-import { showError } from './main.dev.templates';
-import { prompts } from './prompts';
-import { INSTALL_ERROR, show } from './show';
-import { getThemes, kitCache, kitState, preloadChoicesMap, workers } from './state';
-
-import { backupEnvFile, cleanupOldBackups, restoreEnvFile } from '@johnlindquist/kit/core/env-backup';
-import { cleanupStaleLocks } from '@johnlindquist/kit/core/env-file-lock';
-import electronLog from 'electron-log';
-import { getAssetPath } from '../shared/assets';
+import { ensureDir, pathExists, readdir, readJson, writeFile, writeJson } from './cjs-exports';
 import { compareCollections, logDifferences } from './compare';
+import download, { type DownloadOptions } from './download';
 import { getAllShellEnvs } from './env-utils';
-import { container } from './state/services/container';
 import { createForkOptions } from './fork.options';
+import { createScoredChoice, isInDirectory } from './helpers';
 import { showInfo } from './info';
 import { createLogger } from './log-utils';
+import { mainLogPath, scriptLog, workerLog } from './logs';
+import { showError } from './main.dev.templates';
+import { destroyPromptWindow, KitPrompt, makeSplashWindow } from './prompt';
+import { prompts } from './prompts';
 import { getPnpmPath } from './setup/pnpm';
 import { shortcutMap } from './shortcuts';
+import { INSTALL_ERROR, show } from './show';
+import { getThemes, kitCache, kitState, preloadChoicesMap, workers } from './state';
+import { container } from './state/services/container';
 import { osTmpPath } from './tmp';
 import { getLatestAppTag, getURLFromVersion, getVersion, getVersionFromTag } from './version';
 import { onScriptChanged } from './watcher';
+
 const log = createLogger('install.ts');
 
 let isOhNo = false;
@@ -280,7 +277,7 @@ export const installPackage = async (installCommand: string, cwd: string) => {
 
     // Handling the different events for the child process
     if (child.stdout) {
-      child.stdout.on('data', (_data) => { });
+      child.stdout.on('data', (_data) => {});
     }
 
     if (child.stderr) {
@@ -794,7 +791,7 @@ export const optionalSpawnSetup = (...args: string[]) => {
     if (!kitState.KIT_NODE_PATH) {
       log.error(
         '[install] Cannot spawn terminal: KIT_NODE_PATH is not set. ' +
-        'This usually means setup didn\'t finish or node wasn\'t located.'
+          "This usually means setup didn't finish or node wasn't located.",
       );
       resolve('done');
       return;
@@ -1119,7 +1116,7 @@ export const cacheMainMenu = async ({
       shortcuts: kitCache.shortcuts,
       scriptFlags: kitCache.scriptFlags,
       preview: kitCache.preview,
-      timestamp
+      timestamp,
     };
 
     // Log the atomic update
@@ -1388,9 +1385,9 @@ export const cacheMainScripts: CacheMainScripts = async (
     channel: Channel;
     value: any;
   } = {
-      channel: Channel.CACHE_MAIN_SCRIPTS,
-      value: null,
-    },
+    channel: Channel.CACHE_MAIN_SCRIPTS,
+    value: null,
+  },
 ): Promise<boolean> => {
   log.info(`[SCRIPTS RENDER] cacheMainScripts called: ${reason}`);
   return new Promise<boolean>((resolve, reject) => {

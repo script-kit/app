@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // Simple implementation of parseSnippet for testing
 const snippetRegex = /^(?:\/\/|#)\s*([\w-]+):\s*(.*)/;
@@ -35,7 +35,7 @@ describe('parseSnippet', () => {
 Snippet content here`;
 
     const result = parseSnippet(content);
-    
+
     expect(result.metadata).toEqual({
       snippet: 'test',
       description: 'Test description',
@@ -51,7 +51,7 @@ Snippet content here`;
 Snippet content here`;
 
     const result = parseSnippet(content);
-    
+
     expect(result.metadata).toEqual({
       snippet: 'test',
       description: 'Test description',
@@ -66,7 +66,7 @@ Snippet content here`;
 Content`;
 
     const result = parseSnippet(content);
-    
+
     expect(result.metadata).toEqual({
       snippet: 'test',
       description: 'Test description',
@@ -81,7 +81,7 @@ Content`;
 Content`;
 
     const result = parseSnippet(content);
-    
+
     expect(result.metadata).toEqual({
       snippet: 'test',
       description: 'Test with spaces',
@@ -94,7 +94,7 @@ Content`;
 No metadata here`;
 
     const result = parseSnippet(content);
-    
+
     expect(result.metadata).toEqual({});
     expect(result.snippet).toBe(content);
   });
@@ -103,7 +103,7 @@ No metadata here`;
     const content = '';
 
     const result = parseSnippet(content);
-    
+
     expect(result.metadata).toEqual({});
     expect(result.snippet).toBe('');
   });
@@ -116,7 +116,7 @@ This is content
 # This is not metadata`;
 
     const result = parseSnippet(content);
-    
+
     expect(result.metadata).toEqual({
       snippet: 'test',
       description: 'Test',
@@ -131,7 +131,7 @@ This is content
 Content`;
 
     const result = parseSnippet(content);
-    
+
     expect(result.metadata).toEqual({
       expand: 'exp',
       description: 'Expansion test',
@@ -145,7 +145,7 @@ Content`;
 Postfix content`;
 
     const result = parseSnippet(content);
-    
+
     expect(result.metadata).toEqual({
       snippet: '*post',
       description: 'Postfix snippet',
@@ -159,7 +159,7 @@ Postfix content`;
 Content`;
 
     const result = parseSnippet(content);
-    
+
     expect(result.metadata).toEqual({
       snippet: ',,',
       description: 'Comma trigger',
@@ -173,7 +173,7 @@ Content`;
 Content`;
 
     const result = parseSnippet(content);
-    
+
     expect(result.metadata).toEqual({
       snippet: 'hello world',
       description: 'Multi-word',
@@ -188,7 +188,7 @@ Content`;
 Content`;
 
     const result = parseSnippet(content);
-    
+
     expect(result.metadata).toEqual({
       snippet: '',
       description: 'Has value',

@@ -1,6 +1,6 @@
 import path from 'node:path';
 import type { Script } from '@johnlindquist/kit';
-import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock all dependencies first
 vi.mock('valtio');
@@ -10,11 +10,16 @@ vi.mock('electron', () => ({
   app: {
     getPath: vi.fn((name: string) => {
       switch (name) {
-        case 'userData': return '/Users/test/Library/Application Support/ScriptKit';
-        case 'downloads': return '/Users/test/Downloads';
-        case 'home': return '/Users/test';
-        case 'logs': return '/Users/test/Library/Logs/ScriptKit';
-        default: return '/Users/test';
+        case 'userData':
+          return '/Users/test/Library/Application Support/ScriptKit';
+        case 'downloads':
+          return '/Users/test/Downloads';
+        case 'home':
+          return '/Users/test';
+        case 'logs':
+          return '/Users/test/Library/Logs/ScriptKit';
+        default:
+          return '/Users/test';
       }
     }),
   },
@@ -290,7 +295,7 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
 
       // First call should go through
       await handleFileChangeEvent('change', '/test/scripts/test.js', 'test');
-      
+
       // Since we can't directly test wasRecentlyProcessed, we test the behavior
       // The script change should be processed (not ignored)
       expect(parseScript).toHaveBeenCalled();
@@ -317,16 +322,14 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
 
       // The script should be processed again (not ignored)
       expect(scriptLog.info).toHaveBeenCalledWith('🚨 onScriptChanged', 'change', '/test/scripts/test.js');
-      
+
       // Should NOT see the "ignoring" message
-      expect(scriptLog.info).not.toHaveBeenCalledWith(
-        expect.stringContaining('🛑 Ignoring change event')
-      );
+      expect(scriptLog.info).not.toHaveBeenCalledWith(expect.stringContaining('🛑 Ignoring change event'));
     });
 
     it.skip('should return false for files processed more than 5 seconds ago', async () => {
       const { parseScript } = await import('@johnlindquist/kit/core/utils');
-      
+
       vi.mocked(parseScript).mockResolvedValue({
         filePath: '/test/scripts/test.js',
         name: 'test.js',
@@ -334,13 +337,13 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
 
       // First change
       await handleFileChangeEvent('change', '/test/scripts/test.js', 'test');
-      
+
       // Advance time by 6 seconds
       await vi.advanceTimersByTimeAsync(6000);
 
       // Second change after timeout - should be processed
       await handleFileChangeEvent('change', '/test/scripts/test.js', 'test');
-      
+
       // parseScript should be called twice (not ignored the second time)
       expect(parseScript).toHaveBeenCalledTimes(2);
     });
@@ -351,14 +354,14 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
       // Mock Windows platform
       Object.defineProperty(process, 'platform', {
         value: 'win32',
-        configurable: true
+        configurable: true,
       });
 
       const { watcherLog } = await import('./logs');
 
       // Process file with Windows path
       await handleFileChangeEvent('change', 'C:\\test\\scripts\\test.js', 'test');
-      
+
       // Try with forward slashes - should be considered the same file
       await handleFileChangeEvent('change', 'C:/test/scripts/test.js', 'test');
 
@@ -366,7 +369,7 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
       expect(watcherLog.info).toHaveBeenCalledWith(
         expect.stringContaining('🛑 Ignoring change event'),
         expect.any(String),
-        expect.stringContaining('recently processed')
+        expect.stringContaining('recently processed'),
       );
     });
 
@@ -374,14 +377,14 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
       // Mock Windows platform
       Object.defineProperty(process, 'platform', {
         value: 'win32',
-        configurable: true
+        configurable: true,
       });
 
       const { watcherLog } = await import('./logs');
 
       // Process file with one case
       await handleFileChangeEvent('change', 'C:/Test/Scripts/Test.js', 'test');
-      
+
       // Try with different case - should be considered the same file on Windows
       await handleFileChangeEvent('change', 'C:/test/scripts/test.js', 'test');
 
@@ -389,7 +392,7 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
       expect(watcherLog.info).toHaveBeenCalledWith(
         expect.stringContaining('🛑 Ignoring change event'),
         expect.any(String),
-        expect.stringContaining('recently processed')
+        expect.stringContaining('recently processed'),
       );
     });
 
@@ -397,11 +400,11 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
       // Mock Unix platform
       Object.defineProperty(process, 'platform', {
         value: 'darwin',
-        configurable: true
+        configurable: true,
       });
 
       const { parseScript } = await import('@johnlindquist/kit/core/utils');
-      
+
       vi.mocked(parseScript).mockResolvedValue({
         filePath: '/test/scripts/test.js',
         name: 'test.js',
@@ -409,7 +412,7 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
 
       // Process file with one case
       await handleFileChangeEvent('change', '/Test/Scripts/Test.js', 'test');
-      
+
       // Try with different case - should be considered different files on Unix
       await handleFileChangeEvent('change', '/test/scripts/test.js', 'test');
 
@@ -421,7 +424,7 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
   describe('Bug fix verification - original file not marked as processed', () => {
     it.skip('should demonstrate that the fix allows rapid user saves', async () => {
       const { scriptLog } = await import('./logs');
-      
+
       const testScript = {
         filePath: '/test/scripts/my-script.js',
         name: 'my-script.js',
@@ -431,10 +434,10 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
       // Simulate rapid user saves
       // First save
       await onScriptChanged('change', testScript, false, false);
-      
+
       // User immediately saves again (within milliseconds)
       await onScriptChanged('change', testScript, false, false);
-      
+
       // Third save
       await onScriptChanged('change', testScript, false, false);
 
@@ -443,16 +446,14 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
       expect(scriptLog.info).toHaveBeenNthCalledWith(1, '🚨 onScriptChanged', 'change', '/test/scripts/my-script.js');
       expect(scriptLog.info).toHaveBeenNthCalledWith(2, '🚨 onScriptChanged', 'change', '/test/scripts/my-script.js');
       expect(scriptLog.info).toHaveBeenNthCalledWith(3, '🚨 onScriptChanged', 'change', '/test/scripts/my-script.js');
-      
+
       // Should NOT see any "ignoring" messages
-      expect(scriptLog.info).not.toHaveBeenCalledWith(
-        expect.stringContaining('🛑 Ignoring change event')
-      );
+      expect(scriptLog.info).not.toHaveBeenCalledWith(expect.stringContaining('🛑 Ignoring change event'));
     });
 
     it.skip('should still prevent cascading dependency changes', async () => {
       const { watcherLog } = await import('./logs');
-      
+
       // Mock madgeAllScripts to simulate marking other files as processed
       const originalMadge = (globalThis as any).madgeAllScripts;
       (globalThis as any).madgeAllScripts = vi.fn((originalFilePath?: string) => {
@@ -489,7 +490,7 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
       expect(watcherLog.info).not.toHaveBeenCalledWith(
         expect.stringContaining('🛑 Ignoring change event'),
         expect.stringContaining('original.js'),
-        expect.any(String)
+        expect.any(String),
       );
 
       // Restore
@@ -499,7 +500,7 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
     it.skip('should not ignore changes when rebuilt flag is true', async () => {
       const { onScriptChanged } = await import('./watcher');
       const { scriptLog } = await import('./logs');
-      
+
       const testScript = {
         filePath: '/test/scripts/my-script.js',
         name: 'my-script.js',
@@ -507,21 +508,19 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
 
       // First change marks as processed
       await onScriptChanged('change', testScript, false, false);
-      
+
       // Second change with rebuilt=true should NOT be ignored
       await onScriptChanged('change', testScript, true, false);
 
       // Should not see the "ignoring" message when rebuilt=true
-      expect(scriptLog.info).not.toHaveBeenCalledWith(
-        expect.stringContaining('🛑 Ignoring change event')
-      );
+      expect(scriptLog.info).not.toHaveBeenCalledWith(expect.stringContaining('🛑 Ignoring change event'));
     });
   });
 
   describe('Cleanup and memory management', () => {
     it.skip('should clean up entries after 5 seconds', async () => {
       const { parseScript } = await import('@johnlindquist/kit/core/utils');
-      
+
       vi.mocked(parseScript).mockResolvedValue({
         filePath: '/test/scripts/test.js',
         name: 'test.js',
@@ -529,7 +528,7 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
 
       // Process a file
       await handleFileChangeEvent('change', '/test/scripts/test.js', 'test');
-      
+
       // Should be ignored immediately
       await handleFileChangeEvent('change', '/test/scripts/test.js', 'test');
       expect(parseScript).toHaveBeenCalledTimes(1);
@@ -544,11 +543,14 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
 
     it.skip('should handle multiple files independently', async () => {
       const { parseScript } = await import('@johnlindquist/kit/core/utils');
-      
-      vi.mocked(parseScript).mockImplementation(async (filePath: string) => ({
-        filePath,
-        name: path.basename(filePath),
-      } as Script));
+
+      vi.mocked(parseScript).mockImplementation(
+        async (filePath: string) =>
+          ({
+            filePath,
+            name: path.basename(filePath),
+          }) as Script,
+      );
 
       // Process multiple files
       await handleFileChangeEvent('change', '/test/scripts/file1.js', 'test');

@@ -57,4 +57,3 @@ export class OutputAggregator {
     this.flushNow();
   }
 }
-

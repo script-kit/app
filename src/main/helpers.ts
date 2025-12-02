@@ -7,13 +7,12 @@
 import os from 'node:os';
 import path from 'node:path';
 import v8 from 'node:v8';
-import colors from 'color-name';
-import log from 'electron-log';
-
 import { getMainScriptPath, kitPath, shortcutNormalizer } from '@johnlindquist/kit/core/utils';
 import type { Choice } from '@johnlindquist/kit/types/core';
+import colors from 'color-name';
+import log from 'electron-log';
 import { Trigger } from '../shared/enums';
-import { KitEvent, emitter } from '../shared/events';
+import { emitter, KitEvent } from '../shared/events';
 import type { ScoredChoice } from '../shared/types';
 import { convertKey, kitState } from './state';
 
@@ -206,8 +205,8 @@ export function createAsTypedChoice(rawInput: string, originalChoice?: Choice): 
   return {
     id: `typed-${originalChoice?.id || 'default'}-${rawInput}-${Date.now()}`,
     name: originalChoice?.name || '{input}',
-    keyword: '',      // we don't compete on keyword
-    value: originalChoice?.value !== undefined ? originalChoice.value : rawInput,  // Use original value if provided
+    keyword: '', // we don't compete on keyword
+    value: originalChoice?.value !== undefined ? originalChoice.value : rawInput, // Use original value if provided
     group: originalChoice?.group || 'As Typed',
     asTyped: true,
     pass: false,

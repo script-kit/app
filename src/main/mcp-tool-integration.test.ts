@@ -1,12 +1,12 @@
 import { readFile } from 'node:fs/promises';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { getScripts } from '@johnlindquist/kit/core/db';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
+import { handleScript, UNDEFINED_VALUE } from './handleScript';
+import { createMcpHttpServer } from './mcp-http-server';
 import { extractMCPToolParameters, type MCPToolParameter } from './mcp-parameter-extractor';
 import { mcpService } from './mcp-service';
-import { createMcpHttpServer } from './mcp-http-server';
-import { handleScript, UNDEFINED_VALUE } from './handleScript';
 
 // Mock dependencies
 vi.mock('electron', () => ({
@@ -23,15 +23,18 @@ vi.mock('electron', () => ({
   nativeTheme: {
     shouldUseDarkColors: false,
   },
-  BrowserWindow: Object.assign(vi.fn(() => ({
-    loadURL: vi.fn(),
-    on: vi.fn(),
-    webContents: {
-      send: vi.fn(),
+  BrowserWindow: Object.assign(
+    vi.fn(() => ({
+      loadURL: vi.fn(),
+      on: vi.fn(),
+      webContents: {
+        send: vi.fn(),
+      },
+    })),
+    {
+      getAllWindows: vi.fn(() => []),
     },
-  })), {
-    getAllWindows: vi.fn(() => []),
-  }),
+  ),
   ipcMain: {
     handle: vi.fn(),
     on: vi.fn(),
@@ -46,8 +49,8 @@ vi.mock('electron-context-menu', () => ({
   default: vi.fn(() => ({})),
 }));
 vi.mock('@johnlindquist/kit/core/utils', () => ({
-  kenvPath: vi.fn((subpath?: string) => subpath ? `/tmp/.kenv/${subpath}` : '/tmp/.kenv'),
-  kitPath: vi.fn((subpath?: string) => subpath ? `/tmp/.kit/${subpath}` : '/tmp/.kit'),
+  kenvPath: vi.fn((subpath?: string) => (subpath ? `/tmp/.kenv/${subpath}` : '/tmp/.kenv')),
+  kitPath: vi.fn((subpath?: string) => (subpath ? `/tmp/.kit/${subpath}` : '/tmp/.kit')),
   tmpClipboardDir: '/tmp/clipboard',
   getTrustedKenvsKey: vi.fn(() => 'trusted-kenvs'),
   defaultGroupNameClassName: vi.fn(() => 'default-group'),
@@ -122,7 +125,7 @@ console.log(\`Message: \${result.message}, Count: \${result.count}\`)
 `;
 
       const result = await extractMCPToolParameters(scriptContent);
-      
+
       expect(result).toHaveProperty('inputSchema');
       expect((result as any).inputSchema).toEqual({
         type: 'object',
@@ -190,10 +193,10 @@ const result = await params({
 `;
 
       const result = await extractMCPToolParameters(scriptContent);
-      
+
       expect(result).toHaveProperty('inputSchema');
       const inputSchema = (result as any).inputSchema;
-      
+
       expect(inputSchema.properties).toHaveProperty('simpleString');
       expect(inputSchema.properties).toHaveProperty('enumString');
       expect(inputSchema.properties).toHaveProperty('patternString');
@@ -201,7 +204,7 @@ const result = await params({
       expect(inputSchema.properties).toHaveProperty('booleanFlag');
       expect(inputSchema.properties).toHaveProperty('arrayParam');
       expect(inputSchema.properties).toHaveProperty('objectParam');
-      
+
       expect(inputSchema.properties.enumString.enum).toEqual(['option1', 'option2', 'option3']);
       expect(inputSchema.properties.numberWithBounds.minimum).toBe(0);
       expect(inputSchema.properties.numberWithBounds.maximum).toBe(100);
@@ -229,10 +232,10 @@ console.log(\`User: \${username}, Age: \${age}\`)
 `;
 
       const result = await extractMCPToolParameters(scriptContent);
-      
+
       expect(Array.isArray(result)).toBe(true);
       const params = result as any[];
-      
+
       expect(params).toHaveLength(2);
       expect(params[0]).toEqual({
         name: 'username',
@@ -289,10 +292,10 @@ const result = await params({
 
       const scripts = await mcpService.getMCPScripts();
       expect(scripts).toHaveLength(1);
-      
+
       const script = scripts[0];
       expect(script.inputSchema).toBeDefined();
-      
+
       // Verify the inputSchema structure
       const inputSchema = script.inputSchema;
       expect(inputSchema.type).toBe('object');
@@ -319,24 +322,24 @@ const result = await params({
 
       // This simulates what createToolSchemaFromConfig would do
       const shape: Record<string, z.ZodTypeAny> = {};
-      
+
       // Message parameter (required string)
       shape.message = z.string().describe('The message to display');
-      
+
       // Count parameter (optional number with default)
       shape.count = z.number().describe('Number of times to repeat').optional().default(1);
-      
+
       const schema = z.object(shape);
-      
+
       // Test schema validation
       const valid1 = schema.safeParse({ message: 'Hello' });
       expect(valid1.success).toBe(true);
       expect(valid1.data).toEqual({ message: 'Hello', count: 1 });
-      
+
       const valid2 = schema.safeParse({ message: 'Hello', count: 5 });
       expect(valid2.success).toBe(true);
       expect(valid2.data).toEqual({ message: 'Hello', count: 5 });
-      
+
       const invalid = schema.safeParse({ count: 5 }); // Missing required message
       expect(invalid.success).toBe(false);
     });
@@ -393,15 +396,15 @@ await sendResponse({
 
       const scripts = await mcpService.getMCPScripts();
       const script = scripts[0];
-      
+
       expect(script.inputSchema).toBeDefined();
       expect(script.inputSchema.properties.action.enum).toEqual(['create', 'update', 'delete']);
-      
+
       // Simulate MCP tool registration (what happens in createMcpHttpServer)
       const toolName = script.name;
       const toolDescription = script.description;
       const toolProperties = script.inputSchema.properties;
-      
+
       expect(toolName).toBe('test-mcp-tool');
       expect(toolDescription).toBe('Test MCP tool');
       expect(toolProperties).toHaveProperty('action');
@@ -460,18 +463,16 @@ const confirm = await arg({
 `;
 
       vi.mocked(getScripts).mockResolvedValue(mockScripts as any);
-      vi.mocked(readFile)
-        .mockResolvedValueOnce(paramsBasedContent)
-        .mockResolvedValueOnce(argBasedContent);
+      vi.mocked(readFile).mockResolvedValueOnce(paramsBasedContent).mockResolvedValueOnce(argBasedContent);
 
       const scripts = await mcpService.getMCPScripts();
       expect(scripts).toHaveLength(2);
-      
+
       // First script should have inputSchema
       expect(scripts[0].inputSchema).toBeDefined();
       expect(scripts[0].inputSchema.properties).toHaveProperty('input');
       expect(scripts[0].args).toEqual([]); // params() scripts have empty args array
-      
+
       // Second script should have args array
       expect(scripts[1].inputSchema).toBeUndefined();
       expect(scripts[1].args).toHaveLength(2);
@@ -535,7 +536,7 @@ const result = await params({
 
       const scripts = await mcpService.getMCPScripts();
       const script = scripts[0];
-      
+
       // Simulate what the MCP UI would receive
       const uiParameters = Object.entries(script.inputSchema.properties).map(([key, param]: [string, any]) => ({
         name: key,
@@ -545,11 +546,11 @@ const result = await params({
         default: param.default,
         enum: param.enum,
       }));
-      
+
       expect(uiParameters).toHaveLength(5);
-      
+
       // Verify UI-friendly format
-      const titleParam = uiParameters.find(p => p.name === 'title');
+      const titleParam = uiParameters.find((p) => p.name === 'title');
       expect(titleParam).toEqual({
         name: 'title',
         type: 'string',
@@ -558,8 +559,8 @@ const result = await params({
         default: undefined,
         enum: undefined,
       });
-      
-      const priorityParam = uiParameters.find(p => p.name === 'priority');
+
+      const priorityParam = uiParameters.find((p) => p.name === 'priority');
       expect(priorityParam).toEqual({
         name: 'priority',
         type: 'string',
@@ -641,43 +642,45 @@ await sendResponse({
           write: { status: 'success', message: 'File written' },
           delete: { status: 'success', message: 'File deleted' },
         };
-        
+
         return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify(responses[operation]),
-          }],
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(responses[operation]),
+            },
+          ],
         };
       });
 
       // Get the script
       const scripts = await mcpService.getMCPScripts();
       const script = scripts[0];
-      
+
       // Verify tool configuration
       expect(script.inputSchema).toBeDefined();
       expect(script.inputSchema.properties.operation.enum).toEqual(['read', 'write', 'delete']);
-      
+
       // Simulate MCP tool invocation
       const toolArgs = {
         operation: 'write',
         path: '/test/file.txt',
         content: 'Hello, world!',
       };
-      
+
       const result = await handleScript({
         filePath: script.filePath,
         args: toolArgs,
       });
-      
+
       expect(result.content[0].text).toBe('{"status":"success","message":"File written"}');
-      
+
       // Test with different operation
       const readResult = await handleScript({
         filePath: script.filePath,
         args: { operation: 'read', path: '/test/file.txt' },
       });
-      
+
       expect(readResult.content[0].text).toBe('{"status":"success","data":"file contents"}');
     });
 
@@ -688,22 +691,22 @@ await sendResponse({
         count: z.number().describe('Number of times to repeat').min(1).max(10).optional().default(1),
         tags: z.array(z.string()).describe('Tags').optional(),
       });
-      
+
       // Valid inputs
       const valid1 = schema.safeParse({ message: 'Hello' });
       expect(valid1.success).toBe(true);
       expect(valid1.data).toEqual({ message: 'Hello', count: 1 });
-      
+
       const valid2 = schema.safeParse({ message: 'Hello', count: 5, tags: ['test', 'demo'] });
       expect(valid2.success).toBe(true);
-      
+
       // Invalid inputs
       const invalid1 = schema.safeParse({}); // Missing required message
       expect(invalid1.success).toBe(false);
-      
+
       const invalid2 = schema.safeParse({ message: 'Hello', count: 15 }); // Count out of range
       expect(invalid2.success).toBe(false);
-      
+
       const invalid3 = schema.safeParse({ message: 123 }); // Wrong type
       expect(invalid3.success).toBe(false);
     });

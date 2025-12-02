@@ -1,10 +1,10 @@
 import os from 'node:os';
 import { kitPath } from '@johnlindquist/kit/core/utils';
-import { Notification, app, shell } from 'electron';
+import { app, Notification, shell } from 'electron';
 import log from 'electron-log';
 import { debounce } from 'lodash-es';
 import { Trigger } from '../shared/enums';
-import { KitEvent, emitter } from '../shared/events';
+import { emitter, KitEvent } from '../shared/events';
 import { mainLogPath } from './logs';
 import { TrackEvent, trackEvent } from './track';
 
@@ -19,14 +19,14 @@ Locale: ${app.getLocale()}
 
 export const displayError = debounce(async (error: Error) => {
   log.error(error);
-  
+
   // Try to get enhanced error info if sourcemap support is available
   let enhancedStack = error?.stack || 'Unknown error stack';
   try {
     const { SourcemapErrorFormatter } = await import('@johnlindquist/kit/core/sourcemap-formatter');
     const formattedError = SourcemapErrorFormatter.formatError(error);
     enhancedStack = formattedError.stack;
-    
+
     // Track with enhanced telemetry
     const errorLocation = SourcemapErrorFormatter.extractErrorLocation(error);
     trackEvent(TrackEvent.Error, {
@@ -36,7 +36,7 @@ export const displayError = debounce(async (error: Error) => {
       originalFile: errorLocation?.file,
       line: errorLocation?.line,
       column: errorLocation?.column,
-      mappingSuccess: !!errorLocation
+      mappingSuccess: !!errorLocation,
     });
   } catch (e) {
     // Fallback to original telemetry if formatter fails
@@ -47,7 +47,7 @@ export const displayError = debounce(async (error: Error) => {
       stack: error?.stack || 'Unknown error stack',
     });
   }
-  
+
   emitter.emit(KitEvent.RunPromptProcess, {
     scriptPath: kitPath('cli', 'info.js'),
     args: [

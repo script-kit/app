@@ -368,9 +368,9 @@ describe('IdleProcessPool', () => {
 
       // The exit handler should be registered via disposableRegistry.addListener
       // Let's verify it was called and simulate the exit
-      const exitCall = vi.mocked(disposableRegistry.addListener).mock.calls.find(
-        (call: unknown[]) => call[2] === 'exit',
-      );
+      const exitCall = vi
+        .mocked(disposableRegistry.addListener)
+        .mock.calls.find((call: unknown[]) => call[2] === 'exit');
       expect(exitCall).toBeDefined();
 
       // Call the exit handler
@@ -384,9 +384,9 @@ describe('IdleProcessPool', () => {
       const child = createMockChildProcess(100);
       pool.add(child as any);
 
-      const errorCall = vi.mocked(disposableRegistry.addListener).mock.calls.find(
-        (call: unknown[]) => call[2] === 'error',
-      );
+      const errorCall = vi
+        .mocked(disposableRegistry.addListener)
+        .mock.calls.find((call: unknown[]) => call[2] === 'error');
       expect(errorCall).toBeDefined();
 
       // Call the error handler

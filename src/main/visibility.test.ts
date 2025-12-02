@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
-import { visibilityController, FocusState } from './visibility';
-import type { KitPrompt } from './prompt';
-import { HideReason } from '../shared/enums';
 import { Channel } from '@johnlindquist/kit/core/enum';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { HideReason } from '../shared/enums';
+import type { KitPrompt } from './prompt';
+import { FocusState, visibilityController } from './visibility';
 
 // Mock dependencies
 vi.mock('./state', () => ({
@@ -47,9 +47,9 @@ describe('VisibilityController', () => {
   describe('handleFocus', () => {
     it('should set focus state and reset flags', () => {
       const prompt = createMockPrompt();
-      
+
       visibilityController.handleFocus(prompt);
-      
+
       const state = visibilityController.getState(prompt.window.id);
       expect(state?.focusState).toBe(FocusState.Focused);
       expect(state?.escapeCount).toBe(0);
@@ -60,10 +60,10 @@ describe('VisibilityController', () => {
     it('should reset global isActivated flag if set', async () => {
       const { kitState } = await import('./state');
       kitState.isActivated = true;
-      
+
       const prompt = createMockPrompt();
       visibilityController.handleFocus(prompt);
-      
+
       expect(kitState.isActivated).toBe(false);
     });
   });
@@ -71,26 +71,26 @@ describe('VisibilityController', () => {
   describe('handleBlur', () => {
     it('should set blur state for normal blur', () => {
       const prompt = createMockPrompt();
-      
+
       visibilityController.handleFocus(prompt); // First focus
       visibilityController.handleBlur(prompt);
-      
+
       const state = visibilityController.getState(prompt.window.id);
       expect(state?.focusState).toBe(FocusState.Blurred);
     });
 
     it('should ignore blur when emoji panel is active', () => {
       const prompt = createMockPrompt();
-      
+
       // First focus to establish state
       visibilityController.handleFocus(prompt);
-      
+
       // Then set emoji active
       prompt.emojiActive = true;
-      
+
       // Try to blur - should be ignored
       visibilityController.handleBlur(prompt);
-      
+
       const state = visibilityController.getState(prompt.window.id);
       expect(state?.focusState).toBe(FocusState.Focused); // Should remain focused
     });
@@ -98,10 +98,10 @@ describe('VisibilityController', () => {
     it('should ignore blur when DevTools are open', () => {
       const prompt = createMockPrompt();
       (prompt.window.webContents.isDevToolsOpened as Mock).mockReturnValue(true);
-      
+
       visibilityController.handleFocus(prompt);
       visibilityController.handleBlur(prompt);
-      
+
       const state = visibilityController.getState(prompt.window.id);
       expect(state?.focusState).toBe(FocusState.Focused); // Should remain focused
     });
@@ -110,10 +110,10 @@ describe('VisibilityController', () => {
   describe('handleEscape', () => {
     it('should hide prompt when focused, hideOnEscape is true, and no child process', () => {
       const prompt = createMockPrompt();
-      
+
       visibilityController.handleFocus(prompt);
       const handled = visibilityController.handleEscape(prompt, false); // No child process
-      
+
       expect(handled).toBe(true);
       expect(prompt.maybeHide).toHaveBeenCalledWith(HideReason.Escape);
       expect(prompt.sendToPrompt).toHaveBeenCalledWith(Channel.SET_INPUT, '');
@@ -121,31 +121,31 @@ describe('VisibilityController', () => {
 
     it('should allow escape to propagate when child process exists', () => {
       const prompt = createMockPrompt({ hideOnEscape: true });
-      
+
       visibilityController.handleFocus(prompt);
       const handled = visibilityController.handleEscape(prompt, true); // Has child process
-      
+
       expect(handled).toBe(false); // Should not handle, let it propagate
       expect(prompt.maybeHide).not.toHaveBeenCalled();
     });
 
     it('should not act when window is blurred', () => {
       const prompt = createMockPrompt();
-      
+
       visibilityController.handleFocus(prompt);
       visibilityController.handleBlur(prompt);
       const handled = visibilityController.handleEscape(prompt);
-      
+
       expect(handled).toBe(false);
       expect(prompt.maybeHide).not.toHaveBeenCalled();
     });
 
     it('should not hide when hideOnEscape is false', () => {
       const prompt = createMockPrompt({ hideOnEscape: false });
-      
+
       visibilityController.handleFocus(prompt);
       const handled = visibilityController.handleEscape(prompt);
-      
+
       expect(handled).toBe(false);
       expect(prompt.maybeHide).not.toHaveBeenCalled();
     });
@@ -153,14 +153,14 @@ describe('VisibilityController', () => {
     it('should reload window on quad-escape', () => {
       const prompt = createMockPrompt();
       visibilityController.handleFocus(prompt);
-      
+
       // Press escape 4 times quickly
       for (let i = 0; i < 4; i++) {
         visibilityController.handleEscape(prompt, false);
       }
-      
+
       expect(prompt.window.reload).toHaveBeenCalled();
-      
+
       // Escape count should be reset after reload
       const state = visibilityController.getState(prompt.window.id);
       expect(state?.escapeCount).toBe(0);
@@ -195,15 +195,15 @@ describe('VisibilityController', () => {
   describe('Race condition prevention', () => {
     it('should handle rapid focus-blur-escape sequence', () => {
       const prompt = createMockPrompt();
-      
+
       // Simulate rapid sequence
       visibilityController.handleFocus(prompt);
       visibilityController.handleBlur(prompt);
       visibilityController.handleFocus(prompt);
-      
+
       // Escape should work immediately after focus
       const handled = visibilityController.handleEscape(prompt, false);
-      
+
       expect(handled).toBe(true);
       expect(prompt.maybeHide).toHaveBeenCalled();
     });
@@ -212,25 +212,25 @@ describe('VisibilityController', () => {
       const prompt1 = createMockPrompt();
       const prompt2 = createMockPrompt();
       prompt2.window.id = 2;
-      
+
       // Focus both windows
       visibilityController.handleFocus(prompt1);
       visibilityController.handleFocus(prompt2);
-      
+
       // Blur first window
       visibilityController.handleBlur(prompt1);
-      
+
       // States should be independent
       const state1 = visibilityController.getState(prompt1.window.id);
       const state2 = visibilityController.getState(prompt2.window.id);
-      
+
       expect(state1?.focusState).toBe(FocusState.Blurred);
       expect(state2?.focusState).toBe(FocusState.Focused);
-      
+
       // Escape should work on focused window
       const handled2 = visibilityController.handleEscape(prompt2, false);
       expect(handled2).toBe(true);
-      
+
       // Escape should not work on blurred window
       const handled1 = visibilityController.handleEscape(prompt1, false);
       expect(handled1).toBe(false);
@@ -242,9 +242,9 @@ describe('VisibilityController', () => {
         hideOnEscape: false, // Explicitly set to false
         isMainMenu: true, // Add this property to indicate this is the main menu
       });
-      
+
       visibilityController.handleFocus(mainMenu);
-      
+
       // Should hide even with hideOnEscape false and child process
       const handled = visibilityController.handleEscape(mainMenu, true);
       expect(handled).toBe(true);
@@ -257,9 +257,9 @@ describe('VisibilityController', () => {
         scriptPath: '/path/to/other-script.js',
         hideOnEscape: false,
       });
-      
+
       visibilityController.handleFocus(regularScript);
-      
+
       // Should not hide when hideOnEscape is false
       const handled = visibilityController.handleEscape(regularScript, false);
       expect(handled).toBe(false);

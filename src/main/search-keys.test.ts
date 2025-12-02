@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { searchChoices } from './vscode-search';
 import type { Choice } from '@johnlindquist/kit/types/core';
+import { describe, expect, it } from 'vitest';
+import { searchChoices } from './vscode-search';
 
 describe('searchKeys functionality', () => {
   it('should search only by description when searchKeys is ["description"]', () => {
@@ -29,7 +29,7 @@ describe('searchKeys functionality', () => {
     expect(results).toHaveLength(1);
     expect(results[0].item.id).toBe('1');
     expect(results[0].item.name).toBe('something');
-    
+
     // Should have matches in description field
     expect(results[0].matches).toHaveProperty('description');
     expect(results[0].matches.description).toBeDefined();
@@ -55,9 +55,9 @@ describe('searchKeys functionality', () => {
     // Should only find the second choice
     expect(results).toHaveLength(1);
     expect(results[0].item.id).toBe('2');
-    
+
     // Should not find the first choice even though "github" is in the name
-    const foundIds = results.map(r => r.item.id);
+    const foundIds = results.map((r) => r.item.id);
     expect(foundIds).not.toContain('1');
   });
 
@@ -88,15 +88,15 @@ describe('searchKeys functionality', () => {
 
     // Should find all three choices
     expect(results).toHaveLength(3);
-    
+
     // Verify each has matches in the expected field
-    const choice1 = results.find(r => r.item.id === '1');
+    const choice1 = results.find((r) => r.item.id === '1');
     expect(choice1?.matches).toHaveProperty('name');
-    
-    const choice2 = results.find(r => r.item.id === '2');
+
+    const choice2 = results.find((r) => r.item.id === '2');
     expect(choice2?.matches).toHaveProperty('description');
-    
-    const choice3 = results.find(r => r.item.id === '3');
+
+    const choice3 = results.find((r) => r.item.id === '3');
     expect(choice3?.matches).toHaveProperty('keyword');
   });
 
@@ -124,16 +124,16 @@ describe('searchKeys functionality', () => {
 
     // Should find all three that have "test" in name, keyword, or tag
     expect(results).toHaveLength(3);
-    
+
     // Should not search description by default
     const choiceWithTestInDescription: Choice = {
       id: '4',
       name: 'no match',
       description: 'test is here',
     };
-    
+
     const resultsWithDesc = searchChoices([...choices, choiceWithTestInDescription], 'test');
-    const foundIds = resultsWithDesc.map(r => r.item.id);
+    const foundIds = resultsWithDesc.map((r) => r.item.id);
     expect(foundIds).not.toContain('4');
   });
 });

@@ -45,20 +45,20 @@ export const supportsDependency = (dep: OptionalDependency) => {
 const exportDefaults: OptionalDependency[] = [nmp, robot];
 
 interface Shims {
-  //@ts-ignore This import might not work, depending on the platform
+  //@ts-expect-error This import might not work, depending on the platform
   [robot]: typeof import('@jitsi/robotjs');
-  //@ts-ignore This import might not work, depending on the platform
+  //@ts-expect-error This import might not work, depending on the platform
   [uiohook]: typeof import('uiohook-napi');
-  //@ts-ignore This import might not work, depending on the platform
+  //@ts-expect-error This import might not work, depending on the platform
   [nmp]: typeof import('node-mac-permissions');
-  //@ts-ignore This import might not work, depending on the platform
+  //@ts-expect-error This import might not work, depending on the platform
   [nwm]: typeof import('@johnlindquist/node-window-manager');
-  //@ts-ignore This import might not work, depending on the platform
+  //@ts-expect-error This import might not work, depending on the platform
   [mf]: typeof import('@johnlindquist/mac-frontmost');
-  //@ts-ignore This import might not work, depending on the platform
+  //@ts-expect-error This import might not work, depending on the platform
   [mcl]: typeof import('@johnlindquist/mac-clipboard-listener');
-  //@ts-ignore This import might not work, depending on the platform
-  //@ts-ignore This import might not work, depending on the platform
+  //@ts-expect-error This import might not work, depending on the platform
+  //@ts-expect-error This import might not work, depending on the platform
 }
 
 const createShim = <T extends keyof Shims>(packageName: T, depth = 0): Shims[T] =>
@@ -71,7 +71,7 @@ const createShim = <T extends keyof Shims>(packageName: T, depth = 0): Shims[T] 
         if (depth > 0) {
           log.error(
             `The shim for ${packageName} appears to get accessed deeply with '${prop}', indicating ` +
-            'that platform checks are missing.',
+              'that platform checks are missing.',
           );
         }
 

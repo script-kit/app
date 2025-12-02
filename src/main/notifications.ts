@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import { BrowserWindow, app, screen } from 'electron';
+import { app, BrowserWindow, screen } from 'electron';
 import { KIT_PROTOCOL } from './helpers';
 
 let notificationWindow: BrowserWindow | null = null;

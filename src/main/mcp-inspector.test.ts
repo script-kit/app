@@ -1,8 +1,6 @@
-import { beforeAll, describe, expect, it } from 'vitest';
-import { startTestMcpServer } from './mcp-test-bootstrap';
-
 // Mock electron and heavy services to avoid Electron dependency
-import { vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { startTestMcpServer } from './mcp-test-bootstrap';
 
 // Mock process.resourcesPath before importing any modules that might use it
 const originalProcess = process;
@@ -23,29 +21,32 @@ vi.mock('electron', () => ({
     removeListener: vi.fn(),
     removeAllListeners: vi.fn(),
   },
-  BrowserWindow: Object.assign(vi.fn().mockImplementation(() => ({
-    loadURL: vi.fn(),
-    on: vi.fn(),
-    once: vi.fn(),
-    removeListener: vi.fn(),
-    removeAllListeners: vi.fn(),
-    close: vi.fn(),
-    destroy: vi.fn(),
-    show: vi.fn(),
-    hide: vi.fn(),
-    focus: vi.fn(),
-    blur: vi.fn(),
-    webContents: {
+  BrowserWindow: Object.assign(
+    vi.fn().mockImplementation(() => ({
+      loadURL: vi.fn(),
       on: vi.fn(),
       once: vi.fn(),
       removeListener: vi.fn(),
       removeAllListeners: vi.fn(),
-      send: vi.fn(),
-      executeJavaScript: vi.fn(),
+      close: vi.fn(),
+      destroy: vi.fn(),
+      show: vi.fn(),
+      hide: vi.fn(),
+      focus: vi.fn(),
+      blur: vi.fn(),
+      webContents: {
+        on: vi.fn(),
+        once: vi.fn(),
+        removeListener: vi.fn(),
+        removeAllListeners: vi.fn(),
+        send: vi.fn(),
+        executeJavaScript: vi.fn(),
+      },
+    })),
+    {
+      getAllWindows: vi.fn(() => []),
     },
-  })), {
-    getAllWindows: vi.fn(() => []),
-  }),
+  ),
   Notification: vi.fn().mockImplementation(() => ({
     show: vi.fn(),
     close: vi.fn(),

@@ -1,23 +1,20 @@
-import type { KitPrompt } from './prompt';
-import { Channel } from '@johnlindquist/kit/core/enum';
-import { HideReason } from '../shared/enums';
-import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
-import { kitState } from './state';
-import { AppChannel } from '../shared/enums';
-import { container } from './state/services/container';
-import { getAssetPath } from '../shared/assets';
 import os from 'node:os';
 import path from 'node:path';
-import { getVersion } from './version';
-import { ipcMain, shell } from 'electron';
-import { KitEvent, emitter } from '../shared/events';
-import { processes } from './process';
-import { cliFromParams, runPromptProcess } from './kit';
-import { kitPath } from '@johnlindquist/kit/core/utils';
-import { app, BrowserWindow } from 'electron';
 import { fileURLToPath } from 'node:url';
-import { getCachedAvatar } from './avatar-cache';
+import { Channel } from '@johnlindquist/kit/core/enum';
+import { getMainScriptPath, kitPath } from '@johnlindquist/kit/core/utils';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { snapshot } from 'valtio';
+import { getAssetPath } from '../shared/assets';
+import { AppChannel, HideReason } from '../shared/enums';
+import { emitter, KitEvent } from '../shared/events';
+import { getCachedAvatar } from './avatar-cache';
+import { cliFromParams, runPromptProcess } from './kit';
+import { processes } from './process';
+import type { KitPrompt } from './prompt';
+import { kitState } from './state';
+import { container } from './state/services/container';
+import { getVersion } from './version';
 
 export function setupDevtoolsHandlers(prompt: KitPrompt) {
   prompt.window.webContents?.on('devtools-opened', () => {
@@ -48,7 +45,7 @@ async function sendBootstrapUser(prompt: KitPrompt) {
   if (!u || typeof u.login !== 'string' || u.login.length === 0) {
     return; // nothing to preload
   }
-  let payload = { ...u };
+  const payload = { ...u };
   try {
     if (u.avatar_url) {
       const cached = await getCachedAvatar(u.avatar_url);
@@ -63,7 +60,7 @@ async function sendBootstrapUser(prompt: KitPrompt) {
     prompt.window?.webContents?.send(AppChannel.USER_CHANGED, payload);
     (prompt as any).__userBootstrapped = true;
     prompt.logInfo(`[Bootstrap] Sent user data: ${payload.login}`);
-    
+
     // Also send sponsor status so the star shows immediately
     prompt.window?.webContents?.send(AppChannel.KIT_STATE, { isSponsor: kitState.isSponsor });
     prompt.logInfo(`[Bootstrap] Sent sponsor status: ${kitState.isSponsor}`);
@@ -154,9 +151,11 @@ export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
   });
 
   prompt.window.webContents?.on('render-process-gone', (event, details) => {
-    try { processes.removeByPid(prompt.pid, 'prompt exit cleanup'); } catch { }
-    prompt.sendToPrompt = (() => { }) as any;
-    (prompt.window.webContents as any).send = () => { };
+    try {
+      processes.removeByPid(prompt.pid, 'prompt exit cleanup');
+    } catch {}
+    prompt.sendToPrompt = (() => {}) as any;
+    (prompt.window.webContents as any).send = () => {};
     prompt.logError('🫣 Render process gone...');
     prompt.logError({ event, details });
   });
@@ -226,7 +225,9 @@ export function setupWindowLifecycleHandlers(prompt: KitPrompt) {
   prompt.window.on('maximize', () => prompt.logInfo('📌 maximize'));
   prompt.window.on('unmaximize', () => prompt.logInfo('📌 unmaximize'));
   prompt.window.on('close', () => {
-    try { processes.removeByPid((prompt as any).pid, 'prompt destroy cleanup'); } catch { }
+    try {
+      processes.removeByPid((prompt as any).pid, 'prompt destroy cleanup');
+    } catch {}
     prompt.logInfo('📌 close');
   });
   prompt.window.on('closed', () => {

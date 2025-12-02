@@ -24,7 +24,7 @@ function createMockChildProcess(options: { connected?: boolean; killed?: boolean
   };
   emitter.connected = options.connected ?? true;
   emitter.killed = options.killed ?? false;
-  emitter.send = vi.fn((data, callback) => {
+  emitter.send = vi.fn((_data, callback) => {
     if (callback) callback(null);
     return true;
   });
@@ -163,7 +163,7 @@ describe('IPCMessageRouter', () => {
   describe('middleware', () => {
     it('should run middleware before handler', async () => {
       const order: string[] = [];
-      const middleware = vi.fn(async (msg, info, next) => {
+      const middleware = vi.fn(async (_msg, _info, next) => {
         order.push('middleware');
         await next();
       });
@@ -182,12 +182,12 @@ describe('IPCMessageRouter', () => {
 
     it('should chain multiple middleware', async () => {
       const order: string[] = [];
-      const middleware1 = vi.fn(async (msg, info, next) => {
+      const middleware1 = vi.fn(async (_msg, _info, next) => {
         order.push('mw1-before');
         await next();
         order.push('mw1-after');
       });
-      const middleware2 = vi.fn(async (msg, info, next) => {
+      const middleware2 = vi.fn(async (_msg, _info, next) => {
         order.push('mw2-before');
         await next();
         order.push('mw2-after');
@@ -207,7 +207,7 @@ describe('IPCMessageRouter', () => {
     });
 
     it('should allow removing middleware', async () => {
-      const middleware = vi.fn(async (msg, info, next) => {
+      const middleware = vi.fn(async (_msg, _info, next) => {
         await next();
       });
 
@@ -398,7 +398,7 @@ describe('IPCMessageRouter', () => {
     it('should clear all handlers', () => {
       router.register(Channel.SET_VALUE, vi.fn());
       router.addGlobalHandler(vi.fn());
-      router.use(async (msg, info, next) => next());
+      router.use(async (_msg, _info, next) => next());
       router.blockChannel(Channel.SET_INPUT);
 
       router.clear();
@@ -454,8 +454,8 @@ describe('IPCMessageRouter', () => {
     });
 
     it('should return middleware count', () => {
-      router.use(async (msg, info, next) => next());
-      router.use(async (msg, info, next) => next());
+      router.use(async (_msg, _info, next) => next());
+      router.use(async (_msg, _info, next) => next());
 
       const debug = router.getDebugInfo();
 

@@ -15,12 +15,7 @@
  * - diagnostic: Debugging and diagnostics (debug, error, search, compare, update, processWindowCoordinator)
  */
 
-import {
-  createElectronLogger,
-  DOMAIN_CONFIG,
-  type ElectronLogger,
-  type LogLevel,
-} from './electron-adapter';
+import { createElectronLogger, DOMAIN_CONFIG, type ElectronLogger, type LogLevel } from './electron-adapter';
 
 /**
  * Domain logger instances

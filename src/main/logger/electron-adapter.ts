@@ -8,9 +8,9 @@
  * with the SDK's logger module which doesn't export TypeScript declarations.
  */
 
-import log, { type FileTransport, type LevelOption } from 'electron-log';
-import { app } from 'electron';
 import * as path from 'node:path';
+import { app } from 'electron';
+import log, { type FileTransport, type LevelOption } from 'electron-log';
 
 // ============================================================================
 // Types (self-contained to avoid SDK import issues)
@@ -146,11 +146,9 @@ export interface RedactionConfig {
  */
 function shouldRedact(key: string, paths: string[]): boolean {
   const lowerKey = key.toLowerCase();
-  return paths.some(path => {
+  return paths.some((path) => {
     const lowerPath = path.toLowerCase();
-    return lowerKey === lowerPath ||
-           lowerKey.includes(lowerPath) ||
-           lowerPath.includes(lowerKey);
+    return lowerKey === lowerPath || lowerKey.includes(lowerPath) || lowerPath.includes(lowerKey);
   });
 }
 
@@ -167,7 +165,7 @@ function redactObject(obj: unknown, paths: string[], replacement: string): unkno
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => redactObject(item, paths, replacement));
+    return obj.map((item) => redactObject(item, paths, replacement));
   }
 
   if (typeof obj === 'object') {
@@ -292,11 +290,11 @@ export class FileFormatter {
 export class PrettyFormatter {
   private colors: Record<LogLevel, string> = {
     fatal: '\x1b[41m\x1b[37m', // Red background, white text
-    error: '\x1b[31m',          // Red
-    warn: '\x1b[33m',           // Yellow
-    info: '\x1b[36m',           // Cyan
-    debug: '\x1b[35m',          // Magenta
-    trace: '\x1b[90m',          // Gray
+    error: '\x1b[31m', // Red
+    warn: '\x1b[33m', // Yellow
+    info: '\x1b[36m', // Cyan
+    debug: '\x1b[35m', // Magenta
+    trace: '\x1b[90m', // Gray
   };
 
   private reset = '\x1b[0m';
@@ -375,7 +373,7 @@ export class ElectronLogger implements Logger {
       pid: process.pid,
       ...options.defaultContext,
     };
-    this.structured = options.structured ?? (process.env.NODE_ENV === 'production');
+    this.structured = options.structured ?? process.env.NODE_ENV === 'production';
 
     // Create redactor
     this.redactor = createRedactor({
@@ -384,18 +382,13 @@ export class ElectronLogger implements Logger {
     });
 
     // Create formatter based on mode
-    this.formatter = this.structured
-      ? new JSONFormatter()
-      : new FileFormatter();
+    this.formatter = this.structured ? new JSONFormatter() : new FileFormatter();
 
     // Create electron-log instance
     this.electronLog = log.create({ logId: options.name });
 
     // Set up log path
-    this.logPath = options.logPath ?? path.resolve(
-      app.getPath('logs'),
-      `${options.name}.log`
-    );
+    this.logPath = options.logPath ?? path.resolve(app.getPath('logs'), `${options.name}.log`);
 
     // Configure file transport
     if (options.fileTransport !== false) {
@@ -435,12 +428,7 @@ export class ElectronLogger implements Logger {
     return LOG_LEVEL_PRIORITY[level] <= LOG_LEVEL_PRIORITY[this.level];
   }
 
-  private createEntry(
-    level: LogLevel,
-    message: string,
-    context?: LogContext,
-    error?: Error
-  ): LogEntry {
+  private createEntry(level: LogLevel, message: string, context?: LogContext, error?: Error): LogEntry {
     const correlationId = getCorrelationId();
     const parentId = getParentId();
 
@@ -501,12 +489,7 @@ export class ElectronLogger implements Logger {
     }
   }
 
-  private log(
-    level: LogLevel,
-    message: string,
-    errorOrContext?: Error | LogContext,
-    context?: LogContext
-  ): void {
+  private log(level: LogLevel, message: string, errorOrContext?: Error | LogContext, context?: LogContext): void {
     if (!this.isLevelEnabled(level)) return;
 
     let error: Error | undefined;
@@ -553,9 +536,7 @@ export class ElectronLogger implements Logger {
       messageArgs = args;
     }
 
-    const message = messageArgs.map(arg =>
-      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-    ).join(' ');
+    const message = messageArgs.map((arg) => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ');
 
     this.log('warn', message, context);
   }
@@ -582,9 +563,7 @@ export class ElectronLogger implements Logger {
       messageArgs = args;
     }
 
-    const message = messageArgs.map(arg =>
-      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-    ).join(' ');
+    const message = messageArgs.map((arg) => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ');
 
     this.log('info', message, context);
   }
@@ -611,9 +590,7 @@ export class ElectronLogger implements Logger {
       messageArgs = args;
     }
 
-    const message = messageArgs.map(arg =>
-      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-    ).join(' ');
+    const message = messageArgs.map((arg) => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ');
 
     this.log('debug', message, context);
   }
@@ -640,9 +617,7 @@ export class ElectronLogger implements Logger {
       messageArgs = args;
     }
 
-    const message = messageArgs.map(arg =>
-      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-    ).join(' ');
+    const message = messageArgs.map((arg) => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ');
 
     this.log('trace', message, context);
   }
@@ -654,9 +629,7 @@ export class ElectronLogger implements Logger {
   verbose(...args: unknown[]): void {
     // Early exit if level not enabled (avoid formatting work)
     if (!this.isLevelEnabled('debug') || args.length === 0) return;
-    const message = args.map(arg =>
-      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-    ).join(' ');
+    const message = args.map((arg) => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ');
     this.log('debug', message);
   }
 
@@ -667,9 +640,7 @@ export class ElectronLogger implements Logger {
   silly(...args: unknown[]): void {
     // Early exit if level not enabled (avoid formatting work)
     if (!this.isLevelEnabled('trace') || args.length === 0) return;
-    const message = args.map(arg =>
-      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-    ).join(' ');
+    const message = args.map((arg) => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ');
     this.log('trace', message);
   }
 
@@ -736,11 +707,14 @@ export function createElectronLogger(options: ElectronLoggerOptions): ElectronLo
  * Domain-based logger configuration
  * Groups related log categories into domains for easier management
  */
-export const DOMAIN_CONFIG: Record<string, {
-  categories: string[];
-  level: LogLevel;
-  description: string;
-}> = {
+export const DOMAIN_CONFIG: Record<
+  string,
+  {
+    categories: string[];
+    level: LogLevel;
+    description: string;
+  }
+> = {
   core: {
     categories: ['main', 'kit', 'system', 'health'],
     level: 'info',
@@ -799,9 +773,7 @@ export function getDomainForCategory(category: string): string {
  * Create domain-based loggers
  * Returns a map of domain name to logger instance
  */
-export function createDomainLoggers(
-  options: Partial<ElectronLoggerOptions> = {}
-): Map<string, ElectronLogger> {
+export function createDomainLoggers(options: Partial<ElectronLoggerOptions> = {}): Map<string, ElectronLogger> {
   const loggers = new Map<string, ElectronLogger>();
 
   for (const [domain, config] of Object.entries(DOMAIN_CONFIG)) {

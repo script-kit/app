@@ -1,7 +1,6 @@
-import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
-import { ProcessType } from '@johnlindquist/kit/core/enum';
+import { Channel, PROMPT, ProcessType, UI } from '@johnlindquist/kit/core/enum';
 import type { Choice, FlagsWithKeys, Script } from '@johnlindquist/kit/types/core';
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { AppChannel } from '../shared/enums';
 import type { ScoredChoice } from '../shared/types';
 import type { KitPrompt } from './prompt';
@@ -15,23 +14,23 @@ vi.mock('lodash-es', () => ({
 vi.mock('./vscode-search', () => ({
   searchChoices: vi.fn((choices: Choice[], input: string, searchKeys?: string[]) => {
     // Default behavior - filter choices based on input
-    if (!input) return choices.map(choice => ({ item: choice, score: 0, matches: {}, _: '' }));
+    if (!input) return choices.map((choice) => ({ item: choice, score: 0, matches: {}, _: '' }));
 
     return choices
-      .filter(choice => {
+      .filter((choice) => {
         const keys = searchKeys || ['name', 'keyword', 'tag'];
-        return keys.some(key => {
+        return keys.some((key) => {
           const value = choice[key as keyof Choice];
           return typeof value === 'string' && value.toLowerCase().includes(input.toLowerCase());
         });
       })
-      .map(choice => ({ item: choice, score: 0.8, matches: {}, _: '' }));
+      .map((choice) => ({ item: choice, score: 0.8, matches: {}, _: '' }));
   }),
   scoreChoice: vi.fn(),
   isExactMatch: vi.fn(),
   startsWithQuery: vi.fn(),
   clearFuzzyCache: vi.fn(),
-}))
+}));
 
 vi.mock('./logs', () => ({
   searchLog: {
@@ -58,7 +57,7 @@ vi.mock('./state', () => ({
   kitState: {
     kenvEnv: {},
   },
-}))
+}));
 
 // Use real implementations for pure functions
 vi.mock('@johnlindquist/kit/core/utils', async () => {
@@ -76,7 +75,7 @@ vi.mock('./helpers', () => {
       item: choice,
       score: 0,
       matches: {},
-      _: ''
+      _: '',
     })),
     createAsTypedChoice: vi.fn((input: string, template: any) => ({
       ...template,
@@ -88,8 +87,9 @@ vi.mock('./helpers', () => {
     })),
     structuredClone: vi.fn((obj: any) => JSON.parse(JSON.stringify(obj))),
   };
-})
+});
 
+import { createAsTypedChoice, createScoredChoice, structuredClone } from './helpers';
 // Import after mocks
 import {
   appendChoices,
@@ -102,9 +102,7 @@ import {
   setScoredFlags,
   setShortcodes,
 } from './search';
-
-import { searchChoices, scoreChoice, isExactMatch, startsWithQuery, clearFuzzyCache } from './vscode-search';
-import { createScoredChoice, createAsTypedChoice, structuredClone } from './helpers';
+import { clearFuzzyCache, isExactMatch, scoreChoice, searchChoices, startsWithQuery } from './vscode-search';
 
 describe('Search Functionality', () => {
   let mockPrompt: KitPrompt;
@@ -657,9 +655,12 @@ describe('Search Functionality', () => {
           item: choices[0],
           score: 0.9,
           matches: {
-            name: [[0, 3], [4, 13]] // VS Code returns proper ranges for original string
+            name: [
+              [0, 3],
+              [4, 13],
+            ], // VS Code returns proper ranges for original string
           },
-          _: ''
+          _: '',
         },
       ];
 
@@ -677,7 +678,10 @@ describe('Search Functionality', () => {
         expect.arrayContaining([
           expect.objectContaining({
             matches: {
-              name: [[0, 3], [4, 13]] // VS Code returns proper ranges
+              name: [
+                [0, 3],
+                [4, 13],
+              ], // VS Code returns proper ranges
             },
           }),
         ]),
@@ -685,18 +689,19 @@ describe('Search Functionality', () => {
     });
 
     it('should handle spaces in choice names', () => {
-      const choices = [
-        { id: '1', name: 'kit container', keyword: 'kit' },
-      ];
+      const choices = [{ id: '1', name: 'kit container', keyword: 'kit' }];
 
       const searchResults = [
         {
           item: choices[0],
           score: 0.9,
           matches: {
-            name: [[0, 3], [4, 13]] // VS Code returns proper ranges
+            name: [
+              [0, 3],
+              [4, 13],
+            ], // VS Code returns proper ranges
           },
-          _: ''
+          _: '',
         },
       ];
 
@@ -710,17 +715,15 @@ describe('Search Functionality', () => {
     });
 
     it('should handle flag search highlight ranges', () => {
-      const flagChoices = [
-        { id: 'flag1', name: 'test-flag', group: 'Group1' },
-      ];
+      const flagChoices = [{ id: 'flag1', name: 'test-flag', group: 'Group1' }];
 
       const searchResults = [
         {
           item: flagChoices[0],
           score: 0.8,
           matches: { name: [[0, 4]] },
-          _: ''
-        }
+          _: '',
+        },
       ];
 
       mockPrompt.flagSearch.choices = flagChoices;
@@ -738,7 +741,7 @@ describe('Search Functionality', () => {
         expect.arrayContaining([
           expect.objectContaining({
             matches: {
-              name: [[0, 4]] // Should be remapped correctly
+              name: [[0, 4]], // Should be remapped correctly
             },
           }),
         ]),
@@ -746,16 +749,14 @@ describe('Search Functionality', () => {
     });
 
     it('should handle choices with no matches gracefully', () => {
-      const choices = [
-        { id: '1', name: 'kit-container' },
-      ];
+      const choices = [{ id: '1', name: 'kit-container' }];
 
       const searchResults = [
         {
           item: choices[0],
           score: 0.9,
           matches: {}, // No matches
-          _: ''
+          _: '',
         },
       ];
 
@@ -777,10 +778,7 @@ describe('Search Functionality', () => {
     });
 
     it('should handle multiple keys with matches', () => {
-      const choices = [
-        { id: '1', name: 'kit-container', keyword: 'kit-key' },
-      ];
-
+      const choices = [{ id: '1', name: 'kit-container', keyword: 'kit-key' }];
 
       const searchResults = [
         {
@@ -788,9 +786,9 @@ describe('Search Functionality', () => {
           score: 0.9,
           matches: {
             name: [[0, 3]],
-            keyword: [[0, 3]]
+            keyword: [[0, 3]],
           },
-          _: ''
+          _: '',
         },
       ];
 
@@ -808,7 +806,7 @@ describe('Search Functionality', () => {
           expect.objectContaining({
             matches: {
               name: [[0, 3]],
-              keyword: [[0, 3]]
+              keyword: [[0, 3]],
             },
           }),
         ]),
@@ -948,9 +946,7 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = false;
-      vi.mocked(searchChoices).mockReturnValue([
-        { item: choices[0], score: 0.8, matches: { name: [[9, 13]] }, _: '' }
-      ]);
+      vi.mocked(searchChoices).mockReturnValue([{ item: choices[0], score: 0.8, matches: { name: [[9, 13]] }, _: '' }]);
       mockPrompt.kitSearch.keys = ['name', 'keyword'];
 
       invokeSearch(mockPrompt, 'test');
@@ -1028,7 +1024,7 @@ describe('Search Functionality', () => {
         invokeSearch(mockPrompt, 'git foo');
 
         const calls = mockSendToPrompt.mock.calls;
-        const setScoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+        const setScoredChoicesCall = calls.find((call) => call[0] === Channel.SET_SCORED_CHOICES);
         const scoredChoices = setScoredChoicesCall?.[1] || [];
 
         // Find the as typed choice in the results
@@ -1103,7 +1099,7 @@ describe('Search Functionality', () => {
         invokeSearch(mockPrompt, '/Users/john/Documents');
 
         const calls = mockSendToPrompt.mock.calls;
-        const setScoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+        const setScoredChoicesCall = calls.find((call) => call[0] === Channel.SET_SCORED_CHOICES);
         const scoredChoices = setScoredChoicesCall?.[1] || [];
 
         // Find the as typed choice in the results
@@ -1130,7 +1126,7 @@ describe('Search Functionality', () => {
 
         // Should show both "As Typed" options
         const calls = mockSendToPrompt.mock.calls;
-        const setScoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+        const setScoredChoicesCall = calls.find((call) => call[0] === Channel.SET_SCORED_CHOICES);
         const scoredChoices = setScoredChoicesCall?.[1] || [];
         const asTypedChoices = scoredChoices.filter((sc: ScoredChoice) => sc.item.asTyped === true);
 
@@ -1155,7 +1151,7 @@ describe('Search Functionality', () => {
         invokeSearch(mockPrompt, 'my-input-text');
 
         const calls = mockSendToPrompt.mock.calls;
-        const setScoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+        const setScoredChoicesCall = calls.find((call) => call[0] === Channel.SET_SCORED_CHOICES);
         const scoredChoices = setScoredChoicesCall?.[1] || [];
         const asTypedChoices = scoredChoices.filter((sc: ScoredChoice) => sc.item.asTyped === true);
 
@@ -1183,7 +1179,7 @@ describe('Search Functionality', () => {
         invokeSearch(mockPrompt, 'test-input');
 
         const calls = mockSendToPrompt.mock.calls;
-        const setScoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+        const setScoredChoicesCall = calls.find((call) => call[0] === Channel.SET_SCORED_CHOICES);
         const scoredChoices = setScoredChoicesCall?.[1] || [];
         const asTypedChoices = scoredChoices.filter((sc: ScoredChoice) => sc.item.asTyped === true);
 
@@ -1269,20 +1265,18 @@ describe('Search Functionality', () => {
       mockPrompt.kitSearch.hasGroup = true;
 
       // Only return a match from Group2, nothing from Group1
-      vi.mocked(searchChoices).mockReturnValue([
-        { item: choices[2], score: 0.8, matches: { name: [[0, 9]] }, _: '' }
-      ]);
+      vi.mocked(searchChoices).mockReturnValue([{ item: choices[2], score: 0.8, matches: { name: [[0, 9]] }, _: '' }]);
       vi.mocked(isExactMatch).mockReturnValue(false);
       vi.mocked(startsWithQuery).mockReturnValue(false);
 
       invokeSearch(mockPrompt, 'different');
 
-      const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+      const call = mockSendToPrompt.mock.calls.find((c) => c[0] === Channel.SET_SCORED_CHOICES);
       const scoredChoices = call?.[1] || [];
 
       // Should not have any "Exact Match" separator since no exact matches were found
-      const exactMatchSeparator = scoredChoices.find((sc: ScoredChoice) =>
-        sc.item.name === 'Exact Match' && sc.item.skip === true
+      const exactMatchSeparator = scoredChoices.find(
+        (sc: ScoredChoice) => sc.item.name === 'Exact Match' && sc.item.skip === true,
       );
       expect(exactMatchSeparator).toBeUndefined();
 
@@ -1305,14 +1299,14 @@ describe('Search Functionality', () => {
       // Return matches but none are exact or starts-with
       vi.mocked(searchChoices).mockReturnValue([
         { item: choices[0], score: 0.6, matches: { name: [[5, 9]] }, _: '' },
-        { item: choices[1], score: 0.5, matches: { name: [[8, 12]] }, _: '' }
+        { item: choices[1], score: 0.5, matches: { name: [[8, 12]] }, _: '' },
       ]);
       vi.mocked(isExactMatch).mockReturnValue(false);
       vi.mocked(startsWithQuery).mockReturnValue(false);
 
       invokeSearch(mockPrompt, 'test');
 
-      const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+      const call = mockSendToPrompt.mock.calls.find((c) => c[0] === Channel.SET_SCORED_CHOICES);
       const scoredChoices = call?.[1] || [];
 
       // Should have "Fuzzy Match" separator since there are fuzzy matches
@@ -1338,19 +1332,19 @@ describe('Search Functionality', () => {
       // First choice is exact match
       vi.mocked(searchChoices).mockReturnValue([
         { item: choices[0], score: 1.0, matches: { name: [[0, 4]] }, _: '' },
-        { item: choices[1], score: 0.8, matches: { name: [[0, 4]] }, _: '' }
+        { item: choices[1], score: 0.8, matches: { name: [[0, 4]] }, _: '' },
       ]);
       vi.mocked(isExactMatch).mockImplementation((choice) => choice.id === '1');
       vi.mocked(startsWithQuery).mockImplementation((choice) => choice.id === '2');
 
       invokeSearch(mockPrompt, 'test');
 
-      const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+      const call = mockSendToPrompt.mock.calls.find((c) => c[0] === Channel.SET_SCORED_CHOICES);
       const scoredChoices = call?.[1] || [];
 
       // Should have "Exact Match" separator
-      const exactMatchSeparator = scoredChoices.find((sc: ScoredChoice) =>
-        sc.item.name === 'Exact Match' && sc.item.skip === true
+      const exactMatchSeparator = scoredChoices.find(
+        (sc: ScoredChoice) => sc.item.name === 'Exact Match' && sc.item.skip === true,
       );
       expect(exactMatchSeparator).toBeDefined();
 
@@ -1373,7 +1367,7 @@ describe('Search Functionality', () => {
           pass: false,
           className: 'defaultGroupClassName',
           nameClassName: 'defaultGroupNameClassName',
-          height: 48 // PROMPT.ITEM.HEIGHT.XXXS
+          height: 48, // PROMPT.ITEM.HEIGHT.XXXS
         },
         // Real items from "Cursor Snippets" group
         {
@@ -1382,7 +1376,7 @@ describe('Search Functionality', () => {
           command: 'open-scriptlets',
           group: 'Cursor Snippets',
           type: 'Prompt',
-          tag: 'opt+s'
+          tag: 'opt+s',
         },
         {
           id: 'step-by-step',
@@ -1390,7 +1384,7 @@ describe('Search Functionality', () => {
           command: 'step-by-step',
           group: 'Cursor Snippets',
           type: 'Prompt',
-          tag: 'expand: ,sbs'
+          tag: 'expand: ,sbs',
         },
         {
           id: 'create-a-branch',
@@ -1398,7 +1392,7 @@ describe('Search Functionality', () => {
           command: 'create-a-branch',
           group: 'Cursor Snippets',
           type: 'Prompt',
-          tag: 'expand: ,cb'
+          tag: 'expand: ,cb',
         },
         // Another group separator
         {
@@ -1409,7 +1403,7 @@ describe('Search Functionality', () => {
           pass: false,
           className: 'defaultGroupClassName',
           nameClassName: 'defaultGroupNameClassName',
-          height: 48
+          height: 48,
         },
         // Item from different group that matches "Cursor"
         {
@@ -1417,7 +1411,7 @@ describe('Search Functionality', () => {
           name: 'Cursor Position Helper',
           command: 'cursor-position',
           group: 'Editor Tools',
-          type: 'Prompt'
+          type: 'Prompt',
         },
       ];
 
@@ -1428,7 +1422,7 @@ describe('Search Functionality', () => {
       // This simulates what happens when the group name itself matches the search
       vi.mocked(searchChoices).mockReturnValue([
         { item: choices[0], score: 0.95, matches: { name: [[0, 6]] }, _: '' }, // "Cursor Snippets" separator
-        { item: choices[5], score: 0.9, matches: { name: [[0, 6]] }, _: '' }   // "Cursor Position Helper"
+        { item: choices[5], score: 0.9, matches: { name: [[0, 6]] }, _: '' }, // "Cursor Position Helper"
       ]);
       vi.mocked(isExactMatch).mockReturnValue(false);
       vi.mocked(startsWithQuery).mockImplementation((choice) => {
@@ -1437,19 +1431,22 @@ describe('Search Functionality', () => {
 
       invokeSearch(mockPrompt, 'Cursor');
 
-      const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+      const call = mockSendToPrompt.mock.calls.find((c) => c[0] === Channel.SET_SCORED_CHOICES);
       const scoredChoices = call?.[1] || [];
 
       // Log for debugging
-      console.log('Scored choices:', scoredChoices.map((sc: ScoredChoice) => ({
-        name: sc.item.name,
-        group: sc.item.group,
-        skip: sc.item.skip
-      })));
+      console.log(
+        'Scored choices:',
+        scoredChoices.map((sc: ScoredChoice) => ({
+          name: sc.item.name,
+          group: sc.item.group,
+          skip: sc.item.skip,
+        })),
+      );
 
       // The bug: "Cursor Snippets" separator appears even though no actual items from that group matched
-      const cursorSnippetsSeparator = scoredChoices.find((sc: ScoredChoice) =>
-        sc.item.name === 'Cursor Snippets' && sc.item.skip === true
+      const cursorSnippetsSeparator = scoredChoices.find(
+        (sc: ScoredChoice) => sc.item.name === 'Cursor Snippets' && sc.item.skip === true,
       );
 
       // This test should FAIL with the current implementation, showing the bug
@@ -1476,20 +1473,18 @@ describe('Search Functionality', () => {
         { item: choices[1], score: 0.9, matches: { name: [[0, 6]] }, _: '' },
       ]);
       // Both Stripe and Stripe Payment Links start with "Stripe" so they're exact matches
-      vi.mocked(isExactMatch).mockImplementation((choice) =>
-        choice.name?.toLowerCase().startsWith('stripe')
-      );
+      vi.mocked(isExactMatch).mockImplementation((choice) => choice.name?.toLowerCase().startsWith('stripe'));
       // Neither matches the mnemonic pattern for "Stripe"
       vi.mocked(startsWithQuery).mockImplementation(() => false);
 
       invokeSearch(mockPrompt, 'Stripe');
 
-      const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+      const call = mockSendToPrompt.mock.calls.find((c) => c[0] === Channel.SET_SCORED_CHOICES);
       const scoredChoices = call?.[1] || [];
 
       // Should have "Exact Match" header
-      const exactMatchHeader = scoredChoices.find((sc: ScoredChoice) =>
-        sc.item.name === 'Exact Match' && sc.item.skip === true
+      const exactMatchHeader = scoredChoices.find(
+        (sc: ScoredChoice) => sc.item.name === 'Exact Match' && sc.item.skip === true,
       );
       expect(exactMatchHeader).toBeDefined();
 
@@ -1510,31 +1505,53 @@ describe('Search Functionality', () => {
       mockPrompt.kitSearch.hasGroup = true;
 
       vi.mocked(searchChoices).mockReturnValue([
-        { item: choices[0], score: 0.9, matches: { name: [[0, 1], [7, 8], [15, 16]] }, _: '' },
-        { item: choices[1], score: 0.8, matches: { name: [[0, 1], [5, 6], [10, 11]] }, _: '' },
+        {
+          item: choices[0],
+          score: 0.9,
+          matches: {
+            name: [
+              [0, 1],
+              [7, 8],
+              [15, 16],
+            ],
+          },
+          _: '',
+        },
+        {
+          item: choices[1],
+          score: 0.8,
+          matches: {
+            name: [
+              [0, 1],
+              [5, 6],
+              [10, 11],
+            ],
+          },
+          _: '',
+        },
       ]);
       // None start with "spl"
       vi.mocked(isExactMatch).mockImplementation(() => false);
       // Both match the mnemonic pattern S-P-L
-      vi.mocked(startsWithQuery).mockImplementation((choice) =>
-        choice.name === 'Stripe Payment Links' || choice.name === 'Send Pull Request'
+      vi.mocked(startsWithQuery).mockImplementation(
+        (choice) => choice.name === 'Stripe Payment Links' || choice.name === 'Send Pull Request',
       );
 
       invokeSearch(mockPrompt, 'spl');
 
-      const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+      const call = mockSendToPrompt.mock.calls.find((c) => c[0] === Channel.SET_SCORED_CHOICES);
       const scoredChoices = call?.[1] || [];
 
       // Should have "Best Matches" header
-      const bestMatchHeader = scoredChoices.find((sc: ScoredChoice) =>
-        sc.item.name === 'Best Matches' && sc.item.skip === true
+      const bestMatchHeader = scoredChoices.find(
+        (sc: ScoredChoice) => sc.item.name === 'Best Matches' && sc.item.skip === true,
       );
       expect(bestMatchHeader).toBeDefined();
 
       // Both should be under Best Matches
       const bestMatchIndex = scoredChoices.findIndex((sc: ScoredChoice) => sc.item.name === 'Best Matches');
       const bestMatches = [scoredChoices[bestMatchIndex + 1], scoredChoices[bestMatchIndex + 2]];
-      expect(bestMatches.map(m => m?.item?.name).sort()).toEqual(['Send Pull Request', 'Stripe Payment Links']);
+      expect(bestMatches.map((m) => m?.item?.name).sort()).toEqual(['Send Pull Request', 'Stripe Payment Links']);
     });
 
     it('should show best match when typing a word from the middle', () => {
@@ -1554,39 +1571,69 @@ describe('Search Functionality', () => {
       // None start with "Payment" at position 0
       vi.mocked(isExactMatch).mockImplementation(() => false);
       // Both have "Payment" as a word
-      vi.mocked(startsWithQuery).mockImplementation((choice) =>
-        choice.name === 'Stripe Payment Links' || choice.name === 'Process Payment Gateway'
+      vi.mocked(startsWithQuery).mockImplementation(
+        (choice) => choice.name === 'Stripe Payment Links' || choice.name === 'Process Payment Gateway',
       );
 
       invokeSearch(mockPrompt, 'Payment');
 
-      const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+      const call = mockSendToPrompt.mock.calls.find((c) => c[0] === Channel.SET_SCORED_CHOICES);
       const scoredChoices = call?.[1] || [];
 
       // Should have "Best Matches" header
-      const bestMatchHeader = scoredChoices.find((sc: ScoredChoice) =>
-        sc.item.name === 'Best Matches' && sc.item.skip === true
+      const bestMatchHeader = scoredChoices.find(
+        (sc: ScoredChoice) => sc.item.name === 'Best Matches' && sc.item.skip === true,
       );
       expect(bestMatchHeader).toBeDefined();
 
       // Should include both choices that have "Payment" as a word
       const bestMatchIndex = scoredChoices.findIndex((sc: ScoredChoice) => sc.item.name === 'Best Matches');
       const bestMatches = [scoredChoices[bestMatchIndex + 1], scoredChoices[bestMatchIndex + 2]];
-      expect(bestMatches.map(m => m?.item?.name).sort()).toEqual(['Process Payment Gateway', 'Stripe Payment Links']);
+      expect(bestMatches.map((m) => m?.item?.name).sort()).toEqual(['Process Payment Gateway', 'Stripe Payment Links']);
     });
 
     describe('Search prioritization', () => {
       it('should prioritize "API Tester" over "Stripe Payment Links" for query "apit"', () => {
         const choices = [
-          { id: '1', name: 'Stripe Payment Links', description: 'Fetch payment links from Stripe and retrieve customer emails from successful payments' },
+          {
+            id: '1',
+            name: 'Stripe Payment Links',
+            description: 'Fetch payment links from Stripe and retrieve customer emails from successful payments',
+          },
           { id: '2', name: 'API Tester', description: 'Test API endpoints with custom requests and data' },
         ];
 
         mockPrompt.kitSearch.choices = choices;
         mockPrompt.kitSearch.hasGroup = false;
 
-        const apiTesterResult = { item: choices[1], score: 327732, matches: { name: [[0, 3], [4, 5]], slicedName: [[0, 3], [4, 5]] }, _: '' };
-        const stripeResult = { item: choices[0], score: 16, matches: { description: [[7, 8], [29, 30], [57, 58], [83, 84]] }, _: '' };
+        const apiTesterResult = {
+          item: choices[1],
+          score: 327732,
+          matches: {
+            name: [
+              [0, 3],
+              [4, 5],
+            ],
+            slicedName: [
+              [0, 3],
+              [4, 5],
+            ],
+          },
+          _: '',
+        };
+        const stripeResult = {
+          item: choices[0],
+          score: 16,
+          matches: {
+            description: [
+              [7, 8],
+              [29, 30],
+              [57, 58],
+              [83, 84],
+            ],
+          },
+          _: '',
+        };
 
         vi.mocked(searchChoices).mockReturnValue([apiTesterResult, stripeResult]);
 
@@ -1603,7 +1650,7 @@ describe('Search Functionality', () => {
         );
 
         // Verify API Tester comes first
-        const call = mockSendToPrompt.mock.calls.find(c => c[0] === Channel.SET_SCORED_CHOICES);
+        const call = mockSendToPrompt.mock.calls.find((c) => c[0] === Channel.SET_SCORED_CHOICES);
         const scoredChoices = call?.[1] || [];
         expect(scoredChoices[0]?.item?.name).toBe('API Tester');
         expect(scoredChoices[1]?.item?.name).toBe('Stripe Payment Links');
@@ -1614,7 +1661,12 @@ describe('Search Functionality', () => {
   describe('Edge Cases for Pass Group and Skip Filtering', () => {
     it('should handle pass group with regex patterns in grouped search', () => {
       const choices = [
-        { id: '1', name: 'Email Choice', pass: '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/i', group: 'Validators' },
+        {
+          id: '1',
+          name: 'Email Choice',
+          pass: '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/i',
+          group: 'Validators',
+        },
         { id: '2', name: 'Phone Choice', pass: '/^\\d{3}-\\d{3}-\\d{4}$/', group: 'Validators' },
         { id: '3', name: 'Normal Choice', group: 'Normal' },
       ];
@@ -1627,12 +1679,14 @@ describe('Search Functionality', () => {
 
       // Should include Pass group header and email choice
       const calls = mockSendToPrompt.mock.calls;
-      const scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoicesCall = calls.find((call) => call[0] === Channel.SET_SCORED_CHOICES);
       const scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
 
-      const passHeaderIndex = scoredChoices.findIndex(sc => sc.item.name === 'Pass "test@example.com" to...' && sc.item.skip === true);
-      const emailChoiceIndex = scoredChoices.findIndex(sc => sc.item.name === 'Email Choice');
-      const emailChoice = scoredChoices.find(sc => sc.item.name === 'Email Choice');
+      const passHeaderIndex = scoredChoices.findIndex(
+        (sc) => sc.item.name === 'Pass "test@example.com" to...' && sc.item.skip === true,
+      );
+      const emailChoiceIndex = scoredChoices.findIndex((sc) => sc.item.name === 'Email Choice');
+      const emailChoice = scoredChoices.find((sc) => sc.item.name === 'Email Choice');
 
       expect(passHeaderIndex).toBeGreaterThan(-1);
       expect(emailChoiceIndex).toBeGreaterThan(passHeaderIndex);
@@ -1654,13 +1708,13 @@ describe('Search Functionality', () => {
       invokeSearch(mockPrompt, 'anything');
 
       const calls = mockSendToPrompt.mock.calls;
-      const scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoicesCall = calls.find((call) => call[0] === Channel.SET_SCORED_CHOICES);
       const scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
 
       // Should include pass header and the always pass choice
-      expect(scoredChoices.some(sc => sc.item.name === 'Pass "anything" to...' && sc.item.skip === true)).toBe(true);
-      expect(scoredChoices.some(sc => sc.item.name === 'Always Pass Choice')).toBe(true);
-      expect(scoredChoices.some(sc => sc.item.name === 'Conditional Pass')).toBe(false);
+      expect(scoredChoices.some((sc) => sc.item.name === 'Pass "anything" to...' && sc.item.skip === true)).toBe(true);
+      expect(scoredChoices.some((sc) => sc.item.name === 'Always Pass Choice')).toBe(true);
+      expect(scoredChoices.some((sc) => sc.item.name === 'Conditional Pass')).toBe(false);
     });
 
     it('should handle pass choices in non-grouped search with regex', () => {
@@ -1671,19 +1725,17 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = false;
-      vi.mocked(searchChoices).mockReturnValue([
-        { item: choices[1], score: 0.5, matches: {}, _: '' }
-      ]);
+      vi.mocked(searchChoices).mockReturnValue([{ item: choices[1], score: 0.5, matches: {}, _: '' }]);
 
       invokeSearch(mockPrompt, 'https://example.com');
 
       const calls = mockSendToPrompt.mock.calls;
-      const scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoicesCall = calls.find((call) => call[0] === Channel.SET_SCORED_CHOICES);
       const scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
 
       // Should include both normal choice and pass choice
-      expect(scoredChoices.some(sc => sc.item.name === 'Normal Choice')).toBe(true);
-      expect(scoredChoices.some(sc => sc.item.name === 'URL Choice')).toBe(true);
+      expect(scoredChoices.some((sc) => sc.item.name === 'Normal Choice')).toBe(true);
+      expect(scoredChoices.some((sc) => sc.item.name === 'URL Choice')).toBe(true);
     });
 
     it('should filter skip choices in non-grouped search', () => {
@@ -1704,13 +1756,13 @@ describe('Search Functionality', () => {
       invokeSearch(mockPrompt, 'choice');
 
       const calls = mockSendToPrompt.mock.calls;
-      const scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoicesCall = calls.find((call) => call[0] === Channel.SET_SCORED_CHOICES);
       const scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
 
       // Should NOT include skip choice
-      expect(scoredChoices.some(sc => sc.item.skip === true)).toBe(false);
-      expect(scoredChoices.some(sc => sc.item.name === 'Normal Choice')).toBe(true);
-      expect(scoredChoices.some(sc => sc.item.name === 'Another Choice')).toBe(true);
+      expect(scoredChoices.some((sc) => sc.item.skip === true)).toBe(false);
+      expect(scoredChoices.some((sc) => sc.item.name === 'Normal Choice')).toBe(true);
+      expect(scoredChoices.some((sc) => sc.item.name === 'Another Choice')).toBe(true);
     });
 
     it('should handle invalid regex patterns gracefully', () => {
@@ -1727,12 +1779,12 @@ describe('Search Functionality', () => {
       expect(() => invokeSearch(mockPrompt, 'test')).not.toThrow();
 
       const calls = mockSendToPrompt.mock.calls;
-      const scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoicesCall = calls.find((call) => call[0] === Channel.SET_SCORED_CHOICES);
       const scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
 
       // Should include good regex but not bad regex
-      expect(scoredChoices.some(sc => sc.item.name === 'Good Regex')).toBe(true);
-      expect(scoredChoices.some(sc => sc.item.name === 'Bad Regex')).toBe(false);
+      expect(scoredChoices.some((sc) => sc.item.name === 'Good Regex')).toBe(true);
+      expect(scoredChoices.some((sc) => sc.item.name === 'Bad Regex')).toBe(false);
     });
 
     it('should show info choices consistently in both grouped and non-grouped paths', () => {
@@ -1744,14 +1796,12 @@ describe('Search Functionality', () => {
       // Test grouped path
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = true;
-      vi.mocked(searchChoices).mockReturnValue([
-        { item: choices[1], score: 0.8, matches: {}, _: '' }
-      ]);
+      vi.mocked(searchChoices).mockReturnValue([{ item: choices[1], score: 0.8, matches: {}, _: '' }]);
 
       invokeSearch(mockPrompt, 'test');
 
       let calls = mockSendToPrompt.mock.calls;
-      let scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      let scoredChoicesCall = calls.find((call) => call[0] === Channel.SET_SCORED_CHOICES);
       let scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
 
       // Info should be at the beginning
@@ -1762,13 +1812,13 @@ describe('Search Functionality', () => {
       mockPrompt.kitSearch.hasGroup = false;
       vi.mocked(searchChoices).mockReturnValue([
         { item: choices[0], score: 1.0, matches: {}, _: '' },
-        { item: choices[1], score: 0.8, matches: {}, _: '' }
+        { item: choices[1], score: 0.8, matches: {}, _: '' },
       ]);
 
       invokeSearch(mockPrompt, 'test');
 
       calls = mockSendToPrompt.mock.calls;
-      scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      scoredChoicesCall = calls.find((call) => call[0] === Channel.SET_SCORED_CHOICES);
       scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
 
       // Info should still be at the beginning
@@ -1783,22 +1833,20 @@ describe('Search Functionality', () => {
 
       mockPrompt.kitSearch.choices = choices;
       mockPrompt.kitSearch.hasGroup = true;
-      vi.mocked(searchChoices).mockReturnValue([
-        { item: choices[1], score: 0.8, matches: {}, _: '' }
-      ]);
+      vi.mocked(searchChoices).mockReturnValue([{ item: choices[1], score: 0.8, matches: {}, _: '' }]);
 
       invokeSearch(mockPrompt, 'not-an-email');
 
       const calls = mockSendToPrompt.mock.calls;
-      const scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoicesCall = calls.find((call) => call[0] === Channel.SET_SCORED_CHOICES);
       const scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
 
       // Should NOT include Pass header
-      expect(scoredChoices.some(sc => sc.item.name === 'Pass' && sc.item.skip === true)).toBe(false);
+      expect(scoredChoices.some((sc) => sc.item.name === 'Pass' && sc.item.skip === true)).toBe(false);
       // Should include normal choice
-      expect(scoredChoices.some(sc => sc.item.name === 'Normal Choice')).toBe(true);
+      expect(scoredChoices.some((sc) => sc.item.name === 'Normal Choice')).toBe(true);
       // Should NOT include email choice
-      expect(scoredChoices.some(sc => sc.item.name === 'Email Only')).toBe(false);
+      expect(scoredChoices.some((sc) => sc.item.name === 'Email Only')).toBe(false);
     });
 
     it('should include existing Pass group headers when showing pass choices', () => {
@@ -1815,14 +1863,12 @@ describe('Search Functionality', () => {
       invokeSearch(mockPrompt, 'test');
 
       const calls = mockSendToPrompt.mock.calls;
-      const scoredChoicesCall = calls.find(call => call[0] === Channel.SET_SCORED_CHOICES);
+      const scoredChoicesCall = calls.find((call) => call[0] === Channel.SET_SCORED_CHOICES);
       const scoredChoices = scoredChoicesCall?.[1] as ScoredChoice[];
 
       // Find the pass section
-      const passHeaderIndex = scoredChoices.findIndex(sc =>
-        sc.item.skip === true && sc.item.name?.includes('Pass')
-      );
-      const terminalChoiceIndex = scoredChoices.findIndex(sc => sc.item.name === 'Terminal Command');
+      const passHeaderIndex = scoredChoices.findIndex((sc) => sc.item.skip === true && sc.item.name?.includes('Pass'));
+      const terminalChoiceIndex = scoredChoices.findIndex((sc) => sc.item.name === 'Terminal Command');
 
       // Should have the existing group header followed by the pass choice
       expect(passHeaderIndex).toBeGreaterThan(-1);

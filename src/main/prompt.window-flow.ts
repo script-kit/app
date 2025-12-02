@@ -1,13 +1,13 @@
 import path from 'node:path';
-import type { Rectangle } from 'electron';
 import { Channel, PROMPT } from '@johnlindquist/kit/core/enum';
 import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
-import type { KitPrompt } from './prompt';
-import { processWindowCoordinator, WindowOperation } from './process-window-coordinator';
+import type { Rectangle } from 'electron';
 import { ensureIdleProcess } from './process';
-import { kitState } from './state';
-import { getCurrentScreenPromptCache, getCurrentScreenFromMouse } from './prompt.screen-utils';
+import { processWindowCoordinator, WindowOperation } from './process-window-coordinator';
+import type { KitPrompt } from './prompt';
+import { getCurrentScreenFromMouse, getCurrentScreenPromptCache } from './prompt.screen-utils';
 import shims from './shims';
+import { kitState } from './state';
 
 export function initShowPromptFlow(prompt: KitPrompt) {
   prompt.logInfo(`${prompt.pid}:🎪 initShowPrompt: ${prompt.id} ${prompt.scriptPath}`);
@@ -132,9 +132,7 @@ export function initBoundsFlow(prompt: KitPrompt, forceScriptPath?: string) {
   const { x, y, width, height } = prompt.window.getBounds();
   if (cachedBounds.width !== width || cachedBounds.height !== height) {
     prompt.logVerbose(
-      `Started resizing: ${prompt.window?.getSize()}. First prompt?: ${
-        (prompt as any).firstPrompt ? 'true' : 'false'
-      }`,
+      `Started resizing: ${prompt.window?.getSize()}. First prompt?: ${(prompt as any).firstPrompt ? 'true' : 'false'}`,
     );
     (prompt as any).resizing = true;
   }
@@ -159,5 +157,3 @@ export function initMainBoundsFlow(prompt: KitPrompt) {
   if (!cached.height || cached.height < PROMPT.HEIGHT.BASE) cached.height = PROMPT.HEIGHT.BASE;
   (prompt as any).setBounds(cached as Partial<Rectangle>, 'initMainBounds');
 }
-
-

@@ -1,6 +1,6 @@
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import type { PromptData, Script } from '@johnlindquist/kit/types/core';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { Trigger } from '../shared/enums';
 
 // Mock dependencies
@@ -85,7 +85,7 @@ class MockKitPrompt {
     },
   };
   shown = false;
-  
+
   initMainBounds = vi.fn();
   initShowPrompt = vi.fn();
   initBounds = vi.fn();
@@ -100,12 +100,12 @@ class MockKitPrompt {
   focusPrompt = vi.fn();
 }
 
+import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
 // Import the module under test after mocks
 import { runPromptProcess } from './kit';
+import { promptLog as log } from './logs';
 import { processes } from './process';
 import { kitState } from './state';
-import { promptLog as log } from './logs';
-import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
 
 describe.skip('Prompt Timing Tests', () => {
   let mockPrompt: MockKitPrompt;
@@ -114,14 +114,14 @@ describe.skip('Prompt Timing Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    
+
     mockPrompt = new MockKitPrompt();
     mockChild = {
       pid: 12345,
       connected: true,
       send: vi.fn(),
     };
-    
+
     (processes.findIdlePromptProcess as Mock).mockReturnValue({
       prompt: mockPrompt,
       pid: 12345,
@@ -136,7 +136,7 @@ describe.skip('Prompt Timing Tests', () => {
   describe('Snippet trigger timing', () => {
     it.skip('should wait 50ms before showing snippet-triggered prompts', async () => {
       const scriptPath = '/test/snippet.js';
-      
+
       await runPromptProcess(scriptPath, [], {
         force: false,
         trigger: Trigger.Snippet,
@@ -147,16 +147,14 @@ describe.skip('Prompt Timing Tests', () => {
       expect(mockPrompt.initBounds).toHaveBeenCalled();
       expect(mockPrompt.initShowPrompt).not.toHaveBeenCalled();
       expect(mockPrompt.shown).toBe(false);
-      
+
       // Verify 50ms delay is logged
-      expect(log.info).toHaveBeenCalledWith(
-        expect.stringContaining('📝 Snippet trigger: Preparing prompt')
-      );
+      expect(log.info).toHaveBeenCalledWith(expect.stringContaining('📝 Snippet trigger: Preparing prompt'));
     });
 
     it('should show prompt immediately for non-snippet triggers', async () => {
       const scriptPath = '/test/script.js';
-      
+
       await runPromptProcess(scriptPath, [], {
         force: false,
         trigger: Trigger.Shortcut,
@@ -170,7 +168,7 @@ describe.skip('Prompt Timing Tests', () => {
 
     it('should not show prompt for snippet if show: false in prompt data', async () => {
       const scriptPath = '/test/snippet.js';
-      
+
       await runPromptProcess(scriptPath, [], {
         force: false,
         trigger: Trigger.Snippet,
@@ -182,12 +180,12 @@ describe.skip('Prompt Timing Tests', () => {
         show: false,
         scriptPath,
       };
-      
+
       mockPrompt.setPromptData(promptData as PromptData);
-      
+
       // Advance timers past 50ms
       vi.advanceTimersByTime(100);
-      
+
       // Prompt should remain hidden
       expect(mockPrompt.showPrompt).not.toHaveBeenCalled();
       expect(mockPrompt.shown).toBe(false);
@@ -195,7 +193,7 @@ describe.skip('Prompt Timing Tests', () => {
 
     it('should show prompt by default for snippet triggers', async () => {
       const scriptPath = '/test/snippet.js';
-      
+
       await runPromptProcess(scriptPath, [], {
         force: false,
         trigger: Trigger.Snippet,
@@ -207,16 +205,16 @@ describe.skip('Prompt Timing Tests', () => {
         scriptPath,
         ui: UI.arg,
       };
-      
+
       mockPrompt.setPromptData(promptData as PromptData);
-      
+
       // Wait for potential delays
       vi.advanceTimersByTime(100);
-      
+
       // Since setPromptData is mocked, we need to manually trigger what would happen
       // In real code, setPromptData would trigger the prompt to show
       mockPrompt.showPrompt();
-      
+
       expect(mockPrompt.shown).toBe(true);
     });
   });
@@ -224,7 +222,7 @@ describe.skip('Prompt Timing Tests', () => {
   describe('Keyboard shortcut behavior', () => {
     it('should center prompts triggered by keyboard shortcuts', async () => {
       const scriptPath = '/test/shortcut.js';
-      
+
       await runPromptProcess(scriptPath, [], {
         force: false,
         trigger: Trigger.Shortcut,
@@ -232,14 +230,12 @@ describe.skip('Prompt Timing Tests', () => {
       });
 
       expect(mockPrompt.moveToMouseScreen).toHaveBeenCalled();
-      expect(log.info).toHaveBeenCalledWith(
-        expect.stringContaining('🖱️ Moving prompt to mouse screen')
-      );
+      expect(log.info).toHaveBeenCalledWith(expect.stringContaining('🖱️ Moving prompt to mouse screen'));
     });
 
     it('should immediately show prompts for keyboard shortcuts', async () => {
       const scriptPath = '/test/shortcut.js';
-      
+
       await runPromptProcess(scriptPath, [], {
         force: false,
         trigger: Trigger.Shortcut,
@@ -249,7 +245,7 @@ describe.skip('Prompt Timing Tests', () => {
       // No delay for keyboard shortcuts
       expect(mockPrompt.moveToMouseScreen).toHaveBeenCalled();
       vi.advanceTimersByTime(0);
-      
+
       // Should be ready to show immediately
       expect(mockPrompt.initBounds).not.toHaveBeenCalled();
     });
@@ -258,7 +254,7 @@ describe.skip('Prompt Timing Tests', () => {
   describe('Main script initialization', () => {
     it('should initialize main bounds for main script', async () => {
       const mainPath = getMainScriptPath();
-      
+
       await runPromptProcess(mainPath, [], {
         force: true,
         trigger: Trigger.Kit,
@@ -267,15 +263,13 @@ describe.skip('Prompt Timing Tests', () => {
 
       expect(mockPrompt.initMainBounds).toHaveBeenCalled();
       expect(mockPrompt.initShowPrompt).toHaveBeenCalled();
-      expect(log.info).toHaveBeenCalledWith(
-        expect.stringContaining('🏠 Main script:')
-      );
+      expect(log.info).toHaveBeenCalledWith(expect.stringContaining('🏠 Main script:'));
     });
 
     it('should handle main script with special initialization', async () => {
       const mainPath = getMainScriptPath();
       kitState.hasOpenedMainMenu = false;
-      
+
       await runPromptProcess(mainPath, [], {
         force: true,
         trigger: Trigger.Kit,
@@ -291,7 +285,7 @@ describe.skip('Prompt Timing Tests', () => {
   describe('Prompt display logic', () => {
     it('should respect explicit show: true in prompt data', async () => {
       const scriptPath = '/test/script.js';
-      
+
       await runPromptProcess(scriptPath, [], {
         force: false,
         trigger: Trigger.App,
@@ -302,16 +296,16 @@ describe.skip('Prompt Timing Tests', () => {
         show: true,
         scriptPath,
       };
-      
+
       mockPrompt.setPromptData(promptData as PromptData);
       mockPrompt.showPrompt();
-      
+
       expect(mockPrompt.shown).toBe(true);
     });
 
     it('should hide prompt when show: false', async () => {
       const scriptPath = '/test/script.js';
-      
+
       await runPromptProcess(scriptPath, [], {
         force: false,
         trigger: Trigger.App,
@@ -322,9 +316,9 @@ describe.skip('Prompt Timing Tests', () => {
         show: false,
         scriptPath,
       };
-      
+
       mockPrompt.setPromptData(promptData as PromptData);
-      
+
       expect(mockPrompt.showPrompt).not.toHaveBeenCalled();
       expect(mockPrompt.shown).toBe(false);
     });
@@ -333,7 +327,7 @@ describe.skip('Prompt Timing Tests', () => {
   describe('Different trigger types', () => {
     it('should handle background triggers', async () => {
       const scriptPath = '/test/background.js';
-      
+
       await runPromptProcess(scriptPath, [], {
         force: false,
         trigger: Trigger.Background,
@@ -346,7 +340,7 @@ describe.skip('Prompt Timing Tests', () => {
 
     it('should handle schedule triggers', async () => {
       const scriptPath = '/test/schedule.js';
-      
+
       await runPromptProcess(scriptPath, [], {
         force: false,
         trigger: Trigger.Schedule,
@@ -359,7 +353,7 @@ describe.skip('Prompt Timing Tests', () => {
 
     it('should handle app triggers', async () => {
       const scriptPath = '/test/app.js';
-      
+
       await runPromptProcess(scriptPath, [], {
         force: false,
         trigger: Trigger.App,
@@ -374,43 +368,43 @@ describe.skip('Prompt Timing Tests', () => {
     it('should handle rapid script launches', async () => {
       const script1 = '/test/script1.js';
       const script2 = '/test/script2.js';
-      
+
       // Launch two scripts rapidly
       await runPromptProcess(script1, [], {
         force: false,
         trigger: Trigger.Snippet,
         sponsorCheck: false,
       });
-      
+
       await runPromptProcess(script2, [], {
         force: false,
         trigger: Trigger.Snippet,
         sponsorCheck: false,
       });
-      
+
       // Both should have initialized bounds
       expect(mockPrompt.initBounds).toHaveBeenCalledTimes(2);
     });
 
     it('should prevent prompts from appearing before deletion completes', async () => {
       const scriptPath = '/test/snippet.js';
-      
+
       // Simulate deleteText in progress
       kitState.isTyping = true;
-      
+
       await runPromptProcess(scriptPath, [], {
         force: false,
         trigger: Trigger.Snippet,
         sponsorCheck: false,
       });
-      
+
       // Prompt should be prepared but not shown while typing
       expect(mockPrompt.initBounds).toHaveBeenCalled();
       expect(mockPrompt.shown).toBe(false);
-      
+
       // Simulate deleteText completion
       kitState.isTyping = false;
-      
+
       // Now prompt can be shown when requested
       mockPrompt.showPrompt();
       expect(mockPrompt.shown).toBe(true);
@@ -420,7 +414,7 @@ describe.skip('Prompt Timing Tests', () => {
   describe('Memory leak prevention', () => {
     it('should not create multiple timers for same prompt', async () => {
       const scriptPath = '/test/snippet.js';
-      
+
       // Launch same script multiple times
       for (let i = 0; i < 5; i++) {
         await runPromptProcess(scriptPath, [], {
@@ -429,26 +423,26 @@ describe.skip('Prompt Timing Tests', () => {
           sponsorCheck: false,
         });
       }
-      
+
       // Should reuse the same prompt process
       expect(processes.findIdlePromptProcess).toHaveBeenCalledTimes(5);
     });
 
     it('should clean up timers when prompt is destroyed', async () => {
       const scriptPath = '/test/snippet.js';
-      
+
       await runPromptProcess(scriptPath, [], {
         force: false,
         trigger: Trigger.Snippet,
         sponsorCheck: false,
       });
-      
+
       // Simulate prompt destruction
       mockPrompt.window.isDestroyed = () => true;
-      
+
       // Advance timers - should not cause errors
       vi.advanceTimersByTime(100);
-      
+
       // No errors should occur
       expect(mockPrompt.showPrompt).not.toHaveBeenCalled();
     });
@@ -457,21 +451,21 @@ describe.skip('Prompt Timing Tests', () => {
   describe('Centering behavior', () => {
     it('should maintain centered position for keyboard shortcuts', async () => {
       const scriptPath = '/test/shortcut.js';
-      
+
       await runPromptProcess(scriptPath, [], {
         force: false,
         trigger: Trigger.Shortcut,
         sponsorCheck: false,
       });
-      
+
       // Simulate prompt data being set
       const promptData: Partial<PromptData> = {
         scriptPath,
         ui: UI.arg,
       };
-      
+
       mockPrompt.setPromptData(promptData as PromptData);
-      
+
       // Should not lose centered position
       expect(mockPrompt.centerPrompt).not.toHaveBeenCalled();
       expect(mockPrompt.moveToMouseScreen).toHaveBeenCalled();
@@ -479,13 +473,13 @@ describe.skip('Prompt Timing Tests', () => {
 
     it('should center main menu prompt', async () => {
       const mainPath = getMainScriptPath();
-      
+
       await runPromptProcess(mainPath, [], {
         force: true,
         trigger: Trigger.Kit,
         sponsorCheck: false,
       });
-      
+
       // Main menu uses special bounds initialization
       expect(mockPrompt.initMainBounds).toHaveBeenCalled();
       expect(mockPrompt.moveToMouseScreen).not.toHaveBeenCalled();

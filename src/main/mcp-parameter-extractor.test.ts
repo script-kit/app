@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { extractMCPToolParameters } from './mcp-parameter-extractor';
 
 const script = `
@@ -9,18 +9,18 @@ const favoriteColor = await arg({ placeholder: "What's your favorite color?", ch
 `;
 
 describe('extractMCPToolParameters', () => {
-    it('should return variable names with placeholders', async () => {
-        const params = await extractMCPToolParameters(script);
-        expect(params).toEqual([
-            { name: 'name', placeholder: "What's your name?" },
-            { name: 'age', placeholder: "What's your age?" },
-            { name: 'favoriteColor', placeholder: "What's your favorite color?" },
-        ]);
-    });
+  it('should return variable names with placeholders', async () => {
+    const params = await extractMCPToolParameters(script);
+    expect(params).toEqual([
+      { name: 'name', placeholder: "What's your name?" },
+      { name: 'age', placeholder: "What's your age?" },
+      { name: 'favoriteColor', placeholder: "What's your favorite color?" },
+    ]);
+  });
 
-    describe('params() function parsing', () => {
-        it('should extract inputSchema from params() call', async () => {
-            const code = `
+  describe('params() function parsing', () => {
+    it('should extract inputSchema from params() call', async () => {
+      const code = `
 import "@johnlindquist/kit"
 
 const result = await params({
@@ -40,28 +40,28 @@ const result = await params({
 });
 `;
 
-            const result = await extractMCPToolParameters(code);
+      const result = await extractMCPToolParameters(code);
 
-            expect(result).toHaveProperty('inputSchema');
-            expect((result as any).inputSchema).toMatchObject({
-                type: 'object',
-                properties: {
-                    input: {
-                        type: 'string',
-                        description: 'Input string',
-                    },
-                    count: {
-                        type: 'number',
-                        description: 'Count value',
-                        default: 10,
-                    },
-                },
-                required: ['input']
-            });
-        });
+      expect(result).toHaveProperty('inputSchema');
+      expect((result as any).inputSchema).toMatchObject({
+        type: 'object',
+        properties: {
+          input: {
+            type: 'string',
+            description: 'Input string',
+          },
+          count: {
+            type: 'number',
+            description: 'Count value',
+            default: 10,
+          },
+        },
+        required: ['input'],
+      });
+    });
 
-        it('should extract inputSchema from params() with TypeScript generics', async () => {
-            const code = `
+    it('should extract inputSchema from params() with TypeScript generics', async () => {
+      const code = `
 // Name: Testing MCP Params
 // mcp: testing-mcp-params
 
@@ -89,30 +89,30 @@ const result = await params<MyParams>({
 });
 `;
 
-            const result = await extractMCPToolParameters(code);
+      const result = await extractMCPToolParameters(code);
 
-            expect(result).toHaveProperty('inputSchema');
-            expect((result as any).inputSchema).toMatchObject({
-                type: 'object',
-                properties: {
-                    text: {
-                        type: 'string',
-                        description: 'Just give me any string',
-                        default: 'Hello, world!',
-                    },
-                    number: {
-                        type: 'number',
-                        description: 'Just give me any number',
-                        default: 100,
-                    },
-                },
-            });
-        });
+      expect(result).toHaveProperty('inputSchema');
+      expect((result as any).inputSchema).toMatchObject({
+        type: 'object',
+        properties: {
+          text: {
+            type: 'string',
+            description: 'Just give me any string',
+            default: 'Hello, world!',
+          },
+          number: {
+            type: 'number',
+            description: 'Just give me any number',
+            default: 100,
+          },
+        },
+      });
     });
+  });
 
-    describe('simple schema extraction', () => {
-        it('should extract and expand simple params schema', async () => {
-            const code = `
+  describe('simple schema extraction', () => {
+    it('should extract and expand simple params schema', async () => {
+      const code = `
 import "@johnlindquist/kit"
 
 const result = await params({
@@ -130,27 +130,27 @@ const result = await params({
     }
 })
 `;
-            const result = await extractMCPToolParameters(code);
-            expect(result).toHaveProperty('inputSchema');
-            const { inputSchema } = result as any;
-            expect(inputSchema).toMatchObject({
-                type: 'object',
-                properties: {
-                    name: { type: 'string', description: 'Your full name' },
-                    age: { type: 'number', description: '21', default: 21 },
-                    agree: { type: 'boolean', description: '', default: true },
-                    isStudent: { type: 'boolean', description: 'Are you a student?' },
-                    dates: { type: 'array', description: 'Enter your dates', items: { type: 'string' } }
-                }
-                // No required array - everything is optional in simple syntax
-            });
-            expect(inputSchema).not.toHaveProperty('required');
-        });
+      const result = await extractMCPToolParameters(code);
+      expect(result).toHaveProperty('inputSchema');
+      const { inputSchema } = result as any;
+      expect(inputSchema).toMatchObject({
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Your full name' },
+          age: { type: 'number', description: '21', default: 21 },
+          agree: { type: 'boolean', description: '', default: true },
+          isStudent: { type: 'boolean', description: 'Are you a student?' },
+          dates: { type: 'array', description: 'Enter your dates', items: { type: 'string' } },
+        },
+        // No required array - everything is optional in simple syntax
+      });
+      expect(inputSchema).not.toHaveProperty('required');
     });
+  });
 
-    describe('simple schema extraction with as const', () => {
-        it('should extract and expand simple params schema with as const', async () => {
-            const code = `
+  describe('simple schema extraction with as const', () => {
+    it('should extract and expand simple params schema with as const', async () => {
+      const code = `
 import "@johnlindquist/kit"
 
 const result = await params({
@@ -172,20 +172,20 @@ const result = await params({
     }
 } as const)
 `;
-            const result = await extractMCPToolParameters(code);
-            expect(result).toHaveProperty('inputSchema');
-            const { inputSchema } = result as any;
-            expect(inputSchema).toMatchObject({
-                type: 'object',
-                properties: {
-                    name: { type: 'string', description: 'Enter your name' },
-                    age: { type: 'number', description: 'Enter your age' },
-                    isStudent: { type: 'boolean', description: 'Are you a student?' },
-                    dates: { type: 'array', description: 'Enter your dates', items: { type: 'string' } }
-                }
-                // No required array - everything is optional in simple syntax
-            });
-            expect(inputSchema).not.toHaveProperty('required');
-        });
+      const result = await extractMCPToolParameters(code);
+      expect(result).toHaveProperty('inputSchema');
+      const { inputSchema } = result as any;
+      expect(inputSchema).toMatchObject({
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Enter your name' },
+          age: { type: 'number', description: 'Enter your age' },
+          isStudent: { type: 'boolean', description: 'Are you a student?' },
+          dates: { type: 'array', description: 'Enter your dates', items: { type: 'string' } },
+        },
+        // No required array - everything is optional in simple syntax
+      });
+      expect(inputSchema).not.toHaveProperty('required');
     });
+  });
 });

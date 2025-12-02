@@ -7,7 +7,7 @@ import Store from 'electron-store';
 import schedule from 'node-schedule';
 import { subscribeKey } from 'valtio/utils';
 import { proxy, snapshot } from 'valtio/vanilla';
-import { type MockedFunction, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type MockedFunction, vi } from 'vitest';
 
 // Mock all dependencies
 vi.mock('electron', () => ({
@@ -406,13 +406,13 @@ describe('State Management', () => {
     it.skip('should return cached value when offline', async () => {
       const internetAvailable = (await import('../shared/internet-available')).default;
       vi.mocked(internetAvailable).mockResolvedValue(false);
-      
+
       // Without cached sponsor status, should return false
       kitStore.delete('sponsor');
       let result = await sponsorCheck('test-feature', false);
       expect(result).toBe(false);
       expect(kitState.isSponsor).toBe(false);
-      
+
       // With cached sponsor status, should return true
       kitStore.set('sponsor', true);
       result = await sponsorCheck('test-feature', false);
@@ -450,13 +450,13 @@ describe('State Management', () => {
       expect(result).toBe(true);
       expect(kitState.isSponsor).toBe(true);
       expect(axios.post).toHaveBeenCalledWith(
-        'https://test.com/api/check-sponsor', 
+        'https://test.com/api/check-sponsor',
         {
           login: 'testuser',
           node_id: 'test-node-id',
           feature: 'test-feature',
         },
-        { timeout: 5000 }
+        { timeout: 5000 },
       );
     });
 
@@ -486,11 +486,11 @@ describe('State Management', () => {
       // Ensure we're online so API is attempted
       const internetAvailable = (await import('../shared/internet-available')).default;
       vi.mocked(internetAvailable).mockResolvedValue(true);
-      
+
       kitState.isSponsor = false;
       kitState.user = { login: 'testuser', node_id: 'test-node-id' } as any;
       kitState.url = 'https://test.com';
-      
+
       // Clear any cached value
       kitStore.delete('sponsor');
       vi.mocked(axios.post).mockRejectedValue(new Error('Network error'));
@@ -499,7 +499,7 @@ describe('State Management', () => {
       let result = await sponsorCheck('test-feature', false);
       expect(result).toBe(false);
       expect(kitState.isSponsor).toBe(false);
-      
+
       // With cached sponsor status, should return cached value on error
       kitStore.set('sponsor', true);
       vi.mocked(axios.post).mockRejectedValue(new Error('Network error'));

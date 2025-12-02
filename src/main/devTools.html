@@ -28,17 +28,17 @@
     <script>
       const { ipcRenderer, Rectangle } = window.electron;
 
-      ipcRenderer.on('DEVTOOLS', (event, x) => {
-        window['x'] = x;
+      ipcRenderer.on('DEVTOOLS', (_event, x) => {
+        window.x = x;
 
-        for (let [key, value] of Object.entries(x)) {
+        for (const [key, value] of Object.entries(x)) {
           window[key] = value;
         }
 
         console.log(x);
       });
 
-      ipcRenderer.on('LOG', (event, x) => {
+      ipcRenderer.on('LOG', (_event, x) => {
         console.log(x);
       });
     </script>

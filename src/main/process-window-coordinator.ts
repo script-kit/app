@@ -95,12 +95,16 @@ class ProcessWindowCoordinator {
     // Check for any incomplete critical operations
     const criticalOps = [WindowOperation.Focus, WindowOperation.Create, WindowOperation.Show];
     const hasCriticalOps = Array.from(operations.values()).some(
-      op => !op.completed && criticalOps.includes(op.operation)
+      (op) => !op.completed && criticalOps.includes(op.operation),
     );
 
     if (hasCriticalOps) {
       log.warn(`❌ Process ${pid} has critical pending operations, cannot cleanup yet`);
-      log.warn(`   Pending: ${Array.from(operations.values()).map(op => op.operation).join(', ')}`);
+      log.warn(
+        `   Pending: ${Array.from(operations.values())
+          .map((op) => op.operation)
+          .join(', ')}`,
+      );
       return false;
     }
 
@@ -148,9 +152,7 @@ class ProcessWindowCoordinator {
     const staleThreshold = 30000; // 30 seconds
 
     for (const [pid, operations] of this.pendingOperations) {
-      const staleOps = Array.from(operations.entries()).filter(
-        ([_, op]) => now - op.timestamp > staleThreshold
-      );
+      const staleOps = Array.from(operations.entries()).filter(([_, op]) => now - op.timestamp > staleThreshold);
 
       for (const [opId, op] of staleOps) {
         log.warn(`🧹 Cleaning up stale operation ${opId} (${op.operation}) for PID ${pid}`);

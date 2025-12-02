@@ -1,6 +1,5 @@
-import { windowLog as log } from '../logs';
-
 import { BrowserWindow } from 'electron';
+import { windowLog as log } from '../logs';
 
 export class WindowMonitor {
   private previousWindowIds: Set<number> = new Set();

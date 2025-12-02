@@ -2,6 +2,7 @@ import { kitPath } from '@johnlindquist/kit/core/utils';
 import { createForkOptions } from './fork.options';
 import { createLogger } from './log-utils';
 import { kitState } from './state';
+
 const log = createLogger('spawn.ts');
 
 export const optionalSetupScript = async (

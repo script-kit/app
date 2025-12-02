@@ -48,11 +48,7 @@ export function envBool(key: string, defaultValue: boolean): boolean {
  * Parse a number from kitState.kenvEnv[key]. If invalid or not set, returns defaultValue.
  * Optionally clamps to a min/max range.
  */
-export function envNumber(
-  key: string,
-  defaultValue: number,
-  opts: { min?: number; max?: number } = {},
-): number {
+export function envNumber(key: string, defaultValue: number, opts: { min?: number; max?: number } = {}): number {
   const raw = (kitState.kenvEnv as any)?.[key];
   const n = typeof raw === 'string' ? Number.parseFloat(raw) : Number(raw);
   const valid = Number.isFinite(n) ? (n as number) : defaultValue;

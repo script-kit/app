@@ -2,12 +2,16 @@ import { PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import type { PromptBounds } from '@johnlindquist/kit/types/core';
 import type { Rectangle } from 'electron';
 import { screen } from 'electron';
-
+import { EMOJI_HEIGHT, EMOJI_WIDTH } from '../shared/defaults';
 import { promptLog as log } from './logs';
 import { OFFSCREEN_X, OFFSCREEN_Y } from './prompt.options';
-import { getCurrentScreen, getCurrentScreenFromBounds, isBoundsWithinDisplayById, isBoundsWithinDisplays } from './screen';
+import {
+  getCurrentScreen,
+  getCurrentScreenFromBounds,
+  isBoundsWithinDisplayById,
+  isBoundsWithinDisplays,
+} from './screen';
 import { promptState } from './state';
-import { EMOJI_HEIGHT, EMOJI_WIDTH } from '../shared/defaults';
 
 // Small, focused helpers for screen/display utilities used by prompts
 
@@ -129,4 +133,3 @@ export const pointOnMouseScreen = ({ x, y }: { x: number; y: number }) => {
     y < mouseScreen.bounds.y + mouseScreen.bounds.height;
   return onMouseScreen;
 };
-

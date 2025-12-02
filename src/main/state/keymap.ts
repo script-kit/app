@@ -1,8 +1,9 @@
+import type { kenvEnv } from '@johnlindquist/kit/types/env';
 import type { IKeyboardMapping } from 'native-keymap';
 import { subscribeKey } from 'valtio/utils';
-import type { kenvEnv } from '@johnlindquist/kit/types/env';
-import type { kitStateType } from '../state';
 import { createLogger } from '../log-utils';
+import type { kitStateType } from '../state';
+
 const keymapLog = createLogger('keymapLog');
 
 export const defaultKeyMap: { [code: string]: string } = {
@@ -91,14 +92,11 @@ export const wireKeymapSubscriptions = (kitState: kitStateType) => {
   });
   // ensure initial build
   rebuildReverseKeyMap(kitState.keymap);
-  
+
   return subKeymap;
 };
 
-export const convertKeyInternal = (
-  kitState: kitStateType,
-  sourceKey: string,
-): string => {
+export const convertKeyInternal = (kitState: kitStateType, sourceKey: string): string => {
   const hasMap = reverseKeyValueToCode.size > 0;
   keymapLog.debug('🔑 Has reverse keymap:', { hasMap });
   if (kitState.kenvEnv?.KIT_CONVERT_KEY === 'false' || !hasMap) {

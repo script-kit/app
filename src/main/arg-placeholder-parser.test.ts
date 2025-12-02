@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { extractArgPlaceholders } from './arg-placeholder-parser';
 
 // Mock script from user showing various arg() usages

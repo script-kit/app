@@ -1,7 +1,6 @@
 import { Worker } from 'node:worker_threads';
-import { workers } from './state';
-
 import { KIT_WORKER } from '@johnlindquist/kit/workers';
+import { workers } from './state';
 
 export const getKitWorker = () => {
   if (!workers.kit) {

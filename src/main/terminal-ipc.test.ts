@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PromptData } from '@johnlindquist/kit/types/core';
 import { ipcMain } from 'electron';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppChannel } from '../shared/enums';
 import { handleTerminalCapture } from './prompt';
-import type { PromptData } from '@johnlindquist/kit/types/core';
 
 // Mock electron
 vi.mock('electron', () => ({
@@ -81,13 +81,13 @@ describe('Terminal IPC Communication Tests', () => {
 
   beforeEach(() => {
     mockHandlers = new Map();
-    
+
     // Capture IPC handlers
     vi.mocked(ipcMain.on).mockImplementation((channel: string, handler: Function) => {
       mockHandlers.set(channel, handler);
       return ipcMain;
     });
-    
+
     vi.mocked(ipcMain.once).mockImplementation((channel: string, handler: Function) => {
       mockHandlers.set(channel, handler);
       return ipcMain;
@@ -134,9 +134,7 @@ describe('Terminal IPC Communication Tests', () => {
       selectionHandler(mockEvent, mockData);
 
       // Verify the prompt was found with correct PID
-      expect(prompts.find).toHaveBeenCalledWith(
-        expect.any(Function)
-      );
+      expect(prompts.find).toHaveBeenCalledWith(expect.any(Function));
 
       // Verify the selection was stored
       const findCall = vi.mocked(prompts.find).mock.calls[0];
@@ -202,10 +200,7 @@ describe('Terminal IPC Communication Tests', () => {
       }
 
       // Verify the event was sent
-      expect(mockWebContents.send).toHaveBeenCalledWith(
-        AppChannel.TERM_CAPTURE_READY,
-        mockData
-      );
+      expect(mockWebContents.send).toHaveBeenCalledWith(AppChannel.TERM_CAPTURE_READY, mockData);
     });
   });
 
@@ -213,7 +208,7 @@ describe('Terminal IPC Communication Tests', () => {
     it.skip('should handle TERM_READY event', async () => {
       // Import pty module which registers the handler
       const { createPty } = await import('./pty');
-      
+
       // Create a mock prompt to trigger handler registration
       const mockPrompt = {
         id: 'test-prompt-id',
@@ -229,7 +224,7 @@ describe('Terminal IPC Communication Tests', () => {
           command: 'echo "test"',
         },
       } as any;
-      
+
       // This registers the TERM_READY handler
       createPty(mockPrompt);
 
@@ -253,7 +248,7 @@ describe('Terminal IPC Communication Tests', () => {
       expect(exitHandler).toBeDefined();
 
       const mockEvent = { sender: { id: 1 } };
-      const mockData = { 
+      const mockData = {
         pid: 12345,
         exitCode: 0,
       };
@@ -285,7 +280,7 @@ describe('Terminal IPC Communication Tests', () => {
       await import('./prompt');
 
       const selectionHandler = mockHandlers.get(AppChannel.TERM_SELECTION);
-      
+
       // Invalid data
       const mockEvent = { sender: { id: 1 } };
       const invalidData = null;
@@ -320,7 +315,7 @@ describe('Terminal IPC Communication Tests', () => {
         };
 
         vi.mocked(prompts.find).mockReturnValue(mockPrompts[pid - 1] as any);
-        
+
         selectionHandler?.(mockEvent, mockData);
       }
 
@@ -359,12 +354,12 @@ describe('Terminal IPC Communication Tests', () => {
 
       // Test various invalid data structures
       const invalidDataCases = [
-        { pid: null, text: 'text' },        // null pid
-        { pid: 'string', text: 'text' },    // non-numeric pid
-        { pid: 123, text: null },           // null text
-        { pid: 123 },                       // missing text
-        { text: 'text' },                   // missing pid
-        {},                                 // empty object
+        { pid: null, text: 'text' }, // null pid
+        { pid: 'string', text: 'text' }, // non-numeric pid
+        { pid: 123, text: null }, // null text
+        { pid: 123 }, // missing text
+        { text: 'text' }, // missing pid
+        {}, // empty object
       ];
 
       for (const invalidData of invalidDataCases) {

@@ -1,7 +1,7 @@
 import { termLog } from './logs';
-import { PtyPool } from './pty/pool';
-import { registerTerminalIpc } from './pty/ipc-router';
 import type { KitPrompt } from './prompt';
+import { registerTerminalIpc } from './pty/ipc-router';
+import { PtyPool } from './pty/pool';
 
 export const ptyPool = new PtyPool();
 
@@ -26,4 +26,3 @@ export const destroyPtyPool = async () => {
 };
 
 export { ptyPool as default };
-

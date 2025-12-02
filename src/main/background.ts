@@ -2,7 +2,7 @@ import type { Channel } from '@johnlindquist/kit/core/enum';
 import type { Script } from '@johnlindquist/kit/types/core';
 import type { SendData } from '@johnlindquist/kit/types/kitapp';
 import { Trigger } from '../shared/enums';
-import { KitEvent, emitter } from '../shared/events';
+import { emitter, KitEvent } from '../shared/events';
 import { runPromptProcess } from './kit';
 import { backgroundLog as log } from './logs';
 import { processes } from './process';

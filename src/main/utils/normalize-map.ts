@@ -10,14 +10,14 @@ export function normalizeWithMap(raw: string): string {
   const cached = normCache.get(raw);
   if (cached) return cached.transformed;
 
-  let transformed = "";
+  let transformed = '';
   const indexMap: number[] = [];
 
   for (let i = 0, j = 0; i < raw.length; i++) {
     const ch = raw[i];
-    if (ch === "-") continue;                         // strip hyphens but **remember**
+    if (ch === '-') continue; // strip hyphens but **remember**
     transformed += ch.toLocaleLowerCase();
-    indexMap[j++] = i;                                // record origin
+    indexMap[j++] = i; // record origin
   }
 
   normCache.set(raw, { transformed, indexMap });
@@ -29,11 +29,11 @@ export function remapRange(raw: string, range: [number, number]): [number, numbe
   const entry = normCache.get(raw);
   if (!entry) return range; // should not happen
   const [s, e] = range;
-  
+
   // Handle empty range
   if (s === e) {
     return [entry.indexMap[s] || 0, (entry.indexMap[s] || 0) + 1];
   }
-  
+
   return [entry.indexMap[s], entry.indexMap[e - 1] + 1]; // end is exclusive
 }

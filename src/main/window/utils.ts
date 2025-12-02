@@ -1,5 +1,6 @@
 import type { BrowserWindow } from 'electron';
 import { createLogger } from '.././log-utils';
+
 const log = createLogger('utils.ts');
 
 export const prepForClose = (window: BrowserWindow) => {

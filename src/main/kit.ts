@@ -1,12 +1,8 @@
-import path from 'node:path';
-import { app, shell } from 'electron';
-
-import { randomUUID } from 'node:crypto';
 import { fork } from 'node:child_process';
-import minimist from 'minimist';
-import { pathExistsSync, readJson } from './cjs-exports';
-
+import { randomUUID } from 'node:crypto';
+import path from 'node:path';
 import type { ProcessInfo } from '@johnlindquist/kit';
+import { refreshScripts } from '@johnlindquist/kit/core/db';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import {
   getLogFromScriptPath,
@@ -16,20 +12,21 @@ import {
   scriptsDbPath,
 } from '@johnlindquist/kit/core/utils';
 import type { Script } from '@johnlindquist/kit/types/core';
-
-import { refreshScripts } from '@johnlindquist/kit/core/db';
+import { app, shell } from 'electron';
+import minimist from 'minimist';
 import { subscribeKey } from 'valtio/utils';
 import { Trigger } from '../shared/enums';
-import { KitEvent, emitter } from '../shared/events';
+import { emitter, KitEvent } from '../shared/events';
+import { pathExistsSync, readJson } from './cjs-exports';
 import { createForkOptions } from './fork.options';
 import { pathsAreEqual } from './helpers';
 import { errorLog, kitLog as log, mainLogPath } from './logs';
 import { getIdles, processes } from './process';
 import { prompts } from './prompts';
+import { createRunMeta } from './script-lifecycle';
 import { setShortcodes } from './search';
 import { getKitScript, kitCache, kitState, kitStore, sponsorCheck } from './state';
 import { TrackEvent, trackEvent } from './track';
-import { createRunMeta } from './script-lifecycle';
 
 app.on('second-instance', (_event, argv) => {
   log.info('second-instance', argv);
@@ -80,14 +77,14 @@ emitter.on(
   (
     scriptOrScriptAndData:
       | {
-        scriptPath: string;
-        args: string[];
-        options: {
-          force: boolean;
-          trigger: Trigger;
-          cwd?: string;
-        };
-      }
+          scriptPath: string;
+          args: string[];
+          options: {
+            force: boolean;
+            trigger: Trigger;
+            cwd?: string;
+          };
+        }
       | string,
   ) => {
     if (!kitState.ready) {
@@ -110,15 +107,15 @@ emitter.on(
     const { scriptPath, args, options } =
       typeof scriptOrScriptAndData === 'string'
         ? {
-          scriptPath: scriptOrScriptAndData,
-          args: [],
-          options: {
-            force: false,
-            trigger: Trigger.Kit,
-            sponsorCheck: true,
-            cwd: '',
-          },
-        }
+            scriptPath: scriptOrScriptAndData,
+            args: [],
+            options: {
+              force: false,
+              trigger: Trigger.Kit,
+              sponsorCheck: true,
+              cwd: '',
+            },
+          }
         : scriptOrScriptAndData;
 
     // TODO: Each prompt will need its own "ignoreBlur"
@@ -193,13 +190,13 @@ export const runPromptProcess = async (
     sponsorCheck: boolean;
     cwd?: string;
   } = {
-      force: false,
-      trigger: Trigger.App,
-      main: false,
-      sponsorCheck: false,
-      headers: {},
-      cwd: '',
-    },
+    force: false,
+    trigger: Trigger.App,
+    main: false,
+    sponsorCheck: false,
+    headers: {},
+    cwd: '',
+  },
 ): Promise<ProcessInfo | null> => {
   const chainId = Math.random().toString(36).slice(2, 10);
   const runId = randomUUID();
@@ -245,7 +242,9 @@ export const runPromptProcess = async (
     kitState.hasOpenedMainMenu = true;
   }
   const { prompt, pid, child } = promptInfo;
-  log.info(`🔑🔑🔑 runPromptProcess: pid=${pid}, promptScriptPath="${promptScriptPath}", isMain=${isMain}, prompt.initMain=${prompt.initMain}, prompt.scriptPath="${prompt.scriptPath}"`);
+  log.info(
+    `🔑🔑🔑 runPromptProcess: pid=${pid}, promptScriptPath="${promptScriptPath}", isMain=${isMain}, prompt.initMain=${prompt.initMain}, prompt.scriptPath="${prompt.scriptPath}"`,
+  );
   const runMeta = createRunMeta(pid, runId);
   promptInfo.runId = runId;
   promptInfo.runStartedAt = runMeta.startedAt;

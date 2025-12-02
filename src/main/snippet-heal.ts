@@ -1,9 +1,8 @@
 import path from 'node:path';
 import { snippetLog } from './logs';
-import { kitState } from './state';
-import { snippetMap } from './tick'; // The in-memory snippetMap that powers expansions
-import { addTextSnippet, snippetScriptChanged } from './tick';
 import { cacheSnippets } from './snippet-cache';
+import { kitState } from './state';
+import { addTextSnippet, snippetMap, snippetScriptChanged } from './tick';
 
 export async function snippetsSelfCheck() {
   const expansionsNeeded = new Set<string>();
@@ -59,7 +58,7 @@ export async function snippetsSelfCheck() {
       }
 
       expansionsNeeded.add(sf.snippetKey);
-      
+
       if (!snippetMap.has(sf.snippetKey)) {
         snippetLog.info(`[selfHealSnippets] Missing text snippet '${sf.snippetKey}'. Re-adding...`);
         snippetMap.set(sf.snippetKey, { filePath: sf.filePath, postfix: sf.postfix, txt: true });

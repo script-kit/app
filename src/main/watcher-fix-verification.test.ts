@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 describe('wasRecentlyProcessed Fix Verification', () => {
   it('verifies that the fix excludes original file from being marked as processed', () => {
     // This test documents the fix implementation
-    
+
     // BEFORE THE FIX:
     // 1. User saves script.js
     // 2. onScriptChanged is called with script.js
@@ -12,7 +12,7 @@ describe('wasRecentlyProcessed Fix Verification', () => {
     // 5. User saves script.js again within 5 seconds
     // 6. onScriptChanged checks wasRecentlyProcessed(script.js) → returns TRUE
     // 7. Change is IGNORED - user's legitimate edit is lost!
-    
+
     // AFTER THE FIX:
     // 1. User saves script.js
     // 2. onScriptChanged is called with script.js
@@ -21,12 +21,12 @@ describe('wasRecentlyProcessed Fix Verification', () => {
     // 5. User saves script.js again within 5 seconds
     // 6. onScriptChanged checks wasRecentlyProcessed(script.js) → returns FALSE
     // 7. Change is PROCESSED - user's edit is saved!
-    
+
     // The key changes:
     // - madgeAllScripts now accepts an optional originalFilePath parameter
     // - When marking files as processed, it skips the originalFilePath
     // - onScriptChanged passes script.filePath to madgeAllScripts
-    
+
     expect(true).toBe(true);
   });
 
@@ -48,13 +48,13 @@ describe('wasRecentlyProcessed Fix Verification', () => {
       // ... rest of the function ...
     });
     `;
-    
+
     // In onScriptChanged:
     const mockCall = `
     // Pass the original file path so it won't be marked as processed
     madgeAllScripts(script.filePath);
     `;
-    
+
     expect(mockImplementation).toBeTruthy();
     expect(mockCall).toBeTruthy();
   });
@@ -70,10 +70,10 @@ describe('wasRecentlyProcessed Fix Verification', () => {
     // T+2001ms: onScriptChanged('change', { filePath: 'file.js' })
     // T+2002ms: wasRecentlyProcessed('file.js') returns false (file.js was never marked!)
     // T+2003ms: Change is PROCESSED! User's edit is saved!
-    
+
     // The fix ensures that legitimate user changes are always processed
     // while still preventing cascading dependency updates
-    
+
     expect(true).toBe(true);
   });
 });

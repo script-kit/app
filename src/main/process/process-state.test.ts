@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ProcessStateMachine, ProcessState } from './process-state';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ProcessState, ProcessStateMachine } from './process-state';
 
 describe('ProcessStateMachine', () => {
   let stateMachine: ProcessStateMachine;
@@ -275,11 +275,7 @@ describe('ProcessStateMachine', () => {
 
       stateMachine.transition({ type: 'SPAWN' });
 
-      expect(callback).toHaveBeenCalledWith(
-        ProcessState.Idle,
-        ProcessState.Spawning,
-        { type: 'SPAWN' },
-      );
+      expect(callback).toHaveBeenCalledWith(ProcessState.Idle, ProcessState.Spawning, { type: 'SPAWN' });
     });
 
     it('does not call callback on failed transitions', () => {

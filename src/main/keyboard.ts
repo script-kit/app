@@ -1,7 +1,7 @@
+import { expectBackspaces } from './io';
+import { keyboardLog as log } from './logs';
 import shims from './shims';
 import { kitState } from './state';
-import { keyboardLog as log } from './logs';
-import { expectBackspaces } from './io';
 
 export const deleteText = async (stringToDelete = '') => {
   if (!kitState.supportsNut) {

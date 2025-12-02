@@ -1,9 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock node-pty before any imports that use it
 vi.mock('node-pty', () => ({
-  spawn: vi.fn((shell, args, options) => ({
+  spawn: vi.fn((shell, _args, _options) => ({
     onData: vi.fn(),
     onExit: vi.fn(),
     write: vi.fn(),
@@ -14,12 +14,12 @@ vi.mock('node-pty', () => ({
   })),
 }));
 
-import * as pty from 'node-pty';
 import { ipcMain } from 'electron';
-import { createPty } from './pty';
-import { TranscriptBuilder } from './transcript-builder';
+import * as pty from 'node-pty';
 import { AppChannel } from '../shared/enums';
 import type { KitPrompt } from './prompt';
+import { createPty } from './pty';
+import { TranscriptBuilder } from './transcript-builder';
 
 // Mock electron
 vi.mock('electron', () => ({
@@ -127,7 +127,7 @@ describe('PTY Integration Tests for Terminal Capture', () => {
       }
 
       // Wait for PTY to be set up
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Simulate terminal output using the stored callbacks
       if (mockPty._dataCallback) {
@@ -147,7 +147,7 @@ describe('PTY Integration Tests for Terminal Capture', () => {
         expect.objectContaining({
           text: 'Hello World\r\nLine 2\r\nLine 3\r\n',
           exitCode: 0,
-        })
+        }),
       );
     });
 
@@ -173,7 +173,7 @@ describe('PTY Integration Tests for Terminal Capture', () => {
         expect.objectContaining({
           text: 'Red Text\r\nBold Text\r\n',
           exitCode: 0,
-        })
+        }),
       );
     });
   });
@@ -204,7 +204,7 @@ describe('PTY Integration Tests for Terminal Capture', () => {
         expect.objectContaining({
           text: 'Line 8\r\n\nLine 9\r\n\nLine 10\r\n',
           exitCode: 0,
-        })
+        }),
       );
     });
   });
@@ -219,7 +219,7 @@ describe('PTY Integration Tests for Terminal Capture', () => {
       createPty(mockPrompt);
 
       const dataHandler = mockPty.onData.mock.calls[0][0];
-      
+
       // Simulate terminal output
       dataHandler('Line 1\r\n');
       dataHandler('Line 2\r\n');
@@ -253,7 +253,7 @@ describe('PTY Integration Tests for Terminal Capture', () => {
         expect.objectContaining({
           text: 'Line 2',
           exitCode: 0,
-        })
+        }),
       );
     });
   });
@@ -287,7 +287,7 @@ describe('PTY Integration Tests for Terminal Capture', () => {
         expect.objectContaining({
           text: 'Captured line 1\r\nCaptured line 2\r\n',
           exitCode: 0,
-        })
+        }),
       );
     });
 
@@ -320,7 +320,7 @@ describe('PTY Integration Tests for Terminal Capture', () => {
         expect.objectContaining({
           text: 'Block 1\r\nBlock 2\r\n',
           exitCode: 0,
-        })
+        }),
       );
     });
   });
@@ -346,7 +346,7 @@ describe('PTY Integration Tests for Terminal Capture', () => {
         expect.objectContaining({
           text: '',
           exitCode: 0,
-        })
+        }),
       );
     });
   });
@@ -370,7 +370,7 @@ describe('PTY Integration Tests for Terminal Capture', () => {
         expect.objectContaining({
           text: 'Partial output\r\n',
           exitCode: 1,
-        })
+        }),
       );
     });
 
@@ -389,7 +389,7 @@ describe('PTY Integration Tests for Terminal Capture', () => {
         expect.objectContaining({
           text: '',
           exitCode: 0,
-        })
+        }),
       );
     });
   });
@@ -418,7 +418,7 @@ describe('PTY Integration Tests for Terminal Capture', () => {
         expect.objectContaining({
           text: 'Hello\r\n',
           exitCode: 0,
-        })
+        }),
       );
     });
   });
@@ -448,14 +448,12 @@ describe('PTY Integration Tests for Terminal Capture', () => {
         AppChannel.TERM_CAPTURE_READY,
         expect.objectContaining({
           exitCode: 0,
-        })
+        }),
       );
 
-      const captureCall = mockIpcSend.mock.calls.find(
-        call => call[0] === AppChannel.TERM_CAPTURE_READY
-      );
+      const captureCall = mockIpcSend.mock.calls.find((call) => call[0] === AppChannel.TERM_CAPTURE_READY);
       const capturedText = captureCall[1].text;
-      
+
       // Verify it's a large string
       expect(capturedText.length).toBeGreaterThan(lineCount * 85); // ~85 chars per line
       expect(capturedText.split('\r\n').length).toBe(lineCount + 1); // +1 for trailing newline
@@ -480,13 +478,11 @@ describe('PTY Integration Tests for Terminal Capture', () => {
 
       exitHandler({ exitCode: 0 });
 
-      const captureCall = mockIpcSend.mock.calls.find(
-        call => call[0] === AppChannel.TERM_CAPTURE_READY
-      );
+      const captureCall = mockIpcSend.mock.calls.find((call) => call[0] === AppChannel.TERM_CAPTURE_READY);
       const capturedText = captureCall[1].text;
-      
+
       // Should only have last 100 lines
-      const lines = capturedText.split('\n').filter(line => line.trim());
+      const lines = capturedText.split('\n').filter((line) => line.trim());
       expect(lines.length).toBe(100);
       expect(lines[0]).toContain('Line 9900');
       expect(lines[99]).toContain('Line 9999');

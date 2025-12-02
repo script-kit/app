@@ -1,15 +1,15 @@
+import { type IpcMainEvent, ipcMain } from 'electron';
 import { debounce } from 'lodash-es';
 import { AppChannel } from '../../shared/enums';
+import { emitter, KitEvent } from '../../shared/events';
 import type { TermConfig } from '../../shared/types';
+import { displayError } from '../error';
 import { termLog } from '../logs';
 import type { KitPrompt } from '../prompt';
-import { ipcMain, type IpcMainEvent } from 'electron';
-import { USE_BINARY, getDefaultArgs, getDefaultShell, getPtyOptions, getShellConfig } from '../pty-utils';
+import { getDefaultArgs, getDefaultShell, getPtyOptions, getShellConfig, USE_BINARY } from '../pty-utils';
+import { type TermCapture, TranscriptBuilder } from '../transcript-builder';
 import { OutputAggregator } from './output';
-import { PtyPool } from './pool';
-import { KitEvent, emitter } from '../../shared/events';
-import { displayError } from '../error';
-import { TranscriptBuilder, type TermCapture } from '../transcript-builder';
+import type { PtyPool } from './pool';
 
 export function registerTerminalIpc(prompt: KitPrompt, pool: PtyPool) {
   let t: any = null;
@@ -17,7 +17,8 @@ export function registerTerminalIpc(prompt: KitPrompt, pool: PtyPool) {
   // Capture config from promptData
   const promptData = (prompt?.promptData as any) || {};
   const capture = promptData?.capture;
-  const capOpts: TermCapture = capture === true ? { mode: 'full' } : capture ? (capture as TermCapture) : { mode: 'none' };
+  const capOpts: TermCapture =
+    capture === true ? { mode: 'full' } : capture ? (capture as TermCapture) : { mode: 'none' };
   const tb = new TranscriptBuilder({
     mode: capOpts.mode ?? 'full',
     tailLines: capOpts.tailLines ?? 1000,
@@ -64,7 +65,14 @@ export function registerTerminalIpc(prompt: KitPrompt, pool: PtyPool) {
   };
 
   const handleTermReady = async (_event: IpcMainEvent, config: TermConfig) => {
-    termLog.info({ termConfig: { command: config?.command || '<no command>', args: config?.args || '<no args>', cwd: config?.cwd || '<no cwd>', shell: config?.shell || '<no shell>' } });
+    termLog.info({
+      termConfig: {
+        command: config?.command || '<no command>',
+        args: config?.args || '<no args>',
+        cwd: config?.cwd || '<no cwd>',
+        shell: config?.shell || '<no shell>',
+      },
+    });
     if (!prompt) return;
     if (config.pid !== prompt?.pid) return;
 
@@ -142,22 +150,26 @@ export function registerTerminalIpc(prompt: KitPrompt, pool: PtyPool) {
     });
 
     t.onExit(
-      debounce(({ exitCode }) => {
-        termLog.info('🐲 Term process exited');
-        try {
-          if (typeof config?.closeOnExit === 'boolean' && !config.closeOnExit) {
-            termLog.info('Process closed, but not closing pty because closeOnExit is false');
-          } else {
-            const captureResult = tb.result();
-            prompt?.sendToPrompt(AppChannel.TERM_CAPTURE_READY, { pid: prompt.pid, text: captureResult, exitCode });
-            teardown(t?.pid);
-            termLog.info('🐲 >_ Emit term process exited', config.pid);
-            emitter.emit(KitEvent.TermExited, config.pid);
+      debounce(
+        ({ exitCode }) => {
+          termLog.info('🐲 Term process exited');
+          try {
+            if (typeof config?.closeOnExit === 'boolean' && !config.closeOnExit) {
+              termLog.info('Process closed, but not closing pty because closeOnExit is false');
+            } else {
+              const captureResult = tb.result();
+              prompt?.sendToPrompt(AppChannel.TERM_CAPTURE_READY, { pid: prompt.pid, text: captureResult, exitCode });
+              teardown(t?.pid);
+              termLog.info('🐲 >_ Emit term process exited', config.pid);
+              emitter.emit(KitEvent.TermExited, config.pid);
+            }
+          } catch (error) {
+            termLog.error('Error closing pty', error);
           }
-        } catch (error) {
-          termLog.error('Error closing pty', error);
-        }
-      }, 500, { leading: true }),
+        },
+        500,
+        { leading: true },
+      ),
     );
   };
 

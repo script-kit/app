@@ -1,13 +1,13 @@
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
+import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
 import type { PromptData } from '@johnlindquist/kit/types/core';
 import { debounce } from 'lodash-es';
-import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
 import { AppChannel } from '../shared/enums';
-import { kitState, preloadPromptDataMap, promptState } from './state';
-import { setFlags } from './search';
-import { createPty } from './pty';
 import { applyPromptDataBounds } from './prompt.bounds-utils';
+import { createPty } from './pty';
 import { getCurrentScreen } from './screen';
+import { setFlags } from './search';
+import { kitState, preloadPromptDataMap, promptState } from './state';
 
 export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Promise<void> => {
   prompt.promptData = promptData;
@@ -102,7 +102,7 @@ export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Pr
     prompt.sendToPrompt(AppChannel.USER_CHANGED, userSnapshot);
     (prompt as any).__userBootstrapped = true;
   }
-  
+
   prompt.sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
 
   const isMainScript = getMainScriptPath() === promptData.scriptPath;
@@ -122,19 +122,15 @@ export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Pr
     const currentBounds = prompt.window?.getBounds();
     const targetWidth = promptData?.width ?? currentBounds?.width;
     const targetHeight = promptData?.height ?? promptData?.inputHeight ?? currentBounds?.height;
-    const significantSizeDifference = currentBounds && (
-      Math.abs(currentBounds.width - targetWidth) > 20 ||
-      Math.abs(currentBounds.height - targetHeight) > 20
-    );
+    const significantSizeDifference =
+      currentBounds &&
+      (Math.abs(currentBounds.width - targetWidth) > 20 || Math.abs(currentBounds.height - targetHeight) > 20);
 
     // Check if this script has cached bounds from a previous run
     const currentScreen = getCurrentScreen();
     const screenId = String(currentScreen.id);
     const scriptPath = promptData?.scriptPath;
-    const hasCachedBounds = Boolean(
-      scriptPath &&
-      promptState?.screens?.[screenId]?.[scriptPath]
-    );
+    const hasCachedBounds = Boolean(scriptPath && promptState?.screens?.[screenId]?.[scriptPath]);
 
     const shouldDeferForExplicitDimensions = hasExplicitDimensions && significantSizeDifference;
     const shouldDeferForFirstRun = !hasCachedBounds && promptData?.ui === UI.arg;
@@ -235,4 +231,3 @@ export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Pr
     prompt.focusPrompt();
   }
 };
-

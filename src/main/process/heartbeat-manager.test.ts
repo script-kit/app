@@ -237,9 +237,7 @@ describe('HeartbeatManager', () => {
 
       // First call is from register auto-starting, but no actual heartbeat
       // The heartbeat should not be sent since visibility is false
-      const heartbeatCalls = (child.send as any).mock.calls.filter(
-        (call: any[]) => call[0]?.channel === 'HEARTBEAT',
-      );
+      const heartbeatCalls = (child.send as any).mock.calls.filter((call: any[]) => call[0]?.channel === 'HEARTBEAT');
       expect(heartbeatCalls.length).toBe(0);
     });
 

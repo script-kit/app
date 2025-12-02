@@ -18,10 +18,10 @@
  *   }, { choiceCount: 500 });
  */
 
-import { performance } from 'node:perf_hooks';
 import * as path from 'node:path';
-import log, { type FileTransport } from 'electron-log';
+import { performance } from 'node:perf_hooks';
 import { app } from 'electron';
+import log, { type FileTransport } from 'electron-log';
 import { kitState } from './state';
 
 // Threshold in ms - only log operations taking longer than this
@@ -47,8 +47,7 @@ let opCounter = 0;
  * Check if perf logging is enabled
  */
 function isEnabled(): boolean {
-  return (kitState?.kenvEnv as Record<string, string>)?.KIT_PERF_LOG === 'true' ||
-         process.env.KIT_PERF_LOG === 'true';
+  return (kitState?.kenvEnv as Record<string, string>)?.KIT_PERF_LOG === 'true' || process.env.KIT_PERF_LOG === 'true';
 }
 
 /**
@@ -81,7 +80,7 @@ function formatContext(context?: Record<string, unknown>): string {
 function start(
   name: string,
   context?: Record<string, unknown>,
-  thresholdMs: number = DEFAULT_THRESHOLD_MS
+  thresholdMs: number = DEFAULT_THRESHOLD_MS,
 ): () => number {
   if (!isEnabled()) {
     return () => 0;
@@ -118,7 +117,7 @@ async function measure<T>(
   name: string,
   fn: () => Promise<T>,
   context?: Record<string, unknown>,
-  thresholdMs: number = DEFAULT_THRESHOLD_MS
+  thresholdMs: number = DEFAULT_THRESHOLD_MS,
 ): Promise<T> {
   const end = start(name, context, thresholdMs);
   try {
@@ -141,7 +140,7 @@ function measureSync<T>(
   name: string,
   fn: () => T,
   context?: Record<string, unknown>,
-  thresholdMs: number = DEFAULT_THRESHOLD_MS
+  thresholdMs: number = DEFAULT_THRESHOLD_MS,
 ): T {
   const end = start(name, context, thresholdMs);
   try {
@@ -158,7 +157,7 @@ function logMetric(
   name: string,
   durationMs: number,
   context?: Record<string, unknown>,
-  thresholdMs: number = DEFAULT_THRESHOLD_MS
+  thresholdMs: number = DEFAULT_THRESHOLD_MS,
 ): void {
   if (!isEnabled()) return;
   if (durationMs < thresholdMs) return;
@@ -173,7 +172,7 @@ function logMetric(
 function logSummary(
   name: string,
   stats: { count: number; totalMs: number; maxMs: number; minMs: number },
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
 ): void {
   if (!isEnabled()) return;
 
@@ -181,7 +180,7 @@ function logSummary(
   const contextStr = formatContext(context);
   perfLogInstance.info(
     `[PERF SUMMARY] ${name}: count=${stats.count}, total=${stats.totalMs.toFixed(2)}ms, ` +
-    `avg=${avgMs.toFixed(2)}ms, min=${stats.minMs.toFixed(2)}ms, max=${stats.maxMs.toFixed(2)}ms${contextStr}`
+      `avg=${avgMs.toFixed(2)}ms, min=${stats.minMs.toFixed(2)}ms, max=${stats.maxMs.toFixed(2)}ms${contextStr}`,
   );
 }
 

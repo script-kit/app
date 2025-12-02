@@ -1,17 +1,11 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
-import os from 'node:os';
-
-import { pathToFileURL } from 'node:url';
-import { BrowserWindow, type IpcMainEvent, globalShortcut, ipcMain, nativeTheme, powerMonitor } from 'electron';
-import { debounce } from 'lodash-es';
 
 import { type ChildProcess, fork, spawn } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
+import os from 'node:os';
+import { pathToFileURL } from 'node:url';
 import { Channel, ProcessType, UI } from '@johnlindquist/kit/core/enum';
-import type { ProcessInfo } from '@johnlindquist/kit/types/core';
-
-import type { GenericSendData } from '@johnlindquist/kit/types/kitapp';
-
 import {
   KIT_APP,
   KIT_APP_PROMPT,
@@ -19,42 +13,38 @@ import {
   processPlatformSpecificTheme,
   resolveToScriptPath,
 } from '@johnlindquist/kit/core/utils';
+import type { ProcessInfo } from '@johnlindquist/kit/types/core';
 
-import { pathExistsSync } from './cjs-exports';
-import { getLog, processLog, themeLog } from './logs';
-import type { KitPrompt } from './prompt';
-import { debounceSetScriptTimestamp, getThemes, kitState, kitStore } from './state';
-
+import type { GenericSendData } from '@johnlindquist/kit/types/kitapp';
+import { BrowserWindow, globalShortcut, type IpcMainEvent, ipcMain, nativeTheme, powerMonitor } from 'electron';
+import { debounce } from 'lodash-es';
+import { AppChannel } from '../shared/enums';
+import { emitter, KitEvent } from '../shared/events';
 import { widgetState } from '../shared/widget';
+import { stripAnsi } from './ansi';
 
 import { sendToAllPrompts } from './channel';
-import { processWindowCoordinator } from './process-window-coordinator';
-
-import { KitEvent, emitter } from '../shared/events';
-import { showInspector } from './show';
-
-import { AppChannel } from '../shared/enums';
-import { stripAnsi } from './ansi';
+import { pathExistsSync } from './cjs-exports';
 import { createEnv } from './env.utils';
 import { isKitScript } from './helpers';
-import { createMessageMap } from './messages';
-import { prompts } from './prompts';
-import shims from './shims';
-import { TrackEvent, trackEvent } from './track';
-
-import { readFile } from 'node:fs/promises';
 import { invoke } from './invoke-pty';
-import { createIdlePty } from './pty';
-
-import { processLog as log } from './logs';
-import { notification } from './state/services/notification';
-import { container } from './state/services/container';
-
+import { getLog, processLog as log, processLog, themeLog } from './logs';
+import { createMessageMap } from './messages';
 // New architecture services
 import { disposableRegistry } from './process/disposable-registry';
 import { heartbeatManager } from './process/heartbeat-manager';
 import { processManager } from './process/process-manager';
 import { processScanner } from './process-scanner';
+import { processWindowCoordinator } from './process-window-coordinator';
+import type { KitPrompt } from './prompt';
+import { prompts } from './prompts';
+import { createIdlePty } from './pty';
+import shims from './shims';
+import { showInspector } from './show';
+import { debounceSetScriptTimestamp, getThemes, kitState, kitStore } from './state';
+import { container } from './state/services/container';
+import { notification } from './state/services/notification';
+import { TrackEvent, trackEvent } from './track';
 
 export type ProcessAndPrompt = ProcessInfo & {
   prompt: KitPrompt;
@@ -184,10 +174,7 @@ export const childSend = (child: ChildProcess, data: any) => {
   }
 };
 
-export const sendToAllActiveChildren = (data: {
-  channel: Channel;
-  state?: any;
-}) => {
+export const sendToAllActiveChildren = (data: { channel: Channel; state?: any }) => {
   // processLog.info(`Sending ${data?.channel} to all active children`);
   for (const processInfo of processes.getActiveProcesses()) {
     const prevent = processInfo.preventChannels?.has(data.channel);
@@ -321,15 +308,19 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
 
   const isPrompt = type === ProcessType.Prompt;
   const entry = isPrompt ? KIT_APP_PROMPT : KIT_APP;
-  
-  processLog.info(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:314 - Creating child with entry: ${entry}, exists: ${pathExistsSync(entry)}`);
+
+  processLog.info(
+    `/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:314 - Creating child with entry: ${entry}, exists: ${pathExistsSync(entry)}`,
+  );
 
   const env = createEnv();
   // console.log({ env });
   const loaderFileUrl = pathToFileURL(kitPath('build', 'loader.js')).href;
   const beforeChildForkPerfMark = performance.now();
-  processLog.info(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:321 - Forking child: entry=${entry}, args=${JSON.stringify(args)}, cwd=${kitState?.kenvEnv?.KIT_CWD || os.homedir()}`);
-  
+  processLog.info(
+    `/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:321 - Forking child: entry=${entry}, args=${JSON.stringify(args)}, cwd=${kitState?.kenvEnv?.KIT_CWD || os.homedir()}`,
+  );
+
   const child = fork(entry, args, {
     silent: true,
     stdio: kitState?.kenvEnv?.KIT_STDIO || 'pipe',
@@ -345,25 +336,32 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
     },
     ...(port
       ? {
-        stdio: 'pipe',
-        execArgv: ['--loader', loaderFileUrl, `--inspect=${port}`],
-      }
+          stdio: 'pipe',
+          execArgv: ['--loader', loaderFileUrl, `--inspect=${port}`],
+        }
       : {}),
   });
 
   if (!child || !child.pid) {
-    processLog.error(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:343 - Failed to create child process: entry=${entry}`);
+    processLog.error(
+      `/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:343 - Failed to create child process: entry=${entry}`,
+    );
     throw new Error('Failed to create child process');
   }
 
   // Add stdout/stderr logging for idle processes
   if (isPrompt && (!scriptPath || scriptPath === '')) {
-    processLog.info(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:350 - Setting up stdio handlers for idle process ${child.pid}`);
+    processLog.info(
+      `/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:350 - Setting up stdio handlers for idle process ${child.pid}`,
+    );
     if (child.stdout) {
       child.stdout.on('data', (data) => {
         const output = data.toString().trim();
         if (output) {
-          processLog.info(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:355 - ${child.pid} STDOUT:`, output);
+          processLog.info(
+            `/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:355 - ${child.pid} STDOUT:`,
+            output,
+          );
         }
       });
     }
@@ -371,7 +369,10 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
       child.stderr.on('data', (data) => {
         const output = data.toString().trim();
         if (output) {
-          processLog.error(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:362 - ${child.pid} STDERR:`, output);
+          processLog.error(
+            `/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:362 - ${child.pid} STDERR:`,
+            output,
+          );
         }
       });
     }
@@ -394,13 +395,16 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
   };
 
   child.on('message', kitReadyHandler);
-  
+
   // Debug: Log all messages from child
   child.on('message', (data) => {
-    processLog.info(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:359 - ${child.pid}: Received message:`, { 
-      channel: data?.channel, 
-      value: data?.value?.substring ? data.value.substring(0, 100) : data?.value 
-    });
+    processLog.info(
+      `/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:359 - ${child.pid}: Received message:`,
+      {
+        channel: data?.channel,
+        value: data?.value?.substring ? data.value.substring(0, 100) : data?.value,
+      },
+    );
   });
 
   const mainMenuReadyHandler = (data) => {
@@ -416,7 +420,9 @@ const createChild = ({ type, scriptPath = 'kit', runArgs = [], port = 0 }: Creat
 
   processLog.info(`
   ${child.pid}: 🚀 Create child process: ${entry} ${args.join(' ')}`);
-  processLog.info(`${child.pid}: Process details - type: ${type}, scriptPath: ${scriptPath || 'none'}, isPrompt: ${isPrompt}, entry: ${entry}`);
+  processLog.info(
+    `${child.pid}: Process details - type: ${type}, scriptPath: ${scriptPath || 'none'}, isPrompt: ${isPrompt}, entry: ${entry}`,
+  );
 
   let win: BrowserWindow | null = null;
 
@@ -751,19 +757,21 @@ class Processes extends Array<ProcessAndPrompt> {
 
     child.once('disconnect', () => {
       processLog.info(`${pid}: DISCONNECTED from process type: ${type}, scriptPath: ${scriptPath || 'idle'}`);
-      processLog.info(`${pid}: Child process state - killed: ${child.killed}, exitCode: ${child.exitCode}, signalCode: ${child.signalCode}`);
+      processLog.info(
+        `${pid}: Child process state - killed: ${child.killed}, exitCode: ${child.exitCode}, signalCode: ${child.signalCode}`,
+      );
       this.stampPid(pid);
       processes.removeByPid(pid, 'process self cleanup');
     });
 
     child.once('exit', (code) => {
-      processLog.info(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:705 - Process ${pid} EXIT`, { 
-        pid, 
+      processLog.info(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:705 - Process ${pid} EXIT`, {
+        pid,
         code,
         type,
         scriptPath: scriptPath || 'idle',
         signal: child.signalCode,
-        killed: child.killed 
+        killed: child.killed,
       });
       if (id) {
         clearTimeout(id);
@@ -803,12 +811,12 @@ class Processes extends Array<ProcessAndPrompt> {
         processLog.info(`${pid}: EPIPE error (ignored)`);
         return;
       }
-      processLog.error(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:730 - Process ${pid} ERROR:`, { 
-        pid, 
+      processLog.error(`/Users/johnlindquist/dev/kit-container/app/src/main/process.ts:730 - Process ${pid} ERROR:`, {
+        pid,
         error: error?.message || error,
         stack: error?.stack,
         type,
-        scriptPath 
+        scriptPath,
       });
       processLog.error('👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors');
       notification.setWarn('');

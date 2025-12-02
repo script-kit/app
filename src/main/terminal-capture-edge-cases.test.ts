@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TranscriptBuilder } from './transcript-builder';
 import type { TermCapture } from './transcript-builder';
+import { TranscriptBuilder } from './transcript-builder';
 
 describe('Terminal Capture Edge Cases and Error Handling', () => {
   describe('TranscriptBuilder edge cases', () => {
@@ -32,7 +32,7 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
       // TypeScript would prevent this, but testing runtime safety
       tb.push(null as any);
       tb.push(undefined as any);
-      
+
       expect(() => tb.result()).not.toThrow();
     });
 
@@ -45,10 +45,10 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
         sentinelEnd: '<<END>>',
       });
 
-      tb.push('Line 1\n');      // Unix
-      tb.push('Line 2\r\n');    // Windows
-      tb.push('Line 3\r');      // Old Mac
-      tb.push('Line 4');        // No ending
+      tb.push('Line 1\n'); // Unix
+      tb.push('Line 2\r\n'); // Windows
+      tb.push('Line 3\r'); // Old Mac
+      tb.push('Line 4'); // No ending
 
       const result = tb.result();
       expect(result).toContain('Line 1');
@@ -68,7 +68,7 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
 
       const longLine = 'x'.repeat(1000000); // 1MB line
       tb.push(longLine);
-      
+
       const result = tb.result();
       expect(result).toBe(longLine);
     });
@@ -85,7 +85,7 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
       // String with null bytes and control characters
       const binaryString = 'Hello\x00World\x01\x02\x03';
       tb.push(binaryString);
-      
+
       const result = tb.result();
       expect(result).toBe(binaryString);
     });
@@ -101,7 +101,7 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
 
       const unicodeText = '你好世界 🌍 Γειά σου κόσμε 🚀';
       tb.push(unicodeText);
-      
+
       const result = tb.result();
       expect(result).toBe(unicodeText);
     });
@@ -118,7 +118,7 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
       });
 
       tb.push('START START data END END\n');
-      
+
       const result = tb.result();
       expect(result).toBe('');
     });
@@ -134,12 +134,12 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
 
       tb.push('BEGIN\n');
       tb.push('Outer\n');
-      tb.push('BEGIN\n');  // Nested BEGIN is just text
+      tb.push('BEGIN\n'); // Nested BEGIN is just text
       tb.push('Inner\n');
-      tb.push('END\n');     // This ends the first block
-      tb.push('Still outer\n');  // This is outside any block
+      tb.push('END\n'); // This ends the first block
+      tb.push('Still outer\n'); // This is outside any block
       tb.push('END\n');
-      
+
       const result = tb.result();
       // Our implementation stops at the first END, which is correct behavior
       expect(result).toBe('Outer\nInner\n');
@@ -157,7 +157,7 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
       tb.push('START\n');
       tb.push('Content\n');
       tb.push('START_END\n');
-      
+
       const result = tb.result();
       expect(result).toBe('Content\n');
     });
@@ -174,7 +174,7 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
       tb.push('<<<$[START]^>>>\n');
       tb.push('Special chars content\n');
       tb.push('<<<$[END]^>>>\n');
-      
+
       const result = tb.result();
       expect(result).toBe('Special chars content\n');
     });
@@ -192,7 +192,7 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
       tb.push('Content without end\n');
       tb.push('More content\n');
       // No END marker
-      
+
       const result = tb.result();
       expect(result).toBe('Content without end\nMore content\n');
     });
@@ -210,7 +210,7 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
 
       tb.push('Line 1\n');
       tb.push('Line 2\n');
-      
+
       const result = tb.result();
       expect(result).toBe('');
     });
@@ -227,7 +227,7 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
       tb.push('Line 1\n');
       tb.push('Line 2\n');
       tb.push('Line 3\n');
-      
+
       const result = tb.result();
       expect(result).toBe('Line 3\n');
     });
@@ -245,9 +245,9 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
       for (let i = 0; i < 1000; i++) {
         tb.push(`Line ${i}\n`);
       }
-      
+
       const result = tb.result();
-      const lines = result.split('\n').filter(l => l);
+      const lines = result.split('\n').filter((l) => l);
       expect(lines.length).toBe(1000);
     });
   });
@@ -264,7 +264,7 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
 
       // Valid ANSI sequences
       tb.push('\x1b[31mRed\x1b[0m \x1b[1mBold\x1b[0m \x1b[4mUnderline\x1b[0m');
-      
+
       const result = tb.result();
       // All ANSI codes should be stripped
       expect(result).toBe('Red Bold Underline');
@@ -284,7 +284,7 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
       tb.push('Normal \x1b');
       tb.push('[31m');
       tb.push('Red text\x1b[0m');
-      
+
       const result = tb.result();
       // Since chunks are processed separately, partial ANSI codes may remain
       // The actual behavior depends on how ansi-regex handles edge cases
@@ -304,7 +304,7 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
 
       const ansiText = '\x1b[1;31mBold Red\x1b[0m';
       tb.push(ansiText);
-      
+
       const result = tb.result();
       expect(result).toBe(ansiText);
     });
@@ -321,7 +321,7 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
       });
 
       tb.push('Some text\n');
-      
+
       // Should default to some safe behavior
       const result = tb.result();
       expect(result).toBeDefined();
@@ -337,7 +337,7 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
       });
 
       tb.push('Some text\n');
-      
+
       // Should not crash
       expect(() => tb.result()).not.toThrow();
     });
@@ -354,15 +354,15 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
       });
 
       const startTime = Date.now();
-      
+
       // Push 100,000 single characters
       for (let i = 0; i < 100000; i++) {
         tb.push('x');
       }
-      
+
       const endTime = Date.now();
       const result = tb.result();
-      
+
       expect(result.length).toBe(100000);
       expect(endTime - startTime).toBeLessThan(1000); // Should complete in < 1 second
     });
@@ -396,15 +396,15 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
       // Push to all builders
       for (let i = 0; i < 1000; i++) {
         const line = `Line ${i}\n`;
-        builders.forEach(tb => tb.push(line));
+        builders.forEach((tb) => tb.push(line));
       }
 
       // Each should produce different results based on mode
-      const results = builders.map(tb => tb.result());
-      
+      const results = builders.map((tb) => tb.result());
+
       expect(results[0].split('\n').length).toBeGreaterThan(900); // Full mode
       // Tail mode - might have extra newlines due to how lines are joined
-      const tailLines = results[1].split('\n').filter(l => l.trim());
+      const tailLines = results[1].split('\n').filter((l) => l.trim());
       expect(tailLines.length).toBeLessThanOrEqual(10); // Tail mode
       expect(results[2]).toBe(''); // Sentinel mode (no markers)
     });
@@ -423,14 +423,12 @@ describe('Terminal Capture Edge Cases and Error Handling', () => {
       // Simulate concurrent pushes (though JS is single-threaded)
       const promises = [];
       for (let i = 0; i < 100; i++) {
-        promises.push(
-          Promise.resolve().then(() => tb.push(`Concurrent ${i}\n`))
-        );
+        promises.push(Promise.resolve().then(() => tb.push(`Concurrent ${i}\n`)));
       }
 
       return Promise.all(promises).then(() => {
         const result = tb.result();
-        const lines = result.split('\n').filter(l => l);
+        const lines = result.split('\n').filter((l) => l);
         expect(lines.length).toBe(100);
       });
     });

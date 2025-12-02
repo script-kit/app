@@ -1,5 +1,5 @@
-import { kitState } from '../state';
 import { createLogger } from '../log-utils';
+import { kitState } from '../state';
 
 const log = createLogger('kitstate-guards');
 
@@ -33,4 +33,3 @@ export function applyKitStatePatch(patch: KitStatePatch) {
     }
   }
 }
-

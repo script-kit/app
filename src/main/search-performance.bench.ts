@@ -1,7 +1,6 @@
-import { Channel, Mode, UI } from '@johnlindquist/kit/core/enum';
-import { ProcessType } from '@johnlindquist/kit/core/enum';
+import { Channel, Mode, ProcessType, UI } from '@johnlindquist/kit/core/enum';
 import type { Choice, Script } from '@johnlindquist/kit/types/core';
-import { type Mock, afterEach, beforeEach, bench, describe, expect, vi } from 'vitest';
+import { afterEach, beforeEach, bench, describe, expect, type Mock, vi } from 'vitest';
 import type { ScoredChoice } from '../shared/types';
 import type { KitPrompt } from './prompt';
 
@@ -48,8 +47,8 @@ vi.mock('./helpers', () => ({
     item: choice,
     score: 1,
     matches: {},
-    _: choice.name || ''
-  }))
+    _: choice.name || '',
+  })),
 }));
 
 import { invokeSearch, setChoices, setShortcodes } from './search';
@@ -302,7 +301,7 @@ describe('Search Performance Benchmarks', () => {
 
   describe('Detailed Performance Analysis', () => {
     it('should provide comprehensive performance metrics', async () => {
-      console.log('\n=== VS Code Fuzzy Search Performance Metrics ===')
+      console.log('\n=== VS Code Fuzzy Search Performance Metrics ===');
       console.log(`Testing with ${choices.length} choices`);
       const searchTerms = generateSearchTerms();
       const results: Array<{ term: string; duration: number; resultCount: number }> = [];
@@ -332,7 +331,7 @@ describe('Search Performance Benchmarks', () => {
       console.log(`- Min duration: ${minDuration.toFixed(2)}ms`);
       console.log(`- Max duration: ${maxDuration.toFixed(2)}ms`);
       console.log(`- Slow searches (>100ms): ${slowSearches.length}/${results.length}`);
-      
+
       // Performance assertions
       expect(avgDuration).toBeLessThan(50); // Average should be under 50ms
       expect(maxDuration).toBeLessThan(200); // No search should take more than 200ms
@@ -398,7 +397,7 @@ describe('Search Performance Benchmarks', () => {
         const avgTime = measurements.reduce((a, b) => a + b, 0) / measurements.length;
 
         console.log(`\nSize ${size}: avg ${avgTime.toFixed(2)}ms`);
-        
+
         // Performance should scale reasonably
         expect(avgTime).toBeLessThan(size * 0.02); // Max 0.02ms per choice
       });

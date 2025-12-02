@@ -1,11 +1,11 @@
-import { debounce } from 'lodash-es';
-import type { kitStateType } from '../state';
-import type Store from 'electron-store';
-import type { AxiosInstance } from 'axios';
-import type { EventEmitter } from 'events';
-import type { KitEvent } from '../../shared/events';
-import type { Trigger } from '../../shared/enums';
+import type { EventEmitter } from 'node:events';
 import os from 'node:os';
+import type { AxiosInstance } from 'axios';
+import type Store from 'electron-store';
+import { debounce } from 'lodash-es';
+import type { Trigger } from '../../shared/enums';
+import type { KitEvent } from '../../shared/events';
+import type { kitStateType } from '../state';
 
 type OnlineDeps = {
   internetAvailable: () => Promise<boolean>;

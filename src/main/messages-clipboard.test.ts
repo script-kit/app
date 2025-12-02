@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('electron', () => {
   let _text = 'INITIAL';
@@ -72,7 +72,14 @@ vi.mock('./state', () => ({
   kitState,
   kitStore: { get: vi.fn(), set: vi.fn() },
   kitConfig: {},
-  kitCache: { choices: [], keys: [], triggers: new Map(), postfixes: new Map(), keywords: new Map(), shortcodes: new Map() },
+  kitCache: {
+    choices: [],
+    keys: [],
+    triggers: new Map(),
+    postfixes: new Map(),
+    keywords: new Map(),
+    shortcodes: new Map(),
+  },
   preloadChoicesMap: new Map(),
   sponsorCheck: vi.fn(async () => true),
   getSchedule: vi.fn(() => []),
@@ -91,8 +98,8 @@ vi.mock('./logs', () => ({
 }));
 
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { createMessageMap } from './messages';
 import { clipboard } from 'electron';
+import { createMessageMap } from './messages';
 
 describe('Clipboard handlers', () => {
   beforeEach(() => {
@@ -118,7 +125,11 @@ describe('Clipboard handlers', () => {
 
     const map = createMessageMap(processInfo as any);
     // Act
-    map[Channel.SET_SELECTED_TEXT]({ channel: Channel.SET_SELECTED_TEXT, pid: processInfo.pid, value: { text: 'new', hide: false } } as any);
+    map[Channel.SET_SELECTED_TEXT]({
+      channel: Channel.SET_SELECTED_TEXT,
+      pid: processInfo.pid,
+      value: { text: 'new', hide: false },
+    } as any);
 
     vi.advanceTimersByTime(10); // paste wait
     vi.advanceTimersByTime(300); // restore delay
@@ -141,7 +152,11 @@ describe('Clipboard handlers', () => {
     });
 
     const map = createMessageMap(processInfo as any);
-    map[Channel.SET_SELECTED_TEXT]({ channel: Channel.SET_SELECTED_TEXT, pid: processInfo.pid, value: { text: 'new', hide: false } } as any);
+    map[Channel.SET_SELECTED_TEXT]({
+      channel: Channel.SET_SELECTED_TEXT,
+      pid: processInfo.pid,
+      value: { text: 'new', hide: false },
+    } as any);
 
     vi.advanceTimersByTime(10); // paste wait
     // Simulate user change before restore
@@ -163,7 +178,9 @@ describe('Clipboard handlers', () => {
 
     // Start copy; after 2ms, change clipboard
     const p = map[Channel.KEYBOARD_COPY]({ channel: Channel.KEYBOARD_COPY, pid: processInfo.pid, value: {} } as any);
-    setTimeout(() => { current = 'after'; }, 2);
+    setTimeout(() => {
+      current = 'after';
+    }, 2);
     vi.advanceTimersByTime(5);
     await p;
 
@@ -184,7 +201,9 @@ describe('Clipboard handlers', () => {
     await p;
 
     // Verify fallback attempted
-    const usedInsert = keyTap.mock.calls.some((c) => c[0] === 'insert' && Array.isArray(c[1]) && c[1].includes('control'));
+    const usedInsert = keyTap.mock.calls.some(
+      (c) => c[0] === 'insert' && Array.isArray(c[1]) && c[1].includes('control'),
+    );
     expect(usedInsert).toBe(true);
   });
 });

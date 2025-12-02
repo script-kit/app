@@ -1,8 +1,7 @@
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { Notification, app } from 'electron';
-import { ioLog as log } from './logs';
+import { app, Notification } from 'electron';
 import { chars } from './chars';
-import { keymapLog } from './logs';
+import { keymapLog, ioLog as log } from './logs';
 import { sendToAllActiveChildren } from './process';
 import shims, { supportsDependency, target } from './shims';
 import { getAccessibilityAuthorized, kitState, kitStore } from './state';

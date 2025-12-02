@@ -4,7 +4,7 @@ describe('Snippet Prefix Indexing Logic', () => {
   // Recreate the indexing logic in isolation
   function buildSnippetPrefixIndex(snippetKeys: string[]): Map<string, string[]> {
     const index = new Map<string, string[]>();
-    
+
     for (const key of snippetKeys) {
       const kl = key.length;
       // For snippets of 2 chars, index under 2-char prefix
@@ -28,7 +28,7 @@ describe('Snippet Prefix Indexing Logic', () => {
         arr.push(key);
       }
     }
-    
+
     return index;
   }
 
@@ -101,7 +101,7 @@ describe('Snippet Prefix Indexing Logic', () => {
   describe('Snippet Lookup', () => {
     it('should find 2-character snippets', () => {
       const index = buildSnippetPrefixIndex([',,']);
-      
+
       expect(findMatchingSnippets('hello,,', index)).toEqual([',,']);
       expect(findMatchingSnippets('world,,', index)).toEqual([',,']);
       expect(findMatchingSnippets(',,', index)).toEqual([',,']);
@@ -110,7 +110,7 @@ describe('Snippet Prefix Indexing Logic', () => {
 
     it('should find 3-character snippets', () => {
       const index = buildSnippetPrefixIndex(['foo']);
-      
+
       expect(findMatchingSnippets('testfoo', index)).toEqual(['foo']);
       expect(findMatchingSnippets('foo', index)).toEqual(['foo']);
       expect(findMatchingSnippets('fo', index)).toEqual([]);
@@ -118,18 +118,18 @@ describe('Snippet Prefix Indexing Logic', () => {
 
     it('should find longer snippets', () => {
       const index = buildSnippetPrefixIndex(['test', 'hello']);
-      
+
       expect(findMatchingSnippets('mytest', index)).toEqual(['test']);
       expect(findMatchingSnippets('sayhello', index)).toEqual(['hello']);
     });
 
     it('should handle overlapping snippets', () => {
       const index = buildSnippetPrefixIndex([',,', ',,,']);
-      
+
       const matches1 = findMatchingSnippets('hello,,', index);
       expect(matches1).toContain(',,');
       expect(matches1).not.toContain(',,,');
-      
+
       const matches2 = findMatchingSnippets('hello,,,', index);
       expect(matches2).toContain(',,');
       expect(matches2).toContain(',,,');
@@ -137,14 +137,14 @@ describe('Snippet Prefix Indexing Logic', () => {
 
     it('should not match partial snippets', () => {
       const index = buildSnippetPrefixIndex([',,', 'test']);
-      
+
       expect(findMatchingSnippets('hello,', index)).toEqual([]);
       expect(findMatchingSnippets('tes', index)).toEqual([]);
     });
 
     it('should handle edge cases', () => {
       const index = buildSnippetPrefixIndex([',,', '@@', '!!!']);
-      
+
       expect(findMatchingSnippets('', index)).toEqual([]);
       expect(findMatchingSnippets('a', index)).toEqual([]);
       expect(findMatchingSnippets('@@', index)).toEqual(['@@']);
@@ -155,17 +155,17 @@ describe('Snippet Prefix Indexing Logic', () => {
   describe('Real-world Scenarios', () => {
     it('should support the find-synonym use case', () => {
       const index = buildSnippetPrefixIndex([',,']);
-      
+
       // User types various words followed by ,,
       const testCases = [
         'wonder,,',
         'amazing,,',
         'hello,,',
         'test,,',
-        'a,,',  // Even single char before trigger
-        ',,'     // Just the trigger itself
+        'a,,', // Even single char before trigger
+        ',,', // Just the trigger itself
       ];
-      
+
       for (const testCase of testCases) {
         const matches = findMatchingSnippets(testCase, index);
         expect(matches).toEqual([',,'], `Failed for: ${testCase}`);
@@ -174,12 +174,12 @@ describe('Snippet Prefix Indexing Logic', () => {
 
     it('should handle mixed snippet lengths', () => {
       const index = buildSnippetPrefixIndex([
-        '!!',      // 2 chars
-        'cmd',     // 3 chars
-        'test',    // 4 chars
-        'snippet'  // 7 chars
+        '!!', // 2 chars
+        'cmd', // 3 chars
+        'test', // 4 chars
+        'snippet', // 7 chars
       ]);
-      
+
       expect(findMatchingSnippets('wow!!', index)).toEqual(['!!']);
       expect(findMatchingSnippets('runcmd', index)).toEqual(['cmd']);
       expect(findMatchingSnippets('mytest', index)).toEqual(['test']);

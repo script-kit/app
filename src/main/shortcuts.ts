@@ -1,23 +1,20 @@
 import path from 'node:path';
-import { globalShortcut, BrowserWindow } from 'electron';
+import { getMainScriptPath, parseScript, parseScriptletsFromPath } from '@johnlindquist/kit/core/utils';
+import { BrowserWindow, globalShortcut } from 'electron';
 import { debounce } from 'lodash-es';
 import { subscribeKey } from 'valtio/utils';
-
-import { getMainScriptPath, parseScript, parseScriptletsFromPath } from '@johnlindquist/kit/core/utils';
-
-import { KitEvent, emitter } from '../shared/events';
-import { runPromptProcess } from './kit';
-
 import { Trigger } from '../shared/enums';
+import { emitter, KitEvent } from '../shared/events';
+import { isReservedShortcut } from '../shared/shortcuts';
 import { LoggedMap } from './compare';
 import { convertShortcut, shortcutInfo } from './helpers';
 import { createUiohookToName } from './io';
+import { runPromptProcess } from './kit';
 import { keymapLog, shortcutsLog as log } from './logs';
 import { runMainScript } from './main-script';
 import { processes, spawnShebang } from './process';
 import { prompts } from './prompts';
 import { convertKey, kitState, subs } from './state';
-import { isReservedShortcut } from '../shared/shortcuts';
 
 const registerFail = (shortcut: string, filePath: string) =>
   `# Shortcut Registration Failed

@@ -10,19 +10,11 @@ import { snapshot } from 'valtio';
 import { getAssetPath } from '../shared/assets';
 import { WindowChannel } from '../shared/enums';
 import { windowsState } from '../shared/windows';
-import { getCurrentScreenFromMouse } from './prompt.screen-utils';
 import { getPromptOptions } from './prompt.options';
+import { getCurrentScreenFromMouse } from './prompt.screen-utils';
 import { kitState } from './state';
 
-export const createWindow = async ({
-  ui,
-  scriptPath,
-  title,
-}: {
-  ui: UI;
-  scriptPath: string;
-  title: string;
-}) => {
+export const createWindow = async ({ ui, scriptPath, title }: { ui: UI; scriptPath: string; title: string }) => {
   const options = getPromptOptions();
   log.info(`Creating log window for ${scriptPath}`);
 
@@ -64,13 +56,7 @@ export const createWindow = async ({
   return win;
 };
 
-export const showLogWindow = async ({
-  scriptPath,
-  pid,
-}: {
-  scriptPath: string;
-  pid: number;
-}) => {
+export const showLogWindow = async ({ scriptPath, pid }: { scriptPath: string; pid: number }) => {
   // TODO: If Log window already exists, just show it
   let tail: Tail.Tail;
   const alreadyOpen = windowsState.windows.find((w) => w.scriptPath === scriptPath && w.ui === UI.log);

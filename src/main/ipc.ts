@@ -21,19 +21,20 @@ import detect from 'detect-file-type';
 import { ipcMain } from 'electron';
 import { debounce } from 'lodash-es';
 import { DownloaderHelper } from 'node-downloader-helper';
-import { KitEvent, emitter } from '../shared/events';
-import { type ProcessAndPrompt, ensureIdleProcess, processes } from './process';
-
 import { getAssetPath } from '../shared/assets';
 import { noChoice } from '../shared/defaults';
 import { AppChannel, HideReason, Trigger } from '../shared/enums';
-import { getCachedAvatar, clearAvatarCache } from './avatar-cache';
+import { emitter, KitEvent } from '../shared/events';
 import type { ResizeData, Survey } from '../shared/types';
+import { clearAvatarCache, getCachedAvatar } from './avatar-cache';
+import { recordSelection } from './frecency';
 import { runPromptProcess } from './kit';
 import { ipcLog as log } from './logs';
+import { ensureIdleProcess, type ProcessAndPrompt, processes } from './process';
 import type { KitPrompt } from './prompt';
 import { prompts } from './prompts';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
+import { registerScreenRecordingHandlers } from './screen-recording';
 import { kitState } from './state';
 import { visibilityController } from './visibility';
 
@@ -577,23 +578,23 @@ ${data.error}
           // If visibility controller didn't handle it, let it propagate to child process
           if (!handled) {
             log.info(`␛ Escape not handled by visibility controller, propagating to child process`);
-            
+
             // Check if we can actually send to child
             if (!child || !child.connected) {
               log.warn(`␛ Child process not ready to receive escape, closing prompt`);
-              
+
               // Kill any existing child process
-              if (child && child.pid) {
+              if (child?.pid) {
                 child.kill();
               }
-              
+
               // Hide the prompt
               prompt.maybeHide(HideReason.Escape);
               prompt.sendToPrompt(Channel.SET_INPUT, '');
-              
+
               // Clean up the process
               processes.removeByPid(prompt.pid, 'escape with no child');
-              
+
               return; // Don't try to send to child
             }
           }
@@ -616,6 +617,14 @@ ${data.error}
 ${child?.pid} 📝 Submitting...
 -------------`.trim(),
           );
+
+          // Record frecency for the selected choice
+          const focusedChoiceId = message?.state?.focused?.id;
+          if (focusedChoiceId && typeof focusedChoiceId === 'string') {
+            recordSelection(focusedChoiceId).catch((err) => {
+              log.warn(`Failed to record frecency: ${err}`);
+            });
+          }
 
           // TODO: Is this still necessary? It was breaking a scenario around empty strings in an arg.
           // It would also need to check if there are "info" choices.
@@ -660,11 +669,7 @@ ${child?.pid} 📝 Submitting...
             if (child?.channel && child.connected) {
               // Back-compat for chat channels: child expects top-level `value`
               if (
-                [
-                  Channel.CHAT_ADD_MESSAGE,
-                  Channel.CHAT_PUSH_TOKEN,
-                  Channel.CHAT_SET_MESSAGE,
-                ].includes(channel as any)
+                [Channel.CHAT_ADD_MESSAGE, Channel.CHAT_PUSH_TOKEN, Channel.CHAT_SET_MESSAGE].includes(channel as any)
               ) {
                 try {
                   const msg: any = message as any;
@@ -678,8 +683,8 @@ ${child?.pid} 📝 Submitting...
                     promptId: message.promptId,
                     hadTopValue,
                     hasStateValue: stateValue !== undefined,
-                    valueType: typeof (msg.value),
-                    textLen: typeof (msg.value?.text) === 'string' ? msg.value.text.length : undefined,
+                    valueType: typeof msg.value,
+                    textLen: typeof msg.value?.text === 'string' ? msg.value.text.length : undefined,
                   });
                 } catch (e) {
                   log.warn(`[Main IPC] chat forward log error for ${channel}`, e);
@@ -775,4 +780,7 @@ ${child?.pid} 📝 Submitting...
       sponsorCheck: false,
     });
   });
+
+  // Register screen recording handlers
+  registerScreenRecordingHandlers();
 };

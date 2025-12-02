@@ -1,22 +1,17 @@
 import { exec, execFile } from 'node:child_process';
-import { constants, accessSync, createWriteStream } from 'node:fs';
-import { existsSync } from 'node:fs';
-import { container } from '../state/services/container';
+import { accessSync, constants, createWriteStream, existsSync } from 'node:fs';
 import { chmod, mkdtemp, rm, symlink, unlink } from 'node:fs/promises';
-import { arch, platform } from 'node:os';
-import { tmpdir } from 'node:os';
-import os from 'node:os';
-import { join } from 'node:path';
-import path from 'node:path';
+import os, { arch, platform, tmpdir } from 'node:os';
+import path, { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { promisify } from 'node:util';
-import { kitPath, kitPnpmPath } from '@johnlindquist/kit/core/utils';
-import { createPathResolver } from '@johnlindquist/kit/core/utils';
+import { createPathResolver, kitPath, kitPnpmPath } from '@johnlindquist/kit/core/utils';
 import log from 'electron-log';
 import { sendSplashBody } from '../install';
 import { downloadAndInstallPnpm, setPnpmStoreDir } from '../install/install-pnpm';
 import { invoke } from '../invoke-pty';
 import { kitState } from '../state';
+import { container } from '../state/services/container';
 
 const execFileAsync = promisify(execFile);
 

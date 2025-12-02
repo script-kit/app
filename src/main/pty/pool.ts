@@ -1,7 +1,7 @@
 import * as pty from 'node-pty';
+import type { TermConfig } from '../../shared/types';
 import { termLog } from '../logs';
 import { getDefaultArgs, getDefaultOptions, getDefaultShell, getPtyOptions } from '../pty-utils';
-import type { TermConfig } from '../../shared/types';
 
 export class PtyPool {
   ptys: pty.IPty[] = [];
@@ -101,7 +101,9 @@ export class PtyPool {
 
     termLog.info('🔧 [ptyPool] getIdlePty called with:');
     termLog.info(`🔧 [ptyPool] - shell: ${shell} (default: ${defaultShell}, same: ${sameShell})`);
-    termLog.info(`🔧 [ptyPool] - args: ${JSON.stringify(args)} (default: ${JSON.stringify(defaultArgs)}, same: ${sameArgs})`);
+    termLog.info(
+      `🔧 [ptyPool] - args: ${JSON.stringify(args)} (default: ${JSON.stringify(defaultArgs)}, same: ${sameArgs})`,
+    );
     termLog.info(`🔧 [ptyPool] - hasIdlePty: ${!!this.idlePty}`);
 
     const canReuse = this.idlePty && sameShell && sameArgs;
@@ -130,4 +132,3 @@ export class PtyPool {
     return this.createPty(shell, args, options);
   }
 }
-

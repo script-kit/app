@@ -22,7 +22,7 @@ const CHUNK_SIZE = 500 * 1024; // 500KB chunks to be safe
  */
 export function needsChunking(content: any[]): boolean {
   if (!Array.isArray(content)) return false;
-  
+
   for (const item of content) {
     if (item.type === 'image' && item.data && typeof item.data === 'string') {
       if (item.data.length > CHUNK_SIZE) {
@@ -38,32 +38,32 @@ export function needsChunking(content: any[]): boolean {
  */
 export function chunkLargeImages(content: any[]): any[] {
   const result: any[] = [];
-  
+
   for (const item of content) {
     if (item.type === 'image' && item.data && typeof item.data === 'string' && item.data.length > CHUNK_SIZE) {
       // Split large image into chunks
       const data = item.data;
       const totalChunks = Math.ceil(data.length / CHUNK_SIZE);
-      
+
       // Add a marker for the chunked image
       result.push({
         type: 'image',
         isChunked: true,
         totalChunks,
         originalLength: data.length,
-        mimeType: item.mimeType || 'image/png'
+        mimeType: item.mimeType || 'image/png',
       });
-      
+
       // Add individual chunks
       for (let i = 0; i < totalChunks; i++) {
         const start = i * CHUNK_SIZE;
         const end = Math.min(start + CHUNK_SIZE, data.length);
-        
+
         result.push({
           type: 'image-chunk',
           chunkIndex: i,
           totalChunks,
-          chunkData: data.slice(start, end)
+          chunkData: data.slice(start, end),
         });
       }
     } else {
@@ -71,7 +71,7 @@ export function chunkLargeImages(content: any[]): any[] {
       result.push(item);
     }
   }
-  
+
   return result;
 }
 
@@ -82,7 +82,7 @@ export function reconstructChunkedImages(content: any[]): any[] {
   const result: any[] = [];
   const chunks = new Map<number, string[]>();
   let currentChunkedImage: any = null;
-  
+
   for (const item of content) {
     if (item.type === 'image' && item.isChunked) {
       currentChunkedImage = item;
@@ -91,16 +91,16 @@ export function reconstructChunkedImages(content: any[]): any[] {
       const chunkArray = chunks.get(item.totalChunks);
       if (chunkArray) {
         chunkArray[item.chunkIndex] = item.chunkData;
-        
+
         // Check if we have all chunks
         if (chunkArray.filter(Boolean).length === item.totalChunks) {
           // Reconstruct the image
           result.push({
             type: 'image',
             data: chunkArray.join(''),
-            mimeType: currentChunkedImage.mimeType
+            mimeType: currentChunkedImage.mimeType,
           });
-          
+
           // Reset
           chunks.delete(item.totalChunks);
           currentChunkedImage = null;
@@ -110,6 +110,6 @@ export function reconstructChunkedImages(content: any[]): any[] {
       result.push(item);
     }
   }
-  
+
   return result;
 }

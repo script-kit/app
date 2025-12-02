@@ -1,26 +1,26 @@
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { setTimeout } from 'node:timers/promises';
+import { fileURLToPath } from 'node:url';
+import { Channel } from '@johnlindquist/kit/core/enum';
 import { isDir, kenvPath } from '@johnlindquist/kit/core/utils';
 import type { ShowOptions } from '@johnlindquist/kit/types/kitapp';
 import type { WidgetOptions } from '@johnlindquist/kit/types/pro';
 /* eslint-disable import/prefer-default-export */
 import {
+  app,
   BrowserWindow,
   type BrowserWindowConstructorOptions,
   Menu,
   type MenuItemConstructorOptions,
   type PopupOptions,
-  app,
   screen,
 } from 'electron';
-import { ensureDir } from './cjs-exports';
-
-import { fileURLToPath } from 'node:url';
-import { Channel } from '@johnlindquist/kit/core/enum';
 import { getAssetPath } from '../shared/assets';
+import { ensureDir } from './cjs-exports';
 import { getCurrentScreenFromMouse } from './prompt.screen-utils';
 import { forceQuit, kitState } from './state';
+import { widgetPool } from './widget-pool';
 
 export const INSTALL_ERROR = 'install-error';
 
@@ -143,6 +143,117 @@ const getTopRightCurrentScreen = (options: BrowserWindowConstructorOptions = {})
   };
 };
 
+/**
+ * Layout presets for widget positioning
+ */
+type LayoutPreset =
+  | 'center'
+  | 'top-right'
+  | 'top-left'
+  | 'bottom-right'
+  | 'bottom-left'
+  | 'sidebar-right'
+  | 'sidebar-left'
+  | 'top-bar'
+  | 'bottom-bar';
+
+/**
+ * Calculate widget position and size based on layout preset
+ */
+const getLayoutPosition = (
+  layout: LayoutPreset,
+  options: BrowserWindowConstructorOptions & { margin?: number; monitor?: 'current' | 'primary' } = {},
+) => {
+  const margin = options.margin ?? 20;
+  const monitor = options.monitor ?? 'current';
+
+  // Get the appropriate display
+  let display: Electron.Display;
+  if (monitor === 'primary') {
+    display = screen.getPrimaryDisplay();
+  } else {
+    const cursor = screen.getCursorScreenPoint();
+    display = screen.getDisplayNearestPoint({ x: cursor.x, y: cursor.y });
+  }
+
+  const { x: areaX, y: areaY, width: areaWidth, height: areaHeight } = display.workArea;
+
+  // Default widget size
+  let width = options.width || 300;
+  let height = options.height || 200;
+
+  // Calculate position based on layout
+  let x: number;
+  let y: number;
+
+  switch (layout) {
+    case 'center':
+      x = areaX + Math.round((areaWidth - width) / 2);
+      y = areaY + Math.round((areaHeight - height) / 2);
+      break;
+
+    case 'top-right':
+      x = areaX + areaWidth - width - margin;
+      y = areaY + margin;
+      break;
+
+    case 'top-left':
+      x = areaX + margin;
+      y = areaY + margin;
+      break;
+
+    case 'bottom-right':
+      x = areaX + areaWidth - width - margin;
+      y = areaY + areaHeight - height - margin;
+      break;
+
+    case 'bottom-left':
+      x = areaX + margin;
+      y = areaY + areaHeight - height - margin;
+      break;
+
+    case 'sidebar-right':
+      // Sidebars span full height
+      height = areaHeight;
+      x = areaX + areaWidth - width;
+      y = areaY;
+      break;
+
+    case 'sidebar-left':
+      height = areaHeight;
+      x = areaX;
+      y = areaY;
+      break;
+
+    case 'top-bar':
+      // Bars span full width
+      width = areaWidth;
+      x = areaX;
+      y = areaY;
+      break;
+
+    case 'bottom-bar':
+      width = areaWidth;
+      x = areaX;
+      y = areaY + areaHeight - height;
+      break;
+
+    default:
+      // Default to top-right
+      x = areaX + areaWidth - width - margin;
+      y = areaY + margin;
+  }
+
+  log.info('📍 Layout position calculated', {
+    layout,
+    margin,
+    monitor,
+    result: { x, y, width, height },
+  });
+
+  return { x, y, width, height };
+};
+
 export const showInspector = (url: string): BrowserWindow => {
   const win = new BrowserWindow({
     title: 'Script Kit Inspector',
@@ -256,9 +367,9 @@ export const show = async (
     ...(options?.transparent
       ? {}
       : {
-        vibrancy: 'popover',
-        visualEffectState: 'active',
-      }),
+          vibrancy: 'popover',
+          visualEffectState: 'active',
+        }),
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
@@ -328,12 +439,23 @@ export const showWidget = async (
   options.body = options.body || html || '';
   log.info('📐 Calculating window position', {
     center: options?.center,
+    layout: options?.layout,
     options: JSON.stringify(options),
   });
 
-  const position = options?.center
-    ? getCenterOnCurrentScreen(options as BrowserWindowConstructorOptions)
-    : getTopRightCurrentScreen(options as BrowserWindowConstructorOptions);
+  // Calculate position based on layout preset, center option, or default to top-right
+  let position: { x: number; y: number; width: number; height: number };
+
+  if (options?.layout) {
+    // Use layout preset
+    position = getLayoutPosition(options.layout as LayoutPreset, options as any);
+  } else if (options?.center) {
+    // Use center positioning
+    position = getCenterOnCurrentScreen(options as BrowserWindowConstructorOptions);
+  } else {
+    // Default to top-right
+    position = getTopRightCurrentScreen(options as BrowserWindowConstructorOptions);
+  }
 
   log.info('📍 Calculated position', { position });
 
@@ -369,36 +491,62 @@ export const showWidget = async (
   });
 
   let widgetWindow: BrowserWindow;
-  try {
-    if (kitState.isMac) {
-      log.info('🍎 Creating Mac BrowserWindow');
-      widgetWindow = new BrowserWindow(bwOptions);
-      if (!options.transparent) {
-        log.info(`Setting vibrancy to 'popover'`);
-        widgetWindow.setVibrancy('popover');
-      }
-    } else if (options?.transparent) {
-      log.info('🪟 Creating transparent BrowserWindow');
-      widgetWindow = new BrowserWindow(bwOptions);
-      widgetWindow.setBackgroundColor('#00000000');
-    } else {
-      log.info('🪟 Creating standard BrowserWindow');
-      widgetWindow = new BrowserWindow({
-        ...bwOptions,
-        backgroundColor: '#00000000',
-      });
-    }
+  let fromPool = false;
 
-    log.info('✅ BrowserWindow created successfully', {
-      windowId: widgetWindow.id,
-      bounds: widgetWindow.getBounds(),
+  // Try to claim a pre-warmed window from the pool first
+  const pooledWindow = widgetPool.claim();
+
+  if (pooledWindow) {
+    log.info('⚡ Using pooled window (instant)', {
+      windowId: pooledWindow.id,
+      poolStats: widgetPool.getStats(),
     });
-  } catch (error) {
-    log.error('❌ Failed to create BrowserWindow', {
-      error: error instanceof Error ? error.message : error,
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    throw error;
+
+    widgetWindow = pooledWindow;
+    fromPool = true;
+
+    // Configure the pooled window with our options
+    widgetWindow.setTitle(bwOptions.title || '');
+    widgetWindow.setSize(position.width, position.height);
+    widgetWindow.setPosition(position.x, position.y);
+
+    if (kitState.isMac && !options.transparent) {
+      widgetWindow.setVibrancy('popover');
+    }
+  } else {
+    // Fall back to cold window creation
+    try {
+      if (kitState.isMac) {
+        log.info('🍎 Creating Mac BrowserWindow (cold)');
+        widgetWindow = new BrowserWindow(bwOptions);
+        if (!options.transparent) {
+          log.info(`Setting vibrancy to 'popover'`);
+          widgetWindow.setVibrancy('popover');
+        }
+      } else if (options?.transparent) {
+        log.info('🪟 Creating transparent BrowserWindow (cold)');
+        widgetWindow = new BrowserWindow(bwOptions);
+        widgetWindow.setBackgroundColor('#00000000');
+      } else {
+        log.info('🪟 Creating standard BrowserWindow (cold)');
+        widgetWindow = new BrowserWindow({
+          ...bwOptions,
+          backgroundColor: '#00000000',
+        });
+      }
+
+      log.info('✅ BrowserWindow created successfully', {
+        windowId: widgetWindow.id,
+        bounds: widgetWindow.getBounds(),
+        fromPool: false,
+      });
+    } catch (error) {
+      log.error('❌ Failed to create BrowserWindow', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
   }
 
   if (options?.ignoreMouse) {
@@ -477,7 +625,7 @@ export const showWidget = async (
           });
         }
 
-        if (options?.showDevTools) {
+        if (options?.showDevTools || options?.devTools) {
           log.info('🛠️ Opening DevTools', {
             windowId: widgetWindow.id,
           });

@@ -28,7 +28,8 @@ function analyzeObject(obj: any, path: string = 'root', visited = new WeakSet())
   if (Array.isArray(obj)) {
     console.log(`${path}: Array(${obj.length})`);
     obj.forEach((item, index) => {
-      if (index < 3 || index === obj.length - 1) { // Show first 3 and last
+      if (index < 3 || index === obj.length - 1) {
+        // Show first 3 and last
         analyzeObject(item, `${path}[${index}]`, visited);
       } else if (index === 3) {
         console.log(`${path}[3..${obj.length - 2}]: ... (skipped)`);
@@ -46,10 +47,10 @@ function analyzeObject(obj: any, path: string = 'root', visited = new WeakSet())
   // Handle regular objects
   const keys = Object.keys(obj);
   console.log(`${path}: Object(${keys.length} keys)`);
-  
+
   for (const key of keys) {
     const value = obj[key];
-    
+
     // Special handling for image data
     if (key === 'data' && typeof value === 'string' && value.startsWith('data:image/')) {
       console.log(`${path}.${key}: Base64Image(${value.length} chars)`);
@@ -64,7 +65,7 @@ export function debugMCPResponse(response: any): void {
   console.log('=== MCP Response Structure Analysis ===');
   analyzeObject(response);
   console.log('=== End Analysis ===');
-  
+
   // Check if it can be stringified
   console.log('\nStringify test:');
   try {
@@ -76,8 +77,11 @@ export function debugMCPResponse(response: any): void {
           estimatedSize += item.data.length;
         }
       }
-      if (estimatedSize > 1024 * 1024) { // 1MB
-        console.log(`⚠ Response contains large image data (~${(estimatedSize / (1024 * 1024)).toFixed(2)}MB), skipping stringify test`);
+      if (estimatedSize > 1024 * 1024) {
+        // 1MB
+        console.log(
+          `⚠ Response contains large image data (~${(estimatedSize / (1024 * 1024)).toFixed(2)}MB), skipping stringify test`,
+        );
         return;
       }
     }

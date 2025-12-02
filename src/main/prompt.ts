@@ -1,46 +1,96 @@
-import { Channel, UI } from '@johnlindquist/kit/core/enum';
-import { ipcMain } from 'electron';
-import type { Choice, PromptBounds, PromptData, Script, Scriptlet } from '@johnlindquist/kit/types/core';
-import { subscribeKey } from 'valtio/utils';
-
+import type { ChildProcess } from 'node:child_process';
+import EventEmitter from 'node:events';
 import { readFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import { getMainScriptPath, kenvPath, kitPath } from '@johnlindquist/kit/core/utils';
+import type { Choice, PromptBounds, PromptData, Script, Scriptlet } from '@johnlindquist/kit/types/core';
 import type { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { differenceInHours } from 'date-fns';
+import type { Display } from 'electron';
 import {
+  app,
   BrowserWindow,
+  globalShortcut,
   type Input,
+  ipcMain,
   type Point,
   type Rectangle,
-  TouchBar,
-  app,
-  globalShortcut,
   screen,
   shell,
+  TouchBar,
 } from 'electron';
-import type { Display } from 'electron';
-import { setupPromptContextMenu } from './prompt.context-menu';
 import { debounce } from 'lodash-es';
-
-import type { ChildProcess } from 'node:child_process';
-import EventEmitter from 'node:events';
-import { closedDiv, noScript } from '../shared/defaults';
-import { ZOOM_LEVEL } from '../shared/defaults';
+import { subscribeKey } from 'valtio/utils';
+import { closedDiv, noScript, ZOOM_LEVEL } from '../shared/defaults';
 import { AppChannel } from '../shared/enums';
-import { KitEvent, emitter } from '../shared/events';
+import { emitter, KitEvent } from '../shared/events';
 import type { ResizeData } from '../shared/types';
 import { sendToAllPrompts } from './channel';
+import { promptLog as log, perf, themeLog } from './logs';
 import { getIdles, processes, updateTheme } from './process';
-import { getPromptOptions, type PromptWindowMode } from './prompt.options';
-import { prompts } from './prompts';
-import {
-  getCurrentScreenFromBounds,
-  isBoundsWithinDisplays,
-} from './screen';
-import { setChoices, setFlags } from './search';
 import { processWindowCoordinator, WindowOperation } from './process-window-coordinator';
+import { applyPromptBounds } from './prompt.bounds-apply';
+import { applyPromptDataBounds } from './prompt.bounds-utils';
+import { clearPromptCacheFor } from './prompt.cache';
+import { setupPromptContextMenu } from './prompt.context-menu';
+import { computeShouldCloseOnInitialEscape, isDevToolsShortcut } from './prompt.focus-utils';
+import { actualHideImpl, isVisibleImpl, maybeHideImpl } from './prompt.hide-utils';
+import {
+  initMainChoicesImpl,
+  initMainFlagsImpl,
+  initMainPreviewImpl,
+  initMainShortcutsImpl,
+  initPromptImpl,
+  initThemeImpl,
+} from './prompt.init-main';
+import {
+  loadPromptHtml,
+  setupDevtoolsHandlers,
+  setupDomAndFinishLoadHandlers,
+  setupNavigationHandlers,
+  setupWindowLifecycleHandlers,
+} from './prompt.init-utils';
+import { isCloseCombo } from './prompt.input-utils';
+import { clearLongRunningMonitorFlow, startLongRunningMonitorFlow } from './prompt.long-running';
+import { getPromptOptions, type PromptWindowMode } from './prompt.options';
+import {
+  checkProcessAliveImpl,
+  handleProcessGoneImpl,
+  listenForProcessExitImpl,
+  notifyProcessConnectionLostImpl,
+  startProcessMonitoringImpl,
+  stopProcessMonitoringImpl,
+} from './prompt.process-connection';
+import { getLongRunningThresholdMs } from './prompt.process-utils';
+import { setupResizeAndMoveListeners } from './prompt.resize-listeners';
+import { calculateTargetDimensions, calculateTargetPosition } from './prompt.resize-utils';
+import {
+  getAllScreens as utilGetAllScreens,
+  getCurrentScreenFromMouse as utilGetCurrentScreenFromMouse,
+  getCurrentScreenPromptCache as utilGetCurrentScreenPromptCache,
+  pointOnMouseScreen as utilPointOnMouseScreen,
+} from './prompt.screen-utils';
+import { setPromptDataImpl } from './prompt.set-prompt-data';
+import { writePromptState } from './prompt.state-utils';
+import { togglePromptEnvFlow } from './prompt.toggle-env';
+import { handleBlurVisibility } from './prompt.visibility-utils';
+import {
+  blurPromptFlow,
+  hideFlow,
+  initBoundsFlow,
+  initMainBoundsFlow,
+  initShowPromptFlow,
+  moveToMouseScreenFlow,
+  onHideOnceFlow,
+  showPromptFlow,
+} from './prompt.window-flow';
+import { centerThenFocus } from './prompt.window-utils';
+import { prompts } from './prompts';
+import { getCurrentScreenFromBounds, isBoundsWithinDisplays } from './screen';
+import type { ScriptRunMeta } from './script-lifecycle';
+import { setChoices, setFlags } from './search';
 import shims from './shims';
 import {
   getEmojiShortcut,
@@ -54,38 +104,8 @@ import {
 } from './state';
 import { TrackEvent, trackEvent } from './track';
 import { getVersion } from './version';
-import { centerThenFocus } from './prompt.window-utils';
-import { initShowPromptFlow, hideFlow, onHideOnceFlow, showPromptFlow, moveToMouseScreenFlow, initBoundsFlow, blurPromptFlow, initMainBoundsFlow } from './prompt.window-flow';
-import { clearPromptCacheFor } from './prompt.cache';
-import { calculateTargetDimensions, calculateTargetPosition } from './prompt.resize-utils';
-import { applyPromptDataBounds } from './prompt.bounds-utils';
-import { getLongRunningThresholdMs } from './prompt.process-utils';
-import { setupDevtoolsHandlers, setupDomAndFinishLoadHandlers, setupNavigationHandlers, loadPromptHtml, setupWindowLifecycleHandlers } from './prompt.init-utils';
-import { setupResizeAndMoveListeners } from './prompt.resize-listeners';
-import { togglePromptEnvFlow } from './prompt.toggle-env';
-import { startLongRunningMonitorFlow, clearLongRunningMonitorFlow } from './prompt.long-running';
-import {
-  getAllScreens as utilGetAllScreens,
-  getCurrentScreenFromMouse as utilGetCurrentScreenFromMouse,
-  getCurrentScreenPromptCache as utilGetCurrentScreenPromptCache,
-  pointOnMouseScreen as utilPointOnMouseScreen,
-} from './prompt.screen-utils';
-import { writePromptState } from './prompt.state-utils';
-import { isDevToolsShortcut, computeShouldCloseOnInitialEscape } from './prompt.focus-utils';
-import { isCloseCombo } from './prompt.input-utils';
-import type { ScriptRunMeta } from './script-lifecycle';
-
-import { promptLog as log, themeLog, perf } from './logs';
-import { handleBlurVisibility } from './prompt.visibility-utils';
-import { applyPromptBounds } from './prompt.bounds-apply';
-import { setPromptDataImpl } from './prompt.set-prompt-data';
-import { notifyProcessConnectionLostImpl, startProcessMonitoringImpl, stopProcessMonitoringImpl, listenForProcessExitImpl, checkProcessAliveImpl, handleProcessGoneImpl } from './prompt.process-connection';
-import { initMainChoicesImpl, initMainPreviewImpl, initMainShortcutsImpl, initMainFlagsImpl, initThemeImpl, initPromptImpl } from './prompt.init-main';
-import { actualHideImpl, isVisibleImpl, maybeHideImpl } from './prompt.hide-utils';
 
 setupPromptContextMenu();
-
-
 
 export { logPromptStateFlow as logPromptState } from './prompt.log-state';
 
@@ -348,9 +368,7 @@ export class KitPrompt {
     // 1. Script path matches the main script path
     // 2. No script path and pid is 0 (uninitialized main menu)
     // 3. Empty script path (idle process that shows main menu)
-    return this.scriptPath === getMainScriptPath() ||
-      (!this.scriptPath && this.pid === 0) ||
-      this.scriptPath === '';
+    return this.scriptPath === getMainScriptPath() || (!this.scriptPath && this.pid === 0) || this.scriptPath === '';
   }
 
   public window: BrowserWindow;
@@ -465,8 +483,6 @@ export class KitPrompt {
     clearLongRunningMonitorFlow(this as any);
   };
 
-
-
   boundToProcess = false;
   processConnectionLost = false;
   processConnectionLostTimeout?: NodeJS.Timeout;
@@ -506,18 +522,29 @@ export class KitPrompt {
   /**
    * Send notification about lost process connection
    */
-  private notifyProcessConnectionLost() { notifyProcessConnectionLostImpl(this); }
+  private notifyProcessConnectionLost() {
+    notifyProcessConnectionLostImpl(this);
+  }
 
+  private startProcessMonitoring = () => {
+    startProcessMonitoringImpl(this);
+  };
 
-  private startProcessMonitoring = () => { startProcessMonitoringImpl(this); };
+  private stopProcessMonitoring = () => {
+    stopProcessMonitoringImpl(this);
+  };
 
-  private stopProcessMonitoring = () => { stopProcessMonitoringImpl(this); };
+  private checkProcessAlive(force = false) {
+    checkProcessAliveImpl(this, force);
+  }
 
-  private checkProcessAlive(force = false) { checkProcessAliveImpl(this, force); }
+  private listenForProcessExit = () => {
+    listenForProcessExitImpl(this);
+  };
 
-  private listenForProcessExit = () => { listenForProcessExitImpl(this); };
-
-  private handleProcessGone() { handleProcessGoneImpl(this); }
+  private handleProcessGone() {
+    handleProcessGoneImpl(this);
+  }
 
   promptBounds = {
     id: '',
@@ -586,11 +613,7 @@ export class KitPrompt {
     }
 
     // Register blur operation
-    const blurOpId = processWindowCoordinator.registerOperation(
-      this.pid,
-      WindowOperation.Blur,
-      this.window.id
-    );
+    const blurOpId = processWindowCoordinator.registerOperation(this.pid, WindowOperation.Blur, this.window.id);
 
     // Keep prompts registry in sync with actual window blur
     try {
@@ -646,7 +669,9 @@ export class KitPrompt {
     const isSplashScreen = this.ui === UI.splash;
     const isIdle = !this.scriptPath || this.scriptPath === '';
 
-    this.logInfo(`/Users/johnlindquist/dev/kit-container/app/src/main/prompt.ts:562 - Blur check: scriptPath="${this.scriptPath}", mainPath="${mainScriptPath}", isMain=${isMainScript}, isIdle=${isIdle}`);
+    this.logInfo(
+      `/Users/johnlindquist/dev/kit-container/app/src/main/prompt.ts:562 - Blur check: scriptPath="${this.scriptPath}", mainPath="${mainScriptPath}", isMain=${isMainScript}, isIdle=${isIdle}`,
+    );
 
     // Don't hide splash screen on blur - it's a regular window now
     if (isSplashScreen) {
@@ -709,7 +734,9 @@ export class KitPrompt {
   };
 
   initMainPrompt = (reason = 'unknown') => {
-    this.logInfo(`🚀🚀🚀 initMainPrompt CALLED: reason="${reason}", scriptPath="${this.scriptPath}", initMain=${this.initMain}`);
+    this.logInfo(
+      `🚀🚀🚀 initMainPrompt CALLED: reason="${reason}", scriptPath="${this.scriptPath}", initMain=${this.initMain}`,
+    );
     this.initPromptData();
     this.initMainChoices();
     this.initMainPreview();
@@ -750,20 +777,15 @@ export class KitPrompt {
 
     const isSplashScreen = this.ui === UI.splash;
     // Splash is a normal window; otherwise honor env override if provided
-    this.windowMode = isSplashScreen ? 'window' :
-      (process.env.KIT_PROMPT_WINDOW_MODE === 'window' ? 'window' : 'panel');
-    
+    this.windowMode = isSplashScreen ? 'window' : process.env.KIT_PROMPT_WINDOW_MODE === 'window' ? 'window' : 'panel';
+
     const options = getPromptOptions(this.windowMode);
     this.window = new BrowserWindow(options);
-    
+
     if (this.windowMode === 'window') this.window.setTitle('Script Kit');
 
     // Register window creation
-    const createOpId = processWindowCoordinator.registerOperation(
-      this.pid,
-      WindowOperation.Create,
-      this.window.id
-    );
+    const createOpId = processWindowCoordinator.registerOperation(this.pid, WindowOperation.Create, this.window.id);
     // Complete immediately as window is created
     processWindowCoordinator.completeOperation(createOpId);
 
@@ -817,7 +839,8 @@ export class KitPrompt {
           this.window?.webContents.send(String(channel), data);
         } catch (error) {
           const err = error as Error;
-          const isSerializationError = typeof err?.message === 'string' && err.message.includes('Failed to serialize arguments');
+          const isSerializationError =
+            typeof err?.message === 'string' && err.message.includes('Failed to serialize arguments');
           const dataSummary = (() => {
             const type = typeof data;
             if (data === null || type !== 'object') return { type, preview: String(data) };
@@ -827,7 +850,7 @@ export class KitPrompt {
               for (const k of keys.slice(0, 10)) {
                 const v = (data as any)[k];
                 const vt = typeof v;
-                sample[k] = vt === 'object' ? (v?.constructor?.name || 'object') : vt;
+                sample[k] = vt === 'object' ? v?.constructor?.name || 'object' : vt;
               }
               return { type: 'object', keys: keys.slice(0, 50), sampleTypes: sample };
             } catch {
@@ -930,7 +953,9 @@ export class KitPrompt {
     // Intercept DevTools keyboard shortcuts to set flag before blur happens
     this.window.webContents?.on('before-input-event', (_event, input) => {
       if (isDevToolsShortcut(input)) {
-        this.logInfo(`🔧 DevTools shortcut detected: meta=${input.meta}, alt=${input.alt}, shift=${input.shift}, key=${input.key}`);
+        this.logInfo(
+          `🔧 DevTools shortcut detected: meta=${input.meta}, alt=${input.alt}, shift=${input.shift}, key=${input.key}`,
+        );
         this.devToolsOpening = true;
         // Reset flag after a short delay
         setTimeout(() => {
@@ -1082,7 +1107,8 @@ export class KitPrompt {
     centerThenFocus(this.window, this.focusPrompt);
   };
 
-  pingPrompt = async (channel: AppChannel, data?: any) => (await import('./prompt.ipc-utils')).pingPrompt(this as any, channel, data);
+  pingPrompt = async (channel: AppChannel, data?: any) =>
+    (await import('./prompt.ipc-utils')).pingPrompt(this as any, channel, data);
 
   savePromptBounds = (scriptPath: string, bounds: Rectangle, b: number = Bounds.Position | Bounds.Size) => {
     if (!this.window || this.window.isDestroyed()) {
@@ -1130,10 +1156,11 @@ export class KitPrompt {
 
   isDestroyed = () => this.window?.isDestroyed();
 
-  getFromPrompt = <K extends keyof ChannelMap>(child: ChildProcess, channel: K, data?: ChannelMap[K]) => (async () => {
-    const { getFromPrompt } = await import('./prompt.ipc-utils');
-    getFromPrompt(this as any, child, channel, data);
-  })();
+  getFromPrompt = <K extends keyof ChannelMap>(child: ChildProcess, channel: K, data?: ChannelMap[K]) =>
+    (async () => {
+      const { getFromPrompt } = await import('./prompt.ipc-utils');
+      getFromPrompt(this as any, child, channel, data);
+    })();
 
   private shouldApplyResize(resizeData: ResizeData): boolean {
     if (kitState.isLinux) {
@@ -1357,11 +1384,15 @@ export class KitPrompt {
   };
 
   hasBeenHidden = false;
-  actualHide = () => { actualHideImpl(this); };
+  actualHide = () => {
+    actualHideImpl(this);
+  };
 
   isVisible = () => isVisibleImpl(this);
 
-  maybeHide = (reason: string) => { maybeHideImpl(this, reason); };
+  maybeHide = (reason: string) => {
+    maybeHideImpl(this, reason);
+  };
 
   saveCurrentPromptBounds = () => {
     if (!this?.window || this.window?.isDestroyed()) {
@@ -1422,11 +1453,7 @@ export class KitPrompt {
   hasBeenFocused = false;
   focusPrompt = () => {
     // Register focus operation
-    const focusOpId = processWindowCoordinator.registerOperation(
-      this.pid,
-      WindowOperation.Focus,
-      this.window.id
-    );
+    const focusOpId = processWindowCoordinator.registerOperation(this.pid, WindowOperation.Focus, this.window.id);
 
     this.hasBeenFocused = true;
     if (!this.window.focusable) {
@@ -1762,11 +1789,7 @@ export class KitPrompt {
     this.logInfo(`${this.pid}: "close" because ${reason}`);
 
     // Register close operation
-    const closeOpId = processWindowCoordinator.registerOperation(
-      this.pid,
-      WindowOperation.Close,
-      this.window?.id || 0
-    );
+    const closeOpId = processWindowCoordinator.registerOperation(this.pid, WindowOperation.Close, this.window?.id || 0);
 
     // Clear long-running monitor when closing
     this.clearLongRunningMonitor();
@@ -1814,7 +1837,7 @@ export class KitPrompt {
         this.hideInstant(isProcessExit);
       }
 
-      this.sendToPrompt = () => { };
+      this.sendToPrompt = () => {};
 
       try {
         if (!kitState.isMac) {
@@ -1833,7 +1856,7 @@ export class KitPrompt {
           const destroyOpId = processWindowCoordinator.registerOperation(
             this.pid,
             WindowOperation.Destroy,
-            this.window?.id || 0
+            this.window?.id || 0,
           );
 
           this.window.destroy();
@@ -1865,17 +1888,29 @@ export class KitPrompt {
     // this.sendToPrompt(Channel.SET_PROMPT_DATA, kitCache.promptData);
   };
 
-  initMainChoices = () => { initMainChoicesImpl(this); };
+  initMainChoices = () => {
+    initMainChoicesImpl(this);
+  };
 
-  initMainPreview = () => { initMainPreviewImpl(this); };
+  initMainPreview = () => {
+    initMainPreviewImpl(this);
+  };
 
-  initMainShortcuts = () => { initMainShortcutsImpl(this); };
+  initMainShortcuts = () => {
+    initMainShortcutsImpl(this);
+  };
 
-  initMainFlags = () => { initMainFlagsImpl(this); };
+  initMainFlags = () => {
+    initMainFlagsImpl(this);
+  };
 
-  initTheme = () => { initThemeImpl(this); };
+  initTheme = () => {
+    initThemeImpl(this);
+  };
 
-  initPrompt = () => { initPromptImpl(this); };
+  initPrompt = () => {
+    initPromptImpl(this);
+  };
 
   /**
    * Clears the cached main menu content from the renderer.
@@ -1933,7 +1968,9 @@ export class KitPrompt {
 
   attemptPreload = debounce(
     (promptScriptPath: string, show = true, init = true) => {
-      this.logInfo(`🏋️🏋️🏋️ attemptPreload CALLED: promptScriptPath="${promptScriptPath}", current prompt.scriptPath="${this.scriptPath}", prompt.initMain=${this.initMain}`);
+      this.logInfo(
+        `🏋️🏋️🏋️ attemptPreload CALLED: promptScriptPath="${promptScriptPath}", current prompt.scriptPath="${this.scriptPath}", prompt.initMain=${this.initMain}`,
+      );
       const isMainScript = getMainScriptPath() === promptScriptPath;
       if (!promptScriptPath || isMainScript) {
         this.logInfo(`🏋️ attemptPreload: EARLY RETURN - promptScriptPath empty or isMainScript`);
@@ -2079,8 +2116,7 @@ export class KitPrompt {
         const windowIsFocused = this.window?.isFocused();
         const electronFocused = BrowserWindow.getFocusedWindow();
         const registryFocusedIsThis = !prompts.focused || prompts.focused === this;
-        const actuallyFocused =
-          !!windowIsFocused && electronFocused === this.window && registryFocusedIsThis;
+        const actuallyFocused = !!windowIsFocused && electronFocused === this.window && registryFocusedIsThis;
 
         if (!actuallyFocused) {
           this.logInfo('Ignoring Cmd/Ctrl+W because prompt is not actually focused', {
@@ -2139,18 +2175,20 @@ export class KitPrompt {
     const ignoreMouse = this.ignoreMouseEvents;
     const opacity = this.opacity;
     const bounds = this.window?.getBounds();
-    
+
     // Capture current renderer state including input/editor content
     const rendererState = await this.collectRendererState();
-    
+
     // Store the current promptData with renderer state merged in
-    const currentPromptData = this.promptData ? {
-      ...this.promptData,
-      // Merge in any input/value from renderer state
-      ...(rendererState?.input !== undefined && { input: rendererState.input }),
-      ...(rendererState?.value !== undefined && { value: rendererState.value }),
-      ...(rendererState?.description !== undefined && { description: rendererState.description }),
-    } : null;
+    const currentPromptData = this.promptData
+      ? {
+          ...this.promptData,
+          // Merge in any input/value from renderer state
+          ...(rendererState?.input !== undefined && { input: rendererState.input }),
+          ...(rendererState?.value !== undefined && { value: rendererState.value }),
+          ...(rendererState?.description !== undefined && { description: rendererState.description }),
+        }
+      : null;
 
     // Detach listeners from old window (avoid leaks)
     try {
@@ -2174,11 +2212,7 @@ export class KitPrompt {
     this.window.webContents.ipc.on(AppChannel.GET_KIT_CONFIG, getKitConfig);
 
     // Register window creation operation
-    const createOpId = processWindowCoordinator.registerOperation(
-      this.pid,
-      WindowOperation.Create,
-      this.window.id
-    );
+    const createOpId = processWindowCoordinator.registerOperation(this.pid, WindowOperation.Create, this.window.id);
     processWindowCoordinator.completeOperation(createOpId);
 
     // Re-setup sendToPrompt method
@@ -2209,9 +2243,13 @@ export class KitPrompt {
     setupWindowLifecycleHandlers(this);
     this.window.webContents?.on('before-input-event', (_event, input: Input) => {
       if (isDevToolsShortcut(input)) {
-        this.logInfo(`🔧 DevTools shortcut detected (reinit): meta=${input.meta}, alt=${input.alt}, shift=${input.shift}, key=${input.key}`);
+        this.logInfo(
+          `🔧 DevTools shortcut detected (reinit): meta=${input.meta}, alt=${input.alt}, shift=${input.shift}, key=${input.key}`,
+        );
         this.devToolsOpening = true;
-        setTimeout(() => { this.devToolsOpening = false; }, 200);
+        setTimeout(() => {
+          this.devToolsOpening = false;
+        }, 200);
       }
     });
     setupDevtoolsHandlers(this);
@@ -2259,7 +2297,9 @@ export class KitPrompt {
 
     // Destroy old window
     setTimeout(() => {
-      try { oldWindow?.destroy(); } catch {}
+      try {
+        oldWindow?.destroy();
+      } catch {}
     }, 120);
 
     // Resume monitors

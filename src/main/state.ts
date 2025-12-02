@@ -1,19 +1,19 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-nested-ternary */
 
-import Store, { type Schema } from 'electron-store';
-
 import type { ChildProcess } from 'node:child_process';
-import os from 'node:os';
-import type { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
-import { type Display, nativeTheme } from 'electron';
-import type { LogLevel } from 'electron-log';
-import { debounce } from 'lodash-es';
-import { subscribeKey } from 'valtio/utils';
-import { proxy, snapshot } from 'valtio/vanilla';
-
 import { readdir } from 'node:fs/promises';
+import os from 'node:os';
+import type { Worker } from 'node:worker_threads';
 import type { Stamp, UserDb } from '@johnlindquist/kit/core/db';
+import {
+  getTrustedKenvsKey,
+  isParentOfDir,
+  kenvPath,
+  kitPath,
+  parseScript,
+  tmpClipboardDir,
+} from '@johnlindquist/kit/core/utils';
 import type {
   Choice,
   FlagsObject,
@@ -24,29 +24,26 @@ import type {
   Shortcut,
   Snippet,
 } from '@johnlindquist/kit/types/core';
-import schedule, { type Job } from 'node-schedule';
-
-import type { Worker } from 'node:worker_threads';
-import {
-  getTrustedKenvsKey,
-  isParentOfDir,
-  kenvPath,
-  kitPath,
-  parseScript,
-  tmpClipboardDir,
-} from '@johnlindquist/kit/core/utils';
 import type { kenvEnv } from '@johnlindquist/kit/types/env';
+import type { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import axios from 'axios';
-import { Trigger } from '../shared/enums';
-import { KitEvent, emitter } from '../shared/events';
-import internetAvailable from '../shared/internet-available';
-import shims from './shims';
-
+import { type Display, nativeTheme } from 'electron';
+import type { LogLevel } from 'electron-log';
+import Store, { type Schema } from 'electron-store';
+import { debounce } from 'lodash-es';
 import type { IKeyboardMapping } from 'native-keymap';
+import schedule, { type Job } from 'node-schedule';
+import { subscribeKey } from 'valtio/utils';
+import { proxy, snapshot } from 'valtio/vanilla';
+import { Trigger } from '../shared/enums';
+import { emitter, KitEvent } from '../shared/events';
+import internetAvailable from '../shared/internet-available';
 import { createLogger } from './log-utils';
-import { getThemes } from './state/themes';
-import { wireKeymapSubscriptions, convertKeyInternal, getEmojiShortcutInternal } from './state/keymap';
+import shims from './shims';
+import { convertKeyInternal, getEmojiShortcutInternal, wireKeymapSubscriptions } from './state/keymap';
 import { makeOnline, makeSponsorCheck } from './state/sponsor';
+import { getThemes } from './state/themes';
+
 const log = createLogger('state.ts');
 const keymapLog = createLogger('keymapLog');
 
@@ -205,7 +202,6 @@ export const kitCache = {
   shortcodes: new Map<string, Choice>(),
   keys: ['slicedName', 'tag', 'group', 'command'],
 };
-
 
 export { getThemes };
 export const theme = nativeTheme.shouldUseDarkColors ? getThemes().scriptKitTheme : getThemes().scriptKitLightTheme;
@@ -431,16 +427,16 @@ const subScriptErrorPath = subscribeKey(kitState, 'scriptErrorPath', (scriptErro
 });
 
 // TODO: I don't need to return booleans AND set kitState.isSponsor. Pick one.
-export const sponsorCheck = makeSponsorCheck({ 
-  axios, 
-  kitState, 
-  kitStore, 
-  log, 
-  emitter, 
-  events: { KitEvent }, 
-  kitPath, 
-  Trigger, 
-  online 
+export const sponsorCheck = makeSponsorCheck({
+  axios,
+  kitState,
+  kitStore,
+  log,
+  emitter,
+  events: { KitEvent },
+  kitPath,
+  Trigger,
+  online,
 });
 
 // Wire reverse keymap subscriptions + initial build
@@ -501,4 +497,18 @@ export function clearSleepCachedEnvVars(): number {
   }
   keys.clear();
   return cleared;
+}
+
+/**
+ * Updates kitState.kenvEnv in place to preserve the valtio proxy.
+ * Replacing the object directly (kitState.kenvEnv = newObj) breaks the proxy
+ * and causes "proxyState is not iterable" errors when snapshot() is called.
+ */
+export function updateKenvEnv(newEnv: kenvEnv): void {
+  // Clear existing keys
+  for (const key of Object.keys(kitState.kenvEnv)) {
+    delete (kitState.kenvEnv as any)[key];
+  }
+  // Add new keys
+  Object.assign(kitState.kenvEnv, newEnv);
 }

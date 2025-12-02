@@ -17,65 +17,57 @@
  */
 
 export {
-  ElectronLogger,
-  createElectronLogger,
-  createLegacyLogger,
-  createDomainLoggers,
-  DOMAIN_CONFIG,
-  getDomainForCategory,
-  type ElectronLoggerOptions,
-  type LegacyLogger,
-} from './electron-adapter';
-
-// Domain logger exports
-export {
-  initializeDomainLoggers,
-  getDomainLogger,
-  getAllDomainLoggers,
-  setAllDomainLogLevels,
-  setDomainLogLevel,
-  getCoreLogger,
-  getWindowLogger,
-  getProcessLogger,
-  getInputLogger,
-  getCommunicationLogger,
-  getSchedulingLogger,
-  getTerminalLogger,
-  getDiagnosticLogger,
-  getLoggerForCategory,
-  CATEGORY_TO_DOMAIN_GETTER,
-} from './domain-loggers';
-
-// Re-export types from SDK
-export type {
-  Logger,
-  LogLevel,
-  LogContext,
-  LogEntry,
-  LogTransport,
-  LoggerOptions,
-  TimerEndFn,
-} from '@johnlindquist/kit/core/logger/types';
-
-export {
-  LOG_LEVEL_PRIORITY,
-} from '@johnlindquist/kit/core/logger/types';
-
-export {
-  withCorrelation,
-  withCorrelationAsync,
+  correlationMiddleware,
   getCorrelationId,
   getParentId,
-  correlationMiddleware,
+  withCorrelation,
+  withCorrelationAsync,
 } from '@johnlindquist/kit/core/logger/correlation';
-
+export {
+  FileFormatter,
+  JSONFormatter,
+  PrettyFormatter,
+} from '@johnlindquist/kit/core/logger/formatters';
 export {
   createRedactor,
   DEFAULT_REDACTION_PATHS,
 } from '@johnlindquist/kit/core/logger/redaction';
-
+// Re-export types from SDK
+export type {
+  LogContext,
+  LogEntry,
+  Logger,
+  LoggerOptions,
+  LogLevel,
+  LogTransport,
+  TimerEndFn,
+} from '@johnlindquist/kit/core/logger/types';
+export { LOG_LEVEL_PRIORITY } from '@johnlindquist/kit/core/logger/types';
+// Domain logger exports
 export {
-  JSONFormatter,
-  PrettyFormatter,
-  FileFormatter,
-} from '@johnlindquist/kit/core/logger/formatters';
+  CATEGORY_TO_DOMAIN_GETTER,
+  getAllDomainLoggers,
+  getCommunicationLogger,
+  getCoreLogger,
+  getDiagnosticLogger,
+  getDomainLogger,
+  getInputLogger,
+  getLoggerForCategory,
+  getProcessLogger,
+  getSchedulingLogger,
+  getTerminalLogger,
+  getWindowLogger,
+  initializeDomainLoggers,
+  setAllDomainLogLevels,
+  setDomainLogLevel,
+} from './domain-loggers';
+export {
+  createDomainLoggers,
+  createElectronLogger,
+  createLegacyLogger,
+  DOMAIN_CONFIG,
+  ElectronLogger,
+  type ElectronLoggerOptions,
+  getDomainForCategory,
+  type LegacyLogger,
+} from './electron-adapter';

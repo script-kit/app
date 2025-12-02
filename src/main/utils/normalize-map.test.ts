@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { normalizeWithMap, remapRange } from './normalize-map';
 
 describe('normalize-map', () => {
@@ -19,7 +19,7 @@ describe('normalize-map', () => {
       const str = 'test-string';
       const result1 = normalizeWithMap(str);
       const result2 = normalizeWithMap(str);
-      
+
       expect(result1).toBe(result2);
       expect(result1).toBe('teststring');
     });
@@ -29,8 +29,8 @@ describe('normalize-map', () => {
     });
 
     it('should handle strings with only hyphens and spaces', () => {
-      expect(normalizeWithMap('- - -')).toBe('  ');  // Results in 2 spaces after removing 3 hyphens
-      expect(normalizeWithMap('   ')).toBe('   ');   // Spaces are preserved
+      expect(normalizeWithMap('- - -')).toBe('  '); // Results in 2 spaces after removing 3 hyphens
+      expect(normalizeWithMap('   ')).toBe('   '); // Spaces are preserved
     });
 
     it('should preserve other special characters', () => {
@@ -43,7 +43,7 @@ describe('normalize-map', () => {
     it('should remap ranges correctly for hyphenated words', () => {
       const raw = 'kit-container';
       normalizeWithMap(raw); // Populate cache
-      
+
       // 'kitcontainer' matches:
       // [0, 3] (kit) should map to [0, 3] (kit)
       // [3, 12] (container) should map to [4, 13] (-container)
@@ -54,7 +54,7 @@ describe('normalize-map', () => {
     it('should remap ranges correctly for spaced words', () => {
       const raw = 'kit container';
       normalizeWithMap(raw); // Populate cache
-      
+
       // 'kit container' (space preserved) matches:
       // [0, 3] (kit) should map to [0, 3] (kit)
       // [4, 13] (container) should map to [4, 13] (container - same since space is preserved)
@@ -65,7 +65,7 @@ describe('normalize-map', () => {
     it('should remap ranges correctly for multiple hyphens', () => {
       const raw = 'test-multi-word-string';
       normalizeWithMap(raw); // Populate cache
-      
+
       // 'testmultiwordstring' matches:
       // [0, 4] (test) should map to [0, 4] (test)
       // [4, 9] (multi) should map to [5, 10] (-multi)
@@ -80,7 +80,7 @@ describe('normalize-map', () => {
     it('should handle single character matches', () => {
       const raw = 'a-b-c';
       normalizeWithMap(raw); // Populate cache
-      
+
       // 'abc' matches:
       // [0, 1] (a) should map to [0, 1] (a)
       // [1, 2] (b) should map to [2, 3] (-b)
@@ -93,7 +93,7 @@ describe('normalize-map', () => {
     it('should handle full string matches', () => {
       const raw = 'kit-container';
       normalizeWithMap(raw); // Populate cache
-      
+
       // Full match [0, 12] should map to [0, 13]
       expect(remapRange(raw, [0, 12])).toEqual([0, 13]);
     });
@@ -106,14 +106,14 @@ describe('normalize-map', () => {
     it('should handle empty ranges', () => {
       const raw = 'test-string';
       normalizeWithMap(raw); // Populate cache
-      
+
       expect(remapRange(raw, [0, 0])).toEqual([0, 1]); // Empty range becomes single char
     });
 
     it('should handle uppercase in original string', () => {
       const raw = 'Kit-Container';
       normalizeWithMap(raw); // Populate cache
-      
+
       // 'kitcontainer' matches should map correctly to original positions
       expect(remapRange(raw, [0, 3])).toEqual([0, 3]);
       expect(remapRange(raw, [3, 12])).toEqual([4, 13]);
@@ -127,30 +127,29 @@ describe('normalize-map', () => {
           raw: 'run-script-in-background',
           normalized: 'runscriptinbackground',
           ranges: [
-            { input: [0, 3], expected: [0, 3] },    // run
-            { input: [3, 9], expected: [4, 10] },   // script
+            { input: [0, 3], expected: [0, 3] }, // run
+            { input: [3, 9], expected: [4, 10] }, // script
             { input: [9, 11], expected: [11, 13] }, // in
-            { input: [11, 21], expected: [14, 24] } // background
-          ]
+            { input: [11, 21], expected: [14, 24] }, // background
+          ],
         },
         {
           raw: 'VS Code Extension',
-          normalized: 'vs code extension',  // Spaces are preserved
+          normalized: 'vs code extension', // Spaces are preserved
           ranges: [
-            { input: [0, 2], expected: [0, 2] },     // VS
-            { input: [3, 7], expected: [3, 7] },     // Code (no change, space preserved)
-            { input: [8, 17], expected: [8, 17] }    // Extension (no change, space preserved)
-          ]
-        }
+            { input: [0, 2], expected: [0, 2] }, // VS
+            { input: [3, 7], expected: [3, 7] }, // Code (no change, space preserved)
+            { input: [8, 17], expected: [8, 17] }, // Extension (no change, space preserved)
+          ],
+        },
       ];
 
       for (const testCase of testCases) {
         const normalized = normalizeWithMap(testCase.raw);
         expect(normalized).toBe(testCase.normalized);
-        
+
         for (const range of testCase.ranges) {
-          expect(remapRange(testCase.raw, range.input as [number, number]))
-            .toEqual(range.expected);
+          expect(remapRange(testCase.raw, range.input as [number, number])).toEqual(range.expected);
         }
       }
     });

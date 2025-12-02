@@ -1,8 +1,8 @@
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { readFile } from 'node:fs/promises';
 import type { Script } from '@johnlindquist/kit/types/core';
-import { extractMCPToolParameters, type MCPToolParameter } from './mcp-parameter-extractor';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { mcpLog as log } from './logs';
+import { extractMCPToolParameters, type MCPToolParameter } from './mcp-parameter-extractor';
 import { kitState } from './state';
 
 export interface MCPScript {
@@ -71,7 +71,7 @@ class MCPService {
                 description: script.description || `Run the ${script.name} script`,
                 mcp: script.mcp,
                 args: [], // params() scripts don't use positional args
-                inputSchema: inputSchema // Store the schema for later use
+                inputSchema: inputSchema, // Store the schema for later use
               };
             }
 
@@ -89,7 +89,7 @@ class MCPService {
                 description: toolConfig.description || script.description || `Run the ${script.name} script`,
                 mcp: script.mcp,
                 args: [], // tool() scripts don't use positional args
-                toolConfig: toolConfig // Store the full config for later use
+                toolConfig: toolConfig, // Store the full config for later use
               };
             }
 
@@ -120,7 +120,9 @@ class MCPService {
 
       const processDuration = Date.now() - processStart;
       const totalDuration = Date.now() - startTime;
-      log.info(`Found ${this.mcpScripts.length} MCP-enabled scripts after processing (process: ${processDuration}ms, total: ${totalDuration}ms`);
+      log.info(
+        `Found ${this.mcpScripts.length} MCP-enabled scripts after processing (process: ${processDuration}ms, total: ${totalDuration}ms`,
+      );
 
       return this.mcpScripts;
     } catch (error) {

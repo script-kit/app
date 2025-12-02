@@ -1,8 +1,8 @@
 // src/main/health-monitor.ts
-import { BrowserWindow, app } from 'electron';
+import { app, BrowserWindow } from 'electron';
+import { envNumber } from './env.utils';
 import { healthLog } from './logs';
 import { kitState } from './state';
-import { envNumber } from './env.utils';
 
 // A generic type for recursively nested numeric metric values.
 type UnitString = `${number} MB` | `${number} ms`;
@@ -69,7 +69,7 @@ function updateMax(newData: MetricsValue, currentMax: MetricsValue): MetricsValu
   if (typeof newData === 'object' && newData !== null && typeof currentMax === 'object' && currentMax !== null) {
     const result: { [key: string]: MetricsValue } = {};
     for (const key in newData) {
-      if (Object.prototype.hasOwnProperty.call(newData, key)) {
+      if (Object.hasOwn(newData, key)) {
         result[key] = updateMax(
           (newData as { [key: string]: MetricsValue })[key],
           (currentMax as { [key: string]: MetricsValue })[key],
@@ -92,7 +92,7 @@ function updateMin(newData: MetricsValue, currentMin: MetricsValue): MetricsValu
   if (typeof newData === 'object' && newData !== null && typeof currentMin === 'object' && currentMin !== null) {
     const result: { [key: string]: MetricsValue } = {};
     for (const key in newData) {
-      if (Object.prototype.hasOwnProperty.call(newData, key)) {
+      if (Object.hasOwn(newData, key)) {
         result[key] = updateMin(
           (newData as { [key: string]: MetricsValue })[key],
           (currentMin as { [key: string]: MetricsValue })[key],
@@ -115,7 +115,7 @@ function updateSum(newData: MetricsValue, currentSum: MetricsValue): MetricsValu
   if (typeof newData === 'object' && newData !== null && typeof currentSum === 'object' && currentSum !== null) {
     const result: { [key: string]: MetricsValue } = {};
     for (const key in newData) {
-      if (Object.prototype.hasOwnProperty.call(newData, key)) {
+      if (Object.hasOwn(newData, key)) {
         result[key] = updateSum(
           (newData as { [key: string]: MetricsValue })[key],
           (currentSum as { [key: string]: MetricsValue })[key],
@@ -138,7 +138,7 @@ function computeAverage(sumData: MetricsValue, count: number): MetricsValue {
   if (typeof sumData === 'object' && sumData !== null) {
     const result: { [key: string]: MetricsValue } = {};
     for (const key in sumData) {
-      if (Object.prototype.hasOwnProperty.call(sumData, key)) {
+      if (Object.hasOwn(sumData, key)) {
         result[key] = computeAverage((sumData as { [key: string]: MetricsValue })[key], count);
       }
     }
@@ -158,7 +158,7 @@ function computeDelta(newData: MetricsValue, oldData: MetricsValue): MetricsValu
   if (typeof newData === 'object' && newData !== null && typeof oldData === 'object' && oldData !== null) {
     const result: { [key: string]: MetricsValue } = {};
     for (const key in newData) {
-      if (Object.prototype.hasOwnProperty.call(newData, key) && Object.prototype.hasOwnProperty.call(oldData, key)) {
+      if (Object.hasOwn(newData, key) && Object.hasOwn(oldData, key)) {
         result[key] = computeDelta(
           (newData as { [key: string]: MetricsValue })[key],
           (oldData as { [key: string]: MetricsValue })[key],
@@ -310,7 +310,7 @@ export class HealthMonitor {
     if (typeof data === 'object' && data !== null) {
       const result: { [key: string]: MetricsValue } = {};
       for (const key in data) {
-        if (Object.prototype.hasOwnProperty.call(data, key)) {
+        if (Object.hasOwn(data, key)) {
           const value = (data as { [key: string]: MetricsValue })[key];
           if (typeof value === 'number') {
             // Append unit based on key.

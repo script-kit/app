@@ -1,14 +1,19 @@
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { AppChannel } from '../shared/enums';
 import type { Rectangle } from 'electron';
 import { screen as electronScreen } from 'electron';
-import { getCurrentScreen, getCurrentScreenFromBounds, isBoundsWithinDisplayById, isBoundsWithinDisplays } from './screen';
+import { AppChannel } from '../shared/enums';
+import { adjustBoundsToAvoidOverlap, ensureMinWindowHeight, getTitleBarHeight } from './prompt.bounds-utils';
+import { OFFSCREEN_X, OFFSCREEN_Y } from './prompt.options';
+import { setPromptBounds as applyWindowBounds } from './prompt.window-utils';
 import { prompts } from './prompts';
+import {
+  getCurrentScreen,
+  getCurrentScreenFromBounds,
+  isBoundsWithinDisplayById,
+  isBoundsWithinDisplays,
+} from './screen';
 import { kitState } from './state';
 import { container } from './state/services/container';
-import { adjustBoundsToAvoidOverlap, ensureMinWindowHeight, getTitleBarHeight } from './prompt.bounds-utils';
-import { setPromptBounds as applyWindowBounds } from './prompt.window-utils';
-import { OFFSCREEN_X, OFFSCREEN_Y } from './prompt.options';
 
 export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reason = ''): void => {
   if (!prompt?.window || prompt.window.isDestroyed()) {
@@ -165,10 +170,18 @@ export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reaso
     currentBounds.x === OFFSCREEN_X ||
     currentBounds.y === OFFSCREEN_Y;
   const isZeroPosition = bounds?.x === 0 && bounds?.y === 0;
-  const targetFitsCachedScreen =
-    targetScreenFound && isBoundsWithinDisplayById(newBounds, targetScreen.id);
-  const isAtWorkOrigin =
-    Math.abs(newBounds.x - workX) < 4 && Math.abs(newBounds.y - workY) < 4;
+  const targetFitsCachedScreen = targetScreenFound && isBoundsWithinDisplayById(newBounds, targetScreen.id);
+  const isAtWorkOrigin = Math.abs(newBounds.x - workX) < 4 && Math.abs(newBounds.y - workY) < 4;
+
+  // Check if incoming bounds are near the work area origin (within 50px of top-left corner)
+  // This catches cases where the cached position is at or near work origin but not exactly at (0,0)
+  const incomingNearWorkOrigin =
+    typeof bounds?.x === 'number' &&
+    typeof bounds?.y === 'number' &&
+    bounds.x >= workX &&
+    bounds.x < workX + 50 &&
+    bounds.y >= workY &&
+    bounds.y < workY + 50;
 
   // Center only when we truly lack a position (initial show/prompt change) or the window sits at defaults/zero.
   if (
@@ -178,7 +191,8 @@ export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reaso
     !boundsOnMouseScreen ||
     !cachedWithinAnyDisplay ||
     (targetScreenFound && !targetFitsCachedScreen) ||
-    (isPromptChangeReason && isAtWorkOrigin)
+    (isPromptChangeReason && isAtWorkOrigin) ||
+    (isPromptChangeReason && incomingNearWorkOrigin)
   ) {
     prompt.logInfo('📍 Recentering because missing position', {
       missingPosition,
@@ -186,6 +200,7 @@ export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reaso
       isDefaultPosition,
       isZeroPosition,
       isAtWorkOrigin,
+      incomingNearWorkOrigin,
       boundsOnMouseScreen,
       cachedWithinAnyDisplay,
       targetScreenFound,
@@ -196,6 +211,8 @@ export const applyPromptBounds = (prompt: any, bounds: Partial<Rectangle>, reaso
       screenHeight,
       newWidth: newBounds.width,
       newHeight: newBounds.height,
+      incomingX: bounds?.x,
+      incomingY: bounds?.y,
     });
     newBounds.x = Math.round(workX + (screenWidth - newBounds.width) / 2);
     newBounds.y = Math.round(workY + screenHeight / 8);

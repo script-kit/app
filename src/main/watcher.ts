@@ -1,60 +1,48 @@
 import { existsSync, readdirSync } from 'node:fs';
-import { lstat, readFile, readdir, rm } from 'node:fs/promises';
+import { lstat, readdir, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
+import { clearInterval, setInterval } from 'node:timers';
 import { getUserJson } from '@johnlindquist/kit/core/db';
 import { Channel, Env } from '@johnlindquist/kit/core/enum';
-import { getCachedAvatar } from './avatar-cache';
+import { getKenvFromPath, kenvPath, kitPath, parseScript, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
 import type { Script, Scriptlet } from '@johnlindquist/kit/types';
+import chokidar, { type FSWatcher } from 'chokidar';
 import { Notification, shell } from 'electron';
 import { globby } from 'globby';
-import { debounce } from 'lodash-es';
-import { isEqual, omit } from 'lodash-es';
+import { debounce, isEqual, omit } from 'lodash-es';
 import madge, { type MadgeModuleDependencyGraph } from 'madge';
 import { packageUp } from 'package-up';
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
-
-import { getKenvFromPath, kenvPath, kitPath, parseScript, resolveToScriptPath } from '@johnlindquist/kit/core/utils';
-
-import chokidar, { type FSWatcher } from 'chokidar';
-import { shortcutScriptChanged, unlinkShortcuts } from './shortcuts';
-
-import { backgroundScriptChanged, removeBackground } from './background';
-import { cancelSchedule, scheduleScriptChanged } from './schedule';
-import { debounceSetScriptTimestamp, kitState, sponsorCheck } from './state';
-import { systemScriptChanged, unlinkEvents } from './system-events';
-import { removeWatch, watchScriptChanged } from './watch';
-
-import { clearInterval, setInterval } from 'node:timers';
 import { AppChannel, Trigger } from '../shared/enums';
-import { KitEvent, emitter } from '../shared/events';
+import { emitter, KitEvent } from '../shared/events';
 import { compareArrays, diffArrays } from '../shared/utils';
 import { reloadApps } from './apps';
+import { getCachedAvatar } from './avatar-cache';
+import { backgroundScriptChanged, removeBackground } from './background';
 import { sendToAllPrompts } from './channel';
-import { type WatchEvent, getWatcherManager, startWatching } from './chokidar';
+import { getWatcherManager, startWatching, type WatchEvent } from './chokidar';
 import { pathExists, pathExistsSync, writeFile } from './cjs-exports';
 import { actualHideDock, showDock } from './dock';
 import { loadKenvEnvironment } from './env-utils';
 import { isInDirectory } from './helpers';
 import { cacheMainScripts, debounceCacheMainScripts } from './install';
 import { runScript } from './kit';
+import { watcherLog as log, scriptLog } from './logs';
 import { getFileImports } from './npm';
 import { kenvChokidarPath, kitChokidarPath, slash } from './path-utils';
-import {
-  clearIdleProcesses,
-  ensureIdleProcess,
-  sendToAllActiveChildren,
-  spawnShebang,
-  updateTheme,
-} from './process';
+import { clearIdleProcesses, ensureIdleProcess, sendToAllActiveChildren, spawnShebang, updateTheme } from './process';
 import { setKitStateAtom } from './prompt';
 import { clearPromptCache, clearPromptCacheFor } from './prompt.cache';
-import { setCSSVariable } from './theme';
-import { removeSnippet, snippetScriptChanged, addTextSnippet } from './tick';
-
-import { watcherLog as log, scriptLog } from './logs';
 import { prompts } from './prompts';
 import { createIdlePty } from './pty';
+import { cancelSchedule, scheduleScriptChanged } from './schedule';
+import { shortcutScriptChanged, unlinkShortcuts } from './shortcuts';
+import { debounceSetScriptTimestamp, kitState, sponsorCheck, updateKenvEnv } from './state';
+import { systemScriptChanged, unlinkEvents } from './system-events';
+import { setCSSVariable } from './theme';
+import { addTextSnippet, removeSnippet, snippetScriptChanged } from './tick';
+import { removeWatch, watchScriptChanged } from './watch';
 
 // Add a map to track recently processed files
 const recentlyProcessedFiles = new Map<string, number>();
@@ -548,7 +536,7 @@ export const onScriptChanged = async (
   if (script.mcp && (event === 'change' || event === 'add' || event === 'unlink')) {
     emitter.emit(KitEvent.MCPToolChanged, {
       script,
-      action: event === 'unlink' ? 'removed' : event === 'add' ? 'added' : 'updated'
+      action: event === 'unlink' ? 'removed' : event === 'add' ? 'added' : 'updated',
     });
   }
 };
@@ -602,17 +590,17 @@ export const checkUserDb = debounce(async (eventName: string) => {
       // User logged out - send clear signal
       log.info('[USER_CHANGED] User logged out, sending clear signal');
       sendToAllPrompts(AppChannel.USER_CHANGED, { __clear: true });
-      
+
       // Clear kitState.user as well
       kitState.user = {};
-      
+
       // Also clear sponsor status
       kitState.isSponsor = false;
       const { setKitStateAtom } = await import('./prompt');
       setKitStateAtom({ isSponsor: false });
     } else {
       // Prefer cached avatar data URL if available, fall back to original URL.
-      let payload = { ...user };
+      const payload = { ...user };
       if ((user as any).avatar_url) {
         try {
           const cached = await getCachedAvatar((user as any).avatar_url);
@@ -635,7 +623,7 @@ export const checkUserDb = debounce(async (eventName: string) => {
   const isSponsor = await sponsorCheck('Login', false);
   log.info(`🔍 Sponsor check result: ${isSponsor ? '✅' : '❌'}`);
   kitState.isSponsor = isSponsor;
-  
+
   // Broadcast sponsor status to all prompts
   const { setKitStateAtom } = await import('./prompt');
   setKitStateAtom({ isSponsor });
@@ -768,7 +756,7 @@ const showThemeConflictNotification = () => {
 };
 
 export const parseEnvFile = debounce(async () => {
-  const envData = loadKenvEnvironment();
+  const envData = await loadKenvEnvironment();
 
   if (envData?.KIT_LOGIN) {
     log.info('Detected KIT_LOGIN in .env. Setting kitState.kenvEnv.KIT_LOGIN');
@@ -857,7 +845,8 @@ export const parseEnvFile = debounce(async () => {
     // Could send a default font here if needed
   }
 
-  const defaultKitMono = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+  const defaultKitMono =
+    '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
 
   if (envData?.KIT_MONO_FONT) {
     setCSSVariable('--mono-font', envData?.KIT_MONO_FONT || defaultKitMono);
@@ -963,7 +952,7 @@ export const parseEnvFile = debounce(async () => {
   // VS Code fuzzy search doesn't use these configurations
   // Keeping for backward compatibility but they won't affect search
 
-  kitState.kenvEnv = envData;
+  updateKenvEnv(envData);
 }, 100);
 
 export const restartWatchers = debounce(

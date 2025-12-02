@@ -2,6 +2,7 @@ import { app, shell } from 'electron';
 import electronUpdater from 'electron-updater';
 
 const { autoUpdater } = electronUpdater;
+
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -10,7 +11,7 @@ import { kitPath } from '@johnlindquist/kit/core/utils';
 import log from 'electron-log';
 import { once } from 'lodash-es';
 import { subscribeKey } from 'valtio/utils';
-import { KitEvent, emitter } from '../shared/events';
+import { emitter, KitEvent } from '../shared/events';
 import { readdir, remove } from './cjs-exports';
 import { updateLog } from './logs';
 import { forceQuit, kitState, online } from './state';

@@ -1,15 +1,15 @@
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable no-nested-ternary */
 import {
-  Menu,
-  type MenuItemConstructorOptions,
-  Notification,
-  Tray,
   app,
   clipboard,
   globalShortcut,
   ipcMain,
+  Menu,
+  type MenuItemConstructorOptions,
+  Notification,
   shell,
+  Tray,
 } from 'electron';
 
 // REMOVED BY KIT
@@ -27,14 +27,13 @@ import {
 } from '@johnlindquist/kit/core/utils';
 import type { KitStatus, Status } from '@johnlindquist/kit/types/kitapp';
 import { formatDistanceToNow } from 'date-fns';
-import log, { type LogLevel } from 'electron-log';
 import type { KeyboardEvent } from 'electron/main';
-import { subscribeKey } from 'valtio/utils';
-
+import log, { type LogLevel } from 'electron-log';
 import { debounce } from 'lodash-es';
+import { subscribeKey } from 'valtio/utils';
 import { getAssetPath } from '../shared/assets';
 import { AppChannel, Trigger } from '../shared/enums';
-import { KitEvent, emitter } from '../shared/events';
+import { emitter, KitEvent } from '../shared/events';
 import { mainLogPath, updateLogPath } from './logs';
 import { processes } from './process';
 import { prompts } from './prompts';
@@ -330,7 +329,7 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
         await showSplash();
       },
     });
-    
+
     toolsSubmenu.push({
       type: 'separator' as const,
     });

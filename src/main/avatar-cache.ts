@@ -3,10 +3,10 @@
  * Persists across browser windows
  */
 
-import { app } from 'electron';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import axios from 'axios';
+import { app } from 'electron';
 import { mainLog } from './logs';
 
 const CACHE_DIR = path.join(app.getPath('userData'), 'avatar-cache');
@@ -51,7 +51,7 @@ export async function getCachedAvatar(avatarUrl: string): Promise<string | null>
     try {
       const cacheData = await readFile(cachePath, 'utf-8');
       const entry: CacheEntry = JSON.parse(cacheData);
-      
+
       if (Date.now() - entry.timestamp < CACHE_DURATION) {
         mainLog.info(`Avatar cache hit (disk): ${avatarUrl}`);
         // Store in memory for next time
@@ -68,8 +68,8 @@ export async function getCachedAvatar(avatarUrl: string): Promise<string | null>
       responseType: 'arraybuffer',
       timeout: 5000,
       headers: {
-        'User-Agent': 'Script-Kit-App'
-      }
+        'User-Agent': 'Script-Kit-App',
+      },
     });
 
     // Convert to base64 data URL
@@ -81,7 +81,7 @@ export async function getCachedAvatar(avatarUrl: string): Promise<string | null>
     const entry: CacheEntry = {
       dataUrl,
       timestamp: Date.now(),
-      url: avatarUrl
+      url: avatarUrl,
     };
 
     // Save to memory cache
@@ -90,10 +90,9 @@ export async function getCachedAvatar(avatarUrl: string): Promise<string | null>
     // Save to disk cache
     await ensureCacheDir();
     await writeFile(cachePath, JSON.stringify(entry), 'utf-8');
-    
+
     mainLog.info(`Avatar cached: ${avatarUrl}`);
     return dataUrl;
-
   } catch (error) {
     mainLog.error('Failed to get cached avatar:', error);
     // Return original URL as fallback

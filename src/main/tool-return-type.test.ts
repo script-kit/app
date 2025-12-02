@@ -1,11 +1,11 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the kit module's params function
 vi.mock('@johnlindquist/kit/api/params', () => {
   return {
     params: vi.fn(async (inputSchema) => {
       // Check if we're being called via MCP headers
-      if (global.headers && global.headers['X-MCP-Parameters']) {
+      if (global.headers?.['X-MCP-Parameters']) {
         try {
           const parameters = JSON.parse(global.headers['X-MCP-Parameters']);
           return parameters;
@@ -16,11 +16,7 @@ vi.mock('@johnlindquist/kit/api/params', () => {
 
       // Fallback: if all declared parameters are already present in global.headers
       const parameterNames = inputSchema?.properties ? Object.keys(inputSchema.properties) : [];
-      if (
-        global.headers &&
-        parameterNames.length > 0 &&
-        parameterNames.every(k => k in global.headers)
-      ) {
+      if (global.headers && parameterNames.length > 0 && parameterNames.every((k) => k in global.headers)) {
         return global.headers;
       }
 

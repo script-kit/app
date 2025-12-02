@@ -1,8 +1,8 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
-import log from 'electron-log';
 
 import type { kenvEnv } from '@johnlindquist/kit/types/env';
+import log from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
 import { clearIdleProcesses, ensureIdleProcess, processes } from './process';
 import { createIdlePty } from './pty';

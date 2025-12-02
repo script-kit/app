@@ -1,8 +1,8 @@
-import { Menu, app } from 'electron';
+import { app, Menu } from 'electron';
 import log from 'electron-log';
 import { debounce } from 'lodash-es';
 import { getAssetPath } from '../shared/assets';
-import { KitEvent, emitter } from '../shared/events';
+import { emitter, KitEvent } from '../shared/events';
 import { widgetState } from '../shared/widget';
 import { windowsState } from '../shared/windows';
 import { prompts } from './prompts';
