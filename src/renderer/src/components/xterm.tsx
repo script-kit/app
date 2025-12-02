@@ -1,11 +1,10 @@
 /* eslint-disable */
 
-import PropTypes from 'prop-types';
-import * as React from 'react';
-
 // We are using these as types.
 // eslint-disable-next-line no-unused-vars
 import { type ITerminalAddon, type ITerminalOptions, Terminal } from '@xterm/xterm';
+import PropTypes from 'prop-types';
+import * as React from 'react';
 
 interface IProps {
   /**

@@ -3,10 +3,10 @@
  * These atoms store cached data to improve performance when switching between scripts.
  */
 
-import type { PromptData, FlagsObject, Shortcut } from '@johnlindquist/kit/types/core';
-import type { ScoredChoice } from '../../../../shared/types';
 import { UI } from '@johnlindquist/kit/core/enum';
+import type { FlagsObject, PromptData, Shortcut } from '@johnlindquist/kit/types/core';
 import { atom } from 'jotai';
+import type { ScoredChoice } from '../../../../shared/types';
 
 export const cachedMainScoredChoices = atom<ScoredChoice[]>([]);
 export const cachedMainScoredChoicesAtom = atom(

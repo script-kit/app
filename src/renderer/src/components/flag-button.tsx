@@ -1,10 +1,14 @@
 import type { Script } from '@johnlindquist/kit/types/core';
 import parse from 'html-react-parser';
 import { useAtom, useAtomValue } from 'jotai';
+import React, { type DragEvent, useCallback, useEffect, useState } from 'react';
 import useListNav from '../hooks/useListNav';
-import React, { useCallback, useEffect, useState, type DragEvent } from 'react';
+
 const { ipcRenderer } = window.electron;
 
+import { UI } from '@johnlindquist/kit/core/enum';
+// import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
+import { AppChannel } from '../../../shared/enums';
 import type { ChoiceButtonProps, ScoredChoice } from '../../../shared/types';
 import {
   _modifiers,
@@ -19,10 +23,6 @@ import {
   submitValueAtom,
   uiAtom,
 } from '../jotai';
-
-import { UI } from '@johnlindquist/kit/core/enum';
-// import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
-import { AppChannel } from '../../../shared/enums';
 import { highlight } from './utils';
 
 function FlagButton({ index: buttonIndex, style, choices }: ChoiceButtonProps) {
@@ -40,7 +40,7 @@ function FlagButton({ index: buttonIndex, style, choices }: ChoiceButtonProps) {
   const input = useAtomValue(inputAtom);
   const [, setSubmitValue] = useAtom(submitValueAtom);
   const [focusedChoice] = useAtom(focusedChoiceAtom);
-  
+
   // Unified hover routing through nav engine
   const nav = useListNav({
     id: 'actions-overlay',
@@ -220,11 +220,7 @@ function FlagButton({ index: buttonIndex, style, choices }: ChoiceButtonProps) {
                     {(choice?.pass || isRecent) && (choice as Script)?.kenv && (choice as Script)?.kenv !== '.kit'
                       ? (choice as Script).kenv
                       : choice.tag
-                        ? highlight(
-                            choice.tag,
-                            scoredChoice?.matches?.tag,
-                            'bg-text-base/0 text-primary',
-                          )
+                        ? highlight(choice.tag, scoredChoice?.matches?.tag, 'bg-text-base/0 text-primary')
                         : ''}
                   </div>
                 )}

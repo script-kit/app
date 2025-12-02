@@ -1,23 +1,15 @@
-import * as React from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-
+import * as React from 'react';
+import type { Choice, ScoredChoice } from '../../../../shared/types';
 // Import from facade for gradual migration
 import {
-  scoredChoicesAtom,         // ScoredChoice[] (sorted for relevance)
-  focusedChoiceAtom,         // Choice | undefined
-  inputAtom,                 // string
+  focusedChoiceAtom, // Choice | undefined
+  inputAtom, // string
+  scoredChoicesAtom, // ScoredChoice[] (sorted for relevance)
 } from '../../jotai';
-
-import {
-  _indexAtom,
-  defaultValueAtom,
-  defaultChoiceIdAtom,
-  prevIndexAtom,
-  selectedAtom
-} from '../atoms/choices';
+import { _indexAtom, defaultChoiceIdAtom, defaultValueAtom, prevIndexAtom, selectedAtom } from '../atoms/choices';
 import { scrollRequestAtom } from '../scroll';
 import { advanceIndexSkipping } from '../skip-nav';
-import type { Choice, ScoredChoice } from '../../../../shared/types';
 
 // Get wereChoicesPreloaded from jotai module
 // This is a module variable, not an atom, so we'll access it through a helper
@@ -29,19 +21,14 @@ const getWereChoicesPreloaded = () => {
 // ----- Helpers -----
 const isActionable = (c?: Choice) => !!c && !c.skip && !c.info;
 
-const arraysEqual = (a: string[], b: string[]) =>
-  a.length === b.length && a.every((v, i) => v === b[i]);
+const arraysEqual = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
 
 const firstActionableIndex = (cs: ScoredChoice[]) => {
   for (let i = 0; i < cs.length; i++) if (isActionable(cs[i]?.item)) return i;
   return -1;
 };
 
-const findDefaultIndex = (
-  cs: ScoredChoice[],
-  defaultChoiceId?: string,
-  defaultValue?: any
-) => {
+const findDefaultIndex = (cs: ScoredChoice[], defaultChoiceId?: string, defaultValue?: any) => {
   if (defaultChoiceId == null && defaultValue == null) return -1;
   return cs.findIndex((c) => {
     const it = c.item;
@@ -53,8 +40,7 @@ const findDefaultIndex = (
   });
 };
 
-const indexOfChoiceId = (ids: string[], id?: string) =>
-  id ? ids.indexOf(id) : -1;
+const indexOfChoiceId = (ids: string[], id?: string) => (id ? ids.indexOf(id) : -1);
 
 const nearestActionableIndexFrom = (start: number, cs: ScoredChoice[]) => {
   // If already actionable, keep it.
@@ -64,7 +50,11 @@ const nearestActionableIndexFrom = (start: number, cs: ScoredChoice[]) => {
   // forward
   let forward = start;
   for (let i = 0; i < cs.length; i++) {
-    forward = advanceIndexSkipping(forward, +1, cs.map((x) => ({ item: x.item })));
+    forward = advanceIndexSkipping(
+      forward,
+      +1,
+      cs.map((x) => ({ item: x.item })),
+    );
     if (forward >= 0 && forward < cs.length && isActionable(cs[forward]?.item)) return forward;
     if (forward === -1) break;
   }
@@ -72,7 +62,11 @@ const nearestActionableIndexFrom = (start: number, cs: ScoredChoice[]) => {
   // backward
   let backward = start;
   for (let i = 0; i < cs.length; i++) {
-    backward = advanceIndexSkipping(backward, -1, cs.map((x) => ({ item: x.item })));
+    backward = advanceIndexSkipping(
+      backward,
+      -1,
+      cs.map((x) => ({ item: x.item })),
+    );
     if (backward >= 0 && backward < cs.length && isActionable(cs[backward]?.item)) return backward;
     if (backward === -1) break;
   }
@@ -98,9 +92,9 @@ export type FocusInputs = {
 };
 
 export type FocusDecision = {
-  nextIndex: number;        // -1 means "no focus"
-  scrollTo: number;         // -1 means "do not trigger scroll"
-  reason: string;           // for debugging
+  nextIndex: number; // -1 means "no focus"
+  scrollTo: number; // -1 means "do not trigger scroll"
+  reason: string; // for debugging
 };
 
 export function computeFocusDecision(i: FocusInputs): FocusDecision {
@@ -179,10 +173,7 @@ export function computeFocusDecision(i: FocusInputs): FocusDecision {
 // ----- The controller component -----
 export function FocusController() {
   const choices = useAtomValue(scoredChoicesAtom) as ScoredChoice[];
-  const ids = React.useMemo(
-    () => choices.map((c, i) => c.item?.id ?? `@idx:${i}`),
-    [choices]
-  );
+  const ids = React.useMemo(() => choices.map((c, i) => c.item?.id ?? `@idx:${i}`), [choices]);
 
   const input = useAtomValue(inputAtom);
   const defaultValue = useAtomValue(defaultValueAtom);

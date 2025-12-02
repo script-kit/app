@@ -1,13 +1,6 @@
 import { useCallback } from 'react';
 
-export type ListNavReason =
-  | 'key'
-  | 'hover'
-  | 'click'
-  | 'data'
-  | 'open'
-  | 'restore'
-  | 'programmatic';
+export type ListNavReason = 'key' | 'hover' | 'click' | 'data' | 'open' | 'restore' | 'programmatic';
 
 export type ListNavEvent =
   | { type: 'MOVE'; delta: number; source?: ListNavReason }
@@ -93,8 +86,14 @@ export function useListNav(config: ListNavConfig) {
 
   const moveUp = useCallback(() => dispatch({ type: 'MOVE', delta: -1, source: 'key' }), [dispatch]);
   const moveDown = useCallback(() => dispatch({ type: 'MOVE', delta: +1, source: 'key' }), [dispatch]);
-  const pageUp = useCallback((pageSize?: number) => dispatch({ type: 'PAGE', delta: -1, pageSize: pageSize ?? 0, source: 'key' }), [dispatch]);
-  const pageDown = useCallback((pageSize?: number) => dispatch({ type: 'PAGE', delta: +1, pageSize: pageSize ?? 0, source: 'key' }), [dispatch]);
+  const pageUp = useCallback(
+    (pageSize?: number) => dispatch({ type: 'PAGE', delta: -1, pageSize: pageSize ?? 0, source: 'key' }),
+    [dispatch],
+  );
+  const pageDown = useCallback(
+    (pageSize?: number) => dispatch({ type: 'PAGE', delta: +1, pageSize: pageSize ?? 0, source: 'key' }),
+    [dispatch],
+  );
 
   return {
     dispatch,
@@ -106,4 +105,3 @@ export function useListNav(config: ListNavConfig) {
 }
 
 export default useListNav;
-

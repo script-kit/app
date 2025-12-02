@@ -7,7 +7,7 @@ export function getMonacoKeyMod(key: string, isWindows: boolean): number {
     shift: KeyMod.Shift,
     alt: KeyMod.Alt,
     cmd: KeyMod.CtrlCmd,
-    mod: KeyMod.CtrlCmd,  // 'mod' is cross-platform: Cmd on Mac, Ctrl on Windows/Linux
+    mod: KeyMod.CtrlCmd, // 'mod' is cross-platform: Cmd on Mac, Ctrl on Windows/Linux
   };
   const result = keyModMap[key.toLowerCase()];
   console.log('[getMonacoKeyMod] Mapping modifier:', key, '-> Monaco value:', result, 'isWindows:', isWindows);
@@ -150,7 +150,13 @@ const keyCodeMap: { [key: string]: KeyCode } = {
 };
 export function getMonacoKeyCode(key: string): KeyCode | undefined {
   const result = keyCodeMap[key.toLowerCase()];
-  console.log('[getMonacoKeyCode] Mapping key:', key, '-> KeyCode:', result, result === undefined ? '(undefined)' : `(${result} = ${result === 0 ? 'Unknown' : 'Valid'})`);
+  console.log(
+    '[getMonacoKeyCode] Mapping key:',
+    key,
+    '-> KeyCode:',
+    result,
+    result === undefined ? '(undefined)' : `(${result} = ${result === 0 ? 'Unknown' : 'Valid'})`,
+  );
   return result;
 }
 
@@ -170,29 +176,29 @@ Need to support this:
 */
 export function convertStringShortcutToMoncacoNumber(shortcut: string, isWindows: boolean): number {
   console.log('[convertStringShortcutToMoncacoNumber] Input shortcut:', shortcut, 'isWindows:', isWindows);
-  
+
   if (!shortcut) {
     console.log('[convertStringShortcutToMoncacoNumber] No shortcut provided');
     return 0;
   }
   const shortcutParts = shortcut.split('+');
   console.log('[convertStringShortcutToMoncacoNumber] Shortcut parts:', shortcutParts);
-  
+
   // Get the key as the last part
   const key = shortcutParts.pop() as string;
   if (!key) {
     console.log('[convertStringShortcutToMoncacoNumber] No key found');
     return 0;
   }
-  
+
   let result = getMonacoKeyCode(key);
   console.log('[convertStringShortcutToMoncacoNumber] Key:', key, '-> KeyCode:', result);
-  
+
   if (!result) {
     console.log('[convertStringShortcutToMoncacoNumber] Invalid key:', key);
     return 0;
   }
-  
+
   let hasModifier = false;
   for (const part of shortcutParts) {
     const code = getMonacoKeyMod(part, isWindows);
@@ -207,20 +213,35 @@ export function convertStringShortcutToMoncacoNumber(shortcut: string, isWindows
     console.log('[convertStringShortcutToMoncacoNumber] No modifier found for:', shortcut);
     return 0;
   }
-  
-  console.log('[convertStringShortcutToMoncacoNumber] Final result:', result, 'Binary:', result.toString(2), 'Hex:', '0x' + result.toString(16));
+
+  console.log(
+    '[convertStringShortcutToMoncacoNumber] Final result:',
+    result,
+    'Binary:',
+    result.toString(2),
+    'Hex:',
+    '0x' + result.toString(16),
+  );
   return result;
 }
 
 /**
  * Normalizes a shortcut string to extract its components
  */
-export function normalizeShortcut(shortcut: string): { key: string; mod: boolean; shift: boolean; alt: boolean; raw: string } {
+export function normalizeShortcut(shortcut: string): {
+  key: string;
+  mod: boolean;
+  shift: boolean;
+  alt: boolean;
+  raw: string;
+} {
   const raw = shortcut.trim().toLowerCase().replace(/\s+/g, '');
   const parts = raw.split('+').filter(Boolean);
   const last = parts[parts.length - 1] || '';
   const key = last.startsWith('key') ? last.slice(3) : last; // e.g., KeyV -> v
-  const mod = parts.some(p => p === 'mod' || p === 'cmd' || p === 'cmdorctrl' || p === 'ctrl' || p === 'control' || p === 'meta');
+  const mod = parts.some(
+    (p) => p === 'mod' || p === 'cmd' || p === 'cmdorctrl' || p === 'ctrl' || p === 'control' || p === 'meta',
+  );
   const shift = parts.includes('shift');
   const alt = parts.includes('alt') || parts.includes('option');
   return { key, mod, shift, alt, raw };
@@ -237,25 +258,25 @@ const RESERVED_FIND = new Set(['f', 'g']); // find, find next
 export function isReservedEditorShortcut(shortcut: string, includeFind = false): boolean {
   const s = normalizeShortcut(shortcut);
   if (!s.mod) return false; // we only care about mod+* shortcuts
-  
+
   // Check basic clipboard/edit operations
   if (RESERVED_KEYS.has(s.key)) {
     console.log(`[isReservedEditorShortcut] Blocking reserved key: ${shortcut} (${s.key} is clipboard/edit operation)`);
     return true;
   }
-  
+
   // Check find operations if requested
   if (includeFind && RESERVED_FIND.has(s.key)) {
     console.log(`[isReservedEditorShortcut] Blocking reserved key: ${shortcut} (${s.key} is find operation)`);
     return true;
   }
-  
+
   // Also check for shift+insert (paste) and shift+delete (cut) on some systems
   if (s.shift && (s.key === 'insert' || s.key === 'delete')) {
     console.log(`[isReservedEditorShortcut] Blocking reserved key: ${shortcut} (shift+${s.key})`);
     return true;
   }
-  
+
   return false;
 }
 
@@ -265,27 +286,27 @@ export function isReservedEditorShortcut(shortcut: string, includeFind = false):
  */
 export function toMonacoKeybindingOrUndefined(shortcut: string, isWindows: boolean): number | undefined {
   console.log('[toMonacoKeybindingOrUndefined] Input:', { shortcut, isWindows });
-  
+
   const kb = convertStringShortcutToMoncacoNumber(shortcut, isWindows);
   console.log('[toMonacoKeybindingOrUndefined] Converted value:', {
     kb,
     binary: kb ? kb.toString(2) : 'null',
-    hex: kb ? '0x' + kb.toString(16) : 'null'
+    hex: kb ? '0x' + kb.toString(16) : 'null',
   });
-  
+
   if (!kb) {
     console.log('[toMonacoKeybindingOrUndefined] Returning undefined - no keybinding');
     return undefined;
   }
 
   // Monaco packs the keyCode in the low 8 bits
-  const KEY_CODE_MASK = 0xFF;
+  const KEY_CODE_MASK = 0xff;
   const keyCode = kb & KEY_CODE_MASK;
-  
+
   console.log('[toMonacoKeybindingOrUndefined] Key code check:', {
     keyCode,
     keyCodeHex: '0x' + keyCode.toString(16),
-    isZero: keyCode === 0
+    isZero: keyCode === 0,
   });
 
   // 0 === KeyCode.Unknown. Never register modifier-only bindings.

@@ -3,9 +3,9 @@
  * Manages the current UI mode and related states.
  */
 
-import { atom } from 'jotai';
-import { UI, Mode } from '@johnlindquist/kit/core/enum';
+import { Mode, UI } from '@johnlindquist/kit/core/enum';
 import type { PromptData } from '@johnlindquist/kit/types/core';
+import { atom } from 'jotai';
 
 // --- Core UI State ---
 export const _ui = atom<UI>(UI.arg);

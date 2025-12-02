@@ -1,6 +1,6 @@
 import useResizeObserver from '@react-hook/resize-observer';
 import { useAtom } from 'jotai';
-import { useCallback, useRef, type RefObject } from 'react';
+import { type RefObject, useCallback, useRef } from 'react';
 import { mainHeightAtom, openAtom } from '../jotai';
 
 export default <T extends HTMLElement = HTMLElement>(selector = '') => {
@@ -12,8 +12,7 @@ export default <T extends HTMLElement = HTMLElement>(selector = '') => {
     if (!isOpen) return;
 
     const wrapper =
-      (selector ? document.querySelector<HTMLElement>(selector) : null) ??
-      (containerRef.current as HTMLElement | null);
+      (selector ? document.querySelector<HTMLElement>(selector) : null) ?? (containerRef.current as HTMLElement | null);
 
     if (!wrapper) return;
 

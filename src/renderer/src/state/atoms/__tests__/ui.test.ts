@@ -1,22 +1,22 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { Mode, UI } from '@johnlindquist/kit/core/enum';
 import { createStore } from 'jotai';
-import { UI, Mode } from '@johnlindquist/kit/core/enum';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  _ui,
+  _hideOnBlurChanged,
   _prevUI,
+  _ui,
+  actionsOpenAtom,
+  appearanceAtom,
+  hasActionsAtom,
+  hideOnBlurChangedAtom,
+  isFullScreenAtom,
   // _defaultUI, // TODO: needs to be exported from ui.ts
   isHiddenAtom,
   isScriptlessAtom,
-  mouseEnabledAtom,
   isWindowAtom,
-  isFullScreenAtom,
-  hasActionsAtom,
-  actionsOpenAtom,
-  promptData,
-  appearanceAtom,
-  _hideOnBlurChanged,
-  hideOnBlurChangedAtom,
   modeAtom,
+  mouseEnabledAtom,
+  promptData,
   promptReadyAtom,
 } from '../ui';
 
@@ -36,7 +36,7 @@ describe.skip('UI Atoms', () => {
     it('should update UI state', () => {
       store.set(_ui, UI.editor);
       expect(store.get(_ui)).toBe(UI.editor);
-      
+
       store.set(_ui, UI.term);
       expect(store.get(_ui)).toBe(UI.term);
     });
@@ -53,7 +53,6 @@ describe.skip('UI Atoms', () => {
       // TODO: _defaultUI atom needs to be exported from ui.ts
       // const defaultUI = store.get(_defaultUI);
       // expect(defaultUI).toBe(UI.arg);
-
       // store.set(_defaultUI, UI.form);
       // expect(store.get(_defaultUI)).toBe(UI.form);
     });
@@ -72,21 +71,21 @@ describe.skip('UI Atoms', () => {
 
     it('should track mouse enabled state', () => {
       expect(store.get(mouseEnabledAtom)).toBe(0);
-      
+
       store.set(mouseEnabledAtom, 1);
       expect(store.get(mouseEnabledAtom)).toBe(1);
     });
 
     it('should track window state', () => {
       expect(store.get(isWindowAtom)).toBe(false);
-      
+
       store.set(isWindowAtom, true);
       expect(store.get(isWindowAtom)).toBe(true);
     });
 
     it('should track fullscreen state', () => {
       expect(store.get(isFullScreenAtom)).toBe(false);
-      
+
       store.set(isFullScreenAtom, true);
       expect(store.get(isFullScreenAtom)).toBe(true);
     });
@@ -110,10 +109,12 @@ describe.skip('UI Atoms', () => {
   describe('Prompt Data', () => {
     it('should initialize with default prompt data', () => {
       const data = store.get(promptData);
-      expect(data).toEqual(expect.objectContaining({
-        input: '',
-        placeholder: 'Script Kit',
-      }));
+      expect(data).toEqual(
+        expect.objectContaining({
+          input: '',
+          placeholder: 'Script Kit',
+        }),
+      );
     });
 
     it('should update prompt data', () => {
@@ -140,7 +141,7 @@ describe.skip('UI Atoms', () => {
 
     it('should track prompt ready state', () => {
       expect(store.get(promptReadyAtom)).toBe(false);
-      
+
       store.set(promptReadyAtom, true);
       expect(store.get(promptReadyAtom)).toBe(true);
     });

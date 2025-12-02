@@ -3,8 +3,8 @@
  * These atoms manage state for various UI components and their visibility.
  */
 
-import { atom } from 'jotai';
 import { PROMPT } from '@johnlindquist/kit/core/enum';
+import { atom } from 'jotai';
 
 // --- UI Element Visibility ---
 export const headerHiddenAtom = atom(false);

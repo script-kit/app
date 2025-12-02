@@ -74,7 +74,6 @@ export default function Header() {
   const [isMainScript] = useAtom(isMainScriptAtom);
   const [promptData] = useAtom(promptDataAtom);
 
-
   return (
     <div
       style={

@@ -11,17 +11,15 @@
  */
 
 import { atom } from 'jotai';
-import type {
-  ScrollContext,
-  ScrollRequest,
-  ScrollState,
-  GridScrollParams,
-} from './types';
 import { createLogger } from '../../log-utils';
+import type { GridScrollParams, ScrollContext, ScrollRequest, ScrollState } from './types';
 
 // v2 compatible scroll interface - works with wrappers created by components
 interface ScrollableRef {
-  scrollToItem: (indexOrParams: number | { rowIndex: number; columnIndex: number; align?: string }, align?: string) => void;
+  scrollToItem: (
+    indexOrParams: number | { rowIndex: number; columnIndex: number; align?: string },
+    align?: string,
+  ) => void;
 }
 
 const log = createLogger('scroll');
@@ -72,16 +70,13 @@ export const scrollRefsAtom = atom<{
 /**
  * Register a ref for a scroll context
  */
-export const registerScrollRefAtom = atom(
-  null,
-  (get, set, payload: { context: ScrollContext; ref: any }) => {
-    const refs = get(scrollRefsAtom);
-    set(scrollRefsAtom, {
-      ...refs,
-      [payload.context]: payload.ref,
-    });
-  }
-);
+export const registerScrollRefAtom = atom(null, (get, set, payload: { context: ScrollContext; ref: any }) => {
+  const refs = get(scrollRefsAtom);
+  set(scrollRefsAtom, {
+    ...refs,
+    [payload.context]: payload.ref,
+  });
+});
 
 /**
  * Fine-grained scroll state atoms (one per context)
@@ -137,136 +132,116 @@ export const scrollStateAtom = atom<Map<ScrollContext, ScrollState>>((get) => {
  * });
  * ```
  */
-export const scrollRequestAtom = atom(
-  null,
-  (get, set, request: ScrollRequest) => {
-    // Start performance measurement
-    markScrollStart(request.context, request.reason);
+export const scrollRequestAtom = atom(null, (get, set, request: ScrollRequest) => {
+  // Start performance measurement
+  markScrollStart(request.context, request.reason);
 
-    // Get the fine-grained atom for this context
-    const stateAtom = getStateAtomForContext(request.context);
-    const currentState = get(stateAtom);
+  // Get the fine-grained atom for this context
+  const stateAtom = getStateAtomForContext(request.context);
+  const currentState = get(stateAtom);
 
-    // Update state with pending request (no Map copying!)
-    set(stateAtom, {
-      ...currentState,
-      pending: request,
-    });
+  // Update state with pending request (no Map copying!)
+  set(stateAtom, {
+    ...currentState,
+    pending: request,
+  });
 
-    log.verbose(
-      `📜 [ScrollService] Queued: ${request.context} → index ${request.target} (${request.reason})`
-    );
+  log.verbose(`📜 [ScrollService] Queued: ${request.context} → index ${request.target} (${request.reason})`);
 
-    // Conditional timing strategy:
-    // - Navigation needs focus styles to paint first (double rAF)
-    // - Other reasons can execute faster (single rAF)
-    const needsFocusSync =
-      request.reason === 'index-changed' ||
-      request.reason === 'user-navigation' ||
-      request.reason === 'skip-adjustment';
+  // Conditional timing strategy:
+  // - Navigation needs focus styles to paint first (double rAF)
+  // - Other reasons can execute faster (single rAF)
+  const needsFocusSync =
+    request.reason === 'index-changed' || request.reason === 'user-navigation' || request.reason === 'skip-adjustment';
 
-    if (needsFocusSync) {
-      // Double rAF for navigation - ensures focused styles are painted
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          set(executeScrollAtom, request.context);
-        });
-      });
-    } else {
-      // Single rAF for non-navigation - faster response
+  if (needsFocusSync) {
+    // Double rAF for navigation - ensures focused styles are painted
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         set(executeScrollAtom, request.context);
       });
-    }
+    });
+  } else {
+    // Single rAF for non-navigation - faster response
+    requestAnimationFrame(() => {
+      set(executeScrollAtom, request.context);
+    });
   }
-);
+});
 
 /**
  * Execute pending scroll for a context (internal use by ScrollController)
  */
-export const executeScrollAtom = atom(
-  null,
-  (get, set, context: ScrollContext) => {
-    const stateAtom = getStateAtomForContext(context);
-    const state = get(stateAtom);
+export const executeScrollAtom = atom(null, (get, set, context: ScrollContext) => {
+  const stateAtom = getStateAtomForContext(context);
+  const state = get(stateAtom);
 
-    if (!state?.pending) {
-      return; // No pending scroll
-    }
-
-    const request = state.pending;
-    const refs = get(scrollRefsAtom);
-    const ref = refs[context];
-
-    if (!ref) {
-      log.warn(
-        `📜 [ScrollService] No ref registered for context: ${context}`
-      );
-      return;
-    }
-
-    try {
-      // Execute scroll based on context type
-      // v2: Both list and grid use scrollToItem with wrapper interface
-      if (context === 'choices-grid') {
-        // Grid requires row/column calculation
-        const gridDimensions = get(gridDimensionsAtom);
-        const columnCount = gridDimensions.columnCount || 1;
-
-        const params = {
-          rowIndex: Math.floor(request.target / columnCount),
-          columnIndex: request.target % columnCount,
-          align: request.align || 'auto',
-        };
-
-        ref.scrollToItem(params);
-
-        log.verbose(
-          `📜 [ScrollService] Executed: grid → row ${params.rowIndex}, col ${params.columnIndex} (${request.reason})`
-        );
-      } else {
-        // List scrolling
-        ref.scrollToItem(request.target, request.align || 'auto');
-
-        log.verbose(
-          `📜 [ScrollService] Executed: ${context} → index ${request.target} (${request.reason})`
-        );
-      }
-
-      // End performance measurement
-      markScrollEnd(request.context, request.reason);
-
-      // Update state: mark as executed, clear pending (no Map copying!)
-      set(stateAtom, {
-        pending: null,
-        lastExecuted: request,
-        isScrolling: false,
-      });
-    } catch (error) {
-      log.error(
-        `📜 [ScrollService] Failed to execute scroll for ${context}:`,
-        error
-      );
-    }
+  if (!state?.pending) {
+    return; // No pending scroll
   }
-);
+
+  const request = state.pending;
+  const refs = get(scrollRefsAtom);
+  const ref = refs[context];
+
+  if (!ref) {
+    log.warn(`📜 [ScrollService] No ref registered for context: ${context}`);
+    return;
+  }
+
+  try {
+    // Execute scroll based on context type
+    // v2: Both list and grid use scrollToItem with wrapper interface
+    if (context === 'choices-grid') {
+      // Grid requires row/column calculation
+      const gridDimensions = get(gridDimensionsAtom);
+      const columnCount = gridDimensions.columnCount || 1;
+
+      const params = {
+        rowIndex: Math.floor(request.target / columnCount),
+        columnIndex: request.target % columnCount,
+        align: request.align || 'auto',
+      };
+
+      ref.scrollToItem(params);
+
+      log.verbose(
+        `📜 [ScrollService] Executed: grid → row ${params.rowIndex}, col ${params.columnIndex} (${request.reason})`,
+      );
+    } else {
+      // List scrolling
+      ref.scrollToItem(request.target, request.align || 'auto');
+
+      log.verbose(`📜 [ScrollService] Executed: ${context} → index ${request.target} (${request.reason})`);
+    }
+
+    // End performance measurement
+    markScrollEnd(request.context, request.reason);
+
+    // Update state: mark as executed, clear pending (no Map copying!)
+    set(stateAtom, {
+      pending: null,
+      lastExecuted: request,
+      isScrolling: false,
+    });
+  } catch (error) {
+    log.error(`📜 [ScrollService] Failed to execute scroll for ${context}:`, error);
+  }
+});
 
 /**
  * Track when virtual lists are scrolling (for state updates)
  */
-export const setScrollingAtom = atom(
-  null,
-  (get, set, payload: { context: ScrollContext; isScrolling: boolean }) => {
-    const stateAtom = getStateAtomForContext(payload.context);
-    const state = get(stateAtom);
+export const setScrollingAtom = atom(null, (get, set, payload: { context: ScrollContext; isScrolling: boolean }) => {
+  const stateAtom = getStateAtomForContext(payload.context);
+  const state = get(stateAtom);
 
-    // Update state (no Map copying!)
-    set(stateAtom, {
-      ...state,
-      isScrolling: payload.isScrolling,
-    });
-  }
-);
+  // Update state (no Map copying!)
+  set(stateAtom, {
+    ...state,
+    isScrolling: payload.isScrolling,
+  });
+});
 
 /**
  * Grid dimensions for calculating row/column from index

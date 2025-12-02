@@ -1,10 +1,10 @@
 const { ipcRenderer } = window.electron;
+
 import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
-import { appStateAtom, cmdAtom } from '../jotai';
-
 import { AppChannel } from '../../../shared/enums';
+import { appStateAtom, cmdAtom } from '../jotai';
 import { hotkeysOptions } from './shared';
 
 export default () => {

@@ -1,6 +1,6 @@
 import { atom } from 'jotai';
-import { _indexAtom } from '../atoms/choices';
 import { scoredChoicesAtom } from '../../jotai';
+import { _indexAtom } from '../atoms/choices';
 
 /**
  * The requested index from user input or other sources.
@@ -16,7 +16,7 @@ export const effectiveIndexAtom = atom((g) => {
   const idx = g(requestedIndexAtom);
   const choices = g(scoredChoicesAtom);
   const len = choices.length;
-  
+
   if (len === 0) return -1;
   return Math.max(0, Math.min(idx, len - 1));
 });
@@ -28,7 +28,7 @@ export const effectiveIndexAtom = atom((g) => {
 export const focusedChoiceIdAtom = atom((g) => {
   const idx = g(effectiveIndexAtom);
   const list = g(scoredChoicesAtom);
-  
+
   if (idx >= 0 && idx < list.length) {
     return list[idx]?.item?.id;
   }

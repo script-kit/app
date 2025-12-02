@@ -18,7 +18,7 @@ declare module 'electron' {
   export const BrowserWindow: ForbiddenElectronImport;
   export const shell: ForbiddenElectronImport;
   export const clipboard: ForbiddenElectronImport;
-  
+
   const electron: ForbiddenElectronImport;
   export default electron;
 }

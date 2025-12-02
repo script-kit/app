@@ -1,6 +1,8 @@
 import { Channel, PROMPT } from '@johnlindquist/kit/core/enum';
+import useResizeObserver from '@react-hook/resize-observer';
 import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { debounce } from 'lodash-es';
 import {
   type ChangeEvent,
   type KeyboardEvent,
@@ -11,21 +13,18 @@ import {
   useRef,
   useState,
 } from 'react';
-
-
-import useResizeObserver from '@react-hook/resize-observer';
-import { debounce } from 'lodash-es';
 import { useFocus, useKeyIndex, useTab } from '../hooks/index.js';
 import {
   _lastKeyDownWasModifierAtom,
+  _miniShortcutsHoveredAtom,
   _modifiers,
   actionsAtom,
+  actionsOverlayOpenAtom,
   cachedAtom,
   channelAtom,
   choiceInputsAtom,
   enterButtonDisabledAtom,
   enterButtonNameAtom,
-  actionsOverlayOpenAtom,
   flagsAtom,
   focusedChoiceAtom,
   footerHiddenAtom,
@@ -37,7 +36,6 @@ import {
   invalidateChoiceInputsAtom,
   kitStateAtom,
   lastKeyDownWasModifierAtom,
-  _miniShortcutsHoveredAtom,
   miniShortcutsVisibleAtom,
   modifiers,
   onInputSubmitAtom,
@@ -50,16 +48,16 @@ import {
   shortcutsAtom,
   shouldActionButtonShowOnInputAtom,
   signInActionAtom,
-  submitValueAtom,
   submittedAtom,
+  submitValueAtom,
   userAtom,
 } from '../jotai';
+import { remapModifiers } from '../utils/keyboard';
 import { ActionButton } from './actionbutton';
 import { EnterButton } from './actionenterbutton';
 import { OptionsButton } from './actionoptionsbutton';
 import { ActionSeparator } from './actionseparator';
 import { IconButton } from './icon';
-import { remapModifiers } from '../utils/keyboard';
 
 const debouncedFocus = debounce(
   (inputRef: RefObject<HTMLInputElement>) => {
@@ -272,15 +270,18 @@ function MainInput() {
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
       // log.info(`${window.pid}: onKeyDown: ${event}`, event);
-      // if command is pressed
+      // Handle arrow keys in grid mode
       if (gridReady) {
-        if (
-          event.key === 'ArrowLeft' ||
-          event.key === 'ArrowRight' ||
-          event.key === 'ArrowUp' ||
-          event.key === 'ArrowDown'
-        ) {
+        if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+          // Always prevent default for up/down to avoid page scroll
           event.preventDefault();
+          return;
+        }
+        // For left/right in grid mode, don't interfere - let the useHotkeys handlers
+        // in list.tsx handle grid navigation with proper cursor position checks
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+          // Don't call preventDefault here - the list.tsx handler will decide
+          // whether to navigate the grid or allow cursor movement
           return;
         }
       }
@@ -450,7 +451,7 @@ export default function Input() {
   const overlayOpen = useAtomValue(actionsOverlayOpenAtom);
 
   const onClick = useCallback(
-    (event) => {
+    (_event) => {
       if (action) {
         sendAction(action);
       }
@@ -464,7 +465,7 @@ export default function Input() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const handleDocumentClick = (event: MouseEvent) => {
+    const handleDocumentClick = (_event: MouseEvent) => {
       if (document.activeElement === document.body) {
         log.info('🔍 Clicked on the document, so focusing input');
         setInputFocus(Math.random());
@@ -585,12 +586,10 @@ export default function Input() {
             </div>
 
             {shouldActionButtonShowOnInput && !focusedChoice?.ignoreFlags && (
-              <>
-                <div className="options-container flex flex-row">
-                  <OptionsButton key="options-button" />
-                  <ActionSeparator key="login-separator" />
-                </div>
-              </>
+              <div className="options-container flex flex-row">
+                <OptionsButton key="options-button" />
+                <ActionSeparator key="login-separator" />
+              </div>
             )}
 
             <div className="flex flex-row items-center">

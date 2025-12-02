@@ -37,4 +37,3 @@ export function reasonName(mask: number): string {
   add(ResizeReason.PANEL_SPLIT, 'PANEL_SPLIT');
   return parts.join('|');
 }
-

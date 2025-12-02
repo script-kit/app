@@ -1,9 +1,8 @@
 import type { KeyData } from '@johnlindquist/kit/types/kitapp';
+import { useAtom } from 'jotai';
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
 import React, { type KeyboardEvent, useCallback, useEffect, useRef } from 'react';
-
-import { useAtom } from 'jotai';
 import { useFocus } from '../hooks';
 import { choicesConfigAtom, hintAtom, placeholderAtom } from '../jotai';
 

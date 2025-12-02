@@ -4,9 +4,9 @@
  */
 
 import type { Choice } from '@johnlindquist/kit/types/core';
-import type { ScoredChoice } from '../../../../shared/types';
 import { atom } from 'jotai';
 import { noChoice } from '../../../../shared/defaults';
+import type { ScoredChoice } from '../../../../shared/types';
 import { arraysEqual } from '../../utils/state-utils';
 
 // --- Core Choices State ---
@@ -57,7 +57,7 @@ export const _focused = atom<Choice | null>(
     }
     return focused;
   },
-  (g, s, choice: Choice | null) => {
+  (_g, s, choice: Choice | null) => {
     // Setter: validate the choice being set and ensure it's never null/undefined
     if (!choice || typeof choice !== 'object') {
       console.warn('_focused atom: Attempt to set invalid choice, using noChoice instead', choice);
@@ -65,7 +65,7 @@ export const _focused = atom<Choice | null>(
     } else {
       s(_focusedInternal, choice);
     }
-  }
+  },
 );
 
 // export const focusedChoiceAtom = atom((g) => g(_focused)); // Complex version with computed properties is in jotai.ts

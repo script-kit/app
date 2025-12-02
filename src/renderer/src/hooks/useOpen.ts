@@ -1,4 +1,5 @@
 const { ipcRenderer } = window.electron;
+
 import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';

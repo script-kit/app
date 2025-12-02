@@ -1,15 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { createStore } from 'jotai';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
+  actionsInputAtom,
   actionsOverlayOpenAtom,
   actionsOverlaySourceAtom,
-  openActionsOverlayAtom,
   closeActionsOverlayAtom,
-  pendingFlagAtom,
-  actionsInputAtom,
-  focusedFlagValueAtom,
   focusedActionAtom,
+  focusedFlagValueAtom,
+  openActionsOverlayAtom,
+  pendingFlagAtom,
 } from '../../../jotai';
 
 describe('Actions overlay helpers', () => {

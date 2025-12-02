@@ -10,11 +10,9 @@ declare global {
     electron: ElectronAPI;
     api: API;
   }
-  
+
   // Ensure global constructors are available
   const self: Window & typeof globalThis;
   const window: Window & typeof globalThis;
   const document: Document;
 }
-
-export {};

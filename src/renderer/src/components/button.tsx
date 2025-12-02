@@ -1,23 +1,27 @@
 import { PROMPT } from '@johnlindquist/kit/core/enum';
 import type { Choice, Script } from '@johnlindquist/kit/types/core';
-import type { ChoiceButtonProps, ScoredChoice } from '../../../shared/types';
 import log from 'electron-log';
 import parse from 'html-react-parser';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import React, { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ChoiceButtonProps, ScoredChoice } from '../../../shared/types';
 import useListNav from '../hooks/useListNav';
-import React, { useCallback, useEffect, useState, type DragEvent, useMemo, useRef } from 'react';
+
 const { ipcRenderer } = window.electron;
+
+// import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg?asset';
+import { AppChannel } from '../../../shared/enums';
 import {
   _modifiers,
+  actionsOverlayOpenAtom,
   buttonDescriptionFontSizeAtom,
   buttonNameFontSizeAtom,
-  actionsOverlayOpenAtom,
-  openActionsOverlayAtom,
   closeActionsOverlayAtom,
   indexAtom,
   isMouseDownAtom,
   isScrollingAtom,
   mouseEnabledAtom,
+  openActionsOverlayAtom,
   promptDataAtom,
   runKenvTrustScriptAtom,
   selectedChoicesAtom,
@@ -25,9 +29,6 @@ import {
   submitValueAtom,
   toggleSelectedChoiceAtom,
 } from '../jotai';
-
-// import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg?asset';
-import { AppChannel } from '../../../shared/enums';
 import { IconSwapper } from './iconswapper';
 import { highlight } from './utils';
 
@@ -103,11 +104,7 @@ const ChoiceDescription = React.memo(
             {modifierDescription || (index === buttonIndex && choice?.focused)
               ? choice?.focused
               : shouldHighlightDescription
-                ? highlight(
-                    choice.description || '',
-                    scoredChoice?.matches?.description,
-                    'bg-primary/5 text-primary',
-                  )
+                ? highlight(choice.description || '', scoredChoice?.matches?.description, 'bg-primary/5 text-primary')
                 : choice?.description}
           </div>
         )}
@@ -461,11 +458,7 @@ function ChoiceButton({ index: buttonIndex, style, choices, input }: ChoiceButto
                 {(choice?.pass || isRecent) && (choice as Script)?.kenv && (choice as Script).kenv !== '.kit'
                   ? (choice as Script).kenv
                   : choice.tag
-                    ? highlight(
-                        choice.tag,
-                        scoredChoice?.matches?.tag,
-                        'bg-text-base/0 text-primary',
-                      )
+                    ? highlight(choice.tag, scoredChoice?.matches?.tag, 'bg-text-base/0 text-primary')
                     : ''}
 
                 <span onClick={untrustedClick} onMouseEnter={untrustedMouseEnter} onMouseLeave={untrustedMouseLeave}>

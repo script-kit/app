@@ -1,19 +1,23 @@
 import { UI } from '@johnlindquist/kit/core/enum';
 import { type RefObject, useEffect, useRef } from 'react';
+
 const { ipcRenderer, shell } = window.electron;
+
 import useResizeObserver from '@react-hook/resize-observer';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { throttle } from 'lodash-es';
 import { FitAddon } from '@xterm/addon-fit';
 import { LigaturesAddon } from '@xterm/addon-ligatures';
 import { SearchAddon } from '@xterm/addon-search';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { throttle } from 'lodash-es';
+import { AppChannel } from '../../shared/enums';
+import XTerm from './components/xterm';
 import {
+  actionsOverlayOpenAtom,
   appBoundsAtom,
   darkAtom,
-  actionsOverlayOpenAtom,
   hasPreviewAtom,
   promptDataAtom,
   sendShortcutAtom,
@@ -21,14 +25,11 @@ import {
   termConfigAtom,
   termFontAtom,
   termOutputAtom,
+  triggerResizeAtom,
 } from './jotai';
-
-import { AppChannel } from '../../shared/enums';
-import { triggerResizeAtom } from './jotai';
-import XTerm from './components/xterm';
+import { createLogger } from './log-utils';
 import { AttachIPCAddon } from './term-attach-ipc-addon';
 
-import { createLogger } from './log-utils';
 const log = createLogger('term.tsx');
 
 const defaultTheme = {
@@ -97,7 +98,7 @@ export default function Terminal() {
 
       t.loadAddon(fitRef.current);
       t.loadAddon(
-        new WebLinksAddon((e, uri) => {
+        new WebLinksAddon((_e, uri) => {
           shell.openExternal(uri);
         }),
       );
@@ -230,7 +231,7 @@ export default function Terminal() {
 
   useResizeObserver(
     containerRef,
-    throttle((entry) => {
+    throttle((_entry) => {
       if (!fitRef?.current) {
         return;
       }
@@ -264,7 +265,7 @@ export default function Terminal() {
               if (selection && promptData?.pid) {
                 ipcRenderer.send(AppChannel.TERM_SELECTION, {
                   pid: promptData.pid,
-                  text: selection
+                  text: selection,
                 });
               }
             }

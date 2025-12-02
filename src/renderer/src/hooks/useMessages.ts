@@ -108,7 +108,7 @@ import { createLogger } from '../log-utils';
 import { _indexAtom, choices as choicesRawAtom } from '../state/atoms/choices';
 import { editorValueAtom } from '../state/atoms/editor';
 // Internal atoms for direct state manipulation (bypasses side effects in derived atoms)
-import { _inputAtom } from '../state/atoms/input';
+import { _inputAtom, selectionStartAtom } from '../state/atoms/input';
 import type { ScriptState } from '../state/atoms/script-state';
 import { _tabIndex } from '../state/atoms/tabs';
 
@@ -151,6 +151,7 @@ export default () => {
 
   const setExit = useSetAtom(exitAtom);
   const [input, setInput] = useAtom(inputAtom);
+  const setSelectionStart = useSetAtom(selectionStartAtom);
   const appendInput = useSetAtom(appendInputAtom);
   const setPlaceholder = useSetAtom(placeholderAtom);
   const [, setPromptData] = useAtom(promptDataAtom);
@@ -313,15 +314,19 @@ export default () => {
     [Channel.SET_PREVIEW]: setPreviewHTML,
     [Channel.SET_FOOTER]: (html) => setFooter(DOMPurify.sanitize(html)),
     [Channel.SET_INPUT]: (value) => {
+      const valueLength = value?.length || 0;
       console.log(
         JSON.stringify({
           source: 'useMessages_Channel.SET_INPUT',
-          valueLength: value?.length || 0,
+          valueLength,
           valuePreview: value?.substring(0, 50) || '',
           timestamp: Date.now(),
         }),
       );
       setInput(value);
+      // Update selectionStart to end of input so arrow key navigation works
+      // after programmatic input changes (e.g., path browser navigation)
+      setSelectionStart(valueLength);
     },
     [Channel.GET_INPUT]: () => {
       channel(Channel.GET_INPUT, { value: input });

@@ -1,10 +1,9 @@
 import { UI } from '@johnlindquist/kit/core/enum';
+import useResizeObserver from '@react-hook/resize-observer';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 /* eslint-disable no-nested-ternary */
 import React, { type RefObject, useEffect, useLayoutEffect, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
-
-import useResizeObserver from '@react-hook/resize-observer';
 import { darkTheme, lightTheme } from '../../../shared/themes';
 import { useKeyDirection } from '../hooks';
 import {
@@ -56,7 +55,7 @@ export default function Panel() {
   const domUpdated = useSetAtom(domUpdatedAtom);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  useResizeObserver(panelRef, (entry) => {
+  useResizeObserver(panelRef, (_entry) => {
     domUpdated('Panel useResizeObserver');
   });
 

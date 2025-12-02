@@ -5,7 +5,7 @@
 
 import type { Script } from '@johnlindquist/kit/types/core';
 import { atom } from 'jotai';
-import { SPLASH_PATH, noScript } from '../../../../shared/defaults';
+import { noScript, SPLASH_PATH } from '../../../../shared/defaults';
 import { kitConfigAtom } from './app-core';
 
 export type ScriptStatus = 'idle' | 'starting' | 'running' | 'completed' | 'error';

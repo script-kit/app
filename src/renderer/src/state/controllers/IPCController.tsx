@@ -1,11 +1,11 @@
-import { useEffect, useRef } from 'react';
-import { useAtomValue, useSetAtom } from 'jotai';
-import { appStateLiteAtom } from '../selectors/appState';
-import { ipcOutboxAtom, clearIpcOutboxAtom, pushIpcMessageAtom } from '../selectors/ipcOutbound';
-import { pauseChannelAtom, pidAtom, promptDataAtom } from '../../jotai';
-import { sendChannel, sendIPC } from '../services/ipc';
-import { Channel } from '@johnlindquist/kit/core/enum';
+import type { Channel } from '@johnlindquist/kit/core/enum';
 import type { AppMessage } from '@johnlindquist/kit/types/kitapp';
+import { useAtomValue, useSetAtom } from 'jotai';
+import { useEffect, useRef } from 'react';
+import { pauseChannelAtom, pidAtom, promptDataAtom } from '../../jotai';
+import { appStateLiteAtom } from '../selectors/appState';
+import { clearIpcOutboxAtom, ipcOutboxAtom, pushIpcMessageAtom } from '../selectors/ipcOutbound';
+import { sendChannel, sendIPC } from '../services/ipc';
 
 /**
  * Controller that handles IPC message publishing.
@@ -30,9 +30,9 @@ export function IPCController() {
 
     // Debug: Log significant state changes
     if (!state.focused && prevStateRef.current?.focused) {
-      console.warn('State.focused became undefined', { 
+      console.warn('State.focused became undefined', {
         prev: prevStateRef.current?.focused,
-        current: state.focused 
+        current: state.focused,
       });
     }
 
@@ -57,10 +57,10 @@ export function IPCController() {
           if ('channel' in (msg as any)) {
             const message = msg as any;
             const override = message.state || {};
-            let finalState = { ...state, ...override };
+            const finalState = { ...state, ...override };
             // Protect focused from being unset by override
             if (!finalState.focused) finalState.focused = state.focused;
-            
+
             const appMessage: AppMessage = {
               channel: message.channel,
               pid: pid || 0,
@@ -74,13 +74,12 @@ export function IPCController() {
             } else {
               console.error('Invalid appMessage in outbox, skipping send:', appMessage);
             }
-            continue;
           }
           // Unknown shape – ignore (or log)
           // console.warn('Unknown IPC outbox message shape', msg);
         }
       }
-      
+
       clearOutbox();
     } catch (error) {
       console.error('Error in IPCController outbox handler:', error);
@@ -101,18 +100,21 @@ export function useChannel() {
 
   return (channel: Channel, override?: any) => {
     if (pauseChannel) return;
-    
+
     let finalState = state;
     if (override) {
       finalState = { ...state, ...override };
-      
+
       // CRITICAL FIX: Ensure 'focused' is never undefined/null after override
       if (!finalState.focused) {
         finalState.focused = state.focused;
-        console.warn(`[useChannel] Protected 'focused' property from being unset by override. Channel: ${channel}`, override);
+        console.warn(
+          `[useChannel] Protected 'focused' property from being unset by override. Channel: ${channel}`,
+          override,
+        );
       }
     }
-    
+
     pushMessage({
       channel,
       state: finalState,

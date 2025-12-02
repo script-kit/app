@@ -8,13 +8,13 @@
  * instead of iterating over entire Map on any change.
  */
 
-import { useEffect } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
+import { useEffect } from 'react';
 import {
-  choicesListScrollStateAtom,
   choicesGridScrollStateAtom,
-  flagsListScrollStateAtom,
+  choicesListScrollStateAtom,
   executeScrollAtom,
+  flagsListScrollStateAtom,
 } from './atoms';
 
 export function ScrollController() {

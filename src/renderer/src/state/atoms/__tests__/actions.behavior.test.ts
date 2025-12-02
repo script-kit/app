@@ -1,21 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { createStore } from 'jotai';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { ScoredChoice } from '../../../../../shared/types';
 // Import from the single source of truth (jotai.ts) for these atoms
 import {
-  scoredFlagsAtom,
+  flaggedChoiceValueAtom,
   flagsIndexAtom,
   preventSubmitWithoutActionAtom,
-  flaggedChoiceValueAtom,
+  scoredFlagsAtom,
 } from '../../../jotai';
 // Import from actions.ts for these atoms
-import {
-  flagsAtom,
-  actionsInputAtom,
-  focusedFlagValueAtom,
-  focusedActionAtom,
-  _flaggedValue,
-} from '../actions';
+import { _flaggedValue, actionsInputAtom, flagsAtom, focusedActionAtom, focusedFlagValueAtom } from '../actions';
 import { promptData } from '../ui';
 
 describe('Actions menu behavior', () => {
@@ -45,15 +39,11 @@ describe('Actions menu behavior', () => {
 
     // Filter "dep" → only Deploy Service
     store.set(actionsInputAtom as any, 'dep');
-    expect(store.get(scoredFlagsAtom as any).map((s: any) => s.item.name)).toEqual([
-      'Deploy Service',
-    ]);
+    expect(store.get(scoredFlagsAtom as any).map((s: any) => s.item.name)).toEqual(['Deploy Service']);
 
     // Filter "log" → only Open Logs
     store.set(actionsInputAtom as any, 'log');
-    expect(store.get(scoredFlagsAtom as any).map((s: any) => s.item.name)).toEqual([
-      'Open Logs',
-    ]);
+    expect(store.get(scoredFlagsAtom as any).map((s: any) => s.item.name)).toEqual(['Open Logs']);
   });
 
   it('sets focusedActionAtom when selecting an action so Enter can submit', () => {
@@ -62,12 +52,15 @@ describe('Actions menu behavior', () => {
       { item: { id: 'a2', name: 'Deploy Service', value: 'deploy' }, score: 95, matches: {} },
     ];
     store.set(scoredFlagsAtom as any, base);
-    
+
     // Set up the flags to match the expected values
-    store.set(flagsAtom as any, { 
-      build: { name: 'Build Project' },
-      deploy: { name: 'Deploy Service' }
-    } as any);
+    store.set(
+      flagsAtom as any,
+      {
+        build: { name: 'Build Project' },
+        deploy: { name: 'Deploy Service' },
+      } as any,
+    );
 
     // Mark the actions menu as open without triggering side-effects from flaggedChoiceValueAtom
     store.set(_flaggedValue as any, 'actions-open');
@@ -75,9 +68,7 @@ describe('Actions menu behavior', () => {
     // Select first action
     store.set(flagsIndexAtom as any, 0);
     expect(store.get(focusedFlagValueAtom as any)).toBe('build');
-    expect(store.get(focusedActionAtom as any)).toEqual(
-      expect.objectContaining({ hasAction: true, flag: 'build' })
-    );
+    expect(store.get(focusedActionAtom as any)).toEqual(expect.objectContaining({ hasAction: true, flag: 'build' }));
 
     // With a selected action, submit should not be prevented
     expect(store.get(preventSubmitWithoutActionAtom as any)).toBeFalsy();
@@ -91,12 +82,15 @@ describe('Actions menu behavior', () => {
 
     // Seed the base list via the scoredFlagsAtom setter
     store.set(scoredFlagsAtom as any, base);
-    
+
     // Set up the flags to match the expected values
-    store.set(flagsAtom as any, { 
-      build: { name: 'Build Project' },
-      deploy: { name: 'Deploy Service' }
-    } as any);
+    store.set(
+      flagsAtom as any,
+      {
+        build: { name: 'Build Project' },
+        deploy: { name: 'Deploy Service' },
+      } as any,
+    );
 
     // Open actions menu (use the real setter so side-effects are triggered)
     store.set(flaggedChoiceValueAtom as any, 'actions-open');
@@ -106,9 +100,7 @@ describe('Actions menu behavior', () => {
 
     // Sanity: action is "build"
     expect(store.get(focusedFlagValueAtom as any)).toBe('build');
-    expect(store.get(focusedActionAtom as any)).toEqual(
-      expect.objectContaining({ hasAction: true, flag: 'build' }),
-    );
+    expect(store.get(focusedActionAtom as any)).toEqual(expect.objectContaining({ hasAction: true, flag: 'build' }));
 
     // Close actions menu
     store.set(flaggedChoiceValueAtom as any, '');

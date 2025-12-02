@@ -1,33 +1,42 @@
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { type ChangeEvent, type KeyboardEvent, type LegacyRef, useCallback, useEffect, useRef, useState, useDeferredValue } from 'react';
+import {
+  type ChangeEvent,
+  type KeyboardEvent,
+  type LegacyRef,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import { useActionsKeyIndex, useFocus, useTab } from '../hooks';
 import {
   _modifiers,
+  actionsConfigAtom,
   actionsInputAtom,
   actionsInputFocusAtom,
   actionsInputFontSizeAtom,
   actionsInputHeightAtom,
+  actionsOverlayOpenAtom,
   cachedAtom,
   channelAtom,
+  enterButtonDisabledAtom,
+  enterButtonNameAtom,
   flagsAtom,
-  actionsConfigAtom,
   focusedChoiceAtom,
   modifiers,
+  scoredFlagsAtom,
   shortcodesAtom,
   shortcutsAtom,
   submittedAtom,
   uiAtom,
-  scoredFlagsAtom,
-  enterButtonDisabledAtom,
-  enterButtonNameAtom,
-  actionsOverlayOpenAtom,
 } from '../jotai';
+import { remapModifiers } from '../utils/keyboard';
 import { EnterButton } from './actionenterbutton';
 import { ActionSeparator } from './actionseparator';
-import { remapModifiers } from '../utils/keyboard';
 
 export default function ActionsInput() {
   const inputRef = useRef<HTMLInputElement>(null);

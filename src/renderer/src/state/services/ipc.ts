@@ -1,5 +1,5 @@
-import { AppChannel, Channel } from '../../../../shared/enums';
 import type { AppMessage } from '@johnlindquist/kit/types/kitapp';
+import { AppChannel, type Channel } from '../../../../shared/enums';
 import type { ResizeData } from '../../../../shared/types';
 
 // Access ipcRenderer through the preloaded window.electron

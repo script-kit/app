@@ -14,9 +14,9 @@ export const _open = atom(false);
 //   (g) => g(_open),
 //   (g, s, a: boolean) => {
 //     if (g(_open) === a) return;
-//     
+//
 //     s(mouseEnabledAtom, 0);
-//     
+//
 //     // TODO: Will add reset logic after all atoms are extracted
 //     if (g(_open) && a === false) {
 //       // resetPromptState will be added here

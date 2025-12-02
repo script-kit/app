@@ -8,7 +8,6 @@ import { atom } from 'jotai';
 import { isEqual } from 'lodash-es';
 import { createLogger } from '../log-utils';
 
-
 const log = createLogger('prompt-data.ts');
 
 export const promptData = atom<null | Partial<PromptData>>({
@@ -52,7 +51,7 @@ export const uiAtom = atom(
     // }
 
     // Notify main process about UI change, ensuring the element exists first
-    let id: string = a === UI.arg ? 'input' : a;
+    const id: string = a === UI.arg ? 'input' : a;
     const timeoutId = setTimeout(() => ipcRenderer.send(a), 250);
 
     let attempts = 0;

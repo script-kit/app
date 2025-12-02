@@ -1,22 +1,19 @@
+import { UI } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { loadable } from 'jotai/utils';
 import type React from 'react';
-import { useCallback } from 'react';
-
+import { useCallback, useState } from 'react';
 import {
-  createAssetAtom,
   actionsConfigAtom,
+  actionsOverlayOpenAtom,
+  closeActionsOverlayAtom,
+  createAssetAtom,
   isMainScriptAtom,
   runMainScriptAtom,
   sendActionAtom,
-  actionsOverlayOpenAtom,
-  closeActionsOverlayAtom,
   uiAtom,
 } from '../jotai';
-
 import { createLogger } from '../log-utils';
-import { useState } from 'react';
-import { UI } from '@johnlindquist/kit/core/enum';
 
 const log = createLogger('icon.tsx');
 

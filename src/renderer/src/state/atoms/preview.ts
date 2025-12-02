@@ -3,13 +3,13 @@
  * Manages preview panel content and visibility.
  */
 
-import { atom } from 'jotai';
 import DOMPurify from 'dompurify';
+import { atom } from 'jotai';
 import { closedDiv } from '../../../../shared/defaults';
+import { ID_LIST, ID_PANEL } from '../dom-ids';
+import { isHiddenAtom, loadingAtom } from './app-core';
 import { promptData } from './ui';
 import { _mainHeight } from './ui-elements';
-import { loadingAtom, isHiddenAtom } from './app-core';
-import { ID_PANEL, ID_LIST } from '../dom-ids';
 
 // --- Preview HTML ---
 export const _previewHTML = atom('');

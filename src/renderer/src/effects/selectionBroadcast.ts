@@ -1,6 +1,6 @@
-import { atomEffect } from 'jotai-effect';
-import { selectedChoicesAtom, channelAtom } from '../jotai';
 import { Channel } from '@johnlindquist/kit/core/enum';
+import { atomEffect } from 'jotai-effect';
+import { channelAtom, selectedChoicesAtom } from '../jotai';
 
 export const selectionBroadcastEffect = atomEffect((get) => {
   const choices = get(selectedChoicesAtom);

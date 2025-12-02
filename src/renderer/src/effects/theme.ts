@@ -19,7 +19,7 @@
  */
 
 import { atomEffect } from 'jotai-effect';
-import { themeAtom, appearanceAtom } from '../jotai';
+import { appearanceAtom, themeAtom } from '../jotai';
 import { appConfigAtom } from '../state/atoms/app-core';
 import type { Appearance } from '../state/atoms/theme';
 
@@ -45,10 +45,7 @@ function extractAppearance(css: string): Appearance | undefined {
  * Resolve platform-specific opacity from theme CSS.
  * @internal
  */
-function resolveOpacity(
-  css: string,
-  platform: 'mac' | 'win' | 'other'
-): string {
+function resolveOpacity(css: string, platform: 'mac' | 'win' | 'other'): string {
   const key = `--opacity-${platform}`;
   const match = new RegExp(`${key}:\\s*([\\d.]+)`).exec(css);
   return match?.[1] ?? DEFAULT_OPACITY;

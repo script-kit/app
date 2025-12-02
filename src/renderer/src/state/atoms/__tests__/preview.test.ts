@@ -1,20 +1,19 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createStore } from 'jotai';
 import DOMPurify from 'dompurify';
+import { createStore } from 'jotai';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { closedDiv } from '../../../../../shared/defaults';
+import { isHiddenAtom, loadingAtom } from '../app-core';
 import {
+  _panelHTML,
   _previewHTML,
+  hasPreviewAtom,
+  panelHTMLAtom,
+  previewCheckAtom,
   previewEnabledAtom,
   previewHTMLAtom,
-  hasPreviewAtom,
-  previewCheckAtom,
-  _panelHTML,
-  panelHTMLAtom,
 } from '../preview';
-import { isHiddenAtom } from '../app-core';
 import { promptData } from '../ui';
 import { _mainHeight } from '../ui-elements';
-import { loadingAtom } from '../app-core';
 
 // Mock DOMPurify
 vi.mock('dompurify', () => ({
@@ -51,14 +50,14 @@ describe('Preview Atoms', () => {
         expect.objectContaining({
           ADD_TAGS: ['iframe'],
           ALLOW_UNKNOWN_PROTOCOLS: true,
-        })
+        }),
       );
     });
 
     it('should update preview HTML', () => {
       const testHTML = '<div>Test preview</div>';
       store.set(previewHTMLAtom, testHTML);
-      
+
       const html = store.get(previewHTMLAtom);
       expect(html).toBe(testHTML);
     });
@@ -98,7 +97,7 @@ describe('Preview Atoms', () => {
       store.set(_previewHTML, '');
       store.set(previewEnabledAtom, true);
       store.set(isHiddenAtom, false);
-      
+
       const shouldShow = store.get(previewCheckAtom);
       expect(shouldShow).toBe(false);
     });
@@ -107,7 +106,7 @@ describe('Preview Atoms', () => {
       store.set(_previewHTML, closedDiv);
       store.set(previewEnabledAtom, true);
       store.set(isHiddenAtom, false);
-      
+
       const shouldShow = store.get(previewCheckAtom);
       expect(shouldShow).toBe(false);
     });
@@ -116,7 +115,7 @@ describe('Preview Atoms', () => {
       store.set(_previewHTML, '<div>Content</div>');
       store.set(previewEnabledAtom, false);
       store.set(isHiddenAtom, false);
-      
+
       const shouldShow = store.get(previewCheckAtom);
       expect(shouldShow).toBe(false);
     });
@@ -125,7 +124,7 @@ describe('Preview Atoms', () => {
       store.set(_previewHTML, '<div>Content</div>');
       store.set(previewEnabledAtom, true);
       store.set(isHiddenAtom, true);
-      
+
       const shouldShow = store.get(previewCheckAtom);
       expect(shouldShow).toBe(false);
     });
@@ -134,7 +133,7 @@ describe('Preview Atoms', () => {
       store.set(_previewHTML, '<div>Content</div>');
       store.set(previewEnabledAtom, true);
       store.set(isHiddenAtom, false);
-      
+
       const shouldShow = store.get(previewCheckAtom);
       expect(shouldShow).toBe(true);
     });
@@ -143,7 +142,7 @@ describe('Preview Atoms', () => {
       store.set(_previewHTML, '<div></div>');
       store.set(previewEnabledAtom, true);
       store.set(isHiddenAtom, false);
-      
+
       const shouldShow = store.get(previewCheckAtom);
       expect(shouldShow).toBe(false);
     });
@@ -164,17 +163,17 @@ describe('Preview Atoms', () => {
         expect.objectContaining({
           ADD_TAGS: ['iframe'],
           ALLOW_UNKNOWN_PROTOCOLS: true,
-        })
+        }),
       );
     });
 
     it('should not update if content is the same', () => {
       const testHTML = '<div>Same content</div>';
       store.set(_panelHTML, testHTML);
-      
+
       // Try to set the same content again
       store.set(panelHTMLAtom, testHTML);
-      
+
       // Should still be the same
       expect(store.get(_panelHTML)).toBe(testHTML);
     });
@@ -182,7 +181,7 @@ describe('Preview Atoms', () => {
     it('should close preview when panel is set without explicit preview', () => {
       store.set(promptData, {}); // No preview property
       store.set(panelHTMLAtom, '<div>Panel</div>');
-      
+
       const previewHTML = store.get(_previewHTML);
       expect(previewHTML).toBe(closedDiv);
     });
@@ -191,9 +190,9 @@ describe('Preview Atoms', () => {
       const originalPreview = '<div>Original preview</div>';
       store.set(_previewHTML, originalPreview);
       store.set(promptData, { preview: originalPreview });
-      
+
       store.set(panelHTMLAtom, '<div>Panel</div>');
-      
+
       const previewHTML = store.get(_previewHTML);
       expect(previewHTML).toBe(originalPreview);
     });
@@ -201,7 +200,7 @@ describe('Preview Atoms', () => {
     it('should set loading to false when panel has content', () => {
       store.set(loadingAtom, true);
       store.set(panelHTMLAtom, '<div>Content</div>');
-      
+
       const loading = store.get(loadingAtom);
       expect(loading).toBe(false);
     });
@@ -216,7 +215,7 @@ describe('Preview Atoms', () => {
 
       store.set(_mainHeight, 100);
       store.set(panelHTMLAtom, '');
-      
+
       const mainHeight = store.get(_mainHeight);
       expect(mainHeight).toBe(0);
     });
@@ -232,7 +231,7 @@ describe('Preview Atoms', () => {
 
       store.set(_mainHeight, 100);
       store.set(panelHTMLAtom, '');
-      
+
       const mainHeight = store.get(_mainHeight);
       expect(mainHeight).toBe(100); // Should remain unchanged
     });

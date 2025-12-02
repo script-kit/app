@@ -3,12 +3,12 @@
  * State specific to the chat component.
  */
 
-import { atom } from 'jotai';
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { AppChannel } from '../../../../shared/enums';
-import { channelAtom } from '../shared-dependencies';
+import { atom } from 'jotai';
 import type { MessageType } from 'react-chat-elements';
+import { AppChannel } from '../../../../shared/enums';
 import { createLogger } from '../../log-utils';
+import { channelAtom } from '../shared-dependencies';
 
 const log = createLogger('chat.ts');
 
@@ -63,17 +63,17 @@ export const chatPushTokenAtom = atom(null, (g, s, a: string) => {
   const prev = g(chatMessagesAtom);
   const messages = [...prev];
   const index = messages.length - 1;
-  
+
   if (index < 0) {
     return;
   }
-  
+
   try {
     const lastMessage = messages[index] as MessageTypeWithIndex;
     // Append token to the last message
     lastMessage.text = ((lastMessage.text || '') + a).trim();
     lastMessage.index = index;
-    
+
     s(chatMessagesAtom, messages);
 
     // Stream token update via shared channel sender
@@ -99,7 +99,7 @@ export const chatPushTokenAtom = atom(null, (g, s, a: string) => {
       });
     } catch {}
   } catch (error) {
-    log.error("Error pushing chat token", error);
+    log.error('Error pushing chat token', error);
     // Reset if something goes fundamentally wrong with the structure
     s(chatMessagesAtom, []);
   }
@@ -110,7 +110,7 @@ export const setChatMessageAtom = atom(null, (g, s, a: { index: number; message:
   const messages = [...prev];
   // Handle negative indexing (e.g., -1 is the last message)
   const messageIndex = a.index < 0 ? messages.length + a.index : a.index;
-  
+
   try {
     if (messageIndex >= 0 && messageIndex < messages.length) {
       messages[messageIndex] = a.message;
@@ -143,7 +143,7 @@ export const setChatMessageAtom = atom(null, (g, s, a: { index: number; message:
       } catch {}
     }
   } catch (error) {
-    log.error("Error setting chat message", error);
+    log.error('Error setting chat message', error);
   }
 });
 

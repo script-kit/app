@@ -5,9 +5,11 @@ import { useAtom } from 'jotai';
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 import React, { type RefObject, useCallback, useRef, useState } from 'react';
 import SimpleBar from 'simplebar-react';
+
 const { ipcRenderer } = window.electron;
+
 import { AppChannel } from '../../../shared/enums';
-import { logHTMLAtom, logHeightAtom, scriptAtom } from '../jotai';
+import { logHeightAtom, logHTMLAtom, scriptAtom } from '../jotai';
 
 export default function Console() {
   const [script] = useAtom(scriptAtom);

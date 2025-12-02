@@ -1,21 +1,21 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { createStore } from 'jotai';
-import type { ScoredChoice } from '../../../../../shared/types';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { noChoice } from '../../../../../shared/defaults';
+import type { ScoredChoice } from '../../../../../shared/types';
 import {
-  choices,
-  choicesReadyAtom,
-  filteredChoicesIdAtom,
-  prevScoredChoicesIdsAtom,
-  choicesConfig,
-  choicesAtom,
-  currentChoiceHeightsAtom,
-  defaultValueAtom,
-  defaultChoiceIdAtom,
-  prevIndexAtom,
-  hasSkipAtom,
-  allSkipAtom,
   _focused,
+  allSkipAtom,
+  choices,
+  choicesAtom,
+  choicesConfig,
+  choicesReadyAtom,
+  currentChoiceHeightsAtom,
+  defaultChoiceIdAtom,
+  defaultValueAtom,
+  filteredChoicesIdAtom,
+  hasSkipAtom,
+  prevIndexAtom,
+  prevScoredChoicesIdsAtom,
 } from '../choices';
 
 describe('Choices Atoms', () => {
@@ -43,7 +43,7 @@ describe('Choices Atoms', () => {
       ];
 
       store.set(choices, testChoices);
-      
+
       const storedChoices = store.get(choices);
       expect(storedChoices).toEqual(testChoices);
 
@@ -138,7 +138,7 @@ describe('Choices Atoms', () => {
   describe('Filtered Choices ID', () => {
     it('should track filtered choices ID', () => {
       expect(store.get(filteredChoicesIdAtom)).toBe(0);
-      
+
       store.set(filteredChoicesIdAtom, 5);
       expect(store.get(filteredChoicesIdAtom)).toBe(5);
     });
@@ -147,7 +147,7 @@ describe('Choices Atoms', () => {
   describe('Previous Scored Choices IDs', () => {
     it('should track previous choice IDs', () => {
       expect(store.get(prevScoredChoicesIdsAtom)).toEqual([]);
-      
+
       const ids = ['id1', 'id2', 'id3'];
       store.set(prevScoredChoicesIdsAtom, ids);
       expect(store.get(prevScoredChoicesIdsAtom)).toEqual(ids);

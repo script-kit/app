@@ -1,6 +1,6 @@
 import { atom } from 'jotai';
-import { isMainScriptAtom } from '../shared-atoms';
 import { _inputAtom } from '../atoms/input';
+import { isMainScriptAtom } from '../shared-atoms';
 
 /**
  * Selector atoms related to script state.

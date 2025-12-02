@@ -6,16 +6,16 @@ import { UI } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import React, { useCallback } from 'react';
 import {
-  appConfigAtom,
   actionsConfigAtom,
+  appConfigAtom,
   focusedFlagValueAtom,
   sendActionAtom,
   sendShortcutAtom,
   uiAtom,
 } from '../jotai';
+import { createLogger } from '../log-utils';
 import { type Action, bg, textContrast } from './actions';
 import { IconSwapper } from './iconswapper';
-import { createLogger } from '../log-utils';
 
 const log = createLogger('actionbutton.tsx');
 

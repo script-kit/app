@@ -2,12 +2,13 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
+
+import { Channel, Mode, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback } from 'react';
 import { appConfigAtom, channelAtom, sendShortcutAtom, signInActionAtom } from '../jotai';
 import { bg, textContrast } from './actions';
 import { GithubIcon } from './icons';
-import { Channel, Mode, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 
 export function LoginButton() {
   const sendShortcut = useSetAtom(sendShortcutAtom);
@@ -16,7 +17,7 @@ export function LoginButton() {
   const channel = useAtomValue(channelAtom);
 
   const onClick = useCallback(
-    (event) => {
+    (_event) => {
       if (action) {
         channel(Channel.ACTION, { action });
       }

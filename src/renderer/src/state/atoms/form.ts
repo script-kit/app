@@ -3,8 +3,8 @@
  * These atoms manage form data, textarea configuration, and splash screen state.
  */
 
-import { atom } from 'jotai';
 import type { TextareaConfig } from '@johnlindquist/kit/types/kitapp';
+import { atom } from 'jotai';
 
 // --- Textarea ---
 const textareaConfig = atom<TextareaConfig>({

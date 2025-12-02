@@ -1,14 +1,14 @@
+import { UI } from '@johnlindquist/kit/core/enum';
 import { atomEffect } from 'jotai-effect';
 import {
-  termExitAtom,
-  uiAtom,
-  submittedAtom,
-  termConfigAtom,
   promptDataAtom,
-  termOutputAtom,
+  submittedAtom,
   submitValueAtom,
+  termConfigAtom,
+  termExitAtom,
+  termOutputAtom,
+  uiAtom,
 } from '../jotai';
-import { UI } from '@johnlindquist/kit/core/enum';
 
 export const termExitEffect = atomEffect((get, set) => {
   const exitFlag = get(termExitAtom);

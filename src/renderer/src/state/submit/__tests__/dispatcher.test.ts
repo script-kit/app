@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { Channel } from '@johnlindquist/kit/core/enum';
+import { describe, expect, it } from 'vitest';
 import { decideSubmit } from '../dispatcher';
 
 describe('submit dispatcher', () => {
@@ -24,4 +24,3 @@ describe('submit dispatcher', () => {
     expect((d as any).override).toEqual({ value: 'value', flag: 'flag' });
   });
 });
-

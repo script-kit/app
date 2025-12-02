@@ -11,17 +11,9 @@
 // =================================================================================================
 
 import { Channel, Mode, PROMPT, UI } from '@johnlindquist/kit/core/enum';
-import type {
-  Action,
-  AppState,
-  Choice,
-  FlagsWithKeys,
-  PromptData,
-} from '@johnlindquist/kit/types/core';
-import type {
-  AppMessage,
-} from '@johnlindquist/kit/types/kitapp';
-import { type Getter, type Setter, atom } from 'jotai';
+import type { Action, AppState, Choice, FlagsWithKeys, PromptData } from '@johnlindquist/kit/types/core';
+import type { AppMessage } from '@johnlindquist/kit/types/kitapp';
+import { atom, type Getter, type Setter } from 'jotai';
 import { debounce, throttle } from 'lodash-es';
 import { unstable_batchedUpdates } from 'react-dom';
 import type { ScriptState } from './state/atoms/script-state';
@@ -29,185 +21,176 @@ import type { ScriptState } from './state/atoms/script-state';
 // Import all modularized atoms
 export * from './state/atoms';
 
-// Import unified scroll service
-import { scrollRequestAtom } from './state/scroll';
-import { hasFreshFlag } from './state/submit/flagFreshness';
-import { sendAppMessage, sendChannel } from './state/services/ipc';
-import { cancelSpeech, pickColor } from './state/services/platform';
-import { appendChoiceIdToHistory } from './state/services/storage';
-
 // Import specific atoms we need to wire
 import {
-  _open,
-  _script,
+  _actionsInputAtom,
+  _chatMessagesAtom,
+  _flaggedValue,
+  _focused,
+  _indexAtom,
   _inputAtom,
   _inputChangedAtom,
-  _flaggedValue,
+  _lastKeyDownWasModifierAtom,
+  _mainHeight,
+  _miniShortcutsHoveredAtom,
+  _modifiers,
+  _open,
   _panelHTML,
   _previewHTML,
-  _tabIndex,
-  _focused,
-  _modifiers,
-  _lastKeyDownWasModifierAtom,
-  _actionsInputAtom,
-  _termOutputAtom,
-  _chatMessagesAtom,
-  _miniShortcutsHoveredAtom,
+  _script,
   _submitValue,
-  _indexAtom,
-  cachedMainScoredChoicesAtom,
-  cachedMainPromptDataAtom,
-  cachedMainPreviewAtom,
-  cachedMainShortcutsAtom,
-  cachedMainFlagsAtom,
-  promptData,
-  promptReadyAtom,
-  choicesReadyAtom,
-  choicesConfig,
-  prevChoicesConfig,
-  choices,
-  prevScoredChoicesIdsAtom,
-  choicesAtom,
-  selectedChoicesAtom,
-  flagsAtom,
-  scoredFlags,
-  flagsIndex,
-  focusedFlagValueAtom,
-  focusedFlagMetaAtom,
-  lastConsumedFlagMetaAtom,
-  markFlagConsumedAtom,
-  focusedActionAtom,
-  shortcutsAtom,
+  _tabIndex,
+  _termOutputAtom,
   _ui,
-  modeAtom,
-  enterAtom,
-  nameAtom,
+  actionsConfigAtom,
+  actionsInputAtom,
+  actionsItemHeightAtom,
+  // Actions overlay clarity atoms
+  actionsOverlayOpenAtom,
+  actionsOverlaySourceAtom,
+  allSkipAtom,
+  audioDotAtom,
+  backToMainAtom,
+  cachedAtom,
+  cachedMainFlagsAtom,
+  cachedMainPreviewAtom,
+  cachedMainPromptDataAtom,
+  cachedMainScoredChoicesAtom,
+  cachedMainShortcutsAtom,
+  choiceInputsAtom,
+  choices,
+  choicesAtom,
+  choicesConfig,
+  choicesHeightAtom,
+  choicesReadyAtom,
+  closeActionsOverlayAtom,
+  closedInput,
+  containerClassNameAtom,
+  currentChoiceHeightsAtom,
+  defaultActionsIdAtom,
+  defaultChoiceIdAtom,
+  defaultValueAtom,
   descriptionAtom,
-  tabsAtom,
-  previewHTMLAtom,
-  panelHTMLAtom,
-  formHTMLAtom,
-  logHTMLAtom,
-  logLinesAtom,
-  termConfigAtom,
+  directionAtom,
+  disableSubmitAtom,
+  editorAppendAtom,
   editorConfigAtom,
   editorCursorPosAtom,
   editorHistory,
-  webcamStreamAtom,
-  pidAtom,
-  processingAtom,
-  runningAtom,
-  submittedAtom,
-  loadingAtom,
-  progressAtom,
-  isHiddenAtom,
-  promptActiveAtom,
-  mouseEnabledAtom,
-  resizeCompleteAtom,
-  audioDotAtom,
-  disableSubmitAtom,
-  pauseChannelAtom,
-  kitConfigAtom,
-  themeAtom,
-  tempThemeAtom,
-  itemHeightAtom,
-  inputHeightAtom,
-  _mainHeight,
-  choicesHeightAtom,
-  flagsHeightAtom,
-  actionsItemHeightAtom,
-  gridReadyAtom,
-  listAtom,
-  flagsListAtom,
-  scrollToIndexAtom,
-  promptBoundsAtom,
-  isWindowAtom,
-  justOpenedAtom,
-  isSplashAtom,
-  isMainScriptAtom,
-  defaultChoiceIdAtom,
-  defaultValueAtom,
-  prevIndexAtom,
-  directionAtom,
-  hasSkipAtom,
-  allSkipAtom,
-  actionsInputAtom,
-  inputFocusAtom,
-  hintAtom,
-  placeholderAtom,
-  selectedAtom,
-  tabChangedAtom,
-  inputWhileSubmittedAtom,
-  lastKeyDownWasModifierAtom,
-  enterLastPressedAtom,
-  closedInput,
-  lastScriptClosed,
-  logoAtom,
-  preloadedAtom,
-  backToMainAtom,
-  choiceInputsAtom,
-  editorAppendAtom,
   editorHistoryPush,
-  termOutputAtom,
-  formDataAtom,
+  enterAtom,
+  enterLastPressedAtom,
+  flagsAtom,
+  flagsHeightAtom,
+  flagsIndex,
+  flagsListAtom,
+  focusedActionAtom,
+  focusedFlagMetaAtom,
+  focusedFlagValueAtom,
   footerAtom,
-  containerClassNameAtom,
-  headerHiddenAtom,
   footerHiddenAtom,
-  actionsConfigAtom,
-  // Actions overlay clarity atoms
-  actionsOverlayOpenAtom,
-  openActionsOverlayAtom,
-  closeActionsOverlayAtom,
-  resetActionsOverlayStateAtom,
-  pendingFlagAtom,
-  actionsOverlaySourceAtom,
-  onInputSubmitAtom,
-  defaultActionsIdAtom,
+  formDataAtom,
+  formHTMLAtom,
+  gridReadyAtom,
   hasRightShortcutAtom,
-  previewEnabledAtom,
+  hasSkipAtom,
+  headerHiddenAtom,
+  hintAtom,
+  inputFocusAtom,
+  inputHeightAtom,
+  inputWhileSubmittedAtom,
+  isHiddenAtom,
+  isMainScriptAtom,
+  isSplashAtom,
+  isWindowAtom,
+  itemHeightAtom,
+  justOpenedAtom,
+  kitConfigAtom,
+  lastConsumedFlagMetaAtom,
+  lastKeyDownWasModifierAtom,
+  lastScriptClosed,
+  listAtom,
+  loadingAtom,
+  logHTMLAtom,
+  logLinesAtom,
+  logoAtom,
+  markFlagConsumedAtom,
+  modeAtom,
+  mouseEnabledAtom,
+  nameAtom,
+  onInputSubmitAtom,
+  openActionsOverlayAtom,
+  panelHTMLAtom,
+  pauseChannelAtom,
+  pendingFlagAtom,
+  pidAtom,
+  placeholderAtom,
+  preloadedAtom,
+  prevChoicesConfig,
+  prevIndexAtom,
   previewCheckAtom,
-  promptResizedByHumanAtom,
-  currentChoiceHeightsAtom,
+  previewEnabledAtom,
+  previewHTMLAtom,
   prevMh,
-  cachedAtom,
+  prevScoredChoicesIdsAtom,
+  processingAtom,
+  progressAtom,
+  promptActiveAtom,
+  promptBoundsAtom,
+  promptData,
+  promptReadyAtom,
+  promptResizedByHumanAtom,
+  resetActionsOverlayStateAtom,
+  resizeCompleteAtom,
   resizeTickAtom,
+  runningAtom,
+  scoredFlags,
+  scrollToIndexAtom,
+  selectedAtom,
+  selectedChoicesAtom,
+  shortcutsAtom,
+  submittedAtom,
+  tabChangedAtom,
+  tabsAtom,
+  tempThemeAtom,
+  termConfigAtom,
+  termOutputAtom,
+  themeAtom,
+  webcamStreamAtom,
 } from './state/atoms';
 // Needed locally for derived atoms that read platform flags
 import { appConfigAtom } from './state/atoms/app-core';
+// Import unified scroll service
+import { scrollRequestAtom } from './state/scroll';
 import { pushIpcMessageAtom } from './state/selectors/ipcOutbound';
+import { sendAppMessage, sendChannel } from './state/services/ipc';
+import { cancelSpeech, pickColor } from './state/services/platform';
+import { appendChoiceIdToHistory } from './state/services/storage';
+import { hasFreshFlag } from './state/submit/flagFreshness';
 // Keep all atoms sourced from './state/atoms' to avoid circular re-exports
 
-
 // Shared imports
-import { DEFAULT_HEIGHT, closedDiv, noChoice } from '../../shared/defaults';
+import { closedDiv, DEFAULT_HEIGHT, noChoice } from '../../shared/defaults';
 import { AppChannel } from '../../shared/enums';
 import type { ResizeData, ScoredChoice, TermConfig as SharedTermConfig } from '../../shared/types';
 import { formatShortcut } from './components/formatters';
 import { createLogger } from './log-utils';
-import { arraysEqual, colorUtils, dataUtils, domUtils } from './utils/state-utils';
-import { removeTopBorderOnFirstItem, calcVirtualListHeight } from './state/utils';
-import { advanceIndexSkipping } from './state/skip-nav';
-import { computeResize } from './state/resize/compute';
-import { decideSubmit } from './state/submit/dispatcher';
 import {
-  SCROLL_THROTTLE_MS,
-  PREVIEW_THROTTLE_MS,
-  RESIZE_DEBOUNCE_MS,
-  SEND_RESIZE_DEBOUNCE_MS,
   JUST_OPENED_MS,
-  PROCESSING_SPINNER_DELAY_MS,
-  MAX_VLIST_HEIGHT,
   MAX_TABCHECK_ATTEMPTS,
+  MAX_VLIST_HEIGHT,
+  PREVIEW_THROTTLE_MS,
+  PROCESSING_SPINNER_DELAY_MS,
+  RESIZE_DEBOUNCE_MS,
+  SCROLL_THROTTLE_MS,
+  SEND_RESIZE_DEBOUNCE_MS,
 } from './state/constants';
-import {
-  ID_HEADER,
-  ID_FOOTER,
-  ID_MAIN,
-  ID_LIST,
-  ID_PANEL,
-  ID_LOG,
-} from './state/dom-ids';
+import { ID_FOOTER, ID_HEADER, ID_LIST, ID_LOG, ID_MAIN, ID_PANEL } from './state/dom-ids';
+import { computeResize } from './state/resize/compute';
+import { advanceIndexSkipping } from './state/skip-nav';
+import { decideSubmit } from './state/submit/dispatcher';
+import { calcVirtualListHeight, removeTopBorderOnFirstItem } from './state/utils';
+import { arraysEqual, colorUtils, dataUtils, domUtils } from './utils/state-utils';
 
 const log = createLogger('jotai.ts');
 
@@ -229,30 +212,27 @@ const wereChoicesPreloadedAtom = atom(false);
 const domUpdatedDebouncedAtom = atom<((reason?: string) => void) | null>(null);
 const spinnerTimeoutIdAtom = atom<NodeJS.Timeout | null>(null);
 
-export const spinnerControlAtom = atom(
-  null,
-  (g, s, action: 'start' | 'stop') => {
-    const existing = g(spinnerTimeoutIdAtom);
-    if (existing) {
-      clearTimeout(existing);
-      s(spinnerTimeoutIdAtom, null);
-    }
+export const spinnerControlAtom = atom(null, (g, s, action: 'start' | 'stop') => {
+  const existing = g(spinnerTimeoutIdAtom);
+  if (existing) {
+    clearTimeout(existing);
+    s(spinnerTimeoutIdAtom, null);
+  }
 
-    if (action === 'stop') {
-      s(loadingAtom, false);
-      s(processingAtom, false);
-      return;
-    }
+  if (action === 'stop') {
+    s(loadingAtom, false);
+    s(processingAtom, false);
+    return;
+  }
 
-    const id = setTimeout(() => {
-      s(loadingAtom, true);
-      s(processingAtom, true);
-      s(spinnerTimeoutIdAtom, null);
-    }, PROCESSING_SPINNER_DELAY_MS);
+  const id = setTimeout(() => {
+    s(loadingAtom, true);
+    s(processingAtom, true);
+    s(spinnerTimeoutIdAtom, null);
+  }, PROCESSING_SPINNER_DELAY_MS);
 
-    s(spinnerTimeoutIdAtom, id);
-  },
-);
+  s(spinnerTimeoutIdAtom, id);
+});
 
 const resetPromptOnClose = (g: Getter, s: Setter) => {
   s(resizeCompleteAtom, false);
@@ -314,9 +294,7 @@ export const scriptAtom = atom(
   (g, s, update: ScriptState | Partial<ScriptState> | ((prev: ScriptState) => ScriptState)) => {
     const prev = g(_script);
     const next =
-      typeof update === 'function'
-        ? (update as (prev: ScriptState) => ScriptState)(prev)
-        : { ...prev, ...update };
+      typeof update === 'function' ? (update as (prev: ScriptState) => ScriptState)(prev) : { ...prev, ...update };
     const scriptChanged = next.script !== prev.script;
 
     if (scriptChanged) {
@@ -362,7 +340,9 @@ export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
     const pid = g(pidAtom);
-    log.info(`${pid}: 📝📝📝 promptDataAtom SETTER: id="${a?.id}", scriptPath="${a?.scriptPath}", preload=${a?.preload}`);
+    log.info(
+      `${pid}: 📝📝📝 promptDataAtom SETTER: id="${a?.id}", scriptPath="${a?.scriptPath}", preload=${a?.preload}`,
+    );
     if (!a) {
       log.info(`${pid}: 📝 promptDataAtom: Setting to null`);
       s(promptData, null);
@@ -518,10 +498,12 @@ export const promptDataAtom = atom(
 
     s(pushIpcMessageAtom, {
       channel: Channel.SET_PROMPT_DATA,
-      args: [{
-        messageId: (a as any).messageId,
-        ui: a.ui,
-      }],
+      args: [
+        {
+          messageId: (a as any).messageId,
+          ui: a.ui,
+        },
+      ],
     });
 
     s(promptReadyAtom, true);
@@ -609,7 +591,7 @@ export const choicesConfigAtom = atom(
 
 // --- Tab Index ---
 let sendTabChanged: () => void;
-const getSendTabChanged = (g: Getter, s: Setter) =>
+const getSendTabChanged = (_g: Getter, s: Setter) =>
   debounce(
     () => {
       s(pushIpcMessageAtom, { channel: Channel.TAB_CHANGED, state: {} });
@@ -669,7 +651,9 @@ export const scoredChoicesAtom = atom(
   (g) => g(choices),
   (g, s, cs: ScoredChoice[] = []) => {
     const currentPromptData = g(promptData);
-    log.info(`🎯🎯🎯 scoredChoicesAtom SETTER: count=${cs?.length}, first="${cs?.[0]?.item?.name}", currentPromptData.id="${currentPromptData?.id}", currentPromptData.scriptPath="${currentPromptData?.scriptPath}"`);
+    log.info(
+      `🎯🎯🎯 scoredChoicesAtom SETTER: count=${cs?.length}, first="${cs?.[0]?.item?.name}", currentPromptData.id="${currentPromptData?.id}", currentPromptData.scriptPath="${currentPromptData?.scriptPath}"`,
+    );
     s(choicesReadyAtom, true);
     s(cachedAtom, false);
     s(loadingAtom, false);
@@ -803,7 +787,7 @@ export const scoredChoicesAtom = atom(
           promptId: g(promptDataAtom)?.id,
           ui: g(uiAtom),
         });
-      } catch { }
+      } catch {}
     }
 
     s(choicesHeightAtom, choicesHeight);
@@ -818,9 +802,9 @@ export const scoredChoicesAtom = atom(
             nextVirtualHeight: choicesHeight,
             choicesLength: cs.length,
           });
-        } catch { }
+        } catch {}
       }
-    } catch { }
+    } catch {}
 
     // Adjust main height based on UI mode
     const ui = g(uiAtom);
@@ -904,10 +888,10 @@ export const indexAtom = atom(
 
 export const focusedChoiceAtom = atom(
   (g) => g(_focused),
-  (g, s, choice: Choice) => {
+  (_g, s, choice: Choice) => {
     // Simple setter - side effects handled by ChoicesController
     s(_focused, choice || noChoice);
-  }
+  },
 );
 
 // --- Flagged Choice Value ---
@@ -975,12 +959,7 @@ export const scoredFlagsAtom = atom(
         const desc = (it.description || '').toLowerCase();
         const id = (it.id || '').toLowerCase();
         const val = (typeof it.value === 'string' ? it.value : '').toLowerCase();
-        return (
-          name.includes(input) ||
-          desc.includes(input) ||
-          id.includes(input) ||
-          val.includes(input)
-        );
+        return name.includes(input) || desc.includes(input) || id.includes(input) || val.includes(input);
       })
       .map((sc) => {
         // Calculate match positions for highlighting
@@ -1013,7 +992,7 @@ export const scoredFlagsAtom = atom(
 
         return {
           ...sc,
-          matches
+          matches,
         };
       });
   },
@@ -1102,7 +1081,7 @@ export const flagsIndexAtom = atom(
     try {
       const flags = g(flagsAtom);
       const flagData: any = flags?.[focusedFlag as keyof typeof flags];
-      if (flagData && flagData.hasAction) {
+      if (flagData?.hasAction) {
         const action = {
           name: flagData?.name ?? (focusedFlag as string),
           flag: focusedFlag,
@@ -1135,10 +1114,10 @@ export const resize = debounce(
   { leading: true, trailing: true },
 );
 
+import { ResizeReason } from './state/resize/reasons';
 // Route all external triggers through the scheduler for reason coalescing
 import { scheduleResizeAtom } from './state/resize/scheduler';
-import { ResizeReason } from './state/resize/reasons';
-export const triggerResizeAtom = atom(null, (g, s, reason: string) => {
+export const triggerResizeAtom = atom(null, (_g, s, reason: string) => {
   s(scheduleResizeAtom, reason || 'UNKNOWN');
 });
 
@@ -1185,7 +1164,7 @@ export const mainHeightAtom = atom(
 // --- Channel Communication ---
 export const channelAtom = atom((g) => {
   if (g(pauseChannelAtom)) {
-    return () => { };
+    return () => {};
   }
 
   return (channel: Channel, override?: any) => {
@@ -1397,7 +1376,7 @@ export const submitValueAtom = atom(
         channel,
         override,
       });
-    } catch { }
+    } catch {}
     s(pushIpcMessageAtom, { channel, state: override });
 
     if (effectiveFlag) {
@@ -1516,8 +1495,13 @@ export const toggleAllSelectedChoicesAtom = atom(null, (g, s) => {
 });
 
 // Re-export atoms that were moved to other files
-export { getEditorHistoryAtom, triggerKeywordAtom, sendActionAtom, sendShortcutAtom } from './state/atoms/actions-utils';
-export { valueInvalidAtom, preventSubmitAtom } from './state/atoms/utilities';
+export {
+  getEditorHistoryAtom,
+  sendActionAtom,
+  sendShortcutAtom,
+  triggerKeywordAtom,
+} from './state/atoms/actions-utils';
+export { preventSubmitAtom, valueInvalidAtom } from './state/atoms/utilities';
 
 // This atom returns a function for compatibility with useMessages.ts
 export const colorAtom = atom((g) => {
@@ -1613,16 +1597,19 @@ export const actionsAtom = atom((g) => {
 
   const shortcutActions = shortcuts
     .filter((s) => s?.bar)
-    .map(({ key, name, bar, flag, visible }) => ({
-      key,
-      name,
-      value: key,
-      shortcut: formatShortcut(key),
-      position: bar,
-      flag,
-      disabled: Boolean(disabled),
-      visible: Boolean(visible),
-    } as Action));
+    .map(
+      ({ key, name, bar, flag, visible }) =>
+        ({
+          key,
+          name,
+          value: key,
+          shortcut: formatShortcut(key),
+          position: bar,
+          flag,
+          disabled: Boolean(disabled),
+          visible: Boolean(visible),
+        }) as Action,
+    );
 
   return flagActions.concat(shortcutActions);
 });
@@ -1675,7 +1662,9 @@ export const shouldActionButtonShowOnInputAtom = atom((g) => {
 export const initPromptAtom = atom(null, (g, s) => {
   log.info(`${window.pid}: 🚀🚀🚀 INIT_PROMPT RECEIVED - initPromptAtom triggered`);
   const currentPromptData = g(promptDataAtom);
-  log.info(`${window.pid}: Current promptData.id: "${currentPromptData?.id}", scriptPath: "${currentPromptData?.scriptPath}"`);
+  log.info(
+    `${window.pid}: Current promptData.id: "${currentPromptData?.id}", scriptPath: "${currentPromptData?.scriptPath}"`,
+  );
   if (currentPromptData?.id) {
     log.info(`🚪 Init prompt skipped. Already initialized as ${currentPromptData?.id}`);
     return;
@@ -1683,7 +1672,9 @@ export const initPromptAtom = atom(null, (g, s) => {
   // Restore state from cache atomically to prevent flicker
   const promptData = g(cachedMainPromptDataAtom) as PromptData;
   const scoredChoices = g(cachedMainScoredChoicesAtom);
-  log.info(`${window.pid}: 🚀 RESTORING FROM CACHE: promptData.id="${promptData?.id}", scoredChoices.length=${scoredChoices?.length}`);
+  log.info(
+    `${window.pid}: 🚀 RESTORING FROM CACHE: promptData.id="${promptData?.id}", scoredChoices.length=${scoredChoices?.length}`,
+  );
   s(promptDataAtom, promptData);
   s(scoredChoicesAtom, scoredChoices);
   s(previewHTMLAtom, g(cachedMainPreviewAtom));
@@ -1725,13 +1716,15 @@ export const topHeightAtom = atom(
 // These atoms need to return functions for backward compatibility with App.tsx
 export const onPasteAtom = atom((g) => {
   // Create a closure that captures the setter via a writable atom
-  const setter = atom(null, (_g, s, event: ClipboardEvent) => {
+  const setter = atom(null, (_g, s, _event: ClipboardEvent) => {
     const currentUI = g(uiAtom);
-    console.log(JSON.stringify({
-      source: 'onPasteAtom_setter',
-      currentUI,
-      action: currentUI !== UI.editor ? 'sending_ON_PASTE' : 'letting_Monaco_handle'
-    }));
+    console.log(
+      JSON.stringify({
+        source: 'onPasteAtom_setter',
+        currentUI,
+        action: currentUI !== UI.editor ? 'sending_ON_PASTE' : 'letting_Monaco_handle',
+      }),
+    );
 
     // Don't prevent paste in editor - let Monaco handle it naturally
     if (currentUI !== UI.editor) {
@@ -1743,12 +1736,14 @@ export const onPasteAtom = atom((g) => {
   // Return a function that can be called with the event
   return (event: ClipboardEvent) => {
     const currentUI = g(uiAtom);
-    console.log(JSON.stringify({
-      source: 'onPasteAtom',
-      eventType: event.type,
-      currentUI,
-      action: currentUI !== UI.editor ? 'sending_ON_PASTE' : 'NOT_preventing_default'
-    }));
+    console.log(
+      JSON.stringify({
+        source: 'onPasteAtom',
+        eventType: event.type,
+        currentUI,
+        action: currentUI !== UI.editor ? 'sending_ON_PASTE' : 'NOT_preventing_default',
+      }),
+    );
 
     // Don't prevent paste in editor - let Monaco handle it naturally
     if (currentUI !== UI.editor) {

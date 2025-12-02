@@ -1,33 +1,31 @@
 // src/renderer/src/state/controllers/ResizeController.tsx
 
-import React, { useLayoutEffect, useRef, useCallback, useEffect } from 'react';
+import { Channel, Mode, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import { useAtomValue, useStore } from 'jotai';
-
+import type React from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 // Import necessary enums, types, constants, and utils
 import { AppChannel } from '../../../../shared/enums';
-import { Channel, Mode, UI, PROMPT } from '@johnlindquist/kit/core/enum';
-import type { ResizeData, PromptData } from '../../../../shared/types';
-import { createLogger } from '../../log-utils';
-import { resizeInflightAtom } from '../resize/scheduler';
-import { resizeInputsAtom } from '../selectors/resizeInputs';
-import { performResize } from '../services/resize';
-
+import type { PromptData, ResizeData } from '../../../../shared/types';
 // Import from facade for gradual migration
 import {
   _mainHeight, // The trigger atom
   channelAtom,
+  inputAtom,
+  isMainScriptAtom,
+  isSplashAtom,
   promptDataAtom,
   scriptAtom,
-  inputAtom,
-  isSplashAtom,
-  isMainScriptAtom,
 } from '../../jotai';
-
-import { prevMh, resizeTickAtom } from '../atoms/ui-elements';
+import { createLogger } from '../../log-utils';
 import { _inputChangedAtom } from '../atoms/input';
 import { _open } from '../atoms/lifecycle';
-import { _tabIndex } from '../atoms/tabs';
 import { _script } from '../atoms/script-state';
+import { _tabIndex } from '../atoms/tabs';
+import { prevMh, resizeTickAtom } from '../atoms/ui-elements';
+import { resizeInflightAtom } from '../resize/scheduler';
+import { resizeInputsAtom } from '../selectors/resizeInputs';
+import { performResize } from '../services/resize';
 
 const log = createLogger('ResizeController.ts');
 const { ipcRenderer } = window.electron;
@@ -87,10 +85,7 @@ export const ResizeController: React.FC = () => {
       const currentPromptId = promptData.id as string | undefined;
       const currentScriptPath = g(_script)?.script?.filePath as string | undefined;
 
-      if (
-        lastPromptIdRef.current !== currentPromptId ||
-        lastScriptPathRef.current !== currentScriptPath
-      ) {
+      if (lastPromptIdRef.current !== currentPromptId || lastScriptPathRef.current !== currentScriptPath) {
         if (debug) {
           log.info('ResizeController: prompt/script changed', {
             prevPromptId: lastPromptIdRef.current,
@@ -152,8 +147,7 @@ export const ResizeController: React.FC = () => {
       let forceHeight = resizeResult.forceHeight;
       let forceResize = resizeResult.forceResize;
       const urgentShrink = resizeResult.urgentShrink;
-      const forceWidth =
-        typeof promptData?.width === 'number' ? (promptData.width as number) : undefined;
+      const forceWidth = typeof promptData?.width === 'number' ? (promptData.width as number) : undefined;
 
       if (ui === UI.debugger) {
         forceHeight = 128;
@@ -162,12 +156,7 @@ export const ResizeController: React.FC = () => {
       if (mh === 0 && promptData?.preventCollapse) {
         const fallbackMain = Math.max(
           input.mainHeightCurrent || 0,
-          Math.max(
-            0,
-            (promptData?.height ?? PROMPT.HEIGHT.BASE) -
-              input.topHeight -
-              input.footerHeight,
-          ),
+          Math.max(0, (promptData?.height ?? PROMPT.HEIGHT.BASE) - input.topHeight - input.footerHeight),
         );
         mh = fallbackMain;
         forceResize = true;
@@ -214,14 +203,7 @@ export const ResizeController: React.FC = () => {
         };
         const sig = JSON.stringify(sigObj);
         const justOpened = Boolean(input.justOpened);
-        if (
-          !justOpened &&
-          !urgentShrink &&
-          sig === lastSigRef.current &&
-          !forceResize &&
-          !forceHeight &&
-          !forceWidth
-        ) {
+        if (!justOpened && !urgentShrink && sig === lastSigRef.current && !forceResize && !forceHeight && !forceWidth) {
           if (debug) log.info('ResizeController: signature unchanged; skipping send');
           return;
         }
@@ -249,7 +231,12 @@ export const ResizeController: React.FC = () => {
       }
 
       store.set(resizeInflightAtom, true);
-      log.info('ResizeController: sending resize', { pid: data.pid, id: data.id, mainHeight: data.mainHeight, reason: data.reason });
+      log.info('ResizeController: sending resize', {
+        pid: data.pid,
+        id: data.id,
+        mainHeight: data.mainHeight,
+        reason: data.reason,
+      });
       sendResize(data);
       store.set(prevMh, mh);
 
@@ -257,8 +244,7 @@ export const ResizeController: React.FC = () => {
         const prevChoicesLength = lastChoicesLengthRef.current;
         const nextChoicesLength = typeof scoredChoicesLength === 'number' ? scoredChoicesLength : 0;
         lastChoicesLengthRef.current = nextChoicesLength;
-        const choicesChanged =
-          typeof prevChoicesLength === 'number' && prevChoicesLength !== nextChoicesLength;
+        const choicesChanged = typeof prevChoicesLength === 'number' && prevChoicesLength !== nextChoicesLength;
         if (choicesChanged) {
           const direction = nextChoicesLength < prevChoicesLength ? 'SHRINK' : 'GROW';
           const scheduleKey = `${currentPromptId ?? ''}|${nextChoicesLength}|${direction}`;
@@ -320,9 +306,15 @@ export const ResizeController: React.FC = () => {
           if (count < 2) {
             recheckCountsRef.current[key] = count + 1;
             const delay = count === 0 ? 50 : 120;
-            log.info('ResizeController: scheduling recheck', { delayMs: delay, attempt: recheckCountsRef.current[key], promptId: key });
+            log.info('ResizeController: scheduling recheck', {
+              delayMs: delay,
+              attempt: recheckCountsRef.current[key],
+              promptId: key,
+            });
             setTimeout(() => {
-              try { scheduleResizeExecution('RECHECK'); } catch {}
+              try {
+                scheduleResizeExecution('RECHECK');
+              } catch {}
             }, delay);
           }
         } else if (!isJustOpened && currentPromptId) {
@@ -331,10 +323,12 @@ export const ResizeController: React.FC = () => {
       } catch {}
 
       setTimeout(() => {
-        try { store.set(resizeInflightAtom, false); } catch {}
+        try {
+          store.set(resizeInflightAtom, false);
+        } catch {}
       }, 300);
     },
-    [store]
+    [store],
   );
 
   const scheduleResizeExecution = useCallback(

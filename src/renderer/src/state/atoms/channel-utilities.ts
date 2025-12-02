@@ -8,14 +8,14 @@
  * - triggerKeywordAtom -> actions-utils.ts
  * - sendShortcutAtom -> actions-utils.ts
  * - sendActionAtom -> actions-utils.ts
- * 
+ *
  * This file is kept for backward compatibility but should be removed in future refactoring.
  */
 
 // Re-export from the correct locations
-export { 
-  sendShortcutAtom, 
-  sendActionAtom, 
+export {
+  getEditorHistoryAtom,
+  sendActionAtom,
+  sendShortcutAtom,
   triggerKeywordAtom,
-  getEditorHistoryAtom 
 } from './actions-utils';

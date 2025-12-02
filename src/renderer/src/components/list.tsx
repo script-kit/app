@@ -13,7 +13,7 @@ import {
   useListCallbackRef,
 } from 'react-window';
 import type { ListProps, ScoredChoice } from '../../../shared/types';
-import useListNav from '../hooks/useListNav';
+import useGridNav from '../hooks/useGridNav';
 import {
   containerClassNameAtom,
   directionAtom,
@@ -127,13 +127,18 @@ export default function ChoiceList({ width, height }: ListProps) {
   const gridReady = useAtomValue(gridReadyAtom);
   const containerClassName = useAtomValue(containerClassNameAtom);
 
-  // Unified nav adapter for grid: we compute the target index and dispatch SET
-  const nav = useListNav({
+  // Unified grid navigation using the shared strategy pattern
+  const nav = useGridNav({
     id: 'choices-grid',
     getCount: () => choices.length,
     getIndex: () => index,
     setIndex: (next) => setIndex(next),
-    loop: true,
+    getDimensions: () => ({
+      columnCount: gridDimensions.columnCount,
+      rowCount: gridDimensions.rowCount,
+    }),
+    loop: promptData?.loop ?? false,
+    pageSize: 5,
   });
 
   const registerScrollRef = useSetAtom(registerScrollRefAtom);
@@ -223,18 +228,6 @@ ${containerClassName}
   const hasResolvedInitialIndexRef = useRef(false);
   const lastPromptKeyRef = useRef<string | null>(null);
 
-  // Refs for stable hotkey handler - avoids recreating handler on every render
-  const indexRef = useRef(index);
-  const choicesLengthRef = useRef(choices.length);
-  const gridDimensionsRef = useRef(gridDimensions);
-  const gridLoopRef = useRef(promptData?.loop ?? false);
-  useEffect(() => {
-    indexRef.current = index;
-    choicesLengthRef.current = choices.length;
-    gridDimensionsRef.current = gridDimensions;
-    gridLoopRef.current = promptData?.loop ?? false;
-  }, [index, choices.length, gridDimensions, promptData?.loop]);
-
   // Column width function for Grid - v2 API passes cellProps
   const columnWidthFn = useCallback((columnIndex: number, cellProps: ChoiceGridCellProps) => {
     const index = columnIndex; // For column-based sizing
@@ -258,81 +251,55 @@ ${containerClassName}
   const currentColumn = index % gridDimensions.columnCount;
   const currentRow = Math.floor(index / gridDimensions.columnCount);
 
-  // Stable hotkey handler using refs - only gridReady, nav, setMouseEnabled are true dependencies
+  // Arrow key navigation using unified grid nav strategy
+  // Note: Only preventDefault for up/down (to prevent page scroll), not left/right
+  // (to allow text cursor movement in input fields and path browser navigation)
   useHotkeys(
-    ['up', 'down', 'left', 'right'],
+    ['up', 'down'],
     (event) => {
       if (!gridReady) return;
 
       event.preventDefault();
       setMouseEnabled(0);
 
-      // Read current values from refs to avoid stale closures
-      const idx = indexRef.current;
-      const dims = gridDimensionsRef.current;
-      const totalChoices = choicesLengthRef.current;
-      const loop = gridLoopRef.current;
-      const col = idx % dims.columnCount;
-      const row = Math.floor(idx / dims.columnCount);
-
-      let newIndex = idx;
-
       switch (event.key) {
-        case 'ArrowLeft':
-          if (col > 0) {
-            newIndex = row * dims.columnCount + (col - 1);
-          } else if (loop) {
-            // Wrap to last column of same row
-            const lastColInRow = Math.min(dims.columnCount - 1, totalChoices - 1 - row * dims.columnCount);
-            newIndex = row * dims.columnCount + lastColInRow;
-          }
-          break;
-        case 'ArrowRight':
-          if (col < dims.columnCount - 1 && row * dims.columnCount + col + 1 < totalChoices) {
-            newIndex = row * dims.columnCount + (col + 1);
-          } else if (loop) {
-            // Wrap to first column of same row
-            newIndex = row * dims.columnCount;
-          }
-          break;
         case 'ArrowUp':
-          if (row > 0) {
-            newIndex = (row - 1) * dims.columnCount + col;
-          } else if (loop) {
-            // Wrap to last row, same column (if that cell exists)
-            const lastRow = dims.rowCount - 1;
-            const targetIndex = lastRow * dims.columnCount + col;
-            newIndex = Math.min(targetIndex, totalChoices - 1);
-          }
+          nav.moveUp();
           break;
         case 'ArrowDown':
-          if (row < dims.rowCount - 1) {
-            const targetIndex = (row + 1) * dims.columnCount + col;
-            if (targetIndex < totalChoices) {
-              newIndex = targetIndex;
-            } else if (loop) {
-              // Wrap to first row, same column
-              newIndex = col;
-            }
-          } else if (loop) {
-            // Wrap to first row, same column
-            newIndex = col;
-          }
+          nav.moveDown();
           break;
-        default:
-          log.info(`Unknown direction key in ChoiceList.tsx:`, event);
-          break;
-      }
-
-      if (newIndex !== idx) {
-        nav.dispatch({ type: 'SET', index: newIndex, source: 'key' });
       }
     },
     hotkeysOptions,
-    [gridReady, nav, setMouseEnabled], // Stable dependencies only - refs handle the rest
+    [gridReady, nav, setMouseEnabled],
   );
 
-  // PageUp/PageDown/Home/End navigation for grid
+  // Left/right grid navigation - in grid mode, arrows ALWAYS navigate the grid
+  // (cursor movement in input is sacrificed for grid navigation UX)
+  useHotkeys(
+    ['left', 'right'],
+    (event) => {
+      if (!gridReady) return;
+
+      // In grid mode, always navigate grid with arrow keys
+      event.preventDefault();
+      setMouseEnabled(0);
+
+      switch (event.key) {
+        case 'ArrowLeft':
+          nav.moveLeft();
+          break;
+        case 'ArrowRight':
+          nav.moveRight();
+          break;
+      }
+    },
+    hotkeysOptions,
+    [gridReady, nav, setMouseEnabled],
+  );
+
+  // PageUp/PageDown/Home/End navigation using unified grid nav strategy
   useHotkeys(
     ['pageup', 'pagedown', 'home', 'end'],
     (event) => {
@@ -341,39 +308,19 @@ ${containerClassName}
       event.preventDefault();
       setMouseEnabled(0);
 
-      const totalChoices = choicesLengthRef.current;
-      const dims = gridDimensionsRef.current;
-      const idx = indexRef.current;
-      const col = idx % dims.columnCount;
-      const row = Math.floor(idx / dims.columnCount);
-
-      let newIndex = idx;
-
       switch (event.key) {
-        case 'PageUp': {
-          // Jump up by visible rows (approximately 5 rows)
-          const jumpRows = Math.min(5, row);
-          newIndex = Math.max(0, (row - jumpRows) * dims.columnCount + col);
+        case 'PageUp':
+          nav.pageUp();
           break;
-        }
-        case 'PageDown': {
-          // Jump down by visible rows (approximately 5 rows)
-          const jumpRows = Math.min(5, dims.rowCount - 1 - row);
-          newIndex = Math.min(totalChoices - 1, (row + jumpRows) * dims.columnCount + col);
+        case 'PageDown':
+          nav.pageDown();
           break;
-        }
         case 'Home':
-          // Go to first item
-          newIndex = 0;
+          nav.jumpToFirst();
           break;
         case 'End':
-          // Go to last item
-          newIndex = totalChoices - 1;
+          nav.jumpToLast();
           break;
-      }
-
-      if (newIndex !== idx) {
-        nav.dispatch({ type: 'SET', index: newIndex, source: 'key' });
       }
     },
     hotkeysOptions,

@@ -1,5 +1,5 @@
-import type * as Monaco from 'monaco-editor';
 import type { EditorOptions } from '@johnlindquist/kit/types/kitapp';
+import type * as Monaco from 'monaco-editor';
 
 export interface MonacoInitOptions {
   editor: Monaco.editor.IStandaloneCodeEditor;

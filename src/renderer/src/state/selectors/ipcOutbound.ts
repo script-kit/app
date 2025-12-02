@@ -15,6 +15,6 @@ export const pushIpcMessageAtom = atom(null, (g, s, msg: unknown) => {
 });
 
 // Write-only atom to clear the queue after sending
-export const clearIpcOutboxAtom = atom(null, (g, s) => {
+export const clearIpcOutboxAtom = atom(null, (_g, s) => {
   s(ipcOutboxAtom, []);
 });

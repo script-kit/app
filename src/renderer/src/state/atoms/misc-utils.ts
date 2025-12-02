@@ -3,13 +3,12 @@
  * Simple atoms that don't fit into other categories.
  */
 
-import { atom } from 'jotai';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
+import { atom } from 'jotai';
 import { AppChannel } from '../../../../shared/enums';
-
+import { pushIpcMessageAtom } from '../selectors/ipcOutbound';
 // Import dependencies from shared-dependencies to avoid circular imports
 import { uiAtom } from '../shared-dependencies';
-import { pushIpcMessageAtom } from '../selectors/ipcOutbound';
 
 // Note: changeAtom and runMainScriptAtom are defined in jotai.ts
 // They need to return functions for compatibility with useAtomValue usage
@@ -20,4 +19,3 @@ import { pushIpcMessageAtom } from '../selectors/ipcOutbound';
 
 // export const onPasteAtom = ...
 // export const onDropAtom = ...
-

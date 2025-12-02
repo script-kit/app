@@ -3,9 +3,9 @@
  * State specific to the Monaco editor component.
  */
 
+import type { EditorConfig, EditorOptions } from '@johnlindquist/kit/types/kitapp';
 import { atom } from 'jotai';
 import type { editor } from 'monaco-editor';
-import type { EditorConfig, EditorOptions } from '@johnlindquist/kit/types/kitapp';
 import { findCssVar } from '../../../../shared/color-utils';
 
 const MAX_EDITOR_HISTORY = 30;
@@ -41,10 +41,21 @@ export const editorConfigAtom = atom(
   (g) => g(editorConfig),
   (_g, s, a: EditorOptions) => {
     s(editorConfig, a);
-    
+
     // Destructure to separate options for Monaco from other configurations
-    const { file, scrollTo, hint: h, onInput, onEscape, onAbandon, onBlur, ignoreBlur, extraLibs, ...options } = a as any;
-    
+    const {
+      file,
+      scrollTo,
+      hint: h,
+      onInput,
+      onEscape,
+      onAbandon,
+      onBlur,
+      ignoreBlur,
+      extraLibs,
+      ...options
+    } = a as any;
+
     s(editorOptions, {
       ...defaultEditorOptions,
       ...(options as editor.IStandaloneEditorConstructionOptions),
@@ -54,7 +65,7 @@ export const editorConfigAtom = atom(
 
 export const editorSuggestionsAtom = atom<string[]>([]);
 export const editorCursorPosAtom = atom<number>(0);
-export const editorValueAtom = atom<{ text: string; date: string; }>({ text: '', date: '' });
+export const editorValueAtom = atom<{ text: string; date: string }>({ text: '', date: '' });
 
 // Atom specifically for triggering an append action in the editor component
 export const editorAppendAtom = atom(
@@ -71,11 +82,8 @@ export const editorAppendAtom = atom(
 export const editorHistory = atom<{ content: string; timestamp: string }[]>([]);
 export const editorHistoryPush = atom(null, (g, s, a: string) => {
   const history = g(editorHistory);
-  const updatedHistory = [
-    { content: a, timestamp: new Date().toISOString() },
-    ...history,
-  ];
-  
+  const updatedHistory = [{ content: a, timestamp: new Date().toISOString() }, ...history];
+
   if (updatedHistory.length > MAX_EDITOR_HISTORY) {
     updatedHistory.length = MAX_EDITOR_HISTORY;
   }

@@ -21,14 +21,14 @@ export default function Drop() {
 
   const hasPreview = useAtomValue(previewCheckAtom);
 
-  const onDragEnter = useCallback((event) => {
+  const onDragEnter = useCallback((_event) => {
     // TODO: Check this on windows
     // event.preventDefault();
     setDropReady(true);
     setDropMessage('Drop to Submit');
   }, []);
   const onDragLeave = useCallback(
-    (event) => {
+    (_event) => {
       setDropReady(false);
       setDropMessage(placeholder);
     },

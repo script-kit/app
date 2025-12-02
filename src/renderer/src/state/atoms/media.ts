@@ -68,3 +68,16 @@ export const micStateAtom = atom<'idle' | 'recording' | 'stopped'>('idle');
 export const webcamStreamAtom = atom<MediaStream | null>(null);
 export const webcamIdAtom = atom<string | null>(null);
 export const deviceIdAtom = atom<string | null>(null);
+
+// --- Screen Recording ---
+export const screenRecordingStreamAtom = atom<MediaStream | null>(null);
+export const screenAreaAtom = atom<{
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} | null>(null);
+export const screenSourceIdAtom = atom<string | null>(null);
+export const screenRecordingStateAtom = atom<'idle' | 'selecting' | 'recording' | 'paused'>('idle');
+export const screenRecorderAtom = atom<MediaRecorder | null>(null);
+export const screenRecordingChunksAtom = atom<Blob[]>([]);

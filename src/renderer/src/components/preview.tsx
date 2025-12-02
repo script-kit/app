@@ -79,7 +79,7 @@ function Preview() {
       copyButton.classList.add('hljs-copy-button');
       parent.appendChild(copyButton);
 
-      copyButton.addEventListener('click', (event: any) => {
+      copyButton.addEventListener('click', (_event: any) => {
         const text = element.innerText;
         navigator.clipboard.writeText(text);
 

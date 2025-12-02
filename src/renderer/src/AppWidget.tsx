@@ -2,8 +2,105 @@ import { Channel } from '@johnlindquist/kit/core/enum';
 import type { WidgetOptions } from '@johnlindquist/kit/types/pro';
 import log from 'electron-log';
 import { createApp } from 'petite-vue';
-import React, { type ErrorInfo, Suspense, useEffect, useLayoutEffect, useState, useRef } from 'react';
+import React, { type ErrorInfo, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AppChannel } from '../../shared/enums';
+
+// ============================================================================
+// Debug Overlay Component
+// ============================================================================
+
+interface DebugEvent {
+  channel: string;
+  targetId?: string;
+  timestamp: number;
+  data?: any;
+}
+
+interface DebugOverlayProps {
+  widgetId?: string;
+  state: any;
+  events: DebugEvent[];
+  bounds: { x: number; y: number; width: number; height: number };
+  visible: boolean;
+  onToggle: () => void;
+}
+
+function DebugOverlay({ widgetId, state, events, bounds, visible, onToggle }: DebugOverlayProps) {
+  if (!visible) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        className="fixed bottom-2 right-2 w-6 h-6 bg-gray-800/80 text-white text-xs rounded-full flex items-center justify-center hover:bg-gray-700 z-50 font-mono"
+        title="Show Debug Panel (Ctrl+Shift+D)"
+      >
+        D
+      </button>
+    );
+  }
+
+  return (
+    <div className="fixed bottom-2 right-2 bg-gray-900/95 text-white text-xs p-3 rounded-lg max-w-[320px] max-h-[300px] overflow-auto font-mono z-50 shadow-xl border border-gray-700">
+      <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-700">
+        <span className="text-green-400 font-bold">Widget Debug</span>
+        <button
+          type="button"
+          onClick={onToggle}
+          className="text-gray-400 hover:text-white"
+        >
+          ×
+        </button>
+      </div>
+
+      {/* Widget Info */}
+      <div className="mb-3">
+        <div className="text-yellow-400 text-[10px] uppercase tracking-wider mb-1">Widget</div>
+        <div className="text-gray-300 text-[11px]">
+          ID: {widgetId || 'N/A'}
+        </div>
+        <div className="text-gray-400 text-[10px]">
+          {bounds.width}×{bounds.height} @ ({bounds.x}, {bounds.y})
+        </div>
+      </div>
+
+      {/* State */}
+      <div className="mb-3">
+        <div className="text-yellow-400 text-[10px] uppercase tracking-wider mb-1">State</div>
+        <pre className="text-gray-300 whitespace-pre-wrap text-[10px] bg-gray-800 rounded p-1.5 max-h-[80px] overflow-auto">
+          {JSON.stringify(state, null, 2) || '{}'}
+        </pre>
+      </div>
+
+      {/* Recent Events */}
+      <div>
+        <div className="text-yellow-400 text-[10px] uppercase tracking-wider mb-1">
+          Events ({events.length})
+        </div>
+        <div className="space-y-1 max-h-[80px] overflow-auto">
+          {events.slice(-8).reverse().map((e, i) => (
+            <div
+              key={`${e.timestamp}-${i}`}
+              className="text-[10px] bg-gray-800 rounded px-1.5 py-0.5 flex justify-between items-center"
+            >
+              <span className="text-blue-400">{e.channel.replace('WIDGET_', '')}</span>
+              {e.targetId && <span className="text-gray-500">#{e.targetId}</span>}
+              <span className="text-gray-600 text-[9px]">
+                {new Date(e.timestamp).toLocaleTimeString().split(' ')[0]}
+              </span>
+            </div>
+          ))}
+          {events.length === 0 && (
+            <div className="text-gray-500 text-[10px] italic">No events yet</div>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-2 pt-2 border-t border-gray-700 text-[9px] text-gray-500">
+        Ctrl+Shift+D to toggle
+      </div>
+    </div>
+  );
+}
 
 // Extend Window interface for electron and widget properties
 declare global {
@@ -74,16 +171,68 @@ export default function AppWidget() {
   const [contentHeight, setContentHeight] = useState(0);
   const previousDimensionsRef = useRef({ width: 0, height: 0 });
 
+  // Debug state
+  const [debugEvents, setDebugEvents] = useState<DebugEvent[]>([]);
+  const [debugVisible, setDebugVisible] = useState(false);
+  const [widgetState, setWidgetState] = useState<any>({});
+  const [bounds, setBounds] = useState({ x: 0, y: 0, width: 0, height: 0 });
+
+  // Track debug events
+  const addDebugEvent = useCallback((channel: string, targetId?: string, data?: any) => {
+    setDebugEvents(prev => {
+      const newEvents = [...prev, { channel, targetId, timestamp: Date.now(), data }];
+      // Keep last 50 events
+      return newEvents.slice(-50);
+    });
+  }, []);
+
+  // Toggle debug overlay
+  const toggleDebug = useCallback(() => {
+    setDebugVisible(prev => !prev);
+  }, []);
+
+  // Keyboard shortcut for debug toggle (Ctrl+Shift+D)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        toggleDebug();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [toggleDebug]);
+
+  // Track window bounds
+  useEffect(() => {
+    const updateBounds = () => {
+      setBounds({
+        x: window.screenX,
+        y: window.screenY,
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+    updateBounds();
+    window.addEventListener('resize', updateBounds);
+    return () => window.removeEventListener('resize', updateBounds);
+  }, []);
+
   useEffect(() => {
     log.info(` Setting up widget initialization effect`);
 
-    const handleWidgetInit = (event, options: WidgetOptions) => {
+    const handleWidgetInit = (_event, options: WidgetOptions) => {
       log.info(` Widget init received`, {
         widgetId: options.widgetId,
         options: JSON.stringify(options),
       });
       setOptions(options);
       window.widgetId = options.widgetId;
+      // Initialize widget state for debug
+      if (options.state) {
+        setWidgetState(options.state);
+      }
+      addDebugEvent('WIDGET_INIT', undefined, { widgetId: options.widgetId });
     };
 
     log.info(` Adding listener for ${Channel.WIDGET_INIT}`);
@@ -186,6 +335,7 @@ export default function AppWidget() {
       const targetId = closestIdElement.id;
       const message = { targetId, ...options };
       log.info(` Click event`, { targetId, options: JSON.stringify(options) });
+      addDebugEvent('WIDGET_CLICK', targetId);
       ipcRenderer.send(Channel.WIDGET_CLICK, message);
     };
 
@@ -195,6 +345,7 @@ export default function AppWidget() {
       const targetId = closestIdElement.id;
       const message = { targetId, ...options };
       log.info(` MouseDown event`, { targetId, options: JSON.stringify(options) });
+      addDebugEvent('WIDGET_MOUSE_DOWN', targetId);
       ipcRenderer.send(Channel.WIDGET_MOUSE_DOWN, message);
     };
 
@@ -203,6 +354,7 @@ export default function AppWidget() {
         targetId: event.target.id,
         value: event.target.value,
       });
+      addDebugEvent('WIDGET_INPUT', event.target.id, { value: event.target.value });
       ipcRenderer.send(Channel.WIDGET_INPUT, {
         targetId: event.target.id,
         value: event.target.value,
@@ -216,12 +368,12 @@ export default function AppWidget() {
       event.preventDefault();
     };
 
-    const handleDragEnd = (event) => {
+    const handleDragEnd = (_event) => {
       log.info(` DragEnd event`);
       __widgetContainer.classList.remove('drag-shadow');
     };
 
-    const handleDragLeave = (event) => {
+    const handleDragLeave = (_event) => {
       log.info(` DragLeave event`);
       __widgetContainer.classList.remove('drag-shadow');
     };
@@ -250,6 +402,7 @@ export default function AppWidget() {
         files,
       });
 
+      addDebugEvent('WIDGET_DROP', id, { fileCount: files.length });
       ipcRenderer.send('WIDGET_DROP', {
         dataset: {
           ...event.target.dataset,
@@ -278,7 +431,7 @@ export default function AppWidget() {
 
       const fitWidget = () => {
         const firstChild = document.getElementById('__widget-container')?.firstElementChild;
-        if (!(firstChild && firstChild.offsetWidth && firstChild.offsetHeight)) {
+        if (!(firstChild?.offsetWidth && firstChild.offsetHeight)) {
           log.warn(` Cannot fit widget: invalid dimensions`);
           return;
         }
@@ -314,15 +467,18 @@ export default function AppWidget() {
         mounted() {
           log.info(` Widget mounted`);
 
-          ipcRenderer.on('WIDGET_FIT', (event, state) => {
+          ipcRenderer.on('WIDGET_FIT', (_event, _state) => {
             log.info(` WIDGET_FIT event received`);
             fitWidget();
           });
 
-          ipcRenderer.on(Channel.WIDGET_SET_STATE, (event, state) => {
+          ipcRenderer.on(Channel.WIDGET_SET_STATE, (_event, state) => {
             log.info(` WIDGET_SET_STATE event`, { state: JSON.stringify(state) });
             this.setState(state);
             window.onSetState(state);
+            // Update debug state tracking
+            setWidgetState(prev => ({ ...prev, ...state }));
+            addDebugEvent('WIDGET_SET_STATE', undefined, state);
           });
 
           log.info(` Sending WIDGET_INIT`);
@@ -362,6 +518,9 @@ export default function AppWidget() {
     containerClass: options.containerClass,
   });
 
+  // Show debug overlay if debug option is enabled
+  const showDebug = options?.debug === true;
+
   return (
     <ErrorBoundary>
       <div
@@ -369,6 +528,16 @@ export default function AppWidget() {
           __html,
         }}
       />
+      {showDebug && (
+        <DebugOverlay
+          widgetId={options?.widgetId}
+          state={widgetState}
+          events={debugEvents}
+          bounds={bounds}
+          visible={debugVisible}
+          onToggle={toggleDebug}
+        />
+      )}
     </ErrorBoundary>
   );
 }

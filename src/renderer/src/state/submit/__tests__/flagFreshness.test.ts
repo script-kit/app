@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { hasFreshFlag } from '../flagFreshness';
 
 const baseMeta = (version = 1) => ({ sessionKey: 'prompt::pid', version });

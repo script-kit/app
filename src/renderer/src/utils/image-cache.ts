@@ -27,13 +27,13 @@ export async function cacheImage(url: string): Promise<string> {
 
     // Request from main process cache (persists across windows)
     const cachedDataUrl = await ipcRenderer.invoke(AppChannel.GET_CACHED_AVATAR, url);
-    
+
     if (cachedDataUrl) {
       // Store in local memory cache for this window
       memoryCache.set(url, cachedDataUrl);
       return cachedDataUrl;
     }
-    
+
     // If main process returns original URL, use it
     return url;
   } catch (error) {
@@ -50,7 +50,7 @@ export async function clearAvatarCache(): Promise<void> {
   try {
     // Clear local memory cache
     memoryCache.clear();
-    
+
     // Clear main process cache
     await ipcRenderer.invoke(AppChannel.CLEAR_AVATAR_CACHE);
   } catch (error) {
@@ -73,7 +73,7 @@ export function useCachedAvatar(avatarUrl: string | undefined): string | undefin
     }
 
     let cancelled = false;
-    
+
     // Set the original URL immediately to prevent flicker
     setCachedUrl(avatarUrl);
 

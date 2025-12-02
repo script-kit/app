@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import { useAtom, useAtomValue } from 'jotai';
-import React, { useRef, useState, useEffect, Fragment } from 'react';
+import React, { Fragment, useEffect, useRef, useState } from 'react';
 
 import {
   inputHeightAtom,
@@ -15,8 +15,8 @@ import {
   tabsAtom,
   userAtom,
 } from '../jotai';
-import { GithubIcon } from './icons';
 import { useCachedAvatar } from '../utils/image-cache';
+import { GithubIcon } from './icons';
 
 const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
   const user = useAtomValue(userAtom);

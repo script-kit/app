@@ -1,26 +1,25 @@
+import type { AppState, Choice } from '@johnlindquist/kit/types/core';
 import { atom } from 'jotai';
-import { _inputAtom, _inputChangedAtom, _modifiers } from '../atoms/input';
-import { _focused } from '../atoms/choices';
 import { noChoice } from '../../../../shared/defaults';
-import { _flaggedValue, _actionsInputAtom } from '../atoms/actions';
-import { _tabIndex, tabsAtom } from '../atoms/tabs';
-import { _submitValue } from '../atoms/ipc';
-import { submittedAtom } from '../atoms/app-core';
-import { _script } from '../atoms/script-state';
-import { nameAtom, descriptionAtom } from '../atoms/ui-elements';
-import { choicesAtom, selectedChoicesAtom } from '../atoms/choices';
-import { editorCursorPosAtom } from '../atoms/editor';
-import { modeAtom } from '../../jotai';
 // Import from facade for gradual migration
-import { 
-  focusedFlagValueAtom, 
-  indexAtom, 
-  uiAtom, 
+import {
+  focusedActionAtom,
+  focusedFlagValueAtom,
+  indexAtom,
+  modeAtom,
   previewHTMLAtom,
   promptDataAtom,
-  focusedActionAtom,
+  uiAtom,
 } from '../../jotai';
-import type { AppState, Choice } from '@johnlindquist/kit/types/core';
+import { _actionsInputAtom, _flaggedValue } from '../atoms/actions';
+import { submittedAtom } from '../atoms/app-core';
+import { _focused, choicesAtom, selectedChoicesAtom } from '../atoms/choices';
+import { editorCursorPosAtom } from '../atoms/editor';
+import { _inputAtom, _inputChangedAtom, _modifiers } from '../atoms/input';
+import { _submitValue } from '../atoms/ipc';
+import { _script } from '../atoms/script-state';
+import { _tabIndex, tabsAtom } from '../atoms/tabs';
+import { descriptionAtom, nameAtom } from '../atoms/ui-elements';
 
 // --- START FIX: Initialization Safety ---
 
@@ -36,7 +35,9 @@ const FALLBACK_NO_CHOICE: Choice = {
 // Verify the import and select the safe fallback at module initialization time.
 let safeNoChoice = noChoice;
 if (!safeNoChoice || typeof safeNoChoice !== 'object' || safeNoChoice.id === undefined) {
-  console.error('CRITICAL: noChoice import failed or is invalid in appState.ts. Using hardcoded fallback.', { importedValue: noChoice });
+  console.error('CRITICAL: noChoice import failed or is invalid in appState.ts. Using hardcoded fallback.', {
+    importedValue: noChoice,
+  });
   safeNoChoice = FALLBACK_NO_CHOICE;
 }
 
@@ -52,7 +53,7 @@ export const appStateLiteAtom = atom<AppState>((g) => {
     if (!focusedValue) {
       console.warn('_focused atom returned undefined, using noChoice');
     }
-    
+
     return {
       input: g(_inputAtom),
       actionsInput: g(_actionsInputAtom),

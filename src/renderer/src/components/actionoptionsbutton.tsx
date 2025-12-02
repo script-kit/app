@@ -3,18 +3,18 @@ import { Channel, UI } from '@johnlindquist/kit/core/enum';
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
-import { useAtom, useSetAtom, useAtomValue } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import React, { useCallback } from 'react';
 import {
   actionsButtonActionAtom,
+  actionsOverlayOpenAtom,
   appConfigAtom,
   channelAtom,
   choicesAtom,
-  actionsOverlayOpenAtom,
-  openActionsOverlayAtom,
   closeActionsOverlayAtom,
   indexAtom,
   inputAtom,
+  openActionsOverlayAtom,
   uiAtom,
 } from '../jotai';
 

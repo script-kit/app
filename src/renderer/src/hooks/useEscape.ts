@@ -3,9 +3,9 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
-  escapeAtom,
   actionsOverlayOpenAtom,
   closeActionsOverlayAtom,
+  escapeAtom,
   isReadyAtom,
   promptDataAtom,
   runMainScriptAtom,

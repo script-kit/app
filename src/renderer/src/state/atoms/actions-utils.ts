@@ -3,19 +3,13 @@
  * Handles keyboard shortcuts, actions, and related functionality.
  */
 
-import { atom } from 'jotai';
 import { Channel } from '@johnlindquist/kit/core/enum';
 import type { Action, Choice } from '@johnlindquist/kit/types/core';
 import log from 'electron-log';
-
-// Import dependencies from shared-dependencies to avoid circular imports
-import {
-  shortcutsAtom,
-  enterLastPressedAtom,
-  editorHistory,
-  focusedChoiceAtom,
-} from '../shared-dependencies';
+import { atom } from 'jotai';
 import { pushIpcMessageAtom } from '../selectors/ipcOutbound';
+// Import dependencies from shared-dependencies to avoid circular imports
+import { editorHistory, enterLastPressedAtom, focusedChoiceAtom, shortcutsAtom } from '../shared-dependencies';
 
 /**
  * Send shortcut atom - handles keyboard shortcut events.
@@ -38,7 +32,7 @@ export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
 /**
  * Send action atom - handles action button clicks.
  */
-export const sendActionAtom = atom(null, (g, s, action: Action) => {
+export const sendActionAtom = atom(null, (_g, s, action: Action) => {
   log.info(`=I Sending action: ${action.name}`);
   // Send as state override
   // (Main process expects AppMessage with `state.action` set)
@@ -49,12 +43,8 @@ export const sendActionAtom = atom(null, (g, s, action: Action) => {
  * Trigger keyword atom - handles keyword-triggered actions.
  */
 export const triggerKeywordAtom = atom(
-  (_g) => { },
-  (
-    g,
-    s,
-    { keyword, choice }: { keyword: string; choice: Choice },
-  ) => {
+  (_g) => {},
+  (_g, s, { keyword, choice }: { keyword: string; choice: Choice }) => {
     s(pushIpcMessageAtom, {
       channel: Channel.KEYWORD_TRIGGERED,
       state: { keyword, focused: choice, value: choice?.value },

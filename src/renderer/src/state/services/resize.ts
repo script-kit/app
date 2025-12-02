@@ -1,5 +1,5 @@
-import { computeResize, type ComputeResizeInput, type ComputeResizeOutput } from '../resize/compute';
 import { PROMPT } from '@johnlindquist/kit/core/enum';
+import { type ComputeResizeInput, type ComputeResizeOutput, computeResize } from '../resize/compute';
 
 export type ResizeResult = ComputeResizeOutput & {
   urgentShrink: boolean;
@@ -39,13 +39,13 @@ export function performResize(input: any): ResizeResult {
   const base = computeResize(computeInput);
 
   let mainHeight = base.mainHeight;
-  let forceHeight = base.forceHeight;
+  const forceHeight = base.forceHeight;
   let forceResize = base.forceResize;
 
   // Enforce minimum height when overlay is open
   if (input.overlayOpen) {
     const baseHeight =
-      (input.promptData?.height && input.promptData.height > PROMPT.HEIGHT.BASE)
+      input.promptData?.height && input.promptData.height > PROMPT.HEIGHT.BASE
         ? (input.promptData.height as number)
         : PROMPT.HEIGHT.BASE;
     const minMain = Math.max(0, baseHeight - input.topHeight - input.footerHeight);
@@ -59,22 +59,14 @@ export function performResize(input: any): ResizeResult {
   if (mainHeight === 0 && input.promptData?.preventCollapse) {
     const fallbackMain = Math.max(
       input.mainHeightCurrent || 0,
-      Math.max(
-        0,
-        (input.promptData?.height ?? PROMPT.HEIGHT.BASE) -
-          input.topHeight -
-          input.footerHeight,
-      ),
+      Math.max(0, (input.promptData?.height ?? PROMPT.HEIGHT.BASE) - input.topHeight - input.footerHeight),
     );
     mainHeight = fallbackMain;
     forceResize = true;
   }
 
   const urgentShrink =
-    input.prevMainHeight > 0 &&
-    mainHeight > 0 &&
-    mainHeight < input.prevMainHeight &&
-    !input.placeholderOnly;
+    input.prevMainHeight > 0 && mainHeight > 0 && mainHeight < input.prevMainHeight && !input.placeholderOnly;
 
   return {
     mainHeight,

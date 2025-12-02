@@ -3,10 +3,10 @@
  * Manages application logs and console output display.
  */
 
-import { atom } from 'jotai';
-import Convert from 'ansi-to-html';
-import { drop as _drop } from 'lodash-es';
 import { Channel } from '@johnlindquist/kit/core/enum';
+import Convert from 'ansi-to-html';
+import { atom } from 'jotai';
+import { drop as _drop } from 'lodash-es';
 
 const MAX_LOG_LINES = 3000;
 

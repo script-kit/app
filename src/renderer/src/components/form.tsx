@@ -7,9 +7,17 @@ import { useAtom, useAtomValue } from 'jotai';
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
-import React, { useCallback, type KeyboardEvent, useEffect, useRef } from 'react';
+import React, { type KeyboardEvent, useCallback, useEffect, useRef } from 'react';
 
-import { changeAtom, containerClassNameAtom, formDataAtom, formHTMLAtom, logAtom, previewHTMLAtom, submitValueAtom } from '../jotai';
+import {
+  changeAtom,
+  containerClassNameAtom,
+  formDataAtom,
+  formHTMLAtom,
+  logAtom,
+  previewHTMLAtom,
+  submitValueAtom,
+} from '../jotai';
 
 export default function Form() {
   // useEscape();
@@ -180,7 +188,7 @@ export default function Form() {
   );
 
   const onFormChange = useCallback(
-    (event?: any) => {
+    (_event?: any) => {
       // if (event) event.preventDefault();
 
       const { orderedValues } = getFormJSON();

@@ -1,13 +1,20 @@
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useMemo } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
+import type { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
+import {
+  KEY_REPLACEMENT_MAP,
+  KEYWORD_TO_CHAR_MAP,
+  normalizeEventToHotkeysKey,
+  toHotkeysFormat,
+} from '../../../shared/shortcuts';
 import {
   actionsConfigAtom,
   actionsInputFocusAtom,
+  actionsOverlayOpenAtom,
   channelAtom,
   choicesAtom,
-  actionsOverlayOpenAtom,
-  openActionsOverlayAtom,
   closeActionsOverlayAtom,
   flagsAtom,
   focusedActionAtom,
@@ -18,6 +25,7 @@ import {
   indexAtom,
   inputAtom,
   inputFocusAtom,
+  openActionsOverlayAtom,
   previewEnabledAtom,
   promptDataAtom,
   selectionStartAtom,
@@ -27,16 +35,7 @@ import {
   uiAtom,
 } from '../jotai';
 import { createLogger } from '../log-utils';
-
-import { useCallback, useMemo } from 'react';
-import type { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
 import { hotkeysOptions } from './shared';
-import {
-  toHotkeysFormat,
-  normalizeEventToHotkeysKey,
-  KEY_REPLACEMENT_MAP,
-  KEYWORD_TO_CHAR_MAP,
-} from '../../../shared/shortcuts';
 
 const log = createLogger('useShortcuts');
 
@@ -100,7 +99,9 @@ export default () => {
   const flagsWithShortcuts = useMemo(() => {
     log.info('Processing flags for shortcuts', { flags });
     const flagsArray = Object.entries(flags) as [string, { shortcut: string }][];
-    const filtered = flagsArray.filter(([_key, value]) => value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter');
+    const filtered = flagsArray.filter(
+      ([_key, value]) => value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter',
+    );
     log.info('Flags with shortcuts', { filtered });
     return filtered;
   }, [flags]);
@@ -115,7 +116,7 @@ export default () => {
           flag: key,
           original: value.shortcut,
           converted,
-          hasAction: (value as any)?.hasAction
+          hasAction: (value as any)?.hasAction,
         });
       }
     }
@@ -154,15 +155,14 @@ export default () => {
   // handle all shortcut cases correctly.
 
   // Prompt shortcuts should take precedence over flag shortcuts when keys collide
-  const promptConverted = useMemo(() => new Set(
-    (promptShortcuts || [])
-      .filter(ps => ps?.key)
-      .map(ps => convertShortcutToHotkeysFormat(ps.key))
-  ), [promptShortcuts]);
+  const promptConverted = useMemo(
+    () => new Set((promptShortcuts || []).filter((ps) => ps?.key).map((ps) => convertShortcutToHotkeysFormat(ps.key))),
+    [promptShortcuts],
+  );
 
   const filteredFlagShortcuts = useMemo(
-    () => flagShortcuts.filter(k => !promptConverted.has(k)),
-    [flagShortcuts, promptConverted]
+    () => flagShortcuts.filter((k) => !promptConverted.has(k)),
+    [flagShortcuts, promptConverted],
   );
 
   const shortcutsToRegister = filteredFlagShortcuts.length > 0 ? filteredFlagShortcuts.join(',') : 'f19';
@@ -178,7 +178,7 @@ export default () => {
         flagShortcuts,
         matchedFlag,
         keys: handler?.keys,
-        flags
+        flags,
       });
       event.preventDefault();
 
@@ -210,7 +210,6 @@ export default () => {
           shortcut: flagData?.shortcut,
         };
         log.info('Setting focusedAction for hasAction flag', { action });
-        console.log('[useShortcuts] Flag action triggered via shortcut', { flag, action, submitValue });
         setFocusedAction(action as any);
         // Don't set flaggedValue - let the action be triggered directly
         submit(submitValue);
@@ -226,19 +225,33 @@ export default () => {
       submit(submitValue);
     },
     hotkeysOptions,
-    [flags, input, inputFocus, choices, index, overlayOpen, filteredFlagShortcuts, focusedChoice, setFocusedAction, setFlag, submit, flagByEvent],
+    [
+      flags,
+      input,
+      inputFocus,
+      choices,
+      index,
+      overlayOpen,
+      filteredFlagShortcuts,
+      focusedChoice,
+      setFocusedAction,
+      setFlag,
+      submit,
+      flagByEvent,
+    ],
   );
 
   const onShortcuts = useMemo(() => {
     // Deduplicate and normalize prompt shortcuts, to avoid repeated keys breaking registration
     const keys = Array.from(
-      new Set(
-        (promptShortcuts || [])
-          .filter(ps => ps?.key)
-          .map(ps => convertShortcutToHotkeysFormat(ps.key))
-      )
+      new Set((promptShortcuts || []).filter((ps) => ps?.key).map((ps) => convertShortcutToHotkeysFormat(ps.key))),
     );
-    const result = keys.length > 0 ? keys.join(',') : 'f19';
+    // Always include arrow navigation keys to prevent state desync between hasRightShortcut
+    // and the actual registered hotkeys. This ensures we always catch arrow keys and handle
+    // them appropriately (either as shortcuts or as navigation fallback).
+    const navKeys = ['right', 'left'];
+    const allKeys = Array.from(new Set([...keys, ...navKeys]));
+    const result = allKeys.join(',');
     log.info('On shortcuts', { result, promptShortcutsCount: promptShortcuts.length });
     return result;
   }, [promptShortcuts]);
@@ -246,13 +259,21 @@ export default () => {
   useHotkeys(
     onShortcuts,
     (event, handler: HotkeysEvent) => {
-      console.log('[useShortcuts] Prompt shortcut triggered', {
-        key: handler?.keys?.[0],
-        onShortcuts,
-        promptShortcuts: promptShortcuts.map(s => ({ key: s.key, name: s.name }))
-      });
-      log.info('Prompt shortcut triggered', { event, handler, promptShortcuts });
-      event.preventDefault();
+      const domEvent = event as unknown as KeyboardEvent;
+      const isArrowKey = domEvent.key === 'ArrowRight' || domEvent.key === 'ArrowLeft';
+
+      // Debug logging for arrow keys
+      if (isArrowKey) {
+        log.info('Arrow key pressed in useShortcuts', {
+          key: domEvent.key,
+          promptShortcutsCount: promptShortcuts.length,
+          promptShortcutKeys: promptShortcuts.map(s => s?.key).filter(Boolean),
+          hasLeftInMap: promptMap.has('left'),
+          hasRightInMap: promptMap.has('right'),
+        });
+      }
+
+      // Check if this is an arrow key - don't preventDefault yet, handle specially below
 
       // A shortcut clears the active because a new one is incoming
       setActionsConfig({
@@ -273,82 +294,108 @@ export default () => {
       const evKey = normalizeEventToKey(event as unknown as KeyboardEvent);
       const found = promptMap.get(evKey);
 
-      console.log('[useShortcuts] Checking prompt shortcuts', {
-        key: handler?.keys?.[0],
-        found: found ? { key: found.key, name: (found as any).name, hasAction: (found as any).hasAction } : null,
-        allShortcuts: promptShortcuts.map(s => ({ key: s.key, name: (s as any).name }))
+      log.info('Looking up shortcut in promptMap', {
+        evKey,
+        found: !!found,
+        promptMapKeys: Array.from(promptMap.keys()),
+        promptShortcutsCount: promptShortcuts.length,
+        promptShortcutKeys: promptShortcuts.map(s => s?.key)
       });
 
       if (found) {
-        log.info('Matching prompt shortcut found', { shortcut: found });
+        log.info('Matching prompt shortcut found', { shortcut: found, key: found?.key, name: (found as any)?.name });
+        // Note: Don't call event.preventDefault() here - the original code didn't prevent default
+        // for shortcuts, and doing so can interfere with other handlers like useKeyIndex.ts
 
         // Check if this is an action with hasAction
         if ((found as any)?.hasAction) {
-          console.log('[useShortcuts] Found action with hasAction, triggering', {
-            name: (found as any).name,
-            value: (found as any).value,
-            flag: (found as any).flag
-          });
+          log.info('Found action with hasAction, triggering', { name: (found as any).name, flag: (found as any).flag });
           setFocusedAction(found as any);
           // Don't set flaggedValue - let the action be triggered directly
           submit(focusedChoice?.value || input);
         } else if (found?.flag) {
-          console.log('[useShortcuts] Setting flag', { flag: found.flag });
+          log.info('Setting flag from prompt shortcut', { flag: found.flag });
           setFocusedAction({} as any);
           setFlag(found.flag);
         } else if (found.key) {
-          console.log('[useShortcuts] Sending regular shortcut', { key: found.key });
-          log.info('Sending shortcut', { key: found.key });
+          log.info('Calling sendShortcut NOW', { key: found.key, shortcutName: (found as any)?.name });
           sendShortcut(found.key);
+          log.info('sendShortcut called successfully', { key: found.key });
+        }
+      } else if (isArrowKey) {
+        // No shortcut found - handle fallback navigation for arrow keys
+        // This prevents state desync where hasRightShortcut is true but no shortcut exists
+        log.warn('FALLBACK PATH: Arrow key shortcut NOT found in promptMap!', {
+          key: domEvent.key,
+          evKey,
+          promptMapKeys: Array.from(promptMap.keys()),
+        });
+
+        const isArrowRight = domEvent.key === 'ArrowRight';
+        const isArrowLeft = domEvent.key === 'ArrowLeft';
+
+        // Read selection directly from the input element for accurate cursor position
+        const target = domEvent.target as HTMLInputElement;
+        const currentSelectionStart = target?.selectionStart ?? selectionStart;
+        const currentValue = target?.value ?? input;
+
+        log.info('Arrow key fallback details', {
+          key: domEvent.key,
+          isArrowRight,
+          isArrowLeft,
+          inputFocus,
+          gridReady,
+          currentSelectionStart,
+          inputLength: currentValue.length
+        });
+
+        if (!inputFocus || gridReady) {
+          log.info('Arrow key fallback: input not focused or grid ready, ignoring');
+          return;
+        }
+
+        if (isArrowRight && currentSelectionStart === currentValue.length) {
+          log.info('Arrow key fallback: cursor at end, moving forward');
+          event.preventDefault();
+          channel(Channel.FORWARD);
+        } else if (isArrowLeft && currentSelectionStart === 0) {
+          log.info('Arrow key fallback: cursor at start, moving backward');
+          event.preventDefault();
+          channel(Channel.BACK);
+        } else {
+          log.info('Arrow key fallback: cursor not at boundary, allowing default cursor movement');
+          // Don't preventDefault - let the cursor move naturally
         }
       } else {
-        console.log('[useShortcuts] No matching prompt shortcut found');
+        // Non-arrow key with no matching shortcut
         log.info('No matching prompt shortcut found');
-      }
-    },
-    hotkeysOptions,
-    [overlayOpen, promptShortcuts, flagShortcuts, promptData, actionsInputFocus, setFocusedAction, submit, focusedChoice, input, setFlag, promptMap],
-  );
-
-  useHotkeys(
-    'right,left',
-    (event) => {
-      if (gridReady) {
-        return;
-      }
-      log.info('Arrow key pressed', { event, inputFocus, hasRightShortcut, selectionStart, input });
-      if (!inputFocus) {
-        log.info('Input not focused, ignoring arrow key');
-        return;
-      }
-      if (hasRightShortcut) {
-        log.info('Has right shortcut, ignoring arrow key');
-        return;
-      }
-      if (selectionStart === input.length && (event as KeyboardEvent).key !== 'ArrowLeft') {
-        log.info('Cursor at end, moving forward');
-        event.preventDefault();
-        channel(Channel.FORWARD);
-      } else if (selectionStart === 0 && (event as KeyboardEvent).key !== 'ArrowRight') {
-        log.info('Cursor at start, moving backward');
-        event.preventDefault();
-        channel(Channel.BACK);
+        event.preventDefault(); // Prevent default for other unhandled shortcuts
       }
     },
     hotkeysOptions,
     [
-      input,
-      inputFocus,
-      choices,
-      index,
-      selectionStart,
       overlayOpen,
-      channel,
-      flagShortcuts,
       promptShortcuts,
-      hasRightShortcut,
+      flagShortcuts,
+      promptData,
+      actionsInputFocus,
+      setFocusedAction,
+      submit,
+      focusedChoice,
+      input,
+      setFlag,
+      promptMap,
+      inputFocus,
+      selectionStart,
+      gridReady,
+      channel,
     ],
   );
+
+  // NOTE: Arrow key navigation is now handled in the onShortcuts handler above.
+  // This handler is kept as a safety net but defers to onShortcuts for all arrow handling.
+  // The onShortcuts handler always includes 'right' and 'left' to prevent state desync
+  // that was causing the "right arrow stops working after left" bug.
   useHotkeys(
     'mod+k,mod+shift+p',
     () => {
@@ -363,13 +410,27 @@ export default () => {
         closeOverlay();
       } else if (choices.length > 0) {
         log.info('Opening actions overlay for focused choice', { name: focusedChoice?.name });
-        openOverlay({ source: 'choice', flag: (focusedChoice?.value as any) });
+        openOverlay({ source: 'choice', flag: focusedChoice?.value as any });
       } else {
         log.info('Opening actions overlay for input/ui', { input, ui });
         openOverlay({ source: ui === UI.arg ? 'input' : 'ui', flag: (ui === UI.arg ? input : ui) as any });
       }
     },
     hotkeysOptions,
-    [input, inputFocus, choices, index, selectionStart, overlayOpen, channel, flagShortcuts, promptShortcuts, ui, openOverlay, closeOverlay, focusedChoice],
+    [
+      input,
+      inputFocus,
+      choices,
+      index,
+      selectionStart,
+      overlayOpen,
+      channel,
+      flagShortcuts,
+      promptShortcuts,
+      ui,
+      openOverlay,
+      closeOverlay,
+      focusedChoice,
+    ],
   );
 };

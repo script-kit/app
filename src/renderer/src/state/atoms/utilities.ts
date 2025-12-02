@@ -3,25 +3,25 @@
  * These atoms provide common functionality used across the app.
  */
 
-import { atom } from 'jotai';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import type { Choice } from '@johnlindquist/kit/types/core';
+import { atom } from 'jotai';
 
 // Import dependencies from shared-dependencies to avoid circular imports
 import {
-  uiAtom,
-  editorAppendAtom,
   _inputAtom,
-  processingAtom,
-  inputAtom,
   _inputChangedAtom,
-  hintAtom,
   channelAtom,
-  promptActiveAtom,
-  submittedAtom,
-  selectedChoicesAtom,
   choices,
+  editorAppendAtom,
+  hintAtom,
+  inputAtom,
   loadingAtom,
+  processingAtom,
+  promptActiveAtom,
+  selectedChoicesAtom,
+  submittedAtom,
+  uiAtom,
 } from '../shared-dependencies';
 
 /**

@@ -1,21 +1,14 @@
-import React, { useEffect, useRef, useCallback } from 'react';
-import { useAtomValue, useSetAtom, useStore } from 'jotai';
-import { throttle } from 'lodash-es';
-
 import { Channel } from '@johnlindquist/kit/core/enum';
 import type { Choice } from '@johnlindquist/kit/types/core';
+import { useAtomValue, useSetAtom, useStore } from 'jotai';
+import { throttle } from 'lodash-es';
+import type React from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { closedDiv, noChoice } from '../../../../shared/defaults';
 
-import { 
-  _focused,
-  choiceInputsAtom,
-  submittedAtom,
-  previewHTMLAtom,
-  channelAtom
-} from '../../jotai';
-
-import { SCROLL_THROTTLE_MS } from '../constants';
+import { _focused, channelAtom, choiceInputsAtom, previewHTMLAtom, submittedAtom } from '../../jotai';
 import { createLogger } from '../../log-utils';
+import { SCROLL_THROTTLE_MS } from '../constants';
 
 const log = createLogger('ChoicesController');
 
@@ -26,11 +19,11 @@ const log = createLogger('ChoicesController');
 export const ChoicesController: React.FC = () => {
   const store = useStore();
   const prevFocusedChoiceIdRef = useRef<string>('prevFocusedChoiceId');
-  
+
   const setFocused = useSetAtom(_focused);
   const setChoiceInputs = useSetAtom(choiceInputsAtom);
   const setPreviewHTML = useSetAtom(previewHTMLAtom);
-  
+
   const submitted = useAtomValue(submittedAtom);
   const channel = useAtomValue(channelAtom);
   const focusedChoice = useAtomValue(_focused);
@@ -41,19 +34,19 @@ export const ChoicesController: React.FC = () => {
       (choice: Choice) => {
         // Clear choice inputs
         setChoiceInputs([]);
-        
+
         // Skip if choice is marked as skip
         if (choice?.skip) return;
-        
+
         // Skip if same choice is already focused
         if (choice?.id === prevFocusedChoiceIdRef.current) return;
-        
+
         // Skip if already submitted
         if (submitted) return;
 
         // Update the previous focused choice ID
         prevFocusedChoiceIdRef.current = choice?.id || 'prevFocusedChoiceId';
-        
+
         // Update the focused choice atom
         setFocused(choice || noChoice);
 
@@ -72,9 +65,9 @@ export const ChoicesController: React.FC = () => {
         }
       },
       SCROLL_THROTTLE_MS,
-      { leading: true, trailing: true }
+      { leading: true, trailing: true },
     ),
-    [submitted, channel, setFocused, setChoiceInputs, setPreviewHTML]
+    [submitted, channel, setFocused, setChoiceInputs, setPreviewHTML],
   );
 
   // Subscribe to focused choice changes
@@ -92,10 +85,10 @@ export const createThrottledChoiceFocusHandler = (
   setFocused: (choice: Choice) => void,
   setChoiceInputs: (inputs: any[]) => void,
   setPreviewHTML: (html: string) => void,
-  channel: (channelName: string) => void
+  channel: (channelName: string) => void,
 ) => {
   let prevFocusedChoiceId = 'prevFocusedChoiceId';
-  
+
   return throttle(
     (choice: Choice, submitted: boolean) => {
       setChoiceInputs([]);
@@ -119,6 +112,6 @@ export const createThrottledChoiceFocusHandler = (
       }
     },
     SCROLL_THROTTLE_MS,
-    { leading: true, trailing: true }
+    { leading: true, trailing: true },
   );
 };

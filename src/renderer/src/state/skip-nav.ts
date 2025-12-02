@@ -2,7 +2,7 @@
 export function advanceIndexSkipping(
   startIndex: number,
   direction: 1 | -1,
-  items: Array<{ item?: { skip?: boolean } }>
+  items: Array<{ item?: { skip?: boolean } }>,
 ): number {
   let i = startIndex;
   let loopCount = 0;

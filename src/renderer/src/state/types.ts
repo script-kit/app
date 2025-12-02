@@ -24,14 +24,7 @@ export interface FileData {
 }
 
 // Submit value types
-export type SubmitValue = 
-  | string 
-  | number 
-  | boolean 
-  | ArrayBuffer 
-  | FileData[] 
-  | Record<string, unknown>
-  | null;
+export type SubmitValue = string | number | boolean | ArrayBuffer | FileData[] | Record<string, unknown> | null;
 
 // Action types
 export interface Action {

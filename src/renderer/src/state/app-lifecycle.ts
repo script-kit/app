@@ -2,43 +2,34 @@
 // Application lifecycle management including openAtom setter and clearCacheAtom
 // =================================================================================================
 
-import { atom } from 'jotai';
 import type { PromptData } from '@johnlindquist/kit/types/core';
+import { atom } from 'jotai';
+import { scoredChoicesAtom } from '../jotai';
+import { _flaggedValue, flagsAtom } from './atoms/actions';
+import { _open, loadingAtom, pidAtom, progressAtom, runningAtom } from './atoms/app-core';
 import {
-  _open,
-  loadingAtom,
-  progressAtom,
-  pidAtom,
-  runningAtom,
-} from './atoms/app-core';
-import {
+  cachedMainFlagsAtom,
+  cachedMainPreviewAtom,
   cachedMainPromptDataAtom,
   cachedMainScoredChoicesAtom,
-  cachedMainPreviewAtom,
   cachedMainShortcutsAtom,
-  cachedMainFlagsAtom,
 } from './atoms/cache';
-
-// Import from the real atom locations
-import { mouseEnabledAtom } from './atoms/input';
-import { resizeCompleteAtom, promptBoundsAtom, promptBoundsDefault } from './ui-layout';
-import { lastScriptClosed, _script } from './atoms/script-state';
-import { closedInput, _inputAtom } from './atoms/input';
-import { _panelHTML } from './atoms/preview';
-import { formHTMLAtom } from './atoms/form';
-import { logHTMLAtom, logLinesAtom } from './atoms/log';
-import { flagsAtom, _flaggedValue } from './atoms/actions';
+import { _chatMessagesAtom } from './atoms/chat';
 import { editorConfigAtom } from './atoms/editor';
-import { promptData } from './prompt-data';
+import { formHTMLAtom } from './atoms/form';
+// Import from the real atom locations
+import { _inputAtom, closedInput, mouseEnabledAtom } from './atoms/input';
+import { disableSubmitAtom } from './atoms/ipc';
+import { logHTMLAtom, logLinesAtom } from './atoms/log';
+import { audioDotAtom, webcamStreamAtom } from './atoms/media';
+import { _panelHTML } from './atoms/preview';
+import { _script, lastScriptClosed } from './atoms/script-state';
+import { termConfigAtom } from './atoms/terminal';
 // Import from facade for gradual migration
 import { promptDataAtom } from './facade';
-import { scrollToIndexAtom } from './ui-layout';
-import { _chatMessagesAtom } from './atoms/chat';
+import { promptData } from './prompt-data';
+import { promptBoundsAtom, promptBoundsDefault, resizeCompleteAtom, scrollToIndexAtom } from './ui-layout';
 import { miniShortcutsHoveredAtom } from './utils';
-import { audioDotAtom, webcamStreamAtom } from './atoms/media';
-import { disableSubmitAtom } from './atoms/ipc';
-import { termConfigAtom } from './atoms/terminal';
-import { scoredChoicesAtom } from '../jotai';
 
 // Override the openAtom setter implementation
 export const openAtom = atom(

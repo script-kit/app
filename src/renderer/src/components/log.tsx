@@ -1,12 +1,13 @@
+import type { EditorOptions } from '@johnlindquist/kit/types/kitapp';
 import MonacoEditor, { type Monaco } from '@monaco-editor/react';
 import { useAtom, useAtomValue } from 'jotai';
+import { type editor as monacoEditor, Range } from 'monaco-editor';
 /* eslint-disable no-template-curly-in-string */
 /* eslint-disable no-useless-escape */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { EditorOptions } from '@johnlindquist/kit/types/kitapp';
-import { Range, type editor as monacoEditor } from 'monaco-editor';
 const { ipcRenderer } = window.electron;
+
 import { WindowChannel } from '../../../shared/enums';
 import { kitLight, nightOwl } from '../editor-themes';
 import { cmdAtom, darkAtom, editorConfigAtom, editorOptions, editorThemeAtom, shortcutsAtom } from '../jotai';
@@ -123,7 +124,7 @@ export default function Log() {
 
   useEffect(() => {
     if (editor) {
-      ipcRenderer.on(WindowChannel.SET_LAST_LOG_LINE, (event, lastLogLine) => {
+      ipcRenderer.on(WindowChannel.SET_LAST_LOG_LINE, (_event, lastLogLine) => {
         // set position to the end of the file
         const lineNumber = editor.getModel()?.getLineCount() || 0;
         const range = new Range(lineNumber, 1, lineNumber, 1);
@@ -144,7 +145,7 @@ export default function Log() {
 
   useEffect(() => {
     if (editor) {
-      ipcRenderer.on(WindowChannel.SET_LOG_VALUE, (event, newLog) => {
+      ipcRenderer.on(WindowChannel.SET_LOG_VALUE, (_event, newLog) => {
         setLogValue(newLog);
         editor.setValue(newLog);
 

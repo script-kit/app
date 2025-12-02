@@ -1,8 +1,10 @@
 import log from 'electron-log';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
 const path = window.api.path;
 const os = window.api.os;
 const { ipcRenderer } = window.electron;
+
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import useOnEnter from './hooks/useOnEnter';

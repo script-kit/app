@@ -1,7 +1,7 @@
-import { withAtomEffect } from 'jotai-effect';
-import { chatMessagesAtom } from '../jotai';
 import { Channel } from '@johnlindquist/kit/core/enum';
+import { withAtomEffect } from 'jotai-effect';
 import { AppChannel } from '../../../shared/enums';
+import { chatMessagesAtom } from '../jotai';
 import { createLogger } from '../log-utils';
 
 const { ipcRenderer } = window.electron;
@@ -14,7 +14,7 @@ export const chatMessagesWithEffect = withAtomEffect(chatMessagesAtom, (get) => 
     log.info('CHAT_MESSAGES_CHANGE send', {
       count: messages?.length ?? 0,
       lastType: messages?.length ? (messages[messages.length - 1] as any)?.type : undefined,
-      lastTextLen: messages?.length ? (((messages[messages.length - 1] as any)?.text || '').length) : 0,
+      lastTextLen: messages?.length ? ((messages[messages.length - 1] as any)?.text || '').length : 0,
     });
     // Mirror to main log for easier discovery in ScriptKit logs
     ipcRenderer.send(AppChannel.LOG, {
@@ -24,7 +24,7 @@ export const chatMessagesWithEffect = withAtomEffect(chatMessagesAtom, (get) => 
         event: 'CHAT_MESSAGES_CHANGE',
         count: messages?.length ?? 0,
         lastType: messages?.length ? (messages[messages.length - 1] as any)?.type : undefined,
-        lastTextLen: messages?.length ? (((messages[messages.length - 1] as any)?.text || '').length) : 0,
+        lastTextLen: messages?.length ? ((messages[messages.length - 1] as any)?.text || '').length : 0,
       },
     });
   } catch {}

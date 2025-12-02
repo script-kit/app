@@ -19,11 +19,10 @@ import {
 } from '../jotai';
 import { ActionButton } from './actionbutton';
 import { EnterButton } from './actionenterbutton';
-import { IconButton } from './icon';
-
 import { OptionsButton } from './actionoptionsbutton';
 import { type Action, textContrast } from './actions';
 import { ActionSeparator } from './actionseparator';
+import { IconButton } from './icon';
 
 export default function ActionBar() {
   const [flags] = useAtom(flagsAtom);

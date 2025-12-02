@@ -1,16 +1,10 @@
-import React, { useEffect, useRef } from 'react';
-import { useAtomValue } from 'jotai';
-
 import { UI } from '@johnlindquist/kit/core/enum';
-import { 
-  uiAtom,
-  justOpenedAtom
-} from '../../jotai';
+import { useAtomValue } from 'jotai';
+import type React from 'react';
+import { useEffect, useRef } from 'react';
+import { justOpenedAtom, uiAtom } from '../../jotai';
 
-import { 
-  JUST_OPENED_MS,
-  MAX_TABCHECK_ATTEMPTS 
-} from '../constants';
+import { JUST_OPENED_MS, MAX_TABCHECK_ATTEMPTS } from '../constants';
 
 const { ipcRenderer } = window.electron;
 
@@ -29,7 +23,7 @@ export const UIController: React.FC = () => {
     if (!justOpened) return;
 
     const id = ui === UI.arg ? 'input' : ui;
-    
+
     // Set a timeout to send IPC message if element isn't found quickly
     timeoutRef.current = setTimeout(() => {
       ipcRenderer.send(ui);
@@ -40,7 +34,7 @@ export const UIController: React.FC = () => {
     // Check for DOM element with requestAnimationFrame
     const checkElement = () => {
       attempts++;
-      
+
       if (document.getElementById(id)) {
         // Element found, clear timeout and send IPC
         if (timeoutRef.current) {

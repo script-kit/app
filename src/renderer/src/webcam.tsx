@@ -3,7 +3,7 @@ import { useAtom } from 'jotai';
 /* eslint-disable react/button-has-type */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import useOnEnter from './hooks/useOnEnter';
 import { focusedFlagValueAtom, submitValueAtom, webcamIdAtom, webcamStreamAtom } from './jotai';
 

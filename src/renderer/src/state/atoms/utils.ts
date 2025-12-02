@@ -5,7 +5,7 @@
 
 import { atom } from 'jotai';
 import { AppChannel } from '../../../../shared/enums';
-import type { ResizeData, FilePathBounds } from '../../../../shared/types';
+import type { FilePathBounds, ResizeData } from '../../../../shared/types';
 
 const { ipcRenderer } = window.electron;
 
@@ -26,7 +26,7 @@ export const miniShortcutsVisibleAtom = atom((_g) => {
 // --- File Path Bounds ---
 const emptyFilePathBounds: FilePathBounds = {
   bounds: { x: 0, y: 0, width: 0, height: 0 },
-  filePath: ''
+  filePath: '',
 };
 export const filePathBoundsAtom = atom<FilePathBounds>(emptyFilePathBounds);
 export const initialResizeAtom = atom<ResizeData | null>(null);
@@ -47,6 +47,6 @@ export const createAssetAtom = (...parts: string[]) =>
 // These are stubs - the real implementations live in jotai.ts
 const listProcessesActionAtom = atom(() => null);
 const signInActionAtom = atom(() => null);
-const actionsButtonActionAtom = atom(() => ({} as any));
+const actionsButtonActionAtom = atom(() => ({}) as any);
 const shouldActionButtonShowOnInputAtom = atom(() => false);
-export const setFlagByShortcutAtom = atom(null, () => { });
+export const setFlagByShortcutAtom = atom(null, () => {});

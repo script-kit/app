@@ -4,14 +4,13 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect } from 'react';
 import { HotkeyCallback, useHotkeys } from 'react-hotkeys-hook';
 import {
+  actionsOverlayOpenAtom,
   choiceInputsAtom,
   choicesAtom,
-  scoredChoicesAtom,
   cmdAtom,
   enterButtonDisabledAtom,
   enterLastPressedAtom,
   enterPressedAtom,
-  actionsOverlayOpenAtom,
   focusedChoiceAtom,
   focusedFlagValueAtom,
   hasFocusedChoiceAtom,
@@ -20,6 +19,7 @@ import {
   invalidateChoiceInputsAtom,
   panelHTMLAtom,
   promptDataAtom,
+  scoredChoicesAtom,
   submitValueAtom,
   toggleSelectedChoiceAtom,
   uiAtom,

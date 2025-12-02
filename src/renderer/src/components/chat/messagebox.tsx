@@ -5,17 +5,15 @@
 /* eslint-disable react/function-component-definition */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
+
+import classNames from 'classnames';
 import type React from 'react';
 import { useEffect, useRef } from 'react';
-
+import type { MessageBoxType } from 'react-chat-elements';
 import { IoIosDoneAll } from 'react-icons/io';
 import { MdAccessTime, MdBlock, MdCheck, MdDelete, MdDoneAll, MdMessage } from 'react-icons/md';
 import { RiShareForwardFill } from 'react-icons/ri';
-
 import { format } from 'timeago.js';
-
-import classNames from 'classnames';
-import type { MessageBoxType } from 'react-chat-elements';
 import SystemMessage from './systemmessage';
 
 const MessageBox: React.FC<MessageBoxType> = ({ focus = false, notch = true, styles, ...props }) => {

@@ -1,6 +1,6 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type CSSProperties } from 'react';
-import { List, useListCallbackRef, type RowComponentProps } from 'react-window';
+import { type CSSProperties, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { List, type RowComponentProps, useListCallbackRef } from 'react-window';
 import type { ScoredChoice } from '../../../shared/types';
 import {
   actionsInputHeightAtom,

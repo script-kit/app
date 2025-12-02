@@ -1,10 +1,10 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import React from 'react'
-import ChoiceButton from './button'
-import { Provider } from 'jotai'
-import type { ChoiceButtonProps } from '../../../shared/types'
-import type { ScoredChoice } from '@johnlindquist/kit/types/core'
+import type { ScoredChoice } from '@johnlindquist/kit/types/core';
+import { render, screen } from '@testing-library/react';
+import { Provider } from 'jotai';
+import React from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import type { ChoiceButtonProps } from '../../../shared/types';
+import ChoiceButton from './button';
 
 // Mock window.electron
 global.window = {
@@ -13,18 +13,18 @@ global.window = {
     ipcRenderer: {
       send: vi.fn(),
       on: vi.fn(),
-      off: vi.fn()
-    }
-  }
-} as any
+      off: vi.fn(),
+    },
+  },
+} as any;
 
 describe('ChoiceButton emoji display', () => {
   const createScoredChoice = (choice: any): ScoredChoice => ({
     item: choice,
     score: 1,
     matches: {},
-    _: ''
-  })
+    _: '',
+  });
 
   const createButtonProps = (choice: any): ChoiceButtonProps => ({
     index: 0,
@@ -34,9 +34,9 @@ describe('ChoiceButton emoji display', () => {
     ariaAttributes: {
       'aria-posinset': 1,
       'aria-setsize': 1,
-      role: 'listitem' as const
-    }
-  })
+      role: 'listitem' as const,
+    },
+  });
 
   it('should display emoji when choice has emoji property', () => {
     const choiceWithEmoji = {
@@ -44,42 +44,42 @@ describe('ChoiceButton emoji display', () => {
       name: 'Test Choice',
       value: 'test',
       emoji: '🚀',
-      description: 'A test choice with emoji'
-    }
+      description: 'A test choice with emoji',
+    };
 
     const { container } = render(
       <Provider>
         <ChoiceButton {...createButtonProps(choiceWithEmoji)} />
-      </Provider>
-    )
+      </Provider>,
+    );
 
     // Check if emoji is rendered
-    const emojiElement = screen.getByText('🚀')
-    expect(emojiElement).toBeDefined()
-    
+    const emojiElement = screen.getByText('🚀');
+    expect(emojiElement).toBeDefined();
+
     // The emoji is directly in a div, check that div's classes
-    const emojiContainer = emojiElement
-    expect(emojiContainer).toBeDefined()
-  })
+    const emojiContainer = emojiElement;
+    expect(emojiContainer).toBeDefined();
+  });
 
   it('should not display emoji container when choice has no emoji', () => {
     const choiceWithoutEmoji = {
       id: 'test-2',
       name: 'Test Choice',
       value: 'test',
-      description: 'A test choice without emoji'
-    }
+      description: 'A test choice without emoji',
+    };
 
     const { container } = render(
       <Provider>
         <ChoiceButton {...createButtonProps(choiceWithoutEmoji)} />
-      </Provider>
-    )
+      </Provider>,
+    );
 
     // Check that no emoji container is rendered
-    const emojiContainers = container.querySelectorAll('.text-2xl')
-    expect(emojiContainers.length).toBe(0)
-  })
+    const emojiContainers = container.querySelectorAll('.text-2xl');
+    expect(emojiContainers.length).toBe(0);
+  });
 
   it('should display both emoji and img when both are present', () => {
     const choiceWithBoth = {
@@ -88,24 +88,24 @@ describe('ChoiceButton emoji display', () => {
       value: 'test',
       emoji: '⭐',
       img: 'https://example.com/test.png',
-      description: 'A test choice with both emoji and image'
-    }
+      description: 'A test choice with both emoji and image',
+    };
 
     const { container } = render(
       <Provider>
         <ChoiceButton {...createButtonProps(choiceWithBoth)} />
-      </Provider>
-    )
+      </Provider>,
+    );
 
     // Check if emoji is rendered
-    const emojiElement = screen.getByText('⭐')
-    expect(emojiElement).toBeDefined()
-    
+    const emojiElement = screen.getByText('⭐');
+    expect(emojiElement).toBeDefined();
+
     // Check if img element exists
-    const imgElement = container.querySelector('img')
-    expect(imgElement).toBeDefined()
-    expect(imgElement?.src).toBe('https://example.com/test.png')
-  })
+    const imgElement = container.querySelector('img');
+    expect(imgElement).toBeDefined();
+    expect(imgElement?.src).toBe('https://example.com/test.png');
+  });
 
   it('should handle multiple emojis in the emoji property', () => {
     const choiceWithMultipleEmojis = {
@@ -113,17 +113,17 @@ describe('ChoiceButton emoji display', () => {
       name: 'Party Time',
       value: 'party',
       emoji: '🎉🎊🎈',
-      description: 'Multiple emojis test'
-    }
+      description: 'Multiple emojis test',
+    };
 
     const { container } = render(
       <Provider>
         <ChoiceButton {...createButtonProps(choiceWithMultipleEmojis)} />
-      </Provider>
-    )
+      </Provider>,
+    );
 
     // Check if all emojis are rendered
-    const emojiElement = screen.getByText('🎉🎊🎈')
-    expect(emojiElement).toBeDefined()
-  })
-})
+    const emojiElement = screen.getByText('🎉🎊🎈');
+    expect(emojiElement).toBeDefined();
+  });
+});
