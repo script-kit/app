@@ -4,11 +4,13 @@ import MonacoEditor, { type Monaco, useMonaco } from '@monaco-editor/react';
 
 import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { type editor as monacoEditor, Range } from 'monaco-editor/esm/vs/editor/editor.api';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Range, type editor as monacoEditor } from 'monaco-editor/esm/vs/editor/editor.api';
-
 const { ipcRenderer } = window.electron;
+
+import { convertStringShortcutToMoncacoNumber } from '@renderer/utils/keycodes';
+import { kitLight, nightOwl } from '../editor-themes';
 import {
   appConfigAtom,
   channelAtom,
@@ -31,9 +33,6 @@ import {
   uiAtom,
 } from '../jotai';
 
-import { convertStringShortcutToMoncacoNumber } from '@renderer/utils/keycodes';
-import { kitLight, nightOwl } from '../editor-themes';
-
 const registerPropertiesLanguage = (monaco: Monaco) => {
   monaco.languages.register({ id: 'properties' });
 
@@ -41,8 +40,8 @@ const registerPropertiesLanguage = (monaco: Monaco) => {
   monaco.languages.setMonarchTokensProvider('properties', {
     tokenizer: {
       root: [
-        [/^\#.*/, 'comment'],
-        [/.*\=/, 'key'],
+        [/^#.*/, 'comment'],
+        [/.*=/, 'key'],
         [/^=.*/, 'value'],
       ],
     },
@@ -127,7 +126,7 @@ export default function Editor() {
     if (options?.language === 'markdown' || options?.language === 'md') {
       // eslint-disable-next-line react-hooks/exhaustive-deps
       disposeRef.current = m.languages.registerCompletionItemProvider('markdown', {
-        async provideCompletionItems(model, position) {
+        async provideCompletionItems(_model, _position) {
           // clear previous suggestions
 
           const suggestions = editorSuggestions?.map((str: string) => ({
@@ -466,7 +465,7 @@ export default function Editor() {
 
     ipcRenderer.on(Channel.EDITOR_GET_CURSOR_OFFSET, getCursorPosition);
 
-    const insertTextAtCursor = (event: any, text: string) => {
+    const insertTextAtCursor = (_event: any, text: string) => {
       if (!editor) {
         return;
       }
@@ -505,7 +504,7 @@ export default function Editor() {
 
     ipcRenderer.on(Channel.EDITOR_INSERT_TEXT, insertTextAtCursor);
 
-    const moveCursor = (event: any, offset: number) => {
+    const moveCursor = (_event: any, offset: number) => {
       if (!editor) {
         return;
       }
