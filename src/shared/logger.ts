@@ -14,12 +14,7 @@ export class Logger {
   private log: LogTransport;
   private loggerRegistry: Map<string, Logger>;
 
-  constructor(
-    prefix: string,
-    log: LogTransport,
-    loggerRegistry: Map<string, Logger>,
-    isDisabled: boolean,
-  ) {
+  constructor(prefix: string, log: LogTransport, loggerRegistry: Map<string, Logger>, isDisabled: boolean) {
     this.prefix = prefix;
     this.log = log;
     this.loggerRegistry = loggerRegistry;

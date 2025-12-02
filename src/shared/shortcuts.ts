@@ -71,6 +71,11 @@ export const KEY_REPLACEMENT_MAP: Record<string, string> = {
   '`': 'backquote',
   '-': 'minus',
   '=': 'equal',
+  // Arrow keys: event.key returns 'ArrowLeft' etc, but shortcuts use 'left' etc
+  'arrowleft': 'left',
+  'arrowright': 'right',
+  'arrowup': 'up',
+  'arrowdown': 'down',
 };
 
 /**
@@ -245,8 +250,7 @@ export function isReservedShortcut(shortcut: string): boolean {
   // Check against reserved set in both mac and windows formats
   const macFormat = toElectronFormat(shortcut, true);
   const winFormat = toElectronFormat(shortcut, false);
-  const cmdOrCtrlFormat = shortcut
-    .replace(/Command|Cmd|Control|Ctrl/gi, 'CommandOrControl');
+  const cmdOrCtrlFormat = shortcut.replace(/Command|Cmd|Control|Ctrl/gi, 'CommandOrControl');
 
   return (
     RESERVED_SYSTEM_SHORTCUTS.has(macFormat) ||

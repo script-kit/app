@@ -2,7 +2,7 @@ import { BrowserWindow } from 'electron';
 import log from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
 import { proxy } from 'valtio/vanilla';
-import { KitEvent, emitter } from './events';
+import { emitter, KitEvent } from './events';
 
 export type WidgetOptions = {
   id: string;
@@ -11,6 +11,12 @@ export type WidgetOptions = {
   moved: boolean;
   ignoreMouse: boolean;
   ignoreMeasure: boolean;
+  /** Script path that created the widget (for persistence) */
+  scriptPath?: string;
+  /** Current widget state (for persistence) */
+  state?: any;
+  /** Widget creation options (for persistence) */
+  options?: any;
 };
 
 const initWidgets = {

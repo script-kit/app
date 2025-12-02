@@ -1,13 +1,7 @@
 import dns from 'dns-socket';
 
 export default function internetAvailable(
-  options: {
-    timeout?: number;
-    retries?: number;
-    domainName?: string;
-    port?: number;
-    host?: string;
-  } = {},
+  options: { timeout?: number; retries?: number; domainName?: string; port?: number; host?: string } = {},
 ): Promise<boolean> {
   const defaultSettings = {
     timeout: 1000,

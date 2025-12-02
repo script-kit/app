@@ -6,6 +6,7 @@ import url from 'node:url';
 import { Channel } from '@johnlindquist/kit/core/enum';
 import { ipcRenderer, webFrame, webUtils } from 'electron';
 import log from 'electron-log';
+
 log.transports.console.level = false;
 
 // Extend Window interface
@@ -27,7 +28,7 @@ const api = {
   url,
 };
 
-// @ts-ignore (define in dts)
+// @ts-expect-error (define in dts)
 window.electron = {
   ipcRenderer,
   webFrame,
@@ -39,7 +40,7 @@ function sanitizeForIPC(obj: any) {
 }
 
 window.options = {};
-// @ts-ignore (define in dts)
+// @ts-expect-error (define in dts)
 window.send = (channel: string, data: any = {}) => {
   // console.log('send', {
   //   channel: channel || 'no channel',
@@ -56,7 +57,7 @@ window.send = (channel: string, data: any = {}) => {
   );
 };
 
-// @ts-ignore (define in dts)
+// @ts-expect-error (define in dts)
 window.on = (channel: string, callback: (data: any) => void) => {
   const handler = (_: any, data: any) => {
     callback(sanitizeForIPC(data));
@@ -69,9 +70,9 @@ window.on = (channel: string, callback: (data: any) => void) => {
     ipcRenderer.removeListener(channel, handler);
   };
 };
-// @ts-ignore (define in dts)
+// @ts-expect-error (define in dts)
 
-// @ts-ignore (define in dts)
+// @ts-expect-error (define in dts)
 window.api = api;
 
 window.addEventListener('load', () => {

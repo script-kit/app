@@ -10,6 +10,8 @@ export interface ScoredChoice {
   _: string;
   originalIndex?: number;
   isSequentialMatch?: boolean;
+  /** Frecency multiplier applied to score (1.0 = no boost, higher = more frequent/recent) */
+  frecencyBoost?: number;
 }
 
 export interface ChoiceButtonData {

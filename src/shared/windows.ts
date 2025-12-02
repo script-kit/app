@@ -2,7 +2,7 @@ import type { UI } from '@johnlindquist/kit/core/enum';
 import log from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
 import { proxy } from 'valtio/vanilla';
-import { KitEvent, emitter } from './events';
+import { emitter, KitEvent } from './events';
 
 export type WindowOptions = {
   scriptPath: string;
