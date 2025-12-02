@@ -7,10 +7,14 @@ vi.mock('electron', () => ({
   app: {
     getPath: vi.fn((name: string) => {
       switch (name) {
-        case 'userData': return '/Users/test/Library/Application Support/ScriptKit';
-        case 'downloads': return '/Users/test/Downloads';
-        case 'home': return '/Users/test';
-        default: return '/Users/test';
+        case 'userData':
+          return '/Users/test/Library/Application Support/ScriptKit';
+        case 'downloads':
+          return '/Users/test/Downloads';
+        case 'home':
+          return '/Users/test';
+        default:
+          return '/Users/test';
       }
     }),
     quit: vi.fn(),
@@ -25,29 +29,32 @@ vi.mock('electron', () => ({
     removeAllListeners: vi.fn(),
     isPackaged: false,
   },
-  BrowserWindow: Object.assign(vi.fn().mockImplementation(() => ({
-    loadURL: vi.fn(),
-    on: vi.fn(),
-    once: vi.fn(),
-    removeListener: vi.fn(),
-    removeAllListeners: vi.fn(),
-    close: vi.fn(),
-    destroy: vi.fn(),
-    show: vi.fn(),
-    hide: vi.fn(),
-    focus: vi.fn(),
-    blur: vi.fn(),
-    webContents: {
+  BrowserWindow: Object.assign(
+    vi.fn().mockImplementation(() => ({
+      loadURL: vi.fn(),
       on: vi.fn(),
       once: vi.fn(),
       removeListener: vi.fn(),
       removeAllListeners: vi.fn(),
-      send: vi.fn(),
-      executeJavaScript: vi.fn(),
+      close: vi.fn(),
+      destroy: vi.fn(),
+      show: vi.fn(),
+      hide: vi.fn(),
+      focus: vi.fn(),
+      blur: vi.fn(),
+      webContents: {
+        on: vi.fn(),
+        once: vi.fn(),
+        removeListener: vi.fn(),
+        removeAllListeners: vi.fn(),
+        send: vi.fn(),
+        executeJavaScript: vi.fn(),
+      },
+    })),
+    {
+      getAllWindows: vi.fn(() => []),
     },
-  })), {
-    getAllWindows: vi.fn(() => []),
-  }),
+  ),
   crashReporter: {
     start: vi.fn(),
   },
@@ -159,7 +166,7 @@ vi.mock('node:os', () => ({
       gid: 1000,
       username: 'test',
       homedir: '/Users/test',
-      shell: '/bin/bash'
+      shell: '/bin/bash',
     })),
     version: vi.fn(() => 'v1.0.0'),
     constants: {
@@ -199,8 +206,8 @@ vi.mock('node:os', () => ({
         SIGUNUSED: 31,
       },
       errno: {},
-      priority: {}
-    }
+      priority: {},
+    },
   },
   arch: vi.fn(() => 'x64'),
   cpus: vi.fn(() => []),
@@ -224,7 +231,7 @@ vi.mock('node:os', () => ({
     gid: 1000,
     username: 'test',
     homedir: '/Users/test',
-    shell: '/bin/bash'
+    shell: '/bin/bash',
   })),
   version: vi.fn(() => 'v1.0.0'),
   constants: {
@@ -264,13 +271,13 @@ vi.mock('node:os', () => ({
       SIGUNUSED: 31,
     },
     errno: {},
-    priority: {}
-  }
+    priority: {},
+  },
 }));
 
 // Mock node-pty
 vi.mock('node-pty', () => ({
-  spawn: vi.fn((shell, args, options) => ({
+  spawn: vi.fn((shell, _args, _options) => ({
     onData: vi.fn(),
     onExit: vi.fn(),
     write: vi.fn(),
@@ -289,5 +296,5 @@ vi.mock('electron-is-dev', () => ({
 
 // Mock valtio to prevent subscribeKey errors
 vi.mock('valtio/utils', () => ({
-  subscribeKey: vi.fn(() => () => { }), // Return unsubscribe function
+  subscribeKey: vi.fn(() => () => {}), // Return unsubscribe function
 }));

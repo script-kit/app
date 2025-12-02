@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { makeOnline, makeSponsorCheck } from '../src/main/state/sponsor';
 
 const makeDeps = (overrides: any = {}) => {

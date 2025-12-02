@@ -1,5 +1,5 @@
 import { bench } from 'vitest';
-import { rebuildReverseKeyMap, convertKeyInternal } from '../src/main/state/keymap';
+import { convertKeyInternal, rebuildReverseKeyMap } from '../src/main/state/keymap';
 
 const ks: any = {
   kenvEnv: {},

@@ -57,7 +57,6 @@ const safeListStartsWith = [
   '-?bottom',
   '-?left',
   'border-b',
-
 ];
 
 /* eslint-disable global-require */

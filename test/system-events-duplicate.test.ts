@@ -9,80 +9,84 @@ const mockElectronBase = vi.hoisted(() => {
   const handlers = new Map();
 
   return {
-  app: {
-    getPath: vi.fn((name: string) => {
-      switch (name) {
-        case 'userData': return '/Users/test/Library/Application Support/ScriptKit';
-        case 'downloads': return '/Users/test/Downloads';
-        case 'home': return '/Users/test';
-        default: return '/Users/test';
-      }
-    }),
-    quit: vi.fn(),
-    exit: vi.fn(),
-    getName: vi.fn(() => 'ScriptKit'),
-    getVersion: vi.fn(() => '1.0.0'),
-    isReady: vi.fn(() => true),
-    whenReady: vi.fn(() => Promise.resolve()),
-    on: vi.fn(),
-    once: vi.fn(),
-    removeListener: vi.fn(),
-    removeAllListeners: vi.fn(),
-  },
-  BrowserWindow: vi.fn().mockImplementation(() => ({
-    loadURL: vi.fn(),
-    on: vi.fn(),
-    once: vi.fn(),
-    removeListener: vi.fn(),
-    removeAllListeners: vi.fn(),
-    close: vi.fn(),
-    destroy: vi.fn(),
-    show: vi.fn(),
-    hide: vi.fn(),
-    focus: vi.fn(),
-    blur: vi.fn(),
-    webContents: {
+    app: {
+      getPath: vi.fn((name: string) => {
+        switch (name) {
+          case 'userData':
+            return '/Users/test/Library/Application Support/ScriptKit';
+          case 'downloads':
+            return '/Users/test/Downloads';
+          case 'home':
+            return '/Users/test';
+          default:
+            return '/Users/test';
+        }
+      }),
+      quit: vi.fn(),
+      exit: vi.fn(),
+      getName: vi.fn(() => 'ScriptKit'),
+      getVersion: vi.fn(() => '1.0.0'),
+      isReady: vi.fn(() => true),
+      whenReady: vi.fn(() => Promise.resolve()),
       on: vi.fn(),
       once: vi.fn(),
       removeListener: vi.fn(),
       removeAllListeners: vi.fn(),
-      send: vi.fn(),
-      executeJavaScript: vi.fn(),
     },
-  })),
-  crashReporter: {
-    start: vi.fn(),
-  },
-  powerMonitor: {
-    on: vi.fn((event: string, handler: Function) => {
-      // Store the handler so listeners() can return it
-      if (!handlers.has(event)) {
-        handlers.set(event, []);
-      }
-      handlers.get(event).push(handler);
-    }),
-    addListener: vi.fn((event: string, handler: Function) => {
-      // Store the handler so listeners() can return it
-      if (!handlers.has(event)) {
-        handlers.set(event, []);
-      }
-      handlers.get(event).push(handler);
-    }),
-    once: vi.fn(),
-    removeListener: vi.fn(),
-    removeAllListeners: vi.fn(),
-    listeners: vi.fn((event: string) => {
-      return handlers.get(event) || [];
-    }),
-  },
-  nativeTheme: {
-    shouldUseDarkColors: false,
-    on: vi.fn(),
-    once: vi.fn(),
-    removeListener: vi.fn(),
-    removeAllListeners: vi.fn(),
-  },
-};
+    BrowserWindow: vi.fn().mockImplementation(() => ({
+      loadURL: vi.fn(),
+      on: vi.fn(),
+      once: vi.fn(),
+      removeListener: vi.fn(),
+      removeAllListeners: vi.fn(),
+      close: vi.fn(),
+      destroy: vi.fn(),
+      show: vi.fn(),
+      hide: vi.fn(),
+      focus: vi.fn(),
+      blur: vi.fn(),
+      webContents: {
+        on: vi.fn(),
+        once: vi.fn(),
+        removeListener: vi.fn(),
+        removeAllListeners: vi.fn(),
+        send: vi.fn(),
+        executeJavaScript: vi.fn(),
+      },
+    })),
+    crashReporter: {
+      start: vi.fn(),
+    },
+    powerMonitor: {
+      on: vi.fn((event: string, handler: Function) => {
+        // Store the handler so listeners() can return it
+        if (!handlers.has(event)) {
+          handlers.set(event, []);
+        }
+        handlers.get(event).push(handler);
+      }),
+      addListener: vi.fn((event: string, handler: Function) => {
+        // Store the handler so listeners() can return it
+        if (!handlers.has(event)) {
+          handlers.set(event, []);
+        }
+        handlers.get(event).push(handler);
+      }),
+      once: vi.fn(),
+      removeListener: vi.fn(),
+      removeAllListeners: vi.fn(),
+      listeners: vi.fn((event: string) => {
+        return handlers.get(event) || [];
+      }),
+    },
+    nativeTheme: {
+      shouldUseDarkColors: false,
+      on: vi.fn(),
+      once: vi.fn(),
+      removeListener: vi.fn(),
+      removeAllListeners: vi.fn(),
+    },
+  };
 });
 
 vi.mock('electron', () => ({
@@ -143,11 +147,11 @@ vi.mock('electron-log', () => ({
   silly: vi.fn(),
 }));
 
-import { systemScriptChanged } from '../src/main/system-events';
-import { runPromptProcess } from '../src/main/kit';
-import { powerMonitor } from 'electron';
-import { Trigger } from '../src/shared/enums';
 import { ProcessType } from '@johnlindquist/kit/core/enum';
+import { powerMonitor } from 'electron';
+import { runPromptProcess } from '../src/main/kit';
+import { systemScriptChanged } from '../src/main/system-events';
+import { Trigger } from '../src/shared/enums';
 
 describe('system-events duplicate registration', () => {
   beforeEach(() => {
@@ -195,7 +199,7 @@ describe('system-events duplicate registration', () => {
     );
   });
 
-      it.skip('should register multiple different system events', () => {
+  it.skip('should register multiple different system events', () => {
     const mockRunPromptProcess = runPromptProcess as any;
 
     const testScript = {

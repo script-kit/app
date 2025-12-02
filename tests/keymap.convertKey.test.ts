@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { rebuildReverseKeyMap, convertKeyInternal } from '../src/main/state/keymap';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { convertKeyInternal, rebuildReverseKeyMap } from '../src/main/state/keymap';
 
 const makeKitState = () =>
   ({
@@ -9,7 +9,7 @@ const makeKitState = () =>
       KeyW: { value: 'w' },
     },
     isMac: true,
-  } as any);
+  }) as any;
 
 describe('convertKeyInternal', () => {
   let ks: any;

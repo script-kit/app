@@ -1,8 +1,12 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { createStore } from 'jotai';
-import { scheduleResizeAtom, resizePendingMaskAtom, resizeEpochAtom } from '../../../src/renderer/src/state/resize/scheduler';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { devToolsOpenAtom, resizeTickAtom } from '../../../src/renderer/src/state/atoms/ui-elements';
 import { ResizeReason } from '../../../src/renderer/src/state/resize/reasons';
-import { resizeTickAtom, devToolsOpenAtom } from '../../../src/renderer/src/state/atoms/ui-elements';
+import {
+  resizeEpochAtom,
+  resizePendingMaskAtom,
+  scheduleResizeAtom,
+} from '../../../src/renderer/src/state/resize/scheduler';
 
 describe('resize scheduler', () => {
   let store: ReturnType<typeof createStore>;
