@@ -181,7 +181,7 @@ async function uploadWithRetry(octokit, releaseData, filePath, name, maxRetries 
       }
 
       // Wait before retrying (exponential backoff)
-      const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
+      const delay = Math.min(1000 * 2 ** attempt, 10000);
       console.log(`Waiting ${delay}ms before retry...`);
       await new Promise((resolve) => setTimeout(resolve, delay));
     }

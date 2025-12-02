@@ -5,10 +5,14 @@ const mockElectronBase = vi.hoisted(() => ({
   app: {
     getPath: vi.fn((name: string) => {
       switch (name) {
-        case 'userData': return '/Users/test/Library/Application Support/ScriptKit';
-        case 'downloads': return '/Users/test/Downloads';
-        case 'home': return '/Users/test';
-        default: return '/Users/test';
+        case 'userData':
+          return '/Users/test/Library/Application Support/ScriptKit';
+        case 'downloads':
+          return '/Users/test/Downloads';
+        case 'home':
+          return '/Users/test';
+        default:
+          return '/Users/test';
       }
     }),
     quit: vi.fn(),
@@ -131,11 +135,11 @@ vi.mock('electron-store', () => {
   return { default: MockStore };
 });
 
+import assert from 'node:assert';
+import os from 'node:os';
+import path from 'node:path';
+import { describe, it } from 'vitest';
 import { invoke } from '../src/main/invoke-pty';
-import { describe, it } from "vitest"
-import assert from "node:assert"
-import path from "node:path"
-import os from "node:os"
 
 // describe('invoke-pty', () => {
 //   it('should return the result of the command', async () => {
@@ -145,7 +149,7 @@ import os from "node:os"
 //   });
 // });
 
-const kitPath = ()=> path.join(os.homedir(), '.kit');
+const kitPath = () => path.join(os.homedir(), '.kit');
 
 describe('invoke-pty with cwd', () => {
   it.skip('should return the result of the command', async () => {
@@ -155,13 +159,11 @@ describe('invoke-pty with cwd', () => {
   });
 });
 
-
 describe('invoke-pty with quotes in command', () => {
   it.skip('should return the result of the command', async () => {
-    const pnpmPath = '/Users/johnlindquist/Library/pnpm/pnpm'
+    const pnpmPath = '/Users/johnlindquist/Library/pnpm/pnpm';
     const result = await invoke(`"${pnpmPath}" node -e "console.log(process.execPath)"`, kitPath());
     console.log({ result });
     assert(result);
   });
 });
-

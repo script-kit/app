@@ -1,6 +1,6 @@
 import '@johnlindquist/kit';
+import type { OptionalDependency, Target } from '../src/main/shims';
 import { supportMap } from '../src/main/shims';
-import type { Target, OptionalDependency } from '../src/main/shims';
 
 console.log(
   `some of these packages successfully install,
@@ -68,12 +68,16 @@ const command = `pnpm remove ${packagesToActuallyRemove.join(' ')}`;
 
 console.log(
   `\nPREPARE TO UNINSTALL`,
-  JSON.stringify({
-    pkg: pkg.optionalDependencies,
-    optionalDependenciesToKeep,
-    optionalDependenciesToRemove,
-    packagesToActuallyRemove,
-  }, null, 2),
+  JSON.stringify(
+    {
+      pkg: pkg.optionalDependencies,
+      optionalDependenciesToKeep,
+      optionalDependenciesToRemove,
+      packagesToActuallyRemove,
+    },
+    null,
+    2,
+  ),
 );
 
 console.log(`\nUNINSTALL COMMAND`, command);
@@ -141,11 +145,10 @@ if (packagesToActuallyRemove.length > 0) {
     console.log('Remaining optional dependencies:', remainingOptional);
 
     // Check if all expected dependencies were removed
-    const notRemoved = optionalDependenciesToRemove.filter(dep => remainingOptional.includes(dep));
+    const notRemoved = optionalDependenciesToRemove.filter((dep) => remainingOptional.includes(dep));
     if (notRemoved.length > 0) {
       console.error('WARNING: The following dependencies were not removed:', notRemoved);
     }
-
   } catch (error) {
     console.error('Error during pnpm remove:', error);
     console.error('Error stack:', error.stack);

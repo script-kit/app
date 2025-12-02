@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-import { spawn } from "child_process";
-import { setTimeout } from "timers/promises";
+import { spawn } from 'node:child_process';
+import { setTimeout } from 'node:timers/promises';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 60000; // 60 seconds
 
 async function runBuild(attempt = 1): Promise<void> {
   console.log(`\n🔄 Build attempt ${attempt} of ${MAX_RETRIES}`);
-  
+
   return new Promise((resolve, reject) => {
     // Set environment variables to help with download issues
     const env = {
@@ -26,7 +26,7 @@ async function runBuild(attempt = 1): Promise<void> {
       stdio: 'inherit',
       shell: true,
       env,
-      cwd: process.cwd()
+      cwd: process.cwd(),
     });
 
     buildProcess.on('close', (code) => {
@@ -51,13 +51,14 @@ async function buildWithRetry() {
       process.exit(0);
     } catch (error) {
       console.error(`❌ Build attempt ${attempt} failed:`, error);
-      
+
       // Check if it's a 403 error
       const errorMessage = error.toString();
-      const is403Error = errorMessage.includes('status code 403') || 
-                         errorMessage.includes('cannot resolve') ||
-                         errorMessage.includes('electron-v');
-      
+      const is403Error =
+        errorMessage.includes('status code 403') ||
+        errorMessage.includes('cannot resolve') ||
+        errorMessage.includes('electron-v');
+
       if (is403Error && attempt < MAX_RETRIES) {
         console.log(`⏱️  Waiting ${RETRY_DELAY / 1000} seconds before retrying...`);
         await setTimeout(RETRY_DELAY);

@@ -1,6 +1,6 @@
-import { execaCommand } from 'execa';
 import os from 'node:os';
 import path from 'node:path';
+import { execaCommand } from 'execa';
 
 const installDeps = async () => {
   const kitPath = path.resolve(os.homedir(), '.kit');
