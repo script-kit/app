@@ -1,100 +1,93 @@
 import { randomUUID } from 'node:crypto';
-import url from 'node:url';
-import detect from 'detect-port';
-import sizeOf from 'image-size';
-import untildify from 'untildify';
-
-import { writeFile, unlink } from 'node:fs/promises';
+import { unlink, writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import https from 'node:https';
 import os from 'node:os';
 import path from 'node:path';
+import url from 'node:url';
+// const { pathExistsSync, readJson } = fsExtra;
+import type { Stamp } from '@johnlindquist/kit/core/db';
 import { Channel, Key, ProcessType, UI, Value } from '@johnlindquist/kit/core/enum';
+import { getMainScriptPath, kenvPath, kitPath, processPlatformSpecificTheme } from '@johnlindquist/kit/core/utils';
 import type { Choice, ProcessInfo, Script, Scriptlet } from '@johnlindquist/kit/types/core';
+import type { ChannelMap, SendData } from '@johnlindquist/kit/types/kitapp';
+import { format, formatDistanceToNowStrict } from 'date-fns';
+import detect from 'detect-port';
 import {
-  BrowserWindow,
-  Notification,
   app,
+  BrowserWindow,
   clipboard,
   dialog,
   globalShortcut,
+  Notification,
   nativeImage,
   powerMonitor,
   screen,
   shell,
 } from 'electron';
+import sizeOf from 'image-size';
 import { debounce, remove } from 'lodash-es';
+import untildify from 'untildify';
 import { snapshot } from 'valtio';
+import { getAssetPath } from '../shared/assets';
+import { AppChannel, Trigger } from '../shared/enums';
+import { emitter, KitEvent } from '../shared/events';
 
-import type { ChannelMap, SendData } from '@johnlindquist/kit/types/kitapp';
-
-import { getMainScriptPath, kenvPath, kitPath, processPlatformSpecificTheme } from '@johnlindquist/kit/core/utils';
-
-// const { pathExistsSync, readJson } = fsExtra;
-import type { Stamp } from '@johnlindquist/kit/core/db';
-import { type Logger, getLog } from './logs';
-import { getCurrentScreenFromMouse } from './prompt.screen-utils';
-import { clearPromptCache } from './prompt.cache';
+import { findWidget, widgetState } from '../shared/widget';
+import { createSnapshotFromWindow, saveSnapshot } from './widget-persistence';
+import { stripAnsi } from './ansi';
+import { createSendToChild } from './channel';
+import { getClipboardHistory, removeFromClipboardHistory, syncClipboardStore } from './clipboard';
+import { conditionalRestore, takeClipboardSnapshot, writeTextEnsure } from './clipboard-transaction';
+import { displayError } from './error';
+import { saveFrecencyData } from './frecency';
+import { convertShortcut, isLocalPath, isUrl } from './helpers';
+import { cacheMainScripts } from './install';
+import { deleteText } from './keyboard';
+import { consoleLog, getLog, type Logger, messagesLog as log } from './logs';
 import {
+  childShortcutMap,
+  clearFlags,
+  clearPreview,
+  getAppearance,
+  HANDLER_CHANNELS,
+  type ProcessAndPrompt,
+  parseTheme,
+  processes,
+  processManager,
+  setTheme,
+  spawnShebang,
+} from './process';
+import { clearPromptCache } from './prompt.cache';
+import { getCurrentScreenFromMouse } from './prompt.screen-utils';
+import { prompts } from './prompts';
+import { getSourceFromRectangle } from './screen';
+import { isMatchingRun } from './script-lifecycle';
+import { appendChoices, invokeSearch, setChoices, setFlags } from './search';
+import shims from './shims';
+import { show, showDevTools, showWidget } from './show';
+import {
+  clearSleepCachedEnvVars,
   debounceSetScriptTimestamp,
   forceQuit,
   getBackgroundTasks,
   getSchedule,
   kitConfig,
   kitState,
-  clearSleepCachedEnvVars,
   kitStore,
   preloadChoicesMap,
   sponsorCheck,
 } from './state';
-
-import { findWidget, widgetState } from '../shared/widget';
-
-import { createSendToChild } from './channel';
-import { appendChoices, invokeSearch, setChoices, setFlags } from './search';
-
-import { KitEvent, emitter } from '../shared/events';
-import { show, showDevTools, showWidget } from './show';
-
-import { format, formatDistanceToNowStrict } from 'date-fns';
-import { getAssetPath } from '../shared/assets';
-import { AppChannel, Trigger } from '../shared/enums';
-import { conditionalRestore, takeClipboardSnapshot, writeTextEnsure } from './clipboard-transaction';
-import { stripAnsi } from './ansi';
-import { getClipboardHistory, removeFromClipboardHistory, syncClipboardStore } from './clipboard';
-import { displayError } from './error';
-import { convertShortcut, isLocalPath, isUrl } from './helpers';
-import { cacheMainScripts } from './install';
-import { deleteText } from './keyboard';
-import { consoleLog } from './logs';
-import {
-  HANDLER_CHANNELS,
-  type ProcessAndPrompt,
-  childShortcutMap,
-  clearFlags,
-  clearPreview,
-  getAppearance,
-  parseTheme,
-  processManager,
-  processes,
-  setTheme,
-  spawnShebang,
-} from './process';
-import { prompts } from './prompts';
-import { getSourceFromRectangle } from './screen';
-import shims from './shims';
+import { sanitizeKitStateForIpc } from './state/kitstate-sanitize';
 import { osTmpPath } from './tmp';
 import { TrackEvent, trackEvent } from './track';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { showLogWindow } from './window';
-
-import { messagesLog as log } from './logs';
-import { sanitizeKitStateForIpc } from './state/kitstate-sanitize';
-import { isMatchingRun } from './script-lifecycle';
+import { measurementManager } from './measurement';
 
 // Centralize magic numbers
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
-const IMAGE_REQUEST_TIMEOUT_MS = 7000;    // 7 seconds
+const IMAGE_REQUEST_TIMEOUT_MS = 7000; // 7 seconds
 
 import { applyKitStatePatch } from './state/kitstate-guards';
 
@@ -107,7 +100,7 @@ const isSamePrompt = (incomingId?: string, currentId?: string) => {
 // --- Helper to keep globalShortcut state sane per child process
 const unregisterShortcutsForPid = (pid: number) => {
   const shortcuts = childShortcutMap.get(pid);
-  if (shortcuts && shortcuts.length) {
+  if (shortcuts?.length) {
     for (const acc of shortcuts) {
       try {
         globalShortcut.unregister(acc);
@@ -183,12 +176,13 @@ export const formatScriptChoices = (data: Choice[]) => {
     if (script.background) {
       const backgroundScript = getBackgroundTasks().find((t) => t.filePath === script.filePath);
 
-      script.description = `${script.description || ''}${backgroundScript
-        ? `🟢  Uptime: ${formatDistanceToNowStrict(
-          new Date(backgroundScript.process.start),
-        )} PID: ${backgroundScript.process.pid}`
-        : "🛑 isn't running"
-        }`;
+      script.description = `${script.description || ''}${
+        backgroundScript
+          ? `🟢  Uptime: ${formatDistanceToNowStrict(
+              new Date(backgroundScript.process.start),
+            )} PID: ${backgroundScript.process.pid}`
+          : "🛑 isn't running"
+      }`;
     }
 
     if (script.schedule) {
@@ -223,6 +217,13 @@ export const formatScriptChoices = (data: Choice[]) => {
 // Track temp thumbnails to clean up on quit
 const tempThumbnails = new Set<string>();
 app.on('before-quit', async () => {
+  // Save frecency data before quit
+  try {
+    await saveFrecencyData();
+  } catch (_) {
+    // ignore - don't block quit
+  }
+
   for (const p of tempThumbnails) {
     try {
       await unlink(p);
@@ -267,10 +268,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     // Fallback timeout to avoid hangs
     setTimeout(() => {
       if (!settled) {
-        const payload =
-          value && typeof value === 'object'
-            ? { ...value, __ackTimeout: true }
-            : value;
+        const payload = value && typeof value === 'object' ? { ...value, __ackTimeout: true } : value;
         log.warn(`Timeout waiting for renderer ack on ${channel}`);
         ack(payload);
       }
@@ -316,15 +314,15 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
     <K extends keyof ChannelMap>(
       fn: (processInfo: ProcessAndPrompt, data: SendData<K>, samePrompt?: boolean) => void,
     ) =>
-      (data: SendData<K>) =>
-        handleChannelMessage(data, fn, true);
+    (data: SendData<K>) =>
+      handleChannelMessage(data, fn, true);
 
   const onChildChannelOverride =
     <K extends keyof ChannelMap>(
       fn: (processInfo: ProcessAndPrompt, data: SendData<K>, samePrompt?: boolean) => void,
     ) =>
-      (data: SendData<K>) =>
-        handleChannelMessage(data, fn);
+    (data: SendData<K>) =>
+      handleChannelMessage(data, fn);
 
   /**
    * Fetch image dimensions safely (size-limited + timeout) before showing.
@@ -384,10 +382,10 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
   };
 
   const kitMessageMap: ChannelHandler = {
-    KIT_LOADING: () => { },
-    KIT_READY: () => { },
-    MAIN_MENU_READY: () => { },
-    PONG: (_data) => { },
+    KIT_LOADING: () => {},
+    KIT_READY: () => {},
+    MAIN_MENU_READY: () => {},
+    PONG: (_data) => {},
     QUIT_AND_RELAUNCH: () => {
       log.info('👋 Quitting and relaunching');
       app.relaunch();
@@ -457,6 +455,38 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       });
     }),
 
+    MEASURE: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      log.info('[MEASURE] Handler invoked', { channel, options: value });
+
+      // CRITICAL: Prevent script termination when measurement window takes focus
+      // The measurement overlay will steal focus from the prompt, triggering onBlur.
+      // Without this flag, onBlur calls hideAndRemoveProcess() which kills the script.
+      const originalPreventCloseOnBlur = prompt.mainMenuPreventCloseOnBlur;
+      prompt.mainMenuPreventCloseOnBlur = true;
+      log.info('[MEASURE] Set mainMenuPreventCloseOnBlur=true to prevent script termination');
+
+      try {
+        log.info('[MEASURE] Calling measurementManager.measure');
+        const result = await measurementManager.measure(value || {});
+        log.info('[MEASURE] Measurement complete', { result });
+        childSend({
+          channel,
+          value: result,
+        });
+        log.info('[MEASURE] Result sent to child process');
+      } catch (error) {
+        log.error('[MEASURE] Error in handler:', error);
+        childSend({
+          channel,
+          value: null,
+        });
+      } finally {
+        // Restore original value
+        prompt.mainMenuPreventCloseOnBlur = originalPreventCloseOnBlur;
+        log.info('[MEASURE] Restored mainMenuPreventCloseOnBlur to', { originalPreventCloseOnBlur });
+      }
+    }),
+
     WIDGET_UPDATE: onChildChannel(({ child }, { channel, value }) => {
       const { widgetId } = value as any;
       const widget = BrowserWindow.fromId(widgetId);
@@ -511,6 +541,12 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         log.warn(`${widgetId}: widget not found. Cleaning up state.`);
         remove(widgetState.widgets, ({ id }) => id === widgetId);
         return;
+      }
+
+      // Track state changes for persistence
+      const widgetData = widgetState.widgets.find(w => w.id === widgetId);
+      if (widgetData) {
+        widgetData.state = { ...widgetData.state, ...state };
       }
 
       // log.info(`WIDGET_SET_STATE`, value);
@@ -628,6 +664,10 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
           moved: false,
           ignoreMouse: value?.options?.ignoreMouse,
           ignoreMeasure: Boolean(value?.options?.width || value?.options?.height),
+          // For persistence
+          scriptPath,
+          state: value?.options?.state || {},
+          options: value?.options || {},
         });
 
         widget.on('resized', () => {
@@ -775,6 +815,86 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
           imagePath,
         });
         log.warn(imagePath);
+      }
+    }),
+
+    WIDGET_GET_BOUNDS: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      const { widgetId } = value as any;
+      const widget = findWidget(widgetId, channel);
+
+      if (widget) {
+        const bounds = widget.getBounds();
+        childSend({
+          channel,
+          ...bounds,
+        });
+      } else {
+        childSend({
+          channel,
+          error: `Widget ${widgetId} not found`,
+        });
+        log.warn(`Widget ${widgetId} not found for WIDGET_GET_BOUNDS`);
+      }
+    }),
+
+    WIDGET_SNAPSHOT: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      const { widgetId, snapshotId } = value as any;
+      const widget = findWidget(widgetId, channel);
+
+      if (widget) {
+        // Get widget metadata from widgetState
+        const widgetData = widgetState.widgets.find(w => w.id === widgetId);
+
+        // Create and save the snapshot
+        const snapshot = createSnapshotFromWindow(widget, snapshotId, {
+          scriptPath: widgetData?.scriptPath || '',
+          state: widgetData?.state || {},
+          widgetOptions: widgetData?.options || {},
+        });
+
+        try {
+          await saveSnapshot(snapshot);
+          childSend({
+            channel,
+            id: snapshot.id,
+            savedAt: snapshot.savedAt,
+            bounds: snapshot.bounds,
+          });
+          log.info(`Saved snapshot for widget ${widgetId} as ${snapshotId}`);
+        } catch (error) {
+          childSend({
+            channel,
+            error: `Failed to save snapshot: ${error instanceof Error ? error.message : error}`,
+          });
+          log.error(`Failed to save snapshot for widget ${widgetId}:`, error);
+        }
+      } else {
+        childSend({
+          channel,
+          error: `Widget ${widgetId} not found`,
+        });
+        log.warn(`Widget ${widgetId} not found for WIDGET_SNAPSHOT`);
+      }
+    }),
+
+    WIDGET_BROADCAST: onChildChannel(({ child }, { channel, value }) => {
+      const { widgetId, topic, data } = value as any;
+      log.info(`[WIDGET_BROADCAST] Widget ${widgetId} broadcasting to topic "${topic}"`);
+
+      // Broadcast to all widgets in this process (including the sender)
+      // The SDK will filter by topic subscription
+      for (const widgetData of widgetState.widgets) {
+        const widget = findWidget(widgetData.id, 'WIDGET_BROADCAST');
+        if (widget && !widget.isDestroyed()) {
+          // Send message to all widgets - they'll filter by subscription
+          childSend({
+            channel: Channel.WIDGET_MESSAGE,
+            widgetId: widgetData.id,
+            topic,
+            payload: data,
+            fromWidgetId: widgetId,
+          });
+        }
       }
     }),
 
@@ -1612,7 +1732,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       const rawFlags = value?.flags;
       const flags = rawFlags && typeof rawFlags === 'object' ? rawFlags : {};
       const options = value?.options || {};
-      
+
       if (samePrompt) {
         log.info('⛳️ SET_FLAGS', Object.keys(flags));
         setFlags(prompt, flags as any);
@@ -1927,8 +2047,8 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         typeof textOrKeys === 'string'
           ? textOrKeys
           : Array.isArray(textOrKeys)
-          ? textOrKeys.join('')
-          : String(textOrKeys ?? '');
+            ? textOrKeys.join('')
+            : String(textOrKeys ?? '');
       const delay = Number.isFinite(rate) ? Math.max(0, Math.min(1000, Number(rate))) : undefined;
       try {
         if (typeof delay === 'number') {
@@ -1989,8 +2109,7 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       const envSpeed = kitState?.kenvEnv?.KIT_TYPING_SPEED;
       const parsedEnv = typeof envSpeed === 'string' ? Number.parseInt(envSpeed, 10) : Number(envSpeed);
       const speed = Number.isFinite(parsedEnv) ? Math.max(0, Math.min(1000, parsedEnv)) : undefined;
-      const text =
-        typeof value === 'string' ? value : Array.isArray(value) ? value.join('') : String(value ?? '');
+      const text = typeof value === 'string' ? value : Array.isArray(value) ? value.join('') : String(value ?? '');
       try {
         if (typeof speed === 'number') {
           log.info(`⌨️ Typing ${text} with delay ${speed}`);
@@ -2076,12 +2195,18 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
 
           // Attempt primary copy combo
           log.info(`COPY: sending ${modifier}+c`);
-          try { shims['@jitsi/robotjs'].keyTap('c', modifier); } catch {}
+          try {
+            shims['@jitsi/robotjs'].keyTap('c', modifier);
+          } catch {}
 
           let afterText = '';
           let tries = 0;
           while (tries < copyMaxTries) {
-            try { afterText = clipboard.readText(); } catch { afterText = ''; }
+            try {
+              afterText = clipboard.readText();
+            } catch {
+              afterText = '';
+            }
             if (afterText !== beforeText && afterText !== '') break;
             await new Promise((r) => setTimeout(r, copyPollMs));
             tries++;
@@ -2092,10 +2217,16 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
             const useCtrlInsert = !kitState.isMac;
             if (useCtrlInsert) {
               log.info('COPY: fallback Ctrl+Insert');
-              try { shims['@jitsi/robotjs'].keyTap('insert', ['control']); } catch {}
+              try {
+                shims['@jitsi/robotjs'].keyTap('insert', ['control']);
+              } catch {}
               tries = 0;
               while (tries < copyMaxTries) {
-                try { afterText = clipboard.readText(); } catch { afterText = ''; }
+                try {
+                  afterText = clipboard.readText();
+                } catch {
+                  afterText = '';
+                }
                 if (afterText !== beforeText && afterText !== '') break;
                 await new Promise((r) => setTimeout(r, copyPollMs));
                 tries++;
@@ -2315,9 +2446,12 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
           const text: string = (value?.text ?? '') as string;
           const hide = Boolean(value?.hide);
           const method = (value?.method as 'clipboard' | 'typing' | 'auto') || 'clipboard';
-          const restoreDelay = Number.parseInt(String(kitState?.kenvEnv?.KIT_SET_SELECTED_TEXT_RESTORE_DELAY || '250'), 10) || 250;
-          const writeTimeout = Number.parseInt(String(kitState?.kenvEnv?.KIT_SET_SELECTED_TEXT_WRITE_TIMEOUT || '500'), 10) || 500;
-          const pastePollWait = Number.parseInt(String(kitState?.kenvEnv?.KIT_SET_SELECTED_TEXT_PASTE_WAIT || '10'), 10) || 10;
+          const restoreDelay =
+            Number.parseInt(String(kitState?.kenvEnv?.KIT_SET_SELECTED_TEXT_RESTORE_DELAY || '250'), 10) || 250;
+          const writeTimeout =
+            Number.parseInt(String(kitState?.kenvEnv?.KIT_SET_SELECTED_TEXT_WRITE_TIMEOUT || '500'), 10) || 500;
+          const pastePollWait =
+            Number.parseInt(String(kitState?.kenvEnv?.KIT_SET_SELECTED_TEXT_PASTE_WAIT || '10'), 10) || 10;
 
           if (hide && kitState.isMac && app?.dock && app?.dock?.isVisible()) {
             app?.dock?.hide();
@@ -2347,7 +2481,9 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
             if (kitState.isLinux) {
               // Some Linux apps prefer Shift+Insert for paste
               setTimeout(() => {
-                try { robot.keyTap('insert', ['shift']); } catch {}
+                try {
+                  robot.keyTap('insert', ['shift']);
+                } catch {}
               }, 35);
             }
           } catch {}
