@@ -34,6 +34,7 @@ export function performResize(input: any): ResizeResult {
     gridActive: input.gridActive,
     prevMainHeight: input.prevMainHeight,
     placeholderOnly: input.placeholderOnly,
+    panelHeight: input.panelHeight,
   };
 
   const base = computeResize(computeInput);

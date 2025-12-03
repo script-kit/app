@@ -20,6 +20,7 @@ export type ComputeResizeInput = {
   gridActive: boolean;
   prevMainHeight: number;
   placeholderOnly: boolean;
+  panelHeight: number;
 };
 
 export type ComputeResizeOutput = {
@@ -41,6 +42,15 @@ export function computeResize(i: ComputeResizeInput): ComputeResizeOutput {
       mh = base - i.topHeight - i.footerHeight;
     } else {
       mh = i.choicesHeight;
+    }
+  } else if (i.ui === UI.div) {
+    // UI.div uses panel height as the main content area
+    if (i.panelHeight > 0) {
+      mh = i.promptData?.height || i.panelHeight;
+      forceResize = true;
+    } else {
+      // No panel content yet, skip resize
+      return { mainHeight: 0, forceHeight: undefined, forceResize: false };
     }
   }
 
