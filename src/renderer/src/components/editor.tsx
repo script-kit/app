@@ -131,6 +131,7 @@ export default function Editor() {
   const [channel] = useAtom(channelAtom);
   const openOverlay = useSetAtom(openActionsOverlayAtom);
   const triggerResize = useSetAtom(triggerResizeAtom);
+  const submitInput = useSetAtom(submitInputAtom);
 
   const m = useMonaco();
 
@@ -259,6 +260,12 @@ export default function Editor() {
         }
       });
 
+      // Add Cmd+S handler for submitting the editor content
+      mountEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+        console.log('[EDITOR] Cmd+S handler triggered - submitting');
+        submitInput();
+      });
+
       mountEditor.focus();
 
       // monaco.languages.typescript.typescriptDefaults.addExtraLib(
@@ -333,7 +340,7 @@ export default function Editor() {
       // if (typeof global?.exports === 'undefined') global.exports = {};
       mountEditor.focus();
     },
-    [config, containerRef, kitIsDark, triggerResize],
+    [config, containerRef, kitIsDark, triggerResize, submitInput],
   );
 
   const onChange = useCallback(
@@ -800,7 +807,6 @@ export default function Editor() {
   const appConfig = useAtomValue(appConfigAtom);
   const flags = useAtomValue(flagsAtom);
   const setFlagByShortcut = useSetAtom(setFlagByShortcutAtom);
-  const submitInput = useSetAtom(submitInputAtom);
 
   // Track command IDs for cleanup
   const commandIdsRef = useRef<string[]>([]);
