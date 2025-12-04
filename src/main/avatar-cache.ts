@@ -42,7 +42,7 @@ export async function getCachedAvatar(avatarUrl: string): Promise<string | null>
     // Check memory cache first
     const memCached = memoryCache.get(avatarUrl);
     if (memCached && Date.now() - memCached.timestamp < CACHE_DURATION) {
-      mainLog.info(`Avatar cache hit (memory): ${avatarUrl}`);
+      mainLog.silly(`Avatar cache hit (memory): ${avatarUrl}`);
       return memCached.dataUrl;
     }
 
@@ -53,7 +53,7 @@ export async function getCachedAvatar(avatarUrl: string): Promise<string | null>
       const entry: CacheEntry = JSON.parse(cacheData);
 
       if (Date.now() - entry.timestamp < CACHE_DURATION) {
-        mainLog.info(`Avatar cache hit (disk): ${avatarUrl}`);
+        mainLog.silly(`Avatar cache hit (disk): ${avatarUrl}`);
         // Store in memory for next time
         memoryCache.set(avatarUrl, entry);
         return entry.dataUrl;
