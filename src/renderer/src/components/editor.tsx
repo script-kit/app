@@ -21,12 +21,15 @@ import {
   editorCursorPosAtom,
   editorOptions,
   editorSuggestionsAtom,
+  escapeAtom,
   flagsAtom,
   inputAtom,
   openActionsOverlayAtom,
   openAtom,
   scrollToAtom,
+  sendShortcutAtom,
   setFlagByShortcutAtom,
+  shortcutsAtom,
   submitInputAtom,
   triggerResizeAtom,
   uiAtom,
@@ -132,6 +135,9 @@ export default function Editor() {
   const openOverlay = useSetAtom(openActionsOverlayAtom);
   const triggerResize = useSetAtom(triggerResizeAtom);
   const submitInput = useSetAtom(submitInputAtom);
+  const [sendEscape] = useAtom(escapeAtom);
+  const [shortcuts] = useAtom(shortcutsAtom);
+  const [, sendShortcut] = useAtom(sendShortcutAtom);
 
   const m = useMonaco();
 
@@ -266,6 +272,20 @@ export default function Editor() {
         submitInput();
       });
 
+      // Add Escape handler for triggering onEscape in SDK scripts
+      // Check if there's an escape shortcut defined - if so, send as shortcut
+      // Otherwise, send as escape channel (matches useEscape.ts logic)
+      mountEditor.addCommand(monaco.KeyCode.Escape, () => {
+        const hasEscapeShortcut = shortcuts?.find((s) => s.key === 'escape');
+        if (hasEscapeShortcut) {
+          console.log('[EDITOR] Escape handler triggered - sending as shortcut');
+          sendShortcut('escape');
+        } else {
+          console.log('[EDITOR] Escape handler triggered - sending as escape');
+          sendEscape();
+        }
+      });
+
       mountEditor.focus();
 
       // monaco.languages.typescript.typescriptDefaults.addExtraLib(
@@ -340,7 +360,7 @@ export default function Editor() {
       // if (typeof global?.exports === 'undefined') global.exports = {};
       mountEditor.focus();
     },
-    [config, containerRef, kitIsDark, triggerResize, submitInput],
+    [config, containerRef, kitIsDark, triggerResize, submitInput, sendEscape, shortcuts, sendShortcut],
   );
 
   const onChange = useCallback(
