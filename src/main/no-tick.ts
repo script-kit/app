@@ -28,3 +28,5 @@ export const clearTickTimers = () => {};
 export const startClipboardAndKeyboardWatchers = () => {};
 
 export const addTextSnippet = () => {};
+
+export const updateSnippetPrefixIndex = () => {};
