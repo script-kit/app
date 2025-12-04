@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# Pre-push hook - verify lockfile consistency before pushing to CI
+echo "🔒 Verifying lockfile consistency..."
+
+# Save original lockfile hash
+ORIGINAL_HASH=$(git hash-object pnpm-lock.yaml 2>/dev/null || echo "none")
+
+# Regenerate lockfile (fast, lockfile-only mode)
+pnpm install --lockfile-only 2>/dev/null
+
+# Check if lockfile would change
+if ! git diff --quiet pnpm-lock.yaml 2>/dev/null; then
+  # Restore original lockfile
+  git checkout pnpm-lock.yaml 2>/dev/null
+
+  echo ""
+  echo "❌ Lockfile mismatch detected!"
+  echo ""
+  echo "Your pnpm-lock.yaml is out of sync with package.json."
+  echo "This will cause CI to fail with ERR_PNPM_LOCKFILE_CONFIG_MISMATCH."
+  echo ""
+  echo "To fix this, run:"
+  echo "  pnpm install"
+  echo ""
+  echo "Then commit the updated pnpm-lock.yaml and try again."
+  exit 1
+fi
+
+echo "✅ Lockfile is in sync - safe to push"
