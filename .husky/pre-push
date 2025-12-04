@@ -3,6 +3,21 @@
 # Pre-push hook - verify lockfile consistency before pushing to CI
 echo "🔒 Verifying lockfile consistency..."
 
+# Temporarily hide pnpm-workspace.yaml (local dev overrides)
+# This file is gitignored but affects lockfile generation
+if [ -f pnpm-workspace.yaml ]; then
+  mv pnpm-workspace.yaml pnpm-workspace.yaml.pre-push-backup
+  WORKSPACE_HIDDEN=1
+fi
+
+# Restore workspace file on exit (even on failure)
+cleanup() {
+  if [ "$WORKSPACE_HIDDEN" = "1" ] && [ -f pnpm-workspace.yaml.pre-push-backup ]; then
+    mv pnpm-workspace.yaml.pre-push-backup pnpm-workspace.yaml
+  fi
+}
+trap cleanup EXIT
+
 # Save original lockfile hash
 ORIGINAL_HASH=$(git hash-object pnpm-lock.yaml 2>/dev/null || echo "none")
 
