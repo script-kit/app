@@ -34,7 +34,8 @@ import { AppChannel, Trigger } from '../shared/enums';
 import { emitter, KitEvent } from '../shared/events';
 
 import { findWidget, widgetState } from '../shared/widget';
-import { createSnapshotFromWindow, saveSnapshot } from './widget-persistence';
+import { createSnapshotFromWindow, saveSnapshot, loadSnapshot } from './widget-persistence';
+import { widgetPool } from './widget-pool';
 import { stripAnsi } from './ansi';
 import { createSendToChild } from './channel';
 import { getClipboardHistory, removeFromClipboardHistory, syncClipboardStore } from './clipboard';
@@ -780,8 +781,16 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         prompt?.focusPrompt();
       }
 
+      // Remove specific widget listeners before releasing
       widget.removeAllListeners();
-      widget.destroy();
+
+      // Check if this is a pooled window and release it instead of destroying
+      if (widgetPool.isPooledWindow(widget.id)) {
+        log.info(`${widgetId}: Releasing pooled window ${widget.id}`);
+        widgetPool.release(widget);
+      } else {
+        widget.destroy();
+      }
 
       remove(widgetState.widgets, ({ id }) => id === widgetId);
 
@@ -874,6 +883,21 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
           error: `Widget ${widgetId} not found`,
         });
         log.warn(`Widget ${widgetId} not found for WIDGET_SNAPSHOT`);
+      }
+    }),
+
+    WIDGET_GET_SNAPSHOT: onChildChannelOverride(async ({ child }, { channel, value }) => {
+      const { id } = value as any;
+      try {
+        const snapshot = await loadSnapshot(id);
+        if (snapshot) {
+          childSend({ channel, snapshot });
+        } else {
+          childSend({ channel, error: `Snapshot ${id} not found` });
+        }
+      } catch (error) {
+        log.error(`Failed to load snapshot ${id}`, error);
+        childSend({ channel, error: String(error) });
       }
     }),
 

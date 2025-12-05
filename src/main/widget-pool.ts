@@ -260,9 +260,15 @@ class WidgetPool {
 
   /**
    * Release a window back to the pool for recycling
-   * (Currently we just track it, actual recycling could reset the window state)
+   * Properly resets window state to prevent "dirty" state leaks
    */
   release(window: BrowserWindow): void {
+    // Guard against destroyed windows at the start
+    if (window.isDestroyed()) {
+      this.remove(window.id);
+      return;
+    }
+
     const pooled = this.pool.find((p) => p.window.id === window.id);
 
     if (pooled && !window.isDestroyed()) {
@@ -272,6 +278,26 @@ class WidgetPool {
       // Reset window state for reuse
       window.hide();
       window.setPosition(-10000, -10000);
+
+      // Reset standard properties to prevent state leaks
+      window.setAlwaysOnTop(false);
+      window.setFullScreen(false);
+      window.setSkipTaskbar(false);
+      window.setOpacity(1.0);
+      try {
+        // setIgnoreMouseEvents might fail if window is hidden/minimized on some platforms
+        window.setIgnoreMouseEvents(false);
+      } catch (error) {
+        // Ignore error - window state is still valid
+      }
+
+      // CRITICAL: Remove all listeners to prevent duplicate handlers on reuse
+      window.removeAllListeners();
+
+      // Re-add the close listener to maintain pool integrity
+      window.once('closed', () => {
+        this.remove(window.id);
+      });
 
       log.info('[WidgetPool] Window released back to pool', {
         windowId: window.id,

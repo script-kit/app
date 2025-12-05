@@ -1301,9 +1301,23 @@ export const handleWidgetEvents = () => {
     }
   };
 
+  // Track last resize time per widget to prevent infinite resize loops
+  const lastResizeTime = new Map<string, number>();
+  const MIN_RESIZE_INTERVAL = 100; // ms between resizes for same widget
+
   const measureHandler: WidgetHandler = (_event, data: any) => {
-    const { widgetId } = data;
-    processLog.info(`📏 ${widgetId} Widget: Fitting to inner child`);
+    const { widgetId, width, height } = data;
+
+    // Prevent rapid resize loops by enforcing minimum interval
+    const now = Date.now();
+    const lastTime = lastResizeTime.get(widgetId) || 0;
+    if (now - lastTime < MIN_RESIZE_INTERVAL) {
+      processLog.info(`📏 ${widgetId} Widget: Skipping resize (too soon, ${now - lastTime}ms since last)`);
+      return;
+    }
+    lastResizeTime.set(widgetId, now);
+
+    processLog.info(`📏 ${widgetId} Widget: Fitting to inner child`, { width, height });
 
     const options = (widgetState?.widgets || []).find(({ id }) => id === widgetId);
     if (!options) {
@@ -1317,7 +1331,14 @@ export const handleWidgetEvents = () => {
       return;
     }
 
-    widget.setSize(data.width, data.height, true);
+    // Only resize if dimensions actually changed
+    const [currentWidth, currentHeight] = widget.getSize();
+    if (currentWidth === width && currentHeight === height) {
+      processLog.info(`📏 ${widgetId} Widget: Skipping resize (same dimensions)`);
+      return;
+    }
+
+    widget.setSize(width, height, true);
   };
 
   const viteWidgetSendHandler: WidgetHandler = (_event, data) => {

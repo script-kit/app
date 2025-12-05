@@ -11,6 +11,8 @@ import {
   app,
   BrowserWindow,
   type BrowserWindowConstructorOptions,
+  ipcMain,
+  type IpcMainEvent,
   Menu,
   type MenuItemConstructorOptions,
   type PopupOptions,
@@ -513,6 +515,10 @@ export const showWidget = async (
     if (kitState.isMac && !options.transparent) {
       widgetWindow.setVibrancy('popover');
     }
+
+    // CRITICAL: Reload pooled windows to force a fresh WIDGET_GET handshake
+    // This ensures a clean JS environment and reliable initialization
+    widgetWindow.webContents.reload();
   } else {
     // Fall back to cold window creation
     try {
@@ -562,12 +568,16 @@ export const showWidget = async (
       windowId: widgetWindow.id,
       ttl: options.ttl,
     });
-    await setTimeout(options?.ttl);
-    log.info('⌛ TTL expired, closing widget', {
-      windowId: widgetWindow.id,
-      ttl: options.ttl,
+    // Use .then() to avoid blocking the return of the window
+    setTimeout(options?.ttl).then(() => {
+      log.info('⌛ TTL expired, closing widget', {
+        windowId: widgetWindow.id,
+        ttl: options.ttl,
+      });
+      if (!widgetWindow.isDestroyed()) {
+        widgetWindow.close();
+      }
     });
-    widgetWindow.close();
   }
 
   return new Promise((resolve, reject) => {
@@ -586,13 +596,28 @@ export const showWidget = async (
       return;
     }
 
-    widgetWindow.webContents.ipc.once(Channel.WIDGET_GET, () => {
+    // Safety timeout: If widget fails to init in 10s, reject
+    const initTimeout = global.setTimeout(() => {
+      if (!widgetWindow.isDestroyed()) {
+        ipcMain.off(Channel.WIDGET_GET, initHandler);
+        log.error('❌ Widget initialization timed out', { widgetId });
+        reject(new Error('Widget initialization timed out'));
+      }
+    }, 10000);
+
+    const initHandler = (event: IpcMainEvent) => {
+      // Ensure the message is from THIS window
+      if (event.sender.id !== widgetWindow.webContents.id) return;
+
+      clearTimeout(initTimeout);
+      ipcMain.off(Channel.WIDGET_GET, initHandler);
+
       log.info('📨 Received WIDGET_GET event', {
         windowId: widgetWindow.id,
         widgetId,
       });
 
-      if (widgetWindow) {
+      if (widgetWindow && !widgetWindow.isDestroyed()) {
         const widgetOptions = {
           ...options,
           widgetId,
@@ -636,13 +661,22 @@ export const showWidget = async (
 
         resolve(widgetWindow);
       } else {
-        const error = new Error(`Widget ${widgetId} failed to load`);
+        const error = new Error(`Widget ${widgetId} failed to load or was destroyed`);
         log.error('❌ Widget initialization failed', {
           error: error.message,
           widgetId,
         });
         reject(error);
       }
+    };
+
+    // Attach listener using ipcMain for reliability
+    ipcMain.on(Channel.WIDGET_GET, initHandler);
+
+    // Clean up if window closes prematurely
+    widgetWindow.once('closed', () => {
+      clearTimeout(initTimeout);
+      ipcMain.off(Channel.WIDGET_GET, initHandler);
     });
 
     widgetWindow.webContents.on('context-menu', (event: any) => {
@@ -691,7 +725,7 @@ export const showWidget = async (
               windowId: widgetWindow.id,
             });
             widgetWindow?.close();
-            widgetWindow.destroy();
+            // Destroy is handled by close event listener
           },
         },
       ];
@@ -733,6 +767,8 @@ export const showWidget = async (
         stack: error instanceof Error ? error.stack : undefined,
         windowId: widgetWindow.id,
       });
+      clearTimeout(initTimeout);
+      ipcMain.off(Channel.WIDGET_GET, initHandler);
       reject(error);
     }
   });

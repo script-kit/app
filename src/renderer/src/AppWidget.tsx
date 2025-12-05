@@ -171,6 +171,13 @@ export default function AppWidget() {
   const [contentHeight, setContentHeight] = useState(0);
   const previousDimensionsRef = useRef({ width: 0, height: 0 });
 
+  // Theme state - CSS string from main process
+  const [theme, setTheme] = useState<string>('');
+
+  // Ref to track if widget HTML has been inserted (prevents React from overwriting Vue's DOM)
+  const widgetContainerRef = useRef<HTMLDivElement>(null);
+  const htmlInsertedRef = useRef(false);
+
   // Debug state
   const [debugEvents, setDebugEvents] = useState<DebugEvent[]>([]);
   const [debugVisible, setDebugVisible] = useState(false);
@@ -226,6 +233,16 @@ export default function AppWidget() {
         widgetId: options.widgetId,
         options: JSON.stringify(options),
       });
+
+      // Reset HTML insertion flag for recycled windows
+      // This ensures new widget content gets inserted even if window was reused from pool
+      htmlInsertedRef.current = false;
+
+      // Clear any existing content from recycled window
+      if (widgetContainerRef.current) {
+        widgetContainerRef.current.innerHTML = '';
+      }
+
       setOptions(options);
       window.widgetId = options.widgetId;
       // Initialize widget state for debug
@@ -235,8 +252,19 @@ export default function AppWidget() {
       addDebugEvent('WIDGET_INIT', undefined, { widgetId: options.widgetId });
     };
 
+    const handleWidgetTheme = (_event, themeCSS: string) => {
+      log.info(` Widget theme received`, {
+        themeLength: themeCSS?.length,
+      });
+      setTheme(themeCSS || '');
+      addDebugEvent('WIDGET_THEME', undefined, { themeLength: themeCSS?.length });
+    };
+
     log.info(` Adding listener for ${Channel.WIDGET_INIT}`);
     ipcRenderer.on(Channel.WIDGET_INIT, handleWidgetInit);
+
+    log.info(` Adding listener for ${Channel.WIDGET_THEME}`);
+    ipcRenderer.on(Channel.WIDGET_THEME, handleWidgetTheme);
 
     log.info(` Sending ${Channel.WIDGET_GET} to main process`);
     ipcRenderer.send(Channel.WIDGET_GET);
@@ -244,11 +272,17 @@ export default function AppWidget() {
     return () => {
       log.info(` Cleanup: Removing ${Channel.WIDGET_INIT} listener`);
       ipcRenderer.off(Channel.WIDGET_INIT, handleWidgetInit);
+      log.info(` Cleanup: Removing ${Channel.WIDGET_THEME} listener`);
+      ipcRenderer.off(Channel.WIDGET_THEME, handleWidgetTheme);
     };
   }, []);
 
+  // ResizeObserver for stable auto-sizing (replaces polling)
   useEffect(() => {
-    log.info(` Setting up resize effect`);
+    log.info(` Setting up resize observer`);
+
+    // Debounce timeout ref for cleanup
+    let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const resize = () => {
       if (!document.body.firstElementChild) {
@@ -256,70 +290,53 @@ export default function AppWidget() {
         return;
       }
 
-      const width = Math.ceil((document.body.firstElementChild as HTMLElement)?.offsetWidth || window.innerWidth);
-      const height = Math.ceil((document.body.firstElementChild as HTMLElement)?.offsetHeight || window.innerHeight);
+      const element = document.body.firstElementChild as HTMLElement;
+      const width = Math.ceil(element.offsetWidth || window.innerWidth);
+      const height = Math.ceil(element.offsetHeight || window.innerHeight);
 
       const prevDimensions = previousDimensionsRef.current;
-      log.info(` Calculated dimensions`, {
-        width,
-        height,
-        previousWidth: prevDimensions.width,
-        previousHeight: prevDimensions.height,
-      });
 
       if (width !== prevDimensions.width || height !== prevDimensions.height) {
         log.info(` Resizing widget`, { newWidth: width, newHeight: height });
         previousDimensionsRef.current = { width, height };
-        ipcRenderer.send('WIDGET_RESIZE', { width, height });
+
+        // FIX: Send WIDGET_MEASURE with widgetId (process.ts listens for this)
+        ipcRenderer.send(Channel.WIDGET_MEASURE, {
+          widgetId: window.widgetId,
+          width,
+          height,
+        });
       }
     };
 
-    const resizeTimeout = setTimeout(resize, 500);
+    // Debounce resize to prevent rapid fire during animations/transitions
+    const debouncedResize = () => {
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+      debounceTimeout = setTimeout(resize, 50);
+    };
+
+    const observer = new ResizeObserver(() => debouncedResize());
+
+    // Observe the widget container once it exists
+    const target = document.body.firstElementChild || document.body;
+    observer.observe(target);
+
+    // Initial check
+    resize();
 
     return () => {
-      log.info(` Cleanup: Clearing resize timeout`);
-      clearTimeout(resizeTimeout);
-    };
-  }, []);
-
-  useLayoutEffect(() => {
-    log.info(` Setting up body content effect`);
-    const range = document.createRange();
-    const container = document.getElementById('__widget-container');
-    if (!container) {
-      log.error(` Widget container not found for content insertion`);
-      return;
-    }
-
-    try {
-      range.selectNode(container);
-      const fragment = range.createContextualFragment(options?.body || '');
-      log.info(` Created document fragment`, {
-        bodyLength: options?.body?.length,
-        scriptCount: fragment.querySelectorAll('script').length,
-      });
-
-      const scripts = fragment.querySelectorAll('script');
-      for (const script of scripts) {
-        log.info(` Processing script`, {
-          type: script.type,
-          src: script.src,
-          hasInlineContent: !!script.textContent,
-        });
-        const newScript = document.createElement('script');
-        for (const attr of script.attributes) {
-          newScript.setAttribute(attr.name, attr.value);
-        }
-        newScript.textContent = script.textContent;
-        document.body.appendChild(newScript);
+      log.info(` Cleanup: Disconnecting resize observer`);
+      observer.disconnect();
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
       }
-    } catch (error) {
-      log.error(` Error processing body content`, {
-        error: error instanceof Error ? error.message : error,
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-    }
+    };
   }, [options?.body]);
+
+  // Script processing moved to the HTML insertion effect below
+  // to ensure #__widget-container exists before processing scripts
 
   useEffect(() => {
     log.info(` Setting up widget event handlers`);
@@ -489,10 +506,18 @@ export default function AppWidget() {
       };
     }
 
-    log.info(` Creating Vue app`);
-    createApp({
-      Widget,
-    }).mount();
+    // Only create Vue app when we have valid options with a body
+    // This prevents multiple Vue app instances from conflicting
+    let vueApp: ReturnType<typeof createApp> | null = null;
+    if (options?.body) {
+      log.info(` Creating Vue app`);
+      vueApp = createApp({
+        Widget,
+      });
+      vueApp.mount();
+    } else {
+      log.info(` Skipping Vue app creation - no body yet`);
+    }
 
     return () => {
       log.info(` Cleanup: Removing event listeners`);
@@ -504,14 +529,72 @@ export default function AppWidget() {
       document.removeEventListener('dragleave', handleDragLeave);
       document.removeEventListener('dragover', handleDragOver);
       document.removeEventListener('drop', handleDrop);
+      // Cleanup Vue app to prevent multiple instances
+      if (vueApp) {
+        log.info(` Cleanup: Unmounting Vue app`);
+        vueApp.unmount();
+      }
     };
   }, [options]);
 
-  const __html = `<template id="widget-template">
-  ${options?.body || '<div>Missing body</div>'}
-</template>
+  // Track added scripts for cleanup
+  const addedScriptsRef = useRef<HTMLScriptElement[]>([]);
 
-<div id="__widget-container" v-scope="Widget()" @vue:mounted="mounted" class="${options.containerClass}"></div>`;
+  // Insert widget HTML into container ONCE to prevent React from overwriting Vue's DOM
+  // Also process any <script> tags in the body (innerHTML doesn't execute scripts)
+  useLayoutEffect(() => {
+    if (options?.body && widgetContainerRef.current && !htmlInsertedRef.current) {
+      const __html = `<template id="widget-template">
+  ${options.body}
+</template>
+<div id="__widget-container" v-scope="Widget()" @vue:mounted="mounted" class="${options.containerClass || ''}"></div>`;
+
+      log.info(` Inserting widget HTML into container (once only)`);
+      widgetContainerRef.current.innerHTML = __html;
+      htmlInsertedRef.current = true;
+
+      // Process scripts AFTER HTML is inserted (innerHTML doesn't execute scripts)
+      try {
+        const container = document.getElementById('__widget-container');
+        if (container) {
+          const range = document.createRange();
+          range.selectNode(container);
+          const fragment = range.createContextualFragment(options.body);
+
+          const scripts = fragment.querySelectorAll('script');
+          log.info(` Processing ${scripts.length} scripts from widget body`);
+
+          for (const script of scripts) {
+            log.info(` Processing script`, {
+              type: script.type,
+              src: script.src,
+              hasInlineContent: !!script.textContent,
+            });
+            const newScript = document.createElement('script');
+            for (const attr of script.attributes) {
+              newScript.setAttribute(attr.name, attr.value);
+            }
+            newScript.textContent = script.textContent;
+            document.body.appendChild(newScript);
+            addedScriptsRef.current.push(newScript);
+          }
+        }
+      } catch (error) {
+        log.error(` Error processing scripts`, {
+          error: error instanceof Error ? error.message : error,
+        });
+      }
+    }
+
+    // Cleanup scripts when component unmounts
+    return () => {
+      if (addedScriptsRef.current.length > 0) {
+        log.info(` Cleanup: Removing ${addedScriptsRef.current.length} added scripts`);
+        addedScriptsRef.current.forEach(script => script.remove());
+        addedScriptsRef.current = [];
+      }
+    };
+  }, [options?.body, options?.containerClass]);
 
   log.info(` Rendering AppWidget`, {
     hasBody: !!options?.body,
@@ -523,11 +606,10 @@ export default function AppWidget() {
 
   return (
     <ErrorBoundary>
-      <div
-        dangerouslySetInnerHTML={{
-          __html,
-        }}
-      />
+      {/* Apply theme CSS from main process */}
+      {theme && <style>{theme}</style>}
+      {/* Use ref-based container to prevent React from overwriting Vue's DOM on re-renders */}
+      <div ref={widgetContainerRef} />
       {showDebug && (
         <DebugOverlay
           widgetId={options?.widgetId}

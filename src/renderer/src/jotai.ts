@@ -740,6 +740,7 @@ export const scoredChoicesAtom = atom(
         s(scrollRequestAtom, {
           context: scrollContext,
           target: 0,
+          align: 'start',
           reason: 'choices-updated',
         });
         if (changed) {
@@ -763,6 +764,7 @@ export const scoredChoicesAtom = atom(
         s(scrollRequestAtom, {
           context: scrollContext,
           target: 0,
+          align: 'start',
           reason: 'choices-updated',
         });
       }
@@ -864,6 +866,7 @@ export const indexAtom = atom(
         s(scrollRequestAtom, {
           context: scrollContext,
           target: 0,
+          align: 'start',
           reason: 'skip-adjustment',
         });
       } else {
