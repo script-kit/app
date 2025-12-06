@@ -49,6 +49,26 @@ export default () => {
 
   const handleEnter = useCallback(
     (event: KeyboardEvent | null = null) => {
+      // FIX: Derive actualChoice from scoredChoices[index] to avoid race condition
+      // where focusedChoiceAtom can be out of sync with indexAtom
+      const actualChoice = index >= 0 && index < scoredChoices.length
+        ? scoredChoices[index]?.item
+        : focusedChoice;
+
+      // DEBUG: Log what's being submitted to diagnose selection mismatch
+      console.log('🔑 [useEnter] handleEnter called', JSON.stringify({
+        focusedChoiceName: focusedChoice?.name?.substring(0, 40),
+        actualChoiceName: actualChoice?.name?.substring(0, 40),
+        focusedChoiceId: focusedChoice?.id?.substring(0, 20),
+        actualChoiceId: actualChoice?.id?.substring(0, 20),
+        index,
+        scoredChoicesLength: scoredChoices.length,
+        mismatch: focusedChoice?.id !== actualChoice?.id,
+        hasFocusedChoice,
+        overlayOpen,
+        ui,
+      }));
+
       if (
         [UI.editor, UI.textarea, UI.drop, UI.splash, UI.term, UI.drop, UI.form, UI.emoji, UI.fields, UI.chat].includes(
           ui,
@@ -81,15 +101,15 @@ export default () => {
         return;
       }
 
-      if (focusedChoice?.text && !overlayOpen) {
-        log.info('submitting focused choice: ', { focusedChoice });
-        submit(focusedChoice);
+      if (actualChoice?.text && !overlayOpen) {
+        log.info('submitting focused choice: ', { actualChoice });
+        submit(actualChoice);
         return;
       }
 
-      if (focusedChoice?.scriptlet && !overlayOpen) {
+      if (actualChoice?.scriptlet && !overlayOpen) {
         // If any of the choice inputs are empty, don't submit
-        if (choiceInputs.some((input) => input === '') || choiceInputs?.length !== focusedChoice?.inputs?.length) {
+        if (choiceInputs.some((input) => input === '') || choiceInputs?.length !== actualChoice?.inputs?.length) {
           setInvalidateChoiceInputs(true);
           return;
         }
@@ -98,23 +118,29 @@ export default () => {
       }
 
       if (promptData?.multiple && !overlayOpen) {
-        toggleSelectedChoice(focusedChoice?.id as string);
+        toggleSelectedChoice(actualChoice?.id as string);
         return;
       }
 
       if (promptData?.strict && panelHTML?.length === 0) {
         if (overlayOpen) {
           // Overlay flow handled elsewhere
-        } else if (choices.length > 0 && hasFocusedChoice) {
-          // focusedChoiceAtom is now derived from index, always in sync
-          // No race condition possible - focusedChoice is always correct
-          submit(focusedChoice?.value);
+        } else if (choices.length > 0 && actualChoice) {
+          // FIX: Use actualChoice derived from scoredChoices[index] to avoid race condition
+          submit(actualChoice?.value);
           return;
         }
       }
 
       let value;
-      if (hasFocusedChoice) {
+      if (actualChoice && actualChoice !== focusedChoice) {
+        // FIX: Use actualChoice when there's a mismatch (race condition detected)
+        if (actualChoice?.scriptlet) {
+          value = actualChoice;
+        } else {
+          value = actualChoice?.value;
+        }
+      } else if (hasFocusedChoice) {
         // This should cover the flagged scrap scenario
         if (focusedChoice?.scriptlet) {
           value = focusedChoice;
@@ -136,6 +162,8 @@ export default () => {
       toggleSelectedChoice,
       promptData,
       choices,
+      scoredChoices,
+      index,
       hasFocusedChoice,
       input,
       ui,
