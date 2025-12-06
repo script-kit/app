@@ -1,8 +1,7 @@
 import { UI } from '@johnlindquist/kit/core/enum';
-import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect } from 'react';
-import { HotkeyCallback, useHotkeys } from 'react-hotkeys-hook';
+import { useHotkeys } from 'react-hotkeys-hook';
 import {
   actionsOverlayOpenAtom,
   choiceInputsAtom,
@@ -24,7 +23,11 @@ import {
   toggleSelectedChoiceAtom,
   uiAtom,
 } from '../jotai';
+import { createLogger } from '../log-utils';
+import { deriveActualChoice, hasRaceCondition } from './enter-helpers';
 import { hotkeysOptions } from './shared';
+
+const log = createLogger('useEnter');
 
 export default () => {
   const [choices] = useAtom(choicesAtom);
@@ -49,25 +52,18 @@ export default () => {
 
   const handleEnter = useCallback(
     (event: KeyboardEvent | null = null) => {
-      // FIX: Derive actualChoice from scoredChoices[index] to avoid race condition
+      // Derive actualChoice from scoredChoices[index] to avoid race condition
       // where focusedChoiceAtom can be out of sync with indexAtom
-      const actualChoice = index >= 0 && index < scoredChoices.length
-        ? scoredChoices[index]?.item
-        : focusedChoice;
+      const actualChoice = deriveActualChoice(index, scoredChoices, focusedChoice);
 
-      // DEBUG: Log what's being submitted to diagnose selection mismatch
-      console.log('🔑 [useEnter] handleEnter called', JSON.stringify({
-        focusedChoiceName: focusedChoice?.name?.substring(0, 40),
-        actualChoiceName: actualChoice?.name?.substring(0, 40),
-        focusedChoiceId: focusedChoice?.id?.substring(0, 20),
-        actualChoiceId: actualChoice?.id?.substring(0, 20),
-        index,
-        scoredChoicesLength: scoredChoices.length,
-        mismatch: focusedChoice?.id !== actualChoice?.id,
-        hasFocusedChoice,
-        overlayOpen,
-        ui,
-      }));
+      // Log if there's a mismatch (race condition detected)
+      if (hasRaceCondition(actualChoice, focusedChoice)) {
+        log.warn('Race condition detected: focusedChoice out of sync with index', {
+          focusedId: focusedChoice?.id,
+          actualId: actualChoice?.id,
+          index,
+        });
+      }
 
       if (
         [UI.editor, UI.textarea, UI.drop, UI.splash, UI.term, UI.drop, UI.form, UI.emoji, UI.fields, UI.chat].includes(

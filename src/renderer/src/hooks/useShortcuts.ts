@@ -262,6 +262,20 @@ export default () => {
       const domEvent = event as unknown as KeyboardEvent;
       const isArrowKey = domEvent.key === 'ArrowRight' || domEvent.key === 'ArrowLeft';
 
+      // Debug logging for ALL shortcut key presses to diagnose timing issues
+      log.info('🎹 useHotkeys callback triggered', {
+        key: domEvent.key,
+        code: domEvent.code,
+        metaKey: domEvent.metaKey,
+        shiftKey: domEvent.shiftKey,
+        ctrlKey: domEvent.ctrlKey,
+        altKey: domEvent.altKey,
+        handlerKeys: handler?.keys,
+        registeredShortcuts: onShortcuts,
+        promptShortcutsCount: promptShortcuts.length,
+        overlayOpen,
+      });
+
       // Debug logging for arrow keys
       if (isArrowKey) {
         log.info('Arrow key pressed in useShortcuts', {

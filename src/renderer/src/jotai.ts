@@ -1368,18 +1368,6 @@ export const submitValueAtom = atom(
     }
 
     const { channel, override } = decideSubmit(decisionCtx as any, value);
-    try {
-      // Verbose logging to trace submission decisions and payloads
-      console.log('[submitValueAtom] decision', {
-        ui,
-        hasAction: decisionCtx.hasAction,
-        overlayOpen: decisionCtx.overlayOpen,
-        flag: decisionCtx.flag,
-        valueType: typeof value,
-        channel,
-        override,
-      });
-    } catch {}
     s(pushIpcMessageAtom, { channel, state: override });
 
     if (effectiveFlag) {
