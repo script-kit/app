@@ -40,8 +40,12 @@ vi.mock('./logs', () => ({
     verbose: vi.fn(),
   },
   perf: {
-    start: vi.fn(() => vi.fn()), // Returns an end function
-    measure: vi.fn((name, fn) => fn()), // Executes the function
+    start: vi.fn(() => () => 0),
+    measure: vi.fn(async (_name: string, fn: () => Promise<unknown>) => fn()),
+    measureSync: vi.fn((_name: string, fn: () => unknown) => fn()),
+    logMetric: vi.fn(),
+    logSummary: vi.fn(),
+    isEnabled: vi.fn(() => false),
   },
 }));
 

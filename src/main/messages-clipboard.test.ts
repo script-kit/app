@@ -91,6 +91,14 @@ vi.mock('./state', () => ({
 
 // Minimal logs
 vi.mock('./logs', () => ({
+  perf: {
+    start: vi.fn(() => () => 0),
+    measure: vi.fn(async (_name: string, fn: () => Promise<unknown>) => fn()),
+    measureSync: vi.fn((_name: string, fn: () => unknown) => fn()),
+    logMetric: vi.fn(),
+    logSummary: vi.fn(),
+    isEnabled: vi.fn(() => false),
+  },
   getLog: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
   consoleLog: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   promptLog: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), verbose: vi.fn(), silly: vi.fn() },
