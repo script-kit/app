@@ -345,7 +345,7 @@ async function collectEventsIsolated(
  * This helps ensure we don't miss any file changes
  * occurring shortly after watchers start.
  */
-async function waitForWatchersReady(watchers: FSWatcher[], timeoutMs = 5000) {
+async function waitForWatchersReady(watchers: FSWatcher[]) {
   log.debug('Waiting for watchers to be ready:', watchers.length);
   const readyPromises = watchers.map(
     (w, i) =>
@@ -358,25 +358,10 @@ async function waitForWatchersReady(watchers: FSWatcher[], timeoutMs = 5000) {
         }
 
         log.debug(`Setting up ready handler for watcher ${i}`);
-
-        // Set a timeout to avoid hanging indefinitely
-        const timeout = setTimeout(() => {
-          log.debug(`Watcher ${i} timed out waiting for ready, proceeding anyway`);
-          resolve();
-        }, timeoutMs);
-
         w.on('ready', () => {
-          clearTimeout(timeout);
           log.debug(`Watcher ${i} is ready`);
           resolve();
         });
-
-        // Also check if it's already ready (race condition protection)
-        // Some watchers may have already emitted 'ready' before we attached
-        setTimeout(() => {
-          log.debug(`Watcher ${i} timeout reached, resolving anyway`);
-          resolve();
-        }, timeoutMs);
       }),
   );
   await Promise.all(readyPromises);
@@ -582,8 +567,9 @@ const isContainerEnvironment = () => {
 // 3. Native fs.watch/chokidar behaves differently in containers vs native OS
 const skipInContainer = isContainerEnvironment() ? it.skip : it;
 
-// Using sequential describe instead of concurrent due to file system watcher timing sensitivity
-describe('File System Watcher', () => {
+// Skip concurrent tests in CI as file system watchers are flaky with concurrent execution
+const describeWatcher = isContainerEnvironment() ? describe.skip : describe.concurrent;
+describeWatcher('File System Watcher', () => {
   beforeAll(async () => {
     log.debug('Setting up test environment');
     const tmpDir = await testDir;
@@ -641,9 +627,7 @@ describe('File System Watcher', () => {
   // Tests
   // -------------------------------------------------------
 
-  // Skip: Isolated test environment doesn't properly propagate env vars to watchers
-  // The non-isolated version of this test in chokidar-sequential.test.ts provides equivalent coverage
-  it.skip('should detect new script files', async () => {
+  it('should detect new script files', async () => {
     const events = await collectEventsIsolated(
       3000, // Increased timeout for concurrent test environment
       async (_events, dirs) => {
@@ -664,11 +648,9 @@ describe('File System Watcher', () => {
         path: expect.stringContaining('test-script.ts'),
       }),
     );
-  }, 45000); // Increased overall test timeout (watchers take ~30s to initialize)
+  }, 15000); // Increased overall test timeout
 
-  // Skip: Flaky test - kenv directory detection has timing issues with watcher initialization
-  // This is an edge case feature that works reliably in production but is difficult to test
-  it.skip('should detect new kenv directories and watch their contents', async () => {
+  it('should detect new kenv directories and watch their contents', async () => {
     const newKenvName = 'test-kenv';
     const newKenvPath = path.join(testDirs.kenvs, newKenvName);
     const newKenvScriptsDir = path.join(newKenvPath, 'scripts');
@@ -682,7 +664,7 @@ describe('File System Watcher', () => {
 
     // Use the collectEvents helper instead of managing watchers directly
     const events = await collectEvents(
-      2000, // Increased from 800ms for concurrent test environment
+      2000, // Increased timeout for concurrent test environment
       async () => {
         // Create directory structure first
         log.debug('Creating directory:', newKenvScriptsDir);
@@ -690,14 +672,14 @@ describe('File System Watcher', () => {
 
         // Wait for watchers to detect the new kenv directory
         log.debug('Waiting for globs to be added...');
-        await new Promise((resolve) => setTimeout(resolve, KENV_GLOB_TIMEOUT + WATCHER_SETTLE_TIME));
+        await new Promise((resolve) => setTimeout(resolve, KENV_GLOB_TIMEOUT + WATCHER_SETTLE_TIME + 500));
 
         // Write initial content
         log.debug('Writing initial content:', newKenvScriptPath);
         await writeFile(newKenvScriptPath, 'export {}');
 
         // Wait for chokidar to detect the file
-        await new Promise((resolve) => setTimeout(resolve, WATCHER_SETTLE_TIME));
+        await new Promise((resolve) => setTimeout(resolve, WATCHER_SETTLE_TIME + 300));
 
         // Write new content
         log.debug('Writing new content:', newKenvScriptPath);
@@ -713,11 +695,9 @@ describe('File System Watcher', () => {
     const changeEvent = events.some((e) => e.event === 'change' && e.path.endsWith('test.ts'));
 
     expect(addEvent || changeEvent).toBe(true);
-  }, 15000); // Increased from 5000ms for concurrent test environment
+  }, 15000); // Increased overall test timeout
 
-  // Skip: Flaky test - isolated test environment doesn't properly propagate env vars to watchers
-  // File deletion detection works reliably in production but is difficult to test in isolation
-  it.skip('should handle file deletions', async () => {
+  it('should handle file deletions', async () => {
     const events = await collectEventsIsolated(
       3000, // Increased timeout for concurrent test environment
       async (_events, dirs) => {

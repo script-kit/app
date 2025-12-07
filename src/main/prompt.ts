@@ -33,6 +33,12 @@ import { getIdles, processes, updateTheme } from './process';
 import { processWindowCoordinator, WindowOperation } from './process-window-coordinator';
 import { applyPromptBounds } from './prompt.bounds-apply';
 import { applyPromptDataBounds } from './prompt.bounds-utils';
+import {
+  getLayoutEngine,
+  resizeDataToLayoutRequest,
+  type LayoutRequest,
+  type LayoutResponse,
+} from './layout-engine';
 import { clearPromptCacheFor } from './prompt.cache';
 import { setupPromptContextMenu } from './prompt.context-menu';
 import { computeShouldCloseOnInitialEscape, isDevToolsShortcut } from './prompt.focus-utils';
@@ -1069,19 +1075,74 @@ export class KitPrompt {
 
   onHideOnce = (fn: () => void) => onHideOnceFlow(this, fn);
 
-  // When true, the next resize() call is responsible for showing the window.
+  // ============================================================================
+  // Layout Engine Integration
+  // ============================================================================
+  // The new layout engine provides deterministic, unidirectional data flow:
+  // 1. Renderer calculates content size
+  // 2. Renderer sends LayoutRequest via IPC
+  // 3. Main Process calculates target geometry (pure function)
+  // 4. Main Process applies bounds
+  // 5. Window is shown ONLY after final bounds are applied
+  //
+  // This eliminates the need for the legacy synchronization flags below.
+  // ============================================================================
+
+  // Pending layout request ID for correlation
+  private pendingLayoutRequestId: string | null = null;
+
+  /**
+   * Request a layout update using the new deterministic layout engine
+   */
+  requestLayout = async (request: LayoutRequest): Promise<LayoutResponse> => {
+    const layoutEngine = getLayoutEngine();
+    this.pendingLayoutRequestId = request.requestId;
+
+    const response = layoutEngine.processLayoutRequest(this, request);
+
+    // Apply the layout
+    layoutEngine.applyLayout(this, response);
+
+    this.pendingLayoutRequestId = null;
+    return response;
+  };
+
+  /**
+   * Check if there's a pending layout request
+   */
+  hasPendingLayout = (): boolean => {
+    return this.pendingLayoutRequestId !== null;
+  };
+
+  // ============================================================================
+  // DEPRECATED: Legacy Synchronization Flags
+  // ============================================================================
+  // These flags are maintained for backward compatibility during migration.
+  // New code should use the layout engine instead.
+  // TODO: Remove these once migration is complete
+  // ============================================================================
+
+  /**
+   * @deprecated Use layout engine instead. Will be removed in future version.
+   * When true, the next resize() call is responsible for showing the window.
+   */
   showAfterNextResize = false;
 
-  // Flag used by attemptPreload to decide whether it is allowed to call initBounds().
-  // It is set when deferring show for resize and cleared once the resize / preload
-  // handshake has finished.
+  /**
+   * @deprecated Use layout engine instead. Will be removed in future version.
+   * Flag used by attemptPreload to decide whether it is allowed to call initBounds().
+   */
   skipInitBoundsForResize = false;
 
-  // Hard lock to prevent any initBounds()-driven bounds changes while we are in
-  // a "defer show until resize" cycle. This specifically protects against late
-  // attemptPreload() calls re-applying cached bounds after we've shrunk the
-  // window from the renderer.
+  /**
+   * @deprecated Use layout engine instead. Will be removed in future version.
+   * Hard lock to prevent any initBounds()-driven bounds changes.
+   */
   boundsLockedForResize = false;
+
+  /**
+   * @deprecated Use layout engine instead. Will be removed in future version.
+   */
   boundsLockTimeout: NodeJS.Timeout | null = null;
 
   showPrompt = () => showPromptFlow(this);
@@ -1217,18 +1278,25 @@ export class KitPrompt {
     }
   }
 
+  /**
+   * Resize the prompt window using the new layout engine
+   *
+   * This method now uses a deterministic layout engine that:
+   * 1. Converts ResizeData to LayoutRequest
+   * 2. Processes the request through pure functions
+   * 3. Applies bounds and shows window atomically
+   *
+   * This eliminates race conditions and "The Flash" issue.
+   */
   resize = async (resizeData: ResizeData) => {
-    // Track if we need to show after this resize completes
+    // Track if we need to show after this resize completes (legacy flag)
     const shouldShowAfterResize = this.showAfterNextResize;
     if (shouldShowAfterResize) {
       this.showAfterNextResize = false;
-      // Keep skipInitBoundsForResize=true until after showPrompt completes
-      // This prevents attemptPreload->initBounds from overwriting resize dimensions
     }
 
     if (!this.shouldApplyResize(resizeData)) {
       // Even if we skip resize, still show the prompt if requested
-      // This handles edge cases like resize being disabled (e.g., on Linux)
       if (shouldShowAfterResize) {
         this.logInfo('🎤 Showing prompt (resize skipped)...');
         this.showPrompt();
@@ -1236,16 +1304,61 @@ export class KitPrompt {
       return;
     }
 
-    // refactor: removed prevResizeData tracking
-
     if (resizeData.reason === 'SETTLE') {
       setTimeout(() => this.handleSettle(), 50);
     }
 
+    // Convert ResizeData to LayoutRequest format for the new engine
+    const isVisible = this.isVisible();
+    const layoutRequest = resizeDataToLayoutRequest(resizeData, isVisible);
+
+    // Override isInitialShow if the legacy flag is set
+    if (shouldShowAfterResize) {
+      layoutRequest.isInitialShow = true;
+    }
+
+    this.logInfo(`📐 [LayoutEngine] Processing resize request`, {
+      requestId: layoutRequest.requestId,
+      reason: resizeData.reason,
+      mainHeight: resizeData.mainHeight,
+      isInitialShow: layoutRequest.isInitialShow,
+    });
+
+    try {
+      // Use the new layout engine
+      const response = await this.requestLayout(layoutRequest);
+
+      this.logInfo(`📐 [LayoutEngine] Layout applied`, {
+        requestId: response.requestId,
+        bounds: response.bounds,
+        shouldShow: response.shouldShow,
+        reason: response.reason,
+      });
+
+      // Save bounds if this is the initial prompt
+      this.saveBoundsIfInitial(resizeData, response.bounds);
+
+      // Clear the legacy flag after layout is complete
+      if (shouldShowAfterResize) {
+        this.skipInitBoundsForResize = false;
+      }
+    } catch (error) {
+      this.logError('Layout engine error, falling back to legacy resize', error);
+
+      // Fallback to legacy resize logic
+      this.resizeLegacy(resizeData, shouldShowAfterResize);
+    }
+  };
+
+  /**
+   * Legacy resize implementation for fallback
+   * @deprecated Will be removed once layout engine is fully validated
+   */
+  private resizeLegacy = (resizeData: ResizeData, shouldShowAfterResize: boolean) => {
     const currentBounds = this.window.getBounds();
 
-    this.logInfo(`📐 Resize main height: ${resizeData.mainHeight}`);
-    this.logInfo('📏 ResizeData summary', {
+    this.logInfo(`📐 [Legacy] Resize main height: ${resizeData.mainHeight}`);
+    this.logInfo('📏 [Legacy] ResizeData summary', {
       id: resizeData.id,
       pid: resizeData.pid,
       ui: resizeData.ui,
@@ -1267,30 +1380,26 @@ export class KitPrompt {
     });
 
     const targetDimensions = this.calculateTargetDimensions(resizeData, currentBounds);
-    this.logInfo('📐 Calculated targetDimensions', targetDimensions);
+    this.logInfo('📐 [Legacy] Calculated targetDimensions', targetDimensions);
 
     // Skip resize if dimensions haven't changed
     if (currentBounds.height === targetDimensions.height && currentBounds.width === targetDimensions.width) {
-      // Still show the prompt if requested, even though dimensions match
-      // But first ensure position is correct (may be at workarea origin from moveToMouseScreen)
       if (shouldShowAfterResize) {
-        // Check if window is at workarea origin (from moveToMouseScreen) and needs centering
         const mouseScreen = this.getCurrentScreenFromMouse();
         const { x: workX, y: workY } = mouseScreen.workArea;
         const { width: screenWidth, height: screenHeight } = mouseScreen.workAreaSize;
         const isAtWorkOrigin = Math.abs(currentBounds.x - workX) < 4 && Math.abs(currentBounds.y - workY) < 4;
 
         if (isAtWorkOrigin) {
-          // Center the window on the screen
           const centeredX = Math.round(workX + (screenWidth - targetDimensions.width) / 2);
           const centeredY = Math.round(workY + screenHeight / 8);
-          this.logInfo('🎤 Showing prompt (dimensions unchanged, centering from work origin)...', {
+          this.logInfo('🎤 [Legacy] Showing prompt (centering from work origin)...', {
             from: { x: currentBounds.x, y: currentBounds.y },
             to: { x: centeredX, y: centeredY },
           });
           this.setBounds({ x: centeredX, y: centeredY, ...targetDimensions }, 'CENTER_BEFORE_SHOW');
         } else {
-          this.logInfo('🎤 Showing prompt (dimensions unchanged)...');
+          this.logInfo('🎤 [Legacy] Showing prompt (dimensions unchanged)...');
         }
         this.showPrompt();
       }
@@ -1299,11 +1408,11 @@ export class KitPrompt {
 
     const cachedBounds = resizeData.isMainScript ? getCurrentScreenPromptCache(getMainScriptPath()) : undefined;
     if (cachedBounds) {
-      this.logInfo('🗂️ Using cachedBounds for position/width defaults', cachedBounds);
+      this.logInfo('🗂️ [Legacy] Using cachedBounds for position/width defaults', cachedBounds);
     }
 
     const targetPosition = this.calculateTargetPosition(currentBounds, targetDimensions, cachedBounds);
-    this.logInfo('🎯 Calculated targetPosition', targetPosition);
+    this.logInfo('🎯 [Legacy] Calculated targetPosition', targetPosition);
 
     const bounds: Rectangle = { ...targetPosition, ...targetDimensions };
 
@@ -1312,13 +1421,11 @@ export class KitPrompt {
 
     // Show the prompt AFTER bounds have been applied
     if (shouldShowAfterResize) {
-      this.logInfo('🎤 Showing prompt after resize complete...');
+      this.logInfo('🎤 [Legacy] Showing prompt after resize complete...');
       this.showPrompt();
       // Clear the flag after showing - initBounds can now run normally
       this.skipInitBoundsForResize = false;
     }
-
-    // refactor: removed hadPreview tracking
   };
 
   updateShortcodes = () => {
