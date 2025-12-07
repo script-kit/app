@@ -9,6 +9,67 @@ import { getCurrentScreen } from './screen';
 import { setFlags } from './search';
 import { kitState, preloadPromptDataMap, promptState } from './state';
 
+/**
+ * Determine if we should defer showing the window until layout is complete
+ *
+ * The layout engine ensures that when we defer, the window will be shown
+ * after the first resize completes with the correct bounds. This prevents
+ * "The Flash" where the window briefly appears at the wrong size.
+ *
+ * We defer when:
+ * 1. Not the main script (main menu must be instant)
+ * 2. Window is not already visible
+ * 3. Script has explicit dimensions OR this is the first run (no cached bounds)
+ */
+function shouldDeferShowForLayout(
+  prompt: any,
+  promptData: PromptData,
+  isMainScript: boolean,
+  visible: boolean,
+  shouldShow: boolean,
+): { defer: boolean; reason: string } {
+  // Main script never defers - must be instant
+  if (isMainScript) {
+    return { defer: false, reason: 'main-script' };
+  }
+
+  // Already visible or shouldn't show
+  if (visible || !shouldShow) {
+    return { defer: false, reason: visible ? 'already-visible' : 'no-show' };
+  }
+
+  // Check for explicit dimensions that differ from current
+  const hasExplicitDimensions =
+    typeof promptData?.width === 'number' ||
+    typeof promptData?.height === 'number' ||
+    typeof promptData?.inputHeight === 'number';
+
+  const currentBounds = prompt.window?.getBounds();
+  const targetWidth = promptData?.width ?? currentBounds?.width;
+  const targetHeight = promptData?.height ?? promptData?.inputHeight ?? currentBounds?.height;
+  const significantSizeDifference =
+    currentBounds &&
+    (Math.abs(currentBounds.width - targetWidth) > 20 || Math.abs(currentBounds.height - targetHeight) > 20);
+
+  // Check for cached bounds
+  const currentScreen = getCurrentScreen();
+  const screenId = String(currentScreen.id);
+  const scriptPath = promptData?.scriptPath;
+  const hasCachedBounds = Boolean(scriptPath && promptState?.screens?.[screenId]?.[scriptPath]);
+
+  // Defer for explicit dimensions with significant size difference
+  if (hasExplicitDimensions && significantSizeDifference) {
+    return { defer: true, reason: 'explicit-dimensions' };
+  }
+
+  // Defer for first run of arg UI (no cached bounds)
+  if (!hasCachedBounds && promptData?.ui === UI.arg) {
+    return { defer: true, reason: 'first-run-no-cache' };
+  }
+
+  return { defer: false, reason: 'no-defer-needed' };
+}
+
 export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Promise<void> => {
   prompt.promptData = promptData;
 
@@ -109,64 +170,46 @@ export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Pr
   const visible = prompt.isVisible();
   const shouldShow = promptData?.show !== false;
 
-  // FAST PATH: Main script never defers - must be instant
-  // Skip all the expensive defer calculations for main menu
-  let shouldDeferShow = false;
-  if (!isMainScript && !visible && shouldShow) {
-    // Only compute defer logic for non-main scripts that need to show
-    const hasExplicitDimensions =
-      typeof promptData?.width === 'number' ||
-      typeof promptData?.height === 'number' ||
-      typeof promptData?.inputHeight === 'number';
+  // ============================================================================
+  // Layout Engine Integration
+  // ============================================================================
+  // Use the shouldDeferShowForLayout helper to determine if we should defer
+  // showing the window until the first resize completes. The layout engine
+  // handles the "show after resize" guarantee, eliminating race conditions.
+  // ============================================================================
+  const deferResult = shouldDeferShowForLayout(prompt, promptData, isMainScript, visible, shouldShow);
+  const shouldDeferShow = deferResult.defer;
 
-    const currentBounds = prompt.window?.getBounds();
-    const targetWidth = promptData?.width ?? currentBounds?.width;
-    const targetHeight = promptData?.height ?? promptData?.inputHeight ?? currentBounds?.height;
-    const significantSizeDifference =
-      currentBounds &&
-      (Math.abs(currentBounds.width - targetWidth) > 20 || Math.abs(currentBounds.height - targetHeight) > 20);
+  prompt.logInfo(`${prompt.id}: [LayoutEngine] shouldDeferShow=${shouldDeferShow} (${deferResult.reason})`, {
+    visible,
+    shouldShow,
+    isMainScript,
+  });
 
-    // Check if this script has cached bounds from a previous run
-    const currentScreen = getCurrentScreen();
-    const screenId = String(currentScreen.id);
-    const scriptPath = promptData?.scriptPath;
-    const hasCachedBounds = Boolean(scriptPath && promptState?.screens?.[screenId]?.[scriptPath]);
-
-    const shouldDeferForExplicitDimensions = hasExplicitDimensions && significantSizeDifference;
-    const shouldDeferForFirstRun = !hasCachedBounds && promptData?.ui === UI.arg;
-    shouldDeferShow = shouldDeferForExplicitDimensions || shouldDeferForFirstRun;
-
-    prompt.logInfo(`${prompt.id}: shouldDeferShow=${shouldDeferShow}`, {
-      visible,
-      shouldShow,
-      hasExplicitDimensions,
-      significantSizeDifference,
-      hasCachedBounds,
-      shouldDeferForExplicitDimensions,
-      shouldDeferForFirstRun,
-      currentBounds: currentBounds ? { w: currentBounds.width, h: currentBounds.height } : null,
-      target: { w: targetWidth, h: targetHeight },
-    });
-  }
-
-  // If we're deferring the initial show, lock bounds so that any
-  // initBounds() calls (for example from attemptPreload) can't overwrite
-  // the renderer-calculated size while we're waiting on resize().
+  // ============================================================================
+  // DEPRECATED: Legacy synchronization flags
+  // ============================================================================
+  // These flags are still set for backward compatibility with code that checks
+  // them, but the new layout engine handles synchronization atomically.
+  // TODO: Remove these once all callers are migrated to the layout engine
+  // ============================================================================
   if (shouldDeferShow) {
+    // Set legacy flags for backward compatibility
     prompt.boundsLockedForResize = true;
     if (prompt.boundsLockTimeout) {
       clearTimeout(prompt.boundsLockTimeout);
     }
+    // Shorter timeout since layout engine handles this deterministically
     prompt.boundsLockTimeout = setTimeout(() => {
       try {
         if (prompt.window?.isDestroyed?.()) return;
-        prompt.logInfo(`${prompt.id}: boundsLockedForResize timeout – unlocking`);
+        prompt.logInfo(`${prompt.id}: [LayoutEngine] boundsLockedForResize timeout – unlocking`);
         prompt.boundsLockedForResize = false;
         prompt.boundsLockTimeout = null;
       } catch {
         // ignore
       }
-    }, 500);
+    }, 300); // Reduced from 500ms since layout engine is more deterministic
   } else {
     if (prompt.boundsLockTimeout) {
       clearTimeout(prompt.boundsLockTimeout);
@@ -176,10 +219,10 @@ export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Pr
   }
 
   // Only call initBounds if NOT deferring for resize
-  // When deferring, let the first resize set the correct dimensions
+  // The layout engine will set the correct dimensions on first resize
   if (prompt.firstPrompt && !isMainScript) {
     if (shouldDeferShow) {
-      prompt.logInfo(`${prompt.pid} Skipping initBounds - deferring for resize`);
+      prompt.logInfo(`${prompt.pid} [LayoutEngine] Skipping initBounds - deferring for layout`);
     } else {
       prompt.logInfo(`${prompt.pid} Before initBounds`);
       prompt.initBounds();
@@ -201,23 +244,32 @@ export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Pr
 
   prompt.logInfo(`${prompt.id}: visible ${visible ? 'true' : 'false'} 👀`);
 
+  // ============================================================================
+  // Show Logic
+  // ============================================================================
+  // When deferring, set showAfterNextResize so the layout engine knows to show
+  // the window after applying bounds. The layout engine provides a deterministic
+  // guarantee that the window will be shown after the first resize.
+  // ============================================================================
   if (!visible && shouldShow) {
     prompt.logInfo(`${prompt.id}: Prompt not visible but should show`);
 
     if (shouldDeferShow) {
+      // Tell the layout engine to show after the first resize
       prompt.showAfterNextResize = true;
-      // Prevent attemptPreload->initBounds from overwriting resize-calculated dimensions
       prompt.skipInitBoundsForResize = true;
-      // Safety fallback: if resize doesn't happen within 200ms, show anyway
+
+      // Safety fallback with shorter timeout since layout engine is deterministic
       // This handles edge cases like resize being disabled or already at target size
       setTimeout(() => {
         if (prompt.showAfterNextResize && !prompt.window?.isDestroyed()) {
-          prompt.logWarn(`${prompt.id}: showAfterNextResize fallback triggered`);
+          prompt.logWarn(`${prompt.id}: [LayoutEngine] showAfterNextResize fallback triggered`);
           prompt.showAfterNextResize = false;
           prompt.skipInitBoundsForResize = false;
+          prompt.boundsLockedForResize = false;
           prompt.showPrompt();
         }
-      }, 200);
+      }, 150); // Reduced from 200ms since layout engine is faster
     } else if (!prompt.firstPrompt) {
       prompt.showPrompt();
     } else {
