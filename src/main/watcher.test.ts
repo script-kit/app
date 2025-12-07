@@ -33,17 +33,25 @@ vi.mock('electron', () => ({
           return '/Users/test';
       }
     }),
+    whenReady: vi.fn().mockResolvedValue(undefined),
   },
 }));
 vi.mock('electron-store');
 vi.mock('./kit');
-vi.mock('./state');
+vi.mock('./state', () => ({
+  kitState: {},
+  kitCache: { scripts: [], choices: [] },
+  preloadChoicesMap: new Map(),
+  preloadPreviewMap: new Map(),
+  preloadPromptDataMap: new Map(),
+}));
 vi.mock('./system');
 vi.mock('./logs', () => ({
   mainLog: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), verbose: vi.fn() },
   scriptLog: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), verbose: vi.fn() },
   watcherLog: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), verbose: vi.fn() },
   promptLog: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), verbose: vi.fn() },
+  log: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), verbose: vi.fn() },
 }));
 vi.mock('./process');
 vi.mock('./version');
