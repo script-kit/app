@@ -17,12 +17,7 @@ vi.mock('./logs', () => ({
     verbose: vi.fn(),
   },
   perf: {
-    start: vi.fn(() => vi.fn(() => 0)),
-    measure: vi.fn(async (_name: string, fn: () => Promise<unknown>) => fn()),
-    measureSync: vi.fn((_name: string, fn: () => unknown) => fn()),
-    logMetric: vi.fn(),
-    logSummary: vi.fn(),
-    isEnabled: vi.fn(() => false),
+    start: vi.fn(() => vi.fn()), // Returns a function that ends the perf measurement
   },
 }));
 

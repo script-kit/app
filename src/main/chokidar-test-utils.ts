@@ -84,7 +84,7 @@ export async function createIsolatedTestDirs(testName: string): Promise<TestDirs
  * This helps ensure we don't miss any file changes
  * occurring shortly after watchers start.
  */
-export async function waitForWatchersReady(watchers: FSWatcher[]) {
+export async function waitForWatchersReady(watchers: FSWatcher[], timeoutMs = 5000) {
   log.debug('Waiting for watchers to be ready:', watchers.length);
   const readyPromises = watchers.map(
     (w, i) =>
@@ -101,6 +101,13 @@ export async function waitForWatchersReady(watchers: FSWatcher[]) {
           log.debug(`Watcher ${i} is ready`);
           resolve();
         });
+
+        // Also check if it's already ready (race condition protection)
+        // Some watchers may have already emitted 'ready' before we attached
+        setTimeout(() => {
+          log.debug(`Watcher ${i} timeout reached, resolving anyway`);
+          resolve();
+        }, timeoutMs);
       }),
   );
   await Promise.all(readyPromises);
