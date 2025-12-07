@@ -16,6 +16,10 @@ vi.mock('lodash-es', () => ({
 vi.mock('./logs', () => ({
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   searchLog: { info: vi.fn(), warn: vi.fn(), silly: vi.fn(), verbose: vi.fn() },
+  perf: {
+    start: vi.fn(() => vi.fn()),
+    measure: vi.fn((name, fn) => fn()),
+  },
 }));
 
 vi.mock('./messages', () => ({ cacheChoices: vi.fn() }));

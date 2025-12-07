@@ -20,6 +20,7 @@ vi.mock('electron', () => ({
     getPath: vi.fn(() => '/mock/path'),
     getVersion: vi.fn(() => '1.0.0'),
     on: vi.fn(),
+    whenReady: vi.fn(() => Promise.resolve()),
   },
   nativeTheme: {
     shouldUseDarkColors: false,

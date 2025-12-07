@@ -344,8 +344,9 @@ async function collectEventsIsolated(
  * Wait for all watchers to emit their "ready" event.
  * This helps ensure we don't miss any file changes
  * occurring shortly after watchers start.
+ * Includes a timeout to prevent hanging if watchers never become ready.
  */
-async function waitForWatchersReady(watchers: FSWatcher[]) {
+async function waitForWatchersReady(watchers: FSWatcher[], timeoutMs = 3000) {
   log.debug('Waiting for watchers to be ready:', watchers.length);
   const readyPromises = watchers.map(
     (w, i) =>
@@ -357,8 +358,15 @@ async function waitForWatchersReady(watchers: FSWatcher[]) {
           return;
         }
 
+        // Set up timeout to prevent hanging
+        const timeout = setTimeout(() => {
+          log.debug(`Watcher ${i} timed out waiting for ready, proceeding anyway`);
+          resolve();
+        }, timeoutMs);
+
         log.debug(`Setting up ready handler for watcher ${i}`);
         w.on('ready', () => {
+          clearTimeout(timeout);
           log.debug(`Watcher ${i} is ready`);
           resolve();
         });
