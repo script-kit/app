@@ -49,19 +49,11 @@ vi.mock('./state', () => ({
   sponsorCheck: vi.fn().mockResolvedValue(false),
   setKitStateAtom: vi.fn(),
   preloadChoicesMap: new Map(),
-  preloadPromptDataMap: new Map(),
   preloadPreviewMap: new Map(),
+  preloadPromptDataMap: new Map(),
 }));
 vi.mock('./system');
 vi.mock('./logs', () => ({
-  perf: {
-    start: vi.fn(() => () => 0),
-    measure: vi.fn(async (_name: string, fn: () => Promise<unknown>) => fn()),
-    measureSync: vi.fn((_name: string, fn: () => unknown) => fn()),
-    logMetric: vi.fn(),
-    logSummary: vi.fn(),
-    isEnabled: vi.fn(() => false),
-  },
   watcherLog: {
     info: vi.fn(),
     error: vi.fn(),
@@ -76,6 +68,7 @@ vi.mock('./logs', () => ({
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
+    verbose: vi.fn(),
   },
 }));
 vi.mock('./process', () => ({
@@ -317,8 +310,7 @@ describe('watcher.ts - wasRecentlyProcessed Tests', () => {
       expect(parseScript).toHaveBeenCalled();
     });
 
-    // TODO: Fix mock for depWatcher.getWatched - the chokidar watcher isn't fully mocked
-    it.skip('should NOT ignore the original file after madgeAllScripts runs', async () => {
+    it('should NOT ignore the original file after madgeAllScripts runs', async () => {
       const { scriptLog } = await import('./logs');
 
       // Use onScriptChanged which checks wasRecentlyProcessed

@@ -14,19 +14,11 @@ vi.mock('lodash-es', () => ({
 }));
 
 vi.mock('./logs', () => ({
-  perf: {
-    start: vi.fn(() => () => 0),
-    measure: vi.fn(async (_name: string, fn: () => Promise<unknown>) => fn()),
-    measureSync: vi.fn((_name: string, fn: () => unknown) => fn()),
-    logMetric: vi.fn(),
-    logSummary: vi.fn(),
-    isEnabled: vi.fn(() => false),
-  },
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   searchLog: { info: vi.fn(), warn: vi.fn(), silly: vi.fn(), verbose: vi.fn() },
   perf: {
-    start: vi.fn(() => vi.fn()),
-    measure: vi.fn((name, fn) => fn()),
+    start: vi.fn(() => vi.fn()), // start returns an end function
+    end: vi.fn(),
   },
 }));
 
