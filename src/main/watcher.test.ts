@@ -33,17 +33,32 @@ vi.mock('electron', () => ({
           return '/Users/test';
       }
     }),
-    whenReady: vi.fn().mockResolvedValue(undefined),
   },
 }));
 vi.mock('electron-store');
 vi.mock('./kit');
 vi.mock('./state', () => ({
-  kitState: {},
-  kitCache: { scripts: [], choices: [] },
+  kitState: {
+    ready: true,
+    scripts: new Map(),
+    scriptlets: new Map(),
+    firstBatch: false,
+    ignoreInitial: true,
+    suspendWatchers: false,
+    kenvEnv: {},
+    trustedKenvs: [],
+    trustedKenvsKey: 'TRUSTED_KENVS',
+    user: {},
+    isSponsor: false,
+    waitingForPing: false,
+    tempTheme: '',
+  },
+  debounceSetScriptTimestamp: vi.fn(),
+  sponsorCheck: vi.fn().mockResolvedValue(false),
+  setKitStateAtom: vi.fn(),
   preloadChoicesMap: new Map(),
-  preloadPreviewMap: new Map(),
   preloadPromptDataMap: new Map(),
+  preloadPreviewMap: new Map(),
 }));
 vi.mock('./system');
 vi.mock('./logs', () => ({
@@ -51,7 +66,6 @@ vi.mock('./logs', () => ({
   scriptLog: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), verbose: vi.fn() },
   watcherLog: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), verbose: vi.fn() },
   promptLog: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), verbose: vi.fn() },
-  log: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), verbose: vi.fn() },
 }));
 vi.mock('./process');
 vi.mock('./version');

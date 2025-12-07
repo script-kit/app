@@ -14,6 +14,7 @@ vi.mock('electron', () => ({
     once: vi.fn(),
     removeListener: vi.fn(),
     removeAllListeners: vi.fn(),
+    whenReady: vi.fn(() => Promise.resolve()),
   },
   ipcMain: {
     on: vi.fn(),
