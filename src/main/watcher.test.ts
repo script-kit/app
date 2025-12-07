@@ -37,7 +37,17 @@ vi.mock('electron', () => ({
 }));
 vi.mock('electron-store');
 vi.mock('./kit');
-vi.mock('./state');
+vi.mock('./state', () => ({
+  kitState: {
+    kenvEnv: {},
+    kenvs: [],
+    scriptErrorPath: '',
+  },
+  kitConfig: {},
+  preloadChoicesMap: new Map(),
+  preloadPreviewMap: new Map(),
+  preloadPromptDataMap: new Map(),
+}));
 vi.mock('./system');
 vi.mock('./logs', () => ({
   mainLog: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), verbose: vi.fn() },

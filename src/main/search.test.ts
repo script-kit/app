@@ -39,6 +39,10 @@ vi.mock('./logs', () => ({
     silly: vi.fn(),
     verbose: vi.fn(),
   },
+  perf: {
+    start: vi.fn(() => vi.fn()), // start returns an end function
+    end: vi.fn(),
+  },
 }));
 
 vi.mock('./messages', () => ({
