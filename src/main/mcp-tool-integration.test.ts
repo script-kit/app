@@ -84,6 +84,12 @@ vi.mock('./logs', () => ({
     error: vi.fn(),
     warn: vi.fn(),
   },
+  keymapLog: {
+    info: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
 }));
 vi.mock('./handleScript');
 vi.mock('./serverTrayUtils', () => ({

@@ -37,7 +37,29 @@ vi.mock('electron', () => ({
 }));
 vi.mock('electron-store');
 vi.mock('./kit');
-vi.mock('./state');
+vi.mock('./state', () => ({
+  kitState: {
+    ready: true,
+    scripts: new Map(),
+    scriptlets: new Map(),
+    firstBatch: false,
+    ignoreInitial: true,
+    suspendWatchers: false,
+    kenvEnv: {},
+    trustedKenvs: [],
+    trustedKenvsKey: 'TRUSTED_KENVS',
+    user: {},
+    isSponsor: false,
+    waitingForPing: false,
+    tempTheme: '',
+  },
+  debounceSetScriptTimestamp: vi.fn(),
+  sponsorCheck: vi.fn().mockResolvedValue(false),
+  setKitStateAtom: vi.fn(),
+  preloadChoicesMap: new Map(),
+  preloadPromptDataMap: new Map(),
+  preloadPreviewMap: new Map(),
+}));
 vi.mock('./system');
 vi.mock('./logs', () => ({
   mainLog: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), verbose: vi.fn() },

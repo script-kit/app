@@ -39,6 +39,14 @@ vi.mock('./logs', () => ({
     silly: vi.fn(),
     verbose: vi.fn(),
   },
+  perf: {
+    start: vi.fn(() => vi.fn(() => 0)),
+    measure: vi.fn(),
+    measureSync: vi.fn(),
+    logMetric: vi.fn(),
+    logSummary: vi.fn(),
+    isEnabled: vi.fn(() => false),
+  },
 }));
 
 vi.mock('./messages', () => ({
