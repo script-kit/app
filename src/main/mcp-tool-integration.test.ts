@@ -19,6 +19,7 @@ vi.mock('electron', () => ({
     getPath: vi.fn(() => '/mock/path'),
     getVersion: vi.fn(() => '1.0.0'),
     on: vi.fn(),
+    whenReady: vi.fn(() => Promise.resolve()),
   },
   nativeTheme: {
     shouldUseDarkColors: false,
@@ -83,6 +84,13 @@ vi.mock('./logs', () => ({
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
+    debug: vi.fn(),
+  },
+  keymapLog: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
   },
   keymapLog: {
     info: vi.fn(),

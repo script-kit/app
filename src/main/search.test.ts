@@ -40,7 +40,8 @@ vi.mock('./logs', () => ({
     verbose: vi.fn(),
   },
   perf: {
-    start: vi.fn(() => vi.fn()), // Returns a mock end function
+    start: vi.fn(() => vi.fn()), // Returns an end function
+    measure: vi.fn((name, fn) => fn()), // Executes the function
   },
 }));
 
