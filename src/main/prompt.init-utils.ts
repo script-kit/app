@@ -12,6 +12,7 @@ import { getCachedAvatar } from './avatar-cache';
 import { cliFromParams, runPromptProcess } from './kit';
 import { processes } from './process';
 import type { KitPrompt } from './prompt';
+import type { IPromptContext } from './prompt.types';
 import { kitState } from './state';
 import { container } from './state/services/container';
 import { getVersion } from './version';
@@ -58,7 +59,8 @@ async function sendBootstrapUser(prompt: KitPrompt) {
   try {
     // Send directly to this prompt so it has the user before any other late messages
     prompt.window?.webContents?.send(AppChannel.USER_CHANGED, payload);
-    (prompt as any).__userBootstrapped = true;
+    const ctx = prompt as IPromptContext;
+    ctx.__userBootstrapped = true;
     prompt.logInfo(`[Bootstrap] Sent user data: ${payload.login}`);
 
     // Also send sponsor status so the star shows immediately
@@ -97,11 +99,12 @@ export function setupDomAndFinishLoadHandlers(prompt: KitPrompt) {
     });
 
     const user = snapshot(kitState.user);
+    const ctx = prompt as IPromptContext;
     prompt.logInfo(`did-finish-load, prompt user snapshot: ${user?.login}`);
     // Avoid duplicate initial user payloads
-    if (!(prompt as any).__userBootstrapped) {
+    if (!ctx.__userBootstrapped) {
       prompt.sendToPrompt(AppChannel.USER_CHANGED, user);
-      (prompt as any).__userBootstrapped = true;
+      ctx.__userBootstrapped = true;
     }
     prompt.sendToPrompt(AppChannel.KIT_STATE, { isSponsor: kitState.isSponsor });
     emitter.emit(KitEvent.DID_FINISH_LOAD);
@@ -225,8 +228,9 @@ export function setupWindowLifecycleHandlers(prompt: KitPrompt) {
   prompt.window.on('maximize', () => prompt.logInfo('📌 maximize'));
   prompt.window.on('unmaximize', () => prompt.logInfo('📌 unmaximize'));
   prompt.window.on('close', () => {
+    const ctx = prompt as IPromptContext;
     try {
-      processes.removeByPid((prompt as any).pid, 'prompt destroy cleanup');
+      processes.removeByPid(ctx.pid, 'prompt destroy cleanup');
     } catch {}
     prompt.logInfo('📌 close');
   });
@@ -235,7 +239,8 @@ export function setupWindowLifecycleHandlers(prompt: KitPrompt) {
     (kitState as any).emojiActive = false;
   });
   prompt.window.webContents?.on('focus', () => {
+    const ctx = prompt as IPromptContext;
     prompt.logInfo(' WebContents Focus');
-    (prompt as any).emojiActive = false;
+    ctx.emojiActive = false;
   });
 }

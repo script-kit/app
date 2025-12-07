@@ -25,6 +25,7 @@ import { getIdles, processes } from './process';
 import { prompts } from './prompts';
 import { createRunMeta } from './script-lifecycle';
 import { setShortcodes } from './search';
+import type { IPromptContext } from './prompt.types';
 import { getKitScript, kitCache, kitState, kitStore, sponsorCheck } from './state';
 import { TrackEvent, trackEvent } from './track';
 
@@ -283,7 +284,8 @@ export const runPromptProcess = async (
     // Pre-emptively lock bounds so that debounced attemptPreload calls cannot
     // apply cached (wrong) bounds before setPromptData decides whether to defer.
     // setPromptData will either keep the lock (shouldDeferShow) or clear it.
-    (prompt as any).boundsLockedForResize = true;
+    const ctx = prompt as IPromptContext;
+    ctx.boundsLockedForResize = true;
     // Clear any cached main menu content to prevent flash when shortcut triggers non-main script
     prompt.clearCachedMainContent();
     prompt.attemptPreload(promptScriptPath);

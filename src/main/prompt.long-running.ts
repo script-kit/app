@@ -2,90 +2,90 @@ import { UI } from '@johnlindquist/kit/core/enum';
 import { Notification } from 'electron';
 import { emitter, KitEvent } from '../shared/events';
 import { processes } from './process';
-import type { KitPrompt } from './prompt';
 import { buildLongRunningNotificationOptions } from './prompt.notifications';
+import type { IPromptContext } from './prompt.types';
 import { kitState } from './state';
 
-export function startLongRunningMonitorFlow(prompt: KitPrompt) {
+export function startLongRunningMonitorFlow(prompt: IPromptContext) {
   // Clear any existing timer first to avoid duplicates
-  (prompt as any).clearLongRunningMonitor();
+  prompt.clearLongRunningMonitor();
 
   // Check for custom threshold from environment variables is handled in caller config
 
   // Skip monitoring for main script or if disabled
   if (
-    (prompt as any).isMainMenu ||
+    prompt.isMainMenu ||
     (kitState?.kenvEnv as any)?.KIT_DISABLE_LONG_RUNNING_MONITOR === 'true' ||
-    (prompt as any).script?.longRunning === true
+    prompt.script?.longRunning === true
   ) {
-    (prompt as any).logInfo?.(`Skipping long-running monitor for ${(prompt as any).scriptName}`);
+    prompt.logInfo(`Skipping long-running monitor for ${prompt.scriptName}`);
     return;
   }
 
   if (
-    !(prompt as any).scriptPath ||
-    (prompt as any).scriptPath === '' ||
-    !(prompt as any).scriptName ||
-    (prompt as any).scriptName === 'script-not-set'
+    !prompt.scriptPath ||
+    prompt.scriptPath === '' ||
+    !prompt.scriptName ||
+    prompt.scriptName === 'script-not-set'
   ) {
-    (prompt as any).logInfo?.('Skipping long-running monitor for idle prompt (no valid script)');
+    prompt.logInfo('Skipping long-running monitor for idle prompt (no valid script)');
     return;
   }
 
-  if (!(prompt as any).scriptStartTime) (prompt as any).scriptStartTime = Date.now();
-  (prompt as any).hasShownLongRunningNotification = false;
+  if (!prompt.scriptStartTime) prompt.scriptStartTime = Date.now();
+  prompt.hasShownLongRunningNotification = false;
 
-  (prompt as any).longRunningTimer = setTimeout(
+  prompt.longRunningTimer = setTimeout(
     () => {
-      if (!((prompt as any).hasShownLongRunningNotification || prompt.window?.isDestroyed())) {
+      if (!(prompt.hasShownLongRunningNotification || prompt.window?.isDestroyed())) {
         showLongRunningNotificationFlow(prompt);
-        (prompt as any).hasShownLongRunningNotification = true;
+        prompt.hasShownLongRunningNotification = true;
       }
     },
-    (prompt as any).longRunningThresholdMs,
+    prompt.longRunningThresholdMs,
   );
 
-  (prompt as any).logInfo?.(
-    `Started long-running monitor for ${(prompt as any).scriptName} (${(prompt as any).longRunningThresholdMs}ms)`,
+  prompt.logInfo(
+    `Started long-running monitor for ${prompt.scriptName} (${prompt.longRunningThresholdMs}ms)`,
   );
 }
 
-export function clearLongRunningMonitorFlow(prompt: KitPrompt) {
-  const timer = (prompt as any).longRunningTimer as NodeJS.Timeout | undefined;
+export function clearLongRunningMonitorFlow(prompt: IPromptContext) {
+  const timer = prompt.longRunningTimer;
   if (timer) {
     clearTimeout(timer);
-    (prompt as any).longRunningTimer = undefined;
-    (prompt as any).logInfo?.(`Cleared long-running monitor for ${(prompt as any).scriptName}`);
+    prompt.longRunningTimer = undefined;
+    prompt.logInfo(`Cleared long-running monitor for ${prompt.scriptName}`);
   }
 }
 
-export function showLongRunningNotificationFlow(prompt: KitPrompt) {
-  if (!(prompt as any).scriptStartTime) return;
+export function showLongRunningNotificationFlow(prompt: IPromptContext) {
+  if (!prompt.scriptStartTime) return;
 
   if (
-    !(prompt as any).scriptName ||
-    (prompt as any).scriptName === 'script-not-set' ||
-    !(prompt as any).scriptPath ||
-    (prompt as any).scriptPath === ''
+    !prompt.scriptName ||
+    prompt.scriptName === 'script-not-set' ||
+    !prompt.scriptPath ||
+    prompt.scriptPath === ''
   ) {
-    (prompt as any).logInfo?.(`Skipping long-running notification for idle prompt (PID: ${(prompt as any).pid})`);
+    prompt.logInfo(`Skipping long-running notification for idle prompt (PID: ${prompt.pid})`);
     return;
   }
 
-  const runningTimeMs = Date.now() - (prompt as any).scriptStartTime;
+  const runningTimeMs = Date.now() - prompt.scriptStartTime;
   const runningTimeSeconds = Math.floor(runningTimeMs / 1000);
-  const scriptName = (prompt as any).scriptName || 'Unknown Script';
+  const scriptName = prompt.scriptName || 'Unknown Script';
 
   let contextHint = '';
-  if ((prompt as any).ui === UI.term) contextHint = ' It appears to be running a terminal command.';
-  else if ((prompt as any).ui === UI.editor) contextHint = ' It appears to be in an editor session.';
-  else if ((prompt as any).promptData?.input?.includes('http')) contextHint = ' It might be making network requests.';
-  else if ((prompt as any).promptData?.input?.includes('file') || (prompt as any).promptData?.input?.includes('path'))
+  if (prompt.ui === UI.term) contextHint = ' It appears to be running a terminal command.';
+  else if (prompt.ui === UI.editor) contextHint = ' It appears to be in an editor session.';
+  else if (prompt.promptData?.input?.includes('http')) contextHint = ' It might be making network requests.';
+  else if (prompt.promptData?.input?.includes('file') || prompt.promptData?.input?.includes('path'))
     contextHint = ' It might be processing files.';
-  else if ((prompt as any).ui === UI.arg && ((prompt as any).promptData as any)?.choices?.length === 0)
+  else if (prompt.ui === UI.arg && (prompt.promptData as any)?.choices?.length === 0)
     contextHint = ' It might be waiting for user input.';
 
-  (prompt as any).logInfo?.(`Showing long-running notification for ${scriptName} (running for ${runningTimeSeconds}s)`);
+  prompt.logInfo(`Showing long-running notification for ${scriptName} (running for ${runningTimeSeconds}s)`);
 
   const notificationOptions = buildLongRunningNotificationOptions(
     scriptName,
@@ -98,43 +98,43 @@ export function showLongRunningNotificationFlow(prompt: KitPrompt) {
 
   notification.on('action', (_event, index) => {
     if (index === 0) {
-      (prompt as any).logInfo?.(`User chose to terminate long-running script: ${scriptName}`);
+      prompt.logInfo(`User chose to terminate long-running script: ${scriptName}`);
       terminateLongRunningScriptFlow(prompt);
     } else if (index === 1) {
-      (prompt as any).logInfo?.(`User chose to keep running script: ${scriptName}`);
-      (prompt as any).hasShownLongRunningNotification = true;
+      prompt.logInfo(`User chose to keep running script: ${scriptName}`);
+      prompt.hasShownLongRunningNotification = true;
     } else if (index === 2) {
-      (prompt as any).logInfo?.(`User chose "don't ask again" for script: ${scriptName}`);
-      (prompt as any).hasShownLongRunningNotification = true;
+      prompt.logInfo(`User chose "don't ask again" for script: ${scriptName}`);
+      prompt.hasShownLongRunningNotification = true;
     }
   });
 
   notification.on('click', () => {
-    (prompt as any).logInfo?.(`Long-running notification clicked for: ${scriptName}`);
+    prompt.logInfo(`Long-running notification clicked for: ${scriptName}`);
     prompt.focusPrompt();
   });
 
   notification.on('close', () => {
-    (prompt as any).logInfo?.(`Long-running notification closed for: ${scriptName}`);
-    (prompt as any).hasShownLongRunningNotification = true;
+    prompt.logInfo(`Long-running notification closed for: ${scriptName}`);
+    prompt.hasShownLongRunningNotification = true;
   });
 
   notification.show();
 }
 
-export function terminateLongRunningScriptFlow(prompt: KitPrompt) {
-  (prompt as any).logInfo?.(
-    `Terminating long-running script: ${(prompt as any).scriptName} (PID: ${(prompt as any).pid})`,
+export function terminateLongRunningScriptFlow(prompt: IPromptContext) {
+  prompt.logInfo(
+    `Terminating long-running script: ${prompt.scriptName} (PID: ${prompt.pid})`,
   );
   clearLongRunningMonitorFlow(prompt);
-  (prompt as any).hideInstant();
+  prompt.hideInstant();
   try {
-    processes.removeByPid((prompt as any).pid, 'long-running script terminated by user');
+    processes.removeByPid(prompt.pid, 'long-running script terminated by user');
   } catch {}
-  emitter.emit(KitEvent.KillProcess, (prompt as any).pid);
+  emitter.emit(KitEvent.KillProcess, prompt.pid);
   const confirmNotification = new Notification({
     title: 'Script Terminated',
-    body: `"${(prompt as any).scriptName}" has been terminated.`,
+    body: `"${prompt.scriptName}" has been terminated.`,
     timeoutType: 'default',
   });
   confirmNotification.show();

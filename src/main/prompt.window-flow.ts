@@ -6,6 +6,8 @@ import { ensureIdleProcess } from './process';
 import { processWindowCoordinator, WindowOperation } from './process-window-coordinator';
 import type { KitPrompt } from './prompt';
 import { getCurrentScreenFromMouse, getCurrentScreenPromptCache } from './prompt.screen-utils';
+import type { IPromptContext } from './prompt.types';
+import { handleBlurVisibility } from './prompt.visibility-utils';
 import shims from './shims';
 import { kitState } from './state';
 
@@ -19,11 +21,12 @@ export function initShowPromptFlow(prompt: KitPrompt) {
 
   prompt.setPromptAlwaysOnTop(true);
   if (prompt.window && !prompt.window.isDestroyed()) {
-    (prompt as any).handleBlurVisibility?.(prompt);
+    handleBlurVisibility(prompt);
   }
   prompt.focusPrompt();
   prompt.sendToPrompt(Channel.SET_OPEN, true);
-  const topTimeout = (prompt as any).topTimeout;
+  const ctx = prompt as IPromptContext;
+  const topTimeout = ctx.topTimeout;
   if (topTimeout) clearTimeout(topTimeout);
   setTimeout(() => {
     ensureIdleProcess();
@@ -40,7 +43,7 @@ export function hideFlow(prompt: KitPrompt) {
     return;
   }
   const hideOpId = processWindowCoordinator.registerOperation(prompt.pid, WindowOperation.Hide, prompt.window.id);
-  (prompt as any).actualHide();
+  prompt.actualHide();
   processWindowCoordinator.completeOperation(hideOpId);
 }
 
@@ -88,16 +91,18 @@ export function initBoundsFlow(prompt: KitPrompt, forceScriptPath?: string) {
     return;
   }
 
+  const ctx = prompt as IPromptContext;
+
   // During a deferred-show resize cycle we don't want cached bounds (from
   // attemptPreload or similar) to overwrite the renderer-calculated size.
   // We only skip when forceScriptPath is provided, which is the preload path.
   // However, we still apply the POSITION (x, y) so the window isn't stuck at top-left.
-  if ((prompt as any).boundsLockedForResize && forceScriptPath) {
-    const cacheKey = `${forceScriptPath}::${(prompt as any).windowMode || 'panel'}`;
+  if (ctx.boundsLockedForResize && forceScriptPath) {
+    const cacheKey = `${forceScriptPath}::${ctx.windowMode || 'panel'}`;
     const currentBounds = prompt.window.getBounds();
     const cachedBounds = getCurrentScreenPromptCache(cacheKey, {
-      ui: (prompt as any).ui,
-      resize: (prompt as any).allowResize,
+      ui: ctx.ui,
+      resize: ctx.allowResize,
       bounds: { width: currentBounds.width, height: currentBounds.height },
     });
     prompt.logInfo(
@@ -106,7 +111,7 @@ export function initBoundsFlow(prompt: KitPrompt, forceScriptPath?: string) {
     );
     // Apply position only, keep current width/height (which may be set by resize)
     if (typeof cachedBounds.x === 'number' && typeof cachedBounds.y === 'number') {
-      (prompt as any).setBounds(
+      ctx.setBounds(
         { x: cachedBounds.x, y: cachedBounds.y, width: currentBounds.width, height: currentBounds.height },
         'initBounds-positionOnly',
       );
@@ -115,15 +120,15 @@ export function initBoundsFlow(prompt: KitPrompt, forceScriptPath?: string) {
   }
 
   const bounds = prompt.window.getBounds();
-  const cacheKey = `${forceScriptPath || (prompt as any).scriptPath}::${(prompt as any).windowMode || 'panel'}`;
+  const cacheKey = `${forceScriptPath || ctx.scriptPath}::${ctx.windowMode || 'panel'}`;
   const cachedBounds = getCurrentScreenPromptCache(cacheKey, {
-    ui: (prompt as any).ui,
-    resize: (prompt as any).allowResize,
+    ui: ctx.ui,
+    resize: ctx.allowResize,
     bounds: { width: bounds.width, height: bounds.height },
   });
   const currentBounds = prompt?.window?.getBounds();
   prompt.logInfo(
-    `${prompt.pid}:${path.basename((prompt as any)?.scriptPath || '')}: ↖ Init bounds: ${(prompt as any).ui} ui`,
+    `${prompt.pid}:${path.basename(ctx.scriptPath || '')}: ↖ Init bounds: ${ctx.ui} ui`,
     {
       currentBounds,
       cachedBounds,
@@ -132,16 +137,16 @@ export function initBoundsFlow(prompt: KitPrompt, forceScriptPath?: string) {
   const { x, y, width, height } = prompt.window.getBounds();
   if (cachedBounds.width !== width || cachedBounds.height !== height) {
     prompt.logVerbose(
-      `Started resizing: ${prompt.window?.getSize()}. First prompt?: ${(prompt as any).firstPrompt ? 'true' : 'false'}`,
+      `Started resizing: ${prompt.window?.getSize()}. First prompt?: ${ctx.firstPrompt ? 'true' : 'false'}`,
     );
-    (prompt as any).resizing = true;
+    ctx.resizing = true;
   }
-  if ((prompt as any).promptData?.scriptlet) cachedBounds.height = (prompt as any).promptData?.inputHeight;
+  if (ctx.promptData?.scriptlet) cachedBounds.height = ctx.promptData?.inputHeight;
   if (prompt?.window?.isFocused()) {
     cachedBounds.x = x;
     cachedBounds.y = y;
   }
-  (prompt as any).setBounds(cachedBounds, 'initBounds');
+  ctx.setBounds(cachedBounds, 'initBounds');
 }
 
 export function blurPromptFlow(prompt: KitPrompt) {
@@ -155,5 +160,6 @@ export function blurPromptFlow(prompt: KitPrompt) {
 export function initMainBoundsFlow(prompt: KitPrompt) {
   const cached = getCurrentScreenPromptCache(getMainScriptPath());
   if (!cached.height || cached.height < PROMPT.HEIGHT.BASE) cached.height = PROMPT.HEIGHT.BASE;
-  (prompt as any).setBounds(cached as Partial<Rectangle>, 'initMainBounds');
+  const ctx = prompt as IPromptContext;
+  ctx.setBounds(cached as Partial<Rectangle>, 'initMainBounds');
 }

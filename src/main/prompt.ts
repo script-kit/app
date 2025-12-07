@@ -338,7 +338,15 @@ export class KitPrompt {
   devToolsOpening = false;
   private _activeRun?: ScriptRunMeta;
 
-  private longRunningThresholdMs = 60000; // 1 minute default
+  // Long-running script monitoring properties (IPromptContext)
+  longRunningThresholdMs = 60000; // 1 minute default
+  scriptStartTime?: number;
+  hasShownLongRunningNotification?: boolean;
+  longRunningTimer?: NodeJS.Timeout;
+
+  // Internal state flags (IPromptContext)
+  __userBootstrapped?: boolean;
+  topTimeout?: NodeJS.Timeout;
 
   birthTime = performance.now();
 
@@ -476,11 +484,12 @@ export class KitPrompt {
       return;
     }
 
-    startLongRunningMonitorFlow(this as any);
+    startLongRunningMonitorFlow(this);
   };
 
-  private clearLongRunningMonitor = () => {
-    clearLongRunningMonitorFlow(this as any);
+  // Public for IPromptContext interface
+  clearLongRunningMonitor = () => {
+    clearLongRunningMonitorFlow(this);
   };
 
   boundToProcess = false;
@@ -1093,7 +1102,7 @@ export class KitPrompt {
     }
   };
 
-  togglePromptEnv = (envName: string) => togglePromptEnvFlow(this as any, envName);
+  togglePromptEnv = (envName: string) => togglePromptEnvFlow(this, envName);
 
   centerPrompt = () => {
     this.window.center();

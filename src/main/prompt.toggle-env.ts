@@ -1,6 +1,6 @@
-import type { KitPrompt } from './prompt';
+import type { IPromptContext } from './prompt.types';
 
-export function togglePromptEnvFlow(prompt: KitPrompt, envName: string) {
+export function togglePromptEnvFlow(prompt: IPromptContext, envName: string) {
   prompt.logInfo(`Toggle prompt env: ${envName} to ${(require('./state').kitState as any).kenvEnv?.[envName]}`);
   const { kitState } = require('./state');
   if (process.env[envName]) {

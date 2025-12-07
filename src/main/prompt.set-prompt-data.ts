@@ -4,6 +4,7 @@ import type { PromptData } from '@johnlindquist/kit/types/core';
 import { debounce } from 'lodash-es';
 import { AppChannel } from '../shared/enums';
 import { applyPromptDataBounds } from './prompt.bounds-utils';
+import type { IPromptContext } from './prompt.types';
 import { createPty } from './pty';
 import { getCurrentScreen } from './screen';
 import { setFlags } from './search';
@@ -97,10 +98,11 @@ export const setPromptDataImpl = async (prompt: any, promptData: PromptData): Pr
 
   // Send user data BEFORE prompt data only if we haven't bootstrapped this prompt yet
   const userSnapshot = (await import('valtio')).snapshot(kitState.user);
+  const ctx = prompt as IPromptContext;
   prompt.logInfo(`Early user data considered: ${userSnapshot?.login || 'not logged in'}`);
-  if (!(prompt as any).__userBootstrapped) {
+  if (!ctx.__userBootstrapped) {
     prompt.sendToPrompt(AppChannel.USER_CHANGED, userSnapshot);
-    (prompt as any).__userBootstrapped = true;
+    ctx.__userBootstrapped = true;
   }
 
   prompt.sendToPrompt(Channel.SET_PROMPT_DATA, promptData);

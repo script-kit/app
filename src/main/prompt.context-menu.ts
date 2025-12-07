@@ -2,6 +2,7 @@ import type { BrowserWindow } from 'electron';
 import contextMenu from 'electron-context-menu';
 import { promptLog as log } from './logs';
 import { prompts } from './prompts';
+import type { IPromptContext } from './prompt.types';
 
 export const setupPromptContextMenu = (): void => {
   // TODO: Hack context menu to avoid "object destroyed" errors
@@ -17,12 +18,13 @@ export const setupPromptContextMenu = (): void => {
         const bw = browserWindow as BrowserWindow;
         const prompt = prompts.find((p) => p?.window?.id === bw.id);
         if (prompt) {
-          const isStandard = (prompt as any).windowMode === 'window';
+          const ctx = prompt as IPromptContext;
+          const isStandard = ctx.windowMode === 'window';
           actions.push({
             label: isStandard ? 'Convert to Panel (Attach)' : 'Convert to Window (Detach)',
             click: async () => {
               log.info(`Toggling window mode for prompt ${bw.id}`);
-              await (prompt as any).toggleWindowMode();
+              await ctx.toggleWindowMode();
             },
           });
         }

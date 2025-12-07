@@ -3,6 +3,7 @@ import type { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { ipcMain } from 'electron';
 import type { AppChannel } from '../shared/enums';
 import type { KitPrompt } from './prompt';
+import type { IPromptContext } from './prompt.types';
 
 export function pingPrompt(prompt: KitPrompt, channel: AppChannel, data?: any) {
   prompt.logSilly(`sendToPrompt: ${String(channel)} ${data?.kitScript}`);
@@ -12,7 +13,8 @@ export function pingPrompt(prompt: KitPrompt, channel: AppChannel, data?: any) {
         prompt.logInfo(`🎤 ${channel} !!! <<<<`);
         resolve(true);
       });
-      (prompt as any).sendToPrompt(channel as any as Channel, data);
+      const ctx = prompt as IPromptContext;
+      ctx.sendToPrompt(channel as any as Channel, data);
     }
   });
 }
