@@ -51,6 +51,14 @@ vi.mock('./state', () => ({
 }));
 vi.mock('./system');
 vi.mock('./logs', () => ({
+  perf: {
+    start: vi.fn(() => () => 0),
+    measure: vi.fn(async (_name: string, fn: () => Promise<unknown>) => fn()),
+    measureSync: vi.fn((_name: string, fn: () => unknown) => fn()),
+    logMetric: vi.fn(),
+    logSummary: vi.fn(),
+    isEnabled: vi.fn(() => false),
+  },
   watcherLog: {
     info: vi.fn(),
     error: vi.fn(),

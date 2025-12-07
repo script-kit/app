@@ -341,11 +341,11 @@ async function collectEventsIsolated(
 }
 
 /**
- * Wait for all watchers to emit their "ready" event.
+ * Wait for all watchers to emit their "ready" event with timeout.
  * This helps ensure we don't miss any file changes
  * occurring shortly after watchers start.
  */
-async function waitForWatchersReady(watchers: FSWatcher[]) {
+async function waitForWatchersReady(watchers: FSWatcher[], timeoutMs = 5000) {
   log.debug('Waiting for watchers to be ready:', watchers.length);
   const readyPromises = watchers.map(
     (w, i) =>
@@ -357,8 +357,24 @@ async function waitForWatchersReady(watchers: FSWatcher[]) {
           return;
         }
 
+        // Check if watcher is already ready (has watched paths)
+        const watched = w.getWatched?.();
+        if (watched && Object.keys(watched).length > 0) {
+          log.debug(`Watcher ${i} already has watched paths, considering it ready`);
+          resolve();
+          return;
+        }
+
         log.debug(`Setting up ready handler for watcher ${i}`);
+
+        // Add timeout to prevent hanging
+        const timeout = setTimeout(() => {
+          log.debug(`Watcher ${i} ready timeout - proceeding anyway`);
+          resolve();
+        }, timeoutMs);
+
         w.on('ready', () => {
+          clearTimeout(timeout);
           log.debug(`Watcher ${i} is ready`);
           resolve();
         });
