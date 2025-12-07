@@ -18,7 +18,8 @@ vi.mock('./logs', () => ({
     verbose: vi.fn(),
   },
   perf: {
-    start: vi.fn(() => vi.fn()), // Returns a function that ends the perf measurement
+    start: vi.fn(() => () => 0),
+    measure: vi.fn(async (_name: string, fn: () => Promise<any>) => fn()),
   },
 }));
 

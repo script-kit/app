@@ -17,7 +17,8 @@ vi.mock('./logs', () => ({
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   searchLog: { info: vi.fn(), warn: vi.fn(), silly: vi.fn(), verbose: vi.fn() },
   perf: {
-    start: vi.fn(() => vi.fn()), // Returns a function that ends the perf measurement
+    start: vi.fn(() => () => 0),
+    measure: vi.fn(async (_name: string, fn: () => Promise<any>) => fn()),
   },
 }));
 

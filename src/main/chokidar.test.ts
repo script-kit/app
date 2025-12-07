@@ -358,7 +358,15 @@ async function waitForWatchersReady(watchers: FSWatcher[], timeoutMs = 5000) {
         }
 
         log.debug(`Setting up ready handler for watcher ${i}`);
+
+        // Set a timeout to avoid hanging indefinitely
+        const timeout = setTimeout(() => {
+          log.debug(`Watcher ${i} timed out waiting for ready, proceeding anyway`);
+          resolve();
+        }, timeoutMs);
+
         w.on('ready', () => {
+          clearTimeout(timeout);
           log.debug(`Watcher ${i} is ready`);
           resolve();
         });

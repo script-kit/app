@@ -22,6 +22,7 @@ vi.mock('electron', () => ({
           return '/Users/test';
       }
     }),
+    whenReady: vi.fn().mockResolvedValue(undefined),
   },
   shell: {
     openPath: vi.fn(),
@@ -48,6 +49,9 @@ vi.mock('./state', () => ({
   debounceSetScriptTimestamp: vi.fn(),
   sponsorCheck: vi.fn().mockResolvedValue(false),
   setKitStateAtom: vi.fn(),
+  preloadChoicesMap: new Map(),
+  preloadPreviewMap: new Map(),
+  preloadPromptDataMap: new Map(),
 }));
 vi.mock('./system');
 vi.mock('./logs', () => ({
@@ -60,6 +64,16 @@ vi.mock('./logs', () => ({
   scriptLog: {
     info: vi.fn(),
     error: vi.fn(),
+  },
+  promptLog: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+  },
+  log: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
   },
 }));
 vi.mock('./process', () => ({
@@ -215,6 +229,9 @@ vi.mock('chokidar', () => ({
       on: vi.fn(),
       close: vi.fn(),
       removeAllListeners: vi.fn(),
+      getWatched: vi.fn().mockReturnValue({}),
+      unwatch: vi.fn(),
+      add: vi.fn(),
     })),
   },
 }));
