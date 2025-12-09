@@ -254,12 +254,22 @@ const RESERVED_FIND = new Set(['f', 'g']); // find, find next
 /**
  * Returns true if this shortcut should never be bound inside Monaco's editor.
  * These are system/editor shortcuts that must remain functional.
+ *
+ * Only blocks shortcuts that are EXACTLY mod+key (no additional modifiers).
+ * For example:
+ * - cmd+c (copy) -> blocked
+ * - cmd+shift+c -> NOT blocked (it's a custom shortcut)
+ * - cmd+alt+v -> NOT blocked (it's a custom shortcut)
  */
 export function isReservedEditorShortcut(shortcut: string, includeFind = false): boolean {
   const s = normalizeShortcut(shortcut);
   if (!s.mod) return false; // we only care about mod+* shortcuts
 
-  // Check basic clipboard/edit operations
+  // If there are additional modifiers (shift or alt), it's a custom shortcut, not reserved
+  // cmd+c is reserved, but cmd+shift+c is a valid custom shortcut
+  if (s.shift || s.alt) return false;
+
+  // Check basic clipboard/edit operations (only if JUST mod+key)
   if (RESERVED_KEYS.has(s.key)) {
     console.log(`[isReservedEditorShortcut] Blocking reserved key: ${shortcut} (${s.key} is clipboard/edit operation)`);
     return true;
