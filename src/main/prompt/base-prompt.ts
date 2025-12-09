@@ -1,3 +1,11 @@
+/**
+ * BasePrompt - Abstract base class for all prompt types
+ *
+ * This class contains shared functionality used by both MainPrompt (app launcher)
+ * and ScriptPrompt (user scripts). The polymorphic design eliminates isMainScript
+ * conditionals throughout the codebase.
+ */
+
 import type { ChildProcess } from 'node:child_process';
 import EventEmitter from 'node:events';
 import { readFile } from 'node:fs/promises';
@@ -8,53 +16,33 @@ import { getMainScriptPath, kenvPath, kitPath } from '@johnlindquist/kit/core/ut
 import type { Choice, PromptBounds, PromptData, Script, Scriptlet } from '@johnlindquist/kit/types/core';
 import type { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { differenceInHours } from 'date-fns';
-import type { Display } from 'electron';
-import {
-  app,
-  BrowserWindow,
-  globalShortcut,
-  type Input,
-  ipcMain,
-  type Point,
-  type Rectangle,
-  screen,
-  shell,
-  TouchBar,
-} from 'electron';
+import type { Display, Input, Rectangle } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, screen, shell, TouchBar } from 'electron';
 import { debounce } from 'lodash-es';
-import { subscribeKey } from 'valtio/utils';
-import { closedDiv, noScript, ZOOM_LEVEL } from '../shared/defaults';
-import { AppChannel } from '../shared/enums';
-import { emitter, KitEvent } from '../shared/events';
-import type { ResizeData } from '../shared/types';
-import { sendToAllPrompts } from './channel';
-import { promptLog as log, perf, themeLog } from './logs';
-import { getIdles, processes, updateTheme } from './process';
-import { processWindowCoordinator, WindowOperation } from './process-window-coordinator';
-import { applyPromptBounds } from './prompt.bounds-apply';
-import { applyPromptDataBounds } from './prompt.bounds-utils';
-import { clearPromptCacheFor } from './prompt.cache';
-import { setupPromptContextMenu } from './prompt.context-menu';
-import { computeShouldCloseOnInitialEscape, isDevToolsShortcut } from './prompt.focus-utils';
-import { actualHideImpl, isVisibleImpl, maybeHideImpl } from './prompt.hide-utils';
-import {
-  initMainChoicesImpl,
-  initMainFlagsImpl,
-  initMainPreviewImpl,
-  initMainShortcutsImpl,
-  initPromptImpl,
-  initThemeImpl,
-} from './prompt.init-main';
+import { closedDiv, noScript, ZOOM_LEVEL } from '../../shared/defaults';
+import { AppChannel } from '../../shared/enums';
+import { emitter, KitEvent } from '../../shared/events';
+import type { ResizeData } from '../../shared/types';
+import { sendToAllPrompts } from '../channel';
+import { promptLog as log, perf, themeLog } from '../logs';
+import { getIdles, processes, updateTheme } from '../process';
+import { processWindowCoordinator, WindowOperation } from '../process-window-coordinator';
+import { applyPromptBounds } from '../prompt.bounds-apply';
+import { applyPromptDataBounds } from '../prompt.bounds-utils';
+import { clearPromptCacheFor } from '../prompt.cache';
+import { computeShouldCloseOnInitialEscape, isDevToolsShortcut } from '../prompt.focus-utils';
+import { actualHideImpl, isVisibleImpl, maybeHideImpl } from '../prompt.hide-utils';
+import { initPromptImpl, initThemeImpl } from '../prompt.init-main';
 import {
   loadPromptHtml,
   setupDevtoolsHandlers,
   setupDomAndFinishLoadHandlers,
   setupNavigationHandlers,
   setupWindowLifecycleHandlers,
-} from './prompt.init-utils';
-import { isCloseCombo } from './prompt.input-utils';
-import { clearLongRunningMonitorFlow, startLongRunningMonitorFlow } from './prompt.long-running';
-import { getPromptOptions, type PromptWindowMode } from './prompt.options';
+} from '../prompt.init-utils';
+import { isCloseCombo } from '../prompt.input-utils';
+import { clearLongRunningMonitorFlow, startLongRunningMonitorFlow } from '../prompt.long-running';
+import { getPromptOptions, type PromptWindowMode } from '../prompt.options';
 import {
   checkProcessAliveImpl,
   handleProcessGoneImpl,
@@ -62,20 +50,20 @@ import {
   notifyProcessConnectionLostImpl,
   startProcessMonitoringImpl,
   stopProcessMonitoringImpl,
-} from './prompt.process-connection';
-import { getLongRunningThresholdMs } from './prompt.process-utils';
-import { setupResizeAndMoveListeners } from './prompt.resize-listeners';
-import { calculateTargetDimensions, calculateTargetPosition } from './prompt.resize-utils';
+} from '../prompt.process-connection';
+import { getLongRunningThresholdMs } from '../prompt.process-utils';
+import { setupResizeAndMoveListeners } from '../prompt.resize-listeners';
+import { calculateTargetDimensions, calculateTargetPosition } from '../prompt.resize-utils';
 import {
   getAllScreens as utilGetAllScreens,
   getCurrentScreenFromMouse as utilGetCurrentScreenFromMouse,
   getCurrentScreenPromptCache as utilGetCurrentScreenPromptCache,
   pointOnMouseScreen as utilPointOnMouseScreen,
-} from './prompt.screen-utils';
-import { setPromptDataImpl } from './prompt.set-prompt-data';
-import { writePromptState } from './prompt.state-utils';
-import { togglePromptEnvFlow } from './prompt.toggle-env';
-import { handleBlurVisibility } from './prompt.visibility-utils';
+} from '../prompt.screen-utils';
+import { setPromptDataImpl } from '../prompt.set-prompt-data';
+import { writePromptState } from '../prompt.state-utils';
+import { togglePromptEnvFlow } from '../prompt.toggle-env';
+import { handleBlurVisibility } from '../prompt.visibility-utils';
 import {
   blurPromptFlow,
   hideFlow,
@@ -85,19 +73,13 @@ import {
   moveToMouseScreenFlow,
   onHideOnceFlow,
   showPromptFlow,
-} from './prompt.window-flow';
-import {
-  createPromptStateMachine,
-  PromptEvent,
-  PromptState,
-  PromptStateMachine,
-} from './prompt/state-machine';
-import { centerThenFocus } from './prompt.window-utils';
-import { prompts } from './prompts';
-import { getCurrentScreenFromBounds, isBoundsWithinDisplays } from './screen';
-import type { ScriptRunMeta } from './script-lifecycle';
-import { setChoices, setFlags } from './search';
-import shims from './shims';
+} from '../prompt.window-flow';
+import { centerThenFocus } from '../prompt.window-utils';
+import { prompts } from '../prompts';
+import { getCurrentScreenFromBounds, isBoundsWithinDisplays } from '../screen';
+import type { ScriptRunMeta } from '../script-lifecycle';
+import { setChoices, setFlags } from '../search';
+import shims from '../shims';
 import {
   getEmojiShortcut,
   kitCache,
@@ -107,34 +89,9 @@ import {
   preloadPromptDataMap,
   promptState,
   subs,
-} from './state';
-import { TrackEvent, trackEvent } from './track';
-import { getVersion } from './version';
-
-setupPromptContextMenu();
-
-export { logPromptStateFlow as logPromptState } from './prompt.log-state';
-export { PromptState, PromptEvent, PromptStateMachine } from './prompt/state-machine';
-
-// TODO: Move this into a screen utils
-export const getCurrentScreenFromMouse = utilGetCurrentScreenFromMouse;
-
-export const getAllScreens = utilGetAllScreens;
-
-export const getCurrentScreenPromptCache = utilGetCurrentScreenPromptCache;
-
-// Removed unused resize tracking variables as part of refactor
-
-// TODO: Needs refactor to include unique ids, or conflicts will happen
-
-enum Bounds {
-  Position = 1 << 0,
-  Size = 1 << 1,
-}
-
-export const pointOnMouseScreen = utilPointOnMouseScreen as (p: Point) => boolean;
-
-// moved to prompt.state-utils.ts
+} from '../state';
+import { TrackEvent, trackEvent } from '../track';
+import { getVersion } from '../version';
 
 export type ScriptTrigger = 'startup' | 'shortcut' | 'prompt' | 'background' | 'schedule' | 'snippet';
 export type ScriptSource = 'runtime' | 'preload' | 'user';
@@ -146,405 +103,49 @@ export type SetScriptMeta = {
   force?: boolean;
 };
 
-let boundsCheck: any = null;
-const topTimeout: any = null;
+enum Bounds {
+  Position = 1 << 0,
+  Size = 1 << 1,
+}
 
-export const clearPromptCache = async () => {
-  // TODO: Reimplement clear prompt cache?
-  // try {
-  //   promptState.screens = {};
-  // } catch (error) {
-  //   log.info(error);
-  // }
-  // promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
-  // kitState.resizePaused = true;
-  // initBounds();
-  // setTimeout(() => {
-  //   kitState.resizePaused = false;
-  // }, 1000);
-};
+// Re-export utilities for backward compatibility
+export const getCurrentScreenFromMouse = utilGetCurrentScreenFromMouse;
+export const getAllScreens = utilGetAllScreens;
+export const getCurrentScreenPromptCache = utilGetCurrentScreenPromptCache;
+export const pointOnMouseScreen = utilPointOnMouseScreen;
 
-export const destroyPromptWindow = () => {
-  // TODO: Reimplement destroy prompt window?
-  // if (promptWindow && !promptWindow?.isDestroyed()) {
-  //   hideAppIfNoWindows(HideReason.Destroy);
-  //   promptWindow.destroy();
-  // }
-};
-
-// let attempts = 0;
-
-// const boundsMatch = async (bounds: Rectangle) => {
-//   const { width, height } = promptWindow?.getBounds();
-//   if (width === bounds.width && height === bounds.height) {
-//     log.info(`↖ Bounds attempt: ${attempts}`);
-//     return true;
-//   }
-
-//   if (attempts < 4) {
-//     attempts += 1;
-//     return new Promise((resolve) => {
-//       setTimeout(async () => {
-//         const match = await boundsMatch(bounds);
-//         attempts = 0;
-//         resolve(match);
-//       }, 0);
-//     });
-//   }
-//   return true;
-// };
-
-// TODO: I think this was only for the "main" prompt concept
-// const subScriptPath = subscribeKey(
-//   kitState,
-//   'scriptPath',
-//   async (scriptPath) => {
-//     log.verbose(`📄 scriptPath changed: ${scriptPath}`);
-
-//     if (promptWindow?.isDestroyed()) return;
-//     const noScript = kitState.scriptPath === '';
-
-//     kitState.promptUI = UI.arg;
-//     kitState.resizedByChoices = false;
-
-//     if (pathsAreEqual(scriptPath || '', kitState.scriptErrorPath)) {
-//       kitState.scriptErrorPath = '';
-//     }
-
-//     if (noScript) {
-//       log.info(
-//         `
-// 🎬: scriptPath changed: ${kitState.scriptPath}, prompt count: ${kitState.promptCount}
-// ---`
-//       );
-
-//       // hideAppIfNoWindows(HideReason.NoScript);
-//       clearSearch();
-//       sendToSpecificPrompt(promptWindow, Channel.SET_OPEN, false);
-
-//       if (kitState.isWindows) {
-//         initMainBounds();
-//       }
-//       // kitState.alwaysOnTop = false;
-
-//       return;
-//     }
-
-//     kitState.prevScriptPath = kitState.scriptPath;
-//   }
-// );
-
-let prevEmoji = false;
-const subEmoji = subscribeKey(
-  kitState,
-  'emojiActive',
-  debounce(
-    (emoji) => {
-      if (prevEmoji === emoji) {
-        return;
-      }
-      prevEmoji = emoji;
-      log.info(`👆 Emoji changed: ${emoji ? 'on' : 'off'}`);
-      const emojiShortcut = getEmojiShortcut();
-      if (emoji) {
-        globalShortcut.register(emojiShortcut, () => {
-          if (prompts.focused) {
-            log.info('👆 Emoji shortcut pressed. 😘. Setting emojiActive to true on focused prompt', {
-              id: prompts.focused.id,
-            });
-            prompts.focused.emojiActive = true;
-          }
-          // prompts?.prevFocused?.setPromptAlwaysOnTop(false);
-          app.showEmojiPanel();
-        });
-      } else {
-        globalShortcut.unregister(emojiShortcut);
-      }
-    },
-    200,
-    {
-      leading: true,
-      trailing: false,
-    },
-  ),
-);
-
-let _isSponsor = false;
-const subIsSponsor = subscribeKey(kitState, 'isSponsor', (isSponsor) => {
-  if (_isSponsor === isSponsor) {
-    return;
-  }
-  _isSponsor = isSponsor;
-  log.info('🎨 Sponsor changed:', isSponsor);
-  setKitStateAtom({ isSponsor });
-});
-
-export const setKitStateAtom = (partialState: Partial<typeof kitState>) => {
-  sendToAllPrompts(AppChannel.KIT_STATE, partialState);
-};
-
-export const setFocusedKitStateAtom = (partialState: Partial<typeof kitState>) => {
-  prompts?.prevFocused?.sendToPrompt(AppChannel.KIT_STATE, partialState);
-};
-
-const subUpdateDownloaded = subscribeKey(kitState, 'updateDownloaded', (updateDownloaded) => {
-  setKitStateAtom({ updateDownloaded });
-});
-
-const subEscapePressed = subscribeKey(kitState, 'escapePressed', (escapePressed) => {
-  setFocusedKitStateAtom({ escapePressed });
-});
-
-// moved to prompt.cache.ts; keep export for backward compatibility
-export { clearPromptCacheFor } from './prompt.cache';
-
-export const clearPromptTimers = async () => {
-  try {
-    if (boundsCheck) {
-      clearTimeout(boundsCheck);
-    }
-    if (topTimeout) {
-      clearTimeout(topTimeout);
-    }
-  } catch (e) {
-    log.error(e);
-  }
-};
-
-subs.push(
-  // subScriptPath,
-  subIsSponsor,
-  subUpdateDownloaded,
-  subEscapePressed,
-  subEmoji,
-);
-
-export class KitPrompt {
-  /**
-   * Finite State Machine for managing prompt lifecycle.
-   * Replaces ad-hoc boolean flags with formal state management.
-   */
-  private _fsm: PromptStateMachine;
-
+/**
+ * initMain flag - used for backward compatibility.
+ * When true, the prompt behaves like a main menu.
+ * This flag is set externally by prompts.ts when attaching to a main script.
+ */
+export class BasePrompt {
+  initMain = false;
   ui = UI.arg;
   count = 0;
   id = '';
-  windowMode: PromptWindowMode = 'panel'; // default
-  initMain = true;
+  pid = 0;
+  windowMode: PromptWindowMode = 'panel';
   script = noScript;
   scriptPath = '';
   allowResize = true;
+  resizing = false;
   isScripts = true;
   promptData = null as null | PromptData;
+  firstPrompt = true;
+  ready = false;
+  shown = false;
   alwaysOnTop = true;
   hideOnEscape = false;
   cacheScriptChoices = false;
   cacheScriptPromptData = false;
   cacheScriptPreview = false;
+  actionsOpen = false;
+  wasActionsJustOpen = false;
+  devToolsOpening = false;
   private _activeRun?: ScriptRunMeta;
 
-  // --- FSM-backed properties (delegates to state machine) ---
-
-  /**
-   * Whether the prompt is being resized.
-   * @deprecated Use fsm.isResizing() for state checks
-   */
-  get resizing(): boolean {
-    return this._fsm.isResizing();
-  }
-  set resizing(value: boolean) {
-    if (value && !this._fsm.isResizing()) {
-      this._fsm.startResize();
-    } else if (!value && this._fsm.isResizing()) {
-      this._fsm.endResize();
-    }
-  }
-
-  /**
-   * Whether this is the first prompt shown.
-   */
-  get firstPrompt(): boolean {
-    return this._fsm.context.firstPrompt;
-  }
-  set firstPrompt(value: boolean) {
-    this._fsm.updateContext({ firstPrompt: value });
-  }
-
-  /**
-   * Whether the prompt renderer is ready.
-   */
-  get ready(): boolean {
-    return this._fsm.isReady();
-  }
-  set ready(value: boolean) {
-    if (value && this._fsm.isInitializing()) {
-      this._fsm.markReady();
-    }
-  }
-
-  /**
-   * Whether the prompt is currently shown/visible.
-   */
-  get shown(): boolean {
-    return this._fsm.isVisible();
-  }
-  set shown(value: boolean) {
-    // For backward compatibility - actual state transition happens in showPrompt/hide
-    if (value && !this._fsm.isVisible()) {
-      this._fsm.show();
-    }
-  }
-
-  /**
-   * Whether the prompt is bound to a process.
-   */
-  get boundToProcess(): boolean {
-    return this._fsm.context.boundToProcess;
-  }
-  set boundToProcess(value: boolean) {
-    this._fsm.updateContext({ boundToProcess: value });
-  }
-
-  /**
-   * PID of the bound process (accessed through FSM context for state tracking).
-   */
-  get pid(): number {
-    return this._fsm.context.pid;
-  }
-  set pid(value: number) {
-    this._fsm.updateContext({ pid: value });
-  }
-
-  /**
-   * Whether actions menu is open.
-   */
-  get actionsOpen(): boolean {
-    return this._fsm.context.actionsOpen;
-  }
-  set actionsOpen(value: boolean) {
-    this._fsm.updateContext({ actionsOpen: value });
-  }
-
-  /**
-   * Whether actions were just open (for escape handling).
-   */
-  get wasActionsJustOpen(): boolean {
-    return this._fsm.context.wasActionsJustOpen;
-  }
-  set wasActionsJustOpen(value: boolean) {
-    this._fsm.updateContext({ wasActionsJustOpen: value });
-  }
-
-  /**
-   * Whether DevTools are being opened (to ignore blur).
-   */
-  get devToolsOpening(): boolean {
-    return this._fsm.context.devToolsOpening;
-  }
-  set devToolsOpening(value: boolean) {
-    this._fsm.updateContext({ devToolsOpening: value });
-  }
-
-  /**
-   * Whether the process connection has been lost.
-   */
-  get processConnectionLost(): boolean {
-    return this._fsm.context.processConnectionLost;
-  }
-  set processConnectionLost(value: boolean) {
-    this._fsm.updateContext({ processConnectionLost: value });
-  }
-
-  /**
-   * Whether the prompt has been focused at least once.
-   */
-  get hasBeenFocused(): boolean {
-    return this._fsm.context.hasBeenFocused;
-  }
-  set hasBeenFocused(value: boolean) {
-    this._fsm.updateContext({ hasBeenFocused: value });
-  }
-
-  /**
-   * Whether the prompt has been hidden at least once.
-   */
-  get hasBeenHidden(): boolean {
-    return this._fsm.context.hasBeenHidden;
-  }
-  set hasBeenHidden(value: boolean) {
-    this._fsm.updateContext({ hasBeenHidden: value });
-  }
-
-  /**
-   * Whether the window has been modified by the user.
-   */
-  get modifiedByUser(): boolean {
-    return this._fsm.context.modifiedByUser;
-  }
-  set modifiedByUser(value: boolean) {
-    this._fsm.updateContext({ modifiedByUser: value });
-  }
-
-  /**
-   * Whether bounds should be locked during resize.
-   */
-  get boundsLockedForResize(): boolean {
-    return this._fsm.context.boundsLockedForResize;
-  }
-  set boundsLockedForResize(value: boolean) {
-    this._fsm.updateContext({ boundsLockedForResize: value });
-  }
-
-  /**
-   * Whether to skip initBounds during resize.
-   */
-  get skipInitBoundsForResize(): boolean {
-    return this._fsm.context.skipInitBoundsForResize;
-  }
-  set skipInitBoundsForResize(value: boolean) {
-    this._fsm.updateContext({ skipInitBoundsForResize: value });
-  }
-
-  /**
-   * Whether to show after next resize completes.
-   */
-  get showAfterNextResize(): boolean {
-    return this._fsm.context.showAfterNextResize;
-  }
-  set showAfterNextResize(value: boolean) {
-    this._fsm.updateContext({ showAfterNextResize: value });
-  }
-
-  /**
-   * Whether the prompt has been closed.
-   */
-  get closed(): boolean {
-    return this._fsm.isDisposedOrDestroyed();
-  }
-  set closed(value: boolean) {
-    // Only allow transitioning to closed state
-    if (value && !this._fsm.isDisposedOrDestroyed()) {
-      this._fsm.close();
-    }
-  }
-
-  // --- FSM accessors ---
-
-  /**
-   * Gets the underlying state machine for advanced state queries.
-   */
-  get fsm(): PromptStateMachine {
-    return this._fsm;
-  }
-
-  /**
-   * Gets the current FSM state (for debugging/logging).
-   */
-  get fsmState(): PromptState {
-    return this._fsm.state;
-  }
-
-  private longRunningThresholdMs = 60000; // 1 minute default
+  private longRunningThresholdMs = 60000;
 
   birthTime = performance.now();
 
@@ -569,18 +170,22 @@ export class KitPrompt {
     return this?.scriptPath?.split('/')?.pop() || '';
   }
 
-  get isMainMenu() {
-    // Consolidated logic to identify main menu:
-    // 1. Script path matches the main script path
-    // 2. No script path and pid is 0 (uninitialized main menu)
-    // 3. Empty script path (idle process that shows main menu)
-    return this.scriptPath === getMainScriptPath() || (!this.scriptPath && this.pid === 0) || this.scriptPath === '';
+  /**
+   * Whether this prompt is for the main menu (app launcher).
+   * Uses initMain flag for backward compatibility.
+   * Subclasses can override this to define their behavior.
+   */
+  get isMainMenu(): boolean {
+    // Backward compatible: use initMain flag or check scriptPath
+    return this.initMain || this.scriptPath === getMainScriptPath() || (!this.scriptPath && this.pid === 0) || this.scriptPath === '';
   }
 
   public window: BrowserWindow;
   public sendToPrompt: (channel: Channel | AppChannel, data?: any) => void = (channel, data) => {
     this.logWarn('sendToPrompt not set', { channel, data });
   };
+
+  modifiedByUser = false;
 
   opacity = 1;
   setOpacity = (opacity: number) => {
@@ -628,7 +233,7 @@ export class KitPrompt {
       return;
     }
 
-    this.logInfo('🧹 Clearing search...');
+    this.logInfo('Clearing search...');
     this.kitSearch.keyword = '';
     this.kitSearch.choices = [];
     this.kitSearch.input = '';
@@ -655,14 +260,11 @@ export class KitPrompt {
   };
 
   // Long-running script monitoring methods
-  private startLongRunningMonitor = () => {
-    // Clear any existing timer first to avoid duplicates
+  protected startLongRunningMonitor = () => {
     this.clearLongRunningMonitor();
 
-    // Check for custom threshold from environment variables
     this.longRunningThresholdMs = getLongRunningThresholdMs(kitState?.kenvEnv as any, this.longRunningThresholdMs);
 
-    // Skip monitoring for main script or if disabled
     if (
       this.isMainMenu ||
       (kitState?.kenvEnv as any)?.KIT_DISABLE_LONG_RUNNING_MONITOR === 'true' ||
@@ -674,7 +276,6 @@ export class KitPrompt {
       return;
     }
 
-    // Skip monitoring for idle prompts or prompts without valid scripts
     if (!this.scriptPath || this.scriptPath === '' || !this.scriptName || this.scriptName === 'script-not-set') {
       this.logInfo('Skipping long-running monitor for idle prompt (no valid script)');
       return;
@@ -683,10 +284,12 @@ export class KitPrompt {
     startLongRunningMonitorFlow(this as any);
   };
 
-  private clearLongRunningMonitor = () => {
+  protected clearLongRunningMonitor = () => {
     clearLongRunningMonitorFlow(this as any);
   };
 
+  boundToProcess = false;
+  processConnectionLost = false;
   processConnectionLostTimeout?: NodeJS.Timeout;
 
   bindToProcess = (pid: number) => {
@@ -702,50 +305,39 @@ export class KitPrompt {
     this.pid = pid;
     this.boundToProcess = true;
     this.processConnectionLost = false;
-    this.logInfo(`${pid} -> ${this?.window?.id}: 🔗 Binding prompt to process`);
+    this.logInfo(`${pid} -> ${this?.window?.id}: Binding prompt to process`);
 
-    // Start monitoring for long-running scripts
     this.startLongRunningMonitor();
-
-    // Start process monitoring
     this.startProcessMonitoring();
-
-    // Listen for process exit events
     this.listenForProcessExit();
   };
 
-  /**
-   * Check if this prompt has lost connection to its process
-   */
   hasLostProcessConnection = (): boolean => {
     return this.boundToProcess && this.processConnectionLost;
   };
 
-  /**
-   * Send notification about lost process connection
-   */
-  private notifyProcessConnectionLost() {
-    notifyProcessConnectionLostImpl(this);
+  protected notifyProcessConnectionLost() {
+    notifyProcessConnectionLostImpl(this as any);
   }
 
-  private startProcessMonitoring = () => {
-    startProcessMonitoringImpl(this);
+  protected startProcessMonitoring = () => {
+    startProcessMonitoringImpl(this as any);
   };
 
-  private stopProcessMonitoring = () => {
-    stopProcessMonitoringImpl(this);
+  protected stopProcessMonitoring = () => {
+    stopProcessMonitoringImpl(this as any);
   };
 
-  private checkProcessAlive(force = false) {
-    checkProcessAliveImpl(this, force);
+  protected checkProcessAlive(force = false) {
+    checkProcessAliveImpl(this as any, force);
   }
 
-  private listenForProcessExit = () => {
-    listenForProcessExitImpl(this);
+  protected listenForProcessExit = () => {
+    listenForProcessExitImpl(this as any);
   };
 
-  private handleProcessGone() {
-    handleProcessGoneImpl(this);
+  protected handleProcessGone() {
+    handleProcessGoneImpl(this as any);
   }
 
   promptBounds = {
@@ -761,7 +353,7 @@ export class KitPrompt {
   waitForReady = async () => {
     return new Promise<void>((resolve) => {
       this.readyEmitter.once('ready', () => {
-        this.logInfo(`${this?.window?.id} 🎉 Ready because ready emit`);
+        this.logInfo(`${this?.window?.id} Ready because ready emit`);
         resolve();
       });
     });
@@ -777,54 +369,52 @@ export class KitPrompt {
     return `${pid}:${id}:${scriptName}:`;
   };
 
-  logInfo = (...args: Parameters<typeof this.logInfo>) => {
+  logInfo = (...args: any[]) => {
     log.info(this.getLogPrefix(), ...args);
   };
 
-  themeLogInfo = (...args: Parameters<typeof themeLog.info>) => {
+  themeLogInfo = (...args: any[]) => {
     themeLog.info(this.getLogPrefix(), ...args);
   };
 
-  logWarn = (...args: Parameters<typeof this.logWarn>) => {
+  logWarn = (...args: any[]) => {
     log.warn(this.getLogPrefix(), ...args);
   };
 
-  logError = (...args: Parameters<typeof this.logError>) => {
+  logError = (...args: any[]) => {
     log.error(this.getLogPrefix(), ...args);
   };
 
-  logVerbose = (...args: Parameters<typeof this.logVerbose>) => {
+  logVerbose = (...args: any[]) => {
     log.verbose(this.getLogPrefix(), ...args);
   };
 
-  logSilly = (...args: Parameters<typeof log.silly>) => {
+  logSilly = (...args: any[]) => {
     log.silly(this.getLogPrefix(), ...args);
   };
 
+  /**
+   * Handle blur event. Subclasses can override onBlurMainMenu() for main-specific behavior.
+   */
   onBlur = () => {
-    // Early check: if DevTools are being opened or already open, ignore blur entirely
     if (this.devToolsOpening) {
-      this.logInfo('🙈 Blur ignored early - DevTools are being opened');
+      this.logInfo('Blur ignored early - DevTools are being opened');
       return;
     }
 
-    // Also check if DevTools are already open (handles race conditions)
     if (this.window.webContents?.isDevToolsOpened()) {
-      this.logInfo('🙈 Blur ignored early - DevTools are already open');
+      this.logInfo('Blur ignored early - DevTools are already open');
       return;
     }
 
-    // Register blur operation
     const blurOpId = processWindowCoordinator.registerOperation(this.pid, WindowOperation.Blur, this.window.id);
 
-    // Keep prompts registry in sync with actual window blur
     try {
       if (typeof (prompts as any).handleWindowBlur === 'function') {
         (prompts as any).handleWindowBlur(this, 'window-blur');
       } else if (prompts.focused === this) {
-        // Fallback for older builds
         prompts.focused = null;
-        prompts.prevFocused = this;
+        prompts.prevFocused = this as any;
       }
     } catch (error) {
       this.logWarn('Error updating prompts focus state on blur', error);
@@ -839,14 +429,13 @@ export class KitPrompt {
       return;
     }
 
-    this.logInfo('🙈 Prompt window blurred');
+    this.logInfo('Prompt window blurred');
 
-    this.logInfo(`${this.pid}:${this.scriptName}: 🙈 Prompt window blurred. Emoji active: ${this.emojiActive}`, {
+    this.logInfo(`${this.pid}:${this.scriptName}: Prompt window blurred. Emoji active: ${this.emojiActive}`, {
       emojiActive: this.emojiActive,
       focusedEmojiActive: prompts?.focused?.emojiActive,
     });
 
-    // If blur immediately goes to another Kit prompt window, keep this panel open
     try {
       const focusedWindow = BrowserWindow.getFocusedWindow();
       if (focusedWindow) {
@@ -863,19 +452,11 @@ export class KitPrompt {
       this.logWarn('Error checking focused Kit window on blur', error);
     }
 
-    // Use visibility controller to handle blur
-    handleBlurVisibility(this);
+    handleBlurVisibility(this as any);
 
-    const mainScriptPath = getMainScriptPath();
-    const isMainScript = mainScriptPath === this.scriptPath;
     const isSplashScreen = this.ui === UI.splash;
     const isIdle = !this.scriptPath || this.scriptPath === '';
 
-    this.logInfo(
-      `/Users/johnlindquist/dev/kit-container/app/src/main/prompt.ts:562 - Blur check: scriptPath="${this.scriptPath}", mainPath="${mainScriptPath}", isMain=${isMainScript}, isIdle=${isIdle}`,
-    );
-
-    // Don't hide splash screen on blur - it's a regular window now
     if (isSplashScreen) {
       this.logInfo('Splash screen blur - keeping window open');
       if (this.window.isVisible()) {
@@ -885,23 +466,14 @@ export class KitPrompt {
       return;
     }
 
-    // Don't remove idle processes on blur
     if (isIdle) {
       this.logInfo('Idle process blur - keeping process alive');
       processWindowCoordinator.completeOperation(blurOpId);
       return;
     }
 
-    if (isMainScript && !this.mainMenuPreventCloseOnBlur) {
-      // Don't close main menu if DevTools are being opened
-      if (this.devToolsOpening) {
-        this.logInfo('Main menu blur ignored - DevTools are opening');
-        processWindowCoordinator.completeOperation(blurOpId);
-        return;
-      }
-      this.logInfo('Main script. Hiding and removing process');
-      this.hideAndRemoveProcess();
-      processWindowCoordinator.completeOperation(blurOpId);
+    // Delegate to subclass for main menu specific handling
+    if (this.handleBlurForMainMenu(blurOpId)) {
       return;
     }
 
@@ -924,30 +496,21 @@ export class KitPrompt {
     }
 
     if (os.platform().startsWith('win')) {
-      // Complete the blur operation before returning
       processWindowCoordinator.completeOperation(blurOpId);
       return;
     }
 
     kitState.blurredByKit = false;
-
-    // Complete the blur operation
     processWindowCoordinator.completeOperation(blurOpId);
   };
 
-  initMainPrompt = (reason = 'unknown') => {
-    this.logInfo(
-      `🚀🚀🚀 initMainPrompt CALLED: reason="${reason}", scriptPath="${this.scriptPath}", initMain=${this.initMain}`,
-    );
-    this.initPromptData();
-    this.initMainChoices();
-    this.initMainPreview();
-    this.initMainShortcuts();
-    this.initMainFlags();
-    this.initTheme();
-    this.logInfo(`🚀 Prompt init: ${reason}`);
-    this.initPrompt();
-  };
+  /**
+   * Hook for main menu specific blur handling.
+   * Returns true if blur was fully handled and should return early.
+   */
+  protected handleBlurForMainMenu(_blurOpId: string): boolean {
+    return false;
+  }
 
   attemptReadTheme = async () => {
     this.themeLogInfo('attemptReadTheme...');
@@ -955,27 +518,21 @@ export class KitPrompt {
     try {
       const css = await readFile(cssPath, 'utf8');
       if (css) {
-        this.themeLogInfo(`👍 Found ${cssPath}. Sending to prompt ${this.pid}`);
+        this.themeLogInfo(`Found ${cssPath}. Sending to prompt ${this.pid}`);
         this.sendToPrompt(AppChannel.CSS_CHANGED, css);
         this.themeLogInfo(css);
       }
     } catch (error) {
-      this.themeLogInfo(`👍 No ${cssPath}. Sending empty css to prompt ${this.pid}`);
+      this.themeLogInfo(`No ${cssPath}. Sending empty css to prompt ${this.pid}`);
       this.sendToPrompt(AppChannel.CSS_CHANGED, '');
     }
     updateTheme();
   };
 
-  private cacheKeyFor = (scriptPath: string) => `${scriptPath}::${this.windowMode}`;
+  protected cacheKeyFor = (scriptPath: string) => `${scriptPath}::${this.windowMode}`;
 
   constructor() {
-    // Initialize the FSM first since properties depend on it
-    this._fsm = createPromptStateMachine({
-      id: `prompt-${Date.now()}`,
-      verbose: false,
-    });
-
-    const getKitConfig = (event) => {
+    const getKitConfig = (event: any) => {
       event.returnValue = {
         kitPath: kitPath(),
         mainScriptPath: getMainScriptPath(),
@@ -984,7 +541,6 @@ export class KitPrompt {
     };
 
     const isSplashScreen = this.ui === UI.splash;
-    // Splash is a normal window; otherwise honor env override if provided
     this.windowMode = isSplashScreen ? 'window' : process.env.KIT_PROMPT_WINDOW_MODE === 'window' ? 'window' : 'panel';
 
     const options = getPromptOptions(this.windowMode);
@@ -992,15 +548,12 @@ export class KitPrompt {
 
     if (this.windowMode === 'window') this.window.setTitle('Script Kit');
 
-    // Register window creation
     const createOpId = processWindowCoordinator.registerOperation(this.pid, WindowOperation.Create, this.window.id);
-    // Complete immediately as window is created
     processWindowCoordinator.completeOperation(createOpId);
 
     this.window.webContents.ipc.on(AppChannel.GET_KIT_CONFIG, getKitConfig);
 
     this.sendToPrompt = (channel: Channel | AppChannel, data) => {
-      // Calculate data size for perf logging (approximate)
       const dataSize = data && typeof data === 'object' && Array.isArray(data) ? data.length : 1;
       const endPerfSendToPrompt = perf.start('sendToPrompt', {
         channel: String(channel),
@@ -1009,7 +562,6 @@ export class KitPrompt {
 
       log.silly(`sendToPrompt: ${String(channel)}`, data);
 
-      // Log [SCRIPTS RENDER] events
       if (
         channel === AppChannel.SET_CACHED_MAIN_STATE ||
         channel === AppChannel.SET_CACHED_MAIN_SCORED_CHOICES ||
@@ -1020,9 +572,8 @@ export class KitPrompt {
         this.logInfo(`[SCRIPTS RENDER] Prompt ${this.pid}:${this.id} sending ${String(channel)} to renderer`);
       }
 
-      // Special logging for TERM_CAPTURE_READY
       if (channel === AppChannel.TERM_CAPTURE_READY) {
-        this.logInfo('🔍 [CAPTURE] sendToPrompt TERM_CAPTURE_READY:', {
+        this.logInfo('[CAPTURE] sendToPrompt TERM_CAPTURE_READY:', {
           hasData: !!data,
           dataKeys: data ? Object.keys(data) : [],
           textLength: data?.text?.length || 0,
@@ -1076,15 +627,12 @@ export class KitPrompt {
       endPerfSendToPrompt();
     };
 
-    // mark handlers as used to satisfy linter after extraction
     void this.beforeInputHandler;
-
-    // Ensure methods referenced by external monitor helpers are marked as used for linter
     void this.notifyProcessConnectionLost;
     void this.checkProcessAlive;
     void this.handleProcessGone;
 
-    this.logInfo(`🎬 Init appearance: ${kitState.appearance}`);
+    this.logInfo(`Init appearance: ${kitState.appearance}`);
 
     this.window?.webContents?.setZoomLevel(ZOOM_LEVEL);
 
@@ -1092,7 +640,6 @@ export class KitPrompt {
       if (!this.window || this.window?.isDestroyed()) {
         return;
       }
-
       this.window?.webContents?.startPainting();
     }, 100);
 
@@ -1113,12 +660,12 @@ export class KitPrompt {
       }
     }
 
-    setupNavigationHandlers(this);
+    setupNavigationHandlers(this as any);
 
     this.window.once('ready-to-show', async () => {
-      this.logInfo('👍 ready-to-show');
+      this.logInfo('ready-to-show');
       if (!this.window || this.window.isDestroyed()) {
-        this.logInfo('👍 ready-to-show: window is destroyed');
+        this.logInfo('ready-to-show: window is destroyed');
         return;
       }
 
@@ -1129,87 +676,75 @@ export class KitPrompt {
       }
 
       const handler = () => {
-        this.logInfo('👍 INPUT_READY');
+        this.logInfo('INPUT_READY');
       };
 
       this.window.webContents.ipc.on(AppChannel.INPUT_READY, handler);
       this.window.webContents.ipc.emit(AppChannel.INPUT_READY);
 
-      this.themeLogInfo('👍 Ready to show');
+      this.themeLogInfo('Ready to show');
       await this.attemptReadTheme();
     });
 
-    setupDomAndFinishLoadHandlers(this);
-
-    setupWindowLifecycleHandlers(this);
+    setupDomAndFinishLoadHandlers(this as any);
+    setupWindowLifecycleHandlers(this as any);
 
     this.window.webContents?.setWindowOpenHandler(({ url }) => {
       this.logInfo(`Opening ${url}`);
-
-      // Only allow websites to open in the browser
       if (!url.startsWith('http')) {
         return { action: 'deny' };
       }
-
       shell.openExternal(url);
-
       return { action: 'deny' };
     });
 
-    loadPromptHtml(this);
+    loadPromptHtml(this as any);
 
-    // Intercept DevTools keyboard shortcuts to set flag before blur happens
     this.window.webContents?.on('before-input-event', (_event, input) => {
       if (isDevToolsShortcut(input)) {
         this.logInfo(
-          `🔧 DevTools shortcut detected: meta=${input.meta}, alt=${input.alt}, shift=${input.shift}, key=${input.key}`,
+          `DevTools shortcut detected: meta=${input.meta}, alt=${input.alt}, shift=${input.shift}, key=${input.key}`,
         );
         this.devToolsOpening = true;
-        // Reset flag after a short delay
         setTimeout(() => {
           this.devToolsOpening = false;
         }, 200);
       }
     });
 
-    setupDevtoolsHandlers(this);
-
-    // lifecycle handlers moved
+    setupDevtoolsHandlers(this as any);
 
     this.window.on('focus', () => {
-      this.logInfo('👓 Prompt window focused');
+      this.logInfo('Prompt window focused');
 
-      // Keep prompts registry in sync with actual window focus
       try {
         if (typeof (prompts as any).setFocusedPrompt === 'function') {
           (prompts as any).setFocusedPrompt(this, 'window-focus');
         } else {
-          // Fallback for older builds if needed
-          prompts.focused = this;
+          prompts.focused = this as any;
         }
       } catch (error) {
         this.logWarn('Error updating prompts focus state on focus', error);
       }
 
-      // Use visibility controller to handle focus-related visibility
-      handleBlurVisibility(this);
+      handleBlurVisibility(this as any);
 
       if (!kitState.isLinux) {
-        this.logVerbose('👓 Registering emoji shortcut');
+        this.logVerbose('Registering emoji shortcut');
         kitState.emojiActive = true;
       }
     });
 
     this.window.on('hide', () => {
-      this.logInfo('🫣 Prompt window hidden');
+      this.logInfo('Prompt window hidden');
       if (!kitState.isLinux) kitState.emojiActive = false;
     });
 
     this.window.on('show', () => {
-      this.logInfo('😳 Prompt window shown');
+      this.logInfo('Prompt window shown');
     });
 
-    setupResizeAndMoveListeners(this);
+    setupResizeAndMoveListeners(this as any);
   }
 
   appearance: 'light' | 'dark' | 'auto' = 'auto';
@@ -1217,7 +752,7 @@ export class KitPrompt {
     if (this.appearance === appearance || this.window.isDestroyed()) {
       return;
     }
-    this.logInfo(`${this.pid}:${this.scriptName}: 👀 Setting appearance to ${appearance}`);
+    this.logInfo(`${this.pid}:${this.scriptName}: Setting appearance to ${appearance}`);
     this.appearance = appearance;
   };
 
@@ -1233,7 +768,6 @@ export class KitPrompt {
       this.logWarn('Prompt window is destroyed. Not reloading.');
       return;
     }
-
     this.window.reload();
   };
 
@@ -1241,49 +775,53 @@ export class KitPrompt {
     if (this?.window && !this.window.isDestroyed()) {
       return this.window.getBounds();
     }
-    this.logError(`${this.pid}:${this.scriptName}: 🫣 Prompt window is destroyed. Not getting bounds.`);
-    return {
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-    };
+    this.logError(`${this.pid}:${this.scriptName}: Prompt window is destroyed. Not getting bounds.`);
+    return { x: 0, y: 0, width: 0, height: 0 };
   };
+
   hasFocus = () => {
     if (this?.window && !this.window.isDestroyed()) {
       return this.window.isFocused();
     }
-    this.logError(`${this.pid}:${this.scriptName}: 🫣 Prompt window is destroyed. Not getting focus.`);
+    this.logError(`${this.pid}:${this.scriptName}: Prompt window is destroyed. Not getting focus.`);
     return false;
   };
 
   clearCache = () => {
-    this.logInfo('--> 📦 CLEARING CACHE, Not main!');
+    this.logInfo('--> CLEARING CACHE, Not main!');
     this.sendToPrompt(AppChannel.CLEAR_CACHE, {});
   };
 
-  initShowPrompt = () => initShowPromptFlow(this);
+  initShowPrompt = () => initShowPromptFlow(this as any);
 
-  hide = () => hideFlow(this);
+  hide = () => hideFlow(this as any);
 
-  onHideOnce = (fn: () => void) => onHideOnceFlow(this, fn);
+  onHideOnce = (fn: () => void) => onHideOnceFlow(this as any, fn);
 
-  // boundsLockTimeout is kept as a property since it's a timer reference
+  showAfterNextResize = false;
+  skipInitBoundsForResize = false;
+  boundsLockedForResize = false;
   boundsLockTimeout: NodeJS.Timeout | null = null;
 
-  showPrompt = () => showPromptFlow(this);
+  showPrompt = () => showPromptFlow(this as any);
 
-  moveToMouseScreen = () => moveToMouseScreenFlow(this);
+  moveToMouseScreen = () => moveToMouseScreenFlow(this as any);
 
-  initBounds = (forceScriptPath?: string, _show = false) => initBoundsFlow(this, forceScriptPath);
+  initBounds = (forceScriptPath?: string, _show = false) => initBoundsFlow(this as any, forceScriptPath);
 
-  blurPrompt = () => blurPromptFlow(this);
+  blurPrompt = () => blurPromptFlow(this as any);
 
-  initMainBounds = () => initMainBoundsFlow(this);
+  /**
+   * Initialize bounds for main menu.
+   * Default implementation uses initMainBoundsFlow.
+   */
+  initMainBounds = (): void => {
+    initMainBoundsFlow(this as any);
+  };
 
   setBounds = (bounds: Partial<Rectangle>, reason = '') => {
     try {
-      applyPromptBounds(this, bounds, reason);
+      applyPromptBounds(this as any, bounds, reason);
     } catch (error) {
       this.logInfo(`setBounds error ${reason}`, error);
     }
@@ -1304,7 +842,7 @@ export class KitPrompt {
   };
 
   pingPrompt = async (channel: AppChannel, data?: any) =>
-    (await import('./prompt.ipc-utils')).pingPrompt(this as any, channel, data);
+    (await import('../prompt.ipc-utils')).pingPrompt(this as any, channel, data);
 
   savePromptBounds = (scriptPath: string, bounds: Rectangle, b: number = Bounds.Position | Bounds.Size) => {
     if (!this.window || this.window.isDestroyed()) {
@@ -1315,9 +853,7 @@ export class KitPrompt {
       return;
     }
     const key = this.cacheKeyFor(scriptPath);
-    this.logInfo(`${this.pid}: 💾 Save Initial Bounds: ${key}`, bounds);
-    // const isMain = scriptPath.includes('.kit') && scriptPath.includes('cli');
-    // if (isMain) return;
+    this.logInfo(`${this.pid}: Save Initial Bounds: ${key}`, bounds);
 
     const centerPoint = { x: bounds.x + Math.floor(bounds.width / 2), y: bounds.y + Math.floor(bounds.height / 2) };
     if (!pointOnMouseScreen(centerPoint)) {
@@ -1328,23 +864,13 @@ export class KitPrompt {
 
     try {
       const prevBounds = promptState?.screens?.[String(currentScreen.id)]?.[key];
-
-      // Ignore if flag
       const size = b & Bounds.Size;
       const position = b & Bounds.Position;
       const { x, y } = position ? bounds : prevBounds || bounds;
       const { width, height } = size ? bounds : prevBounds || bounds;
 
-      const promptBounds: PromptBounds = {
-        x,
-        y,
-        width,
-        height,
-      };
-
-      // if promptBounds is on the current screen
-
-      writePromptState(this, String(currentScreen.id), key, promptBounds);
+      const promptBounds: PromptBounds = { x, y, width, height };
+      writePromptState(this as any, String(currentScreen.id), key, promptBounds);
     } catch (error) {
       this.logError(error);
     }
@@ -1354,84 +880,65 @@ export class KitPrompt {
 
   getFromPrompt = <K extends keyof ChannelMap>(child: ChildProcess, channel: K, data?: ChannelMap[K]) =>
     (async () => {
-      const { getFromPrompt } = await import('./prompt.ipc-utils');
+      const { getFromPrompt } = await import('../prompt.ipc-utils');
       getFromPrompt(this as any, child, channel, data);
     })();
 
-  private shouldApplyResize(resizeData: ResizeData): boolean {
-    if (kitState.isLinux) {
-      return false;
-    }
-    if (!(resizeData.forceHeight || this.allowResize || resizeData.forceResize)) {
-      return false;
-    }
-    if (this.modifiedByUser) {
-      return false;
-    }
-    if (this.window?.isDestroyed()) {
-      return false;
-    }
+  protected shouldApplyResize(resizeData: ResizeData): boolean {
+    if (kitState.isLinux) return false;
+    if (!(resizeData.forceHeight || this.allowResize || resizeData.forceResize)) return false;
+    if (this.modifiedByUser) return false;
+    if (this.window?.isDestroyed()) return false;
     return true;
   }
 
-  private handleSettle() {
-    if (!this?.window || this.window?.isDestroyed()) {
-      return;
-    }
-
-    this.logInfo(`📬 ${this.pid} 📐 Resize settled. Saving bounds`);
+  protected handleSettle() {
+    if (!this?.window || this.window?.isDestroyed()) return;
+    this.logInfo(`${this.pid} Resize settled. Saving bounds`);
     this.saveCurrentPromptBounds();
   }
 
-  private calculateTargetDimensions(
+  protected calculateTargetDimensions(
     resizeData: ResizeData,
-    currentBounds: Electron.Rectangle,
+    currentBounds: Rectangle,
   ): Pick<Rectangle, 'width' | 'height'> {
     return calculateTargetDimensions(resizeData, currentBounds);
   }
 
-  private calculateTargetPosition(
-    currentBounds: Electron.Rectangle,
+  protected calculateTargetPosition(
+    currentBounds: Rectangle,
     targetDimensions: Pick<Rectangle, 'width' | 'height'>,
-    cachedBounds?: Partial<Electron.Rectangle>,
+    cachedBounds?: Partial<Rectangle>,
   ): Pick<Rectangle, 'x' | 'y'> {
     return calculateTargetPosition(currentBounds, targetDimensions, cachedBounds);
   }
 
-  private saveBoundsIfInitial(resizeData: ResizeData, bounds: Rectangle) {
+  protected saveBoundsIfInitial(resizeData: ResizeData, bounds: Rectangle) {
     if (this.firstPrompt && !resizeData.inputChanged && resizeData.justOpened) {
       this.savePromptBounds(this.scriptPath, bounds);
     }
   }
 
-  resize = async (resizeData: ResizeData) => {
-    // FSM guard: prevent resize during DISPOSING state
-    if (!this._fsm.guardResize('resize')) {
-      return;
-    }
+  /**
+   * Get cached bounds for resize. Subclasses can override for main-specific behavior.
+   */
+  protected getCachedBoundsForResize(_resizeData: ResizeData): Partial<Rectangle> | undefined {
+    return undefined;
+  }
 
-    // Track if we need to show after this resize completes
+  resize = async (resizeData: ResizeData) => {
     const shouldShowAfterResize = this.showAfterNextResize;
     if (shouldShowAfterResize) {
       this.showAfterNextResize = false;
-      // Keep skipInitBoundsForResize=true until after showPrompt completes
-      // This prevents attemptPreload->initBounds from overwriting resize dimensions
     }
 
     if (!this.shouldApplyResize(resizeData)) {
-      // Even if we skip resize, still show the prompt if requested
-      // This handles edge cases like resize being disabled (e.g., on Linux)
       if (shouldShowAfterResize) {
-        this.logInfo('🎤 Showing prompt (resize skipped)...');
+        this.logInfo('Showing prompt (resize skipped)...');
         this.showPrompt();
       }
       return;
     }
-
-    // Transition FSM to RESIZING state
-    this._fsm.startResize();
-
-    // refactor: removed prevResizeData tracking
 
     if (resizeData.reason === 'SETTLE') {
       setTimeout(() => this.handleSettle(), 50);
@@ -1439,8 +946,8 @@ export class KitPrompt {
 
     const currentBounds = this.window.getBounds();
 
-    this.logInfo(`📐 Resize main height: ${resizeData.mainHeight}`);
-    this.logInfo('📏 ResizeData summary', {
+    this.logInfo(`Resize main height: ${resizeData.mainHeight}`);
+    this.logInfo('ResizeData summary', {
       id: resizeData.id,
       pid: resizeData.pid,
       ui: resizeData.ui,
@@ -1462,59 +969,49 @@ export class KitPrompt {
     });
 
     const targetDimensions = this.calculateTargetDimensions(resizeData, currentBounds);
-    this.logInfo('📐 Calculated targetDimensions', targetDimensions);
+    this.logInfo('Calculated targetDimensions', targetDimensions);
 
-    // Skip resize if dimensions haven't changed
     if (currentBounds.height === targetDimensions.height && currentBounds.width === targetDimensions.width) {
-      // Still show the prompt if requested, even though dimensions match
-      // But first ensure position is correct (may be at workarea origin from moveToMouseScreen)
       if (shouldShowAfterResize) {
-        // Check if window is at workarea origin (from moveToMouseScreen) and needs centering
         const mouseScreen = this.getCurrentScreenFromMouse();
         const { x: workX, y: workY } = mouseScreen.workArea;
         const { width: screenWidth, height: screenHeight } = mouseScreen.workAreaSize;
         const isAtWorkOrigin = Math.abs(currentBounds.x - workX) < 4 && Math.abs(currentBounds.y - workY) < 4;
 
         if (isAtWorkOrigin) {
-          // Center the window on the screen
           const centeredX = Math.round(workX + (screenWidth - targetDimensions.width) / 2);
           const centeredY = Math.round(workY + screenHeight / 8);
-          this.logInfo('🎤 Showing prompt (dimensions unchanged, centering from work origin)...', {
+          this.logInfo('Showing prompt (dimensions unchanged, centering from work origin)...', {
             from: { x: currentBounds.x, y: currentBounds.y },
             to: { x: centeredX, y: centeredY },
           });
           this.setBounds({ x: centeredX, y: centeredY, ...targetDimensions }, 'CENTER_BEFORE_SHOW');
         } else {
-          this.logInfo('🎤 Showing prompt (dimensions unchanged)...');
+          this.logInfo('Showing prompt (dimensions unchanged)...');
         }
         this.showPrompt();
       }
       return;
     }
 
-    const cachedBounds = resizeData.isMainScript ? getCurrentScreenPromptCache(getMainScriptPath()) : undefined;
+    const cachedBounds = this.getCachedBoundsForResize(resizeData);
     if (cachedBounds) {
-      this.logInfo('🗂️ Using cachedBounds for position/width defaults', cachedBounds);
+      this.logInfo('Using cachedBounds for position/width defaults', cachedBounds);
     }
 
     const targetPosition = this.calculateTargetPosition(currentBounds, targetDimensions, cachedBounds);
-    this.logInfo('🎯 Calculated targetPosition', targetPosition);
+    this.logInfo('Calculated targetPosition', targetPosition);
 
     const bounds: Rectangle = { ...targetPosition, ...targetDimensions };
 
     this.setBounds(bounds, resizeData.reason);
     this.saveBoundsIfInitial(resizeData, bounds);
 
-    // Show the prompt AFTER bounds have been applied
     if (shouldShowAfterResize) {
-      this.logInfo('🎤 Showing prompt after resize complete...');
+      this.logInfo('Showing prompt after resize complete...');
       this.showPrompt();
-      // Clear the flag after showing - initBounds can now run normally
       this.skipInitBoundsForResize = false;
     }
-
-    // Transition FSM back from RESIZING state
-    this._fsm.endResize();
   };
 
   updateShortcodes = () => {
@@ -1529,7 +1026,6 @@ export class KitPrompt {
     });
 
     this.logInfo(`${this.pid}: Shortcodes:`, shortcodes.join(', '));
-
     this.sendToPrompt(Channel.SET_SHORTCODES, shortcodes);
   };
 
@@ -1542,7 +1038,7 @@ export class KitPrompt {
     const waitForResize = this.ui === UI.arg || this.ui === UI.div;
     const dontWaitForResize = !waitForResize || this.promptData?.grid || kitState.isLinux;
 
-    this.logInfo('👀 Attempting to refocus prompt', {
+    this.logInfo('Attempting to refocus prompt', {
       hasBeenHidden: this.hasBeenHidden,
       isVisible: visible,
       isFocused: this?.window?.isFocused(),
@@ -1552,16 +1048,16 @@ export class KitPrompt {
       scriptPath: this.promptData?.scriptPath,
     });
 
-    // "grid" is currently an "arg" prompt that doesn't need a resize... Need to make grid it's own UI type...
     if (this.hasBeenHidden || (visible && !this?.window?.isFocused()) || (!visible && dontWaitForResize)) {
-      this.logInfo(`👍 ${this.pid}: ${this.ui} ready. Focusing prompt.`);
+      this.logInfo(`${this.pid}: ${this.ui} ready. Focusing prompt.`);
       this.focusPrompt();
       this.hasBeenHidden = false;
     }
   };
 
   setPromptData = async (promptData: PromptData) => {
-    await setPromptDataImpl(this, promptData);
+    await setPromptDataImpl(this as any, promptData);
+    let boundsCheck: NodeJS.Timeout | null = null;
     if (boundsCheck) {
       clearTimeout(boundsCheck);
     }
@@ -1588,14 +1084,15 @@ export class KitPrompt {
     }
   };
 
+  hasBeenHidden = false;
   actualHide = () => {
-    actualHideImpl(this);
+    actualHideImpl(this as any);
   };
 
-  isVisible = () => isVisibleImpl(this);
+  isVisible = () => isVisibleImpl(this as any);
 
   maybeHide = (reason: string) => {
-    maybeHideImpl(this, reason);
+    maybeHideImpl(this as any, reason);
   };
 
   saveCurrentPromptBounds = () => {
@@ -1603,19 +1100,13 @@ export class KitPrompt {
       this.logInfo(`${this.pid} Prompt window is destroyed. Not saving bounds for ${this.scriptPath}`);
       return;
     }
-    // if (kitState.promptCount === 1) {
     const currentBounds = this.window?.getBounds();
-    // this.logInfo(
-    // 	`${this.pid}: 💾 Save Current Bounds: ${this.scriptPath}`,
-    // 	currentBounds,
-    // );
     this.savePromptBounds(this.scriptPath, currentBounds);
 
     this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, {
       id: this.id,
       ...currentBounds,
     });
-    // }
   };
 
   prepPromptForQuit = async () => {
@@ -1633,9 +1124,7 @@ export class KitPrompt {
   };
 
   setVibrancy = (vibrancy: Parameters<typeof BrowserWindow.prototype.setVibrancy>[0]) => {
-    if (this.window.isDestroyed()) {
-      return;
-    }
+    if (this.window.isDestroyed()) return;
     if (kitState.isMac) {
       try {
         this.window.setVibrancy(vibrancy);
@@ -1654,8 +1143,8 @@ export class KitPrompt {
     (this.window as any)[key](value);
   };
 
+  hasBeenFocused = false;
   focusPrompt = () => {
-    // Register focus operation
     const focusOpId = processWindowCoordinator.registerOperation(this.pid, WindowOperation.Focus, this.window.id);
 
     this.hasBeenFocused = true;
@@ -1669,7 +1158,6 @@ export class KitPrompt {
         this.setIgnoreMouseEvents(false);
         this.setOpacity(1);
 
-        // Splash screen is a regular window, use normal focus
         if (this.ui === UI.splash) {
           this.window?.show();
           this.window?.focus();
@@ -1680,15 +1168,12 @@ export class KitPrompt {
           this.window?.focus();
         }
 
-        // Complete the focus operation
         processWindowCoordinator.completeOperation(focusOpId);
       } catch (error) {
         this.logError(error);
-        // Complete the operation even on error
         processWindowCoordinator.completeOperation(focusOpId);
       }
     } else {
-      // Complete the operation if we didn't need to focus
       processWindowCoordinator.completeOperation(focusOpId);
     }
   };
@@ -1696,7 +1181,6 @@ export class KitPrompt {
   forceFocus = () => {
     this.logInfo(`${this.pid}: forceFocus`);
 
-    // Don't steal focus when DevTools are open
     if (this.window?.webContents?.isDevToolsOpened()) {
       this.logInfo('DevTools are open - skipping forceFocus');
       return;
@@ -1707,21 +1191,17 @@ export class KitPrompt {
   };
 
   setSkipTaskbar = (skipTaskBar: boolean) => {
-    if (this.window?.isDestroyed()) {
-      return;
-    }
+    if (this.window?.isDestroyed()) return;
     this.window?.setSkipTaskbar(skipTaskBar);
   };
 
   setPromptAlwaysOnTop = (onTop: boolean, manual = false) => {
-    // Never set alwaysOnTop for splash screen - it's a regular window now
     if (this.ui === UI.splash) {
       this.logInfo('alwaysOnTop disabled for splash screen (regular window)');
       return;
     }
 
     if (this.windowMode === 'window') {
-      // Only honor explicit requests for standard windows
       if (manual && this.window && !this.window.isDestroyed()) {
         this.alwaysOnTop = onTop;
         this.window.setAlwaysOnTop(onTop, 'normal');
@@ -1738,19 +1218,15 @@ export class KitPrompt {
     }
     if (kitState.isMac) {
       const allow = manual && onTop;
-      if (!allow) {
-        return;
-      }
+      if (!allow) return;
     }
 
-    // this.logInfo(`function: setPromptAlwaysOnTop: ${onTop ? 'true' : 'false'}`);
     if (this.window && !this.window.isDestroyed()) {
       const changed = onTop !== this.alwaysOnTop;
       this.alwaysOnTop = onTop;
 
       if (onTop && changed) {
         this.window.setAlwaysOnTop(onTop, 'screen-saver');
-
         if (kitState.isMac) {
           this.window.moveTop();
         } else {
@@ -1760,9 +1236,7 @@ export class KitPrompt {
         this.logInfo({ onTop });
         this.window.setAlwaysOnTop(true, 'screen-saver');
         setTimeout(() => {
-          if (!this?.window || this.window?.isDestroyed()) {
-            return;
-          }
+          if (!this?.window || this.window?.isDestroyed()) return;
           this.window.setAlwaysOnTop(onTop, 'screen-saver');
         }, 100);
 
@@ -1816,37 +1290,35 @@ export class KitPrompt {
     this.sendToPrompt(AppChannel.RESET_PROMPT);
   };
 
+  /**
+   * Reset prompt state. Subclasses can override onResetState() for type-specific behavior.
+   */
   resetState = () => {
-    // Reset FSM to READY state and clear context
-    this._fsm.reset();
-
-    // Clear the bounds lock timeout
+    this.showAfterNextResize = false;
+    this.skipInitBoundsForResize = false;
     if (this.boundsLockTimeout) {
       clearTimeout(this.boundsLockTimeout);
       this.boundsLockTimeout = null;
     }
+    this.boundsLockedForResize = false;
 
+    this.boundToProcess = false;
+    this.pid = 0;
     this.ui = UI.arg;
     this.count = 0;
     this.id = '';
     this.clearActiveRun();
 
-    // Clear long-running monitor when resetting
     this.clearLongRunningMonitor();
-
-    // Stop process monitoring when resetting
     this.stopProcessMonitoring();
 
-    // Only set as idle if we're not currently in the process of being destroyed
-    // and if there isn't already an idle prompt
     if (!(this.closed || this.window?.isDestroyed()) && prompts.idle === null) {
-      prompts.setIdle(this);
+      prompts.setIdle(this as any);
     }
 
-    this.logInfo(`${this.pid}: 🚀 Prompt re-initialized`);
+    this.logInfo(`${this.pid}: Prompt re-initialized`);
     const idles = getIdles();
-    this.logInfo(`${this.pid}: 🚀 Idles: ${idles.length}. Prompts: ${prompts.getPromptMap().size}`);
-    // Logs all idle pids and prompts ids in a nice table format
+    this.logInfo(`${this.pid}: Idles: ${idles.length}. Prompts: ${prompts.getPromptMap().size}`);
     this.logInfo(
       `Idles: ${idles.map((idle) => `${idle.pid}: ${prompts.get(idle.pid)?.window?.id || 'none'}`).join(',')}`,
     );
@@ -1856,15 +1328,19 @@ export class KitPrompt {
 
     const allPrompts = [...prompts];
     this.logInfo(`Prompts: ${allPrompts.map((prompt) => `${prompt.pid}: ${prompt.window?.id}`).join('\n')}`);
-
     this.logInfo(`Prompt map: ${allPrompts.map((prompt) => `${prompt.pid}: ${prompt.window?.id}`).join('\n')}`);
 
-    this.initMainPreview();
-    this.initMainShortcuts();
-    this.initMainChoices();
-    this.initMainFlags();
+    // Hook for subclass-specific reset
+    this.onResetState();
     return;
   };
+
+  /**
+   * Hook for subclass-specific reset state logic.
+   */
+  protected onResetState(): void {
+    // Default: no-op. Subclasses can override.
+  }
 
   scriptSet = false;
 
@@ -1937,7 +1413,6 @@ export class KitPrompt {
       source,
     });
 
-    // Now that we have the script name and path, start long-running monitoring if bound to a process
     if (this.boundToProcess && this.pid) {
       this.logInfo(`Starting long-running monitor after script set: ${this.scriptName}`);
       this.startLongRunningMonitor();
@@ -1952,16 +1427,14 @@ export class KitPrompt {
     return 'allowed';
   };
 
-  private hideInstantCoolingDown = false;
+  protected hideInstantCoolingDown = false;
 
   hideInstant = (forceHide = false) => {
-    // If we're currently cooling down, just ignore this call unless forced
     if (this.hideInstantCoolingDown && !forceHide) {
       this.logInfo(`${this.pid}: "hideInstant" still cooling down`);
       return;
     }
 
-    // Start cooling down for 100ms (skip if forced)
     if (!forceHide) {
       this.hideInstantCoolingDown = true;
       setTimeout(() => {
@@ -1969,7 +1442,6 @@ export class KitPrompt {
       }, 100);
     }
 
-    // --- Original hide logic below ---
     if (!this.window || this.window.isDestroyed() || !this.window.isVisible()) {
       return;
     }
@@ -1985,19 +1457,15 @@ export class KitPrompt {
     }
   };
 
+  closed = false;
   close = (reason = 'unknown') => {
     this.logInfo(`${this.pid}: "close" because ${reason}`);
 
-    // Register close operation
     const closeOpId = processWindowCoordinator.registerOperation(this.pid, WindowOperation.Close, this.window?.id || 0);
 
-    // Clear long-running monitor when closing
     this.clearLongRunningMonitor();
-
-    // Stop process monitoring when closing
     this.stopProcessMonitoring();
 
-    // Skip focus checks if closing due to process exit
     const isProcessExit =
       reason.includes('process-exit') ||
       reason.includes('TERM_KILL') ||
@@ -2031,7 +1499,7 @@ export class KitPrompt {
       return;
     }
 
-    this.logInfo(`${this.pid} ${this.window.id} 👋 Close prompt`);
+    this.logInfo(`${this.pid} ${this.window.id} Close prompt`);
     try {
       if (kitState.isMac) {
         this.hideInstant(isProcessExit);
@@ -2041,7 +1509,6 @@ export class KitPrompt {
 
       try {
         if (!kitState.isMac) {
-          // This was causing nasty crashes on mac
           this.window.setClosable(true);
         }
         this.window.close();
@@ -2052,16 +1519,12 @@ export class KitPrompt {
 
       setImmediate(() => {
         try {
-          // Register destroy operation
           const destroyOpId = processWindowCoordinator.registerOperation(
             this.pid,
             WindowOperation.Destroy,
             this.window?.id || 0,
           );
-
           this.window.destroy();
-
-          // Complete the destroy operation
           processWindowCoordinator.completeOperation(destroyOpId);
         } catch (error) {
           this.logError(error);
@@ -2077,50 +1540,79 @@ export class KitPrompt {
       kitState.previousDownload = new Date();
     }
 
-    // Complete the close operation
     processWindowCoordinator.completeOperation(closeOpId);
-
     return;
   };
 
   initPromptData = async () => {
-    // TODO: Needed?
-    // this.sendToPrompt(Channel.SET_PROMPT_DATA, kitCache.promptData);
-  };
-
-  initMainChoices = () => {
-    initMainChoicesImpl(this);
-  };
-
-  initMainPreview = () => {
-    initMainPreviewImpl(this);
-  };
-
-  initMainShortcuts = () => {
-    initMainShortcutsImpl(this);
-  };
-
-  initMainFlags = () => {
-    initMainFlagsImpl(this);
-  };
-
-  initTheme = () => {
-    initThemeImpl(this);
-  };
-
-  initPrompt = () => {
-    initPromptImpl(this);
+    // Placeholder - subclasses may override
   };
 
   /**
-   * Clears the cached main menu content from the renderer.
-   * Called when a non-main script is triggered to prevent flash of main menu content.
+   * Initialize main menu choices.
+   * Default implementation uses initMainChoicesImpl.
+   */
+  initMainChoices = (): void => {
+    initMainChoicesImpl(this as any);
+  };
+
+  /**
+   * Initialize main menu preview.
+   * Default implementation uses initMainPreviewImpl.
+   */
+  initMainPreview = (): void => {
+    initMainPreviewImpl(this as any);
+  };
+
+  /**
+   * Initialize main menu shortcuts.
+   * Default implementation uses initMainShortcutsImpl.
+   */
+  initMainShortcuts = (): void => {
+    initMainShortcutsImpl(this as any);
+  };
+
+  /**
+   * Initialize main menu flags.
+   * Default implementation uses initMainFlagsImpl.
+   */
+  initMainFlags = (): void => {
+    initMainFlagsImpl(this as any);
+  };
+
+  initTheme = () => {
+    initThemeImpl(this as any);
+  };
+
+  initPrompt = () => {
+    initPromptImpl(this as any);
+  };
+
+  /**
+   * Initialize the full main menu prompt with all components.
+   * This is the main entry point for setting up the main menu.
+   */
+  initMainPrompt = (reason = 'unknown') => {
+    this.logInfo(
+      `initMainPrompt CALLED: reason="${reason}", scriptPath="${this.scriptPath}", initMain=${this.initMain}`,
+    );
+    this.initPromptData();
+    this.initMainChoices();
+    this.initMainPreview();
+    this.initMainShortcuts();
+    this.initMainFlags();
+    this.initTheme();
+    this.logInfo(`Prompt init: ${reason}`);
+    this.initPrompt();
+  };
+
+  /**
+   * Clear cached main menu content. Override in MainPrompt.
    */
   clearCachedMainContent = () => {
-    this.logInfo(`${this.pid}: 🧹 Clearing cached main menu content`);
+    this.logInfo(`${this.pid}: Clearing cached main menu content`);
     if (this.window && !this.window.isDestroyed()) {
       this.sendToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, []);
-      // Use closedDiv to signal "no preview" - empty string still shows the preview panel
       this.sendToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, closedDiv);
       this.sendToPrompt(Channel.SET_PREVIEW, closedDiv);
     }
@@ -2134,7 +1626,7 @@ export class KitPrompt {
       input = this.kitSearch.input || '';
     }
     input = promptData.input || input;
-    this.logInfo(`🏋️‍♂️ Preload promptData for ${promptData?.scriptPath} with input:${input}`);
+    this.logInfo(`Preload promptData for ${promptData?.scriptPath} with input:${input}`);
     promptData.preload = true;
     if (this.kitSearch.keyword) {
       promptData.keyword = this.kitSearch.keyword;
@@ -2153,8 +1645,8 @@ export class KitPrompt {
     }
     this.updateShortcodes();
     if (promptData.flags && typeof promptData.flags === 'object') {
-      this.logInfo(`🏴‍☠️ Setting flags from preloadPromptData: ${Object.keys(promptData.flags)}`);
-      setFlags(this, promptData.flags);
+      this.logInfo(`Setting flags from preloadPromptData: ${Object.keys(promptData.flags)}`);
+      setFlags(this as any, promptData.flags);
     }
     this.alwaysOnTop = typeof promptData?.alwaysOnTop === 'boolean' ? promptData.alwaysOnTop : false;
     kitState.shortcutsPaused = promptData.ui === UI.hotkey;
@@ -2166,35 +1658,32 @@ export class KitPrompt {
     this.sendToPrompt(Channel.SET_OPEN, true);
   };
 
+  /**
+   * Attempt to preload script. Subclasses can customize behavior.
+   */
   attemptPreload = debounce(
     (promptScriptPath: string, show = true, init = true) => {
       this.logInfo(
-        `🏋️🏋️🏋️ attemptPreload CALLED: promptScriptPath="${promptScriptPath}", current prompt.scriptPath="${this.scriptPath}", prompt.initMain=${this.initMain}`,
+        `attemptPreload CALLED: promptScriptPath="${promptScriptPath}", current prompt.scriptPath="${this.scriptPath}"`,
       );
       const isMainScript = getMainScriptPath() === promptScriptPath;
       if (!promptScriptPath || isMainScript) {
-        this.logInfo(`🏋️ attemptPreload: EARLY RETURN - promptScriptPath empty or isMainScript`);
+        this.logInfo(`attemptPreload: EARLY RETURN - promptScriptPath empty or isMainScript`);
         return;
       }
-      // log out all the keys of preloadPromptDataMap
       this.preloaded = '';
 
       const cachedPromptData = preloadPromptDataMap.has(promptScriptPath);
-      this.logInfo(`${this.pid}: 🏋️‍♂️ attemptPreload: ${promptScriptPath}`, {
+      this.logInfo(`${this.pid}: attemptPreload: ${promptScriptPath}`, {
         hasData: cachedPromptData ? 'true' : 'false',
       });
 
-      if (isMainScript) {
-      } else if (cachedPromptData) {
-        this.logInfo(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`, { init, show });
+      if (cachedPromptData) {
+        this.logInfo(`Preload prompt: ${promptScriptPath}`, { init, show });
 
-        // initBounds will check boundsLockedForResize and skip if we're in a
-        // deferred-show cycle (to prevent cached bounds from overwriting resize dimensions)
         if (init) {
           this.initBounds(promptScriptPath, show);
         }
-
-        // kitState.preloaded = true;
 
         this.sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
         this.sendToPrompt(Channel.SET_TAB_INDEX, 0);
@@ -2206,29 +1695,16 @@ export class KitPrompt {
 
         if (hasCachedChoices) {
           const choices = preloadChoicesMap.get(promptScriptPath) as Choice[];
-          this.logInfo(`🏋️‍♂️ Preload choices: ${promptScriptPath}`, choices.length);
-          setChoices(this, choices, {
+          this.logInfo(`Preload choices: ${promptScriptPath}`, choices.length);
+          setChoices(this as any, choices, {
             preload: true,
             generated: false,
             skipInitialSearch: true,
           });
 
-          // this.setBounds({
-          //   x: promptData.x,
-          //   y: promptData.y,
-          //   width:
-          //     getMainScriptPath() === promptData.scriptPath
-          //       ? getDefaultWidth()
-          //       : promptData.width || getDefaultWidth(),
-          //   height:
-          //     getMainScriptPath() === promptData.scriptPath
-          //       ? PROMPT.HEIGHT.BASE
-          //       : promptData.height,
-          // });
-
           const preview = preloadPreviewMap.get(promptScriptPath) as string;
           if (preview) {
-            this.logInfo(`${this.pid}: 🏋️‍♂️ Preload preview: ${promptScriptPath}`);
+            this.logInfo(`${this.pid}: Preload preview: ${promptScriptPath}`);
           }
           this.sendToPrompt(Channel.SET_PREVIEW, preview || closedDiv);
 
@@ -2242,16 +1718,14 @@ export class KitPrompt {
       this.logInfo('end of attemptPreload. Assigning preloaded');
     },
     25,
-    {
-      leading: true,
-    },
+    { leading: true },
   );
 
-  // Extracted and combined escape key handling into handleEscapePress
+  // Escape key handling
   private escapePressCount = 0;
   private lastEscapePressTime = 0;
 
-  private handleEscapePress = () => {
+  protected handleEscapePress = () => {
     if (!this.scriptPath) {
       this.logError(`${this.pid}: ${this.scriptName}: Escape pressed, but no script path. Killing process and prompt.`);
       processes.removeByPid(this.pid, 'prompt exit cleanup');
@@ -2274,21 +1748,19 @@ export class KitPrompt {
     this.lastEscapePressTime = currentTime;
   };
 
-  private shouldClosePromptOnInitialEscape = (isEscape: boolean): boolean => {
+  protected shouldClosePromptOnInitialEscape = (isEscape: boolean): boolean => {
     return computeShouldCloseOnInitialEscape(this.firstPrompt, this.isMainMenu, isEscape, this.wasActionsJustOpen);
   };
 
-  private hideAndRemoveProcess = () => {
+  protected hideAndRemoveProcess = () => {
     this.hideInstant();
     processes.removeByPid(this.pid, 'prompt close cleanup');
   };
 
-  private beforeInputHandler = (_event, input: Input) => {
+  protected beforeInputHandler = (_event: any, input: Input) => {
     if (input.type !== 'keyDown' || !input.key) {
       return;
     }
-
-    // this.logInfo(`${this.pid}: ${this.scriptName}: before-input-event`, { input });
 
     const isW = input.key === 'w';
     const isEscape = input.key === 'Escape';
@@ -2298,7 +1770,6 @@ export class KitPrompt {
       this.handleEscapePress();
     }
 
-    // Treat both ESC + "close combos" (including Cmd/Ctrl+W) as potential closes
     const isCmdOrCtrlW =
       input.type === 'keyDown' &&
       (isW || input.code === 'KeyW') &&
@@ -2309,9 +1780,7 @@ export class KitPrompt {
     const isCloseShortcut = isCloseCombo(input as any, kitState.isMac) || isCmdOrCtrlW;
 
     const shouldCloseOnInitialEscape = this.shouldClosePromptOnInitialEscape(isEscape);
-    // this.logInfo(`${this.pid}: shouldCloseOnInitialEscape: ${shouldCloseOnInitialEscape}`);
     if (isCloseShortcut || shouldCloseOnInitialEscape) {
-      // For Cmd/Ctrl+W, only close when this prompt truly has focus
       if (isCmdOrCtrlW) {
         const windowIsFocused = this.window?.isFocused();
         const electronFocused = BrowserWindow.getFocusedWindow();
@@ -2331,24 +1800,20 @@ export class KitPrompt {
       this.logInfo(`${this.pid}: Closing prompt window`);
 
       if (isCmdOrCtrlW) {
-        this.logInfo(`Closing prompt window with ${kitState.isMac ? '⌘' : '⌃'}+w`);
+        this.logInfo(`Closing prompt window with ${kitState.isMac ? '\u2318' : '\u2303'}+w`);
       } else if (isEscape) {
         this.logInfo('Closing prompt window with escape');
       }
 
-      // Stop the key from reaching the renderer / default handlers
       _event.preventDefault();
 
       this.hideAndRemoveProcess();
-      // I don't think these are needed anymore, but leaving them in for now
-      this.logInfo(`✋ Removing process because of escape ${this.pid}`);
-
-      // emitter.emit(KitEvent.KillProcess, this.pid);
+      this.logInfo(`Removing process because of escape ${this.pid}`);
       return;
     }
   };
 
-  private async collectRendererState(): Promise<any> {
+  protected async collectRendererState(): Promise<any> {
     return new Promise((resolve) => {
       if (!this.window || this.window.isDestroyed()) return resolve({});
       const RESPONSE_CHANNEL = `RENDERER_STATE_RESPONSE_${this.window.id}`;
@@ -2367,7 +1832,6 @@ export class KitPrompt {
   async recreateWindow(nextMode: PromptWindowMode) {
     if (nextMode === this.windowMode) return;
 
-    // Pause monitors & capture state
     this.stopProcessMonitoring?.();
     this.clearLongRunningMonitor?.();
     const devtools = this.window?.webContents?.isDevToolsOpened() ?? false;
@@ -2376,33 +1840,27 @@ export class KitPrompt {
     const opacity = this.opacity;
     const bounds = this.window?.getBounds();
 
-    // Capture current renderer state including input/editor content
     const rendererState = await this.collectRendererState();
 
-    // Store the current promptData with renderer state merged in
     const currentPromptData = this.promptData
       ? {
           ...this.promptData,
-          // Merge in any input/value from renderer state
           ...(rendererState?.input !== undefined && { input: rendererState.input }),
           ...(rendererState?.value !== undefined && { value: rendererState.value }),
           ...(rendererState?.description !== undefined && { description: rendererState.description }),
         }
       : null;
 
-    // Detach listeners from old window (avoid leaks)
     try {
       this.window?.removeListener('blur', this.onBlur);
     } catch {}
 
-    // Build the new window
     const oldWindow = this.window;
     this.windowMode = nextMode;
     const options = getPromptOptions(this.windowMode);
     this.window = new BrowserWindow(options);
 
-    // Setup GET_KIT_CONFIG handler for the new window
-    const getKitConfig = (event) => {
+    const getKitConfig = (event: any) => {
       event.returnValue = {
         kitPath: kitPath(),
         mainScriptPath: getMainScriptPath(),
@@ -2411,11 +1869,9 @@ export class KitPrompt {
     };
     this.window.webContents.ipc.on(AppChannel.GET_KIT_CONFIG, getKitConfig);
 
-    // Register window creation operation
     const createOpId = processWindowCoordinator.registerOperation(this.pid, WindowOperation.Create, this.window.id);
     processWindowCoordinator.completeOperation(createOpId);
 
-    // Re-setup sendToPrompt method
     this.sendToPrompt = (channel: Channel | AppChannel, data) => {
       if (!this?.window || this?.window?.isDestroyed()) {
         this.logError('sendToPrompt: Window is destroyed. Skipping sendToPrompt.');
@@ -2437,14 +1893,13 @@ export class KitPrompt {
       }
     };
 
-    // Re-bind all handlers for the new window
-    setupNavigationHandlers(this);
-    setupDomAndFinishLoadHandlers(this);
-    setupWindowLifecycleHandlers(this);
+    setupNavigationHandlers(this as any);
+    setupDomAndFinishLoadHandlers(this as any);
+    setupWindowLifecycleHandlers(this as any);
     this.window.webContents?.on('before-input-event', (_event, input: Input) => {
       if (isDevToolsShortcut(input)) {
         this.logInfo(
-          `🔧 DevTools shortcut detected (reinit): meta=${input.meta}, alt=${input.alt}, shift=${input.shift}, key=${input.key}`,
+          `DevTools shortcut detected (reinit): meta=${input.meta}, alt=${input.alt}, shift=${input.shift}, key=${input.key}`,
         );
         this.devToolsOpening = true;
         setTimeout(() => {
@@ -2452,19 +1907,16 @@ export class KitPrompt {
         }, 200);
       }
     });
-    setupDevtoolsHandlers(this);
-    loadPromptHtml(this);
-    setupResizeAndMoveListeners(this);
+    setupDevtoolsHandlers(this as any);
+    loadPromptHtml(this as any);
+    setupResizeAndMoveListeners(this as any);
 
     if (this.windowMode === 'window') this.window.setTitle(this.scriptName || 'Script Kit');
 
-    // Set initial zoom level (important for prompt sizing)
     this.window?.webContents?.setZoomLevel(ZOOM_LEVEL);
 
-    // Wait for renderer
     await this.waitForReady();
 
-    // Restore window props
     if (typeof zoom === 'number' && zoom !== ZOOM_LEVEL) {
       this.window.webContents?.setZoomLevel(zoom);
     }
@@ -2472,7 +1924,6 @@ export class KitPrompt {
     this.setIgnoreMouseEvents(ignoreMouse);
     this.setOpacity(opacity);
 
-    // Re-send script & prompt data (with current state merged)
     if (this.scriptSet && this.script) {
       this.setScript(this.script as any, {
         pid: this.pid,
@@ -2480,29 +1931,22 @@ export class KitPrompt {
       });
     }
     if (currentPromptData) {
-      // Update our stored promptData with the current state
       this.promptData = currentPromptData;
       await this.setPromptData(currentPromptData);
     }
 
-    // Send any additional renderer state not handled by setPromptData
-    // This includes things like scroll position, selection, etc.
     this.sendToPrompt(AppChannel.RESTORE_RENDERER_STATE, rendererState);
 
-    // Keep DevTools stance
     if (devtools) this.window.webContents?.openDevTools({ mode: 'detach' });
 
-    // Swap visibility
     this.showPrompt();
 
-    // Destroy old window
     setTimeout(() => {
       try {
         oldWindow?.destroy();
       } catch {}
     }, 120);
 
-    // Resume monitors
     this.startProcessMonitoring?.();
     this.startLongRunningMonitor?.();
   }
@@ -2512,25 +1956,3 @@ export class KitPrompt {
     await this.recreateWindow(target);
   }
 }
-
-export const makeSplashWindow = (_window?: BrowserWindow) => {
-  // No longer needed - splash screen is now a regular window
-  // that doesn't need special handling when closing
-  log.info('Splash window close - no special handling needed');
-};
-
-// Re-export from the new prompt module for forward compatibility
-// New code should import from './prompt' or './prompt/index' as before
-export {
-  BasePrompt,
-  MainPrompt,
-  ScriptPrompt,
-  createPrompt,
-  isMainPrompt,
-  isScriptPrompt,
-} from './prompt/index';
-
-// For backward compatibility, keep KitPrompt as an alias to BasePrompt
-// The BasePrompt class has the same behavior as the original KitPrompt
-// but with a cleaner polymorphic design.
-export { BasePrompt as KitPromptNew } from './prompt/index';
