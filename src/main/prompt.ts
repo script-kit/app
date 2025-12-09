@@ -33,12 +33,6 @@ import { getIdles, processes, updateTheme } from './process';
 import { processWindowCoordinator, WindowOperation } from './process-window-coordinator';
 import { applyPromptBounds } from './prompt.bounds-apply';
 import { applyPromptDataBounds } from './prompt.bounds-utils';
-import {
-  getLayoutEngine,
-  resizeDataToLayoutRequest,
-  type LayoutRequest,
-  type LayoutResponse,
-} from './layout-engine';
 import { clearPromptCacheFor } from './prompt.cache';
 import { setupPromptContextMenu } from './prompt.context-menu';
 import { computeShouldCloseOnInitialEscape, isDevToolsShortcut } from './prompt.focus-utils';
@@ -92,6 +86,12 @@ import {
   onHideOnceFlow,
   showPromptFlow,
 } from './prompt.window-flow';
+import {
+  createPromptStateMachine,
+  PromptEvent,
+  PromptState,
+  PromptStateMachine,
+} from './prompt/state-machine';
 import { centerThenFocus } from './prompt.window-utils';
 import { prompts } from './prompts';
 import { getCurrentScreenFromBounds, isBoundsWithinDisplays } from './screen';
@@ -114,6 +114,7 @@ import { getVersion } from './version';
 setupPromptContextMenu();
 
 export { logPromptStateFlow as logPromptState } from './prompt.log-state';
+export { PromptState, PromptEvent, PromptStateMachine } from './prompt/state-machine';
 
 // TODO: Move this into a screen utils
 export const getCurrentScreenFromMouse = utilGetCurrentScreenFromMouse;
@@ -319,40 +320,231 @@ subs.push(
 );
 
 export class KitPrompt {
+  /**
+   * Finite State Machine for managing prompt lifecycle.
+   * Replaces ad-hoc boolean flags with formal state management.
+   */
+  private _fsm: PromptStateMachine;
+
   ui = UI.arg;
   count = 0;
   id = '';
-  pid = 0;
   windowMode: PromptWindowMode = 'panel'; // default
   initMain = true;
   script = noScript;
   scriptPath = '';
   allowResize = true;
-  resizing = false;
   isScripts = true;
   promptData = null as null | PromptData;
-  firstPrompt = true;
-  ready = false;
-  shown = false;
   alwaysOnTop = true;
   hideOnEscape = false;
   cacheScriptChoices = false;
   cacheScriptPromptData = false;
   cacheScriptPreview = false;
-  actionsOpen = false;
-  wasActionsJustOpen = false;
-  devToolsOpening = false;
   private _activeRun?: ScriptRunMeta;
 
-  // Long-running script monitoring properties (IPromptContext)
-  longRunningThresholdMs = 60000; // 1 minute default
-  scriptStartTime?: number;
-  hasShownLongRunningNotification?: boolean;
-  longRunningTimer?: NodeJS.Timeout;
+  // --- FSM-backed properties (delegates to state machine) ---
 
-  // Internal state flags (IPromptContext)
-  __userBootstrapped?: boolean;
-  topTimeout?: NodeJS.Timeout;
+  /**
+   * Whether the prompt is being resized.
+   * @deprecated Use fsm.isResizing() for state checks
+   */
+  get resizing(): boolean {
+    return this._fsm.isResizing();
+  }
+  set resizing(value: boolean) {
+    if (value && !this._fsm.isResizing()) {
+      this._fsm.startResize();
+    } else if (!value && this._fsm.isResizing()) {
+      this._fsm.endResize();
+    }
+  }
+
+  /**
+   * Whether this is the first prompt shown.
+   */
+  get firstPrompt(): boolean {
+    return this._fsm.context.firstPrompt;
+  }
+  set firstPrompt(value: boolean) {
+    this._fsm.updateContext({ firstPrompt: value });
+  }
+
+  /**
+   * Whether the prompt renderer is ready.
+   */
+  get ready(): boolean {
+    return this._fsm.isReady();
+  }
+  set ready(value: boolean) {
+    if (value && this._fsm.isInitializing()) {
+      this._fsm.markReady();
+    }
+  }
+
+  /**
+   * Whether the prompt is currently shown/visible.
+   */
+  get shown(): boolean {
+    return this._fsm.isVisible();
+  }
+  set shown(value: boolean) {
+    // For backward compatibility - actual state transition happens in showPrompt/hide
+    if (value && !this._fsm.isVisible()) {
+      this._fsm.show();
+    }
+  }
+
+  /**
+   * Whether the prompt is bound to a process.
+   */
+  get boundToProcess(): boolean {
+    return this._fsm.context.boundToProcess;
+  }
+  set boundToProcess(value: boolean) {
+    this._fsm.updateContext({ boundToProcess: value });
+  }
+
+  /**
+   * PID of the bound process (accessed through FSM context for state tracking).
+   */
+  get pid(): number {
+    return this._fsm.context.pid;
+  }
+  set pid(value: number) {
+    this._fsm.updateContext({ pid: value });
+  }
+
+  /**
+   * Whether actions menu is open.
+   */
+  get actionsOpen(): boolean {
+    return this._fsm.context.actionsOpen;
+  }
+  set actionsOpen(value: boolean) {
+    this._fsm.updateContext({ actionsOpen: value });
+  }
+
+  /**
+   * Whether actions were just open (for escape handling).
+   */
+  get wasActionsJustOpen(): boolean {
+    return this._fsm.context.wasActionsJustOpen;
+  }
+  set wasActionsJustOpen(value: boolean) {
+    this._fsm.updateContext({ wasActionsJustOpen: value });
+  }
+
+  /**
+   * Whether DevTools are being opened (to ignore blur).
+   */
+  get devToolsOpening(): boolean {
+    return this._fsm.context.devToolsOpening;
+  }
+  set devToolsOpening(value: boolean) {
+    this._fsm.updateContext({ devToolsOpening: value });
+  }
+
+  /**
+   * Whether the process connection has been lost.
+   */
+  get processConnectionLost(): boolean {
+    return this._fsm.context.processConnectionLost;
+  }
+  set processConnectionLost(value: boolean) {
+    this._fsm.updateContext({ processConnectionLost: value });
+  }
+
+  /**
+   * Whether the prompt has been focused at least once.
+   */
+  get hasBeenFocused(): boolean {
+    return this._fsm.context.hasBeenFocused;
+  }
+  set hasBeenFocused(value: boolean) {
+    this._fsm.updateContext({ hasBeenFocused: value });
+  }
+
+  /**
+   * Whether the prompt has been hidden at least once.
+   */
+  get hasBeenHidden(): boolean {
+    return this._fsm.context.hasBeenHidden;
+  }
+  set hasBeenHidden(value: boolean) {
+    this._fsm.updateContext({ hasBeenHidden: value });
+  }
+
+  /**
+   * Whether the window has been modified by the user.
+   */
+  get modifiedByUser(): boolean {
+    return this._fsm.context.modifiedByUser;
+  }
+  set modifiedByUser(value: boolean) {
+    this._fsm.updateContext({ modifiedByUser: value });
+  }
+
+  /**
+   * Whether bounds should be locked during resize.
+   */
+  get boundsLockedForResize(): boolean {
+    return this._fsm.context.boundsLockedForResize;
+  }
+  set boundsLockedForResize(value: boolean) {
+    this._fsm.updateContext({ boundsLockedForResize: value });
+  }
+
+  /**
+   * Whether to skip initBounds during resize.
+   */
+  get skipInitBoundsForResize(): boolean {
+    return this._fsm.context.skipInitBoundsForResize;
+  }
+  set skipInitBoundsForResize(value: boolean) {
+    this._fsm.updateContext({ skipInitBoundsForResize: value });
+  }
+
+  /**
+   * Whether to show after next resize completes.
+   */
+  get showAfterNextResize(): boolean {
+    return this._fsm.context.showAfterNextResize;
+  }
+  set showAfterNextResize(value: boolean) {
+    this._fsm.updateContext({ showAfterNextResize: value });
+  }
+
+  /**
+   * Whether the prompt has been closed.
+   */
+  get closed(): boolean {
+    return this._fsm.isDisposedOrDestroyed();
+  }
+  set closed(value: boolean) {
+    // Only allow transitioning to closed state
+    if (value && !this._fsm.isDisposedOrDestroyed()) {
+      this._fsm.close();
+    }
+  }
+
+  // --- FSM accessors ---
+
+  /**
+   * Gets the underlying state machine for advanced state queries.
+   */
+  get fsm(): PromptStateMachine {
+    return this._fsm;
+  }
+
+  /**
+   * Gets the current FSM state (for debugging/logging).
+   */
+  get fsmState(): PromptState {
+    return this._fsm.state;
+  }
+
+  private longRunningThresholdMs = 60000; // 1 minute default
 
   birthTime = performance.now();
 
@@ -389,8 +581,6 @@ export class KitPrompt {
   public sendToPrompt: (channel: Channel | AppChannel, data?: any) => void = (channel, data) => {
     this.logWarn('sendToPrompt not set', { channel, data });
   };
-
-  modifiedByUser = false;
 
   opacity = 1;
   setOpacity = (opacity: number) => {
@@ -490,16 +680,13 @@ export class KitPrompt {
       return;
     }
 
-    startLongRunningMonitorFlow(this);
+    startLongRunningMonitorFlow(this as any);
   };
 
-  // Public for IPromptContext interface
-  clearLongRunningMonitor = () => {
-    clearLongRunningMonitorFlow(this);
+  private clearLongRunningMonitor = () => {
+    clearLongRunningMonitorFlow(this as any);
   };
 
-  boundToProcess = false;
-  processConnectionLost = false;
   processConnectionLostTimeout?: NodeJS.Timeout;
 
   bindToProcess = (pid: number) => {
@@ -782,6 +969,12 @@ export class KitPrompt {
   private cacheKeyFor = (scriptPath: string) => `${scriptPath}::${this.windowMode}`;
 
   constructor() {
+    // Initialize the FSM first since properties depend on it
+    this._fsm = createPromptStateMachine({
+      id: `prompt-${Date.now()}`,
+      verbose: false,
+    });
+
     const getKitConfig = (event) => {
       event.returnValue = {
         kitPath: kitPath(),
@@ -1075,74 +1268,7 @@ export class KitPrompt {
 
   onHideOnce = (fn: () => void) => onHideOnceFlow(this, fn);
 
-  // ============================================================================
-  // Layout Engine Integration
-  // ============================================================================
-  // The new layout engine provides deterministic, unidirectional data flow:
-  // 1. Renderer calculates content size
-  // 2. Renderer sends LayoutRequest via IPC
-  // 3. Main Process calculates target geometry (pure function)
-  // 4. Main Process applies bounds
-  // 5. Window is shown ONLY after final bounds are applied
-  //
-  // This eliminates the need for the legacy synchronization flags below.
-  // ============================================================================
-
-  // Pending layout request ID for correlation
-  private pendingLayoutRequestId: string | null = null;
-
-  /**
-   * Request a layout update using the new deterministic layout engine
-   */
-  requestLayout = async (request: LayoutRequest): Promise<LayoutResponse> => {
-    const layoutEngine = getLayoutEngine();
-    this.pendingLayoutRequestId = request.requestId;
-
-    const response = layoutEngine.processLayoutRequest(this, request);
-
-    // Apply the layout
-    layoutEngine.applyLayout(this, response);
-
-    this.pendingLayoutRequestId = null;
-    return response;
-  };
-
-  /**
-   * Check if there's a pending layout request
-   */
-  hasPendingLayout = (): boolean => {
-    return this.pendingLayoutRequestId !== null;
-  };
-
-  // ============================================================================
-  // DEPRECATED: Legacy Synchronization Flags
-  // ============================================================================
-  // These flags are maintained for backward compatibility during migration.
-  // New code should use the layout engine instead.
-  // TODO: Remove these once migration is complete
-  // ============================================================================
-
-  /**
-   * @deprecated Use layout engine instead. Will be removed in future version.
-   * When true, the next resize() call is responsible for showing the window.
-   */
-  showAfterNextResize = false;
-
-  /**
-   * @deprecated Use layout engine instead. Will be removed in future version.
-   * Flag used by attemptPreload to decide whether it is allowed to call initBounds().
-   */
-  skipInitBoundsForResize = false;
-
-  /**
-   * @deprecated Use layout engine instead. Will be removed in future version.
-   * Hard lock to prevent any initBounds()-driven bounds changes.
-   */
-  boundsLockedForResize = false;
-
-  /**
-   * @deprecated Use layout engine instead. Will be removed in future version.
-   */
+  // boundsLockTimeout is kept as a property since it's a timer reference
   boundsLockTimeout: NodeJS.Timeout | null = null;
 
   showPrompt = () => showPromptFlow(this);
@@ -1163,7 +1289,7 @@ export class KitPrompt {
     }
   };
 
-  togglePromptEnv = (envName: string) => togglePromptEnvFlow(this, envName);
+  togglePromptEnv = (envName: string) => togglePromptEnvFlow(this as any, envName);
 
   centerPrompt = () => {
     this.window.center();
@@ -1278,25 +1404,23 @@ export class KitPrompt {
     }
   }
 
-  /**
-   * Resize the prompt window using the new layout engine
-   *
-   * This method now uses a deterministic layout engine that:
-   * 1. Converts ResizeData to LayoutRequest
-   * 2. Processes the request through pure functions
-   * 3. Applies bounds and shows window atomically
-   *
-   * This eliminates race conditions and "The Flash" issue.
-   */
   resize = async (resizeData: ResizeData) => {
-    // Track if we need to show after this resize completes (legacy flag)
+    // FSM guard: prevent resize during DISPOSING state
+    if (!this._fsm.guardResize('resize')) {
+      return;
+    }
+
+    // Track if we need to show after this resize completes
     const shouldShowAfterResize = this.showAfterNextResize;
     if (shouldShowAfterResize) {
       this.showAfterNextResize = false;
+      // Keep skipInitBoundsForResize=true until after showPrompt completes
+      // This prevents attemptPreload->initBounds from overwriting resize dimensions
     }
 
     if (!this.shouldApplyResize(resizeData)) {
       // Even if we skip resize, still show the prompt if requested
+      // This handles edge cases like resize being disabled (e.g., on Linux)
       if (shouldShowAfterResize) {
         this.logInfo('🎤 Showing prompt (resize skipped)...');
         this.showPrompt();
@@ -1304,61 +1428,19 @@ export class KitPrompt {
       return;
     }
 
+    // Transition FSM to RESIZING state
+    this._fsm.startResize();
+
+    // refactor: removed prevResizeData tracking
+
     if (resizeData.reason === 'SETTLE') {
       setTimeout(() => this.handleSettle(), 50);
     }
 
-    // Convert ResizeData to LayoutRequest format for the new engine
-    const isVisible = this.isVisible();
-    const layoutRequest = resizeDataToLayoutRequest(resizeData, isVisible);
-
-    // Override isInitialShow if the legacy flag is set
-    if (shouldShowAfterResize) {
-      layoutRequest.isInitialShow = true;
-    }
-
-    this.logInfo(`📐 [LayoutEngine] Processing resize request`, {
-      requestId: layoutRequest.requestId,
-      reason: resizeData.reason,
-      mainHeight: resizeData.mainHeight,
-      isInitialShow: layoutRequest.isInitialShow,
-    });
-
-    try {
-      // Use the new layout engine
-      const response = await this.requestLayout(layoutRequest);
-
-      this.logInfo(`📐 [LayoutEngine] Layout applied`, {
-        requestId: response.requestId,
-        bounds: response.bounds,
-        shouldShow: response.shouldShow,
-        reason: response.reason,
-      });
-
-      // Save bounds if this is the initial prompt
-      this.saveBoundsIfInitial(resizeData, response.bounds);
-
-      // Clear the legacy flag after layout is complete
-      if (shouldShowAfterResize) {
-        this.skipInitBoundsForResize = false;
-      }
-    } catch (error) {
-      this.logError('Layout engine error, falling back to legacy resize', error);
-
-      // Fallback to legacy resize logic
-      this.resizeLegacy(resizeData, shouldShowAfterResize);
-    }
-  };
-
-  /**
-   * Legacy resize implementation for fallback
-   * @deprecated Will be removed once layout engine is fully validated
-   */
-  private resizeLegacy = (resizeData: ResizeData, shouldShowAfterResize: boolean) => {
     const currentBounds = this.window.getBounds();
 
-    this.logInfo(`📐 [Legacy] Resize main height: ${resizeData.mainHeight}`);
-    this.logInfo('📏 [Legacy] ResizeData summary', {
+    this.logInfo(`📐 Resize main height: ${resizeData.mainHeight}`);
+    this.logInfo('📏 ResizeData summary', {
       id: resizeData.id,
       pid: resizeData.pid,
       ui: resizeData.ui,
@@ -1380,26 +1462,30 @@ export class KitPrompt {
     });
 
     const targetDimensions = this.calculateTargetDimensions(resizeData, currentBounds);
-    this.logInfo('📐 [Legacy] Calculated targetDimensions', targetDimensions);
+    this.logInfo('📐 Calculated targetDimensions', targetDimensions);
 
     // Skip resize if dimensions haven't changed
     if (currentBounds.height === targetDimensions.height && currentBounds.width === targetDimensions.width) {
+      // Still show the prompt if requested, even though dimensions match
+      // But first ensure position is correct (may be at workarea origin from moveToMouseScreen)
       if (shouldShowAfterResize) {
+        // Check if window is at workarea origin (from moveToMouseScreen) and needs centering
         const mouseScreen = this.getCurrentScreenFromMouse();
         const { x: workX, y: workY } = mouseScreen.workArea;
         const { width: screenWidth, height: screenHeight } = mouseScreen.workAreaSize;
         const isAtWorkOrigin = Math.abs(currentBounds.x - workX) < 4 && Math.abs(currentBounds.y - workY) < 4;
 
         if (isAtWorkOrigin) {
+          // Center the window on the screen
           const centeredX = Math.round(workX + (screenWidth - targetDimensions.width) / 2);
           const centeredY = Math.round(workY + screenHeight / 8);
-          this.logInfo('🎤 [Legacy] Showing prompt (centering from work origin)...', {
+          this.logInfo('🎤 Showing prompt (dimensions unchanged, centering from work origin)...', {
             from: { x: currentBounds.x, y: currentBounds.y },
             to: { x: centeredX, y: centeredY },
           });
           this.setBounds({ x: centeredX, y: centeredY, ...targetDimensions }, 'CENTER_BEFORE_SHOW');
         } else {
-          this.logInfo('🎤 [Legacy] Showing prompt (dimensions unchanged)...');
+          this.logInfo('🎤 Showing prompt (dimensions unchanged)...');
         }
         this.showPrompt();
       }
@@ -1408,11 +1494,11 @@ export class KitPrompt {
 
     const cachedBounds = resizeData.isMainScript ? getCurrentScreenPromptCache(getMainScriptPath()) : undefined;
     if (cachedBounds) {
-      this.logInfo('🗂️ [Legacy] Using cachedBounds for position/width defaults', cachedBounds);
+      this.logInfo('🗂️ Using cachedBounds for position/width defaults', cachedBounds);
     }
 
     const targetPosition = this.calculateTargetPosition(currentBounds, targetDimensions, cachedBounds);
-    this.logInfo('🎯 [Legacy] Calculated targetPosition', targetPosition);
+    this.logInfo('🎯 Calculated targetPosition', targetPosition);
 
     const bounds: Rectangle = { ...targetPosition, ...targetDimensions };
 
@@ -1421,11 +1507,14 @@ export class KitPrompt {
 
     // Show the prompt AFTER bounds have been applied
     if (shouldShowAfterResize) {
-      this.logInfo('🎤 [Legacy] Showing prompt after resize complete...');
+      this.logInfo('🎤 Showing prompt after resize complete...');
       this.showPrompt();
       // Clear the flag after showing - initBounds can now run normally
       this.skipInitBoundsForResize = false;
     }
+
+    // Transition FSM back from RESIZING state
+    this._fsm.endResize();
   };
 
   updateShortcodes = () => {
@@ -1499,7 +1588,6 @@ export class KitPrompt {
     }
   };
 
-  hasBeenHidden = false;
   actualHide = () => {
     actualHideImpl(this);
   };
@@ -1566,7 +1654,6 @@ export class KitPrompt {
     (this.window as any)[key](value);
   };
 
-  hasBeenFocused = false;
   focusPrompt = () => {
     // Register focus operation
     const focusOpId = processWindowCoordinator.registerOperation(this.pid, WindowOperation.Focus, this.window.id);
@@ -1730,17 +1817,15 @@ export class KitPrompt {
   };
 
   resetState = () => {
-    // Clear any deferred-show / bounds-lock state from the previous run
-    this.showAfterNextResize = false;
-    this.skipInitBoundsForResize = false;
+    // Reset FSM to READY state and clear context
+    this._fsm.reset();
+
+    // Clear the bounds lock timeout
     if (this.boundsLockTimeout) {
       clearTimeout(this.boundsLockTimeout);
       this.boundsLockTimeout = null;
     }
-    this.boundsLockedForResize = false;
 
-    this.boundToProcess = false;
-    this.pid = 0;
     this.ui = UI.arg;
     this.count = 0;
     this.id = '';
@@ -1900,7 +1985,6 @@ export class KitPrompt {
     }
   };
 
-  closed = false;
   close = (reason = 'unknown') => {
     this.logInfo(`${this.pid}: "close" because ${reason}`);
 
