@@ -1077,7 +1077,10 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
       kitState.hiddenByUser = true;
       log.info('😳 Hiding app');
 
+      let handlerCalled = false;
       const handler = () => {
+        if (handlerCalled) return;
+        handlerCalled = true;
         log.info('🫣 App hidden');
         if (!child?.killed) {
           childSend({
@@ -1090,6 +1093,11 @@ export const createMessageMap = (processInfo: ProcessAndPrompt) => {
         // Ack exactly once when hide completes.
         prompt?.onHideOnce(handler);
         prompt.hide();
+        // If FSM guard blocked the hide (already hidden state), ack immediately
+        // This prevents timeout when FSM state is out of sync with window visibility
+        if (!prompt?.window?.isVisible()) {
+          handler();
+        }
       } else {
         // Already hidden – ack now.
         handler();

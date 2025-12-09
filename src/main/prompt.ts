@@ -1538,6 +1538,11 @@ export class KitPrompt {
   };
 
   refocusPrompt = () => {
+    if (this.window?.isDestroyed()) {
+      this.logWarn('refocusPrompt: Window is destroyed, skipping');
+      return;
+    }
+
     const visible = this.isVisible();
     const waitForResize = this.ui === UI.arg || this.ui === UI.div;
     const dontWaitForResize = !waitForResize || this.promptData?.grid || kitState.isLinux;
@@ -1678,6 +1683,12 @@ export class KitPrompt {
         } else {
           this.window?.showInactive();
           this.window?.focus();
+        }
+
+        // Sync FSM state to VISIBLE if window is now showing
+        // This handles cases where focusPrompt is called outside of showPromptFlow
+        if (this.window?.isVisible() && !this._fsm.isVisible()) {
+          this._fsm.show();
         }
 
         // Complete the focus operation

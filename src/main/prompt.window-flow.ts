@@ -32,19 +32,25 @@ export function initShowPromptFlow(prompt: KitPrompt) {
 }
 
 export function hideFlow(prompt: KitPrompt) {
-  // FSM guard: prevent hiding when already hidden or disposing
-  if (!prompt.fsm.guardHide('hideFlow')) {
-    return;
-  }
-
-  if (prompt.window.isVisible()) {
-    prompt.hasBeenHidden = true;
-  }
-  prompt.logInfo('Hiding prompt window...');
   if (prompt.window.isDestroyed()) {
     prompt.logWarn('Prompt window is destroyed. Not hiding.');
     return;
   }
+
+  // Check actual window visibility - FSM state might be out of sync
+  const windowIsVisible = prompt.window.isVisible();
+
+  // FSM guard: prevent hiding when already hidden or disposing
+  // But allow hiding if window is actually visible (state desync recovery)
+  if (!prompt.fsm.guardHide('hideFlow') && !windowIsVisible) {
+    return;
+  }
+
+  if (windowIsVisible) {
+    prompt.hasBeenHidden = true;
+  }
+  prompt.logInfo('Hiding prompt window...');
+
   const hideOpId = processWindowCoordinator.registerOperation(prompt.pid, WindowOperation.Hide, prompt.window.id);
   (prompt as any).actualHide();
 
