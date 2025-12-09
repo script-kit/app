@@ -5,6 +5,7 @@ import type { Rectangle } from 'electron';
 import { ensureIdleProcess } from './process';
 import { processWindowCoordinator, WindowOperation } from './process-window-coordinator';
 import type { KitPrompt } from './prompt';
+import { PromptEvent } from './prompt/state-machine';
 import { getCurrentScreenFromMouse, getCurrentScreenPromptCache } from './prompt.screen-utils';
 import shims from './shims';
 import { kitState } from './state';
@@ -31,8 +32,13 @@ export function initShowPromptFlow(prompt: KitPrompt) {
 }
 
 export function hideFlow(prompt: KitPrompt) {
+  // FSM guard: prevent hiding when already hidden or disposing
+  if (!prompt.fsm.guardHide('hideFlow')) {
+    return;
+  }
+
   if (prompt.window.isVisible()) {
-    prompt.hasBeenHidden = true as any;
+    prompt.hasBeenHidden = true;
   }
   prompt.logInfo('Hiding prompt window...');
   if (prompt.window.isDestroyed()) {
@@ -41,6 +47,10 @@ export function hideFlow(prompt: KitPrompt) {
   }
   const hideOpId = processWindowCoordinator.registerOperation(prompt.pid, WindowOperation.Hide, prompt.window.id);
   (prompt as any).actualHide();
+
+  // Transition FSM to HIDDEN state
+  prompt.fsm.hide();
+
   processWindowCoordinator.completeOperation(hideOpId);
 }
 
@@ -61,6 +71,11 @@ export function onHideOnceFlow(prompt: KitPrompt, fn: () => void) {
 }
 
 export function showPromptFlow(prompt: KitPrompt) {
+  // FSM guard: prevent showing when already visible or disposing
+  if (!prompt.fsm.guardShow('showPromptFlow')) {
+    return;
+  }
+
   if (prompt.window.isDestroyed()) return;
   const showOpId = processWindowCoordinator.registerOperation(prompt.pid, WindowOperation.Show, prompt.window.id);
   initShowPromptFlow(prompt);
@@ -69,7 +84,10 @@ export function showPromptFlow(prompt: KitPrompt) {
     processWindowCoordinator.completeOperation(showOpId);
     return;
   }
-  prompt.shown = true as any;
+
+  // Transition FSM to VISIBLE state
+  prompt.fsm.show();
+
   processWindowCoordinator.completeOperation(showOpId);
 }
 
@@ -83,6 +101,11 @@ export function moveToMouseScreenFlow(prompt: KitPrompt) {
 }
 
 export function initBoundsFlow(prompt: KitPrompt, forceScriptPath?: string) {
+  // FSM guard: prevent bounds operations when disposing or bounds locked
+  if (!prompt.fsm.guardBounds('initBoundsFlow')) {
+    return;
+  }
+
   if (prompt?.window?.isDestroyed()) {
     prompt.logWarn('initBounds. Window already destroyed', prompt?.id);
     return;
@@ -92,7 +115,7 @@ export function initBoundsFlow(prompt: KitPrompt, forceScriptPath?: string) {
   // attemptPreload or similar) to overwrite the renderer-calculated size.
   // We only skip when forceScriptPath is provided, which is the preload path.
   // However, we still apply the POSITION (x, y) so the window isn't stuck at top-left.
-  if ((prompt as any).boundsLockedForResize && forceScriptPath) {
+  if (prompt.boundsLockedForResize && forceScriptPath) {
     const cacheKey = `${forceScriptPath}::${(prompt as any).windowMode || 'panel'}`;
     const currentBounds = prompt.window.getBounds();
     const cachedBounds = getCurrentScreenPromptCache(cacheKey, {

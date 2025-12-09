@@ -86,6 +86,12 @@ import {
   onHideOnceFlow,
   showPromptFlow,
 } from './prompt.window-flow';
+import {
+  createPromptStateMachine,
+  PromptEvent,
+  PromptState,
+  PromptStateMachine,
+} from './prompt/state-machine';
 import { centerThenFocus } from './prompt.window-utils';
 import { prompts } from './prompts';
 import { getCurrentScreenFromBounds, isBoundsWithinDisplays } from './screen';
@@ -108,6 +114,7 @@ import { getVersion } from './version';
 setupPromptContextMenu();
 
 export { logPromptStateFlow as logPromptState } from './prompt.log-state';
+export { PromptState, PromptEvent, PromptStateMachine } from './prompt/state-machine';
 
 // TODO: Move this into a screen utils
 export const getCurrentScreenFromMouse = utilGetCurrentScreenFromMouse;
@@ -313,30 +320,229 @@ subs.push(
 );
 
 export class KitPrompt {
+  /**
+   * Finite State Machine for managing prompt lifecycle.
+   * Replaces ad-hoc boolean flags with formal state management.
+   */
+  private _fsm: PromptStateMachine;
+
   ui = UI.arg;
   count = 0;
   id = '';
-  pid = 0;
   windowMode: PromptWindowMode = 'panel'; // default
   initMain = true;
   script = noScript;
   scriptPath = '';
   allowResize = true;
-  resizing = false;
   isScripts = true;
   promptData = null as null | PromptData;
-  firstPrompt = true;
-  ready = false;
-  shown = false;
   alwaysOnTop = true;
   hideOnEscape = false;
   cacheScriptChoices = false;
   cacheScriptPromptData = false;
   cacheScriptPreview = false;
-  actionsOpen = false;
-  wasActionsJustOpen = false;
-  devToolsOpening = false;
   private _activeRun?: ScriptRunMeta;
+
+  // --- FSM-backed properties (delegates to state machine) ---
+
+  /**
+   * Whether the prompt is being resized.
+   * @deprecated Use fsm.isResizing() for state checks
+   */
+  get resizing(): boolean {
+    return this._fsm.isResizing();
+  }
+  set resizing(value: boolean) {
+    if (value && !this._fsm.isResizing()) {
+      this._fsm.startResize();
+    } else if (!value && this._fsm.isResizing()) {
+      this._fsm.endResize();
+    }
+  }
+
+  /**
+   * Whether this is the first prompt shown.
+   */
+  get firstPrompt(): boolean {
+    return this._fsm.context.firstPrompt;
+  }
+  set firstPrompt(value: boolean) {
+    this._fsm.updateContext({ firstPrompt: value });
+  }
+
+  /**
+   * Whether the prompt renderer is ready.
+   */
+  get ready(): boolean {
+    return this._fsm.isReady();
+  }
+  set ready(value: boolean) {
+    if (value && this._fsm.isInitializing()) {
+      this._fsm.markReady();
+    }
+  }
+
+  /**
+   * Whether the prompt is currently shown/visible.
+   */
+  get shown(): boolean {
+    return this._fsm.isVisible();
+  }
+  set shown(value: boolean) {
+    // For backward compatibility - actual state transition happens in showPrompt/hide
+    if (value && !this._fsm.isVisible()) {
+      this._fsm.show();
+    }
+  }
+
+  /**
+   * Whether the prompt is bound to a process.
+   */
+  get boundToProcess(): boolean {
+    return this._fsm.context.boundToProcess;
+  }
+  set boundToProcess(value: boolean) {
+    this._fsm.updateContext({ boundToProcess: value });
+  }
+
+  /**
+   * PID of the bound process (accessed through FSM context for state tracking).
+   */
+  get pid(): number {
+    return this._fsm.context.pid;
+  }
+  set pid(value: number) {
+    this._fsm.updateContext({ pid: value });
+  }
+
+  /**
+   * Whether actions menu is open.
+   */
+  get actionsOpen(): boolean {
+    return this._fsm.context.actionsOpen;
+  }
+  set actionsOpen(value: boolean) {
+    this._fsm.updateContext({ actionsOpen: value });
+  }
+
+  /**
+   * Whether actions were just open (for escape handling).
+   */
+  get wasActionsJustOpen(): boolean {
+    return this._fsm.context.wasActionsJustOpen;
+  }
+  set wasActionsJustOpen(value: boolean) {
+    this._fsm.updateContext({ wasActionsJustOpen: value });
+  }
+
+  /**
+   * Whether DevTools are being opened (to ignore blur).
+   */
+  get devToolsOpening(): boolean {
+    return this._fsm.context.devToolsOpening;
+  }
+  set devToolsOpening(value: boolean) {
+    this._fsm.updateContext({ devToolsOpening: value });
+  }
+
+  /**
+   * Whether the process connection has been lost.
+   */
+  get processConnectionLost(): boolean {
+    return this._fsm.context.processConnectionLost;
+  }
+  set processConnectionLost(value: boolean) {
+    this._fsm.updateContext({ processConnectionLost: value });
+  }
+
+  /**
+   * Whether the prompt has been focused at least once.
+   */
+  get hasBeenFocused(): boolean {
+    return this._fsm.context.hasBeenFocused;
+  }
+  set hasBeenFocused(value: boolean) {
+    this._fsm.updateContext({ hasBeenFocused: value });
+  }
+
+  /**
+   * Whether the prompt has been hidden at least once.
+   */
+  get hasBeenHidden(): boolean {
+    return this._fsm.context.hasBeenHidden;
+  }
+  set hasBeenHidden(value: boolean) {
+    this._fsm.updateContext({ hasBeenHidden: value });
+  }
+
+  /**
+   * Whether the window has been modified by the user.
+   */
+  get modifiedByUser(): boolean {
+    return this._fsm.context.modifiedByUser;
+  }
+  set modifiedByUser(value: boolean) {
+    this._fsm.updateContext({ modifiedByUser: value });
+  }
+
+  /**
+   * Whether bounds should be locked during resize.
+   */
+  get boundsLockedForResize(): boolean {
+    return this._fsm.context.boundsLockedForResize;
+  }
+  set boundsLockedForResize(value: boolean) {
+    this._fsm.updateContext({ boundsLockedForResize: value });
+  }
+
+  /**
+   * Whether to skip initBounds during resize.
+   */
+  get skipInitBoundsForResize(): boolean {
+    return this._fsm.context.skipInitBoundsForResize;
+  }
+  set skipInitBoundsForResize(value: boolean) {
+    this._fsm.updateContext({ skipInitBoundsForResize: value });
+  }
+
+  /**
+   * Whether to show after next resize completes.
+   */
+  get showAfterNextResize(): boolean {
+    return this._fsm.context.showAfterNextResize;
+  }
+  set showAfterNextResize(value: boolean) {
+    this._fsm.updateContext({ showAfterNextResize: value });
+  }
+
+  /**
+   * Whether the prompt has been closed.
+   */
+  get closed(): boolean {
+    return this._fsm.isDisposedOrDestroyed();
+  }
+  set closed(value: boolean) {
+    // Only allow transitioning to closed state
+    if (value && !this._fsm.isDisposedOrDestroyed()) {
+      this._fsm.close();
+    }
+  }
+
+  // --- FSM accessors ---
+
+  /**
+   * Gets the underlying state machine for advanced state queries.
+   */
+  get fsm(): PromptStateMachine {
+    return this._fsm;
+  }
+
+  /**
+   * Gets the current FSM state (for debugging/logging).
+   */
+  get fsmState(): PromptState {
+    return this._fsm.state;
+  }
 
   private longRunningThresholdMs = 60000; // 1 minute default
 
@@ -375,8 +581,6 @@ export class KitPrompt {
   public sendToPrompt: (channel: Channel | AppChannel, data?: any) => void = (channel, data) => {
     this.logWarn('sendToPrompt not set', { channel, data });
   };
-
-  modifiedByUser = false;
 
   opacity = 1;
   setOpacity = (opacity: number) => {
@@ -483,8 +687,6 @@ export class KitPrompt {
     clearLongRunningMonitorFlow(this as any);
   };
 
-  boundToProcess = false;
-  processConnectionLost = false;
   processConnectionLostTimeout?: NodeJS.Timeout;
 
   bindToProcess = (pid: number) => {
@@ -767,6 +969,12 @@ export class KitPrompt {
   private cacheKeyFor = (scriptPath: string) => `${scriptPath}::${this.windowMode}`;
 
   constructor() {
+    // Initialize the FSM first since properties depend on it
+    this._fsm = createPromptStateMachine({
+      id: `prompt-${Date.now()}`,
+      verbose: false,
+    });
+
     const getKitConfig = (event) => {
       event.returnValue = {
         kitPath: kitPath(),
@@ -1060,19 +1268,7 @@ export class KitPrompt {
 
   onHideOnce = (fn: () => void) => onHideOnceFlow(this, fn);
 
-  // When true, the next resize() call is responsible for showing the window.
-  showAfterNextResize = false;
-
-  // Flag used by attemptPreload to decide whether it is allowed to call initBounds().
-  // It is set when deferring show for resize and cleared once the resize / preload
-  // handshake has finished.
-  skipInitBoundsForResize = false;
-
-  // Hard lock to prevent any initBounds()-driven bounds changes while we are in
-  // a "defer show until resize" cycle. This specifically protects against late
-  // attemptPreload() calls re-applying cached bounds after we've shrunk the
-  // window from the renderer.
-  boundsLockedForResize = false;
+  // boundsLockTimeout is kept as a property since it's a timer reference
   boundsLockTimeout: NodeJS.Timeout | null = null;
 
   showPrompt = () => showPromptFlow(this);
@@ -1209,6 +1405,11 @@ export class KitPrompt {
   }
 
   resize = async (resizeData: ResizeData) => {
+    // FSM guard: prevent resize during DISPOSING state
+    if (!this._fsm.guardResize('resize')) {
+      return;
+    }
+
     // Track if we need to show after this resize completes
     const shouldShowAfterResize = this.showAfterNextResize;
     if (shouldShowAfterResize) {
@@ -1226,6 +1427,9 @@ export class KitPrompt {
       }
       return;
     }
+
+    // Transition FSM to RESIZING state
+    this._fsm.startResize();
 
     // refactor: removed prevResizeData tracking
 
@@ -1309,7 +1513,8 @@ export class KitPrompt {
       this.skipInitBoundsForResize = false;
     }
 
-    // refactor: removed hadPreview tracking
+    // Transition FSM back from RESIZING state
+    this._fsm.endResize();
   };
 
   updateShortcodes = () => {
@@ -1383,7 +1588,6 @@ export class KitPrompt {
     }
   };
 
-  hasBeenHidden = false;
   actualHide = () => {
     actualHideImpl(this);
   };
@@ -1450,7 +1654,6 @@ export class KitPrompt {
     (this.window as any)[key](value);
   };
 
-  hasBeenFocused = false;
   focusPrompt = () => {
     // Register focus operation
     const focusOpId = processWindowCoordinator.registerOperation(this.pid, WindowOperation.Focus, this.window.id);
@@ -1614,17 +1817,15 @@ export class KitPrompt {
   };
 
   resetState = () => {
-    // Clear any deferred-show / bounds-lock state from the previous run
-    this.showAfterNextResize = false;
-    this.skipInitBoundsForResize = false;
+    // Reset FSM to READY state and clear context
+    this._fsm.reset();
+
+    // Clear the bounds lock timeout
     if (this.boundsLockTimeout) {
       clearTimeout(this.boundsLockTimeout);
       this.boundsLockTimeout = null;
     }
-    this.boundsLockedForResize = false;
 
-    this.boundToProcess = false;
-    this.pid = 0;
     this.ui = UI.arg;
     this.count = 0;
     this.id = '';
@@ -1784,7 +1985,6 @@ export class KitPrompt {
     }
   };
 
-  closed = false;
   close = (reason = 'unknown') => {
     this.logInfo(`${this.pid}: "close" because ${reason}`);
 
